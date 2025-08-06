@@ -44,6 +44,25 @@ This project aligns with university strategic objectives:
 **Prof. Biloskurskyi (Rector)**  
 *Executive Sponsor & Primary Decision Authority*
 
+## Key Stakeholders
+
+### **Executive Level**
+- **Prof. Biloskurskyi (Rector)** - Project funding and strategic decisions
+- **Prof. Martynyuk (Dean)** - Faculty oversight and user adoption leadership
+
+### **Management Level**
+- **Faculty Secretaries** - Operational workflow management and approval processes
+- **Prof. Bihun (Department Chair)** - Departmental requirements and policy consultation
+
+### **End User Level**
+- **University Employees** - Primary system users for award submission and tracking
+- **Administrative Staff** - Award processing and document management
+
+### **Technical & Compliance**
+- **Stefan Kostyk (Lead Developer)** - System architecture and implementation (solo development with enterprise practices)
+- **Future GDPR Officer** - Data protection and compliance oversight (role to be established)
+- **Future InfoSec Team** - Security requirements and monitoring (role to be established)
+
 ## Project Objectives
 - Implement a transparent, end-to-end award monitoring and tracking platform that supports scanned attachments, version history, audit logs, GDPR-compliant workflows, multi-level review, reporting, and analytics.
 - Automate key workflows (parsing, notifications, archival) to reduce manual effort by at least 80% in targeted areas.
@@ -75,7 +94,7 @@ This project aligns with university strategic objectives:
 ### **Functional Requirements**
 1. **Award Management**: CRUD operations with validation and versioning
 2. **Document Processing**: AI-powered parsing with confidence scoring
-3. **Workflow Engine**: Multi-level approval with escalation rules
+3. **Workflow Engine**: Multi-level approval of adding awards to the system with escalation rules
 4. **User Management**: Role-based access with LDAP integration
 5. **Analytics Dashboard**: Customizable widgets and reporting
 6. **Notification System**: Email, SMS, and in-app alerts
@@ -114,7 +133,7 @@ This project aligns with university strategic objectives:
 - **Security-First**: Built-in compliance and security controls
 
 ### **Technology Strategy**
-- **Modern Stack**: Java 21, Spring Boot 3.2+, React, PostgreSQL
+- **Modern Stack**: Java 21, Spring Boot 3.5+, React, PostgreSQL
 - **Cloud-Native**: Docker containers with Kubernetes orchestration
 - **API-First**: RESTful services with comprehensive documentation
 - **Mobile-Responsive**: Progressive web application approach
