@@ -3,7 +3,7 @@
 ## 🎯 **30-Second Technical Elevator Pitch**
 *For technical interviews and developer meetups*
 
-> "I'm building an enterprise-grade award monitoring system for Ukrainian universities using **Spring Boot 3.2 and Java 21**. The platform will replace manual spreadsheet tracking with automated workflows, **AI-powered document parsing**, and **GDPR-compliant data management**. What makes it unique is **complete transparency**—every award will be publicly visible with verification badges—plus intelligent features like **multi-level approval workflows** and **real-time conflict resolution**. The tech stack includes **Kafka for event streaming**, **PostgreSQL for data**, and **Kubernetes for deployment**. I'm implementing **comprehensive testing** with JUnit 5 and TestContainers, targeting **85% code coverage** and **sub-200ms API response times**."
+> "I'm building an enterprise-grade award monitoring system for Ukrainian universities using **Spring Boot 3.5 and Java 21**. The platform will replace manual spreadsheet tracking with automated workflows, **AI-powered document parsing**, and **GDPR-compliant data management**. What makes it unique is **complete transparency**—every award will be publicly visible with verification badges—plus intelligent features like **multi-level approval workflows** and **real-time conflict resolution**. The tech stack includes **Kafka for event streaming**, **PostgreSQL for data**, and **Kubernetes for deployment**. I'm implementing **comprehensive testing** with JUnit 5 and TestContainers, targeting **85% code coverage** and **sub-200ms API response times**."
 
 ---
 
