@@ -1,0 +1,108 @@
+@startuml Component_Diagram
+!theme plain
+skinparam component {
+    BackgroundColor<<frontend>> LightBlue
+    BackgroundColor<<gateway>> LightYellow
+    BackgroundColor<<service>> LightGreen
+    BackgroundColor<<data>> LightGray
+    BackgroundColor<<external>> Pink
+}
+
+title Award Monitoring & Tracking System - Component Diagram
+
+' Frontend Layer
+package "Presentation Layer" {
+    component [Web Application\n<<Angular 20+>>] <<frontend>> as webapp
+    component [Mobile PWA\n<<Angular PWA>>] <<frontend>> as pwa
+}
+
+' API Gateway Layer
+package "API Gateway Layer" {
+    component [API Gateway\n<<Spring Cloud Gateway>>] <<gateway>> as gateway
+}
+
+' Backend Services Layer
+package "Backend Services Layer" {
+    
+    component [Core API Service\n<<Spring Boot 3.2+>>] <<service>> as core_api
+    component [Authentication Service\n<<Spring Security 6+>>] <<service>> as auth_service
+    component [Notification Service\n<<Spring Boot>>] <<service>> as notif_service
+    component [Document Processor\n<<Spring Boot>>] <<service>> as doc_processor
+}
+
+' Data Layer
+package "Data Layer" {
+    database "PostgreSQL 17" <<data>> as postgres
+    database "Redis 7+" <<data>> as redis
+    database "Elasticsearch 8+" <<data>> as elasticsearch
+    queue "Apache Kafka" <<data>> as kafka
+}
+
+' External Systems
+package "External Systems" {
+    component [University LDAP/AD] <<external>> as ldap
+    component [Cloud AI Service] <<external>> as ai_service
+    component [SMTP Server] <<external>> as smtp
+    component [SMS Gateway] <<external>> as sms_gateway
+    component [Cloud Storage] <<external>> as cloud_storage
+}
+
+' Relationships - Frontend to Gateway
+webapp --> gateway : HTTPS
+pwa --> gateway : HTTPS
+
+' Relationships - Gateway to Services
+gateway --> core_api : HTTP
+gateway --> auth_service : HTTP
+gateway --> notif_service : HTTP
+
+' Relationships - Service to Service
+core_api --> auth_service : Token validation
+core_api --> doc_processor : Document ops
+core_api ..> notif_service : via Kafka
+
+' Relationships - Services to Data
+core_api --> postgres : JDBC
+core_api --> redis : Redis Protocol
+core_api --> elasticsearch : REST
+core_api --> kafka : Kafka Protocol
+
+auth_service --> postgres : JDBC
+auth_service --> redis : Session data
+
+notif_service --> postgres : Notification logs
+notif_service --> kafka : Event consumer
+
+doc_processor --> postgres : Document metadata
+doc_processor --> kafka : Event pub/sub
+
+' Relationships - Services to External
+auth_service --> ldap : LDAP/LDAPS
+doc_processor --> ai_service : REST/HTTPS
+doc_processor --> cloud_storage : REST/HTTPS
+notif_service --> smtp : SMTP/TLS
+notif_service --> sms_gateway : REST/HTTPS
+
+' Notes
+note right of gateway
+    Rate limiting: 1000 req/min
+    Authentication check
+    Request routing
+    Load balancing
+end note
+
+note right of core_api
+    Main business logic
+    Modular monolith architecture
+    Event-driven communication
+end note
+
+note right of kafka
+    Event Types:
+    - award.created
+    - award.approved
+    - document.uploaded
+    - notification.send
+end note
+
+@enduml

@@ -1,0 +1,252 @@
+@startuml Package_Diagram
+!theme plain
+skinparam package {
+    BackgroundColor<<api>> LightBlue
+    BackgroundColor<<domain>> LightGreen
+    BackgroundColor<<infra>> LightYellow
+    BackgroundColor<<config>> LightGray
+}
+
+title Award Monitoring & Tracking System - Package Diagram (Java Backend)
+
+package "com.university.awards" {
+    
+    ' API Layer
+    package "api" <<api>> {
+        package "controller" {
+            class AwardController
+            class UserController
+            class WorkflowController
+            class AnalyticsController
+            class ComplianceController
+            class DocumentController
+        }
+        
+        package "dto" {
+            package "request" {
+                class AwardCreateRequest
+                class AwardUpdateRequest
+                class UserRegisterRequest
+                class ReviewDecisionRequest
+            }
+            package "response" {
+                class AwardResponse
+                class UserResponse
+                class WorkflowResponse
+                class PageResponse
+            }
+        }
+        
+        package "mapper" {
+            interface AwardMapper
+            interface UserMapper
+            interface WorkflowMapper
+        }
+        
+        package "exception" {
+            class GlobalExceptionHandler
+            class ApiError
+        }
+    }
+    
+    ' Domain Layer
+    package "domain" <<domain>> {
+        package "award" {
+            package "entity" {
+                class Award
+                class AwardCategory
+                class Document
+            }
+            package "repository" {
+                interface AwardRepository
+                interface CategoryRepository
+                interface DocumentRepository
+            }
+            package "service" {
+                interface AwardService
+                class AwardServiceImpl
+                class AwardValidator
+            }
+        }
+        
+        package "user" {
+            package "entity" as user_entity {
+                class User
+                class UserRole
+                class Organization
+            }
+            package "repository" as user_repo {
+                interface UserRepository
+                interface RoleRepository
+                interface OrganizationRepository
+            }
+            package "service" as user_service {
+                interface UserService
+                class UserServiceImpl
+            }
+        }
+        
+        package "workflow" {
+            package "entity" as wf_entity {
+                class AwardRequest
+                class ReviewDecision
+            }
+            package "repository" as wf_repo {
+                interface RequestRepository
+                interface DecisionRepository
+            }
+            package "service" as wf_service {
+                interface WorkflowEngine
+                class WorkflowEngineImpl
+                interface ApprovalService
+                class ApprovalServiceImpl
+            }
+            package "state" {
+                interface StateMachine
+                class RequestStateMachine
+            }
+        }
+        
+        package "compliance" {
+            package "entity" as comp_entity {
+                class AuditLog
+                class ConsentRecord
+            }
+            package "repository" as comp_repo {
+                interface AuditRepository
+                interface ConsentRepository
+            }
+            package "service" as comp_service {
+                interface AuditService
+                class AuditServiceImpl
+                interface ConsentService
+                class ConsentServiceImpl
+            }
+        }
+        
+        package "notification" {
+            package "entity" as notif_entity {
+                class Notification
+                class NotificationPreference
+            }
+            package "service" as notif_service {
+                interface NotificationService
+                class NotificationServiceImpl
+            }
+        }
+        
+        package "analytics" {
+            package "service" as analytics_service {
+                interface ReportService
+                class ReportServiceImpl
+                interface DashboardService
+                class DashboardServiceImpl
+            }
+        }
+    }
+    
+    ' Infrastructure Layer
+    package "infrastructure" <<infra>> {
+        package "persistence" {
+            class JpaConfig
+            class AuditingConfig
+        }
+        
+        package "messaging" {
+            class KafkaConfig
+            class EventPublisher
+            class EventConsumer
+        }
+        
+        package "cache" {
+            class RedisConfig
+            class CacheManager
+        }
+        
+        package "search" {
+            class ElasticsearchConfig
+            class SearchClient
+        }
+        
+        package "storage" {
+            class StorageConfig
+            class FileStorageClient
+        }
+        
+        package "external" {
+            class LdapClient
+            class AiServiceClient
+            class EmailClient
+            class SmsClient
+        }
+    }
+    
+    ' Configuration Layer
+    package "config" <<config>> {
+        class SecurityConfig
+        class WebConfig
+        class SwaggerConfig
+        class AsyncConfig
+        class I18nConfig
+    }
+    
+    ' Event Layer
+    package "event" {
+        package "domain" as event_domain {
+            abstract class DomainEvent
+            class AwardCreatedEvent
+            class AwardSubmittedEvent
+            class AwardApprovedEvent
+            class DocumentUploadedEvent
+        }
+        package "handler" {
+            class AwardEventHandler
+            class DocumentEventHandler
+            class NotificationEventHandler
+        }
+    }
+    
+    ' Shared/Common
+    package "common" {
+        package "util" {
+            class DateUtils
+            class ValidationUtils
+            class SecurityUtils
+        }
+        package "constant" {
+            class AppConstants
+            class ErrorCodes
+        }
+        package "annotation" {
+            annotation Audited
+            annotation RateLimit
+        }
+    }
+}
+
+' Dependencies
+controller ..> service : uses
+controller ..> mapper : uses
+controller ..> request : receives
+controller ..> response : returns
+
+service ..> repository : uses
+service ..> entity : manages
+service ..> EventPublisher : publishes
+
+repository ..> entity : persists
+mapper ..> entity : maps from
+mapper ..> response : maps to
+
+WorkflowEngineImpl ..> StateMachine : uses
+AwardServiceImpl ..> WorkflowEngine : delegates
+
+event_handler ..> service : calls
+EventConsumer ..> event_handler : delegates
+
+infrastructure ..> config : configured by
+
+@enduml
+
+
+

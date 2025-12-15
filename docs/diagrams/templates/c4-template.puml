@@ -1,0 +1,86 @@
+@startuml C4_Template
+' =============================================================================
+' C4 Architecture Diagram Template
+' Award Monitoring & Tracking System
+' =============================================================================
+' Usage: Copy this template and modify for your specific diagram
+' Levels: Context (L1), Container (L2), Component (L3), Code (L4)
+' =============================================================================
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+' For Container diagrams, use: C4_Container.puml
+' For Component diagrams, use: C4_Component.puml
+
+title [System Name] - [Diagram Type] (C4 Level X)
+
+LAYOUT_WITH_LEGEND()
+
+' =============================================================================
+' ACTORS / PEOPLE
+' =============================================================================
+' Person(alias, "Label", "Description")
+' Person_Ext(alias, "Label", "Description") - for external actors
+
+Person(user, "User Name", "Role description and primary responsibilities")
+Person_Ext(external_user, "External User", "External actor description")
+
+' =============================================================================
+' SYSTEMS
+' =============================================================================
+' System(alias, "Label", "Description") - main system
+' System_Ext(alias, "Label", "Description") - external systems
+
+System(main_system, "Main System Name", "Brief description of system purpose and key capabilities")
+System_Ext(external_system, "External System", "Description of external system and integration purpose")
+
+' =============================================================================
+' CONTAINERS (for Level 2 diagrams)
+' =============================================================================
+' Container(alias, "Label", "Technology", "Description")
+' ContainerDb(alias, "Label", "Technology", "Description")
+' ContainerQueue(alias, "Label", "Technology", "Description")
+
+' Uncomment for Container diagrams:
+' System_Boundary(boundary_alias, "System Name") {
+'     Container(webapp, "Web Application", "Angular 20+", "User interface")
+'     Container(api, "API Service", "Spring Boot", "Business logic")
+'     ContainerDb(database, "Database", "PostgreSQL", "Data storage")
+'     ContainerQueue(queue, "Message Queue", "Kafka", "Event streaming")
+' }
+
+' =============================================================================
+' COMPONENTS (for Level 3 diagrams)
+' =============================================================================
+' Component(alias, "Label", "Technology", "Description")
+
+' Uncomment for Component diagrams:
+' Container_Boundary(container_alias, "Container Name") {
+'     Component(controller, "Controller", "Spring MVC", "HTTP request handling")
+'     Component(service, "Service", "Spring Service", "Business logic")
+'     Component(repository, "Repository", "Spring Data", "Data access")
+' }
+
+' =============================================================================
+' RELATIONSHIPS
+' =============================================================================
+' Rel(from, to, "Label")
+' Rel(from, to, "Label", "Technology/Protocol")
+' Rel_Back, Rel_Neighbor, Rel_D (down), Rel_U (up), Rel_L (left), Rel_R (right)
+
+Rel(user, main_system, "Uses", "HTTPS")
+Rel(main_system, external_system, "Integrates with", "REST/HTTPS")
+
+' =============================================================================
+' NOTES (optional)
+' =============================================================================
+note right of main_system
+    Key characteristics:
+    • Feature 1
+    • Feature 2
+    • Technology choice
+end note
+
+@enduml
+
+
+

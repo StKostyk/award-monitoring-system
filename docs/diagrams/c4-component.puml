@@ -1,0 +1,110 @@
+@startuml C4_Component
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Award Monitoring & Tracking System - Component Diagram (C4 Level 3) - Core API Service
+
+LAYOUT_WITH_LEGEND()
+
+' External Containers
+Container_Ext(api_gateway, "API Gateway", "Spring Cloud Gateway", "Request routing")
+Container_Ext(auth_service, "Auth Service", "Spring Security", "Authentication")
+ContainerDb_Ext(postgres, "PostgreSQL", "Primary database")
+ContainerDb_Ext(redis, "Redis", "Cache")
+ContainerDb_Ext(elasticsearch, "Elasticsearch", "Search")
+ContainerQueue_Ext(kafka, "Kafka", "Event streaming")
+Container_Ext(doc_processor, "Document Processor", "Document handling")
+
+' Core API Service Boundary
+Container_Boundary(core_api, "Core API Service") {
+    
+    ' Award Module
+    Component(award_controller, "Award Controller", "Spring MVC REST", "Handles award CRUD operations, submission endpoints")
+    Component(award_service, "Award Service", "Spring Service", "Award business logic, validation, status management")
+    Component(award_repository, "Award Repository", "Spring Data JPA", "Award data access layer")
+    
+    ' User Module
+    Component(user_controller, "User Controller", "Spring MVC REST", "User management, profile endpoints")
+    Component(user_service, "User Service", "Spring Service", "User business logic, role management")
+    Component(user_repository, "User Repository", "Spring Data JPA", "User data access layer")
+    
+    ' Workflow Module
+    Component(workflow_controller, "Workflow Controller", "Spring MVC REST", "Review queue, approval endpoints")
+    Component(workflow_engine, "Workflow Engine", "Spring Service", "State machine, approval routing logic")
+    Component(approval_service, "Approval Service", "Spring Service", "Review decisions, escalation logic")
+    Component(workflow_repository, "Workflow Repository", "Spring Data JPA", "Workflow state persistence")
+    
+    ' Analytics Module
+    Component(analytics_controller, "Analytics Controller", "Spring MVC REST", "Dashboard, reports endpoints")
+    Component(report_service, "Report Service", "Spring Service", "Report generation, data aggregation")
+    Component(dashboard_service, "Dashboard Service", "Spring Service", "Widget data, metrics calculation")
+    
+    ' Compliance Module
+    Component(compliance_controller, "Compliance Controller", "Spring MVC REST", "GDPR, audit endpoints")
+    Component(audit_service, "Audit Service", "Spring Service", "Audit logging, change tracking")
+    Component(consent_service, "Consent Service", "Spring Service", "GDPR consent management")
+    Component(audit_repository, "Audit Repository", "Spring Data JPA", "Audit log persistence")
+    
+    ' Shared Components
+    Component(event_publisher, "Event Publisher", "Spring Kafka", "Publishes domain events to Kafka")
+    Component(cache_manager, "Cache Manager", "Spring Cache", "Redis cache integration")
+    Component(search_client, "Search Client", "Spring Data ES", "Elasticsearch integration")
+    Component(security_context, "Security Context", "Spring Security", "JWT validation, authorization")
+}
+
+' External Relationships
+Rel(api_gateway, award_controller, "Award API calls", "HTTP")
+Rel(api_gateway, user_controller, "User API calls", "HTTP")
+Rel(api_gateway, workflow_controller, "Workflow API calls", "HTTP")
+Rel(api_gateway, analytics_controller, "Analytics API calls", "HTTP")
+Rel(api_gateway, compliance_controller, "Compliance API calls", "HTTP")
+
+' Controller to Service
+Rel(award_controller, award_service, "Uses")
+Rel(award_controller, security_context, "Authorizes")
+Rel(user_controller, user_service, "Uses")
+Rel(workflow_controller, workflow_engine, "Uses")
+Rel(workflow_controller, approval_service, "Uses")
+Rel(analytics_controller, report_service, "Uses")
+Rel(analytics_controller, dashboard_service, "Uses")
+Rel(compliance_controller, audit_service, "Uses")
+Rel(compliance_controller, consent_service, "Uses")
+
+' Service to Service
+Rel(award_service, user_service, "User validation")
+Rel(award_service, workflow_engine, "Initiates workflow")
+Rel(award_service, audit_service, "Logs changes")
+Rel(workflow_engine, approval_service, "Approval logic")
+Rel(approval_service, audit_service, "Logs decisions")
+Rel(report_service, award_service, "Award data")
+
+' Service to Repository
+Rel(award_service, award_repository, "CRUD")
+Rel(user_service, user_repository, "CRUD")
+Rel(workflow_engine, workflow_repository, "State persistence")
+Rel(approval_service, workflow_repository, "Decision persistence")
+Rel(audit_service, audit_repository, "Log persistence")
+Rel(consent_service, user_repository, "Consent data")
+
+' Service to Shared Components
+Rel(award_service, event_publisher, "Publishes events")
+Rel(workflow_engine, event_publisher, "Publishes events")
+Rel(award_service, cache_manager, "Caches data")
+Rel(dashboard_service, cache_manager, "Caches metrics")
+Rel(award_service, search_client, "Indexes awards")
+Rel(report_service, search_client, "Aggregations")
+
+' Shared to External
+Rel(award_repository, postgres, "SQL", "JDBC")
+Rel(user_repository, postgres, "SQL", "JDBC")
+Rel(workflow_repository, postgres, "SQL", "JDBC")
+Rel(audit_repository, postgres, "SQL", "JDBC")
+Rel(cache_manager, redis, "Cache ops", "Redis")
+Rel(search_client, elasticsearch, "Search/Index", "REST")
+Rel(event_publisher, kafka, "Events", "Kafka")
+Rel(security_context, auth_service, "Token validation", "HTTP")
+Rel(award_service, doc_processor, "Document ops", "HTTP")
+
+@enduml
+
+
+

@@ -1,0 +1,174 @@
+@startuml Network_Architecture_UA
+!theme plain
+skinparam node {
+    BackgroundColor<<dmz>> LightCoral
+    BackgroundColor<<app>> LightGreen
+    BackgroundColor<<data>> LightBlue
+    BackgroundColor<<mgmt>> LightYellow
+    BackgroundColor<<ext>> Pink
+}
+
+title Система Моніторингу та Відстеження Нагород - Мережева Архітектура та Зони Безпеки
+
+' Інтернет
+cloud "Інтернет" as internet {
+    actor "Користувачі" as users
+    actor "Зловмисники" as attackers
+}
+
+' DMZ Зона
+frame "DMZ Зона (Публічна)" <<dmz>> {
+    node "CDN / WAF" as cdn {
+        component [CloudFlare\nЗахист від DDoS] as waf
+        component [SSL Термінація] as ssl
+    }
+    
+    node "Балансувальник Навантаження" as lb {
+        component [HAProxy/ALB\nПеревірка Здоров'я] as haproxy
+    }
+}
+
+' Зона Додатків
+frame "Зона Додатків (Приватна)" <<app>> {
+    node "Веб-Рівень" as web_tier {
+        component [Веб-Додаток 1] as web1
+        component [Веб-Додаток 2] as web2
+        component [Веб-Додаток 3] as web3
+    }
+    
+    node "Рівень API Шлюзу" as gw_tier {
+        component [Шлюз 1\nОбмеження Швидкості] as gw1
+        component [Шлюз 2\nПеревірка Аутентифікації] as gw2
+    }
+    
+    node "Рівень Додатків" as app_tier {
+        component [Основний API 1] as api1
+        component [Основний API 2] as api2
+        component [Основний API 3] as api3
+        component [Сервіс Аутентифікації] as auth
+        component [Сервіс Сповіщень] as notif
+        component [Обробник Документів] as doc
+    }
+}
+
+' Зона Даних
+frame "Зона Даних (Обмежена)" <<data>> {
+    node "Рівень Бази Даних" as db_tier {
+        database [PostgreSQL Основний] as pg_primary
+        database [PostgreSQL Репліка 1] as pg_rep1
+        database [PostgreSQL Репліка 2] as pg_rep2
+    }
+    
+    node "Рівень Кешу" as cache_tier {
+        database [Redis Основний] as redis_m
+        database [Redis Репліка] as redis_r
+    }
+    
+    node "Рівень Пошуку" as search_tier {
+        database [Elasticsearch] as es
+    }
+    
+    node "Рівень Повідомлень" as msg_tier {
+        queue [Kafka Кластер] as kafka
+    }
+}
+
+' Зона Управління
+frame "Зона Управління (Тільки Адміни)" <<mgmt>> {
+    node "Моніторинг" as monitoring {
+        component [Prometheus] as prom
+        component [Grafana] as grafana
+        component [Jaeger] as jaeger
+    }
+    
+    node "Журналювання" as logging {
+        component [ELK Стек] as elk
+    }
+    
+    node "Інструменти Адміна" as admin_tools {
+        component [Jump Box / Бастіон] as bastion
+        component [CI/CD Раннер] as cicd
+    }
+}
+
+' Зона Зовнішніх Сервісів
+frame "Зовнішні Сервіси" <<ext>> {
+    cloud "Університетська Мережа" as uni_net {
+        component [LDAP/AD] as ldap
+    }
+    
+    cloud "Хмарні Сервіси" as cloud_svc {
+        component [Azure AI] as azure
+        component [AWS S3] as s3
+    }
+    
+    cloud "Комунікації" as comm_svc {
+        component [SendGrid] as sendgrid
+        component [Twilio] as twilio
+    }
+}
+
+' Мережеві Потоки
+users --> waf : HTTPS (443)
+waf --> ssl : Розшифровано
+ssl --> haproxy : HTTP
+
+haproxy --> web1 : HTTP (80)
+haproxy --> web2 : HTTP (80)
+haproxy --> gw1 : HTTP (8080)
+haproxy --> gw2 : HTTP (8080)
+
+web1 --> gw1 : HTTP (8080)
+gw1 --> api1 : HTTP (8081)
+gw1 --> auth : HTTP (8082)
+
+api1 --> pg_primary : TCP (5432)
+api1 --> redis_m : TCP (6379)
+api1 --> es : HTTP (9200)
+api1 --> kafka : TCP (9092)
+
+auth --> ldap : LDAPS (636)
+doc --> azure : HTTPS (443)
+doc --> s3 : HTTPS (443)
+notif --> sendgrid : HTTPS (443)
+notif --> twilio : HTTPS (443)
+
+bastion --> api1 : SSH (22)
+prom --> api1 : HTTP (9090)
+
+' Примітки Правил Брандмауера
+note bottom of cdn
+    **Правила Брандмауера - DMZ:**
+    ВХІД: 443 (HTTPS) з Інтернету
+    ВИХІД: 80, 8080 до Зони Додатків
+end note
+
+note bottom of app_tier
+    **Правила Брандмауера - Зона Додатків:**
+    ВХІД: 80, 8080 з DMZ
+    ВИХІД: 5432, 6379, 9092, 9200 до Даних
+    ВИХІД: 443 до Зовнішніх
+end note
+
+note bottom of db_tier
+    **Правила Брандмауера - Зона Даних:**
+    ВХІД: 5432, 6379, 9092, 9200 з Додатків
+    ВИХІД: Жодного (обмежено)
+end note
+
+note bottom of monitoring
+    **Контролі Безпеки:**
+    - Сегментація мережі (VLANs)
+    - Архітектура Zero Trust
+    - Шифрований трафік (TLS 1.3)
+    - Правила WAF (OWASP Top 10)
+    - Захист від DDoS
+    - Обмеження швидкості
+end note
+
+' Блокування зловмисників
+attackers -[#red]-> waf : Заблоковано WAF
+
+@enduml
+
+

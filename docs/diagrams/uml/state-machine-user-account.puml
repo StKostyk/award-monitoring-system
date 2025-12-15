@@ -1,0 +1,152 @@
+@startuml StateMachine_User_Account
+!theme plain
+skinparam state {
+    BackgroundColor<<pending>> LightYellow
+    BackgroundColor<<active>> LightGreen
+    BackgroundColor<<inactive>> LightGray
+    BackgroundColor<<suspended>> LightCoral
+    BackgroundColor<<retired>> LightBlue
+    BackgroundColor<<memorial>> Lavender
+}
+
+title User Account State Machine Diagram
+
+[*] --> PENDING <<pending>> : User registers account
+
+state PENDING <<pending>> {
+    [*] --> EmailSent
+    EmailSent --> AwaitingVerification : Verification email sent
+    AwaitingVerification --> VerificationClicked : User clicks link
+    
+    note right of AwaitingVerification
+        24-hour verification window
+    end note
+}
+
+PENDING --> ACTIVE <<active>> : Email verified\nOR Admin approves
+PENDING --> [*] : Verification expired\n[Account deleted]
+
+state ACTIVE <<active>> {
+    [*] --> NormalOperation
+    
+    state NormalOperation {
+        [*] --> Authenticated
+        Authenticated --> LoggedOut : Logout
+        LoggedOut --> Authenticated : Login
+        Authenticated --> PasswordChanged : Change password
+        PasswordChanged --> Authenticated : Confirmed
+        Authenticated --> ProfileUpdated : Update profile
+        ProfileUpdated --> Authenticated : Saved
+    }
+    
+    state RoleManagement {
+        [*] --> RolesAssigned
+        RolesAssigned --> RoleAdded : Dean/Rector assigns role
+        RolesAssigned --> RoleRemoved : Dean/Rector removes role
+        RoleAdded --> RolesAssigned
+        RoleRemoved --> RolesAssigned
+    }
+    
+    NormalOperation --> RoleManagement : Role change
+    RoleManagement --> NormalOperation : Change complete
+}
+
+ACTIVE --> INACTIVE <<inactive>> : Admin deactivates\nOR HR sync (leave of absence)
+ACTIVE --> SUSPENDED <<suspended>> : Security violation\nOR Admin action
+ACTIVE --> RETIRED <<retired>> : HR sync (retirement)
+ACTIVE --> MEMORIAL <<memorial>> : HR sync (deceased)
+
+state INACTIVE <<inactive>> {
+    [*] --> TemporarilyDisabled
+    TemporarilyDisabled : - Cannot log in
+    TemporarilyDisabled : - Awards preserved
+    TemporarilyDisabled : - Profile visible
+    
+    note right of TemporarilyDisabled
+        Typically used for:
+        - Leave of absence
+        - Temporary suspension
+        - Extended leave
+    end note
+}
+
+INACTIVE --> ACTIVE : Admin reactivates\nOR HR sync (return from leave)
+
+state SUSPENDED <<suspended>> {
+    [*] --> UnderReview
+    UnderReview : - Cannot log in
+    UnderReview : - All actions blocked
+    UnderReview : - Under investigation
+    
+    note right of UnderReview
+        Used for:
+        - Security incidents
+        - Policy violations
+        - Pending investigation
+    end note
+}
+
+SUSPENDED --> ACTIVE : Admin clears after review
+SUSPENDED --> [*] : Account terminated
+
+state RETIRED <<retired>> {
+    [*] --> RetiredStatus
+    RetiredStatus : - Read-only access to own awards
+    RetiredStatus : - Cannot submit new awards
+    RetiredStatus : - Profile marked as retired
+    RetiredStatus : - Historical data preserved
+    
+    note right of RetiredStatus
+        Retired employees can view
+        their historical awards
+        but cannot submit new ones
+    end note
+}
+
+RETIRED --> [*] : Data retention period expired\n[Data anonymized per GDPR]
+
+state MEMORIAL <<memorial>> {
+    [*] --> MemorialStatus
+    MemorialStatus : - Account locked
+    MemorialStatus : - Awards preserved as memorial
+    MemorialStatus : - Profile marked as memorial
+    MemorialStatus : - Special memorial badge
+    
+    note right of MemorialStatus
+        Deceased employee's awards
+        preserved for institutional
+        historical record with
+        appropriate memorial designation
+    end note
+}
+
+MEMORIAL --> [*] : Data retention period expired\n[Institutional archive]
+
+' Security events
+state "Security Events" as security {
+    state "Failed Login Attempts" as failed_login
+    state "Suspicious Activity" as suspicious
+    
+    failed_login : 5 failed attempts
+    suspicious : Unusual access patterns
+}
+
+ACTIVE --> security : Security event detected
+security --> SUSPENDED : Threshold exceeded
+security --> ACTIVE : Event resolved
+
+' Legend
+legend right
+    |= State |= Description |
+    | PENDING | Awaiting verification |
+    | ACTIVE | Normal operation |
+    | INACTIVE | Temporarily disabled |
+    | SUSPENDED | Security suspension |
+    | RETIRED | Retired employee |
+    | MEMORIAL | Deceased employee |
+endlegend
+
+@enduml
+
+
+

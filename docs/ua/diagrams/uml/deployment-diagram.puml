@@ -1,0 +1,194 @@
+@startuml Deployment_Diagram_UA
+!theme plain
+skinparam node {
+    BackgroundColor<<cloud>> LightBlue
+    BackgroundColor<<container>> LightGreen
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> Pink
+}
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Розгортання
+
+' Хмара/Інтернет
+cloud "Інтернет" as internet {
+    actor "Користувачі" as users
+}
+
+' Рівень CDN/WAF
+node "CDN / WAF" <<cloud>> as cdn {
+    component [CloudFlare\nЗахист від DDoS\nSSL Термінація] as cloudflare
+}
+
+' Kubernetes Кластер
+node "Kubernetes Кластер" <<cloud>> as k8s {
+    
+    ' Ingress
+    node "Ingress Контролер" <<container>> as ingress {
+        component [nginx-ingress\nБалансувальник Навантаження] as nginx
+    }
+    
+    ' Frontend Вузли
+    node "Frontend Простір Імен" <<container>> as frontend_ns {
+        artifact "web-app-pod-1" as web1
+        artifact "web-app-pod-2" as web2
+        artifact "web-app-pod-3" as web3
+        
+        note right of web1
+            Angular 20+
+            Nginx сервінг
+            Статичні ресурси
+        end note
+    }
+    
+    ' Вузол API Шлюзу
+    node "Простір Імен Шлюзу" <<container>> as gateway_ns {
+        artifact "api-gateway-pod-1" as gw1
+        artifact "api-gateway-pod-2" as gw2
+        
+        note right of gw1
+            Spring Cloud Gateway
+            Обмеження швидкості
+            Валідація аутентифікації
+        end note
+    }
+    
+    ' Простір Імен Backend Сервісів
+    node "Простір Імен Сервісів" <<container>> as services_ns {
+        frame "Розгортання Основного API" {
+            artifact "core-api-pod-1" as core1
+            artifact "core-api-pod-2" as core2
+            artifact "core-api-pod-3" as core3
+        }
+        
+        frame "Розгортання Сервісу Аутентифікації" {
+            artifact "auth-service-pod-1" as auth1
+            artifact "auth-service-pod-2" as auth2
+        }
+        
+        frame "Розгортання Сервісу Сповіщень" {
+            artifact "notif-service-pod-1" as notif1
+            artifact "notif-service-pod-2" as notif2
+        }
+        
+        frame "Розгортання Обробника Документів" {
+            artifact "doc-processor-pod-1" as doc1
+            artifact "doc-processor-pod-2" as doc2
+        }
+    }
+    
+    ' Простір Імен Даних
+    node "Простір Імен Даних" <<database>> as data_ns {
+        database "PostgreSQL\nStatefulSet" as postgres {
+            artifact "postgres-primary" as pg_primary
+            artifact "postgres-replica-1" as pg_replica1
+            artifact "postgres-replica-2" as pg_replica2
+        }
+        
+        database "Redis Кластер" as redis {
+            artifact "redis-master" as redis_master
+            artifact "redis-replica-1" as redis_rep1
+            artifact "redis-replica-2" as redis_rep2
+        }
+        
+        database "Elasticsearch\nStatefulSet" as elasticsearch {
+            artifact "es-master-1" as es1
+            artifact "es-data-1" as es_data1
+            artifact "es-data-2" as es_data2
+        }
+        
+        queue "Kafka Кластер" as kafka {
+            artifact "kafka-broker-1" as kafka1
+            artifact "kafka-broker-2" as kafka2
+            artifact "kafka-broker-3" as kafka3
+            artifact "zookeeper" as zk
+        }
+    }
+    
+    ' Простір Імен Моніторингу
+    node "Простір Імен Моніторингу" <<container>> as monitoring_ns {
+        component [Prometheus] as prometheus
+        component [Grafana] as grafana
+        component [Jaeger] as jaeger
+        component [ELK Стек] as elk
+    }
+}
+
+' Зовнішні Сервіси
+node "Зовнішні Сервіси" <<external>> as external {
+    component [Університетський LDAP/AD] as ldap
+    component [Azure Cognitive Services] as azure_ai
+    component [SendGrid SMTP] as sendgrid
+    component [Twilio SMS] as twilio
+    component [AWS S3 / Azure Blob] as storage
+}
+
+' Персистентні Томи
+storage "Персистентні Томи" as pv {
+    artifact [postgres-pv] as pv_pg
+    artifact [elasticsearch-pv] as pv_es
+    artifact [kafka-pv] as pv_kafka
+}
+
+' З'єднання
+users --> cloudflare : HTTPS
+cloudflare --> nginx : HTTPS
+
+nginx --> web1 : HTTP
+nginx --> web2 : HTTP
+nginx --> web3 : HTTP
+
+nginx --> gw1 : HTTP
+nginx --> gw2 : HTTP
+
+gw1 --> core1 : HTTP
+gw1 --> core2 : HTTP
+gw1 --> auth1 : HTTP
+gw2 --> core3 : HTTP
+gw2 --> auth2 : HTTP
+
+core1 --> pg_primary : JDBC
+core1 --> redis_master : TCP
+core1 --> es1 : HTTP
+core1 --> kafka1 : TCP
+
+auth1 --> pg_primary : JDBC
+auth1 --> redis_master : TCP
+auth1 --> ldap : LDAPS
+
+notif1 --> kafka1 : TCP
+notif1 --> sendgrid : HTTPS
+notif1 --> twilio : HTTPS
+
+doc1 --> azure_ai : HTTPS
+doc1 --> storage : HTTPS
+doc1 --> kafka1 : TCP
+
+pg_primary --> pv_pg
+es1 --> pv_es
+kafka1 --> pv_kafka
+
+prometheus --> core1 : /actuator/prometheus
+prometheus --> auth1 : /actuator/prometheus
+grafana --> prometheus : Запит
+
+' Примітки
+note bottom of k8s
+    Kubernetes Ресурси:
+    - Horizontal Pod Autoscaler (HPA)
+    - Pod Disruption Budget (PDB)
+    - Мережеві Політики
+    - Квоти Ресурсів
+    - Управління Секретами
+end note
+
+note bottom of postgres
+    Конфігурація PostgreSQL:
+    - Primary + 2 Read Репліки
+    - Потокова Реплікація
+    - Автоматизоване Резервне Копіювання (щоденно)
+    - Відновлення на Момент Часу
+end note
+
+@enduml
+
+

@@ -1,0 +1,175 @@
+@startuml Network_Architecture
+!theme plain
+skinparam node {
+    BackgroundColor<<dmz>> LightCoral
+    BackgroundColor<<app>> LightGreen
+    BackgroundColor<<data>> LightBlue
+    BackgroundColor<<mgmt>> LightYellow
+    BackgroundColor<<ext>> Pink
+}
+
+title Award Monitoring & Tracking System - Network Architecture & Security Zones
+
+' Internet
+cloud "Internet" as internet {
+    actor "Users" as users
+    actor "Attackers" as attackers
+}
+
+' DMZ Zone
+frame "DMZ Zone (Public)" <<dmz>> {
+    node "CDN / WAF" as cdn {
+        component [CloudFlare\nDDoS Protection] as waf
+        component [SSL Termination] as ssl
+    }
+    
+    node "Load Balancer" as lb {
+        component [HAProxy/ALB\nHealth Checks] as haproxy
+    }
+}
+
+' Application Zone
+frame "Application Zone (Private)" <<app>> {
+    node "Web Tier" as web_tier {
+        component [Web App 1] as web1
+        component [Web App 2] as web2
+        component [Web App 3] as web3
+    }
+    
+    node "API Gateway Tier" as gw_tier {
+        component [Gateway 1\nRate Limiting] as gw1
+        component [Gateway 2\nAuth Check] as gw2
+    }
+    
+    node "Application Tier" as app_tier {
+        component [Core API 1] as api1
+        component [Core API 2] as api2
+        component [Core API 3] as api3
+        component [Auth Service] as auth
+        component [Notification Service] as notif
+        component [Document Processor] as doc
+    }
+}
+
+' Data Zone
+frame "Data Zone (Restricted)" <<data>> {
+    node "Database Tier" as db_tier {
+        database [PostgreSQL Primary] as pg_primary
+        database [PostgreSQL Replica 1] as pg_rep1
+        database [PostgreSQL Replica 2] as pg_rep2
+    }
+    
+    node "Cache Tier" as cache_tier {
+        database [Redis Master] as redis_m
+        database [Redis Replica] as redis_r
+    }
+    
+    node "Search Tier" as search_tier {
+        database [Elasticsearch] as es
+    }
+    
+    node "Message Tier" as msg_tier {
+        queue [Kafka Cluster] as kafka
+    }
+}
+
+' Management Zone
+frame "Management Zone (Admin Only)" <<mgmt>> {
+    node "Monitoring" as monitoring {
+        component [Prometheus] as prom
+        component [Grafana] as grafana
+        component [Jaeger] as jaeger
+    }
+    
+    node "Logging" as logging {
+        component [ELK Stack] as elk
+    }
+    
+    node "Admin Tools" as admin_tools {
+        component [Jump Box / Bastion] as bastion
+        component [CI/CD Runner] as cicd
+    }
+}
+
+' External Services Zone
+frame "External Services" <<ext>> {
+    cloud "University Network" as uni_net {
+        component [LDAP/AD] as ldap
+    }
+    
+    cloud "Cloud Services" as cloud_svc {
+        component [Azure AI] as azure
+        component [AWS S3] as s3
+    }
+    
+    cloud "Communication" as comm_svc {
+        component [SendGrid] as sendgrid
+        component [Twilio] as twilio
+    }
+}
+
+' Network Flows
+users --> waf : HTTPS (443)
+waf --> ssl : Decrypted
+ssl --> haproxy : HTTP
+
+haproxy --> web1 : HTTP (80)
+haproxy --> web2 : HTTP (80)
+haproxy --> gw1 : HTTP (8080)
+haproxy --> gw2 : HTTP (8080)
+
+web1 --> gw1 : HTTP (8080)
+gw1 --> api1 : HTTP (8081)
+gw1 --> auth : HTTP (8082)
+
+api1 --> pg_primary : TCP (5432)
+api1 --> redis_m : TCP (6379)
+api1 --> es : HTTP (9200)
+api1 --> kafka : TCP (9092)
+
+auth --> ldap : LDAPS (636)
+doc --> azure : HTTPS (443)
+doc --> s3 : HTTPS (443)
+notif --> sendgrid : HTTPS (443)
+notif --> twilio : HTTPS (443)
+
+bastion --> api1 : SSH (22)
+prom --> api1 : HTTP (9090)
+
+' Firewall Rules Notes
+note bottom of cdn
+    **Firewall Rules - DMZ:**
+    IN: 443 (HTTPS) from Internet
+    OUT: 80, 8080 to App Zone
+end note
+
+note bottom of app_tier
+    **Firewall Rules - App Zone:**
+    IN: 80, 8080 from DMZ
+    OUT: 5432, 6379, 9092, 9200 to Data
+    OUT: 443 to External
+end note
+
+note bottom of db_tier
+    **Firewall Rules - Data Zone:**
+    IN: 5432, 6379, 9092, 9200 from App
+    OUT: None (restricted)
+end note
+
+note bottom of monitoring
+    **Security Controls:**
+    - Network segmentation (VLANs)
+    - Zero Trust architecture
+    - Encrypted traffic (TLS 1.3)
+    - WAF rules (OWASP Top 10)
+    - DDoS protection
+    - Rate limiting
+end note
+
+' Block attackers
+attackers -[#red]-> waf : Blocked by WAF
+
+@enduml
+
+
+

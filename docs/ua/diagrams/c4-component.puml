@@ -1,0 +1,109 @@
+@startuml C4_Component_UA
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Компонентів (C4 Рівень 3) - Основний API Сервіс
+
+LAYOUT_WITH_LEGEND()
+
+' Зовнішні Контейнери
+Container_Ext(api_gateway, "API Шлюз", "Spring Cloud Gateway", "Маршрутизація запитів")
+Container_Ext(auth_service, "Сервіс Аутентифікації", "Spring Security", "Аутентифікація")
+ContainerDb_Ext(postgres, "PostgreSQL", "Основна база даних")
+ContainerDb_Ext(redis, "Redis", "Кеш")
+ContainerDb_Ext(elasticsearch, "Elasticsearch", "Пошук")
+ContainerQueue_Ext(kafka, "Kafka", "Потокова передача подій")
+Container_Ext(doc_processor, "Обробник Документів", "Обробка документів")
+
+' Межі Основного API Сервісу
+Container_Boundary(core_api, "Основний API Сервіс") {
+    
+    ' Модуль Нагород
+    Component(award_controller, "Контролер Нагород", "Spring MVC REST", "Обробляє CRUD операції нагород, ендпоінти подання")
+    Component(award_service, "Сервіс Нагород", "Spring Service", "Бізнес-логіка нагород, валідація, управління статусами")
+    Component(award_repository, "Репозиторій Нагород", "Spring Data JPA", "Рівень доступу до даних нагород")
+    
+    ' Модуль Користувачів
+    Component(user_controller, "Контролер Користувачів", "Spring MVC REST", "Управління користувачами, ендпоінти профілю")
+    Component(user_service, "Сервіс Користувачів", "Spring Service", "Бізнес-логіка користувачів, управління ролями")
+    Component(user_repository, "Репозиторій Користувачів", "Spring Data JPA", "Рівень доступу до даних користувачів")
+    
+    ' Модуль Робочих Процесів
+    Component(workflow_controller, "Контролер Робочих Процесів", "Spring MVC REST", "Черга рецензування, ендпоінти схвалення")
+    Component(workflow_engine, "Механізм Робочих Процесів", "Spring Service", "Скінченний автомат, логіка маршрутизації схвалень")
+    Component(approval_service, "Сервіс Схвалення", "Spring Service", "Рішення рецензування, логіка ескалації")
+    Component(workflow_repository, "Репозиторій Робочих Процесів", "Spring Data JPA", "Збереження стану робочих процесів")
+    
+    ' Модуль Аналітики
+    Component(analytics_controller, "Контролер Аналітики", "Spring MVC REST", "Панелі, ендпоінти звітів")
+    Component(report_service, "Сервіс Звітів", "Spring Service", "Генерація звітів, агрегація даних")
+    Component(dashboard_service, "Сервіс Панелей", "Spring Service", "Дані віджетів, розрахунок метрик")
+    
+    ' Модуль Відповідності
+    Component(compliance_controller, "Контролер Відповідності", "Spring MVC REST", "GDPR, ендпоінти аудиту")
+    Component(audit_service, "Сервіс Аудиту", "Spring Service", "Журналювання аудиту, відстеження змін")
+    Component(consent_service, "Сервіс Згод", "Spring Service", "Управління згодами GDPR")
+    Component(audit_repository, "Репозиторій Аудиту", "Spring Data JPA", "Збереження журналу аудиту")
+    
+    ' Спільні Компоненти
+    Component(event_publisher, "Видавець Подій", "Spring Kafka", "Публікує доменні події в Kafka")
+    Component(cache_manager, "Менеджер Кешу", "Spring Cache", "Інтеграція Redis кешу")
+    Component(search_client, "Клієнт Пошуку", "Spring Data ES", "Інтеграція Elasticsearch")
+    Component(security_context, "Контекст Безпеки", "Spring Security", "Валідація JWT, авторизація")
+}
+
+' Зовнішні Зв'язки
+Rel(api_gateway, award_controller, "API виклики нагород", "HTTP")
+Rel(api_gateway, user_controller, "API виклики користувачів", "HTTP")
+Rel(api_gateway, workflow_controller, "API виклики робочих процесів", "HTTP")
+Rel(api_gateway, analytics_controller, "API виклики аналітики", "HTTP")
+Rel(api_gateway, compliance_controller, "API виклики відповідності", "HTTP")
+
+' Контролер до Сервісу
+Rel(award_controller, award_service, "Використовує")
+Rel(award_controller, security_context, "Авторизує")
+Rel(user_controller, user_service, "Використовує")
+Rel(workflow_controller, workflow_engine, "Використовує")
+Rel(workflow_controller, approval_service, "Використовує")
+Rel(analytics_controller, report_service, "Використовує")
+Rel(analytics_controller, dashboard_service, "Використовує")
+Rel(compliance_controller, audit_service, "Використовує")
+Rel(compliance_controller, consent_service, "Використовує")
+
+' Сервіс до Сервісу
+Rel(award_service, user_service, "Валідація користувача")
+Rel(award_service, workflow_engine, "Ініціює робочий процес")
+Rel(award_service, audit_service, "Журналює зміни")
+Rel(workflow_engine, approval_service, "Логіка схвалення")
+Rel(approval_service, audit_service, "Журналює рішення")
+Rel(report_service, award_service, "Дані нагород")
+
+' Сервіс до Репозиторію
+Rel(award_service, award_repository, "CRUD")
+Rel(user_service, user_repository, "CRUD")
+Rel(workflow_engine, workflow_repository, "Збереження стану")
+Rel(approval_service, workflow_repository, "Збереження рішень")
+Rel(audit_service, audit_repository, "Збереження журналу")
+Rel(consent_service, user_repository, "Дані згод")
+
+' Сервіс до Спільних Компонентів
+Rel(award_service, event_publisher, "Публікує події")
+Rel(workflow_engine, event_publisher, "Публікує події")
+Rel(award_service, cache_manager, "Кешує дані")
+Rel(dashboard_service, cache_manager, "Кешує метрики")
+Rel(award_service, search_client, "Індексує нагороди")
+Rel(report_service, search_client, "Агрегації")
+
+' Спільні до Зовнішніх
+Rel(award_repository, postgres, "SQL", "JDBC")
+Rel(user_repository, postgres, "SQL", "JDBC")
+Rel(workflow_repository, postgres, "SQL", "JDBC")
+Rel(audit_repository, postgres, "SQL", "JDBC")
+Rel(cache_manager, redis, "Операції кешу", "Redis")
+Rel(search_client, elasticsearch, "Пошук/індексація", "REST")
+Rel(event_publisher, kafka, "Події", "Kafka")
+Rel(security_context, auth_service, "Валідація токена", "HTTP")
+Rel(award_service, doc_processor, "Операції документів", "HTTP")
+
+@enduml
+
+

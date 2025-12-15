@@ -1,0 +1,68 @@
+@startuml DFD_Level0_Context_UA
+!theme plain
+skinparam defaultTextAlignment center
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Потоків Даних (Рівень 0 - Контекст)
+
+' Зовнішні Сутності (Джерела/Отримувачі)
+rectangle "Працівник" as employee #LightBlue
+rectangle "Секретар\nФакультету" as fac_sec #LightGreen
+rectangle "Декан" as dean #LightYellow
+rectangle "Ректорат" as rector #LightCoral
+rectangle "Системний\nАдміністратор" as admin #LightGray
+
+rectangle "Університетський\nLDAP" as ldap #Pink
+rectangle "ШІ-Сервіс" as ai #Pink
+rectangle "Поштовий\nСервер" as email #Pink
+rectangle "SMS-Шлюз" as sms #Pink
+rectangle "Файлове\nСховище" as storage #Pink
+
+' Головний Процес (Система)
+agent "Система\nМоніторингу\nта Відстеження\nНагород" as system #White
+
+' Потоки Даних - Працівники
+employee --> system : Дані Нагороди,\nДокументи,\nОновлення Профілю
+system --> employee : Статус Нагороди,\nСповіщення,\nПублічні Нагороди
+
+' Потоки Даних - Секретар Факультету
+fac_sec --> system : Рішення Рецензування,\nСхвалення/Відхилення
+system --> fac_sec : Черга Рецензування,\nЗвіти Факультету
+
+' Потоки Даних - Декан
+dean --> system : Призначення Ролей,\nРішення Схвалення
+system --> dean : Аналітика Факультету,\nЕскальовані Рецензії
+
+' Потоки Даних - Ректорат
+rector --> system : Остаточні Схвалення,\nПолітичні Рішення
+system --> rector : Панель Університету,\nВиконавчі Звіти
+
+' Потоки Даних - Адміністратор
+admin --> system : Конфігурація Системи,\nУправління Користувачами
+system --> admin : Системні Журнали,\nМетрики Здоров'я
+
+' Потоки Даних - Зовнішні Системи
+system --> ldap : Запити Аутентифікації
+ldap --> system : Облікові Дані Користувача,\nДані Працівників
+
+system --> ai : Документи для Парсингу
+ai --> system : Розпізнані Метадані,\nОцінки Впевненості
+
+system --> email : Повідомлення Сповіщень
+system --> sms : Повідомлення Сповіщень
+
+system --> storage : Файли Документів
+storage --> system : URL Збережених Файлів
+
+' Примітки
+note right of system
+    **Основна Обробка Даних:**
+    • CRUD операції нагород
+    • Багаторівневий робочий процес
+    • ШІ-обробка документів
+    • Аналітика та звітність
+    • Відповідність GDPR
+end note
+
+@enduml
+
+

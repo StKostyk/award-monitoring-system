@@ -1,0 +1,134 @@
+@startuml Sequence_Template
+' =============================================================================
+' Sequence Diagram Template
+' Award Monitoring & Tracking System
+' =============================================================================
+' Usage: Copy this template and modify for your specific use case
+' Best for: User interactions, API flows, system integrations
+' =============================================================================
+
+!theme plain
+skinparam sequenceMessageAlign center
+
+title [Feature Name] - Sequence Diagram
+
+' =============================================================================
+' PARTICIPANTS
+' =============================================================================
+' Actors (users/external systems)
+actor "User Role" as user
+
+' Frontend
+participant "Web Application" as webapp
+
+' Backend Services
+participant "API Gateway" as gateway
+participant "Auth Service" as auth
+participant "Core API" as core
+participant "Other Service" as other
+
+' Data Stores
+database "PostgreSQL" as db
+queue "Kafka" as kafka
+database "Redis" as cache
+
+' External Systems
+participant "External\nService" as external
+
+' =============================================================================
+' SEQUENCE FLOW
+' =============================================================================
+
+== Section Title (e.g., Authentication) ==
+
+user -> webapp: User action description
+activate webapp
+
+webapp -> gateway: HTTP Method /endpoint
+activate gateway
+
+gateway -> auth: Validate token
+activate auth
+auth --> gateway: Token valid
+deactivate auth
+
+gateway -> core: Process request
+activate core
+
+' =============================================================================
+' DATABASE OPERATIONS
+' =============================================================================
+core -> db: SQL Query/Operation
+activate db
+db --> core: Result
+deactivate db
+
+' =============================================================================
+' CACHE OPERATIONS
+' =============================================================================
+core -> cache: Cache lookup
+activate cache
+alt Cache hit
+    cache --> core: Cached data
+else Cache miss
+    cache --> core: null
+    core -> db: Fetch from DB
+    db --> core: Data
+    core -> cache: Store in cache
+end
+deactivate cache
+
+' =============================================================================
+' ASYNC OPERATIONS (Kafka)
+' =============================================================================
+core -> kafka: publish(event.type)
+note right: Async notification
+
+' =============================================================================
+' CONDITIONAL LOGIC
+' =============================================================================
+alt Success condition
+    core --> gateway: 200 OK + response
+    gateway --> webapp: Success response
+    webapp --> user: Display success
+else Error condition
+    core --> gateway: 4xx/5xx Error
+    gateway --> webapp: Error response
+    webapp --> user: Display error
+end
+
+deactivate core
+deactivate gateway
+deactivate webapp
+
+' =============================================================================
+' ASYNC CONSUMER (separate flow)
+' =============================================================================
+== Async Processing ==
+
+kafka -> other: consume(event.type)
+activate other
+other -> external: External API call
+activate external
+external --> other: Response
+deactivate external
+other -> db: Store result
+deactivate other
+
+' =============================================================================
+' NOTES
+' =============================================================================
+note over user, webapp
+    User interaction notes
+end note
+
+note right of core
+    Business logic notes:
+    • Validation rules
+    • Processing steps
+end note
+
+@enduml
+
+
+

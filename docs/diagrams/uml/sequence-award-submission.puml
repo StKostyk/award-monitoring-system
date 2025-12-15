@@ -1,0 +1,109 @@
+@startuml Sequence_Award_Submission
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Award Submission Sequence Diagram
+
+actor "Employee" as employee
+participant "Web Application" as webapp
+participant "API Gateway" as gateway
+participant "Auth Service" as auth
+participant "Core API" as core
+participant "Document\nProcessor" as doc
+participant "AI Service" as ai
+database "PostgreSQL" as db
+queue "Kafka" as kafka
+database "File Storage" as storage
+
+== Authentication ==
+employee -> webapp: Access award submission
+webapp -> gateway: GET /api/awards/new
+gateway -> auth: Validate JWT token
+auth --> gateway: Token valid + user context
+gateway --> webapp: Allow access
+
+== Award Draft Creation ==
+employee -> webapp: Fill award form
+webapp -> gateway: POST /api/awards
+gateway -> core: Create award draft
+core -> core: Validate input data
+core -> db: INSERT INTO awards (status='DRAFT')
+db --> core: Award ID
+core -> kafka: publish(award.created)
+core --> gateway: 201 Created + Award ID
+gateway --> webapp: Award draft created
+webapp --> employee: Show draft form
+
+== Document Upload ==
+employee -> webapp: Upload certificate (photo/scan)
+webapp -> gateway: POST /api/awards/{id}/documents
+gateway -> core: Upload document
+core -> doc: Process document upload
+doc -> storage: Store file
+storage --> doc: File URL
+doc -> db: INSERT INTO documents (status='UPLOADED')
+db --> doc: Document ID
+doc -> kafka: publish(document.uploaded)
+doc --> core: Document metadata
+core --> gateway: 201 Created
+gateway --> webapp: Upload successful
+
+== AI Document Processing (Async) ==
+kafka -> doc: consume(document.uploaded)
+doc -> ai: POST /parse (document URL)
+ai -> ai: OCR + NLP processing
+ai --> doc: Parsed metadata + confidence scores
+doc -> db: UPDATE documents SET parsed_metadata, confidence_score
+doc -> kafka: publish(document.processed)
+
+alt Confidence >= 80%
+    doc -> core: Auto-fill form data
+    core -> db: UPDATE awards SET metadata
+else Confidence < 80%
+    doc -> db: UPDATE documents SET status='MANUAL_REVIEW'
+    doc -> kafka: publish(notification.required)
+end
+
+== Form Completion ==
+employee -> webapp: Review/edit extracted data
+webapp -> gateway: PUT /api/awards/{id}
+gateway -> core: Update award
+core -> core: Validate updated data
+core -> db: UPDATE awards
+db --> core: Updated
+core --> gateway: 200 OK
+gateway --> webapp: Award updated
+
+== Award Submission ==
+employee -> webapp: Click "Submit Award"
+webapp -> gateway: POST /api/awards/{id}/submit
+gateway -> core: Submit award
+
+core -> core: Final validation
+alt Validation fails
+    core --> gateway: 400 Bad Request + errors
+    gateway --> webapp: Show validation errors
+    webapp --> employee: Fix errors and retry
+else Validation passes
+    core -> db: UPDATE awards SET status='PENDING'
+    core -> db: INSERT INTO award_requests
+    core -> core: Determine first reviewer\n(Faculty Secretary)
+    core -> db: UPDATE award_requests SET current_reviewer
+    core -> kafka: publish(award.submitted)
+    core --> gateway: 200 OK + Request ID
+    gateway --> webapp: Submission successful
+    webapp --> employee: "Award submitted for review"
+end
+
+== Notification (Async) ==
+kafka -> "Notification\nService" as notif: consume(award.submitted)
+notif -> notif: Prepare notification
+notif -> "Email Server" as smtp: Send email to reviewer
+smtp --> notif: Sent
+notif -> db: INSERT INTO notifications
+notif -> notif: Send in-app notification
+
+@enduml
+
+
+

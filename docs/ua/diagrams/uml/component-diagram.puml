@@ -1,0 +1,110 @@
+@startuml Component_Diagram_UA
+!theme plain
+skinparam component {
+    BackgroundColor<<frontend>> LightBlue
+    BackgroundColor<<gateway>> LightYellow
+    BackgroundColor<<service>> LightGreen
+    BackgroundColor<<data>> LightGray
+    BackgroundColor<<external>> Pink
+}
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Компонентів
+
+' Рівень Frontend
+package "Рівень Презентації" {
+    component [Веб-Додаток\n<<Angular 20+>>] <<frontend>> as webapp
+    component [Мобільний PWA\n<<Angular PWA>>] <<frontend>> as pwa
+}
+
+' Рівень API Шлюзу
+package "Рівень API Шлюзу" {
+    component [API Шлюз\n<<Spring Cloud Gateway>>] <<gateway>> as gateway
+}
+
+' Рівень Backend Сервісів
+package "Рівень Backend Сервісів" {
+    
+    component [Основний API Сервіс\n<<Spring Boot 3.2+>>] <<service>> as core_api
+    component [Сервіс Аутентифікації\n<<Spring Security 6+>>] <<service>> as auth_service
+    component [Сервіс Сповіщень\n<<Spring Boot>>] <<service>> as notif_service
+    component [Обробник Документів\n<<Spring Boot>>] <<service>> as doc_processor
+}
+
+' Рівень Даних
+package "Рівень Даних" {
+    database "PostgreSQL 17" <<data>> as postgres
+    database "Redis 7+" <<data>> as redis
+    database "Elasticsearch 8+" <<data>> as elasticsearch
+    queue "Apache Kafka" <<data>> as kafka
+}
+
+' Зовнішні Системи
+package "Зовнішні Системи" {
+    component [Університетський LDAP/AD] <<external>> as ldap
+    component [Хмарний ШІ-Сервіс] <<external>> as ai_service
+    component [SMTP Сервер] <<external>> as smtp
+    component [SMS-Шлюз] <<external>> as sms_gateway
+    component [Хмарне Сховище] <<external>> as cloud_storage
+}
+
+' Зв'язки - Frontend до Шлюзу
+webapp --> gateway : HTTPS
+pwa --> gateway : HTTPS
+
+' Зв'язки - Шлюз до Сервісів
+gateway --> core_api : HTTP
+gateway --> auth_service : HTTP
+gateway --> notif_service : HTTP
+
+' Зв'язки - Сервіс до Сервісу
+core_api --> auth_service : Валідація токена
+core_api --> doc_processor : Операції документів
+core_api ..> notif_service : через Kafka
+
+' Зв'язки - Сервіси до Даних
+core_api --> postgres : JDBC
+core_api --> redis : Redis Protocol
+core_api --> elasticsearch : REST
+core_api --> kafka : Kafka Protocol
+
+auth_service --> postgres : JDBC
+auth_service --> redis : Дані сесій
+
+notif_service --> postgres : Журнали сповіщень
+notif_service --> kafka : Споживач подій
+
+doc_processor --> postgres : Метадані документів
+doc_processor --> kafka : Публікація/споживання подій
+
+' Зв'язки - Сервіси до Зовнішніх
+auth_service --> ldap : LDAP/LDAPS
+doc_processor --> ai_service : REST/HTTPS
+doc_processor --> cloud_storage : REST/HTTPS
+notif_service --> smtp : SMTP/TLS
+notif_service --> sms_gateway : REST/HTTPS
+
+' Примітки
+note right of gateway
+    Обмеження швидкості: 1000 запитів/хв
+    Перевірка аутентифікації
+    Маршрутизація запитів
+    Балансування навантаження
+end note
+
+note right of core_api
+    Основна бізнес-логіка
+    Модульна монолітна архітектура
+    Подієво-орієнтована комунікація
+end note
+
+note right of kafka
+    Типи Подій:
+    - award.created
+    - award.approved
+    - document.uploaded
+    - notification.send
+end note
+
+@enduml
+
+

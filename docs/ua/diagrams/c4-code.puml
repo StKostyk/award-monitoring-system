@@ -1,0 +1,248 @@
+@startuml C4_Code_UA
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Коду (C4 Рівень 4) - Модуль Нагород
+
+LAYOUT_LEFT_RIGHT()
+
+' Примітка: Ця діаграма показує внутрішню структуру Модуля Нагород
+' з фокусом на ключових класах та їх зв'язках
+
+package "Модуль Нагород" {
+    
+    ' Шар Контролерів
+    package "Контролер" <<Rectangle>> {
+        class AwardController {
+            -awardService: AwardService
+            +createAward(request: AwardCreateRequest): AwardResponse
+            +getAward(id: Long): AwardResponse
+            +updateAward(id: Long, request: AwardUpdateRequest): AwardResponse
+            +submitAward(id: Long): AwardResponse
+            +listAwards(filter: AwardFilter, pageable: Pageable): Page<AwardResponse>
+            +getMyAwards(pageable: Pageable): Page<AwardResponse>
+        }
+        
+        class AwardDocumentController {
+            -documentService: DocumentService
+            +uploadDocument(awardId: Long, file: MultipartFile): DocumentResponse
+            +getDocument(documentId: Long): DocumentResponse
+            +deleteDocument(documentId: Long): void
+        }
+    }
+    
+    ' Шар Сервісів
+    package "Сервіс" <<Rectangle>> {
+        interface AwardService {
+            +createAward(command: CreateAwardCommand): Award
+            +updateAward(command: UpdateAwardCommand): Award
+            +submitAward(awardId: Long, userId: Long): Award
+            +getAward(awardId: Long): Award
+            +findAwards(filter: AwardFilter, pageable: Pageable): Page<Award>
+            +findByUser(userId: Long, pageable: Pageable): Page<Award>
+        }
+        
+        class AwardServiceImpl {
+            -awardRepository: AwardRepository
+            -userService: UserService
+            -workflowEngine: WorkflowEngine
+            -eventPublisher: EventPublisher
+            -auditService: AuditService
+            -validator: AwardValidator
+        }
+        
+        class AwardValidator {
+            +validateCreate(command: CreateAwardCommand): void
+            +validateUpdate(command: UpdateAwardCommand): void
+            +validateSubmit(award: Award): void
+            -checkDuplicates(award: Award): void
+            -validateDates(award: Award): void
+        }
+        
+        interface DocumentService {
+            +uploadDocument(awardId: Long, file: MultipartFile): Document
+            +processDocument(documentId: Long): ParsedMetadata
+            +getDocument(documentId: Long): Document
+            +deleteDocument(documentId: Long): void
+        }
+    }
+    
+    ' Шар Домену
+    package "Домен" <<Rectangle>> {
+        class Award <<Сутність>> {
+            -id: Long
+            -userId: Long
+            -categoryId: Long
+            -title: String
+            -description: String
+            -awardingOrganization: String
+            -awardDate: LocalDate
+            -status: AwardStatus
+            -verificationBadge: Boolean
+            -impactScore: Integer
+            -createdAt: Instant
+            -updatedAt: Instant
+            -version: Long
+            +submit(): void
+            +approve(): void
+            +reject(reason: String): void
+            +archive(): void
+        }
+        
+        enum AwardStatus <<Перелік>> {
+            DRAFT
+            PENDING
+            APPROVED
+            REJECTED
+            ARCHIVED
+        }
+        
+        class AwardCategory <<Сутність>> {
+            -id: Long
+            -name: String
+            -description: String
+            -level: RecognitionLevel
+        }
+        
+        enum RecognitionLevel <<Перелік>> {
+            DEPARTMENT
+            FACULTY
+            UNIVERSITY
+            NATIONAL
+            INTERNATIONAL
+        }
+        
+        class Document <<Сутність>> {
+            -id: Long
+            -awardId: Long
+            -filePath: String
+            -fileName: String
+            -fileType: String
+            -fileSize: Long
+            -storageUrl: String
+            -parsedMetadata: JsonNode
+            -confidenceScore: Double
+            -status: DocumentStatus
+            -uploadedAt: Instant
+            -processedAt: Instant
+        }
+        
+        enum DocumentStatus <<Перелік>> {
+            UPLOADING
+            UPLOADED
+            PROCESSING
+            PROCESSED
+            VERIFIED
+            ARCHIVED
+        }
+    }
+    
+    ' Шар Репозиторіїв
+    package "Репозиторій" <<Rectangle>> {
+        interface AwardRepository {
+            +findById(id: Long): Optional<Award>
+            +findByUserId(userId: Long, pageable: Pageable): Page<Award>
+            +findByStatus(status: AwardStatus, pageable: Pageable): Page<Award>
+            +findByOrganizationId(orgId: Long, pageable: Pageable): Page<Award>
+            +existsByUserIdAndTitleAndAwardDate(userId: Long, title: String, date: LocalDate): boolean
+            +save(award: Award): Award
+            +delete(award: Award): void
+        }
+        
+        interface DocumentRepository {
+            +findById(id: Long): Optional<Document>
+            +findByAwardId(awardId: Long): List<Document>
+            +save(document: Document): Document
+            +delete(document: Document): void
+        }
+    }
+    
+    ' Шар DTO
+    package "DTO" <<Rectangle>> {
+        class AwardCreateRequest {
+            +title: String
+            +description: String
+            +categoryId: Long
+            +awardingOrganization: String
+            +awardDate: LocalDate
+        }
+        
+        class AwardResponse {
+            +id: Long
+            +title: String
+            +description: String
+            +category: AwardCategoryDto
+            +awardingOrganization: String
+            +awardDate: LocalDate
+            +status: AwardStatus
+            +verificationBadge: Boolean
+            +owner: UserSummaryDto
+            +documents: List<DocumentSummaryDto>
+            +createdAt: Instant
+        }
+        
+        class CreateAwardCommand {
+            +userId: Long
+            +title: String
+            +description: String
+            +categoryId: Long
+            +awardingOrganization: String
+            +awardDate: LocalDate
+        }
+    }
+    
+    ' Шар Подій
+    package "Події" <<Rectangle>> {
+        class AwardCreatedEvent <<Доменна Подія>> {
+            +awardId: Long
+            +userId: Long
+            +title: String
+            +categoryId: Long
+            +timestamp: Instant
+        }
+        
+        class AwardSubmittedEvent <<Доменна Подія>> {
+            +awardId: Long
+            +userId: Long
+            +requestId: Long
+            +timestamp: Instant
+        }
+        
+        class AwardApprovedEvent <<Доменна Подія>> {
+            +awardId: Long
+            +approverId: Long
+            +level: String
+            +timestamp: Instant
+        }
+    }
+}
+
+' Зв'язки
+AwardController --> AwardService : використовує
+AwardController ..> AwardCreateRequest : отримує
+AwardController ..> AwardResponse : повертає
+AwardDocumentController --> DocumentService : використовує
+
+AwardServiceImpl ..|> AwardService : реалізує
+AwardServiceImpl --> AwardRepository : використовує
+AwardServiceImpl --> AwardValidator : використовує
+AwardServiceImpl ..> CreateAwardCommand : використовує
+AwardServiceImpl ..> AwardCreatedEvent : публікує
+AwardServiceImpl ..> AwardSubmittedEvent : публікує
+
+AwardValidator --> AwardRepository : використовує
+
+Award --> AwardStatus : має
+Award --> AwardCategory : належить до
+AwardCategory --> RecognitionLevel : має
+Document --> DocumentStatus : має
+Document --> Award : належить до
+
+AwardRepository ..> Award : керує
+DocumentRepository ..> Document : керує
+
+AwardResponse ..> Award : мапиться з
+CreateAwardCommand ..> AwardCreateRequest : з
+
+@enduml
+
+

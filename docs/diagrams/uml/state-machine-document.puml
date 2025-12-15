@@ -1,0 +1,161 @@
+@startuml StateMachine_Document
+!theme plain
+skinparam state {
+    BackgroundColor<<uploading>> LightYellow
+    BackgroundColor<<uploaded>> LightBlue
+    BackgroundColor<<processing>> Orange
+    BackgroundColor<<processed>> LightGreen
+    BackgroundColor<<verified>> Green
+    BackgroundColor<<manual>> LightCoral
+    BackgroundColor<<archived>> DarkGray
+    BackgroundColor<<failed>> Red
+}
+
+title Document Processing State Machine Diagram
+
+[*] --> UPLOADING <<uploading>> : User initiates upload
+
+state UPLOADING <<uploading>> {
+    [*] --> Validating
+    Validating --> FileTypeCheck : Check file type
+    FileTypeCheck --> FileSizeCheck : Type OK (PDF, JPG, PNG)
+    FileSizeCheck --> Uploading : Size OK (< 10MB)
+    Uploading --> [*] : Upload complete
+    
+    FileTypeCheck --> UploadError : Invalid file type
+    FileSizeCheck --> UploadError : File too large
+    Uploading --> UploadError : Upload error
+}
+
+UPLOADING --> UPLOADED <<uploaded>> : Upload successful
+UPLOADING --> UPLOAD_FAILED <<failed>> : Upload failed
+
+state UPLOAD_FAILED <<failed>>
+
+note right of UPLOAD_FAILED
+    User notified of failure reason
+    Can retry with valid file
+end note
+
+UPLOAD_FAILED --> [*] : User abandons
+UPLOAD_FAILED --> UPLOADING : User retries
+
+state UPLOADED <<uploaded>> {
+    [*] --> StoredTemporarily
+    StoredTemporarily --> QueuedForProcessing : Added to AI queue
+}
+
+note right of UPLOADED
+    File stored in temporary
+    location pending AI processing
+end note
+
+UPLOADED --> PROCESSING <<processing>> : AI processing starts
+
+state PROCESSING <<processing>> {
+    [*] --> OCRInProgress
+    OCRInProgress --> TextExtracted : OCR complete
+    TextExtracted --> NLPInProgress : Start NLP analysis
+    NLPInProgress --> MetadataExtracted : NLP complete
+    MetadataExtracted --> ConfidenceCalculated : Calculate scores
+    ConfidenceCalculated --> [*]
+}
+
+note right of PROCESSING
+    Extracted fields:
+    - Award title
+    - Awarding organization
+    - Date
+    - Category (suggested)
+end note
+
+PROCESSING --> PROCESSED <<processed>> : Processing complete\n[Confidence >= 80%]
+PROCESSING --> MANUAL_REVIEW <<manual>> : Processing complete\n[Confidence < 80%]
+PROCESSING --> PROCESS_FAILED <<failed>> : AI service error
+
+state PROCESS_FAILED <<failed>>
+
+note right of PROCESS_FAILED
+    AI processing failed
+    Retry or manual entry required
+end note
+
+PROCESS_FAILED --> PROCESSING : Retry AI processing
+PROCESS_FAILED --> MANUAL_REVIEW : Skip to manual entry
+
+state PROCESSED <<processed>> {
+    [*] --> HighConfidence
+    HighConfidence : Confidence >= 80%
+    HighConfidence : Auto-filled form
+    HighConfidence : User can review/edit
+}
+
+note right of PROCESSED
+    High confidence results
+    auto-populate award form
+    User reviews before submit
+end note
+
+state MANUAL_REVIEW <<manual>> {
+    [*] --> LowConfidence
+    LowConfidence : Confidence < 80%
+    LowConfidence : Flagged fields highlighted
+    LowConfidence : User must verify/correct
+}
+
+note right of MANUAL_REVIEW
+    Low confidence fields
+    require user verification
+end note
+
+PROCESSED --> VERIFIED <<verified>> : Award submitted\n& reviewer confirms
+MANUAL_REVIEW --> VERIFIED <<verified>> : User verifies\n& award submitted
+
+state VERIFIED <<verified>> {
+    [*] --> DocumentVerified
+    DocumentVerified : Certificate validated
+    DocumentVerified : Metadata confirmed
+    DocumentVerified : Verification badge eligible
+}
+
+note right of VERIFIED
+    Verified documents:
+    - Display verification badge
+    - Stored permanently
+    - Indexed for search
+end note
+
+VERIFIED --> PUBLISHED : Award approved
+PUBLISHED --> ARCHIVED <<archived>> : Retention period elapsed
+
+state ARCHIVED <<archived>>
+
+note right of ARCHIVED
+    Archived documents:
+    - Moved to cold storage
+    - Metadata preserved
+    - File may be deleted per retention policy
+end note
+
+ARCHIVED --> [*]
+
+' Error recovery paths
+PROCESS_FAILED --> UPLOADED : Reset to retry
+
+' Admin override
+MANUAL_REVIEW --> VERIFIED : Admin force verify
+
+' Legend
+legend right
+    |= State |= Description |
+    | UPLOADING | File being uploaded |
+    | UPLOADED | Ready for AI processing |
+    | PROCESSING | AI extracting metadata |
+    | PROCESSED | High confidence extraction |
+    | MANUAL_REVIEW | Low confidence, needs user |
+    | VERIFIED | Confirmed by reviewer |
+    | ARCHIVED | Retention period complete |
+    | FAILED | Error occurred |
+endlegend
+
+@enduml

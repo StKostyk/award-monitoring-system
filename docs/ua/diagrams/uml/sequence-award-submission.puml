@@ -1,0 +1,108 @@
+@startuml Sequence_Award_Submission_UA
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Діаграма Послідовності Подання Нагороди
+
+actor "Працівник" as employee
+participant "Веб-Додаток" as webapp
+participant "API Шлюз" as gateway
+participant "Сервіс\nАутентифікації" as auth
+participant "Основний API" as core
+participant "Обробник\nДокументів" as doc
+participant "ШІ-Сервіс" as ai
+database "PostgreSQL" as db
+queue "Kafka" as kafka
+database "Файлове\nСховище" as storage
+
+== Аутентифікація ==
+employee -> webapp: Доступ до подання нагороди
+webapp -> gateway: GET /api/awards/new
+gateway -> auth: Валідувати JWT токен
+auth --> gateway: Токен валідний + контекст користувача
+gateway --> webapp: Дозволити доступ
+
+== Створення Чернетки Нагороди ==
+employee -> webapp: Заповнити форму нагороди
+webapp -> gateway: POST /api/awards
+gateway -> core: Створити чернетку нагороди
+core -> core: Валідувати вхідні дані
+core -> db: INSERT INTO awards (status='DRAFT')
+db --> core: ID Нагороди
+core -> kafka: publish(award.created)
+core --> gateway: 201 Created + ID Нагороди
+gateway --> webapp: Чернетку нагороди створено
+webapp --> employee: Показати форму чернетки
+
+== Завантаження Документа ==
+employee -> webapp: Завантажити сертифікат (фото/скан)
+webapp -> gateway: POST /api/awards/{id}/documents
+gateway -> core: Завантажити документ
+core -> doc: Обробити завантаження документа
+doc -> storage: Зберегти файл
+storage --> doc: URL файлу
+doc -> db: INSERT INTO documents (status='UPLOADED')
+db --> doc: ID Документа
+doc -> kafka: publish(document.uploaded)
+doc --> core: Метадані документа
+core --> gateway: 201 Created
+gateway --> webapp: Завантаження успішне
+
+== ШІ-Обробка Документа (Асинхронна) ==
+kafka -> doc: consume(document.uploaded)
+doc -> ai: POST /parse (URL документа)
+ai -> ai: OCR + NLP обробка
+ai --> doc: Розпізнані метадані + оцінки впевненості
+doc -> db: UPDATE documents SET parsed_metadata, confidence_score
+doc -> kafka: publish(document.processed)
+
+alt Впевненість >= 80%
+    doc -> core: Автозаповнити дані форми
+    core -> db: UPDATE awards SET metadata
+else Впевненість < 80%
+    doc -> db: UPDATE documents SET status='MANUAL_REVIEW'
+    doc -> kafka: publish(notification.required)
+end
+
+== Завершення Форми ==
+employee -> webapp: Переглянути/редагувати вилучені дані
+webapp -> gateway: PUT /api/awards/{id}
+gateway -> core: Оновити нагороду
+core -> core: Валідувати оновлені дані
+core -> db: UPDATE awards
+db --> core: Оновлено
+core --> gateway: 200 OK
+gateway --> webapp: Нагороду оновлено
+
+== Подання Нагороди ==
+employee -> webapp: Клацнути "Подати Нагороду"
+webapp -> gateway: POST /api/awards/{id}/submit
+gateway -> core: Подати нагороду
+
+core -> core: Фінальна валідація
+alt Валідація не пройшла
+    core --> gateway: 400 Bad Request + помилки
+    gateway --> webapp: Показати помилки валідації
+    webapp --> employee: Виправте помилки та спробуйте знову
+else Валідація пройшла
+    core -> db: UPDATE awards SET status='PENDING'
+    core -> db: INSERT INTO award_requests
+    core -> core: Визначити першого рецензента\n(Секретар Факультету)
+    core -> db: UPDATE award_requests SET current_reviewer
+    core -> kafka: publish(award.submitted)
+    core --> gateway: 200 OK + ID Запиту
+    gateway --> webapp: Подання успішне
+    webapp --> employee: "Нагороду подано на рецензування"
+end
+
+== Сповіщення (Асинхронне) ==
+kafka -> "Сервіс\nСповіщень" as notif: consume(award.submitted)
+notif -> notif: Підготувати сповіщення
+notif -> "Поштовий\nСервер" as smtp: Надіслати email рецензенту
+smtp --> notif: Надіслано
+notif -> db: INSERT INTO notifications
+notif -> notif: Надіслати in-app сповіщення
+
+@enduml
+
+

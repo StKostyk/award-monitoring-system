@@ -1,0 +1,69 @@
+@startuml DFD_Level0_Context
+!theme plain
+skinparam defaultTextAlignment center
+
+title Award Monitoring & Tracking System - Data Flow Diagram (Level 0 - Context)
+
+' External Entities (Sources/Sinks)
+rectangle "Employee" as employee #LightBlue
+rectangle "Faculty Secretary" as fac_sec #LightGreen
+rectangle "Dean" as dean #LightYellow
+rectangle "Rector's Office" as rector #LightCoral
+rectangle "System Admin" as admin #LightGray
+
+rectangle "University LDAP" as ldap #Pink
+rectangle "AI Service" as ai #Pink
+rectangle "Email Server" as email #Pink
+rectangle "SMS Gateway" as sms #Pink
+rectangle "File Storage" as storage #Pink
+
+' Main Process (System)
+agent "Award Monitoring\n& Tracking\nSystem" as system #White
+
+' Data Flows - Employees
+employee --> system : Award Data,\nDocuments,\nProfile Updates
+system --> employee : Award Status,\nNotifications,\nPublic Awards
+
+' Data Flows - Faculty Secretary
+fac_sec --> system : Review Decisions,\nApprovals/Rejections
+system --> fac_sec : Review Queue,\nFaculty Reports
+
+' Data Flows - Dean
+dean --> system : Role Assignments,\nApproval Decisions
+system --> dean : Faculty Analytics,\nEscalated Reviews
+
+' Data Flows - Rector's Office
+rector --> system : Final Approvals,\nPolicy Decisions
+system --> rector : University Dashboard,\nExecutive Reports
+
+' Data Flows - Admin
+admin --> system : System Config,\nUser Management
+system --> admin : System Logs,\nHealth Metrics
+
+' Data Flows - External Systems
+system --> ldap : Auth Requests
+ldap --> system : User Credentials,\nEmployee Data
+
+system --> ai : Documents for Parsing
+ai --> system : Parsed Metadata,\nConfidence Scores
+
+system --> email : Notification Messages
+system --> sms : Alert Messages
+
+system --> storage : Document Files
+storage --> system : Stored File URLs
+
+' Notes
+note right of system
+    **Core Data Processing:**
+    • Award CRUD operations
+    • Multi-level workflow
+    • Document AI processing
+    • Analytics & reporting
+    • GDPR compliance
+end note
+
+@enduml
+
+
+

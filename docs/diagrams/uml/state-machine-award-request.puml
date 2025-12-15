@@ -1,0 +1,129 @@
+@startuml StateMachine_Award_Request
+!theme plain
+skinparam state {
+    BackgroundColor<<draft>> LightBlue
+    BackgroundColor<<pending>> LightYellow
+    BackgroundColor<<review>> Orange
+    BackgroundColor<<escalated>> LightCoral
+    BackgroundColor<<approved>> LightGreen
+    BackgroundColor<<rejected>> Pink
+    BackgroundColor<<returned>> LightGray
+    BackgroundColor<<archived>> DarkGray
+}
+
+title Award Request State Machine Diagram
+
+[*] --> DRAFT <<draft>> : Employee creates award
+
+state DRAFT <<draft>> {
+    [*] --> Editing
+    Editing --> Editing : Save changes
+    Editing --> DocumentUploaded : Upload certificate
+    DocumentUploaded --> AIProcessing : Trigger AI parsing
+    AIProcessing --> MetadataExtracted : AI completes
+    MetadataExtracted --> Editing : Employee reviews
+}
+
+DRAFT --> SUBMITTED <<pending>> : Employee submits\n[All required fields filled]
+
+state SUBMITTED <<pending>> {
+    [*] --> AwaitingReviewer
+    AwaitingReviewer --> ReviewerAssigned : System assigns reviewer
+}
+
+note right of SUBMITTED
+    First reviewer is always
+    Faculty Secretary
+end note
+
+SUBMITTED --> IN_REVIEW <<review>> : Reviewer opens request
+
+state IN_REVIEW <<review>> {
+    [*] --> UnderReview
+    UnderReview --> DocumentVerification : Verify certificate
+    DocumentVerification --> DecisionPending : Verification complete
+    DecisionPending --> [*] : Decision made
+}
+
+IN_REVIEW --> APPROVED <<approved>> : Reviewer approves\n[No more levels required]
+IN_REVIEW --> REJECTED <<rejected>> : Reviewer rejects\n[With reason]
+IN_REVIEW --> ESCALATED <<escalated>> : Reviewer escalates\n[Higher authority needed]
+IN_REVIEW --> RETURNED <<returned>> : Reviewer returns\n[Corrections needed]
+
+state ESCALATED <<escalated>> {
+    [*] --> Level2_Dean
+    Level2_Dean --> Level3_RectorSecretary : Dean escalates
+    Level3_RectorSecretary --> Level4_Rector : Secretary escalates
+}
+
+note right of ESCALATED
+    Escalation levels:
+    - Dean reviews from Faculty Secretary
+    - Rector has final authority
+end note
+
+ESCALATED --> IN_REVIEW : New reviewer opens\n[At higher level]
+
+state RETURNED <<returned>> {
+    [*] --> AwaitingCorrections
+    AwaitingCorrections --> CorrectionsMade : Employee edits
+}
+
+RETURNED --> IN_REVIEW : Employee resubmits\n[Within deadline]
+RETURNED --> EXPIRED : Deadline passed\n[No resubmission]
+
+state REJECTED <<rejected>> {
+    [*] --> RejectionNotified
+    RejectionNotified --> AppealWindow : 7 days to appeal
+}
+
+REJECTED --> DRAFT : Employee creates new submission\n[With corrections]
+
+state APPROVED <<approved>> {
+    [*] --> Published
+    Published --> VerificationBadgeAdded : Documents verified
+}
+
+note right of APPROVED
+    Award is now publicly visible
+end note
+
+APPROVED --> ARCHIVED <<archived>> : Retention period elapsed
+
+state ARCHIVED <<archived>>
+
+note right of ARCHIVED
+    Award preserved for historical record
+    Personal data anonymized per GDPR
+end note
+
+ARCHIVED --> [*]
+
+' Timeout transitions
+SUBMITTED --> EXPIRED : Review deadline exceeded\n[Configurable timeout]
+IN_REVIEW --> EXPIRED : Decision deadline exceeded
+
+state EXPIRED
+
+note right of EXPIRED
+    Auto-expired requests require
+    manual intervention or new submission
+end note
+
+EXPIRED --> [*]
+
+' Legend
+legend right
+    |= State |= Description |
+    | DRAFT | Award being prepared |
+    | SUBMITTED | Awaiting first review |
+    | IN_REVIEW | Currently under review |
+    | ESCALATED | Forwarded to higher authority |
+    | APPROVED | Fully approved, published |
+    | REJECTED | Rejected by reviewer |
+    | RETURNED | Sent back for corrections |
+    | ARCHIVED | Moved to archive |
+    | EXPIRED | Auto-expired |
+endlegend
+
+@enduml

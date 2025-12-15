@@ -1,0 +1,179 @@
+@startuml UseCase_Diagram
+!theme plain
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+title Award Monitoring & Tracking System - Use Case Diagram
+
+left to right direction
+
+' Actors
+actor "Employee" as employee
+actor "Faculty Secretary" as fac_sec
+actor "Dean" as dean
+actor "Rector's Secretary" as rec_sec
+actor "Rector" as rector
+actor "System Admin" as admin
+actor "GDPR Officer" as gdpr
+
+' External Actors
+actor "LDAP System" as ldap <<external>>
+actor "AI Service" as ai <<external>>
+actor "Email Server" as email <<external>>
+
+' System Boundary
+rectangle "Award Monitoring & Tracking System" {
+    
+    ' Award Management Use Cases
+    package "Award Management" {
+        usecase "Submit Award" as UC_SUBMIT
+        usecase "Upload Certificate" as UC_UPLOAD
+        usecase "Edit Award Draft" as UC_EDIT
+        usecase "Track Award Status" as UC_TRACK
+        usecase "View Public Awards" as UC_VIEW_PUBLIC
+        usecase "View Own Awards" as UC_VIEW_OWN
+        usecase "Resubmit Rejected Award" as UC_RESUBMIT
+    }
+    
+    ' Review & Approval Use Cases
+    package "Review & Approval" {
+        usecase "Review Award" as UC_REVIEW
+        usecase "Approve Award" as UC_APPROVE
+        usecase "Reject Award" as UC_REJECT
+        usecase "Escalate Award" as UC_ESCALATE
+        usecase "Return for Corrections" as UC_RETURN
+        usecase "Batch Approve Awards" as UC_BATCH
+        usecase "View Review Queue" as UC_QUEUE
+    }
+    
+    ' User Management Use Cases
+    package "User Management" {
+        usecase "Register Account" as UC_REGISTER
+        usecase "Login" as UC_LOGIN
+        usecase "Manage Profile" as UC_PROFILE
+        usecase "Assign User Roles" as UC_ROLES
+        usecase "View User Directory" as UC_USERS
+    }
+    
+    ' Analytics & Reporting Use Cases
+    package "Analytics & Reporting" {
+        usecase "View Personal Dashboard" as UC_DASH_PERSONAL
+        usecase "View Faculty Dashboard" as UC_DASH_FACULTY
+        usecase "View University Dashboard" as UC_DASH_UNIV
+        usecase "Generate Reports" as UC_REPORTS
+        usecase "Export Data" as UC_EXPORT
+    }
+    
+    ' Compliance Use Cases
+    package "Compliance & Administration" {
+        usecase "Manage GDPR Consent" as UC_CONSENT
+        usecase "Export Personal Data" as UC_EXPORT_DATA
+        usecase "Request Data Deletion" as UC_DELETE_DATA
+        usecase "View Audit Logs" as UC_AUDIT
+        usecase "Manage Retention Policies" as UC_RETENTION
+        usecase "System Configuration" as UC_CONFIG
+        usecase "Monitor System Health" as UC_MONITOR
+    }
+    
+    ' Document Processing Use Cases
+    package "Document Processing" {
+        usecase "Parse Document (AI)" as UC_PARSE
+        usecase "Verify Document" as UC_VERIFY
+        usecase "Flag Parsing Errors" as UC_FLAG
+    }
+}
+
+' Employee relationships
+employee --> UC_SUBMIT
+employee --> UC_UPLOAD
+employee --> UC_EDIT
+employee --> UC_TRACK
+employee --> UC_VIEW_PUBLIC
+employee --> UC_VIEW_OWN
+employee --> UC_RESUBMIT
+employee --> UC_REGISTER
+employee --> UC_LOGIN
+employee --> UC_PROFILE
+employee --> UC_DASH_PERSONAL
+employee --> UC_CONSENT
+employee --> UC_EXPORT_DATA
+employee --> UC_DELETE_DATA
+employee --> UC_FLAG
+
+' Faculty Secretary relationships
+fac_sec --> UC_VIEW_PUBLIC
+fac_sec --> UC_QUEUE
+fac_sec --> UC_REVIEW
+fac_sec --> UC_APPROVE
+fac_sec --> UC_REJECT
+fac_sec --> UC_ESCALATE
+fac_sec --> UC_RETURN
+fac_sec --> UC_BATCH
+fac_sec --> UC_DASH_FACULTY
+fac_sec --> UC_REPORTS
+fac_sec --> UC_VERIFY
+
+' Dean relationships
+dean --> UC_VIEW_PUBLIC
+dean --> UC_QUEUE
+dean --> UC_REVIEW
+dean --> UC_APPROVE
+dean --> UC_REJECT
+dean --> UC_ESCALATE
+dean --> UC_ROLES
+dean --> UC_DASH_FACULTY
+dean --> UC_REPORTS
+dean --> UC_EXPORT
+
+' Rector's Secretary relationships
+rec_sec --> UC_VIEW_PUBLIC
+rec_sec --> UC_QUEUE
+rec_sec --> UC_REVIEW
+rec_sec --> UC_APPROVE
+rec_sec --> UC_REJECT
+rec_sec --> UC_ESCALATE
+rec_sec --> UC_DASH_UNIV
+rec_sec --> UC_REPORTS
+
+' Rector relationships
+rector --> UC_VIEW_PUBLIC
+rector --> UC_REVIEW
+rector --> UC_APPROVE
+rector --> UC_REJECT
+rector --> UC_ROLES
+rector --> UC_DASH_UNIV
+rector --> UC_REPORTS
+rector --> UC_EXPORT
+
+' System Admin relationships
+admin --> UC_CONFIG
+admin --> UC_MONITOR
+admin --> UC_USERS
+admin --> UC_AUDIT
+
+' GDPR Officer relationships
+gdpr --> UC_AUDIT
+gdpr --> UC_RETENTION
+gdpr --> UC_CONSENT
+
+' External system relationships
+UC_LOGIN ..> ldap : <<uses>>
+UC_REGISTER ..> ldap : <<uses>>
+UC_PARSE ..> ai : <<uses>>
+UC_APPROVE ..> email : <<triggers>>
+UC_REJECT ..> email : <<triggers>>
+
+' Include relationships
+UC_SUBMIT ..> UC_UPLOAD : <<include>>
+UC_SUBMIT ..> UC_PARSE : <<include>>
+UC_REVIEW ..> UC_VERIFY : <<include>>
+
+' Extend relationships
+UC_REVIEW <.. UC_ESCALATE : <<extend>>
+UC_REVIEW <.. UC_RETURN : <<extend>>
+UC_APPROVE <.. UC_BATCH : <<extend>>
+
+@enduml
+
+
+

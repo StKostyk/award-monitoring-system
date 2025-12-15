@@ -1,0 +1,164 @@
+@startuml Deployment_Template
+' =============================================================================
+' Deployment Diagram Template
+' Award Monitoring & Tracking System
+' =============================================================================
+' Usage: Copy this template for infrastructure documentation
+' Best for: Production topology, cloud architecture, network layout
+' =============================================================================
+
+!theme plain
+
+' =============================================================================
+' NODE STYLING
+' =============================================================================
+skinparam node {
+    BackgroundColor<<cloud>> LightBlue
+    BackgroundColor<<container>> LightGreen
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> Pink
+    BackgroundColor<<security>> LightCoral
+}
+
+title [Environment Name] - Deployment Diagram
+
+' =============================================================================
+' CLOUD/INTERNET
+' =============================================================================
+cloud "Internet" as internet {
+    actor "Users" as users
+}
+
+' =============================================================================
+' SECURITY LAYER
+' =============================================================================
+node "CDN / WAF" <<security>> as cdn {
+    component [CloudFlare\nDDoS Protection] as waf
+}
+
+' =============================================================================
+' LOAD BALANCER
+' =============================================================================
+node "Load Balancer" <<cloud>> as lb {
+    component [HAProxy/ALB\nHealth Checks] as haproxy
+}
+
+' =============================================================================
+' APPLICATION CLUSTER
+' =============================================================================
+node "Kubernetes Cluster" <<cloud>> as k8s {
+    
+    ' Frontend
+    node "Frontend Namespace" <<container>> as frontend_ns {
+        artifact "web-app-pod-1" as web1
+        artifact "web-app-pod-2" as web2
+    }
+    
+    ' Backend Services
+    node "Services Namespace" <<container>> as services_ns {
+        frame "Service Deployment" {
+            artifact "service-pod-1" as svc1
+            artifact "service-pod-2" as svc2
+        }
+    }
+    
+    ' Data Layer
+    node "Data Namespace" <<database>> as data_ns {
+        database "PostgreSQL" as postgres {
+            artifact "postgres-primary" as pg_primary
+            artifact "postgres-replica" as pg_replica
+        }
+        
+        database "Redis" as redis {
+            artifact "redis-master" as redis_m
+        }
+        
+        queue "Kafka" as kafka {
+            artifact "kafka-broker" as kafka_b
+        }
+    }
+    
+    ' Monitoring
+    node "Monitoring Namespace" <<container>> as monitoring {
+        component [Prometheus] as prom
+        component [Grafana] as grafana
+    }
+}
+
+' =============================================================================
+' EXTERNAL SERVICES
+' =============================================================================
+node "External Services" <<external>> as external {
+    component [LDAP/AD] as ldap
+    component [Cloud AI] as ai
+    component [Email/SMS] as comm
+    component [Object Storage] as storage
+}
+
+' =============================================================================
+' PERSISTENT STORAGE
+' =============================================================================
+storage "Persistent Volumes" as pv {
+    artifact [database-pv]
+    artifact [storage-pv]
+}
+
+' =============================================================================
+' CONNECTIONS
+' =============================================================================
+' User traffic
+users --> waf : HTTPS (443)
+waf --> haproxy : HTTPS
+haproxy --> web1 : HTTP (80)
+haproxy --> web2 : HTTP (80)
+
+' Service communication
+web1 --> svc1 : HTTP (8080)
+svc1 --> pg_primary : TCP (5432)
+svc1 --> redis_m : TCP (6379)
+svc1 --> kafka_b : TCP (9092)
+
+' External integrations
+svc1 --> ldap : LDAPS (636)
+svc1 --> ai : HTTPS (443)
+svc1 --> comm : HTTPS (443)
+svc1 --> storage : HTTPS (443)
+
+' Monitoring
+prom --> svc1 : /actuator (9090)
+
+' Storage
+pg_primary --> pv
+
+' =============================================================================
+' NOTES
+' =============================================================================
+note bottom of k8s
+    Kubernetes Resources:
+    - HPA (Horizontal Pod Autoscaler)
+    - PDB (Pod Disruption Budget)
+    - Network Policies
+    - Resource Quotas
+    - Secrets Management
+end note
+
+note right of postgres
+    Database Configuration:
+    - Primary + Read Replica
+    - Streaming Replication
+    - Daily Backups
+    - Point-in-time Recovery
+end note
+
+note right of external
+    External Dependencies:
+    - University LDAP (Auth)
+    - Azure AI (Document OCR)
+    - SendGrid (Email)
+    - AWS S3 (Storage)
+end note
+
+@enduml
+
+
+
