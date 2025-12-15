@@ -1,0 +1,182 @@
+@startuml Activity_Award_Lifecycle
+!theme plain
+skinparam activityShape octagon
+
+title Award Lifecycle - Activity Diagram
+
+|#LightBlue|Employee|
+|#LightGreen|Faculty Secretary|
+|#LightYellow|Dean|
+|#LightCoral|Rector's Office|
+|#LightGray|System|
+
+|Employee|
+start
+:Access Award System;
+:Create Award Draft;
+
+repeat
+    :Fill Award Details;
+    :Upload Certificate;
+    
+    |System|
+    :AI Parse Document;
+    
+    if (Confidence >= 80%?) then (yes)
+        :Auto-fill Metadata;
+    else (no)
+        :Flag for Manual Entry;
+    endif
+    
+    |Employee|
+    :Review/Edit Details;
+    
+    if (Save as Draft?) then (yes)
+        :Save Draft;
+        stop
+    else (no)
+        :Submit Award;
+    endif
+    
+    |System|
+    :Validate Submission;
+    
+repeat while (Validation Errors?) is (yes)
+->no;
+
+|System|
+:Determine Award Level;
+:Create Review Request;
+
+switch (Award Level?)
+case (Department/Faculty)
+    :Assign to Faculty Secretary;
+case (University+)
+    :Assign to Faculty Secretary\n(First Level);
+endswitch
+
+|Faculty Secretary|
+:Receive Review Notification;
+:Open Award for Review;
+:Examine Certificate & Details;
+
+if (Award Valid?) then (yes)
+    if (Within Authority?) then (yes)
+        :Approve Award;
+        |System|
+        :Update Status = APPROVED;
+        :Publish Award;
+        |Employee|
+        :Receive Approval Notification;
+        :Award Visible Publicly;
+        stop
+    else (no - needs escalation)
+        :Escalate to Dean;
+        |System|
+        :Update Reviewer = Dean;
+        
+        |Dean|
+        :Receive Review Notification;
+        :Review Award;
+        
+        if (Approve?) then (yes)
+            if (Within Authority?) then (yes)
+                :Approve Award;
+                |System|
+                :Update Status = APPROVED;
+                :Publish Award;
+                |Employee|
+                :Receive Approval Notification;
+                stop
+            else (no - university level)
+                :Recommend Approval;
+                :Forward to Rector's Office;
+                |System|
+                :Update Reviewer = Rector's Secretary;
+                
+                |Rector's Office|
+                :Receive Review Notification;
+                :Review Award;
+                
+                if (Approve?) then (yes)
+                    if (Secretary Can Approve?) then (yes)
+                        :Approve Award;
+                    else (no - needs Rector)
+                        :Escalate to Rector;
+                        :Rector Reviews;
+                        :Rector Approves;
+                    endif
+                    |System|
+                    :Update Status = APPROVED;
+                    :Publish Award;
+                    |Employee|
+                    :Receive Approval Notification;
+                    stop
+                else (no)
+                    :Reject Award;
+                    |System|
+                    :Update Status = REJECTED;
+                    |Employee|
+                    :Receive Rejection Notification;
+                    
+                    if (Resubmit?) then (yes)
+                        :Edit Award;
+                        |System|
+                        :Reset to Draft;
+                        ->Submit Award;
+                    else (no)
+                        stop
+                    endif
+                endif
+            endif
+        else (no)
+            :Reject Award;
+            |System|
+            :Update Status = REJECTED;
+            |Employee|
+            :Receive Rejection Notification;
+            
+            if (Resubmit?) then (yes)
+                :Edit Award;
+                |System|
+                :Reset to Draft;
+                ->Submit Award;
+            else (no)
+                stop
+            endif
+        endif
+    endif
+else (no - invalid)
+    if (Needs Corrections?) then (yes)
+        :Return for Corrections;
+        |System|
+        :Update Status = RETURNED;
+        |Employee|
+        :Receive Return Notification;
+        :Make Corrections;
+        |System|
+        :Reset to In Review;
+        |Faculty Secretary|
+        ->Open Award for Review;
+    else (no - reject)
+        :Reject Award;
+        |System|
+        :Update Status = REJECTED;
+        |Employee|
+        :Receive Rejection Notification;
+        
+        if (Resubmit?) then (yes)
+            :Edit Award;
+            |System|
+            :Reset to Draft;
+            ->Submit Award;
+        else (no)
+            stop
+        endif
+    endif
+endif
+
+@enduml
+
+
+

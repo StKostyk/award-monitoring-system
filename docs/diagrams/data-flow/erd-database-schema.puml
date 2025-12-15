@@ -1,0 +1,208 @@
+@startuml ERD_Database_Schema
+!theme plain
+skinparam linetype ortho
+
+title Award Monitoring & Tracking System - Entity Relationship Diagram
+
+' User Domain
+entity "users" as users {
+    * user_id : BIGSERIAL <<PK>>
+    --
+    * email : VARCHAR(255) <<UK>>
+    * first_name : VARCHAR(100)
+    * last_name : VARCHAR(100)
+    * password_hash : VARCHAR(255)
+    * status : VARCHAR(20)
+    * organization_id : BIGINT <<FK>>
+    last_login_at : TIMESTAMP
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+    * version : BIGINT
+}
+
+entity "user_roles" as user_roles {
+    * user_role_id : BIGSERIAL <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * role_type : VARCHAR(50)
+    * organization_id : BIGINT <<FK>>
+    valid_from : DATE
+    valid_to : DATE
+    * created_at : TIMESTAMP
+}
+
+entity "organizations" as organizations {
+    * org_id : BIGSERIAL <<PK>>
+    --
+    * name : VARCHAR(255)
+    * org_type : VARCHAR(20)
+    parent_org_id : BIGINT <<FK>>
+    * created_at : TIMESTAMP
+}
+
+' Award Domain
+entity "awards" as awards {
+    * award_id : BIGSERIAL <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * category_id : BIGINT <<FK>>
+    * title : VARCHAR(500)
+    description : TEXT
+    * awarding_organization : VARCHAR(255)
+    * award_date : DATE
+    * status : VARCHAR(20)
+    verification_badge : BOOLEAN
+    impact_score : INTEGER
+    * created_at : TIMESTAMP
+    * updated_at : TIMESTAMP
+    * version : BIGINT
+}
+
+entity "award_categories" as categories {
+    * category_id : BIGSERIAL <<PK>>
+    --
+    * name : VARCHAR(100)
+    description : TEXT
+    * level : VARCHAR(20)
+    * created_at : TIMESTAMP
+}
+
+entity "documents" as documents {
+    * document_id : BIGSERIAL <<PK>>
+    --
+    * award_id : BIGINT <<FK>>
+    request_id : BIGINT <<FK>>
+    * file_path : VARCHAR(500)
+    * file_name : VARCHAR(255)
+    * file_type : VARCHAR(50)
+    * file_size : BIGINT
+    storage_url : VARCHAR(1000)
+    parsed_metadata : JSONB
+    confidence_score : DECIMAL(5,2)
+    * status : VARCHAR(20)
+    * uploaded_at : TIMESTAMP
+    processed_at : TIMESTAMP
+}
+
+' Workflow Domain
+entity "award_requests" as requests {
+    * request_id : BIGSERIAL <<PK>>
+    --
+    * award_id : BIGINT <<FK>> <<UK>>
+    * submitter_id : BIGINT <<FK>>
+    * status : VARCHAR(20)
+    current_reviewer_id : BIGINT <<FK>>
+    * current_level : VARCHAR(30)
+    * submitted_at : TIMESTAMP
+    deadline : TIMESTAMP
+    * created_at : TIMESTAMP
+}
+
+entity "review_decisions" as decisions {
+    * decision_id : BIGSERIAL <<PK>>
+    --
+    * request_id : BIGINT <<FK>>
+    * reviewer_id : BIGINT <<FK>>
+    * decision : VARCHAR(20)
+    * level : VARCHAR(30)
+    comments : TEXT
+    * decided_at : TIMESTAMP
+}
+
+' Compliance Domain
+entity "audit_logs" as audit_logs {
+    * log_id : BIGSERIAL <<PK>>
+    --
+    user_id : BIGINT <<FK>>
+    * action_type : VARCHAR(50)
+    * entity_type : VARCHAR(50)
+    entity_id : BIGINT
+    old_values : JSONB
+    new_values : JSONB
+    ip_address : VARCHAR(45)
+    user_agent : VARCHAR(500)
+    * created_at : TIMESTAMP
+}
+
+entity "consent_records" as consent_records {
+    * consent_id : BIGSERIAL <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * consent_type : VARCHAR(50)
+    * granted : BOOLEAN
+    granted_at : TIMESTAMP
+    withdrawn_at : TIMESTAMP
+    * consent_version : VARCHAR(20)
+    * created_at : TIMESTAMP
+}
+
+' Notification Domain
+entity "notifications" as notifications {
+    * notification_id : BIGSERIAL <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * type : VARCHAR(50)
+    * title : VARCHAR(255)
+    * message : TEXT
+    * read : BOOLEAN
+    * channel : VARCHAR(20)
+    * sent_at : TIMESTAMP
+    read_at : TIMESTAMP
+}
+
+entity "notification_preferences" as notif_prefs {
+    * preference_id : BIGSERIAL <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * event_type : VARCHAR(50)
+    * email_enabled : BOOLEAN
+    * sms_enabled : BOOLEAN
+    * push_enabled : BOOLEAN
+}
+
+' Relationships
+users ||--o{ user_roles : "has"
+users }o--|| organizations : "belongs to"
+organizations ||--o{ organizations : "parent"
+
+users ||--o{ awards : "owns"
+awards }o--|| categories : "categorized by"
+awards ||--o{ documents : "has"
+
+awards ||--|| requests : "initiated by"
+requests ||--o{ decisions : "has"
+users ||--o{ decisions : "makes"
+users ||--o{ requests : "reviews"
+
+users ||--o{ audit_logs : "performs"
+users ||--o{ consent_records : "has"
+users ||--o{ notifications : "receives"
+users ||--o{ notif_prefs : "has preferences"
+
+' Index annotations
+note right of users
+    Indexes:
+    - idx_users_email (email)
+    - idx_users_org (organization_id)
+    - idx_users_status (status)
+end note
+
+note right of awards
+    Indexes:
+    - idx_awards_user (user_id)
+    - idx_awards_status (status)
+    - idx_awards_date (award_date)
+    - idx_awards_category (category_id)
+end note
+
+note right of requests
+    Indexes:
+    - idx_requests_status (status)
+    - idx_requests_reviewer (current_reviewer_id)
+    - idx_requests_deadline (deadline)
+end note
+
+@enduml
+
+
+

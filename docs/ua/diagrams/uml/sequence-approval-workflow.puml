@@ -1,0 +1,177 @@
+@startuml Sequence_Approval_Workflow_UA
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Діаграма Послідовності Робочого Процесу Схвалення Нагороди
+
+actor "Секретар\nФакультету" as fac_sec
+actor "Декан" as dean
+actor "Секретар\nРектора" as rec_sec
+actor "Ректор" as rector
+actor "Працівник" as employee
+
+participant "Веб-Додаток" as webapp
+participant "API Шлюз" as gateway
+participant "Основний API" as core
+participant "Механізм\nРобочих Процесів" as workflow
+database "PostgreSQL" as db
+queue "Kafka" as kafka
+participant "Сервіс\nСповіщень" as notif
+
+== Рівень 1: Рецензування Секретарем Факультету ==
+fac_sec -> webapp: Переглянути чергу рецензування
+webapp -> gateway: GET /api/reviews/queue
+gateway -> core: Отримати очікуючі рецензії
+core -> db: SELECT FROM award_requests\nWHERE current_reviewer = fac_sec_id
+db --> core: Очікуючі запити
+core --> gateway: Черга рецензування
+gateway --> webapp: Відобразити чергу
+webapp --> fac_sec: Показати очікуючі нагороди
+
+fac_sec -> webapp: Відкрити нагороду для рецензування
+webapp -> gateway: GET /api/awards/{id}
+gateway -> core: Отримати деталі нагороди
+core -> db: SELECT award + documents
+db --> core: Дані нагороди
+core --> gateway: Деталі нагороди
+gateway --> webapp: Відобразити нагороду
+webapp --> fac_sec: Показати нагороду + сертифікат
+
+alt Секретар Факультету Схвалює
+    fac_sec -> webapp: Клацнути "Схвалити"
+    webapp -> gateway: POST /api/reviews/{requestId}/approve
+    gateway -> core: Обробити схвалення
+    core -> workflow: ApproveAtLevel(FACULTY_SECRETARY)
+    workflow -> workflow: Перевірити чи потрібні більше рівнів
+    
+    alt Рівень нагороди = КАФЕДРА або ФАКУЛЬТЕТ (більше рівнів не потрібно)
+        workflow -> db: INSERT INTO review_decisions
+        workflow -> db: UPDATE award_requests SET status='APPROVED'
+        workflow -> db: UPDATE awards SET status='APPROVED'
+        workflow -> kafka: publish(award.approved)
+        workflow --> core: Схвалення завершено
+        core --> gateway: 200 OK
+        gateway --> webapp: Нагороду схвалено
+        webapp --> fac_sec: "Нагороду схвалено та опубліковано"
+        
+        kafka -> notif: consume(award.approved)
+        notif -> employee: Надіслати сповіщення про схвалення
+        
+    else Рівень нагороди = УНІВЕРСИТЕТ або вище (потрібен Декан)
+        workflow -> db: INSERT INTO review_decisions
+        workflow -> db: UPDATE award_requests SET\ncurrent_level='DEAN', current_reviewer=dean_id
+        workflow -> kafka: publish(award.escalated)
+        workflow --> core: Ескальовано до Декана
+        core --> gateway: 200 OK
+        gateway --> webapp: "Передано Декану"
+        webapp --> fac_sec: Показати підтвердження ескалації
+        
+        kafka -> notif: consume(award.escalated)
+        notif -> dean: Надіслати сповіщення про рецензування
+    end
+
+else Секретар Факультету Відхиляє
+    fac_sec -> webapp: Клацнути "Відхилити" + причина
+    webapp -> gateway: POST /api/reviews/{requestId}/reject
+    gateway -> core: Обробити відхилення
+    core -> workflow: RejectAtLevel(FACULTY_SECRETARY, reason)
+    workflow -> db: INSERT INTO review_decisions
+    workflow -> db: UPDATE award_requests SET status='REJECTED'
+    workflow -> db: UPDATE awards SET status='REJECTED'
+    workflow -> kafka: publish(award.rejected)
+    workflow --> core: Відхилення завершено
+    core --> gateway: 200 OK
+    gateway --> webapp: Нагороду відхилено
+    webapp --> fac_sec: "Нагороду відхилено"
+    
+    kafka -> notif: consume(award.rejected)
+    notif -> employee: Надіслати сповіщення про відхилення з причиною
+
+else Секретар Факультету Ескалює Напряму
+    fac_sec -> webapp: Клацнути "Ескалювати до Декана"
+    webapp -> gateway: POST /api/reviews/{requestId}/escalate
+    gateway -> core: Обробити ескалацію
+    core -> workflow: EscalateToLevel(DEAN)
+    workflow -> db: INSERT INTO review_decisions (decision='ESCALATED')
+    workflow -> db: UPDATE award_requests SET\ncurrent_level='DEAN', current_reviewer=dean_id
+    workflow -> kafka: publish(award.escalated)
+    core --> gateway: 200 OK
+    gateway --> webapp: "Ескальовано до Декана"
+    
+    kafka -> notif: consume(award.escalated)
+    notif -> dean: Надіслати сповіщення про рецензування
+end
+
+== Рівень 2: Рецензування Деканом (якщо ескальовано) ==
+dean -> webapp: Переглянути чергу рецензування
+webapp -> gateway: GET /api/reviews/queue
+gateway -> core: Отримати очікуючі рецензії
+core -> db: SELECT FROM award_requests\nWHERE current_reviewer = dean_id
+db --> core: Очікуючі запити
+core --> gateway: Черга рецензування
+gateway --> webapp: Відобразити чергу
+webapp --> dean: Показати очікуючі нагороди
+
+dean -> webapp: Рецензувати нагороду
+dean -> webapp: Клацнути "Схвалити"
+webapp -> gateway: POST /api/reviews/{requestId}/approve
+gateway -> core: Обробити схвалення Декана
+core -> workflow: ApproveAtLevel(DEAN)
+workflow -> workflow: Перевірити чи потрібні більше рівнів
+
+alt Рівень нагороди = ФАКУЛЬТЕТ (Декан має остаточні повноваження)
+    workflow -> db: UPDATE awards SET status='APPROVED'
+    workflow -> kafka: publish(award.approved)
+    workflow --> core: Схвалення завершено
+    core --> gateway: 200 OK
+    gateway --> webapp: "Нагороду схвалено"
+    
+    kafka -> notif: consume(award.approved)
+    notif -> employee: Надіслати сповіщення про схвалення
+    
+else Рівень нагороди = УНІВЕРСИТЕТ, НАЦІОНАЛЬНИЙ, МІЖНАРОДНИЙ
+    workflow -> db: UPDATE award_requests SET\ncurrent_level='RECTOR_SECRETARY', current_reviewer=rec_sec_id
+    workflow -> kafka: publish(award.escalated)
+    workflow --> core: Ескальовано до Секретаря Ректора
+    core --> gateway: 200 OK
+    gateway --> webapp: "Передано до Ректорату"
+    
+    kafka -> notif: consume(award.escalated)
+    notif -> rec_sec: Надіслати сповіщення про рецензування
+end
+
+== Рівень 3: Рецензування Секретарем Ректора (якщо ескальовано) ==
+rec_sec -> webapp: Рецензувати нагороду
+rec_sec -> webapp: Клацнути "Схвалити" або "Ескалювати до Ректора"
+webapp -> gateway: POST /api/reviews/{requestId}/approve
+gateway -> core: Обробити схвалення
+core -> workflow: ApproveAtLevel(RECTOR_SECRETARY)
+
+alt Секретар Ректора може схвалити
+    workflow -> db: UPDATE awards SET status='APPROVED'
+    workflow -> kafka: publish(award.approved)
+else Потрібне рішення Ректора
+    workflow -> db: UPDATE award_requests SET\ncurrent_level='RECTOR', current_reviewer=rector_id
+    kafka -> notif: consume(award.escalated)
+    notif -> rector: Надіслати сповіщення про рецензування
+end
+
+== Рівень 4: Остаточне Рішення Ректора (якщо ескальовано) ==
+rector -> webapp: Рецензувати нагороду
+rector -> webapp: Клацнути "Схвалити"
+webapp -> gateway: POST /api/reviews/{requestId}/approve
+gateway -> core: Обробити схвалення Ректора
+core -> workflow: ApproveAtLevel(RECTOR)
+workflow -> db: INSERT INTO review_decisions
+workflow -> db: UPDATE awards SET status='APPROVED'
+workflow -> kafka: publish(award.approved)
+core --> gateway: 200 OK
+gateway --> webapp: "Нагороду схвалено Ректором"
+
+kafka -> notif: consume(award.approved)
+notif -> employee: Надіслати остаточне сповіщення про схвалення
+notif -> fac_sec: Надіслати сповіщення про схвалення (для інформації)
+
+@enduml
+
+

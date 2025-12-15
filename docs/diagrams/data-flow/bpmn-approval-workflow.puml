@@ -1,0 +1,89 @@
+@startuml BPMN_Approval_Workflow
+!theme plain
+
+title Award Approval Workflow - Activity Diagram
+
+start
+
+:Employee submits award;
+
+:System validates submission;
+
+if (Valid?) then (yes)
+    :Create review request;
+    :Determine award level;
+    
+    if (Award Level?) then (Department/Faculty)
+        :Assign to Faculty Secretary;
+        
+        :Faculty Secretary reviews award;
+        :Verify documents;
+        
+        switch (Secretary Decision?)
+        case (Approve)
+            :Record approval;
+            :Publish award;
+            :Notify employee of approval;
+            stop
+        case (Reject)
+            :Record rejection with reason;
+            :Notify employee of rejection;
+            
+            if (Resubmit?) then (yes)
+                :Employee edits award;
+                :Reset to draft;
+            else (no)
+                stop
+            endif
+        case (Escalate)
+            :Escalate to Dean;
+            
+            :Dean reviews award;
+            
+            if (Dean approves?) then (yes)
+                :Record approval;
+                :Publish award;
+                :Notify employee;
+                stop
+            else (no)
+                :Record rejection;
+                :Notify employee;
+                stop
+            endif
+        endswitch
+        
+    else (University/National/International)
+        :Assign to Faculty Secretary;
+        :Faculty Secretary reviews and recommends;
+        :Forward to Dean;
+        
+        :Dean reviews and recommends;
+        :Forward to Rector's Office;
+        
+        :Rector's Office reviews;
+        
+        if (Rector approves?) then (yes)
+            if (Secretary has authority?) then (yes)
+                :Secretary approves;
+            else (no)
+                :Escalate to Rector;
+                :Rector reviews and approves;
+            endif
+            :Publish award;
+            :Notify employee of approval;
+            stop
+        else (no)
+            :Record rejection;
+            :Notify employee of rejection;
+            stop
+        endif
+    endif
+    
+else (no)
+    :Return validation errors;
+    :Employee fixes errors;
+endif
+
+stop
+
+@enduml

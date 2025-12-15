@@ -1,0 +1,177 @@
+@startuml Class_Template
+' =============================================================================
+' Class Diagram Template
+' Award Monitoring & Tracking System
+' =============================================================================
+' Usage: Copy this template for domain model documentation
+' Best for: Entity relationships, service interfaces, module structure
+' =============================================================================
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+title [Module Name] - Class Diagram
+
+' =============================================================================
+' PACKAGES
+' =============================================================================
+package "domain.module_name" {
+    
+    ' =============================================================================
+    ' ABSTRACT BASE CLASSES
+    ' =============================================================================
+    abstract class BaseEntity {
+        -id: Long
+        -createdAt: Instant
+        -updatedAt: Instant
+        -version: Long
+        +getId(): Long
+        +getCreatedAt(): Instant
+        +getUpdatedAt(): Instant
+    }
+    
+    ' =============================================================================
+    ' ENTITIES
+    ' =============================================================================
+    class EntityName extends BaseEntity {
+        ' Private fields
+        -fieldName: FieldType
+        -status: EntityStatus
+        -relatedEntityId: Long
+        
+        ' Constructors
+        +EntityName()
+        +EntityName(param: Type)
+        
+        ' Getters/Setters (important ones only)
+        +getFieldName(): FieldType
+        +setFieldName(value: FieldType): void
+        
+        ' Business methods
+        +businessMethod(): ReturnType
+        +validate(): boolean
+        +isActive(): boolean
+    }
+    
+    ' =============================================================================
+    ' ENUMERATIONS
+    ' =============================================================================
+    enum EntityStatus {
+        DRAFT
+        ACTIVE
+        INACTIVE
+        ARCHIVED
+    }
+    
+    ' =============================================================================
+    ' VALUE OBJECTS
+    ' =============================================================================
+    class ValueObject <<Value Object>> {
+        -property1: Type1
+        -property2: Type2
+        +ValueObject(p1: Type1, p2: Type2)
+        +getProperty1(): Type1
+        +equals(other: Object): boolean
+        +hashCode(): int
+    }
+}
+
+' =============================================================================
+' INTERFACES
+' =============================================================================
+package "service" {
+    interface EntityService <<Service>> {
+        +create(command: CreateCommand): Entity
+        +update(command: UpdateCommand): Entity
+        +delete(id: Long): void
+        +findById(id: Long): Optional<Entity>
+        +findAll(pageable: Pageable): Page<Entity>
+    }
+    
+    class EntityServiceImpl implements EntityService {
+        -repository: EntityRepository
+        -validator: EntityValidator
+        -eventPublisher: EventPublisher
+    }
+}
+
+package "repository" {
+    interface EntityRepository <<Repository>> {
+        +findById(id: Long): Optional<Entity>
+        +findByStatus(status: EntityStatus): List<Entity>
+        +save(entity: Entity): Entity
+        +delete(entity: Entity): void
+        +existsById(id: Long): boolean
+    }
+}
+
+' =============================================================================
+' RELATIONSHIPS
+' =============================================================================
+
+' Association (simple reference)
+' EntityA --> EntityB : "uses"
+
+' Aggregation (whole-part, part can exist independently)
+' EntityA o-- EntityB : "contains"
+
+' Composition (whole-part, part cannot exist independently)  
+' EntityA *-- EntityB : "owns"
+
+' Inheritance
+' ChildEntity --|> ParentEntity
+
+' Interface Implementation
+' ServiceImpl ..|> Service
+
+' Dependency (uses temporarily)
+' EntityA ..> EntityB : "depends on"
+
+' Example relationships
+EntityName --> EntityStatus : "has"
+EntityServiceImpl --> EntityRepository : "uses"
+EntityServiceImpl --> EntityName : "manages"
+
+' =============================================================================
+' CARDINALITY
+' =============================================================================
+' "1" - exactly one
+' "0..1" - zero or one
+' "*" or "0..*" - zero or many
+' "1..*" - one or many
+
+' Example with cardinality
+' EntityA "1" --> "*" EntityB : "has many"
+
+' =============================================================================
+' STEREOTYPES
+' =============================================================================
+' <<Entity>> - domain entity
+' <<Value Object>> - immutable value object
+' <<Service>> - business service
+' <<Repository>> - data access
+' <<Controller>> - API controller
+' <<DTO>> - data transfer object
+' <<Event>> - domain event
+' <<Factory>> - factory pattern
+
+' =============================================================================
+' NOTES
+' =============================================================================
+note right of EntityName
+    Business rules:
+    • Rule 1
+    • Rule 2
+end note
+
+note bottom of EntityRepository
+    Database: PostgreSQL
+    Schema: public
+    Table: entity_names
+end note
+
+@enduml
+
+
+

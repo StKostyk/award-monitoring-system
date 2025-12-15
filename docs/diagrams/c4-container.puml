@@ -1,0 +1,88 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Award Monitoring & Tracking System - Container Diagram (C4 Level 2)
+
+LAYOUT_WITH_LEGEND()
+
+' Actors
+Person(employee, "Employee", "University faculty/staff")
+Person(reviewer, "Reviewer", "Faculty Secretary, Dean, Rector's Secretary, Rector")
+Person(admin, "System Admin", "IT operations")
+
+' System Boundary
+System_Boundary(award_system, "Award Monitoring & Tracking System") {
+    
+    ' Frontend Containers
+    Container(web_app, "Web Application", "Angular 20+, TypeScript", "User interface for award submission, review, dashboards, and administration")
+    Container(pwa, "Mobile PWA", "Angular PWA", "Mobile-optimized interface for quick submissions and status tracking")
+    
+    ' API Layer
+    Container(api_gateway, "API Gateway", "Spring Cloud Gateway", "Request routing, rate limiting, authentication, load balancing")
+    
+    ' Backend Services
+    Container(core_api, "Core API Service", "Spring Boot 3.2+, Java 21", "Award management, user management, workflow engine, business logic")
+    Container(auth_service, "Authentication Service", "Spring Security 6+", "OAuth2, JWT token management, RBAC, session management")
+    Container(notification_service, "Notification Service", "Spring Boot", "Email, SMS, in-app, push notification delivery")
+    Container(document_processor, "Document Processor", "Spring Boot", "Document validation, AI integration, file management")
+    
+    ' Data Stores
+    ContainerDb(postgres, "PostgreSQL Database", "PostgreSQL 17", "Primary data storage: users, awards, workflows, audit logs")
+    ContainerDb(redis, "Redis Cache", "Redis 7+", "Session cache, frequently accessed data, rate limiting")
+    ContainerDb(elasticsearch, "Search Engine", "Elasticsearch 8+", "Full-text search, analytics aggregation, award indexing")
+    
+    ' Message Broker
+    ContainerQueue(kafka, "Message Broker", "Apache Kafka", "Event streaming, async processing, inter-service communication")
+}
+
+' External Systems
+System_Ext(ldap, "University LDAP/AD", "Authentication provider")
+System_Ext(ai_service, "Cloud AI Service", "Document OCR/parsing")
+System_Ext(smtp, "Email Server", "Email delivery")
+System_Ext(sms, "SMS Gateway", "SMS delivery")
+System_Ext(storage, "File Storage", "Document storage")
+
+' Relationships - User to Frontend
+Rel(employee, web_app, "Uses", "HTTPS")
+Rel(employee, pwa, "Uses", "HTTPS")
+Rel(reviewer, web_app, "Uses", "HTTPS")
+Rel(admin, web_app, "Uses", "HTTPS")
+
+' Relationships - Frontend to API Gateway
+Rel(web_app, api_gateway, "API calls", "REST/HTTPS")
+Rel(pwa, api_gateway, "API calls", "REST/HTTPS")
+
+' Relationships - API Gateway to Services
+Rel(api_gateway, core_api, "Routes requests", "HTTP")
+Rel(api_gateway, auth_service, "Authentication", "HTTP")
+Rel(api_gateway, notification_service, "Notification APIs", "HTTP")
+
+' Relationships - Service to Service
+Rel(core_api, auth_service, "Validates tokens", "HTTP")
+Rel(core_api, document_processor, "Document processing", "HTTP/Kafka")
+Rel(core_api, notification_service, "Sends notifications", "Kafka")
+
+' Relationships - Services to Data
+Rel(core_api, postgres, "Reads/Writes data", "JDBC")
+Rel(core_api, redis, "Caches data", "Redis Protocol")
+Rel(core_api, elasticsearch, "Search/Index", "REST")
+Rel(auth_service, postgres, "User data", "JDBC")
+Rel(auth_service, redis, "Session data", "Redis Protocol")
+Rel(notification_service, postgres, "Notification logs", "JDBC")
+
+' Relationships - Services to Kafka
+Rel(core_api, kafka, "Publishes events", "Kafka Protocol")
+Rel(notification_service, kafka, "Consumes events", "Kafka Protocol")
+Rel(document_processor, kafka, "Publishes/Consumes", "Kafka Protocol")
+
+' Relationships - External Systems
+Rel(auth_service, ldap, "Authenticates", "LDAP")
+Rel(document_processor, ai_service, "OCR requests", "REST")
+Rel(document_processor, storage, "Store/retrieve files", "REST")
+Rel(notification_service, smtp, "Send emails", "SMTP")
+Rel(notification_service, sms, "Send SMS", "REST")
+
+@enduml
+
+
+

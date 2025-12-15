@@ -1,0 +1,131 @@
+@startuml StateMachine_Award_Request_UA
+!theme plain
+skinparam state {
+    BackgroundColor<<draft>> LightBlue
+    BackgroundColor<<pending>> LightYellow
+    BackgroundColor<<review>> Orange
+    BackgroundColor<<escalated>> LightCoral
+    BackgroundColor<<approved>> LightGreen
+    BackgroundColor<<rejected>> Pink
+    BackgroundColor<<returned>> LightGray
+    BackgroundColor<<archived>> DarkGray
+}
+
+title Діаграма Скінченного Автомата Запиту на Нагороду
+
+[*] --> DRAFT <<draft>> : Працівник створює нагороду
+
+state DRAFT <<draft>> {
+    [*] --> Editing
+    Editing --> Editing : Зберегти зміни
+    Editing --> DocumentUploaded : Завантажити сертифікат
+    DocumentUploaded --> AIProcessing : Запустити ШІ-парсинг
+    AIProcessing --> MetadataExtracted : ШІ завершено
+    MetadataExtracted --> Editing : Працівник перевіряє
+}
+
+DRAFT --> SUBMITTED <<pending>> : Працівник подає\n[Всі обов'язкові поля заповнені]
+
+state SUBMITTED <<pending>> {
+    [*] --> AwaitingReviewer
+    AwaitingReviewer --> ReviewerAssigned : Система призначає рецензента
+}
+
+note right of SUBMITTED
+    Першим рецензентом завжди є
+    Секретар Факультету
+end note
+
+SUBMITTED --> IN_REVIEW <<review>> : Рецензент відкриває запит
+
+state IN_REVIEW <<review>> {
+    [*] --> UnderReview
+    UnderReview --> DocumentVerification : Верифікація сертифіката
+    DocumentVerification --> DecisionPending : Верифікація завершена
+    DecisionPending --> [*] : Рішення прийнято
+}
+
+IN_REVIEW --> APPROVED <<approved>> : Рецензент схвалює\n[Більше рівнів не потрібно]
+IN_REVIEW --> REJECTED <<rejected>> : Рецензент відхиляє\n[З причиною]
+IN_REVIEW --> ESCALATED <<escalated>> : Рецензент ескалює\n[Потрібні вищі повноваження]
+IN_REVIEW --> RETURNED <<returned>> : Рецензент повертає\n[Потрібні виправлення]
+
+state ESCALATED <<escalated>> {
+    [*] --> Level2_Dean
+    Level2_Dean --> Level3_RectorSecretary : Декан ескалює
+    Level3_RectorSecretary --> Level4_Rector : Секретар ескалює
+}
+
+note right of ESCALATED
+    Рівні ескалації:
+    - Декан перевіряє від Секретаря Факультету
+    - Ректор має остаточні повноваження
+end note
+
+ESCALATED --> IN_REVIEW : Новий рецензент відкриває\n[На вищому рівні]
+
+state RETURNED <<returned>> {
+    [*] --> AwaitingCorrections
+    AwaitingCorrections --> CorrectionsMade : Працівник редагує
+}
+
+RETURNED --> IN_REVIEW : Працівник повторно подає\n[В межах терміну]
+RETURNED --> EXPIRED : Термін минув\n[Без повторного подання]
+
+state REJECTED <<rejected>> {
+    [*] --> RejectionNotified
+    RejectionNotified --> AppealWindow : 7 днів на апеляцію
+}
+
+REJECTED --> DRAFT : Працівник створює нове подання\n[З виправленнями]
+
+state APPROVED <<approved>> {
+    [*] --> Published
+    Published --> VerificationBadgeAdded : Документи верифіковано
+}
+
+note right of APPROVED
+    Нагорода тепер публічно видима
+end note
+
+APPROVED --> ARCHIVED <<archived>> : Період зберігання минув
+
+state ARCHIVED <<archived>>
+
+note right of ARCHIVED
+    Нагорода збережена для історичного запису
+    Персональні дані анонімізовані згідно GDPR
+end note
+
+ARCHIVED --> [*]
+
+' Переходи з таймаутом
+SUBMITTED --> EXPIRED : Термін рецензування перевищено\n[Налаштовуваний таймаут]
+IN_REVIEW --> EXPIRED : Термін рішення перевищено
+
+state EXPIRED
+
+note right of EXPIRED
+    Прострочені запити вимагають
+    ручного втручання або нового подання
+end note
+
+EXPIRED --> [*]
+
+' Легенда
+legend right
+    |= Стан |= Опис |
+    | DRAFT | Нагорода готується |
+    | SUBMITTED | Очікує першого рецензування |
+    | IN_REVIEW | Зараз на рецензуванні |
+    | ESCALATED | Передано вищим повноваженням |
+    | APPROVED | Повністю схвалено, опубліковано |
+    | REJECTED | Відхилено рецензентом |
+    | RETURNED | Повернуто на виправлення |
+    | ARCHIVED | Переміщено в архів |
+    | EXPIRED | Автоматично прострочено |
+endlegend
+
+@enduml
+
+

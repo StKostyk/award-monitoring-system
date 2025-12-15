@@ -1,0 +1,87 @@
+@startuml C4_Container_UA
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Контейнерів (C4 Рівень 2)
+
+LAYOUT_WITH_LEGEND()
+
+' Актори
+Person(employee, "Працівник", "Викладач/співробітник університету")
+Person(reviewer, "Рецензент", "Секретар Факультету, Декан, Секретар Ректора, Ректор")
+Person(admin, "Системний Адміністратор", "ІТ-операції")
+
+' Межі Системи
+System_Boundary(award_system, "Система Моніторингу та Відстеження Нагород") {
+    
+    ' Frontend Контейнери
+    Container(web_app, "Веб-Додаток", "Angular 20+, TypeScript", "Інтерфейс користувача для подання нагород, рецензування, панелей та адміністрування")
+    Container(pwa, "Мобільний PWA", "Angular PWA", "Мобільно-оптимізований інтерфейс для швидких подань та відстеження статусу")
+    
+    ' API Шар
+    Container(api_gateway, "API Шлюз", "Spring Cloud Gateway", "Маршрутизація запитів, обмеження швидкості, аутентифікація, балансування навантаження")
+    
+    ' Backend Сервіси
+    Container(core_api, "Основний API Сервіс", "Spring Boot 3.2+, Java 21", "Управління нагородами, користувачами, механізм робочих процесів, бізнес-логіка")
+    Container(auth_service, "Сервіс Аутентифікації", "Spring Security 6+", "OAuth2, управління JWT токенами, RBAC, управління сесіями")
+    Container(notification_service, "Сервіс Сповіщень", "Spring Boot", "Доставка email, SMS, in-app, push сповіщень")
+    Container(document_processor, "Обробник Документів", "Spring Boot", "Валідація документів, інтеграція ШІ, управління файлами")
+    
+    ' Сховища Даних
+    ContainerDb(postgres, "База Даних PostgreSQL", "PostgreSQL 17", "Основне сховище даних: користувачі, нагороди, робочі процеси, журнали аудиту")
+    ContainerDb(redis, "Redis Кеш", "Redis 7+", "Кеш сесій, часто запитувані дані, обмеження швидкості")
+    ContainerDb(elasticsearch, "Пошуковий Рушій", "Elasticsearch 8+", "Повнотекстовий пошук, аналітична агрегація, індексація нагород")
+    
+    ' Брокер Повідомлень
+    ContainerQueue(kafka, "Брокер Повідомлень", "Apache Kafka", "Потокова передача подій, асинхронна обробка, міжсервісна комунікація")
+}
+
+' Зовнішні Системи
+System_Ext(ldap, "Університетський LDAP/AD", "Провайдер аутентифікації")
+System_Ext(ai_service, "Хмарний ШІ-Сервіс", "OCR/парсинг документів")
+System_Ext(smtp, "Поштовий Сервер", "Доставка email")
+System_Ext(sms, "SMS-Шлюз", "Доставка SMS")
+System_Ext(storage, "Файлове Сховище", "Зберігання документів")
+
+' Зв'язки - Користувач до Frontend
+Rel(employee, web_app, "Використовує", "HTTPS")
+Rel(employee, pwa, "Використовує", "HTTPS")
+Rel(reviewer, web_app, "Використовує", "HTTPS")
+Rel(admin, web_app, "Використовує", "HTTPS")
+
+' Зв'язки - Frontend до API Шлюзу
+Rel(web_app, api_gateway, "API виклики", "REST/HTTPS")
+Rel(pwa, api_gateway, "API виклики", "REST/HTTPS")
+
+' Зв'язки - API Шлюз до Сервісів
+Rel(api_gateway, core_api, "Маршрутизує запити", "HTTP")
+Rel(api_gateway, auth_service, "Аутентифікація", "HTTP")
+Rel(api_gateway, notification_service, "API сповіщень", "HTTP")
+
+' Зв'язки - Сервіс до Сервісу
+Rel(core_api, auth_service, "Валідує токени", "HTTP")
+Rel(core_api, document_processor, "Обробка документів", "HTTP/Kafka")
+Rel(core_api, notification_service, "Надсилає сповіщення", "Kafka")
+
+' Зв'язки - Сервіси до Даних
+Rel(core_api, postgres, "Читає/записує дані", "JDBC")
+Rel(core_api, redis, "Кешує дані", "Redis Protocol")
+Rel(core_api, elasticsearch, "Пошук/індексація", "REST")
+Rel(auth_service, postgres, "Дані користувачів", "JDBC")
+Rel(auth_service, redis, "Дані сесій", "Redis Protocol")
+Rel(notification_service, postgres, "Журнали сповіщень", "JDBC")
+
+' Зв'язки - Сервіси до Kafka
+Rel(core_api, kafka, "Публікує події", "Kafka Protocol")
+Rel(notification_service, kafka, "Споживає події", "Kafka Protocol")
+Rel(document_processor, kafka, "Публікує/споживає", "Kafka Protocol")
+
+' Зв'язки - Зовнішні Системи
+Rel(auth_service, ldap, "Аутентифікує", "LDAP")
+Rel(document_processor, ai_service, "OCR запити", "REST")
+Rel(document_processor, storage, "Зберігання/отримання файлів", "REST")
+Rel(notification_service, smtp, "Надсилає emails", "SMTP")
+Rel(notification_service, sms, "Надсилає SMS", "REST")
+
+@enduml
+
+

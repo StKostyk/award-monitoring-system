@@ -1,0 +1,44 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Award Monitoring & Tracking System - System Context Diagram (C4 Level 1)
+
+LAYOUT_WITH_LEGEND()
+
+' Actors / People
+Person(employee, "Employee", "University faculty/staff member who submits and tracks awards")
+Person(faculty_secretary, "Faculty Secretary", "Reviews and approves faculty-level awards")
+Person(dean, "Dean", "Faculty leadership, reviews escalated awards")
+Person(rector_secretary, "Rector's Secretary", "Reviews university-level awards")
+Person(rector, "Rector", "Final approval authority for university awards")
+Person(system_admin, "System Administrator", "IT operations and system maintenance")
+
+' Main System
+System(award_system, "Award Monitoring & Tracking System", "Comprehensive platform for managing, tracking, and validating employee awards with AI-powered document processing and multi-level approval workflows")
+
+' External Systems
+System_Ext(ldap, "University LDAP/AD", "User authentication and employee data synchronization")
+System_Ext(ai_service, "Cloud AI Service", "Document OCR and metadata extraction (Azure Cognitive Services)")
+System_Ext(email_service, "Email Server", "SMTP server for email notifications")
+System_Ext(sms_gateway, "SMS Gateway", "SMS alerts for critical notifications")
+System_Ext(file_storage, "Cloud File Storage", "Certificate and document storage (S3/Azure Blob)")
+
+' Relationships - Actors to System
+Rel(employee, award_system, "Submits awards, tracks status, views public awards", "HTTPS")
+Rel(faculty_secretary, award_system, "Reviews awards, manages faculty submissions", "HTTPS")
+Rel(dean, award_system, "Approves faculty awards, assigns roles, views analytics", "HTTPS")
+Rel(rector_secretary, award_system, "Reviews university-level awards", "HTTPS")
+Rel(rector, award_system, "Final approval, executive dashboards, policy decisions", "HTTPS")
+Rel(system_admin, award_system, "System maintenance, monitoring, backup management", "HTTPS/SSH")
+
+' Relationships - System to External
+Rel(award_system, ldap, "Authenticates users, syncs employee data", "LDAP/LDAPS")
+Rel(award_system, ai_service, "Sends documents for parsing, receives metadata", "REST/HTTPS")
+Rel(award_system, email_service, "Sends notification emails", "SMTP/TLS")
+Rel(award_system, sms_gateway, "Sends SMS alerts", "REST/HTTPS")
+Rel(award_system, file_storage, "Stores/retrieves certificates and documents", "REST/HTTPS")
+
+@enduml
+
+
+

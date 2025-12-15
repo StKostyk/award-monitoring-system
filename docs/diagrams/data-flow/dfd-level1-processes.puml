@@ -1,0 +1,108 @@
+@startuml DFD_Level1_Processes
+!theme plain
+skinparam defaultTextAlignment center
+
+title Award Monitoring & Tracking System - Data Flow Diagram (Level 1 - Major Processes)
+
+' External Entities
+rectangle "Employee" as employee #LightBlue
+rectangle "Reviewer\n(Secretary/Dean/Rector)" as reviewer #LightGreen
+rectangle "Admin" as admin #LightGray
+
+rectangle "LDAP" as ldap #Pink
+rectangle "AI Service" as ai #Pink
+rectangle "Email/SMS" as notify_ext #Pink
+rectangle "File Storage" as storage #Pink
+
+' Processes
+usecase "1.0\nUser\nManagement" as P1 #White
+usecase "2.0\nAward\nSubmission" as P2 #White
+usecase "3.0\nDocument\nProcessing" as P3 #White
+usecase "4.0\nWorkflow\nEngine" as P4 #White
+usecase "5.0\nNotification\nService" as P5 #White
+usecase "6.0\nAnalytics\n& Reporting" as P6 #White
+usecase "7.0\nCompliance\n& Audit" as P7 #White
+usecase "8.0\nSearch\nEngine" as P8 #White
+
+' Data Stores
+database "D1\nUser\nDatabase" as D1 #LightYellow
+database "D2\nAward\nDatabase" as D2 #LightYellow
+database "D3\nDocument\nStore" as D3 #LightYellow
+database "D4\nWorkflow\nState" as D4 #LightYellow
+database "D5\nAudit\nLog" as D5 #LightYellow
+database "D6\nSearch\nIndex" as D6 #LightYellow
+database "D7\nCache" as D7 #LightYellow
+
+' Employee Flows
+employee --> P1 : Registration\nProfile Updates
+employee --> P2 : Award Data\nSubmission
+employee --> P3 : Document Upload
+P1 --> employee : Account Status
+P2 --> employee : Submission Confirmation
+P5 --> employee : Status Notifications
+P6 --> employee : Personal Dashboard
+
+' Reviewer Flows
+reviewer --> P4 : Review Decisions
+P4 --> reviewer : Review Queue
+P5 --> reviewer : Assignment Notifications
+P6 --> reviewer : Analytics Reports
+
+' Admin Flows
+admin --> P1 : User Management
+admin --> P7 : Audit Queries
+P7 --> admin : Audit Reports
+
+' Process to Process Flows
+P1 --> P7 : User Actions
+P2 --> P3 : Documents for Processing
+P2 --> P4 : Award for Review
+P2 --> P7 : Submission Events
+P3 --> P2 : Parsed Metadata
+P3 --> P8 : Index Document
+P4 --> P5 : Notification Triggers
+P4 --> P7 : Workflow Events
+P6 --> P8 : Search Queries
+
+' Process to Data Store Flows
+P1 --> D1 : Store User
+P1 <-- D1 : Read User
+P1 --> D7 : Cache Session
+
+P2 --> D2 : Store Award
+P2 <-- D2 : Read Award
+P2 --> D7 : Cache Award
+
+P3 --> D3 : Store Document
+P3 <-- D3 : Read Document
+
+P4 --> D4 : Store State
+P4 <-- D4 : Read State
+P4 --> D2 : Update Award Status
+
+P6 <-- D2 : Award Data
+P6 <-- D1 : User Data
+P6 --> D7 : Cache Reports
+
+P7 --> D5 : Store Audit Log
+P7 <-- D5 : Read Audit Log
+
+P8 --> D6 : Index Data
+P8 <-- D6 : Search Results
+
+' External System Flows
+P1 --> ldap : Auth Request
+ldap --> P1 : User Data
+
+P3 --> ai : Parse Request
+ai --> P3 : Parsed Data
+
+P3 --> storage : Store File
+storage --> P3 : File URL
+
+P5 --> notify_ext : Send Message
+
+@enduml
+
+
+

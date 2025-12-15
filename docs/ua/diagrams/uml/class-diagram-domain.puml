@@ -1,0 +1,326 @@
+@startuml Class_Diagram_Domain_UA
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену
+
+' Базова Сутність
+abstract class BaseEntity {
+    -id: Long
+    -createdAt: Instant
+    -updatedAt: Instant
+    -version: Long
+    +getId(): Long
+    +getCreatedAt(): Instant
+    +getUpdatedAt(): Instant
+}
+
+' Домен Користувачів та Організацій
+package "Домен Користувачів" <<Rectangle>> {
+    
+    class User extends BaseEntity {
+        -email: String
+        -firstName: String
+        -lastName: String
+        -passwordHash: String
+        -status: UserStatus
+        -organizationId: Long
+        -lastLoginAt: Instant
+        +getFullName(): String
+        +isActive(): boolean
+        +hasRole(role: RoleType): boolean
+        +activate(): void
+        +deactivate(): void
+        +suspend(): void
+    }
+    
+    enum UserStatus {
+        PENDING
+        ACTIVE
+        INACTIVE
+        SUSPENDED
+        RETIRED
+        MEMORIAL
+    }
+    
+    class UserRole extends BaseEntity {
+        -userId: Long
+        -roleType: RoleType
+        -organizationId: Long
+        -validFrom: LocalDate
+        -validTo: LocalDate
+        +isValid(): boolean
+        +isExpired(): boolean
+    }
+    
+    enum RoleType {
+        EMPLOYEE
+        FACULTY_SECRETARY
+        DEAN
+        RECTOR_SECRETARY
+        RECTOR
+        SYSTEM_ADMIN
+        GDPR_OFFICER
+    }
+    
+    class Organization extends BaseEntity {
+        -name: String
+        -orgType: OrganizationType
+        -parentOrgId: Long
+        +getParent(): Organization
+        +getChildren(): List<Organization>
+        +getHierarchyPath(): String
+    }
+    
+    enum OrganizationType {
+        UNIVERSITY
+        FACULTY
+        DEPARTMENT
+    }
+}
+
+' Домен Нагород
+package "Домен Нагород" <<Rectangle>> {
+    
+    class Award extends BaseEntity {
+        -userId: Long
+        -categoryId: Long
+        -title: String
+        -description: String
+        -awardingOrganization: String
+        -awardDate: LocalDate
+        -status: AwardStatus
+        -verificationBadge: boolean
+        -impactScore: Integer
+        +submit(): void
+        +approve(): void
+        +reject(reason: String): void
+        +archive(): void
+        +isPublic(): boolean
+        +calculateImpactScore(): Integer
+    }
+    
+    enum AwardStatus {
+        DRAFT
+        PENDING
+        APPROVED
+        REJECTED
+        ARCHIVED
+    }
+    
+    class AwardCategory extends BaseEntity {
+        -name: String
+        -description: String
+        -level: RecognitionLevel
+        +requiresEscalation(): boolean
+        +getRequiredApprovalLevel(): int
+    }
+    
+    enum RecognitionLevel {
+        DEPARTMENT
+        FACULTY
+        UNIVERSITY
+        NATIONAL
+        INTERNATIONAL
+    }
+    
+    class Document extends BaseEntity {
+        -awardId: Long
+        -requestId: Long
+        -filePath: String
+        -fileName: String
+        -fileType: String
+        -fileSize: Long
+        -storageUrl: String
+        -parsedMetadata: JsonNode
+        -confidenceScore: Double
+        -status: DocumentStatus
+        -processedAt: Instant
+        +isHighConfidence(): boolean
+        +needsManualReview(): boolean
+        +getMetadataField(field: String): String
+    }
+    
+    enum DocumentStatus {
+        UPLOADING
+        UPLOADED
+        PROCESSING
+        PROCESSED
+        MANUAL_REVIEW
+        VERIFIED
+        ARCHIVED
+    }
+}
+
+' Домен Робочих Процесів
+package "Домен Робочих Процесів" <<Rectangle>> {
+    
+    class AwardRequest extends BaseEntity {
+        -awardId: Long
+        -submitterId: Long
+        -status: RequestStatus
+        -currentReviewerId: Long
+        -currentLevel: ApprovalLevel
+        -submittedAt: Instant
+        -deadline: Instant
+        +assignReviewer(reviewerId: Long): void
+        +escalate(level: ApprovalLevel): void
+        +approve(): void
+        +reject(reason: String): void
+        +returnForCorrections(notes: String): void
+        +isExpired(): boolean
+    }
+    
+    enum RequestStatus {
+        SUBMITTED
+        IN_REVIEW
+        ESCALATED
+        APPROVED
+        REJECTED
+        RETURNED
+        EXPIRED
+    }
+    
+    enum ApprovalLevel {
+        FACULTY_SECRETARY
+        DEAN
+        RECTOR_SECRETARY
+        RECTOR
+    }
+    
+    class ReviewDecision extends BaseEntity {
+        -requestId: Long
+        -reviewerId: Long
+        -decision: DecisionType
+        -level: ApprovalLevel
+        -comments: String
+        -decidedAt: Instant
+        +isApproval(): boolean
+        +isRejection(): boolean
+        +isEscalation(): boolean
+    }
+    
+    enum DecisionType {
+        APPROVED
+        REJECTED
+        ESCALATED
+        RETURNED
+    }
+}
+
+' Домен Відповідності
+package "Домен Відповідності" <<Rectangle>> {
+    
+    class AuditLog extends BaseEntity {
+        -userId: Long
+        -actionType: String
+        -entityType: String
+        -entityId: Long
+        -oldValues: JsonNode
+        -newValues: JsonNode
+        -ipAddress: String
+        -userAgent: String
+        +getDiff(): JsonNode
+    }
+    
+    class ConsentRecord extends BaseEntity {
+        -userId: Long
+        -consentType: ConsentType
+        -granted: boolean
+        -grantedAt: Instant
+        -withdrawnAt: Instant
+        -consentVersion: String
+        +isActive(): boolean
+        +withdraw(): void
+    }
+    
+    enum ConsentType {
+        DATA_PROCESSING
+        PUBLIC_VISIBILITY
+        EMAIL_NOTIFICATIONS
+        SMS_NOTIFICATIONS
+        ANALYTICS
+    }
+}
+
+' Домен Сповіщень
+package "Домен Сповіщень" <<Rectangle>> {
+    
+    class Notification extends BaseEntity {
+        -userId: Long
+        -type: NotificationType
+        -title: String
+        -message: String
+        -read: boolean
+        -channel: NotificationChannel
+        -sentAt: Instant
+        -readAt: Instant
+        +markAsRead(): void
+        +isRead(): boolean
+    }
+    
+    enum NotificationType {
+        AWARD_SUBMITTED
+        AWARD_APPROVED
+        AWARD_REJECTED
+        AWARD_RETURNED
+        REVIEW_ASSIGNED
+        DEADLINE_REMINDER
+        SYSTEM_ALERT
+    }
+    
+    enum NotificationChannel {
+        EMAIL
+        SMS
+        IN_APP
+        PUSH
+    }
+    
+    class NotificationPreference extends BaseEntity {
+        -userId: Long
+        -eventType: NotificationType
+        -emailEnabled: boolean
+        -smsEnabled: boolean
+        -pushEnabled: boolean
+        +isEnabled(channel: NotificationChannel): boolean
+    }
+}
+
+' Зв'язки
+User "1" --> "*" UserRole : має
+User --> UserStatus : має
+UserRole --> RoleType : має
+User "*" --> "1" Organization : належить до
+Organization --> OrganizationType : має
+Organization "1" --> "*" Organization : батьківська/дочірні
+
+User "1" --> "*" Award : володіє
+Award "*" --> "1" AwardCategory : категоризована
+Award --> AwardStatus : має
+AwardCategory --> RecognitionLevel : має
+
+Award "1" --> "*" Document : має
+Document --> DocumentStatus : має
+
+Award "1" --> "1" AwardRequest : ініційована
+AwardRequest --> RequestStatus : має
+AwardRequest --> ApprovalLevel : поточний рівень
+AwardRequest "1" --> "*" ReviewDecision : має рішення
+ReviewDecision --> DecisionType : має
+ReviewDecision --> ApprovalLevel : на рівні
+ReviewDecision "*" --> "1" User : прийнято
+
+User "1" --> "*" AuditLog : виконував
+User "1" --> "*" ConsentRecord : має згоди
+ConsentRecord --> ConsentType : для
+
+User "1" --> "*" Notification : отримує
+Notification --> NotificationType : типу
+Notification --> NotificationChannel : через
+User "1" --> "*" NotificationPreference : має налаштування
+NotificationPreference --> NotificationType : для події
+
+@enduml
+
+

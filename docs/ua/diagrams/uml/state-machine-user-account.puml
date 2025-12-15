@@ -1,0 +1,151 @@
+@startuml StateMachine_User_Account_UA
+!theme plain
+skinparam state {
+    BackgroundColor<<pending>> LightYellow
+    BackgroundColor<<active>> LightGreen
+    BackgroundColor<<inactive>> LightGray
+    BackgroundColor<<suspended>> LightCoral
+    BackgroundColor<<retired>> LightBlue
+    BackgroundColor<<memorial>> Lavender
+}
+
+title Діаграма Скінченного Автомата Облікового Запису Користувача
+
+[*] --> PENDING <<pending>> : Користувач реєструє акаунт
+
+state PENDING <<pending>> {
+    [*] --> EmailSent
+    EmailSent --> AwaitingVerification : Email верифікації надіслано
+    AwaitingVerification --> VerificationClicked : Користувач клацає посилання
+    
+    note right of AwaitingVerification
+        24-годинне вікно верифікації
+    end note
+}
+
+PENDING --> ACTIVE <<active>> : Email верифіковано\nАБО Адмін схвалює
+PENDING --> [*] : Верифікація прострочена\n[Акаунт видалено]
+
+state ACTIVE <<active>> {
+    [*] --> NormalOperation
+    
+    state NormalOperation {
+        [*] --> Authenticated
+        Authenticated --> LoggedOut : Вихід
+        LoggedOut --> Authenticated : Вхід
+        Authenticated --> PasswordChanged : Зміна пароля
+        PasswordChanged --> Authenticated : Підтверджено
+        Authenticated --> ProfileUpdated : Оновлення профілю
+        ProfileUpdated --> Authenticated : Збережено
+    }
+    
+    state RoleManagement {
+        [*] --> RolesAssigned
+        RolesAssigned --> RoleAdded : Декан/Ректор призначає роль
+        RolesAssigned --> RoleRemoved : Декан/Ректор знімає роль
+        RoleAdded --> RolesAssigned
+        RoleRemoved --> RolesAssigned
+    }
+    
+    NormalOperation --> RoleManagement : Зміна ролі
+    RoleManagement --> NormalOperation : Зміну завершено
+}
+
+ACTIVE --> INACTIVE <<inactive>> : Адмін деактивує\nАБО HR синхронізація (відпустка)
+ACTIVE --> SUSPENDED <<suspended>> : Порушення безпеки\nАБО Дія адміна
+ACTIVE --> RETIRED <<retired>> : HR синхронізація (вихід на пенсію)
+ACTIVE --> MEMORIAL <<memorial>> : HR синхронізація (померлий)
+
+state INACTIVE <<inactive>> {
+    [*] --> TemporarilyDisabled
+    TemporarilyDisabled : - Не може увійти
+    TemporarilyDisabled : - Нагороди збережено
+    TemporarilyDisabled : - Профіль видимий
+    
+    note right of TemporarilyDisabled
+        Зазвичай використовується для:
+        - Відпустки
+        - Тимчасове призупинення
+        - Тривала відсутність
+    end note
+}
+
+INACTIVE --> ACTIVE : Адмін реактивує\nАБО HR синхронізація (повернення з відпустки)
+
+state SUSPENDED <<suspended>> {
+    [*] --> UnderReview
+    UnderReview : - Не може увійти
+    UnderReview : - Всі дії заблоковано
+    UnderReview : - Під розслідуванням
+    
+    note right of UnderReview
+        Використовується для:
+        - Інцидентів безпеки
+        - Порушень політики
+        - Очікування розслідування
+    end note
+}
+
+SUSPENDED --> ACTIVE : Адмін знімає блокування після перевірки
+SUSPENDED --> [*] : Акаунт припинено
+
+state RETIRED <<retired>> {
+    [*] --> RetiredStatus
+    RetiredStatus : - Доступ тільки для читання власних нагород
+    RetiredStatus : - Не може подавати нові нагороди
+    RetiredStatus : - Профіль позначено як пенсіонер
+    RetiredStatus : - Історичні дані збережено
+    
+    note right of RetiredStatus
+        Пенсіонери можуть переглядати
+        свої історичні нагороди
+        але не можуть подавати нові
+    end note
+}
+
+RETIRED --> [*] : Період зберігання даних минув\n[Дані анонімізовано згідно GDPR]
+
+state MEMORIAL <<memorial>> {
+    [*] --> MemorialStatus
+    MemorialStatus : - Акаунт заблоковано
+    MemorialStatus : - Нагороди збережено як пам'ять
+    MemorialStatus : - Профіль позначено як меморіальний
+    MemorialStatus : - Спеціальний меморіальний значок
+    
+    note right of MemorialStatus
+        Нагороди померлого працівника
+        збережено для інституційного
+        історичного запису з
+        відповідним меморіальним позначенням
+    end note
+}
+
+MEMORIAL --> [*] : Період зберігання даних минув\n[Інституційний архів]
+
+' Події безпеки
+state "Події Безпеки" as security {
+    state "Невдалі Спроби Входу" as failed_login
+    state "Підозріла Активність" as suspicious
+    
+    failed_login : 5 невдалих спроб
+    suspicious : Незвичайні патерни доступу
+}
+
+ACTIVE --> security : Виявлено подію безпеки
+security --> SUSPENDED : Поріг перевищено
+security --> ACTIVE : Подію вирішено
+
+' Легенда
+legend right
+    |= Стан |= Опис |
+    | PENDING | Очікує верифікації |
+    | ACTIVE | Нормальна робота |
+    | INACTIVE | Тимчасово вимкнено |
+    | SUSPENDED | Призупинення з безпеки |
+    | RETIRED | Пенсіонер |
+    | MEMORIAL | Померлий працівник |
+endlegend
+
+@enduml
+
+

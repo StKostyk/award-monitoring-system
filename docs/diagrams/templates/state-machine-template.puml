@@ -1,0 +1,155 @@
+@startuml StateMachine_Template
+' =============================================================================
+' State Machine Diagram Template
+' Award Monitoring & Tracking System
+' =============================================================================
+' Usage: Copy this template and modify for entity lifecycle documentation
+' Best for: Award status, Request workflow, User account, Document processing
+' =============================================================================
+
+!theme plain
+
+' =============================================================================
+' STATE STYLING
+' =============================================================================
+skinparam state {
+    BackgroundColor<<initial>> LightBlue
+    BackgroundColor<<processing>> LightYellow
+    BackgroundColor<<success>> LightGreen
+    BackgroundColor<<error>> LightCoral
+    BackgroundColor<<final>> DarkGray
+}
+
+title [Entity Name] State Machine Diagram
+
+' =============================================================================
+' INITIAL STATE
+' =============================================================================
+[*] --> STATE_1 <<initial>> : Trigger event
+
+' =============================================================================
+' SIMPLE STATES
+' =============================================================================
+state STATE_1 <<initial>> {
+    [*] --> SubState1
+    SubState1 --> SubState2 : Internal transition
+    SubState2 --> [*]
+    
+    note right of SubState1
+        Description of what happens
+        in this sub-state
+    end note
+}
+
+state STATE_2 <<processing>> {
+    ' Processing state with timeout
+    state "Processing" as proc
+    proc : Entry: Start timer
+    proc : Do: Execute operation
+    proc : Exit: Stop timer
+}
+
+state STATE_3 <<success>> {
+    ' Success/completion state
+}
+
+state STATE_4 <<error>> {
+    ' Error/failure state
+}
+
+state STATE_5 <<final>> {
+    ' Terminal state
+}
+
+' =============================================================================
+' STATE TRANSITIONS
+' =============================================================================
+' Basic transition
+STATE_1 --> STATE_2 : Event trigger\n[Guard condition]
+
+' Transition with action
+STATE_2 --> STATE_3 : Success\n/ Action to perform
+
+' Error transition
+STATE_2 --> STATE_4 : Failure\n[Error condition]\n/ Log error
+
+' Recovery transition
+STATE_4 --> STATE_2 : Retry\n[Retry count < max]
+
+' Terminal transitions
+STATE_3 --> STATE_5 : Archive\n[Retention period elapsed]
+STATE_4 --> [*] : Abandon\n[Max retries exceeded]
+STATE_5 --> [*]
+
+' =============================================================================
+' CHOICE/DECISION POINTS
+' =============================================================================
+state decision <<choice>>
+STATE_2 --> decision : Evaluate
+decision --> STATE_3 : [condition = true]
+decision --> STATE_4 : [condition = false]
+
+' =============================================================================
+' FORK/JOIN (Parallel States)
+' =============================================================================
+state fork_state <<fork>>
+state join_state <<join>>
+
+STATE_1 --> fork_state
+fork_state --> ParallelState1
+fork_state --> ParallelState2
+ParallelState1 --> join_state
+ParallelState2 --> join_state
+join_state --> STATE_2
+
+' =============================================================================
+' HISTORY STATE
+' =============================================================================
+' [H] - Shallow history
+' [H*] - Deep history
+state CompositeState {
+    [H] --> LastActiveState
+    state LastActiveState
+}
+
+' =============================================================================
+' GUARD CONDITIONS
+' =============================================================================
+' Format: [condition] - only transition if condition is true
+' Examples:
+' [isValid]
+' [retryCount < 3]
+' [hasPermission]
+' [deadline not passed]
+
+' =============================================================================
+' ACTIONS
+' =============================================================================
+' Format: / action - execute action during transition
+' Examples:
+' / sendNotification
+' / updateDatabase
+' / logAuditEvent
+' / incrementCounter
+
+' =============================================================================
+' LEGEND
+' =============================================================================
+legend right
+    |= State Color |= Meaning |
+    | <<initial>> | Initial/Starting state |
+    | <<processing>> | Processing/In progress |
+    | <<success>> | Success/Completion |
+    | <<error>> | Error/Failure |
+    | <<final>> | Terminal/Archive |
+endlegend
+
+' =============================================================================
+' NOTES
+' =============================================================================
+note "State machine for [Entity] lifecycle management" as N1
+
+@enduml
+
+
+

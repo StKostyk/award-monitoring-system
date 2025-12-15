@@ -1,0 +1,79 @@
+@startuml DFD_Level2_Award_Submission
+!theme plain
+skinparam defaultTextAlignment center
+
+title Award Submission Process - Data Flow Diagram (Level 2)
+
+' External Entity
+rectangle "Employee" as employee #LightBlue
+
+' Sub-processes of Award Submission (2.0)
+usecase "2.1\nValidate\nInput" as P21 #White
+usecase "2.2\nCreate\nDraft" as P22 #White
+usecase "2.3\nAttach\nDocuments" as P23 #White
+usecase "2.4\nSubmit\nAward" as P24 #White
+usecase "2.5\nDetermine\nReview Level" as P25 #White
+usecase "2.6\nAssign\nReviewer" as P26 #White
+
+' Connected Processes
+usecase "3.0\nDocument\nProcessing" as P3 #LightGray
+usecase "4.0\nWorkflow\nEngine" as P4 #LightGray
+usecase "5.0\nNotification" as P5 #LightGray
+usecase "7.0\nAudit" as P7 #LightGray
+
+' Data Stores
+database "D2\nAward\nDatabase" as D2 #LightYellow
+database "D3\nDocument\nStore" as D3 #LightYellow
+database "D4\nWorkflow\nState" as D4 #LightYellow
+
+' Employee Flows
+employee --> P21 : Award Details\n(title, org, date, category)
+P22 --> employee : Draft ID
+P24 --> employee : Submission\nConfirmation
+
+' Internal Process Flows
+P21 --> P22 : Validated Data
+P21 --> employee : Validation Errors
+
+P22 --> D2 : Store Draft\n(status=DRAFT)
+P22 --> P7 : Draft Created Event
+
+P23 --> D3 : Document Reference
+P23 --> P3 : Document for\nAI Processing
+P3 --> P23 : Parsed Metadata
+
+employee --> P23 : Document Files
+employee --> P24 : Submit Command
+
+P24 --> P21 : Final Validation
+P24 --> D2 : Update Status\n(status=PENDING)
+P24 --> P25 : Award Data
+
+P25 --> D2 : Read Category
+P25 --> P26 : Award Level
+
+P26 --> D4 : Create Request\n(status=SUBMITTED)
+P26 --> P4 : Workflow Initiated
+P26 --> P5 : Notification Trigger
+
+P24 --> P7 : Submission Event
+
+' Notes
+note right of P21
+    Validation Rules:
+    • Required fields check
+    • Date range validation
+    • Duplicate detection
+    • Category validation
+end note
+
+note right of P25
+    Level Determination:
+    • DEPT/FAC → Faculty Secretary
+    • UNIV+ → Faculty Secretary → Dean → Rector
+end note
+
+@enduml
+
+
+

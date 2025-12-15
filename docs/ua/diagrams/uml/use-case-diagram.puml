@@ -1,0 +1,178 @@
+@startuml UseCase_Diagram_UA
+!theme plain
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+title Система Моніторингу та Відстеження Нагород - Діаграма Варіантів Використання
+
+left to right direction
+
+' Актори
+actor "Працівник" as employee
+actor "Секретар\nФакультету" as fac_sec
+actor "Декан" as dean
+actor "Секретар\nРектора" as rec_sec
+actor "Ректор" as rector
+actor "Системний\nАдміністратор" as admin
+actor "Відповідальний\nза GDPR" as gdpr
+
+' Зовнішні Актори
+actor "LDAP Система" as ldap <<зовнішній>>
+actor "ШІ-Сервіс" as ai <<зовнішній>>
+actor "Поштовий Сервер" as email <<зовнішній>>
+
+' Межі Системи
+rectangle "Система Моніторингу та Відстеження Нагород" {
+    
+    ' Варіанти Використання Управління Нагородами
+    package "Управління Нагородами" {
+        usecase "Подати Нагороду" as UC_SUBMIT
+        usecase "Завантажити Сертифікат" as UC_UPLOAD
+        usecase "Редагувати Чернетку" as UC_EDIT
+        usecase "Відстежити Статус Нагороди" as UC_TRACK
+        usecase "Переглянути Публічні Нагороди" as UC_VIEW_PUBLIC
+        usecase "Переглянути Власні Нагороди" as UC_VIEW_OWN
+        usecase "Повторно Подати Відхилену Нагороду" as UC_RESUBMIT
+    }
+    
+    ' Варіанти Використання Рецензування та Схвалення
+    package "Рецензування та Схвалення" {
+        usecase "Рецензувати Нагороду" as UC_REVIEW
+        usecase "Схвалити Нагороду" as UC_APPROVE
+        usecase "Відхилити Нагороду" as UC_REJECT
+        usecase "Ескалювати Нагороду" as UC_ESCALATE
+        usecase "Повернути на Виправлення" as UC_RETURN
+        usecase "Пакетне Схвалення Нагород" as UC_BATCH
+        usecase "Переглянути Чергу Рецензування" as UC_QUEUE
+    }
+    
+    ' Варіанти Використання Управління Користувачами
+    package "Управління Користувачами" {
+        usecase "Зареєструвати Акаунт" as UC_REGISTER
+        usecase "Увійти в Систему" as UC_LOGIN
+        usecase "Керувати Профілем" as UC_PROFILE
+        usecase "Призначити Ролі Користувачам" as UC_ROLES
+        usecase "Переглянути Каталог Користувачів" as UC_USERS
+    }
+    
+    ' Варіанти Використання Аналітики та Звітності
+    package "Аналітика та Звітність" {
+        usecase "Переглянути Персональну Панель" as UC_DASH_PERSONAL
+        usecase "Переглянути Панель Факультету" as UC_DASH_FACULTY
+        usecase "Переглянути Панель Університету" as UC_DASH_UNIV
+        usecase "Генерувати Звіти" as UC_REPORTS
+        usecase "Експортувати Дані" as UC_EXPORT
+    }
+    
+    ' Варіанти Використання Відповідності
+    package "Відповідність та Адміністрування" {
+        usecase "Керувати GDPR Згодами" as UC_CONSENT
+        usecase "Експортувати Персональні Дані" as UC_EXPORT_DATA
+        usecase "Запит на Видалення Даних" as UC_DELETE_DATA
+        usecase "Переглянути Журнали Аудиту" as UC_AUDIT
+        usecase "Керувати Політиками Зберігання" as UC_RETENTION
+        usecase "Конфігурація Системи" as UC_CONFIG
+        usecase "Моніторинг Здоров'я Системи" as UC_MONITOR
+    }
+    
+    ' Варіанти Використання Обробки Документів
+    package "Обробка Документів" {
+        usecase "Парсинг Документа (ШІ)" as UC_PARSE
+        usecase "Верифікація Документа" as UC_VERIFY
+        usecase "Позначити Помилки Парсингу" as UC_FLAG
+    }
+}
+
+' Зв'язки Працівника
+employee --> UC_SUBMIT
+employee --> UC_UPLOAD
+employee --> UC_EDIT
+employee --> UC_TRACK
+employee --> UC_VIEW_PUBLIC
+employee --> UC_VIEW_OWN
+employee --> UC_RESUBMIT
+employee --> UC_REGISTER
+employee --> UC_LOGIN
+employee --> UC_PROFILE
+employee --> UC_DASH_PERSONAL
+employee --> UC_CONSENT
+employee --> UC_EXPORT_DATA
+employee --> UC_DELETE_DATA
+employee --> UC_FLAG
+
+' Зв'язки Секретаря Факультету
+fac_sec --> UC_VIEW_PUBLIC
+fac_sec --> UC_QUEUE
+fac_sec --> UC_REVIEW
+fac_sec --> UC_APPROVE
+fac_sec --> UC_REJECT
+fac_sec --> UC_ESCALATE
+fac_sec --> UC_RETURN
+fac_sec --> UC_BATCH
+fac_sec --> UC_DASH_FACULTY
+fac_sec --> UC_REPORTS
+fac_sec --> UC_VERIFY
+
+' Зв'язки Декана
+dean --> UC_VIEW_PUBLIC
+dean --> UC_QUEUE
+dean --> UC_REVIEW
+dean --> UC_APPROVE
+dean --> UC_REJECT
+dean --> UC_ESCALATE
+dean --> UC_ROLES
+dean --> UC_DASH_FACULTY
+dean --> UC_REPORTS
+dean --> UC_EXPORT
+
+' Зв'язки Секретаря Ректора
+rec_sec --> UC_VIEW_PUBLIC
+rec_sec --> UC_QUEUE
+rec_sec --> UC_REVIEW
+rec_sec --> UC_APPROVE
+rec_sec --> UC_REJECT
+rec_sec --> UC_ESCALATE
+rec_sec --> UC_DASH_UNIV
+rec_sec --> UC_REPORTS
+
+' Зв'язки Ректора
+rector --> UC_VIEW_PUBLIC
+rector --> UC_REVIEW
+rector --> UC_APPROVE
+rector --> UC_REJECT
+rector --> UC_ROLES
+rector --> UC_DASH_UNIV
+rector --> UC_REPORTS
+rector --> UC_EXPORT
+
+' Зв'язки Системного Адміністратора
+admin --> UC_CONFIG
+admin --> UC_MONITOR
+admin --> UC_USERS
+admin --> UC_AUDIT
+
+' Зв'язки Відповідального за GDPR
+gdpr --> UC_AUDIT
+gdpr --> UC_RETENTION
+gdpr --> UC_CONSENT
+
+' Зв'язки Зовнішніх Систем
+UC_LOGIN ..> ldap : <<використовує>>
+UC_REGISTER ..> ldap : <<використовує>>
+UC_PARSE ..> ai : <<використовує>>
+UC_APPROVE ..> email : <<запускає>>
+UC_REJECT ..> email : <<запускає>>
+
+' Зв'язки Включення
+UC_SUBMIT ..> UC_UPLOAD : <<включає>>
+UC_SUBMIT ..> UC_PARSE : <<включає>>
+UC_REVIEW ..> UC_VERIFY : <<включає>>
+
+' Зв'язки Розширення
+UC_REVIEW <.. UC_ESCALATE : <<розширює>>
+UC_REVIEW <.. UC_RETURN : <<розширює>>
+UC_APPROVE <.. UC_BATCH : <<розширює>>
+
+@enduml
+
+
