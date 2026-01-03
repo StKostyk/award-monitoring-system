@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Award Monitoring & Tracking System - SpotBugs Exclusion Configuration
+    Defines acceptable false positives and intentional patterns
+    Version: 1.0
+    Last Updated: January 2026
+    
+    Run with: mvn spotbugs:check
+-->
+
+<FindBugsFilter
+    xmlns="https://github.com/spotbugs/filter/3.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
+    https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- ===================================================================== -->
+    <!-- General Exclusions -->
+    <!-- ===================================================================== -->
+
+    <!-- Exclude generated code -->
+    <Match>
+        <Package name="~.*\.generated\..*"/>
+    </Match>
+
+    <!-- Exclude test classes from certain checks -->
+    <Match>
+        <Class name="~.*Test$"/>
+        <Or>
+            <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+            <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+            <Bug pattern="NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+        </Or>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- Spring Framework Patterns -->
+    <!-- ===================================================================== -->
+
+    <!-- Spring @Autowired fields are initialized by Spring -->
+    <Match>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+        <Or>
+            <Annotation name="org.springframework.beans.factory.annotation.Autowired"/>
+            <Annotation name="jakarta.inject.Inject"/>
+            <Annotation name="org.springframework.beans.factory.annotation.Value"/>
+        </Or>
+    </Match>
+
+    <!-- Spring @Bean methods may return null intentionally -->
+    <Match>
+        <Bug pattern="NP_NONNULL_RETURN_VIOLATION"/>
+        <Method annotation="org.springframework.context.annotation.Bean"/>
+    </Match>
+
+    <!-- Spring configuration classes -->
+    <Match>
+        <Class name="~.*Configuration$"/>
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+    </Match>
+
+    <!-- Spring controllers - parameter handling -->
+    <Match>
+        <Class name="~.*Controller$"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- JPA/Hibernate Patterns -->
+    <!-- ===================================================================== -->
+
+    <!-- Entity classes with lazy initialization -->
+    <Match>
+        <Annotation name="jakarta.persistence.Entity"/>
+        <Or>
+            <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+            <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+            <Bug pattern="NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+            <Bug pattern="SS_SHOULD_BE_STATIC"/>
+        </Or>
+    </Match>
+
+    <!-- Entity ID fields -->
+    <Match>
+        <Field annotation="jakarta.persistence.Id"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
+    <!-- Embeddable classes -->
+    <Match>
+        <Annotation name="jakarta.persistence.Embeddable"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- Lombok Patterns -->
+    <!-- ===================================================================== -->
+
+    <!-- Lombok @Data and @Builder classes -->
+    <Match>
+        <Or>
+            <Annotation name="lombok.Data"/>
+            <Annotation name="lombok.Builder"/>
+            <Annotation name="lombok.NoArgsConstructor"/>
+            <Annotation name="lombok.AllArgsConstructor"/>
+            <Annotation name="lombok.Value"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+            <Bug pattern="NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+        </Or>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- DTO/Record Patterns -->
+    <!-- ===================================================================== -->
+
+    <!-- DTO classes are data carriers -->
+    <Match>
+        <Class name="~.*DTO$"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!-- Request/Response objects -->
+    <Match>
+        <Or>
+            <Class name="~.*Request$"/>
+            <Class name="~.*Response$"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!-- Java Records are immutable by design -->
+    <Match>
+        <Class name="~.*Record$"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- Serialization Patterns -->
+    <!-- ===================================================================== -->
+
+    <!-- We don't use Java serialization - using JSON -->
+    <Match>
+        <Bug pattern="SE_NO_SERIALVERSIONID"/>
+    </Match>
+    <Match>
+        <Bug pattern="SE_BAD_FIELD"/>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- Security Exclusions (intentional patterns) -->
+    <!-- ===================================================================== -->
+
+    <!-- Password handling in DTOs (encrypted/hashed elsewhere) -->
+    <Match>
+        <Class name="~.*PasswordDTO$"/>
+        <Bug pattern="HARD_CODE_PASSWORD"/>
+    </Match>
+
+    <!-- Test credentials are intentional -->
+    <Match>
+        <Source name="~.*Test.*"/>
+        <Bug pattern="HARD_CODE_PASSWORD"/>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- Concurrency Exclusions -->
+    <!-- ===================================================================== -->
+
+    <!-- Spring-managed singletons handle concurrency -->
+    <Match>
+        <Annotation name="org.springframework.stereotype.Service"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- Specific Bug Exclusions -->
+    <!-- ===================================================================== -->
+
+    <!-- False positives for Optional usage -->
+    <Match>
+        <Bug pattern="NP_OPTIONAL_RETURN_NULL"/>
+    </Match>
+
+    <!-- Allow comparing strings with == for enums and constants -->
+    <Match>
+        <Bug pattern="ES_COMPARING_STRINGS_WITH_EQ"/>
+        <Class name="~.*Enum$"/>
+    </Match>
+
+    <!-- Performance warnings for small collections -->
+    <Match>
+        <Bug pattern="WMI_WRONG_MAP_ITERATOR"/>
+    </Match>
+
+    <!-- ===================================================================== -->
+    <!-- Exclude Specific Packages -->
+    <!-- ===================================================================== -->
+
+    <!-- Configuration packages often have unusual patterns -->
+    <Match>
+        <Package name="~ua\.kostyk\.award\.config\..*"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+
+    <!-- Migration scripts -->
+    <Match>
+        <Package name="~.*\.db\.migration\..*"/>
+    </Match>
+
+</FindBugsFilter>
+

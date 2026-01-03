@@ -1,0 +1,199 @@
+<?xml version="1.0"?>
+<!--
+    Award Monitoring & Tracking System - PMD Ruleset Configuration
+    Enterprise-grade static analysis rules
+    Version: 1.0
+    Last Updated: January 2026
+    
+    Run with: mvn pmd:check
+-->
+
+<ruleset name="Award Monitoring System Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+         https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Custom PMD ruleset for the Award Monitoring &amp; Tracking System.
+        Optimized for Spring Boot applications with enterprise quality standards.
+    </description>
+
+    <!-- ===================================================================== -->
+    <!-- Best Practices -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/bestpractices.xml">
+        <!-- Exclusions with justifications -->
+        <exclude name="GuardLogStatement"/>  <!-- Using SLF4J with lazy evaluation -->
+        <exclude name="JUnitTestContainsTooManyAsserts"/>  <!-- Allow multiple assertions in tests -->
+        <exclude name="JUnitAssertionsShouldIncludeMessage"/>  <!-- AssertJ provides clear messages -->
+    </rule>
+
+    <!-- Customize specific rules -->
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod">
+        <properties>
+            <property name="ignoredAnnotations" value="org.springframework.context.annotation.Bean|jakarta.annotation.PostConstruct|org.springframework.scheduling.annotation.Scheduled|org.springframework.kafka.annotation.KafkaListener"/>
+        </properties>
+    </rule>
+
+    <!-- ===================================================================== -->
+    <!-- Code Style -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="AtLeastOneConstructor"/>  <!-- Not needed for all classes -->
+        <exclude name="CommentDefaultAccessModifier"/>  <!-- Handled by Checkstyle -->
+        <exclude name="ConfusingTernary"/>  <!-- Allow ternary operators -->
+        <exclude name="LocalVariableCouldBeFinal"/>  <!-- Too strict -->
+        <exclude name="MethodArgumentCouldBeFinal"/>  <!-- Handled by IDE settings -->
+        <exclude name="OnlyOneReturn"/>  <!-- Multiple returns can improve readability -->
+        <exclude name="ShortClassName"/>  <!-- Allow DTOs, etc. -->
+        <exclude name="ShortMethodName"/>  <!-- Allow factory methods like of(), from() -->
+        <exclude name="ShortVariable"/>  <!-- Allow 'id', 'e', etc. -->
+        <exclude name="TooManyStaticImports"/>  <!-- Allow for test classes -->
+        <exclude name="CallSuperInConstructor"/>  <!-- Not always necessary -->
+        <exclude name="LongVariable"/>  <!-- Descriptive names are encouraged -->
+    </rule>
+
+    <!-- Class naming conventions -->
+    <rule ref="category/java/codestyle.xml/ClassNamingConventions">
+        <properties>
+            <property name="classPattern" value="[A-Z][a-zA-Z0-9]*"/>
+            <property name="abstractClassPattern" value="Abstract[A-Z][a-zA-Z0-9]*|Base[A-Z][a-zA-Z0-9]*"/>
+            <property name="interfacePattern" value="[A-Z][a-zA-Z0-9]*"/>
+            <property name="enumPattern" value="[A-Z][a-zA-Z0-9]*"/>
+            <property name="annotationPattern" value="[A-Z][a-zA-Z0-9]*"/>
+            <property name="utilityClassPattern" value="[A-Z][a-zA-Z0-9]*(Utils?|Helper|Constants?)"/>
+        </properties>
+    </rule>
+
+    <!-- ===================================================================== -->
+    <!-- Design -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/design.xml">
+        <exclude name="AvoidCatchingGenericException"/>  <!-- Sometimes needed for global handlers -->
+        <exclude name="LawOfDemeter"/>  <!-- Too strict for fluent APIs and builders -->
+        <exclude name="LoosePackageCoupling"/>  <!-- Managed by architecture -->
+        <exclude name="UseObjectForClearerAPI"/>  <!-- DTOs are acceptable -->
+    </rule>
+
+    <!-- Cyclomatic complexity limit -->
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="methodReportLevel" value="10"/>
+            <property name="classReportLevel" value="80"/>
+        </properties>
+    </rule>
+
+    <!-- NPath complexity limit -->
+    <rule ref="category/java/design.xml/NPathComplexity">
+        <properties>
+            <property name="reportLevel" value="200"/>
+        </properties>
+    </rule>
+
+    <!-- Too many methods -->
+    <rule ref="category/java/design.xml/TooManyMethods">
+        <properties>
+            <property name="maxmethods" value="25"/>
+        </properties>
+    </rule>
+
+    <!-- Too many fields -->
+    <rule ref="category/java/design.xml/TooManyFields">
+        <properties>
+            <property name="maxfields" value="15"/>
+        </properties>
+    </rule>
+
+    <!-- Excessive parameter list -->
+    <rule ref="category/java/design.xml/ExcessiveParameterList">
+        <properties>
+            <property name="minimum" value="8"/>
+        </properties>
+    </rule>
+
+    <!-- Excessive class length -->
+    <rule ref="category/java/design.xml/ExcessiveClassLength">
+        <properties>
+            <property name="minimum" value="500"/>
+        </properties>
+    </rule>
+
+    <!-- ===================================================================== -->
+    <!-- Documentation -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/documentation.xml">
+        <exclude name="CommentRequired"/>  <!-- Javadoc is handled by Checkstyle -->
+    </rule>
+
+    <!-- Comment size -->
+    <rule ref="category/java/documentation.xml/CommentSize">
+        <properties>
+            <property name="maxLines" value="20"/>
+            <property name="maxLineLength" value="120"/>
+        </properties>
+    </rule>
+
+    <!-- ===================================================================== -->
+    <!-- Error Prone -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="AvoidDuplicateLiterals"/>  <!-- Handled differently -->
+        <exclude name="AvoidFieldNameMatchingMethodName"/>  <!-- Common in getters -->
+        <exclude name="AvoidLiteralsInIfCondition"/>  <!-- Too strict -->
+        <exclude name="BeanMembersShouldSerialize"/>  <!-- Not needed for DTOs -->
+        <exclude name="DataflowAnomalyAnalysis"/>  <!-- Too many false positives -->
+        <exclude name="MissingSerialVersionUID"/>  <!-- Not using Java serialization -->
+        <exclude name="NullAssignment"/>  <!-- Sometimes needed -->
+        <exclude name="UseLocaleWithCaseConversions"/>  <!-- Handle case-by-case -->
+    </rule>
+
+    <!-- Empty catch blocks -->
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+        <properties>
+            <property name="allowCommentedBlocks" value="true"/>
+            <property name="allowExceptionNameRegex" value="^(expected|ignore|ignored)$"/>
+        </properties>
+    </rule>
+
+    <!-- Avoid duplicate literals with threshold -->
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+        <properties>
+            <property name="maxDuplicateLiterals" value="4"/>
+            <property name="minimumLength" value="5"/>
+            <property name="skipAnnotations" value="true"/>
+        </properties>
+    </rule>
+
+    <!-- ===================================================================== -->
+    <!-- Multithreading -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/multithreading.xml">
+        <exclude name="UseConcurrentHashMap"/>  <!-- Not always needed -->
+        <exclude name="DoNotUseThreads"/>  <!-- Spring @Async is acceptable -->
+    </rule>
+
+    <!-- ===================================================================== -->
+    <!-- Performance -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/performance.xml">
+        <exclude name="AvoidInstantiatingObjectsInLoops"/>  <!-- Too strict -->
+    </rule>
+
+    <!-- ===================================================================== -->
+    <!-- Security -->
+    <!-- ===================================================================== -->
+    <rule ref="category/java/security.xml"/>
+
+    <!-- ===================================================================== -->
+    <!-- Custom Rules for Spring Boot -->
+    <!-- ===================================================================== -->
+
+    <!-- Avoid System.out and System.err - use logging -->
+    <rule ref="category/java/bestpractices.xml/SystemPrintln"/>
+
+    <!-- Avoid printStackTrace - use proper logging -->
+    <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
+
+</ruleset>
+

@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+    Award Monitoring & Tracking System - Checkstyle Suppressions
+    Defines acceptable violations for specific patterns
+    Version: 1.0
+    Last Updated: January 2026
+-->
+
+<suppressions>
+    <!-- ===================================================================== -->
+    <!-- Generated Code -->
+    <!-- ===================================================================== -->
+    <suppress files="[\\/]generated[\\/]" checks=".*"/>
+    <suppress files="[\\/]target[\\/]" checks=".*"/>
+
+    <!-- ===================================================================== -->
+    <!-- Test Classes -->
+    <!-- ===================================================================== -->
+    <!-- Allow magic numbers in tests -->
+    <suppress files=".*Test\.java$" checks="MagicNumber"/>
+    <suppress files=".*IT\.java$" checks="MagicNumber"/>
+    
+    <!-- Allow longer methods in tests -->
+    <suppress files=".*Test\.java$" checks="MethodLength"/>
+    <suppress files=".*IT\.java$" checks="MethodLength"/>
+    
+    <!-- Allow more complex tests -->
+    <suppress files=".*Test\.java$" checks="CyclomaticComplexity"/>
+    
+    <!-- Allow missing Javadoc in tests -->
+    <suppress files=".*Test\.java$" checks="Javadoc.*"/>
+    <suppress files=".*IT\.java$" checks="Javadoc.*"/>
+
+    <!-- ===================================================================== -->
+    <!-- Configuration Classes -->
+    <!-- ===================================================================== -->
+    <!-- Configuration classes often have many fields -->
+    <suppress files=".*Config(uration)?\.java$" checks="TooManyFields"/>
+    
+    <!-- Allow @Bean method names that don't follow conventions -->
+    <suppress files=".*Config(uration)?\.java$" checks="MethodName"/>
+
+    <!-- ===================================================================== -->
+    <!-- DTO/Entity Classes -->
+    <!-- ===================================================================== -->
+    <!-- DTOs and entities often have many fields -->
+    <suppress files=".*DTO\.java$" checks="TooManyFields"/>
+    <suppress files="[\\/]entity[\\/]" checks="TooManyFields"/>
+    <suppress files="[\\/]model[\\/]" checks="TooManyFields"/>
+    
+    <!-- Allow missing Javadoc for DTO fields (self-explanatory) -->
+    <suppress files=".*DTO\.java$" checks="JavadocVariable"/>
+    
+    <!-- Entities may expose internal representation -->
+    <suppress files="[\\/]entity[\\/]" checks="HiddenField"/>
+
+    <!-- ===================================================================== -->
+    <!-- Exception Classes -->
+    <!-- ===================================================================== -->
+    <!-- Exception classes don't need Javadoc on constructors -->
+    <suppress files=".*Exception\.java$" checks="JavadocMethod"/>
+
+    <!-- ===================================================================== -->
+    <!-- Application Entry Point -->
+    <!-- ===================================================================== -->
+    <suppress files=".*Application\.java$" checks="HideUtilityClassConstructor"/>
+
+    <!-- ===================================================================== -->
+    <!-- Constants Classes -->
+    <!-- ===================================================================== -->
+    <!-- Constant classes may have many static fields -->
+    <suppress files=".*Constants?\.java$" checks="ConstantName"/>
+
+    <!-- ===================================================================== -->
+    <!-- Migration Scripts (Java-based Flyway) -->
+    <!-- ===================================================================== -->
+    <suppress files="[\\/]db[\\/]migration[\\/]" checks=".*"/>
+
+    <!-- ===================================================================== -->
+    <!-- Builder Classes -->
+    <!-- ===================================================================== -->
+    <!-- Allow longer builder chains -->
+    <suppress files=".*Builder\.java$" checks="MethodLength"/>
+
+</suppressions>
+
