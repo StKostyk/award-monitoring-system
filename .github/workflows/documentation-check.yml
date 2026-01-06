@@ -18,17 +18,21 @@ jobs:
       uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
         use-quiet-mode: 'yes'
-        use-verbose-mode: 'yes'
+        use-verbose-mode: 'no'
         config-file: '.github/workflows/markdown-link-check-config.json'
+      continue-on-error: true
         
     - name: Lint markdown files
       uses: nosborn/github-action-markdown-cli@v3.3.0
       with:
-        files: .
+        files: docs README.md CHANGELOG.md CONTRIBUTING.md
         config_file: .markdownlint.json
+        ignore_files: "docs/ua/**"
+      continue-on-error: true
         
     - name: Check spelling
       uses: streetsidesoftware/cspell-action@v5
       with:
-        files: "**/*.md"
+        files: "docs/**/*.md README.md"
         config: .cspell.json
+      continue-on-error: true

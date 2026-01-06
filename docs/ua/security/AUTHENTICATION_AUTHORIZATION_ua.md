@@ -1320,7 +1320,7 @@ public class SecurityAuditService {
 - **Етап 10**: [Модель Загроз](./THREAT_MODEL_ua.md)
 - **Етап 10**: [Privacy by Design](./PRIVACY_BY_DESIGN_ua.md)
 - **Етап 7**: [ADR-009 Фреймворк Безпеки](../architecture/adr/ADR-009-Security-Framework-ua.md)
-- **Етап 2**: [Матриця RBAC](../RBAC_matrix_ua.md)
+- **Етап 2**: [Матриця RBAC](../stakeholders/RBAC_matrix_ua.md)
 
 ---
 
