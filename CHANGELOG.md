@@ -8,8 +8,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 16: Release & Deployment Strategy
 - Phase 17: Documentation & Knowledge Management
+- Phase 18: Portfolio Preparation & Presentation
+
+## [0.16.0] - 2026-01-06 - Phase 16 Complete: Release & Deployment Strategy
+
+### Added
+- **Release Management Framework (`docs/deployment/RELEASE_MANAGEMENT.md`)**
+  - Semantic Versioning 2.0.0 strategy
+  - 4 release types: Major, Minor, Patch, Emergency
+  - Release workflows with approval gates
+  - Branch strategy (main, release/*, develop, feature/*, hotfix/*)
+  - Pre-release, release day, and post-release checklists
+  - DORA metrics targets
+
+- **Environment Promotion Strategy (`docs/deployment/ENVIRONMENT_PROMOTION.md`)**
+  - 5-stage pipeline: DEV → INT → UAT → PREPROD → PROD
+  - Environment definitions with data and access policies
+  - Promotion gates with automated and manual criteria
+  - Environment configuration matrix (replicas, resources, logging)
+  - Deployment triggers and automation
+  - Rollback strategy per environment
+
+- **Kubernetes Manifests (`infra/k8s/`)**
+  - `deployment.yml` - Production-grade K8s deployment:
+    - Namespace configuration
+    - Backend Blue-Green deployments (blue/green)
+    - Frontend deployment with nginx
+    - Services (ClusterIP)
+    - Ingress with TLS
+    - Service accounts
+    - ConfigMap for application settings
+    - HorizontalPodAutoscaler (3-10 replicas)
+    - PodDisruptionBudget (min 2 available)
+    - NetworkPolicy for backend isolation
+  - `secrets.yml` - Secret templates (database, Redis, JWT, API keys)
+
+- **Dockerfiles**
+  - `backend/Dockerfile` - Multi-stage Java 21 build:
+    - Maven build stage with dependency caching
+    - Layered JAR extraction for optimal caching
+    - Eclipse Temurin JRE 21 Alpine runtime (~200MB)
+    - Non-root user security
+    - Health check configuration
+    - JVM container optimizations
+  - `frontend/Dockerfile` - Multi-stage Angular build:
+    - Node 20 Alpine build stage
+    - Production Angular build
+    - nginx Alpine runtime (~25MB)
+    - Non-root nginx user
+    - Health check configuration
+  - `frontend/nginx.conf` - Production nginx:
+    - Gzip compression
+    - Security headers (CSP, X-Frame-Options, etc.)
+    - Static asset caching (1 year)
+    - Angular routing support (SPA)
+    - API proxy configuration
+
+- **Ukrainian Translations (`docs/ua/`)**
+  - `monitoring/MONITORING_OBSERVABILITY_ua.md` - Phase 15 translation
+  - `deployment/RELEASE_MANAGEMENT_ua.md` - Release management
+  - `deployment/ENVIRONMENT_PROMOTION_ua.md` - Environment promotion
+
+### Deliverables Completed
+- [x] Release Management Framework (`docs/deployment/RELEASE_MANAGEMENT.md`)
+- [x] Environment Promotion Strategy (`docs/deployment/ENVIRONMENT_PROMOTION.md`)
+- [x] Kubernetes deployment manifests (`infra/k8s/deployment.yml`)
+- [x] Kubernetes secrets template (`infra/k8s/secrets.yml`)
+- [x] Backend Dockerfile (`backend/Dockerfile`)
+- [x] Frontend Dockerfile (`frontend/Dockerfile`)
+- [x] Nginx configuration (`frontend/nginx.conf`)
+- [x] Ukrainian translation - Monitoring (`docs/ua/monitoring/MONITORING_OBSERVABILITY_ua.md`)
+- [x] Ukrainian translation - Release Management (`docs/ua/deployment/RELEASE_MANAGEMENT_ua.md`)
+- [x] Ukrainian translation - Environment Promotion (`docs/ua/deployment/ENVIRONMENT_PROMOTION_ua.md`)
+- [x] Updated README with Phase 16 completion status
+- [x] Updated CHANGELOG with Phase 16 deliverables
+
+### Portfolio Value
+This phase demonstrates:
+- **Release engineering** with semantic versioning and release type classification
+- **Environment management** through structured promotion pipeline
+- **Kubernetes expertise** with production-grade manifests and security policies
+- **Container optimization** using multi-stage builds and minimal images
+- **Infrastructure as Code** with declarative Kubernetes resources
+- **Security practices** with non-root containers, network policies, and secrets management
+- **Operational readiness** with HPA, PDB, health checks, and rollback strategies
+
+### Statistics
+- **2 deployment docs** covering release management and environment promotion
+- **4 release types** with defined workflows and approvals
+- **5 environments** in promotion pipeline with gate criteria
+- **10+ Kubernetes resources** in deployment manifest
+- **2 Dockerfiles** with multi-stage builds
+- **3 Ukrainian translations** for Phase 15-16 documentation
 
 ## [0.15.0] - 2026-01-06 - Phase 15 Complete: Monitoring & Observability Strategy
 
@@ -953,7 +1044,8 @@ This phase demonstrates:
 - **v0.13.0**: Quality Assurance Strategy ✅
 - **v0.14.0**: CI/CD Pipeline Design ✅
 - **v0.15.0**: Monitoring & Observability Strategy ✅
-- **v0.16.0**: Release & Deployment Strategy
+- **v0.16.0**: Release & Deployment Strategy ✅
+- **v0.17.0**: Documentation & Knowledge Management
 
 ### Development Phases (v1.x.x)
 - **v1.0.0**: MVP Release (Core functionality)
