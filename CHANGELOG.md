@@ -8,8 +8,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 17: Documentation & Knowledge Management
 - Phase 18: Portfolio Preparation & Presentation
+- Phase 19: Final Review & Sign-off
+
+## [0.17.0] - 2026-01-06 - Phase 17 Complete: Documentation & Knowledge Management
+
+### Added
+- **API Documentation (`docs/api/`)**
+  - `openapi.yml` - Complete OpenAPI 3.1 specification:
+    - 25+ REST endpoints across 6 resource categories
+    - Authentication (login, refresh, logout)
+    - Awards CRUD and workflow operations
+    - Documents upload and management
+    - Users profile and admin management
+    - Reports and analytics endpoints
+    - RFC 7807 Problem Details error format
+    - Reusable components and schemas
+  - `postman-collection.json` - API testing collection:
+    - 20+ requests organized by resource
+    - Automated test scripts for validation
+    - Environment variable support
+    - Token auto-population after login
+
+- **Operations Documentation (`docs/operations/`)**
+  - `TROUBLESHOOTING.md` - Comprehensive troubleshooting guide:
+    - Quick reference table for common issues
+    - Authentication, server, performance, connectivity sections
+    - Kubectl commands and diagnostic queries
+    - Kibana log queries and Grafana dashboard links
+    - Common error codes with actions
+  - `runbooks/DEPLOYMENT_RUNBOOK.md` - Deployment procedures:
+    - Pre-deployment checklist
+    - Blue-Green deployment steps
+    - Database migration procedures
+    - Emergency hotfix deployment
+    - Post-deployment verification
+  - `runbooks/INCIDENT_RESPONSE_RUNBOOK.md` - Incident response:
+    - 4 severity levels (P1-P4) with response times
+    - Incident workflow diagram
+    - P1-P3 specific procedures with commands
+    - Post-incident checklist
+    - Post-mortem template
+
+- **User Documentation (`docs/user/`)**
+  - `USER_GUIDE.md` - End-user documentation:
+    - Getting started and login instructions
+    - Award submission workflow (4 steps)
+    - Document management guidelines
+    - Status tracking and meanings
+    - Profile and notification settings
+    - FAQ with 10+ common questions
+  - `ADMIN_GUIDE.md` - Administrator guide:
+    - Role hierarchy and permissions
+    - User management (CRUD, bulk operations)
+    - Award category management
+    - Workflow configuration
+    - Reports and analytics
+    - GDPR compliance tasks
+    - Audit log searching
+  - `training/README.md` - Training materials:
+    - 3 training tracks (End User, Reviewer, Admin)
+    - Quick start guides for each role
+    - Training schedule and onboarding
+    - Hands-on exercises
+    - Certification requirements
+
+- **Technical Writing Standards (`docs/TECHNICAL_WRITING_STANDARDS.md`)**
+  - Document structure and header template
+  - Writing style principles and voice
+  - Formatting standards (headings, code blocks, tables)
+  - Terminology consistency guidelines
+  - Bilingual support instructions
+  - Review process and quality checklist
+
+- **Ukrainian Translations (`docs/ua/`)**
+  - `user/USER_GUIDE_ua.md` - User guide translation
+  - `user/ADMIN_GUIDE_ua.md` - Admin guide translation
+  - `user/training/README_ua.md` - Training materials translation
+  - `TECHNICAL_WRITING_STANDARDS_ua.md` - Writing standards translation
+  - `operations/runbooks/INCIDENT_RESPONSE_RUNBOOK_ua.md` - Incident response translation
+
+### Deliverables Completed
+- [x] API specification (`docs/api/openapi.yml`)
+- [x] Postman collection (`docs/api/postman-collection.json`)
+- [x] Troubleshooting guide (`docs/operations/TROUBLESHOOTING.md`)
+- [x] Deployment runbook (`docs/operations/runbooks/DEPLOYMENT_RUNBOOK.md`)
+- [x] Incident response runbook (`docs/operations/runbooks/INCIDENT_RESPONSE_RUNBOOK.md`)
+- [x] User guide (`docs/user/USER_GUIDE.md`)
+- [x] Administrator guide (`docs/user/ADMIN_GUIDE.md`)
+- [x] Training materials (`docs/user/training/README.md`)
+- [x] Technical writing standards (`docs/TECHNICAL_WRITING_STANDARDS.md`)
+- [x] Ukrainian translations (5 documents)
+- [x] Updated README with Phase 17 completion status
+- [x] Updated CHANGELOG with Phase 17 deliverables
+
+### Portfolio Value
+This phase demonstrates:
+- **API design** with comprehensive OpenAPI 3.1 specification
+- **Developer experience** through Postman collection with automated tests
+- **Operational excellence** with deployment and incident response runbooks
+- **User-centric documentation** with guides for all user types
+- **Training development** with structured learning paths and certification
+- **Documentation standards** ensuring quality and consistency
+- **Bilingual capability** with complete Ukrainian translations
+
+### Statistics
+- **25+ API endpoints** documented in OpenAPI specification
+- **20+ Postman requests** with automated test scripts
+- **3 runbooks** covering deployment, troubleshooting, and incidents
+- **3 user docs** (User Guide, Admin Guide, Training)
+- **3 training tracks** for different user roles
+- **5 Ukrainian translations** for Phase 17 documentation
 
 ## [0.16.0] - 2026-01-06 - Phase 16 Complete: Release & Deployment Strategy
 
@@ -1045,7 +1154,8 @@ This phase demonstrates:
 - **v0.14.0**: CI/CD Pipeline Design ✅
 - **v0.15.0**: Monitoring & Observability Strategy ✅
 - **v0.16.0**: Release & Deployment Strategy ✅
-- **v0.17.0**: Documentation & Knowledge Management
+- **v0.17.0**: Documentation & Knowledge Management ✅
+- **v0.18.0**: Portfolio Preparation & Presentation
 
 ### Development Phases (v1.x.x)
 - **v1.0.0**: MVP Release (Core functionality)
