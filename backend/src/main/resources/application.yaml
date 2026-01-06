@@ -1,3 +1,52 @@
+# =============================================================================
+# Award Monitoring & Tracking System - Application Configuration
+# =============================================================================
 spring:
   application:
     name: award-monitoring-system
+
+  # Database Configuration (override in environment-specific profiles)
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/award_monitoring}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+
+  # Security Configuration
+  security:
+    user:
+      name: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:admin}
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    ua.edu.chnu: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN
+
+# Actuator Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized

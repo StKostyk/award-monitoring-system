@@ -118,9 +118,9 @@ This project follows an enterprise-grade pre-development methodology. See the [r
 
 ### **Phase 1: Project Initiation**
 - [📋 Project Charter](./docs/business/PROJECT_CHARTER.md) - Complete business case and project authorization
-- [🎯 Vision & Strategy](./docs/intiation/VISION.md) - Mission, vision, and strategic objectives  
+- [🎯 Vision & Strategy](./docs/initiation/VISION.md) - Mission, vision, and strategic objectives  
 - [📊 Success Metrics](./docs/initiation/SUCCESS_METRICS.md) - OKRs, KPIs, and measurement framework
-- [🎪 Elevator Pitches](./docs/intiation/ELEVATOR_PITCH.md) - Multi-audience presentation materials
+- [🎪 Elevator Pitches](./docs/initiation/ELEVATOR_PITCH.md) - Multi-audience presentation materials
 - [🎯 SMART Objectives](./docs/initiation/SMART_objectives.md) - Detailed tactical objectives
 
 ### **Phase 2: Stakeholder Analysis & Alignment** ✅

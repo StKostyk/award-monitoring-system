@@ -1,0 +1,37 @@
+# =============================================================================
+# Test Configuration - H2 In-Memory Database
+# =============================================================================
+spring:
+  application:
+    name: award-monitoring-system-test
+
+  # H2 In-Memory Database for Testing
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Disable Security for Tests (optional - configure as needed)
+  security:
+    user:
+      name: test
+      password: test
+
+# Logging
+logging:
+  level:
+    org.springframework: WARN
+    org.hibernate: WARN
+    ua.edu.chnu: DEBUG
+
