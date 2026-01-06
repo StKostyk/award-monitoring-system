@@ -78,7 +78,9 @@ award-monitoring-system/
 │       ├── checkstyle.xml         # Checkstyle rules
 │       ├── pmd-ruleset.xml        # PMD static analysis rules
 │       └── spotbugs-excludes.xml  # SpotBugs exclusions
-├── src/                            # Source code (coming after pre-development)
+├── backend/                      # Spring Boot application
+├── frontend/                     # Angular application
+├── infra/                        # Infrastructure
 ├── .editorconfig                   # Cross-IDE code style
 ├── sonar-project.properties        # SonarQube configuration
 ├── Enterprise_Pre-Development_Roadmap.md  # 8-week methodology
@@ -312,6 +314,20 @@ This project follows an enterprise-grade pre-development methodology. See the [r
 - ✅ EditorConfig for cross-IDE code style consistency
 - ✅ Docker-based local development services (PostgreSQL, Redis)
 - ✅ Complete code quality tool integration documentation
+
+### **Phase 13: Quality Assurance Strategy** ✅
+- **Spring Boot Application** (`backend/`)
+  - [pom.xml](./backend/pom.xml) - All Necessary Dependencies and Plugins
+  - [AwardMonitoringSystemApplication](./backend/src/main/java/ua/edu/chnu/award_monitoring_system/AwardMonitoringSystemApplication.java) - Main Entry Point
+- **Angular Application** (`frontend/`)
+  - [index.html](./frontend/src/index.html) Main HTML Page
+  - Node modules and Different config files
+
+**Key Achievements:**
+- ✅ Initialized Spring Boot application with all necessary dependencies in backend folder
+- ✅ Initialized Angular application in frontend folder
+- ✅ Added necessary testing dependencies to pom.xml
+- ✅ Added many necessary ngrx packages to Angular application
 
 ### **Project Management**
 - [🗺️ Development Roadmap](./Enterprise_Pre-Development_Roadmap.md) - Complete 8-week pre-development methodology
