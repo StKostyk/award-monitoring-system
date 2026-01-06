@@ -178,3 +178,5 @@ docs/_AI_TEMPLATES.md
 # Local development notes
 TODO.local.md
 NOTES.local.md
+
+infra/k8s/secrets.yml

@@ -1,0 +1,1082 @@
+openapi: 3.1.0
+info:
+  title: Award Monitoring & Tracking System API
+  version: 1.0.0
+  description: |
+    RESTful API for enterprise award monitoring and tracking platform.
+    
+    ## Authentication
+    This API uses OAuth 2.0 with JWT tokens. Include the `Authorization: Bearer <token>` header in all requests.
+    
+    ## Rate Limiting
+    - Standard users: 1000 requests/hour
+    - Admin users: 5000 requests/hour
+    
+    ## Response Formats
+    All responses are JSON. Dates are ISO 8601 format (UTC).
+    
+    ## Error Handling
+    Errors follow RFC 7807 Problem Details format.
+    
+  contact:
+    name: API Support
+    email: support@award-system.edu.ua
+    url: https://award-system.edu.ua/docs
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.award-system.edu.ua/v1
+    description: Production server
+  - url: https://staging-api.award-system.edu.ua/v1
+    description: Staging server
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+tags:
+  - name: Authentication
+    description: OAuth2 authentication and token management
+  - name: Awards
+    description: Award CRUD and submission operations
+  - name: Workflows
+    description: Award approval workflow management
+  - name: Users
+    description: User account management
+  - name: Documents
+    description: Document upload and management
+  - name: Reports
+    description: Analytics and reporting endpoints
+
+paths:
+  # ============== Authentication ==============
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and receive JWT tokens
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      security:
+        - bearerAuth: []
+      operationId: logout
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============== Awards ==============
+  /awards:
+    get:
+      tags: [Awards]
+      summary: List awards
+      description: Retrieve paginated list of awards with optional filtering
+      security:
+        - bearerAuth: []
+      operationId: listAwards
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/AwardStatus'
+        - name: category
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Paginated award list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AwardPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Awards]
+      summary: Create award submission
+      description: Submit a new award for review
+      security:
+        - bearerAuth: []
+      operationId: createAward
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardCreateRequest'
+      responses:
+        '201':
+          description: Award created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of created resource
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /awards/{id}:
+    get:
+      tags: [Awards]
+      summary: Get award by ID
+      security:
+        - bearerAuth: []
+      operationId: getAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: Award details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Awards]
+      summary: Update award
+      security:
+        - bearerAuth: []
+      operationId: updateAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardUpdateRequest'
+      responses:
+        '200':
+          description: Award updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    delete:
+      tags: [Awards]
+      summary: Delete award
+      security:
+        - bearerAuth: []
+      operationId: deleteAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '204':
+          description: Award deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============== Workflows ==============
+  /awards/{id}/submit:
+    post:
+      tags: [Workflows]
+      summary: Submit award for approval
+      security:
+        - bearerAuth: []
+      operationId: submitAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: Award submitted for review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /awards/{id}/approve:
+    post:
+      tags: [Workflows]
+      summary: Approve award at current level
+      security:
+        - bearerAuth: []
+      operationId: approveAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        '200':
+          description: Award approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /awards/{id}/reject:
+    post:
+      tags: [Workflows]
+      summary: Reject award
+      security:
+        - bearerAuth: []
+      operationId: rejectAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectionRequest'
+      responses:
+        '200':
+          description: Award rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /awards/{id}/return:
+    post:
+      tags: [Workflows]
+      summary: Return award for revision
+      security:
+        - bearerAuth: []
+      operationId: returnAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+      responses:
+        '200':
+          description: Award returned for revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+
+  # ============== Documents ==============
+  /awards/{id}/documents:
+    get:
+      tags: [Documents]
+      summary: List award documents
+      security:
+        - bearerAuth: []
+      operationId: listAwardDocuments
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: Document list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+
+    post:
+      tags: [Documents]
+      summary: Upload document
+      security:
+        - bearerAuth: []
+      operationId: uploadDocument
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, type]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Document file (PDF, JPG, PNG)
+                type:
+                  $ref: '#/components/schemas/DocumentType'
+                description:
+                  type: string
+                  maxLength: 500
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          description: File too large (max 10MB)
+
+  /documents/{id}:
+    get:
+      tags: [Documents]
+      summary: Download document
+      security:
+        - bearerAuth: []
+      operationId: downloadDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Documents]
+      summary: Delete document
+      security:
+        - bearerAuth: []
+      operationId: deleteDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============== Users ==============
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      security:
+        - bearerAuth: []
+      operationId: updateCurrentUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (Admin only)
+      security:
+        - bearerAuth: []
+      operationId: listUsers
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: organization
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============== Reports ==============
+  /reports/awards/summary:
+    get:
+      tags: [Reports]
+      summary: Awards summary statistics
+      security:
+        - bearerAuth: []
+      operationId: getAwardsSummary
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, year]
+            default: month
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AwardsSummary'
+
+  /reports/awards/export:
+    get:
+      tags: [Reports]
+      summary: Export awards data
+      security:
+        - bearerAuth: []
+      operationId: exportAwards
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [csv, xlsx, pdf]
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Export file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  # ============== Health ==============
+  /actuator/health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from /auth/login
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number (0-based)
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+
+    SizeParam:
+      name: size
+      in: query
+      description: Page size
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+    SortParam:
+      name: sort
+      in: query
+      description: Sort field and direction (e.g., createdAt,desc)
+      schema:
+        type: string
+
+    AwardIdParam:
+      name: id
+      in: path
+      required: true
+      description: Award UUID
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # Auth
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@university.edu.ua
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Seconds until access token expires
+          example: 3600
+
+    # User
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED]
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+
+    UserRole:
+      type: string
+      enum:
+        - EMPLOYEE
+        - FACULTY_SECRETARY
+        - DEAN
+        - RECTOR_SECRETARY
+        - RECTOR
+        - SYSTEM_ADMIN
+        - GDPR_OFFICER
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        notificationPreferences:
+          $ref: '#/components/schemas/NotificationPreferences'
+
+    UserPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+
+    NotificationPreferences:
+      type: object
+      properties:
+        emailEnabled:
+          type: boolean
+          default: true
+        browserEnabled:
+          type: boolean
+          default: true
+
+    # Organization
+    OrganizationRef:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [UNIVERSITY, FACULTY, DEPARTMENT]
+
+    # Award
+    Award:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/AwardCategory'
+        status:
+          $ref: '#/components/schemas/AwardStatus'
+        currentLevel:
+          $ref: '#/components/schemas/ApprovalLevel'
+        submitter:
+          $ref: '#/components/schemas/UserRef'
+        awardDate:
+          type: string
+          format: date
+        issuingOrganization:
+          type: string
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentRef'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+
+    AwardStatus:
+      type: string
+      enum:
+        - DRAFT
+        - SUBMITTED
+        - UNDER_REVIEW
+        - APPROVED
+        - REJECTED
+        - RETURNED
+        - PUBLISHED
+
+    ApprovalLevel:
+      type: string
+      enum:
+        - DEPARTMENT
+        - FACULTY
+        - RECTOR_OFFICE
+        - FINAL
+
+    AwardCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        level:
+          type: string
+          enum: [INTERNATIONAL, NATIONAL, REGIONAL, LOCAL]
+
+    AwardCreateRequest:
+      type: object
+      required: [title, categoryId, awardDate]
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        categoryId:
+          type: string
+          format: uuid
+        awardDate:
+          type: string
+          format: date
+        issuingOrganization:
+          type: string
+          maxLength: 255
+
+    AwardUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        categoryId:
+          type: string
+          format: uuid
+        awardDate:
+          type: string
+          format: date
+        issuingOrganization:
+          type: string
+          maxLength: 255
+
+    AwardPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Award'
+
+    UserRef:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+
+    DocumentRef:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        type:
+          $ref: '#/components/schemas/DocumentType'
+
+    # Workflow
+    ApprovalRequest:
+      type: object
+      properties:
+        comment:
+          type: string
+          maxLength: 1000
+
+    RejectionRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+
+    ReturnRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+        requiredChanges:
+          type: array
+          items:
+            type: string
+
+    # Document
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        originalFilename:
+          type: string
+        type:
+          $ref: '#/components/schemas/DocumentType'
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+        description:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, VERIFIED, REJECTED]
+        uploadedAt:
+          type: string
+          format: date-time
+        uploadedBy:
+          $ref: '#/components/schemas/UserRef'
+
+    DocumentType:
+      type: string
+      enum:
+        - CERTIFICATE
+        - DIPLOMA
+        - SUPPORTING_DOCUMENT
+        - PHOTO
+
+    # Reports
+    AwardsSummary:
+      type: object
+      properties:
+        period:
+          type: string
+        totalAwards:
+          type: integer
+        byStatus:
+          type: object
+          additionalProperties:
+            type: integer
+        byCategory:
+          type: object
+          additionalProperties:
+            type: integer
+        approvalRate:
+          type: number
+          format: float
+        averageProcessingDays:
+          type: number
+          format: float
+
+    # Common
+    Page:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+
+    ProblemDetail:
+      type: object
+      description: RFC 7807 Problem Details
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        timestamp:
+          type: string
+          format: date-time
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Conflict:
+      description: Resource conflict (e.g., concurrent modification)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until rate limit resets
+
+security:
+  - bearerAuth: []
+
