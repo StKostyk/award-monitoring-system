@@ -8,9 +8,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 13: Quality Assurance Strategy
-- Phase 14: CI/CD Pipeline Design
 - Phase 15: Monitoring & Observability Strategy
+- Phase 16: Release & Deployment Strategy
+
+## [0.14.0] - 2026-01-06 - Phase 14 Complete: CI/CD Pipeline Design
+
+### Added
+- **CI/CD Pipeline Architecture (`.github/workflows/ci-cd.yml`)**
+  - Multi-stage pipeline for Java Spring Boot + Angular applications
+  - Backend build with Maven, JUnit tests, JaCoCo coverage
+  - Frontend build with npm, linting, and Angular production build
+  - Code quality analysis with Checkstyle, PMD, SpotBugs, SonarQube
+  - Security scanning with OWASP Dependency Check and Trivy
+  - Docker image builds with GitHub Container Registry
+  - Kubernetes deployment with Blue-Green strategy
+  - Environment-specific deployments (staging, production)
+  - Automatic rollback on health check failures
+
+- **Quality Gates Configuration**
+  - SonarQube integration with 85% coverage threshold
+  - Quality gate wait enabled for pipeline blocking
+  - External analyzer integration (Checkstyle, PMD, SpotBugs reports)
+  - OWASP Dependency Check report integration
+
+- **Deployment Strategies Documentation (`docs/deployment/DEPLOYMENT_STRATEGIES.md`)**
+  - Blue-Green deployment (primary production strategy)
+  - Canary deployment for high-risk features
+  - Rolling deployment for routine updates
+  - A/B testing for feature experiments
+  - Environment promotion flow (Dev → Staging → UAT → Production)
+  - Rollback procedures and health check configurations
+  - DORA metrics targets defined
+
+- **Ukrainian Translation (`docs/ua/deployment/DEPLOYMENT_STRATEGIES_ua.md`)**
+  - Complete Ukrainian translation of deployment strategies
+
+### Deliverables Completed
+- [x] CI/CD Pipeline (`.github/workflows/ci-cd.yml`)
+- [x] Quality Gates (existing `sonar-project.properties` referenced)
+- [x] Deployment Strategies (`docs/deployment/DEPLOYMENT_STRATEGIES.md`)
+- [x] Ukrainian translation (`docs/ua/deployment/DEPLOYMENT_STRATEGIES_ua.md`)
+- [x] Updated README with Phase 14 completion status
+- [x] Updated CHANGELOG with Phase 14 deliverables
+
+### Portfolio Value
+This phase demonstrates:
+- **DevOps expertise** with enterprise-grade CI/CD pipeline design
+- **Quality engineering** through automated quality gates and security scanning
+- **Deployment strategies** covering Blue-Green, Canary, Rolling, and A/B patterns
+- **Infrastructure knowledge** with Kubernetes deployment configurations
+- **Security awareness** with OWASP and Trivy vulnerability scanning
+- **Reliability engineering** with health checks and automatic rollbacks
+
+### Statistics
+- **1 comprehensive CI/CD workflow** with 8 jobs covering full pipeline
+- **4 deployment strategies** documented with implementation details
+- **85% coverage** quality gate enforced in pipeline
+- **2 security scanners** integrated (OWASP, Trivy)
+- **2 deployment environments** configured (staging, production)
+
+## [0.13.0] - 2026-01-06 - Phase 13 Complete: Quality Assurance Strategy
+
+### Added
+- **Spring Boot Application (`backend/`)**
+  - Just an Initialized Spring Boot Application
+  - Testing dependencies in `pom.xml`
+
+- **Angular Application (`frontend/`)**
+  - Generated Node Modules
+  - Generated rgrx packages
+  - Configuration files
 
 ## [0.12.0] - 2026-01-03 - Phase 12 Complete: Development Environment & Toolchain
 
@@ -772,8 +839,9 @@ This phase demonstrates:
 - **v0.10.0**: Security Architecture & Privacy Design ✅
 - **v0.11.0**: Project Management & Agile Framework ✅
 - **v0.12.0**: Development Environment & Toolchain ✅
-- **v0.13.0**: Quality Assurance Strategy
-- **v0.14.0**: CI/CD Pipeline Design
+- **v0.13.0**: Quality Assurance Strategy ✅
+- **v0.14.0**: CI/CD Pipeline Design ✅
+- **v0.15.0**: Monitoring & Observability Strategy
 
 ### Development Phases (v1.x.x)
 - **v1.0.0**: MVP Release (Core functionality)
