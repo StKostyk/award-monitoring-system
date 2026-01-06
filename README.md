@@ -92,7 +92,7 @@ award-monitoring-system/
 ## 🚀 **Getting Started**
 
 ### **For Reviewers**
-1. **Project Overview**: Read [Vision & Mission](./docs/VISION.md)
+1. **Project Overview**: Read [Vision & Mission](./docs/initiation/VISION.md)
 2. **Business Case**: Review [Project Charter](./docs/business/PROJECT_CHARTER.md)
 3. **Technical Approach**: Check [Development Roadmap](./Enterprise_Pre-Development_Roadmap.md)
 
@@ -118,9 +118,9 @@ This project follows an enterprise-grade pre-development methodology. See the [r
 
 ### **Phase 1: Project Initiation**
 - [📋 Project Charter](./docs/business/PROJECT_CHARTER.md) - Complete business case and project authorization
-- [🎯 Vision & Strategy](./docs/VISION.md) - Mission, vision, and strategic objectives  
-- [📊 Success Metrics](./docs/SUCCESS_METRICS.md) - OKRs, KPIs, and measurement framework
-- [🎪 Elevator Pitches](./docs/ELEVATOR_PITCH.md) - Multi-audience presentation materials
+- [🎯 Vision & Strategy](./docs/intiation/VISION.md) - Mission, vision, and strategic objectives  
+- [📊 Success Metrics](./docs/initiation/SUCCESS_METRICS.md) - OKRs, KPIs, and measurement framework
+- [🎪 Elevator Pitches](./docs/intiation/ELEVATOR_PITCH.md) - Multi-audience presentation materials
 - [🎯 SMART Objectives](./docs/initiation/SMART_objectives.md) - Detailed tactical objectives
 
 ### **Phase 2: Stakeholder Analysis & Alignment** ✅
@@ -207,7 +207,6 @@ This project follows an enterprise-grade pre-development methodology. See the [r
 - ✅ Comprehensive patterns for resilience, monitoring, and data consistency
 
 ### **Phase 8: System Design & Modeling** ✅
-- [📐 System Design Specification](./docs/diagrams/SYSTEM_DESIGN_SPECIFICATION.md) - Comprehensive ASCII specification of all system components, relationships, and workflows
 - **C4 Architecture Diagrams** (`docs/diagrams/`)
   - [Context Diagram](./docs/diagrams/c4-context.puml) - System boundary and external actors
   - [Container Diagram](./docs/diagrams/c4-container.puml) - High-level technology containers

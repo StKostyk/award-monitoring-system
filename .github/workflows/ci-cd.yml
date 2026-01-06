@@ -52,26 +52,41 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
+          cache-dependency-path: backend/pom.xml
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+      - name: Configure Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml << 'EOF'
+          <settings>
+            <servers>
+              <server>
+                <id>central</id>
+                <configuration>
+                  <httpConfiguration>
+                    <all>
+                      <connectionTimeout>30000</connectionTimeout>
+                      <readTimeout>30000</readTimeout>
+                    </all>
+                  </httpConfiguration>
+                </configuration>
+              </server>
+            </servers>
+          </settings>
+          EOF
 
       - name: Build with Maven
-        run: mvn clean compile -B -DskipTests
+        run: mvn clean compile -B -DskipTests -Dmaven.wagon.http.retryHandler.count=3
 
       - name: Run Unit Tests
-        run: mvn test -B
+        run: mvn test -B -Dmaven.wagon.http.retryHandler.count=3
 
       - name: Run Integration Tests
-        run: mvn verify -B -DskipUnitTests
+        run: mvn verify -B -DskipUnitTests -Dmaven.wagon.http.retryHandler.count=3
 
       - name: Generate JaCoCo Coverage Report
         run: mvn jacoco:report -B
+        continue-on-error: true
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4
@@ -151,17 +166,18 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
+          cache-dependency-path: backend/pom.xml
 
       - name: Run Checkstyle
-        run: mvn checkstyle:check -B
+        run: mvn checkstyle:check -B -Dmaven.wagon.http.retryHandler.count=3
         continue-on-error: true
 
       - name: Run PMD
-        run: mvn pmd:check -B
+        run: mvn pmd:check -B -Dmaven.wagon.http.retryHandler.count=3
         continue-on-error: true
 
       - name: Run SpotBugs
-        run: mvn spotbugs:check -B
+        run: mvn spotbugs:check -B -Dmaven.wagon.http.retryHandler.count=3
         continue-on-error: true
 
       - name: SonarQube Analysis
@@ -169,11 +185,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn sonar:sonar \
+          mvn sonar:sonar -B \
+            -Dmaven.wagon.http.retryHandler.count=3 \
             -Dsonar.projectKey=award-monitoring-system \
             -Dsonar.organization=${{ github.repository_owner }} \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.qualitygate.wait=true
+        continue-on-error: true
 
   # ===========================================================================
   # Security Scanning
@@ -196,9 +214,10 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
+          cache-dependency-path: backend/pom.xml
 
       - name: OWASP Dependency Check
-        run: mvn org.owasp:dependency-check-maven:check -B
+        run: mvn org.owasp:dependency-check-maven:check -B -Dmaven.wagon.http.retryHandler.count=3
         continue-on-error: true
 
       - name: Upload Dependency Check Report

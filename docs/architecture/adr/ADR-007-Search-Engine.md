@@ -116,8 +116,8 @@ The Award Monitoring & Tracking System requires advanced search capabilities for
 
 ## Related Documents
 
-- **Tech Stack**: [Technology Stack Selection](../TECH_STACK_ua.md)
-- **Other ADRs**: [ADR-004 Database](./ADR-004-Database-ua.md)
+- **Tech Stack**: [Technology Stack Selection](../TECH_STACK.md)
+- **Other ADRs**: [ADR-004 Database](./ADR-004-Database.md)
 - **External Resources**: [Elasticsearch Documentation](https://www.elastic.co/guide/)
 
 ---

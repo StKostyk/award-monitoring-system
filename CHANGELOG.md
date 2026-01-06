@@ -863,5 +863,5 @@ This phase demonstrates:
 - [Project Charter](docs/business/PROJECT_CHARTER.md)
 - [Enterprise Roadmap](Enterprise_Pre-Development_Roadmap.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
-- [Issue Tracker](https://github.com/your-username/award-monitoring-system/issues)
-- [Pull Requests](https://github.com/your-username/award-monitoring-system/pulls) 
+- [Issue Tracker](https://github.com/StKostyk/award-monitoring-system/issues)
+- [Pull Requests](https://github.com/StKostyk/award-monitoring-system/pulls) 
