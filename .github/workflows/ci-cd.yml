@@ -131,7 +131,9 @@ jobs:
         run: npm run lint
 
       - name: Run Unit Tests
-        run: npm run test -- --run
+        run: npm test
+        env:
+          CI: true
 
       - name: Build Production
         run: npm run build -- --configuration=production
