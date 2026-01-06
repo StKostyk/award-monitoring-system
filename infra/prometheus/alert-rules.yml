@@ -1,0 +1,271 @@
+# =============================================================================
+# Award Monitoring System - Prometheus Alerting Rules
+# =============================================================================
+# SLA Targets:
+#   - API Response Time: P99 < 200ms
+#   - Uptime: 99.9%
+#   - Error Rate: < 0.1%
+# =============================================================================
+
+groups:
+  # ===========================================================================
+  # Application Health Alerts
+  # ===========================================================================
+  - name: application_health
+    rules:
+      # Service Down
+      - alert: ServiceDown
+        expr: up{job="award-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Award Backend service is down"
+          description: "The Award Monitoring System backend has been down for more than 1 minute."
+          runbook_url: "https://wiki.internal/runbooks/service-down"
+
+      # High Error Rate (SLA: < 0.1%)
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count[5m]))
+          ) > 0.001
+        for: 5m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "High HTTP error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 0.1%)"
+          runbook_url: "https://wiki.internal/runbooks/high-error-rate"
+
+      # High Response Time (SLA: P99 < 200ms)
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High API response time detected"
+          description: "P99 response time is {{ $value | humanizeDuration }} (threshold: 200ms)"
+          runbook_url: "https://wiki.internal/runbooks/high-latency"
+
+      # Very High Response Time (Critical)
+      - alert: CriticalResponseTime
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Critical API response time - immediate action required"
+          description: "P99 response time is {{ $value | humanizeDuration }} (threshold: 1s)"
+
+  # ===========================================================================
+  # JVM & Resource Alerts
+  # ===========================================================================
+  - name: jvm_resources
+    rules:
+      # High JVM Memory Usage
+      - alert: HighJvmMemoryUsage
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High JVM heap memory usage"
+          description: "JVM heap usage is {{ $value | humanizePercentage }} (threshold: 85%)"
+
+      # Critical JVM Memory Usage
+      - alert: CriticalJvmMemoryUsage
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Critical JVM heap memory - OOM risk"
+          description: "JVM heap usage is {{ $value | humanizePercentage }} (threshold: 95%)"
+
+      # High GC Pause Time
+      - alert: HighGcPauseTime
+        expr: |
+          rate(jvm_gc_pause_seconds_sum[5m]) / rate(jvm_gc_pause_seconds_count[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High GC pause time detected"
+          description: "Average GC pause time is {{ $value | humanizeDuration }}"
+
+      # High Thread Count
+      - alert: HighThreadCount
+        expr: jvm_threads_live_threads > 300
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High thread count detected"
+          description: "Current thread count: {{ $value }} (threshold: 300)"
+
+  # ===========================================================================
+  # Database Connection Alerts
+  # ===========================================================================
+  - name: database_health
+    rules:
+      # Low Available Connections
+      - alert: LowDatabaseConnections
+        expr: |
+          hikaricp_connections_idle < 2
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Low database connection pool"
+          description: "Only {{ $value }} idle connections available"
+
+      # Connection Pool Exhausted
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          hikaricp_connections_pending > 0
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "{{ $value }} requests waiting for connections"
+
+      # Slow Database Queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(spring_data_repository_invocations_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 query time is {{ $value | humanizeDuration }}"
+
+  # ===========================================================================
+  # Business Metrics Alerts
+  # ===========================================================================
+  - name: business_metrics
+    rules:
+      # Award Processing Backlog
+      - alert: AwardProcessingBacklog
+        expr: |
+          award_requests_pending_total > 100
+        for: 15m
+        labels:
+          severity: warning
+          team: business
+        annotations:
+          summary: "Award processing backlog growing"
+          description: "{{ $value }} pending award requests"
+
+      # Failed Award Submissions
+      - alert: HighAwardSubmissionFailures
+        expr: |
+          (
+            sum(rate(award_submissions_total{status="failed"}[1h]))
+            /
+            sum(rate(award_submissions_total[1h]))
+          ) > 0.05
+        for: 30m
+        labels:
+          severity: warning
+          team: business
+        annotations:
+          summary: "High award submission failure rate"
+          description: "{{ $value | humanizePercentage }} of submissions failing"
+
+      # Document Processing Failures
+      - alert: DocumentProcessingFailures
+        expr: |
+          rate(document_processing_failures_total[15m]) > 0.1
+        for: 15m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Document processing failures detected"
+          description: "{{ $value }} failures per second"
+
+  # ===========================================================================
+  # Security Alerts
+  # ===========================================================================
+  - name: security_alerts
+    rules:
+      # High Authentication Failures
+      - alert: HighAuthenticationFailures
+        expr: |
+          rate(security_authentication_failures_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "{{ $value }} failures per second - possible brute force attack"
+
+      # Unusual API Access Pattern
+      - alert: UnusualApiAccess
+        expr: |
+          rate(http_server_requests_seconds_count[5m]) > 
+          2 * avg_over_time(rate(http_server_requests_seconds_count[5m])[1h:5m])
+        for: 10m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Unusual API traffic pattern detected"
+          description: "Request rate significantly above normal"
+
+  # ===========================================================================
+  # Infrastructure Alerts
+  # ===========================================================================
+  - name: infrastructure
+    rules:
+      # Prometheus Target Down
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Prometheus target {{ $labels.job }} is down"
+          description: "Target {{ $labels.instance }} has been down for 5+ minutes"
+
+      # High Disk Usage (if node exporter enabled)
+      - alert: HighDiskUsage
+        expr: |
+          (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) > 0.85
+        for: 15m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | humanizePercentage }}"
+
