@@ -1,0 +1,32 @@
+# =============================================================================
+# Award Monitoring System - Grafana Datasources
+# =============================================================================
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    editable: false
+
+  - name: Elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    database: "award-logs-*"
+    jsonData:
+      timeField: "@timestamp"
+      esVersion: "8.0.0"
+      logMessageField: log_message
+      logLevelField: log_level
+    editable: false
+

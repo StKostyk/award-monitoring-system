@@ -1,0 +1,90 @@
+# =============================================================================
+# Award Monitoring System - Alertmanager Configuration
+# =============================================================================
+
+global:
+  resolve_timeout: 5m
+  # SMTP configuration (uncomment and configure for email alerts)
+  # smtp_smarthost: 'smtp.example.com:587'
+  # smtp_from: 'alertmanager@awards.example.com'
+  # smtp_auth_username: 'alertmanager'
+  # smtp_auth_password: 'password'
+
+# Notification templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Routing tree
+route:
+  group_by: ['alertname', 'severity', 'team']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'default-receiver'
+  
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Security alerts - dedicated channel
+    - match:
+        team: security
+      receiver: 'security-receiver'
+      group_wait: 10s
+
+    # Business alerts
+    - match:
+        team: business
+      receiver: 'business-receiver'
+
+# Inhibition rules
+inhibit_rules:
+  # Don't alert about high latency if service is down
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match:
+      alertname: 'HighResponseTime'
+    equal: ['job']
+
+  # Don't alert about memory if GC is high
+  - source_match:
+      alertname: 'CriticalJvmMemoryUsage'
+    target_match:
+      alertname: 'HighGcPauseTime'
+    equal: ['instance']
+
+# Receivers
+receivers:
+  - name: 'default-receiver'
+    # Webhook for development/testing
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook'
+        send_resolved: true
+
+  - name: 'critical-receiver'
+    # For production: configure Slack, PagerDuty, or email
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/critical'
+        send_resolved: true
+    # Slack example (uncomment and configure):
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/xxx/yyy/zzz'
+    #     channel: '#alerts-critical'
+    #     title: '{{ .Status | toUpper }}: {{ .CommonLabels.alertname }}'
+    #     text: '{{ .CommonAnnotations.summary }}'
+    #     send_resolved: true
+
+  - name: 'security-receiver'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/security'
+        send_resolved: true
+
+  - name: 'business-receiver'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/business'
+        send_resolved: true
+

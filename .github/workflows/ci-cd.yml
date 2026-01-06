@@ -205,7 +205,6 @@ jobs:
     permissions:
       contents: read
       security-events: write
-=======
     defaults:
       run:
         working-directory: backend

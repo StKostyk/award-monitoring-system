@@ -1,0 +1,205 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"award-backend\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Service Status",
+      "type": "stat"
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[5m]))",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Rate (req/s)",
+      "type": "stat"
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) * 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "P99 Latency (ms)",
+      "type": "stat"
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) * 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Error Rate (%)",
+      "type": "stat"
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "options": {},
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (uri)",
+          "legendFormat": "{{ uri }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Rate by Endpoint",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "options": {},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "title": "Response Time Percentiles (ms)",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "options": {},
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024",
+          "legendFormat": "Used",
+          "refId": "A"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{area=\"heap\"} / 1024 / 1024",
+          "legendFormat": "Max",
+          "refId": "B"
+        }
+      ],
+      "title": "JVM Heap Memory (MB)",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "options": {},
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "Active",
+          "refId": "A"
+        },
+        {
+          "expr": "hikaricp_connections_idle",
+          "legendFormat": "Idle",
+          "refId": "B"
+        },
+        {
+          "expr": "hikaricp_connections_pending",
+          "legendFormat": "Pending",
+          "refId": "C"
+        }
+      ],
+      "title": "Database Connection Pool",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["award-system", "overview"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Award System - Application Overview",
+  "uid": "award-overview",
+  "version": 1,
+  "weekStart": ""
+}
+

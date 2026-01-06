@@ -41,12 +41,47 @@ logging:
     org.springframework.security: INFO
     org.hibernate.SQL: WARN
 
-# Actuator Endpoints
+# =============================================================================
+# Actuator & Observability Configuration
+# =============================================================================
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus,loggers,env
+      base-path: /actuator
   endpoint:
     health:
       show-details: when_authorized
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 50ms,100ms,200ms,500ms,1s
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  observations:
+    key-values:
+      application: ${spring.application.name}
+
+# =============================================================================
+# OpenTelemetry Tracing Configuration
+# =============================================================================
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+  service:
+    name: ${spring.application.name}

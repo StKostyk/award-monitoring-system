@@ -1,0 +1,18 @@
+# =============================================================================
+# Award Monitoring System - Grafana Dashboard Provisioning
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: 'Award Monitoring Dashboards'
+    orgId: 1
+    folder: 'Award System'
+    folderUid: 'award-system'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+

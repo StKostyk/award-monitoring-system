@@ -8,8 +8,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 15: Monitoring & Observability Strategy
 - Phase 16: Release & Deployment Strategy
+- Phase 17: Documentation & Knowledge Management
+
+## [0.15.0] - 2026-01-06 - Phase 15 Complete: Monitoring & Observability Strategy
+
+### Added
+- **Observability Stack (`infra/docker-compose.monitoring.yml`)**
+  - Prometheus for metrics collection with 15-day retention
+  - Grafana for visualization with provisioned datasources
+  - Jaeger for distributed tracing via OpenTelemetry
+  - ELK Stack (Elasticsearch, Logstash, Kibana) for log aggregation
+  - Alertmanager for alert routing and notifications
+
+- **Prometheus Configuration (`infra/prometheus/`)**
+  - `prometheus.yml` - Scrape configuration for Spring Boot Actuator
+  - `alert-rules.yml` - Comprehensive alerting rules covering:
+    - Application health (service down, error rate, response time)
+    - JVM resources (memory, GC, threads)
+    - Database connections (pool exhaustion, slow queries)
+    - Business metrics (award backlog, submission failures)
+    - Security alerts (authentication failures, unusual traffic)
+
+- **Alertmanager Configuration (`infra/alertmanager/alertmanager.yml`)**
+  - Severity-based routing (critical, warning)
+  - Team-based channels (backend, security, business)
+  - Inhibition rules to reduce alert noise
+  - Webhook receivers (extensible to Slack, PagerDuty, email)
+
+- **Logstash Pipeline (`infra/logstash/logstash.conf`)**
+  - TCP/UDP input for Spring Boot JSON logs
+  - Field extraction and normalization
+  - Elasticsearch output with daily index rotation
+
+- **Grafana Dashboards (`infra/grafana/`)**
+  - Datasource provisioning (Prometheus, Jaeger, Elasticsearch)
+  - Application overview dashboard with key metrics panels
+
+- **Micrometer Configuration (`backend/.../config/`)**
+  - `MetricsConfiguration.java` - Common tags, meter filters, @Timed support
+  - `ObservabilityConfiguration.java` - @Observed annotation support
+
+- **Business Metrics Service (`backend/.../metrics/BusinessMetricsService.java`)**
+  - Award submission counters (success/failed)
+  - Award approval counters (by level and decision)
+  - Pending requests gauge
+  - Document processing timer and failure counter
+  - User registration and session metrics
+
+- **Structured Logging (`backend/.../resources/logback-spring.xml`)**
+  - Development profile: Human-readable colored console output
+  - Production profile: JSON format with LogstashEncoder
+  - MDC context fields: trace_id, span_id, user_id, request_id
+  - Async appender for high-throughput Logstash delivery
+  - Rolling file appender with compression
+
+- **Application Configuration Updates**
+  - Actuator endpoints: health, metrics, prometheus, loggers
+  - Prometheus metrics export with SLO histograms
+  - OpenTelemetry tracing configuration
+  - Health probes for Kubernetes (liveness, readiness)
+
+- **Dependencies Added to `pom.xml`**
+  - `spring-boot-starter-actuator` - Production-ready features
+  - `spring-boot-starter-aop` - Aspect support for metrics
+  - `micrometer-registry-prometheus` - Prometheus exporter
+  - `micrometer-tracing-bridge-otel` - OpenTelemetry bridge
+  - `opentelemetry-exporter-otlp` - OTLP trace export
+  - `logstash-logback-encoder` - JSON logging
+
+- **Documentation (`docs/monitoring/MONITORING_OBSERVABILITY.md`)**
+  - Observability architecture overview
+  - Metrics configuration and usage examples
+  - Distributed tracing with OpenTelemetry
+  - Structured logging strategy
+  - Alerting rules and SLA targets
+  - Grafana dashboard creation guide
+  - Kibana log analysis queries
+  - Production recommendations and troubleshooting
+
+### Deliverables Completed
+- [x] Observability Stack (`infra/docker-compose.monitoring.yml`)
+- [x] Prometheus configuration (`infra/prometheus/prometheus.yml`)
+- [x] Alerting rules (`infra/prometheus/alert-rules.yml`)
+- [x] Alertmanager configuration (`infra/alertmanager/alertmanager.yml`)
+- [x] Logstash pipeline (`infra/logstash/logstash.conf`)
+- [x] Grafana provisioning (`infra/grafana/provisioning/`)
+- [x] Grafana dashboard (`infra/grafana/dashboards/application-overview.json`)
+- [x] Metrics configuration (`MetricsConfiguration.java`, `ObservabilityConfiguration.java`)
+- [x] Business metrics service (`BusinessMetricsService.java`)
+- [x] Structured logging (`logback-spring.xml`)
+- [x] Updated `application.yaml` with observability settings
+- [x] Updated `pom.xml` with observability dependencies
+- [x] Monitoring documentation (`docs/monitoring/MONITORING_OBSERVABILITY.md`)
+- [x] Updated README with Phase 15 completion status
+- [x] Updated CHANGELOG with Phase 15 deliverables
+
+### Portfolio Value
+This phase demonstrates:
+- **Observability expertise** with complete monitoring stack implementation
+- **Metrics engineering** using Micrometer with custom business metrics
+- **Distributed tracing** via OpenTelemetry and Jaeger integration
+- **Log management** with structured JSON logging and ELK pipeline
+- **SLA monitoring** through Prometheus alerting rules (99.9% uptime, <200ms P99)
+- **Infrastructure knowledge** with Docker Compose orchestration
+- **Production readiness** with environment-specific configurations
+
+### Statistics
+- **1 Docker Compose file** orchestrating 7 monitoring services
+- **5 alerting rule groups** with 15+ alert definitions
+- **7 custom business metrics** for award system monitoring
+- **3 environment profiles** for logging (dev/staging/production)
+- **1 Grafana dashboard** with 8 panels
+- **6 new dependencies** added for observability
 
 ## [0.14.0] - 2026-01-06 - Phase 14 Complete: CI/CD Pipeline Design
 
@@ -841,7 +952,8 @@ This phase demonstrates:
 - **v0.12.0**: Development Environment & Toolchain ✅
 - **v0.13.0**: Quality Assurance Strategy ✅
 - **v0.14.0**: CI/CD Pipeline Design ✅
-- **v0.15.0**: Monitoring & Observability Strategy
+- **v0.15.0**: Monitoring & Observability Strategy ✅
+- **v0.16.0**: Release & Deployment Strategy
 
 ### Development Phases (v1.x.x)
 - **v1.0.0**: MVP Release (Core functionality)
