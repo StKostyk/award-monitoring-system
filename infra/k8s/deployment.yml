@@ -1,0 +1,454 @@
+# =============================================================================
+# Award Monitoring & Tracking System - Kubernetes Deployment
+# =============================================================================
+# Production-grade Kubernetes manifests for backend and frontend services
+# Supports: Blue-Green deployment, health checks, resource limits, secrets
+# =============================================================================
+
+---
+# ===========================================================================
+# Namespace
+# ===========================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: award-system
+  labels:
+    app.kubernetes.io/name: award-monitoring-system
+    environment: production
+
+---
+# ===========================================================================
+# Backend Deployment - Blue
+# ===========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: award-backend-blue
+  namespace: award-system
+  labels:
+    app: award-backend
+    version: blue
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: award-backend
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: award-backend
+        version: blue
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      serviceAccountName: award-backend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: backend
+          image: ghcr.io/stkostyk/award-monitoring-system-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "production"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: award-db-secret
+                  key: url
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: award-db-secret
+                  key: username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: award-db-secret
+                  key: password
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://jaeger-collector:4317"
+            - name: LOGSTASH_HOST
+              value: "logstash"
+            - name: LOGSTASH_PORT
+              value: "5000"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+---
+# ===========================================================================
+# Backend Deployment - Green (for Blue-Green deployments)
+# ===========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: award-backend-green
+  namespace: award-system
+  labels:
+    app: award-backend
+    version: green
+spec:
+  replicas: 0  # Scaled down when not in use
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: award-backend
+      version: green
+  template:
+    metadata:
+      labels:
+        app: award-backend
+        version: green
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      serviceAccountName: award-backend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: backend
+          image: ghcr.io/stkostyk/award-monitoring-system-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "production"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: award-db-secret
+                  key: url
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: award-db-secret
+                  key: username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: award-db-secret
+                  key: password
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+---
+# ===========================================================================
+# Frontend Deployment
+# ===========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: award-frontend
+  namespace: award-system
+  labels:
+    app: award-frontend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: award-frontend
+  template:
+    metadata:
+      labels:
+        app: award-frontend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101  # nginx user
+        fsGroup: 101
+      containers:
+        - name: frontend
+          image: ghcr.io/stkostyk/award-monitoring-system-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+---
+# ===========================================================================
+# Backend Service
+# ===========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: award-backend
+  namespace: award-system
+  labels:
+    app: award-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: award-backend
+    version: blue  # Switch to 'green' for Blue-Green deployment
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+
+---
+# ===========================================================================
+# Frontend Service
+# ===========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: award-frontend
+  namespace: award-system
+  labels:
+    app: award-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: award-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+
+---
+# ===========================================================================
+# Ingress
+# ===========================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: award-ingress
+  namespace: award-system
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  tls:
+    - hosts:
+        - awards.example.com
+        - api.awards.example.com
+      secretName: award-tls-secret
+  rules:
+    - host: awards.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: award-frontend
+                port:
+                  number: 80
+    - host: api.awards.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: award-backend
+                port:
+                  number: 8080
+
+---
+# ===========================================================================
+# Service Account
+# ===========================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: award-backend
+  namespace: award-system
+
+---
+# ===========================================================================
+# ConfigMap - Application Configuration
+# ===========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: award-config
+  namespace: award-system
+data:
+  SPRING_PROFILES_ACTIVE: "production"
+  SERVER_PORT: "8080"
+  LOGGING_LEVEL_ROOT: "WARN"
+  LOGGING_LEVEL_UA_EDU_CHNU: "INFO"
+
+---
+# ===========================================================================
+# HorizontalPodAutoscaler - Backend
+# ===========================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: award-backend-hpa
+  namespace: award-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: award-backend-blue
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# ===========================================================================
+# PodDisruptionBudget - Backend
+# ===========================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: award-backend-pdb
+  namespace: award-system
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: award-backend
+
+---
+# ===========================================================================
+# NetworkPolicy - Backend
+# ===========================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: award-backend-network-policy
+  namespace: award-system
+spec:
+  podSelector:
+    matchLabels:
+      app: award-backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: award-frontend
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 6379  # Redis
+        - protocol: TCP
+          port: 443   # External HTTPS
+
