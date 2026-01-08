@@ -171,6 +171,7 @@ tmp/
 # =============================================================================
 # Cursor AI
 .cursor/
+.claude/
 
 # AI Templates (internal use)
 docs/_AI_TEMPLATES.md
@@ -180,3 +181,4 @@ TODO.local.md
 NOTES.local.md
 
 infra/k8s/secrets.yml
+DEVELOPMENT_ROADMAP.md

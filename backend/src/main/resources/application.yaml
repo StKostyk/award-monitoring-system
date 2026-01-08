@@ -4,6 +4,8 @@
 spring:
   application:
     name: award-monitoring-system
+  profiles:
+    active: local
 
   # Database Configuration (override in environment-specific profiles)
   datasource:
@@ -22,6 +24,15 @@ spring:
       hibernate:
         format_sql: true
         default_schema: public
+
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
 
   # Security Configuration
   security:
@@ -85,3 +96,48 @@ otel:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
   service:
     name: ${spring.application.name}
+
+# =============================================================================
+# Environment-Specific Profiles
+# =============================================================================
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/award_monitoring
+    username: postgres
+    password: popqaz
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:postgresql://postgres:5432/award_monitoring
+    username: postgres
+    password: popqaz
+
+---
+spring:
+  config:
+    activate:
+      on-profile: production
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+  jpa:
+    show-sql: false
+  flyway:
+    baseline-version: 1
