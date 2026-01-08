@@ -171,6 +171,7 @@ tmp/
 # =============================================================================
 # Cursor AI
 .cursor/
+.claude/
 
 # AI Templates (internal use)
 docs/_AI_TEMPLATES.md

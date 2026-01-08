@@ -4,218 +4,217 @@
      ============================================================================= -->
 <configuration scan="true" scanPeriod="30 seconds">
 
-    <!-- Properties -->
-    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="award-monitoring-system"/>
-    <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
-    <property name="LOG_FILE" value="${LOG_PATH}/${appName}"/>
+  <!-- Properties -->
+  <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="award-monitoring-system"/>
+  <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
+  <property name="LOG_FILE" value="${LOG_PATH}/${appName}"/>
 
-    <!-- =========================================================================
-         Console Appender - Development (Human-readable)
-         ========================================================================= -->
-    <springProfile name="local,dev">
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n</pattern>
-            </encoder>
-        </appender>
-    </springProfile>
+  <!-- =========================================================================
+       Console Appender - Development (Human-readable)
+       ========================================================================= -->
+  <springProfile name="local | dev">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n</pattern>
+      </encoder>
+    </appender>
+  </springProfile>
 
-    <!-- =========================================================================
-         Console Appender - Production (JSON for ELK)
-         ========================================================================= -->
-    <springProfile name="!local,!dev">
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
-                <providers>
-                    <!-- Timestamp -->
-                    <timestamp>
-                        <fieldName>timestamp</fieldName>
-                        <pattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</pattern>
-                    </timestamp>
-                    
-                    <!-- Log Level -->
-                    <logLevel>
-                        <fieldName>level</fieldName>
-                    </logLevel>
-                    
-                    <!-- Logger Name -->
-                    <loggerName>
-                        <fieldName>logger_name</fieldName>
-                        <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
-                    </loggerName>
-                    
-                    <!-- Thread Name -->
-                    <threadName>
-                        <fieldName>thread_name</fieldName>
-                    </threadName>
-                    
-                    <!-- Message -->
-                    <message>
-                        <fieldName>message</fieldName>
-                    </message>
-                    
-                    <!-- MDC (trace_id, span_id, user_id, request_id) -->
-                    <mdc>
-                        <includeMdcKeyName>trace_id</includeMdcKeyName>
-                        <includeMdcKeyName>span_id</includeMdcKeyName>
-                        <includeMdcKeyName>user_id</includeMdcKeyName>
-                        <includeMdcKeyName>request_id</includeMdcKeyName>
-                    </mdc>
-                    
-                    <!-- Structured Arguments -->
-                    <arguments>
-                        <includeNonStructuredArguments>false</includeNonStructuredArguments>
-                    </arguments>
-                    
-                    <!-- Stack Trace -->
-                    <stackTrace>
-                        <fieldName>stack_trace</fieldName>
-                        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
-                            <maxDepthPerThrowable>30</maxDepthPerThrowable>
-                            <maxLength>2048</maxLength>
-                            <shortenedClassNameLength>20</shortenedClassNameLength>
-                            <rootCauseFirst>true</rootCauseFirst>
-                        </throwableConverter>
-                    </stackTrace>
-                    
-                    <!-- Application Context -->
-                    <pattern>
-                        <pattern>
-                            {
-                                "application": "${appName}",
-                                "environment": "${ENVIRONMENT:-development}"
-                            }
-                        </pattern>
-                    </pattern>
-                </providers>
-            </encoder>
-        </appender>
-    </springProfile>
+  <!-- =========================================================================
+       Console Appender - Production (JSON for ELK)
+       ========================================================================= -->
+  <springProfile name="staging | production">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+        <providers>
+          <!-- Timestamp -->
+          <timestamp>
+            <fieldName>timestamp</fieldName>
+            <pattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</pattern>
+          </timestamp>
 
-    <!-- =========================================================================
-         File Appender - Rolling (Production Backup)
-         ========================================================================= -->
-    <springProfile name="!local">
-        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-            <file>${LOG_FILE}.log</file>
-            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-                <maxFileSize>50MB</maxFileSize>
-                <maxHistory>30</maxHistory>
-                <totalSizeCap>1GB</totalSizeCap>
-            </rollingPolicy>
-            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
-                <providers>
-                    <timestamp/>
-                    <logLevel/>
-                    <loggerName/>
-                    <threadName/>
-                    <message/>
-                    <mdc/>
-                    <arguments/>
-                    <stackTrace/>
-                </providers>
-            </encoder>
-        </appender>
-    </springProfile>
+          <!-- Log Level -->
+          <logLevel>
+            <fieldName>level</fieldName>
+          </logLevel>
 
-    <!-- =========================================================================
-         TCP Appender - Logstash (Production)
-         ========================================================================= -->
-    <springProfile name="staging,production">
-        <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-            <destination>${LOGSTASH_HOST:-localhost}:${LOGSTASH_PORT:-5000}</destination>
-            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
-                <providers>
-                    <timestamp/>
-                    <logLevel/>
-                    <loggerName/>
-                    <threadName/>
-                    <message/>
-                    <mdc/>
-                    <arguments/>
-                    <stackTrace/>
-                    <pattern>
-                        <pattern>
-                            {
-                                "application": "${appName}",
-                                "environment": "${ENVIRONMENT:-production}"
-                            }
-                        </pattern>
-                    </pattern>
-                </providers>
-            </encoder>
-            <keepAliveDuration>5 minutes</keepAliveDuration>
-            <reconnectionDelay>1 second</reconnectionDelay>
-        </appender>
-    </springProfile>
+          <!-- Logger Name -->
+          <loggerName>
+            <fieldName>logger_name</fieldName>
+            <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
+          </loggerName>
 
-    <!-- =========================================================================
-         Async Appender - High-throughput wrapper
-         ========================================================================= -->
-    <springProfile name="staging,production">
-        <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
-            <appender-ref ref="LOGSTASH"/>
-            <queueSize>512</queueSize>
-            <discardingThreshold>0</discardingThreshold>
-            <includeCallerData>false</includeCallerData>
-            <neverBlock>true</neverBlock>
-        </appender>
-    </springProfile>
+          <!-- Thread Name -->
+          <threadName>
+            <fieldName>thread_name</fieldName>
+          </threadName>
 
-    <!-- =========================================================================
-         Logger Configuration
-         ========================================================================= -->
-    
-    <!-- Application Loggers -->
-    <logger name="ua.edu.chnu.award_monitoring_system" level="DEBUG"/>
-    
-    <!-- Spring Framework -->
-    <logger name="org.springframework" level="INFO"/>
-    <logger name="org.springframework.web" level="INFO"/>
-    <logger name="org.springframework.security" level="INFO"/>
-    <logger name="org.springframework.boot.actuate" level="WARN"/>
-    
-    <!-- Hibernate -->
-    <logger name="org.hibernate" level="WARN"/>
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
-    
-    <!-- HikariCP -->
-    <logger name="com.zaxxer.hikari" level="INFO"/>
-    
-    <!-- Suppress noisy loggers -->
-    <logger name="org.apache.catalina" level="WARN"/>
-    <logger name="org.apache.tomcat" level="WARN"/>
-    <logger name="io.micrometer" level="WARN"/>
+          <!-- Message -->
+          <message>
+            <fieldName>message</fieldName>
+          </message>
 
-    <!-- =========================================================================
-         Root Logger Configuration
-         ========================================================================= -->
-    <springProfile name="local,dev">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
-    </springProfile>
+          <!-- MDC (trace_id, span_id, user_id, request_id) -->
+          <mdc>
+            <includeMdcKeyName>trace_id</includeMdcKeyName>
+            <includeMdcKeyName>span_id</includeMdcKeyName>
+            <includeMdcKeyName>user_id</includeMdcKeyName>
+            <includeMdcKeyName>request_id</includeMdcKeyName>
+          </mdc>
 
-    <springProfile name="staging">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
-            <appender-ref ref="ASYNC_LOGSTASH"/>
-        </root>
-    </springProfile>
+          <!-- Structured Arguments -->
+          <arguments>
+            <includeNonStructuredArguments>false</includeNonStructuredArguments>
+          </arguments>
 
-    <springProfile name="production">
-        <root level="WARN">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
-            <appender-ref ref="ASYNC_LOGSTASH"/>
-        </root>
-        
-        <!-- Keep application logs at INFO in production -->
-        <logger name="ua.edu.chnu.award_monitoring_system" level="INFO"/>
-    </springProfile>
+          <!-- Stack Trace -->
+          <stackTrace>
+            <fieldName>stack_trace</fieldName>
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+              <maxDepthPerThrowable>30</maxDepthPerThrowable>
+              <maxLength>2048</maxLength>
+              <shortenedClassNameLength>20</shortenedClassNameLength>
+              <rootCauseFirst>true</rootCauseFirst>
+            </throwableConverter>
+          </stackTrace>
+
+          <!-- Application Context -->
+          <pattern>
+            <pattern>
+              {
+              "application": "${appName}",
+              "environment": "${ENVIRONMENT:-development}"
+              }
+            </pattern>
+          </pattern>
+        </providers>
+      </encoder>
+    </appender>
+  </springProfile>
+
+  <!-- =========================================================================
+       File Appender - Rolling (Production Backup)
+       ========================================================================= -->
+  <springProfile name="staging | production">
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>${LOG_FILE}.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+        <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+        <maxFileSize>50MB</maxFileSize>
+        <maxHistory>30</maxHistory>
+        <totalSizeCap>1GB</totalSizeCap>
+      </rollingPolicy>
+      <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+        <providers>
+          <timestamp/>
+          <logLevel/>
+          <loggerName/>
+          <threadName/>
+          <message/>
+          <mdc/>
+          <arguments/>
+          <stackTrace/>
+        </providers>
+      </encoder>
+    </appender>
+  </springProfile>
+
+  <!-- =========================================================================
+       TCP Appender - Logstash (Production)
+       ========================================================================= -->
+  <springProfile name="staging | production">
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+      <destination>${LOGSTASH_HOST:-localhost}:${LOGSTASH_PORT:-5000}</destination>
+      <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+        <providers>
+          <timestamp/>
+          <logLevel/>
+          <loggerName/>
+          <threadName/>
+          <message/>
+          <mdc/>
+          <arguments/>
+          <stackTrace/>
+          <pattern>
+            <pattern>
+              {
+              "application": "${appName}",
+              "environment": "${ENVIRONMENT:-production}"
+              }
+            </pattern>
+          </pattern>
+        </providers>
+      </encoder>
+      <keepAliveDuration>5 minutes</keepAliveDuration>
+      <reconnectionDelay>1 second</reconnectionDelay>
+    </appender>
+  </springProfile>
+
+  <!-- =========================================================================
+       Async Appender - High-throughput wrapper
+       ========================================================================= -->
+  <springProfile name="staging | production">
+    <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
+      <appender-ref ref="LOGSTASH"/>
+      <queueSize>512</queueSize>
+      <discardingThreshold>0</discardingThreshold>
+      <includeCallerData>false</includeCallerData>
+      <neverBlock>true</neverBlock>
+    </appender>
+  </springProfile>
+
+  <!-- =========================================================================
+       Logger Configuration
+       ========================================================================= -->
+
+  <!-- Application Loggers -->
+  <logger name="ua.edu.chnu.award_monitoring_system" level="DEBUG"/>
+
+  <!-- Spring Framework -->
+  <logger name="org.springframework" level="INFO"/>
+  <logger name="org.springframework.web" level="INFO"/>
+  <logger name="org.springframework.security" level="INFO"/>
+  <logger name="org.springframework.boot.actuate" level="WARN"/>
+
+  <!-- Hibernate -->
+  <logger name="org.hibernate" level="WARN"/>
+  <logger name="org.hibernate.SQL" level="DEBUG"/>
+  <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+
+  <!-- HikariCP -->
+  <logger name="com.zaxxer.hikari" level="INFO"/>
+
+  <!-- Suppress noisy loggers -->
+  <logger name="org.apache.catalina" level="WARN"/>
+  <logger name="org.apache.tomcat" level="WARN"/>
+  <logger name="io.micrometer" level="WARN"/>
+
+  <!-- =========================================================================
+       Root Logger Configuration
+       ========================================================================= -->
+  <springProfile name="local | dev">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
+  <springProfile name="staging">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="FILE"/>
+      <appender-ref ref="ASYNC_LOGSTASH"/>
+    </root>
+  </springProfile>
+
+  <springProfile name="production">
+    <root level="WARN">
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="FILE"/>
+      <appender-ref ref="ASYNC_LOGSTASH"/>
+    </root>
+
+    <!-- Keep application logs at INFO in production -->
+    <logger name="ua.edu.chnu.award_monitoring_system" level="INFO"/>
+  </springProfile>
 
 </configuration>
-
