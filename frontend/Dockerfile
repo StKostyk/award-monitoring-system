@@ -10,20 +10,30 @@
 # ---------------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache python3 make g++ git
+
 WORKDIR /build
+
+ENV NODE_OPTIONS="--max_old_space_size=8192"
 
 # Cache dependencies
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --prefer-offline --no-audit
 
 # Build application
 COPY . .
-RUN npm run build -- --configuration=production
+RUN npx ng build \
+    --configuration=production \
+    --optimization=true \
+    --aot=true \
+    --source-map=false
 
 # ---------------------------------------------------------------------------
 # Stage 2: Runtime
 # ---------------------------------------------------------------------------
 FROM nginx:alpine
+
+RUN apk add --no-cache curl
 
 # Security: Remove default content
 RUN rm -rf /usr/share/nginx/html/*
@@ -47,7 +57,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost/ || exit 1
+    CMD curl -f http://localhost/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
 

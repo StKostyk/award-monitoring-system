@@ -8,7 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:frontend": "node dist/frontend/server/server.mjs",
-    "lint": "eslint src/**/*.ts"
+    "lint": "eslint src/**/*.ts",
+
+    "build:prod": "node --max_old_space_size=4096 ./node_modules/@angular/cli/bin/ng build --configuration production",
+    "build:docker": "node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng build --configuration production --optimization=true --output-hashing=all --source-map=false"
   },
   "prettier": {
     "printWidth": 100,

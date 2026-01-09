@@ -21,9 +21,9 @@
   </springProfile>
 
   <!-- =========================================================================
-       Console Appender - Production (JSON for ELK)
+       Console Appender - Production/Docker (JSON for ELK)
        ========================================================================= -->
-  <springProfile name="staging | production">
+  <springProfile name="!local &amp; !dev">
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
       <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
         <providers>
