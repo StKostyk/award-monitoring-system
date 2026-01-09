@@ -1,9 +1,6 @@
 # =============================================================================
 # Award Monitoring System - Backend Dockerfile
 # =============================================================================
-# Multi-stage build for optimized Java 21 Spring Boot application
-# Final image: Eclipse Temurin JRE 21 Alpine (~200MB)
-# =============================================================================
 
 # ---------------------------------------------------------------------------
 # Stage 1: Build
@@ -28,6 +25,9 @@ RUN java -Djarmode=layertools -jar target/*.jar extract --destination extracted
 # ---------------------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Security: Run as non-root user
 RUN addgroup -g 1000 appgroup && \
     adduser -u 1000 -G appgroup -D appuser
@@ -46,14 +46,18 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Application configuration
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75.0 \
+    -XX:+UseG1GC \
+    -XX:MaxGCPauseMillis=200 \
+    -Djava.security.egd=file:/dev/./urandom"
 ENV SERVER_PORT=8080
 
 EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget -qO- http://localhost:8080/actuator/health/liveness || exit 1
+    CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
 # Start application
 ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} org.springframework.boot.loader.launch.JarLauncher"]

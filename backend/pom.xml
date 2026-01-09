@@ -28,6 +28,14 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+
+    <sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
+    <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
+
+    <!-- SonarQube configuration -->
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
 		<!-- Spring Boot Starters -->
@@ -193,7 +201,169 @@
         <groupId>org.flywaydb</groupId>
         <artifactId>flyway-maven-plugin</artifactId>
       </plugin>
+
+      <!--
+                JaCoCo Plugin for Code Coverage
+                This plugin instruments your code during testing to track which lines are executed
+                It generates reports that show exactly which parts of your code are tested
+            -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco-maven-plugin.version}</version>
+        <executions>
+          <!--
+              Prepare agent: This runs before tests and sets up JaCoCo to monitor execution
+              It adds a Java agent that tracks which lines of code are executed during tests
+          -->
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+
+          <!--
+              Generate report: After tests run, this creates the coverage report
+              The report shows which code was covered by tests and which wasn't
+          -->
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+
+          <!--
+              Check coverage: Enforces minimum coverage thresholds
+              Build will fail if coverage drops below these levels
+              This prevents code quality from degrading over time
+          -->
+          <execution>
+            <id>check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>PACKAGE</element>
+                  <limits>
+                    <!-- Require at least 80% line coverage per package -->
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.80</minimum>
+                    </limit>
+                    <!-- Require at least 75% branch coverage -->
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.75</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <!--
+              Exclude certain classes from coverage requirements
+              These are typically classes that are hard to test or don't need testing
+          -->
+          <excludes>
+            <!-- Main application class - just a launcher, no business logic -->
+            <exclude>**/Application.class</exclude>
+            <!-- Configuration classes - Spring manages these, hard to unit test -->
+            <exclude>**/config/**</exclude>
+            <!-- Data Transfer Objects - just data holders, no logic -->
+            <exclude>**/dto/**</exclude>
+            <!-- Entities - JPA manages these, integration tests cover them -->
+            <exclude>**/entity/**</exclude>
+            <!-- Exception classes - simple data classes -->
+            <exclude>**/exception/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!--
+          SonarQube Maven Plugin
+          This plugin uploads your code analysis results to SonarQube server
+          It integrates seamlessly with Maven's build lifecycle
+      -->
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>${sonar-maven-plugin.version}</version>
+      </plugin>
     </plugins>
 	</build>
+
+  <!--
+        Build Profiles let you activate certain build configurations conditionally
+        This is useful for running different steps in different environments
+    -->
+  <profiles>
+    <!--
+        Coverage Profile
+        Activate this profile to run tests with code coverage
+        Usage: mvn clean verify -Pcoverage
+    -->
+    <profile>
+      <id>coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <!--
+                  Merge execution data from unit and integration tests
+                  This gives you a complete picture of your test coverage
+              -->
+              <execution>
+                <id>merge-results</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>merge</goal>
+                </goals>
+                <configuration>
+                  <fileSets>
+                    <fileSet>
+                      <directory>${project.build.directory}</directory>
+                      <includes>
+                        <include>*.exec</include>
+                      </includes>
+                    </fileSet>
+                  </fileSets>
+                  <destFile>${project.build.directory}/jacoco-aggregate.exec</destFile>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!--
+        SonarQube Profile
+        Use this when you want to run SonarQube analysis
+        Usage: mvn clean verify sonar:sonar -Psonar
+    -->
+    <profile>
+      <id>sonar</id>
+      <activation>
+        <!--
+            Automatically activate this profile when sonar.host.url is set
+            This makes it work seamlessly in CI/CD pipelines
+        -->
+        <property>
+          <name>sonar.host.url</name>
+        </property>
+      </activation>
+    </profile>
+  </profiles>
 
 </project>

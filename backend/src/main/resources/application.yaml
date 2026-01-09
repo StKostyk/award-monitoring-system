@@ -13,6 +13,15 @@ spring:
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      # Connection pool settings for high performance
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000
 
   # JPA Configuration
   jpa:
@@ -23,7 +32,43 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
         default_schema: public
+        jdbc.batch_versioned_data: true
+
+  # Redis configuration
+  data:
+    redis:
+      # Redis server connection details
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+      # Connection pooling with Lettuce (default Redis client)
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
+
+        shutdown-timeout: 100ms
+
+      # Timeout settings
+      timeout: 6000ms  # Command timeout
+      connect-timeout: 2000ms
+
+  # Cache configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000
+      key-prefix: "awardapp:"
+      use-key-prefix: true
+      cache-null-values: false
 
   # Flyway Configuration
   flyway:
@@ -33,6 +78,9 @@ spring:
     locations: classpath:db/migration
     validate-on-migrate: true
     clean-disabled: true
+    placeholder-replacement: true
+    placeholders:
+      schemaName: public
 
   # Security Configuration
   security:
@@ -43,14 +91,20 @@ spring:
 # Server Configuration
 server:
   port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  compression:
+    enabled: true
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
+    include-exception: false
 
 # Logging Configuration
 logging:
-  level:
-    root: INFO
-    ua.edu.chnu: DEBUG
-    org.springframework.security: INFO
-    org.hibernate.SQL: WARN
+  # The file path for logs (used by logback-spring.xml)
+  file:
+    path: ${LOG_PATH:logs}
 
 # =============================================================================
 # Actuator & Observability Configuration
@@ -66,11 +120,17 @@ management:
       show-details: when_authorized
       probes:
         enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState,db,redis
     prometheus:
       enabled: true
   metrics:
     tags:
       application: ${spring.application.name}
+      environment: ${ENVIRONMENT:local}
     distribution:
       percentiles-histogram:
         http.server.requests: true
@@ -96,6 +156,10 @@ otel:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
   service:
     name: ${spring.application.name}
+  resource:
+    attributes:
+      service.name: ${spring.application.name}
+      deployment.environment: ${ENVIRONMENT:local}
 
 # =============================================================================
 # Environment-Specific Profiles
@@ -117,6 +181,11 @@ spring:
         format_sql: true
   flyway:
     enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
 
 ---
 spring:
@@ -127,6 +196,17 @@ spring:
     url: jdbc:postgresql://postgres:5432/award_monitoring
     username: postgres
     password: popqaz
+    hikari:
+      connection-timeout: 20000
+  jpa:
+    show-sql: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password:
 
 ---
 spring:
@@ -137,7 +217,29 @@ spring:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
   jpa:
     show-sql: false
+    properties:
+      hibernate:
+        query.plan_cache_max_size: 2048
+        query.plan_parameter_metadata_max_size: 128
   flyway:
     baseline-version: 1
+    baseline-on-migrate: false
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never

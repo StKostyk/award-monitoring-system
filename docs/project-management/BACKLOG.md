@@ -9,12 +9,12 @@
 
 | ID       | Story | Points | Status | Issue                                                                |
 |----------|-------|--------|--------|----------------------------------------------------------------------|
-| SETUP-01 | Spring Boot project setup | 2      | 🔄 In Progress | [#18](https://github.com/StKostyk/award-monitoring-system/issues/18) |
-| SETUP-02 | PostgreSQL Docker setup | 2      | ⏳ Sprint | [#19](https://github.com/StKostyk/award-monitoring-system/issues/19) |
-| SETUP-03 | Redis configuration | 2      | ⏳ Sprint | [#20](https://github.com/StKostyk/award-monitoring-system/issues/20) |
-| SETUP-04 | Angular project initialization | 2      | ⏳ Sprint | [#21](https://github.com/StKostyk/award-monitoring-system/issues/21) |
+| SETUP-01 | Spring Boot project setup | 2      | ✅ Complete | [#18](https://github.com/StKostyk/award-monitoring-system/issues/18) |
+| SETUP-02 | PostgreSQL Docker setup | 2      | 🔄 In Progress | [#19](https://github.com/StKostyk/award-monitoring-system/issues/19) |
+| SETUP-03 | Redis configuration | 2      | 🔄 In Progress | [#20](https://github.com/StKostyk/award-monitoring-system/issues/20) |
+| SETUP-04 | Angular project initialization | 2      | 🔄 In Progress | [#21](https://github.com/StKostyk/award-monitoring-system/issues/21) |
 | SETUP-05 | CI/CD pipeline (GitHub Actions) | 2      | ⏳ Sprint | [#22](https://github.com/StKostyk/award-monitoring-system/issues/22) |
-| SETUP-06 | SonarQube integration | 2      | ⏳ Sprint | [#23](https://github.com/StKostyk/award-monitoring-system/issues/23) |
+| SETUP-06 | SonarQube integration | 2      | 🔄 In Progress | [#23](https://github.com/StKostyk/award-monitoring-system/issues/23) |
 | SETUP-07 | Flyway migration setup | 2      | ⏳ Sprint | [#24](https://github.com/StKostyk/award-monitoring-system/issues/24) |
 
 **Sprint Goal**: Implement basic setup and folder structure  
