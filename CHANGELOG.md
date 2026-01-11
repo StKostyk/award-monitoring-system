@@ -11,6 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Phase 18: Portfolio Preparation & Presentation
 - Phase 19: Final Review & Sign-off
 
+## [0.18.0] - 2026-01-10 - Sprint 1: Development Environment
+
+### Added
+- Spring Boot 3.5 project with PostgreSQL 17
+- Angular 20 frontend scaffold
+- GitHub Actions CI/CD pipeline
+- SonarQube integration (85% coverage gate)
+- Flyway migration framework
+
+### Infrastructure
+- Docker Compose for local development
+- Redis caching layer configured
+
+**Sprint Stats**: 14 points | 7 stories | Velocity: 14
+
 ## [0.17.0] - 2026-01-06 - Phase 17 Complete: Documentation & Knowledge Management
 
 ### Added
