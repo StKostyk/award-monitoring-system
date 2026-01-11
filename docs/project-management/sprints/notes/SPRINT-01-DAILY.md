@@ -41,3 +41,18 @@
 **Notes**: Reconfigure docker compose or frontend/Dockerfile file
 
 **Tomorrow**: Start actual development
+
+---
+
+## Day 4 (Sat, Jan 10)
+**Focus**: Flyway migrations and ci/cd pipeline
+
+**Completed**:
+- [x] CI/CD pipeline configured
+- [x] Basic flyway migrations added
+
+**Blockers**: Flyway migrations took way to much time due to big number of different departments and faculties
+
+**Notes**: Consider hiring someone to add different data
+
+**Tomorrow**: Start actual development
