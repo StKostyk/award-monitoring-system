@@ -182,3 +182,12 @@ NOTES.local.md
 
 infra/k8s/secrets.yml
 DEVELOPMENT_ROADMAP.md
+WORKFLOW_CHEATSHEET.md
+LEARNING_AND_WORKFLOW_GUIDE.md
+CLAUDE.md
+
+tools/claude-skills/
+docs/learning/
+docs/epics/README.md
+docs/project-management/sprints/notes/LEARNING_JOURNAL_TEMPLATE.md
+docs/project-management/sprints/notes/PRACTICE_LOG.md

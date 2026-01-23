@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -56,8 +54,8 @@ services:
       # Redis connection
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      # OpenTelemetry configuration
-      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      # OpenTelemetry configuration (requires monitoring stack: docker-compose -f infra/docker-compose.monitoring.yml up -d)
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}
       - OTEL_SERVICE_NAME=award-monitoring-system
       # Environment identifier for logging
       - ENVIRONMENT=docker
@@ -120,59 +118,10 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # Elasticsearch for logging
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: award-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - award-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1G
-        reservations:
-          cpus: '1'
-          memory: 512M
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.11.0
-    container_name: award-logstash
-    ports:
-      - "5000:5000"
-      - "9600:9600"
-    environment:
-      - "LS_JAVA_OPTS=-Xms256m -Xmx512m"
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
-      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    networks:
-      - award-network
-
 volumes:
   postgres_data:
     driver: local
   redis_data:
-    driver: local
-  es_data:
     driver: local
 
 networks:

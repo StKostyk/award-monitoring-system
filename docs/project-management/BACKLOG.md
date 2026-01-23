@@ -5,20 +5,21 @@
 > **Total Story Points**: 154  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)
 
-## Current Sprint: Sprint 1 (Setup)
+## Current Sprint: Sprint 2 (Authentication)
 
-| ID       | Story | Points | Status | Issue                                                                |
-|----------|-------|--------|--------|----------------------------------------------------------------------|
-| SETUP-01 | Spring Boot project setup | 2      | ✅ Complete | [#18](https://github.com/StKostyk/award-monitoring-system/issues/18) |
-| SETUP-02 | PostgreSQL Docker setup | 2      | ✅ Complete | [#19](https://github.com/StKostyk/award-monitoring-system/issues/19) |
-| SETUP-03 | Redis configuration | 2      | ✅ Complete | [#20](https://github.com/StKostyk/award-monitoring-system/issues/20) |
-| SETUP-04 | Angular project initialization | 2      | ✅ Complete | [#21](https://github.com/StKostyk/award-monitoring-system/issues/21) |
-| SETUP-05 | CI/CD pipeline (GitHub Actions) | 2      | ✅ Complete | [#22](https://github.com/StKostyk/award-monitoring-system/issues/22) |
-| SETUP-06 | SonarQube integration | 2      | ✅ Complete | [#23](https://github.com/StKostyk/award-monitoring-system/issues/23) |
-| SETUP-07 | Flyway migration setup | 2      | ⏳ Sprint | [#24](https://github.com/StKostyk/award-monitoring-system/issues/24) |
+| ID | Story | Points | Status | Issue |
+|----|-------|--------|--------|-------|
+| US-001 | Employee Registration | 3 | 🔄 In Progress | [#29](https://github.com/StKostyk/award-monitoring-system/issues/29) |
+| 1.1.1 | JWT Login | 5 | ⏳ Sprint | [#30](https://github.com/StKostyk/award-monitoring-system/issues/30) |
+| 1.1.2 | Rate Limiting | 3 | ⏳ Sprint | [#31](https://github.com/StKostyk/award-monitoring-system/issues/31) |
+| US-002 | Role Assignment | 5 | ⏳ Sprint |[#32](https://github.com/StKostyk/award-monitoring-system/issues/32) | 
+| 1.1.3 | Login Notification | 4 | ⏳ Sprint | [#33](https://github.com/StKostyk/award-monitoring-system/issues/33) |
+| 1.2.1 | Login/logout endpoints | 2 | ⏳ Sprint | [#34](https://github.com/StKostyk/award-monitoring-system/issues/34) |
+| 1.2.2 | Faculty-Scoped Permissions | 3 | ⏳ Sprint | [#35](https://github.com/StKostyk/award-monitoring-system/issues/35) |
+| 1.2.3 | OAuth2 Authorization Server | 5 | ⏳ Sprint | [#36](https://github.com/StKostyk/award-monitoring-system/issues/36) |
 
-**Sprint Goal**: Implement basic setup and folder structure  
-**Committed Points**: 14
+Sprint Goal: Implement core authentication with OAuth2/JWT  
+Committed Points: 27
 
 ---
 
@@ -27,17 +28,36 @@
 ### High Priority (Next 2 Sprints)
 | ID | Story | Points | Epic | Issue |
 |----|-------|--------|------|-------|
-| -  | -     | -      | -    | -     |
+| 1.3.1 | Approval Authority Delegation | - | Auth | [#37](https://github.com/StKostyk/award-monitoring-system/issues/37) |
+| 1.3.2 | Profile Information Update | - | Auth | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
+| 1.3.3 | Notification Preferences | - | Auth | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |
+| US-011 | GDPR Data Portability | - | Auth | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
+| 1.3.4 | MFA implementation | 3 | Auth | [#41](https://github.com/StKostyk/award-monitoring-system/issues/41) |
+| 1.3.5 | User domain entities | 5 | Awards | [#42](https://github.com/StKostyk/award-monitoring-system/issues/42) |
+| 1.3.6 | Award domain entities | 5 | Awards | [#43](https://github.com/StKostyk/award-monitoring-system/issues/43) |
+
 
 ### Medium Priority
 | ID     | Story | Points | Epic |
 |--------|-------|--------|------|
-| US-001 | Employee Registration | 3      | Auth |
-| US-003 | Role Assignment | 5      | Auth |
+| US-003 | Quick Award Submission | 3 | Awards |
+| 2.1.2 | Award Date Validation | - | Awards |
+| 2.1.3 | Smart Award Categorization | - | Awards |
+| 2.2.1 | Automatic Change Tracking | - | Awards |
+| 2.2.2 | Version History Display | - | Awards |
+| 3.1.1 | Certificate Upload | - | Documents |
+| US-006 | AI-Powered Document Parsing | - | Documents |
+
 
 ### Low Priority (Future)
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
+| US-005 | Real-Time Status Updates | - | Awards |
+| 2.4.1 | Award Error Correction | - | Awards |
+| 2.4.2 | GDPR-Compliant Deletion | - | Awards |
+| US-007 | Confidence Score Display | - | Documents |
+| US-004 | Multi-Level Approval Routing | - | Workflows |
+| 4.2.1 | Automatic Escalation | - | Workflows |
 | US-008 | Personal Dashboard | 13 | Analytics |
 | US-010 | Executive Dashboard | 21 | Analytics |
 
@@ -47,9 +67,9 @@
 
 | Sprint | Stories | Points |
 |--------|---------|--------|
-| -      | -       | -      |
+| Sprint 1 | Setup (7 tasks) | 14 |
 
-**Total Completed**: 0 / 154 points (0%)
+Total Completed: 14 / 154 points (9%)
 
 ---
 
