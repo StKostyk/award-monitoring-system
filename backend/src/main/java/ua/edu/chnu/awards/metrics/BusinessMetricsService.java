@@ -1,20 +1,21 @@
-package ua.edu.chnu.award_monitoring_system.metrics;
+package ua.edu.chnu.awards.metrics;
+
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+
+import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import org.springframework.stereotype.Service;
-
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 /**
  * Business metrics service for Award Monitoring System.
- * 
+ *
  * <p>Provides custom business metrics for monitoring award submissions,
  * approvals, document processing, and user activity.</p>
- * 
+ *
  * <p>Metrics exposed:</p>
  * <ul>
  *   <li>award.submissions.total - Total award submissions by status</li>
@@ -25,7 +26,7 @@ import java.util.function.Supplier;
  *   <li>user.registrations.total - Total user registrations</li>
  *   <li>user.sessions.active - Current active user sessions</li>
  * </ul>
- * 
+ *
  * @author Stefan Kostyk
  * @since 0.15.0
  */

@@ -1,16 +1,17 @@
-package ua.edu.chnu.award_monitoring_system.config;
+package ua.edu.chnu.awards.config;
 
-import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.observation.aop.ObservedAspect;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.aop.ObservedAspect;
+
 /**
  * Observability configuration for distributed tracing and observation.
- * 
+ *
  * <p>Enables @Observed annotation support for automatic span creation
  * in distributed tracing systems like Jaeger.</p>
- * 
+ *
  * @author Stefan Kostyk
  * @since 0.15.0
  */

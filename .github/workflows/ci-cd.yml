@@ -36,33 +36,6 @@ jobs:
     name: Backend Build & Test
     runs-on: ubuntu-latest
 
-    # Service containers for integration tests
-    # These provide real PostgreSQL and Redis instances for testing
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
     defaults:
       run:
         working-directory: backend
@@ -80,29 +53,8 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build application
-        run: mvn clean compile -B
-
-      - name: Run unit tests
-        run: mvn test -B
-        env:
-          # Even though we have service containers, unit tests shouldn't need them
-          # But we set these in case some tests accidentally require them
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/test_db
-          SPRING_DATASOURCE_USERNAME: test_user
-          SPRING_DATASOURCE_PASSWORD: test_password
-          SPRING_DATA_REDIS_HOST: localhost
-          SPRING_DATA_REDIS_PORT: 6379
-
-      - name: Run integration tests
-        run: mvn verify -DskipTests -B
-        env:
-          # Integration tests run against real databases via service containers
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/test_db
-          SPRING_DATASOURCE_USERNAME: test_user
-          SPRING_DATASOURCE_PASSWORD: test_password
-          SPRING_DATA_REDIS_HOST: localhost
-          SPRING_DATA_REDIS_PORT: 6379
+      - name: Build, test and check quality gates
+        run: mvn clean verify -B
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -151,8 +103,7 @@ jobs:
 
       - name: Run unit tests
         # Angular tests need headless mode in CI
-        # Make sure package.json has: "test:ci": "ng test --watch=false --browsers=ChromeHeadless --code-coverage"
-        run: npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+        run: npm run test:ci
         env:
           CI: true
 
@@ -204,9 +155,8 @@ jobs:
           name: backend-coverage-report
           path: backend/target/site/jacoco/
 
-      - name: Run code quality checks
-        run: mvn verify -DskipTests -B
-        continue-on-error: true
+      - name: Run static analysis
+        run: mvn compile checkstyle:check pmd:check spotbugs:check -B
 
       - name: Upload Checkstyle report
         uses: actions/upload-artifact@v4

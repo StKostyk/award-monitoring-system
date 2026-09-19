@@ -1,19 +1,20 @@
-package ua.edu.chnu.award_monitoring_system.config;
+package ua.edu.chnu.awards.config;
 
-import io.micrometer.core.aop.TimedAspect;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.config.MeterFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.micrometer.core.aop.TimedAspect;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
+
 /**
  * Micrometer metrics configuration for Award Monitoring System.
- * 
+ *
  * <p>Configures common tags, meter filters, and timed aspects for
  * comprehensive application metrics collection.</p>
- * 
+ *
  * @author Stefan Kostyk
  * @since 0.15.0
  */
