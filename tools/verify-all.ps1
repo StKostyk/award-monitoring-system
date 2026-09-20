@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Backend:  mvn clean verify (unit, integration, functional tests, coverage, static analysis)
-    Frontend: npm run lint, npm run test:ci, optional Playwright e2e (-E2E)
+    Frontend: npm run lint, npm run test:ci, optional Playwright e2e via tools/e2e.ps1 (-E2E, boots the backend)
     Summary:  build/gate-summary.txt (build/verify.log holds the full Maven output)
 
 .EXAMPLE
@@ -68,13 +68,14 @@ if (-not $SkipFrontend) {
     $testOk = $LASTEXITCODE -eq 0
     Add-Line ("Frontend: lint {0}, tests {1}" -f ($(if ($lintOk) { 'PASS' } else { 'FAIL' })), ($(if ($testOk) { 'PASS' } else { 'FAIL' })))
     if (-not ($lintOk -and $testOk)) { $failed = $true }
-    if ($E2E) {
-        & npx playwright test 2>&1 | Out-Null
-        $e2eOk = $LASTEXITCODE -eq 0
-        Add-Line ("E2E:      {0}" -f ($(if ($e2eOk) { 'PASS' } else { 'FAIL' })))
-        if (-not $e2eOk) { $failed = $true }
-    }
     Pop-Location
+}
+
+if ($E2E) {
+    & (Join-Path $PSScriptRoot 'e2e.ps1') 2>&1 | Out-Null
+    $e2eOk = $LASTEXITCODE -eq 0
+    Add-Line ("E2E:      {0}" -f ($(if ($e2eOk) { 'PASS' } else { 'FAIL' })))
+    if (-not $e2eOk) { $failed = $true }
 }
 
 $summaryPath = Join-Path $root 'build\gate-summary.txt'

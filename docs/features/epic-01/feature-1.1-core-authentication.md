@@ -193,7 +193,7 @@ Coverage target 85 % lines per `mvn verify`; static analysis clean.
 
 ## 9. Manual verification
 
-Preconditions (all stories): `docker compose up -d postgres redis mailpit minio`; backend with the `local` profile on `http://localhost:8080`; frontend `npm start` on `http://localhost:4200`; Mailpit inbox at `http://localhost:8025`. Seed accounts (password `Passw0rd-demo` for all):
+Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root — it starts the containers, the backend with the `local` profile on `http://localhost:8080` (its own window, about a minute) and the frontend on `http://localhost:4200`, and waits for the health check. By hand the same is `docker compose up -d postgres redis mailpit minio`, then `cd backend; .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"`, then `cd frontend; npm start`. Mailpit inbox at `http://localhost:8025`. Seed accounts (password `Passw0rd-demo` for all):
 
 | Email | Roles | Organisation |
 |-------|-------|--------------|
