@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 1.1 — story 1.1.0 in review; 1.1.1 (authorization server) next.
+Feature 1.1 — story 1.1.1 (authorization server, PKCE login, auth shell).
 
 ## Stories
 
@@ -23,7 +23,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 1.1.0 User domain entities and auth schema | 1.1 | 3 | SCRUM-6 | #42 | no | In review |
+| 1 | 1.1.0 User domain entities and auth schema | 1.1 | 3 | SCRUM-6 | #42 | no | Done 2026-09-20 |
 | 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | Ready |
 | 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | Ready |
 | 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Ready |
