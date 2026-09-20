@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
@@ -9,12 +9,13 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
+import { PASSWORD_VALIDATORS } from '../password-rules';
 import { RegistrationService } from '../registration.service';
 
-export type VerificationState = 'form' | 'verified' | 'invalid' | 'failed';
+export type ResetState = 'form' | 'done' | 'invalid';
 
 @Component({
-  selector: 'app-verify-email',
+  selector: 'app-reset-password',
   imports: [
     ReactiveFormsModule,
     MatCard,
@@ -29,17 +30,16 @@ export type VerificationState = 'form' | 'verified' | 'invalid' | 'failed';
     RouterLink,
     TranslocoPipe,
   ],
-  templateUrl: './verify-email.component.html',
-  styleUrl: './verify-email.component.scss',
+  templateUrl: './reset-password.component.html',
+  styleUrl: './reset-password.component.scss',
 })
-export class VerifyEmailComponent {
+export class ResetPasswordComponent {
   private readonly api = inject(RegistrationService);
   private readonly auth = inject(AuthService);
   private readonly token = inject(ActivatedRoute).snapshot.queryParamMap.get('token');
 
-  readonly password = new FormControl('', { nonNullable: true, validators: Validators.required });
-  readonly state = signal<VerificationState>(this.token ? 'form' : 'invalid');
-  readonly email = signal('');
+  readonly password = new FormControl('', { nonNullable: true, validators: PASSWORD_VALIDATORS });
+  readonly state = signal<ResetState>(this.token ? 'form' : 'invalid');
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
 
@@ -56,17 +56,14 @@ export class VerifyEmailComponent {
     }
     this.submitting.set(true);
     this.error.set(null);
-    this.api.verifyEmail(this.token, this.password.value).subscribe({
-      next: (response) => {
-        this.email.set(response.email);
-        this.state.set('verified');
-      },
+    this.api.confirmPasswordReset(this.token, this.password.value).subscribe({
+      next: () => this.state.set('done'),
       error: (err) => {
         const type = problemType(err);
-        if (type === 'password-mismatch') {
-          this.error.set('verify.errors.password-mismatch');
+        if (type === 'token-invalid') {
+          this.state.set('invalid');
         } else {
-          this.state.set(type === 'token-invalid' ? 'invalid' : 'failed');
+          this.error.set(`reset.errors.${type}`);
         }
         this.submitting.set(false);
       },

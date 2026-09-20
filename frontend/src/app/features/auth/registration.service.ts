@@ -42,11 +42,19 @@ export class RegistrationService {
     return this.http.post<RegistrationResponse>(`${this.base}/register`, request);
   }
 
-  verifyEmail(token: string): Observable<RegistrationResponse> {
-    return this.http.post<RegistrationResponse>(`${this.base}/verify-email`, { token });
+  verifyEmail(token: string, password: string): Observable<RegistrationResponse> {
+    return this.http.post<RegistrationResponse>(`${this.base}/verify-email`, { token, password });
   }
 
   resendVerification(email: string): Observable<void> {
     return this.http.post<void>(`${this.base}/resend-verification`, { email });
+  }
+
+  requestPasswordReset(email: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/password-reset/request`, { email });
+  }
+
+  confirmPasswordReset(token: string, password: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/password-reset/confirm`, { token, password });
   }
 }

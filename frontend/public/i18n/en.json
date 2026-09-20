@@ -69,6 +69,42 @@
     "invalid": "The link is invalid, expired or already used.",
     "resendHint": "Request a new link by entering your address.",
     "resend": "Send a new link",
-    "failed": "The address could not be confirmed. Try again later."
+    "failed": "The address could not be confirmed. Try again later.",
+    "passwordHint": "Enter the password you chose when registering to confirm that this account is yours.",
+    "password": "Registration password",
+    "submit": "Confirm address",
+    "errors": {
+      "password-mismatch": "The password does not match the one chosen at registration."
+    }
+  },
+  "forgot": {
+    "title": "Password reset",
+    "hint": "Enter your address. If an account exists, we will send a link to set a new password.",
+    "submit": "Send link",
+    "sent": "If {{email}} is registered, an email with a reset link is on its way. The link is valid for 1 hour.",
+    "sentHint": "No email? Check the spam folder or try again in a minute.",
+    "signIn": "Back to sign in",
+    "errors": {
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The request failed. Try again later."
+    }
+  },
+  "reset": {
+    "title": "New password",
+    "hint": "Choose a new password of at least 10 characters. Every device signed in with the old one will be signed out.",
+    "password": "New password",
+    "submit": "Set password",
+    "done": "The password is changed. Sign in with the new one.",
+    "signIn": "Sign in",
+    "invalid": "The link is invalid, expired or already used.",
+    "requestAgain": "Request a new link",
+    "errors": {
+      "password-too-short": "The password is too short.",
+      "password-too-long": "The password is too long.",
+      "password-too-common": "This password is too common; choose another one.",
+      "account-not-active": "The account is not active. Contact the administrator.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The password could not be changed. Try again later."
+    }
   }
 }

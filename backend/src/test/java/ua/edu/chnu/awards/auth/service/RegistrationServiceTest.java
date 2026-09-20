@@ -58,7 +58,7 @@ class RegistrationServiceTest {
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
-        List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofMinutes(1),
+        List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
         new AuthProperties.Jwk("", "", ""));
     private final Organization department = Organization.builder().id(64L).orgType(OrganizationType.DEPARTMENT)
@@ -160,22 +160,41 @@ class RegistrationServiceTest {
     }
 
     @Test
-    void ac25_validTokenActivatesThePendingAccount() {
-        User user = User.builder().id(42L).emailAddress("x@chnu.edu.ua").accountStatus(AccountStatus.PENDING).build();
-        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION))
-            .thenReturn(Optional.of(OneTimeToken.builder().user(user).build()));
+    void ac25_validTokenAndTheRegistrationPasswordActivateThePendingAccount() {
+        User user = User.builder().id(42L).emailAddress("x@chnu.edu.ua").passwordHash("$2a$12$hash")
+            .accountStatus(AccountStatus.PENDING).build();
+        OneTimeToken token = OneTimeToken.builder().user(user).build();
+        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
+        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
+        when(passwordEncoder.matches("correct-horse-battery", "$2a$12$hash")).thenReturn(true);
 
-        RegistrationResponse response = service.verify("raw");
+        RegistrationResponse response = service.verify("raw", "correct-horse-battery");
 
         assertThat(response.status()).isEqualTo(AccountStatus.ACTIVE);
         assertThat(user.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
     }
 
     @Test
-    void ac25_ac26_unknownExpiredOrUsedTokenIsGone() {
-        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
+    void ac25_wrongPasswordIsForbiddenAndLeavesTheTokenUsable() {
+        User user = User.builder().id(42L).passwordHash("$2a$12$hash").accountStatus(AccountStatus.PENDING).build();
+        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION))
+            .thenReturn(Optional.of(OneTimeToken.builder().user(user).build()));
+        when(passwordEncoder.matches("wrong-password-1", "$2a$12$hash")).thenReturn(false);
 
-        assertThatThrownBy(() -> service.verify("raw"))
+        assertThatThrownBy(() -> service.verify("raw", "wrong-password-1"))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+                assertThat(e.getType()).isEqualTo("password-mismatch");
+            });
+        verify(tokens, never()).redeem(any(), any());
+        assertThat(user.getAccountStatus()).isEqualTo(AccountStatus.PENDING);
+    }
+
+    @Test
+    void ac25_ac26_unknownExpiredOrUsedTokenIsGone() {
+        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.verify("raw", "correct-horse-battery"))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
                 assertThat(e.getStatus()).isEqualTo(HttpStatus.GONE);
                 assertThat(e.getType()).isEqualTo("token-invalid");
@@ -183,12 +202,27 @@ class RegistrationServiceTest {
     }
 
     @Test
-    void verifyingASuspendedAccountDoesNotReactivateIt() {
-        User user = User.builder().id(42L).accountStatus(AccountStatus.SUSPENDED).build();
-        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION))
+    void ac25_tokenRedeemedConcurrentlyIsGone() {
+        User user = User.builder().id(42L).passwordHash("$2a$12$hash").accountStatus(AccountStatus.PENDING).build();
+        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION))
             .thenReturn(Optional.of(OneTimeToken.builder().user(user).build()));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.verify("raw"))
+        assertThatThrownBy(() -> service.verify("raw", "correct-horse-battery"))
+            .isInstanceOfSatisfying(ApiProblemException.class,
+                e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.GONE));
+    }
+
+    @Test
+    void verifyingASuspendedAccountDoesNotReactivateIt() {
+        User user = User.builder().id(42L).passwordHash("$2a$12$hash").accountStatus(AccountStatus.SUSPENDED).build();
+        OneTimeToken token = OneTimeToken.builder().user(user).build();
+        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
+        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.verify("raw", "correct-horse-battery"))
             .isInstanceOfSatisfying(ApiProblemException.class,
                 e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT));
         assertThat(user.getAccountStatus()).isEqualTo(AccountStatus.SUSPENDED);

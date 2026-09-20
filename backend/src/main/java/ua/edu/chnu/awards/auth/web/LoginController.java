@@ -32,6 +32,7 @@ public class LoginController {
     public String login(@RequestParam(required = false) String error, Model model) {
         model.addAttribute("error", error == null ? null : "login.error." + knownCode(error));
         model.addAttribute("registerUrl", properties.frontendUrl() + "/register");
+        model.addAttribute("forgotPasswordUrl", properties.frontendUrl() + "/forgot-password");
         return "login";
     }
 

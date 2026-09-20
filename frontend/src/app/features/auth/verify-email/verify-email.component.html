@@ -4,8 +4,23 @@
   </mat-card-header>
   <mat-card-content>
     @switch (state()) {
-      @case ('checking') {
-        <mat-spinner diameter="32" />
+      @case ('form') {
+        <p class="auth-card__hint" data-testid="verify-hint">{{ 'verify.passwordHint' | transloco }}</p>
+        <form (submit)="$event.preventDefault(); submit()" class="auth-form" novalidate>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'verify.password' | transloco }}</mat-label>
+            <input matInput [formControl]="password" type="password" autocomplete="current-password" data-testid="verify-password" />
+            @if (password.invalid) {
+              <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
+            }
+          </mat-form-field>
+          @if (error(); as error) {
+            <p class="auth-form__error" role="alert" data-testid="verify-error">{{ error | transloco }}</p>
+          }
+          <button mat-flat-button type="submit" [disabled]="submitting()" data-testid="verify-submit">
+            {{ 'verify.submit' | transloco }}
+          </button>
+        </form>
       }
       @case ('verified') {
         <p role="status" data-testid="verify-success">{{ 'verify.success' | transloco: { email: email() } }}</p>

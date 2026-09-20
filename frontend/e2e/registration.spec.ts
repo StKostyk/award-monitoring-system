@@ -48,9 +48,16 @@ test.describe('registration', () => {
 
     const link = await verificationLink(email);
     await page.goto(link);
+    await page.getByTestId('verify-password').fill('not-the-registration-password');
+    await page.getByTestId('verify-submit').click();
+    await expect(page.getByTestId('verify-error')).toContainText('не збігається');
+    await page.getByTestId('verify-password').fill(password);
+    await page.getByTestId('verify-submit').click();
     await expect(page.getByTestId('verify-success')).toContainText(email);
 
     await page.goto(link);
+    await page.getByTestId('verify-password').fill(password);
+    await page.getByTestId('verify-submit').click();
     await expect(page.getByTestId('verify-invalid')).toBeVisible();
 
     await page.getByTestId('verify-go-pending').click();

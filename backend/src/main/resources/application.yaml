@@ -125,6 +125,7 @@ app:
     frontend-url: ${AUTH_FRONTEND_URL:http://localhost:4200}
     allowed-email-domains: ${AUTH_ALLOWED_EMAIL_DOMAINS:chnu.edu.ua}
     verification-ttl: 24h
+    password-reset-ttl: 1h
     resend-interval: 1m
     allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200,http://localhost,http://localhost:8080}
     client:

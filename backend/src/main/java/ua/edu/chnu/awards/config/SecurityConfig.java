@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -28,6 +29,7 @@ import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
+import ua.edu.chnu.awards.auth.security.RetryRequestSessionExpiredStrategy;
 
 /**
  * Resource-server protection for the API and form login for the authorization server.
@@ -40,6 +42,7 @@ import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 public class SecurityConfig {
 
     private static final int API_ORDER = 2;
+    private static final int UNLIMITED_SESSIONS = -1;
     private static final int LOGIN_ORDER = 3;
     private static final int BCRYPT_STRENGTH = 12;
     private static final String ROLE_SYSTEM_ADMIN = "SYSTEM_ADMIN";
@@ -53,7 +56,8 @@ public class SecurityConfig {
             .securityMatcher("/api/**", "/actuator/**")
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/verify-email",
-                    "/api/v1/auth/resend-verification").permitAll()
+                    "/api/v1/auth/resend-verification", "/api/v1/auth/password-reset/request",
+                    "/api/v1/auth/password-reset/confirm").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/organizations").permitAll()
                 .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/actuator/**").hasRole(ROLE_SYSTEM_ADMIN)
@@ -70,8 +74,13 @@ public class SecurityConfig {
     @Bean
     @Order(LOGIN_ORDER)
     SecurityFilterChain loginSecurityFilterChain(HttpSecurity http, DaoAuthenticationProvider authenticationProvider,
-                                                 LoginFailureHandler failureHandler) throws Exception {
+                                                 LoginFailureHandler failureHandler,
+                                                 SessionRegistry sessionRegistry) throws Exception {
         http
+            .sessionManagement(session -> session
+                .maximumSessions(UNLIMITED_SESSIONS)
+                .sessionRegistry(sessionRegistry)
+                .expiredSessionStrategy(new RetryRequestSessionExpiredStrategy()))
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/login", "/error", "/css/**", "/img/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { vi } from 'vitest';
@@ -17,8 +18,17 @@ describe('VerifyEmailComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         VerifyEmailComponent,
+        NoopAnimationsModule,
         TranslocoTestingModule.forRoot({
-          langs: { uk: { verify: { success: 'Підтверджено {{email}}', invalid: 'Недійсне' } } },
+          langs: {
+            uk: {
+              verify: {
+                success: 'Підтверджено {{email}}',
+                invalid: 'Недійсне',
+                errors: { 'password-mismatch': 'Пароль не збігається' },
+              },
+            },
+          },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
         }),
       ],
@@ -38,10 +48,15 @@ describe('VerifyEmailComponent', () => {
 
   afterEach(() => http.verify());
 
-  it('ac25 verifies the token from the link and offers to sign in', async () => {
+  it('ac25 sends the token with the registration password and offers to sign in', async () => {
     const fixture = await setup('raw');
+    expect(fixture.componentInstance.state()).toBe('form');
 
-    http.expectOne(`${environment.apiUrl}/auth/verify-email`).flush({ email: 'x@chnu.edu.ua', status: 'ACTIVE' });
+    fixture.componentInstance.password.setValue('correct-horse-battery');
+    fixture.componentInstance.submit();
+    const request = http.expectOne(`${environment.apiUrl}/auth/verify-email`);
+    expect(request.request.body).toEqual({ token: 'raw', password: 'correct-horse-battery' });
+    request.flush({ email: 'x@chnu.edu.ua', status: 'ACTIVE' });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('verified');
@@ -50,9 +65,25 @@ describe('VerifyEmailComponent', () => {
     expect(auth.login).toHaveBeenCalledWith('/');
   });
 
+  it('ac25 keeps the form open after a wrong password', async () => {
+    const fixture = await setup('raw');
+
+    fixture.componentInstance.password.setValue('wrong-password-1');
+    fixture.componentInstance.submit();
+    http
+      .expectOne(`${environment.apiUrl}/auth/verify-email`)
+      .flush({ type: 'urn:awards:problem:password-mismatch' }, { status: 403, statusText: 'Forbidden' });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state()).toBe('form');
+    expect(fixture.nativeElement.querySelector('[data-testid="verify-error"]').textContent).toContain('не збігається');
+  });
+
   it('ac26 explains an expired or used link and offers to resend', async () => {
     const fixture = await setup('old');
 
+    fixture.componentInstance.password.setValue('correct-horse-battery');
+    fixture.componentInstance.submit();
     http
       .expectOne(`${environment.apiUrl}/auth/verify-email`)
       .flush({ type: 'urn:awards:problem:token-invalid', status: 410 }, { status: 410, statusText: 'Gone' });
@@ -62,10 +93,11 @@ describe('VerifyEmailComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="verify-go-pending"]')).not.toBeNull();
   });
 
-  it('treats a missing token as invalid without calling the server', async () => {
+  it('treats a missing token as invalid and an empty password as not submittable', async () => {
     const fixture = await setup(null);
-
     expect(fixture.componentInstance.state()).toBe('invalid');
+
+    fixture.componentInstance.submit();
     http.expectNone(`${environment.apiUrl}/auth/verify-email`);
   });
 });

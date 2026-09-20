@@ -101,17 +101,27 @@ public class RegistrationService {
     }
 
     /**
-     * Activates the account behind a verification token.
+     * Activates the account behind a verification token once the registration password is presented, so that
+     * only the person who registered can complete the registration.
      *
      * @param rawToken token from the link
+     * @param password the password chosen at registration
      * @return the address and its new status
      */
     @Transactional
-    public RegistrationResponse verify(String rawToken) {
+    public RegistrationResponse verify(String rawToken, String password) {
+        ApiProblemException gone = new ApiProblemException(HttpStatus.GONE, "token-invalid",
+            "The verification link is invalid, expired or already used");
+        User owner = tokens.peek(rawToken, TokenPurpose.EMAIL_VERIFICATION)
+            .map(OneTimeToken::getUser)
+            .orElseThrow(() -> gone);
+        if (!passwordEncoder.matches(password, owner.getPasswordHash())) {
+            throw new ApiProblemException(HttpStatus.FORBIDDEN, "password-mismatch",
+                "The password does not match the one chosen at registration");
+        }
         User user = tokens.redeem(rawToken, TokenPurpose.EMAIL_VERIFICATION)
             .map(OneTimeToken::getUser)
-            .orElseThrow(() -> new ApiProblemException(HttpStatus.GONE, "token-invalid",
-                "The verification link is invalid, expired or already used"));
+            .orElseThrow(() -> gone);
         if (user.getAccountStatus() != AccountStatus.PENDING) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "account-not-pending",
                 "The account is not awaiting verification");

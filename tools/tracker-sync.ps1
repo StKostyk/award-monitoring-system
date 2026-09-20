@@ -38,6 +38,16 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+foreach ($name in 'JIRA_EMAIL', 'JIRA_TOKEN', 'JIRA_SITE') {
+    if (-not (Get-Item "env:$name" -ErrorAction SilentlyContinue)) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'User')
+        if ($value) { Set-Item "env:$name" $value }
+    }
+}
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    $ghHome = Join-Path $env:ProgramFiles 'GitHub CLI'
+    if (Test-Path (Join-Path $ghHome 'gh.exe')) { $env:PATH = "$ghHome;$env:PATH" }
+}
 $site = $env:JIRA_SITE
 if (-not $site) { $site = 'awardmonitoring1.atlassian.net' }
 $base = "https://$site/rest/api/3"

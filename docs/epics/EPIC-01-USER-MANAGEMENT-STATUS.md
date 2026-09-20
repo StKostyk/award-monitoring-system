@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 1.1 — story 1.1.2 in review; 1.1.3 (password reset) next.
+Feature 1.1 — story 1.1.3 in review; 1.1.4 (rate limiting, lockout, audit) next.
 
 ## Stories
 
@@ -25,8 +25,8 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 1.1.0 User domain entities and auth schema | 1.1 | 3 | SCRUM-6 | #42 | no | Done 2026-09-20 |
 | 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | Done 2026-09-20 |
-| 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | In review |
-| 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Ready |
+| 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | Done 2026-09-20 |
+| 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | In review |
 | 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Ready |
 | 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | Ready |
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Ready |
@@ -55,6 +55,8 @@ Closed without implementation: #30 and #34 (folded into 1.1.1), #47 (no HR syste
 | 2026-09-21 | New-device and security emails go through Spring application events and an async listener; message broker decided at Epic 7 | Kafka decision is deferred by the roadmap | ADR-006 |
 | 2026-09-21 | Existing migrations V001–V013 are the base; auth tables land in a new V014 | Versioned migrations are immutable once merged | MIGRATION_STRATEGY |
 | 2026-09-21 | Tokens kept by the SPA in session storage; actuator: health, info and prometheus open, the rest needs `SYSTEM_ADMIN` | Reload without re-login; scraping without tokens inside the network | PRD D-1, AUTH §9 |
+| 2026-09-20 | Self-registered accounts get no role until the faculty secretary or an administrator confirms department membership (Feature 1.2); the confirmation is one strategy behind an interface so an HR/LDAP lookup can replace the manual step when the university provides one | Students share the `@chnu.edu.ua` domain; the HR lookup (#47) was dropped, not ruled out | `/design` at Feature 1.2 kickoff, state-machine-user-account.puml |
+| 2026-09-20 | The verification page asks for the registration password before activating the account | Stops a colleague activating an account somebody else registered for their address (pre-hijacking) | PRD AC-2.5 addendum (1.1.3) |
 
 ## Documentation deviations to resolve
 
@@ -88,6 +90,8 @@ Findings of the review of the authorization server code (2026-09-20) that were n
 3. Deployment hardening (deployment story): do not publish port 8080 outside the compose network, keep Swagger's redirect URI out of the production client, consider a separate client for Swagger, review `spring.profiles.active` default (`local` seeds demo accounts).
 4. `RefreshTokenReuseGuard` answers 500 when Redis is unavailable during a refresh; degrade to `invalid_grant` (story 1.1.4, together with the fail-open decision for login counters).
 5. `/userinfo` is advertised by discovery but unusable (no resource server on the authorization-server chain); add or hide when the SPA needs it.
+6. A `PENDING` account registered by a third party for somebody else's address blocks that address: registration answers 409 and password reset ignores pending accounts (review of 1.1.3). Decide in Feature 1.2 together with membership confirmation: let a new registration replace an unverified account, or expire pending accounts after the verification TTL.
+7. The login-session registry of the authorization server is in-memory (1.1.3); a multi-instance deployment needs Spring Session on Redis so a password reset ends sessions on every node (deployment story).
 
 ## Risks
 

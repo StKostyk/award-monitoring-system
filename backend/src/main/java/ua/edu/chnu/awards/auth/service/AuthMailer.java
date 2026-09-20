@@ -11,16 +11,17 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Sends verification emails after the registration transaction commits; a failed send is retried twice.
+ * Sends account emails after the requesting transaction commits; a failed send is retried twice.
  */
 @Component
 @Slf4j
-public class VerificationMailer {
+public class AuthMailer {
 
     static final int ATTEMPTS = 3;
     private static final long[] PAUSE_MS = {2_000, 5_000};
@@ -30,11 +31,11 @@ public class VerificationMailer {
     private final LongConsumer pause;
 
     @Autowired
-    public VerificationMailer(JavaMailSender mailSender, @Value("${app.mail.from}") String from) {
-        this(mailSender, from, VerificationMailer::sleep);
+    public AuthMailer(JavaMailSender mailSender, @Value("${app.mail.from}") String from) {
+        this(mailSender, from, AuthMailer::sleep);
     }
 
-    VerificationMailer(JavaMailSender mailSender, String from, LongConsumer pause) {
+    AuthMailer(JavaMailSender mailSender, String from, LongConsumer pause) {
         this.mailSender = mailSender;
         this.from = from;
         this.pause = pause;
@@ -43,24 +44,34 @@ public class VerificationMailer {
     @Async
     @TransactionalEventListener
     public void onVerificationRequested(VerificationRequested event) {
+        deliver(event.email(), "Підтвердження адреси / Confirm your address", verificationBody(event));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void onPasswordResetRequested(PasswordResetRequested event) {
+        deliver(event.email(), "Скидання пароля / Password reset", resetBody(event));
+    }
+
+    private void deliver(String to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
-        message.setTo(event.email());
-        message.setSubject("Підтвердження адреси / Confirm your address");
-        message.setText(body(event));
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(text);
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             try {
                 mailSender.send(message);
                 return;
             } catch (MailException e) {
-                log.warn("Verification email to {} failed (attempt {} of {}): {}", event.email(), attempt, ATTEMPTS,
+                log.warn("Email '{}' to {} failed (attempt {} of {}): {}", subject, to, attempt, ATTEMPTS,
                     e.getMessage());
                 if (attempt < ATTEMPTS) {
                     pause.accept(PAUSE_MS[attempt - 1]);
                 }
             }
         }
-        log.error("Verification email to {} was not delivered", event.email());
+        log.error("Email '{}' to {} was not delivered", subject, to);
     }
 
     private static void sleep(long millis) {
@@ -71,15 +82,29 @@ public class VerificationMailer {
         }
     }
 
-    static String body(VerificationRequested event) {
+    static String verificationBody(VerificationRequested event) {
         return "Вітаємо, " + event.firstName() + "!\n\n"
             + "Щоб завершити реєстрацію в системі обліку нагород ЧНУ, підтвердьте свою адресу протягом 24 годин:\n"
             + event.link() + "\n\n"
+            + "На сторінці підтвердження введіть пароль, який ви обрали під час реєстрації.\n"
             + "Якщо ви не реєструвалися, просто проігноруйте цей лист.\n\n"
             + "---\n\n"
             + "Hello " + event.firstName() + ",\n\n"
             + "To finish registering with the ChNU award monitoring system, confirm your address within 24 hours:\n"
             + event.link() + "\n\n"
+            + "The confirmation page asks for the password you chose when registering.\n"
             + "If you did not register, ignore this message.\n";
+    }
+
+    static String resetBody(PasswordResetRequested event) {
+        return "Вітаємо, " + event.firstName() + "!\n\n"
+            + "Ви попросили скинути пароль у системі обліку нагород ЧНУ. Задайте новий пароль протягом 1 години:\n"
+            + event.link() + "\n\n"
+            + "Якщо ви не робили цього запиту, проігноруйте цей лист — пароль залишиться незмінним.\n\n"
+            + "---\n\n"
+            + "Hello " + event.firstName() + ",\n\n"
+            + "You asked to reset your password for the ChNU award monitoring system. Set a new one within 1 hour:\n"
+            + event.link() + "\n\n"
+            + "If you did not ask for this, ignore this message; your password stays unchanged.\n";
     }
 }

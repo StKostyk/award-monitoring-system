@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
@@ -10,19 +10,12 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { PASSWORD_VALIDATORS } from '../password-rules';
 import { OrganizationSummary, RegistrationService } from '../registration.service';
 
-export const PASSWORD_MIN = 10;
-export const PASSWORD_MAX_BYTES = 72;
 export const INSTITUTIONAL_DOMAIN = 'chnu.edu.ua';
 export const INSTITUTIONAL_EMAIL = new RegExp(`^[^@\\s]+@${INSTITUTIONAL_DOMAIN.replace(/\./g, '\\.')}$`, 'i');
 export const NAME = /^\p{L}[\p{L}'’\- ]*$/u;
-
-/** Rejects passwords longer than the 72 bytes BCrypt can hash. */
-export function maxUtf8Bytes(max: number): ValidatorFn {
-  return (control: AbstractControl<string>) =>
-    new TextEncoder().encode(control.value ?? '').length > max ? { maxbytes: { max } } : null;
-}
 
 export interface DepartmentGroup {
   faculty: string;
@@ -59,7 +52,7 @@ export class RegisterComponent implements OnInit {
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.pattern(INSTITUTIONAL_EMAIL)]],
-    password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN), maxUtf8Bytes(PASSWORD_MAX_BYTES)]],
+    password: ['', PASSWORD_VALIDATORS],
     firstName: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(NAME)]],
     lastName: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(NAME)]],
     organizationId: [null as number | null, Validators.required],
