@@ -269,6 +269,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write
 
     # Output the image tags so other jobs can use them
     outputs:
