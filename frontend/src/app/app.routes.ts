@@ -3,6 +3,9 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { CallbackComponent } from './core/auth/callback.component';
 import { ShellComponent } from './core/layout/shell.component';
+import { RegisterComponent } from './features/auth/register/register.component';
+import { RegistrationPendingComponent } from './features/auth/registration-pending/registration-pending.component';
+import { VerifyEmailComponent } from './features/auth/verify-email/verify-email.component';
 import { HomeComponent } from './features/home/home.component';
 
 export const routes: Routes = [
@@ -10,8 +13,12 @@ export const routes: Routes = [
   {
     path: '',
     component: ShellComponent,
-    canActivate: [authGuard],
-    children: [{ path: '', component: HomeComponent, pathMatch: 'full' }],
+    children: [
+      { path: 'register', component: RegisterComponent },
+      { path: 'registration-pending', component: RegistrationPendingComponent },
+      { path: 'verify-email', component: VerifyEmailComponent },
+      { path: '', component: HomeComponent, pathMatch: 'full', canActivate: [authGuard] },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];

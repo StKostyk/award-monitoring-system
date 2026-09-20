@@ -1,0 +1,76 @@
+<mat-card class="auth-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'register.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="auth-card__hint">{{ 'register.hint' | transloco }}</p>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'register.email' | transloco }}</mat-label>
+        <input matInput formControlName="email" type="email" autocomplete="username" data-testid="email" />
+        @if (form.controls.email.hasError('required')) {
+          <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
+        } @else if (form.controls.email.invalid) {
+          <mat-error>{{ 'register.validation.institutionalEmail' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'register.password' | transloco }}</mat-label>
+        <input matInput formControlName="password" type="password" autocomplete="new-password" data-testid="password" />
+        @if (form.controls.password.invalid) {
+          <mat-error>{{ 'register.validation.password' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="auth-form__row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'register.firstName' | transloco }}</mat-label>
+          <input matInput formControlName="firstName" autocomplete="given-name" data-testid="first-name" />
+          @if (form.controls.firstName.hasError('pattern')) {
+            <mat-error>{{ 'register.validation.name' | transloco }}</mat-error>
+          } @else if (form.controls.firstName.invalid) {
+            <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'register.lastName' | transloco }}</mat-label>
+          <input matInput formControlName="lastName" autocomplete="family-name" data-testid="last-name" />
+          @if (form.controls.lastName.hasError('pattern')) {
+            <mat-error>{{ 'register.validation.name' | transloco }}</mat-error>
+          } @else if (form.controls.lastName.invalid) {
+            <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'register.department' | transloco }}</mat-label>
+        <mat-select formControlName="organizationId" data-testid="department">
+          @for (group of groups(); track group.faculty) {
+            <mat-optgroup [label]="group.faculty">
+              @for (department of group.departments; track department.id) {
+                <mat-option [value]="department.id">{{ name(department) }}</mat-option>
+              }
+            </mat-optgroup>
+          }
+        </mat-select>
+        @if (form.controls.organizationId.invalid) {
+          <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      @if (error(); as error) {
+        <p class="auth-form__error" role="alert" data-testid="register-error">{{ error | transloco }}</p>
+      }
+
+      <button mat-flat-button type="submit" [disabled]="submitting()" data-testid="register-submit">
+        {{ 'register.submit' | transloco }}
+      </button>
+    </form>
+    <p class="auth-card__footer">
+      {{ 'register.haveAccount' | transloco }}
+      <a routerLink="/" data-testid="go-sign-in">{{ 'register.signIn' | transloco }}</a>
+    </p>
+  </mat-card-content>
+</mat-card>

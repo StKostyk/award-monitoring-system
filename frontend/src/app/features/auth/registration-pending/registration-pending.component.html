@@ -1,0 +1,24 @@
+<mat-card class="auth-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'pending.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <p data-testid="pending-text">{{ 'pending.text' | transloco }}</p>
+    <p class="auth-card__hint">{{ 'pending.hint' | transloco }}</p>
+    <mat-form-field appearance="outline" class="auth-form__field">
+      <mat-label>{{ 'register.email' | transloco }}</mat-label>
+      <input matInput type="email" [formControl]="email" data-testid="pending-email" />
+    </mat-form-field>
+    @if (notice(); as notice) {
+      <p role="status" data-testid="pending-notice">{{ notice | transloco }}</p>
+    }
+    <div class="auth-actions">
+      <button mat-stroked-button type="button" (click)="resend()" [disabled]="sending()" data-testid="resend">
+        {{ 'pending.resend' | transloco }}
+      </button>
+      <button mat-flat-button type="button" (click)="signIn()" data-testid="pending-sign-in">
+        {{ 'pending.signIn' | transloco }}
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>

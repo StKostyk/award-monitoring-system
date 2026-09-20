@@ -1,0 +1,32 @@
+<mat-card class="auth-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'verify.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @switch (state()) {
+      @case ('checking') {
+        <mat-spinner diameter="32" />
+      }
+      @case ('verified') {
+        <p role="status" data-testid="verify-success">{{ 'verify.success' | transloco: { email: email() } }}</p>
+        <div class="auth-actions">
+          <button mat-flat-button type="button" (click)="signIn()" data-testid="verify-sign-in">
+            {{ 'verify.signIn' | transloco }}
+          </button>
+        </div>
+      }
+      @case ('invalid') {
+        <p role="alert" data-testid="verify-invalid">{{ 'verify.invalid' | transloco }}</p>
+        <p class="auth-card__hint">{{ 'verify.resendHint' | transloco }}</p>
+        <div class="auth-actions">
+          <a mat-stroked-button routerLink="/registration-pending" data-testid="verify-go-pending">
+            {{ 'verify.resend' | transloco }}
+          </a>
+        </div>
+      }
+      @case ('failed') {
+        <p role="alert" data-testid="verify-failed">{{ 'verify.failed' | transloco }}</p>
+      }
+    }
+  </mat-card-content>
+</mat-card>

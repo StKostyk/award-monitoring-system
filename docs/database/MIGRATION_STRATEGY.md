@@ -89,6 +89,7 @@ src/main/resources/
         ├── V012__create_indexes.sql
         ├── V013__create_audit_triggers.sql
         ├── V014__create_auth_tables.sql
+        ├── V015__users_email_unique_lower.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql

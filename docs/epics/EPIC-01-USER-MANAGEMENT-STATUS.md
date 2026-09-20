@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 1.1 — story 1.1.1 in review; 1.1.2 (registration) next.
+Feature 1.1 — story 1.1.2 in review; 1.1.3 (password reset) next.
 
 ## Stories
 
@@ -24,8 +24,8 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 1.1.0 User domain entities and auth schema | 1.1 | 3 | SCRUM-6 | #42 | no | Done 2026-09-20 |
-| 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | In review |
-| 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | Ready |
+| 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | Done 2026-09-20 |
+| 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | In review |
 | 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Ready |
 | 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Ready |
 | 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | Ready |
@@ -75,7 +75,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 - SAS JDBC schema (`oauth2_registered_client`, `oauth2_authorization`, `oauth2_authorization_consent`) is added by V014 from the library's reference DDL.
 - Token customizer reads roles from `user_roles` valid on the day of issue; permissions derive from a static role→permission map (AUTH §3.3), not a table.
 - Lockout: 5 failures within 15 minutes lock the account for 30 minutes (roadmap 1.1.2); counters in Redis, event in `audit_logs`.
-- Verification links expire after 24 hours; password-reset links after 1 hour.
+- Verification links expire after 24 hours; password-reset links after 1 hour. One-time tokens are issued by `OneTimeTokenService` (raw value only in the email, SHA-256 at rest); emails go out after commit through `VerificationMailer` (three attempts). The functional tests read delivered mail from a Mailpit container.
 - Frontend: `angular-oauth2-oidc` for the PKCE flow, tokens in session storage, automatic silent refresh; `core/auth` holds the guard, callback and profile signal; Transloco for runtime translation.
 - The library withholds refresh tokens from public clients and only authenticates them on the PKCE code exchange; `RotatingRefreshTokenGenerator` and `PublicClientRefreshAuthenticationConverter/Provider` add both for `award-web`.
 

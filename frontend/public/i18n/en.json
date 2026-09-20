@@ -20,5 +20,55 @@
     "RECTOR": "Rector",
     "SYSTEM_ADMIN": "System administrator",
     "GDPR_OFFICER": "Data protection officer"
+  },
+  "register": {
+    "title": "Registration",
+    "hint": "Registration is open to university addresses @chnu.edu.ua only. After registering, confirm the address with the link from the email.",
+    "email": "Email address",
+    "password": "Password (10 characters or more)",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "department": "Department",
+    "submit": "Register",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "validation": {
+      "required": "Required",
+      "institutionalEmail": "An address in the chnu.edu.ua domain is required",
+      "password": "The password must be at least 10 characters and at most 72 bytes",
+      "name": "Letters, apostrophe, hyphen and space only"
+    },
+    "errors": {
+      "institutional-email-required": "Registration is possible only with a @chnu.edu.ua address. Ask your faculty secretary if you do not have one.",
+      "email-taken": "An account with this address already exists.",
+      "organisation-invalid": "Choose an active department.",
+      "password-too-short": "The password is too short.",
+      "password-too-long": "The password is too long.",
+      "password-too-common": "This password is too common; choose another one.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "Registration failed. Try again later."
+    }
+  },
+  "pending": {
+    "title": "Check your inbox",
+    "text": "We sent an email with a link to confirm your address. The link is valid for 24 hours.",
+    "hint": "No email? Check the spam folder or send it again.",
+    "resend": "Send again",
+    "signIn": "Sign in",
+    "resent": "The email was sent again.",
+    "errors": {
+      "too-many-requests": "An email was sent recently. Try again in a minute.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The email could not be sent."
+    }
+  },
+  "verify": {
+    "title": "Address confirmation",
+    "success": "The address {{email}} is confirmed. You can sign in now.",
+    "signIn": "Sign in",
+    "invalid": "The link is invalid, expired or already used.",
+    "resendHint": "Request a new link by entering your address.",
+    "resend": "Send a new link",
+    "failed": "The address could not be confirmed. Try again later."
   }
 }

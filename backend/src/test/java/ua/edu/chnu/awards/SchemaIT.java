@@ -31,7 +31,7 @@ class SchemaIT extends AbstractIntegrationTest {
             "select version from flyway_schema_history where success and version is not null "
                 + "order by installed_rank desc limit 1", String.class);
 
-        assertThat(version).isEqualTo("014");
+        assertThat(version).isEqualTo("015");
     }
 
     @Test

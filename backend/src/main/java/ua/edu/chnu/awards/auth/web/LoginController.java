@@ -7,13 +7,19 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Serves the sign-in page of the authorization server.
  */
 @Controller
+@RequiredArgsConstructor
 public class LoginController {
+
+    private final AuthProperties properties;
 
     /**
      * Renders the login form; a known error code from a failed attempt is translated by the template.
@@ -25,6 +31,7 @@ public class LoginController {
     @GetMapping("/login")
     public String login(@RequestParam(required = false) String error, Model model) {
         model.addAttribute("error", error == null ? null : "login.error." + knownCode(error));
+        model.addAttribute("registerUrl", properties.frontendUrl() + "/register");
         return "login";
     }
 
