@@ -78,4 +78,6 @@ src/app
 
 `docker compose up -d postgres redis mailpit minio` starts the infrastructure; the application then runs with the `local` profile. Mailpit exposes an inbox at http://localhost:8025, MinIO a console at http://localhost:9001.
 
+`docker compose up -d --build` runs the whole stack behind nginx at http://localhost: the frontend container proxies `/api`, `/oauth2`, `/connect`, `/.well-known`, `/login`, `/logout` and `/css` to the backend, so browser, API and authorization server share one origin (`AUTH_ISSUER=http://localhost`).
+
 The backend is the OpenID Connect provider for the Angular app: `http://localhost:8080/.well-known/openid-configuration` lists the endpoints, `/login` is the sign-in page, and the demo accounts from `db/seed/local` (password `Passw0rd-demo`) work out of the box. End-to-end tests (`npx playwright test` in `frontend/`) expect that backend to be running.

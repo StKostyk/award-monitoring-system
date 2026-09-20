@@ -105,11 +105,11 @@ spring:
 app:
   auth:
     issuer: ${AUTH_ISSUER:http://localhost:8080}
-    allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200}
+    allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200,http://localhost}
     client:
       id: award-web
-      redirect-uris: ${AUTH_REDIRECT_URIS:http://localhost:4200/callback,http://localhost:4200/silent-refresh.html}
-      post-logout-redirect-uris: ${AUTH_POST_LOGOUT_REDIRECT_URIS:http://localhost:4200}
+      redirect-uris: ${AUTH_REDIRECT_URIS:http://localhost:4200/callback,http://localhost/callback}
+      post-logout-redirect-uris: ${AUTH_POST_LOGOUT_REDIRECT_URIS:http://localhost:4200,http://localhost}
       access-token-ttl: 15m
       refresh-token-ttl: 7d
     jwk:
@@ -121,6 +121,7 @@ app:
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
+  forward-headers-strategy: framework
   compression:
     enabled: true
   error:
