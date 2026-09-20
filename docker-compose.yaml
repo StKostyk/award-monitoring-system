@@ -103,8 +103,8 @@ services:
       - STORAGE_S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       # Authorization server as seen from the browser (nginx proxies it on port 80)
       - AUTH_ISSUER=http://localhost
-      - AUTH_ALLOWED_ORIGINS=http://localhost,http://localhost:4200
-      - AUTH_REDIRECT_URIS=http://localhost/callback,http://localhost:4200/callback
+      - AUTH_ALLOWED_ORIGINS=http://localhost,http://localhost:4200,http://localhost:8080
+      - AUTH_REDIRECT_URIS=http://localhost/callback,http://localhost:4200/callback,http://localhost:8080/swagger-ui/oauth2-redirect.html
       - AUTH_POST_LOGOUT_REDIRECT_URIS=http://localhost,http://localhost:4200
       # Environment identifier for logging
       - ENVIRONMENT=docker

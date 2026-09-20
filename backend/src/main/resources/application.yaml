@@ -99,16 +99,23 @@ spring:
   thymeleaf:
     cache: true
 
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: award-web
+      use-pkce-with-authorization-code-grant: true
+      scopes: openid,profile
+
 # =============================================================================
 # Authorization server
 # =============================================================================
 app:
   auth:
     issuer: ${AUTH_ISSUER:http://localhost:8080}
-    allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200,http://localhost}
+    allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200,http://localhost,http://localhost:8080}
     client:
       id: award-web
-      redirect-uris: ${AUTH_REDIRECT_URIS:http://localhost:4200/callback,http://localhost/callback}
+      redirect-uris: ${AUTH_REDIRECT_URIS:http://localhost:4200/callback,http://localhost/callback,http://localhost:8080/swagger-ui/oauth2-redirect.html}
       post-logout-redirect-uris: ${AUTH_POST_LOGOUT_REDIRECT_URIS:http://localhost:4200,http://localhost}
       access-token-ttl: 15m
       refresh-token-ttl: 7d
