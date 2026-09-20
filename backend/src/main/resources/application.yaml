@@ -187,6 +187,7 @@ spring:
         format_sql: true
   flyway:
     enabled: true
+    locations: classpath:db/migration,classpath:db/seed/local
   data:
     redis:
       host: localhost
@@ -208,6 +209,7 @@ spring:
     show-sql: false
   flyway:
     enabled: true
+    locations: classpath:db/migration,classpath:db/seed/local
   data:
     redis:
       host: redis

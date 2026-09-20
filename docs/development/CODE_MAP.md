@@ -29,7 +29,7 @@ ua.edu.chnu.awards
 ├── AwardMonitoringSystemApplication      entry point
 ├── config/                                cross-cutting Spring configuration (metrics, observability, security)
 ├── metrics/                               Micrometer business metrics
-└── <domain>/                              e.g. user, award, document, workflow, notification, compliance
+└── <domain>/                              user, auth, award, document, workflow, notification, compliance
     ├── controller/                        REST endpoints (thin, validation and mapping only)
     ├── service/                           business logic, transactions
     ├── repository/                        Spring Data JPA
@@ -42,7 +42,7 @@ Conventions:
 
 - Constructor injection via Lombok `@RequiredArgsConstructor`; no field injection.
 - Entities never leave the service layer; controllers exchange DTOs (Java records).
-- Database schema is owned by Flyway (`src/main/resources/db/migration`): versioned `V###__*.sql` files are immutable once merged, repeatable `R__*.sql` files hold views, functions and seed data. Hibernate runs with `ddl-auto: validate`.
+- Database schema is owned by Flyway (`src/main/resources/db/migration`): versioned `V###__*.sql` files are immutable once merged, repeatable `R__*.sql` files hold views, functions and reference data. Demo accounts live in `db/seed/local` and are loaded only by the `local` and `docker` profiles. Hibernate runs with `ddl-auto: validate`; columns with PostgreSQL-specific types (`ltree`, `inet`) are left unmapped and reached through native queries.
 - Configuration lives in `application.yaml` with profiles `local`, `docker`, `production`; secrets come from environment variables, never from the file.
 
 ### Tests

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
+
 ### Changed
 - Backend quality gates are now enforced in `mvn verify`: unit, integration (`*IT`) and functional (`*FT`) tests on TestContainers, JaCoCo line coverage ≥ 85%, Checkstyle, PMD 7 and SpotBugs with zero tolerance
 - Base package renamed to `ua.edu.chnu.awards`
