@@ -33,6 +33,9 @@
     <!-- Allow more complex tests -->
     <suppress files=".*Test\.java$" checks="CyclomaticComplexity"/>
     
+    <!-- Test names may carry the acceptance-criterion id -->
+    <suppress files=".*(Test|IT|FT)\.java$" checks="MethodName"/>
+
     <!-- Allow missing Javadoc in tests -->
     <suppress files=".*Test\.java$" checks="Javadoc.*"/>
     <suppress files=".*IT\.java$" checks="Javadoc.*"/>

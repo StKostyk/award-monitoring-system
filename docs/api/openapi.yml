@@ -502,8 +502,8 @@ paths:
         - name: organization
           in: query
           schema:
-            type: string
-            format: uuid
+            type: integer
+            format: int64
       responses:
         '200':
           description: User list
@@ -673,8 +673,8 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         email:
           type: string
           format: email
@@ -682,19 +682,39 @@ components:
           type: string
         lastName:
           type: string
-        role:
-          $ref: '#/components/schemas/UserRole'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleAssignment'
         organization:
           $ref: '#/components/schemas/OrganizationRef'
         status:
-          type: string
-          enum: [ACTIVE, INACTIVE, SUSPENDED]
+          $ref: '#/components/schemas/AccountStatus'
         createdAt:
           type: string
           format: date-time
         lastLoginAt:
           type: string
           format: date-time
+
+    AccountStatus:
+      type: string
+      enum: [PENDING, ACTIVE, INACTIVE, SUSPENDED, RETIRED, MEMORIAL, DELETED]
+
+    RoleAssignment:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+          nullable: true
 
     UserRole:
       type: string
@@ -744,13 +764,17 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         name:
+          type: string
+        nameUk:
+          type: string
+        code:
           type: string
         type:
           type: string
-          enum: [UNIVERSITY, FACULTY, DEPARTMENT]
+          enum: [UNIVERSITY, COLLEGE, FACULTY, SPECIALITY, DEPARTMENT]
 
     # Award
     Award:

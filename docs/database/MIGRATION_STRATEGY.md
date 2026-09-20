@@ -88,11 +88,17 @@ src/main/resources/
         ├── V011__create_notifications_tables.sql
         ├── V012__create_indexes.sql
         ├── V013__create_audit_triggers.sql
+        ├── V014__create_auth_tables.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql
         └── R__seed_award_categories.sql
+    └── seed/
+        └── local/
+            └── R__seed_users_dev.sql
 ```
+
+`db/migration` holds schema and reference data and runs in every environment. `db/seed/local` holds demo accounts and is added to `spring.flyway.locations` only by the `local` and `docker` profiles; the production profile never sees it. Repeatable scripts run in alphabetical order of their description, so a seed that depends on another is named to sort after it.
 
 ### 1.3 Version Numbering Convention
 

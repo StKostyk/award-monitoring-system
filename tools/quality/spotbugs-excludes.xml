@@ -65,6 +65,13 @@
 
     <!-- Entity classes with lazy initialization -->
     <Match>
+        <Package name="~.*\.entity"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+    <Match>
         <Annotation name="jakarta.persistence.Entity"/>
         <Or>
             <Bug pattern="UWF_UNWRITTEN_FIELD"/>

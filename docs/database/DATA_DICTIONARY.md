@@ -2,8 +2,8 @@
 ## Award Monitoring & Tracking System
 
 > **Phase 9 Deliverable**: Data Architecture & Database Design  
-> **Document Version**: 1.0  
-> **Last Updated**: December 2025  
+> **Document Version**: 1.1  
+> **Last Updated**: September 2026  
 > **Author**: Stefan Kostyk  
 > **Total Entities**: 14  
 > **Classification**: Internal
@@ -19,6 +19,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **Domain** | **Entities** | **Purpose** |
 |------------|--------------|-------------|
 | **User Domain** | `users`, `user_roles`, `organizations` | Identity, access control, organizational structure |
+| **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions` | Multi-level approval workflow tracking |
 | **Compliance Domain** | `audit_logs`, `consent_records` | GDPR compliance, audit trails |
@@ -61,6 +62,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `SUSPENDED` | Administrative hold | ACTIVE, RETIRED |
 | `RETIRED` | Former employee (read-only access) | MEMORIAL |
 | `MEMORIAL` | Deceased (awards preserved, no access) | - |
+| `DELETED` | Erased on request (GDPR); personal data anonymised | - |
 
 **Indexes**:
 - `pk_users` - Primary key on `user_id`
@@ -152,8 +154,10 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | Value | Description | Depth |
 |-------|-------------|-------|
 | `UNIVERSITY` | Top-level institution | 0 |
-| `FACULTY` | Academic faculty | 1 |
-| `DEPARTMENT` | Academic department | 2 |
+| `COLLEGE` | Applied college of the university | 1 |
+| `FACULTY` | Academic faculty or institute | 1 |
+| `SPECIALITY` | Study programme within the college | 2 |
+| `DEPARTMENT` | Academic department within a faculty | 2 |
 
 **Indexes**:
 - `pk_organizations` - Primary key on `org_id`
@@ -166,6 +170,63 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - HAS MANY `organizations` (1:N, children)
 - HAS MANY `users` (1:N)
 - HAS MANY `user_roles` (1:N)
+
+---
+
+### 1.4 Entity: `one_time_tokens`
+
+**Description**: Single-use tokens delivered by email for address verification, password reset and security revocation. Only the SHA-256 hash of the token is stored; the raw value exists solely in the email link.
+
+**Business Rules**:
+- A token is redeemable once: `used_at` is set on first use and later attempts are rejected
+- Lifetime by purpose: `EMAIL_VERIFICATION` 24 hours, `PASSWORD_RESET` 1 hour, `SECURITY_REVOKE` 24 hours
+- Expired and used rows are removed by a scheduled cleanup
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `id` | `BIGSERIAL` | NO | Auto | PK | Unique token identifier |
+| `token_hash` | `VARCHAR(64)` | NO | - | UK | SHA-256 hex digest of the token |
+| `user_id` | `BIGINT` | NO | - | FK→users | Owner of the token |
+| `purpose` | `VARCHAR(30)` | NO | - | CK | `EMAIL_VERIFICATION`, `PASSWORD_RESET`, `SECURITY_REVOKE` |
+| `expires_at` | `TIMESTAMPTZ` | NO | - | - | Moment after which the token is rejected |
+| `used_at` | `TIMESTAMPTZ` | YES | - | - | Moment of redemption (NULL while unused) |
+| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
+
+**Indexes**: `pk_one_time_tokens`, `uk_one_time_tokens_hash`, `idx_one_time_tokens_user`, `idx_one_time_tokens_expires`
+
+**Relationships**: BELONGS TO `users` (N:1) via `user_id`, deleted with the user
+
+---
+
+### 1.5 Entity: `user_devices`
+
+**Description**: Browsers a user has signed in from. A sign-in whose fingerprint is unknown for the user creates a row and triggers a notification email.
+
+**Business Rules**:
+- Fingerprint is a SHA-256 digest of browser family, operating-system family and accept-language
+- One row per user and fingerprint; `last_used_at` and `last_ip_address` are refreshed on every sign-in
+- Rows are removed when the user revokes a device or is deleted
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `id` | `BIGSERIAL` | NO | Auto | PK | Unique device identifier |
+| `user_id` | `BIGINT` | NO | - | FK→users | Owner of the device |
+| `fingerprint` | `VARCHAR(64)` | NO | - | UK (with `user_id`) | Device fingerprint digest |
+| `browser` | `VARCHAR(100)` | YES | - | - | Browser name and version for display |
+| `operating_system` | `VARCHAR(100)` | YES | - | - | Operating system for display |
+| `last_ip_address` | `VARCHAR(45)` | YES | - | - | IPv4/IPv6 address of the last sign-in (GDPR: Technical ID) |
+| `first_seen_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | First sign-in from this device |
+| `last_used_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Most recent sign-in from this device |
+
+**Indexes**: `pk_user_devices`, `uk_user_devices_fingerprint`, `idx_user_devices_last_used`
+
+**Relationships**: BELONGS TO `users` (N:1) via `user_id`, deleted with the user
+
+---
+
+### 1.6 Authorization server tables
+
+`oauth2_registered_client`, `oauth2_authorization` and `oauth2_authorization_consent` follow the reference schema of Spring Authorization Server with the PostgreSQL adjustments it recommends (`blob` → `TEXT`, `timestamp` → `TIMESTAMPTZ`). Their columns are owned by the library and are not listed here; `oauth2_authorization.principal_name` holds the user's email address and is indexed for revocation queries.
 
 ---
 
@@ -645,9 +706,11 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 | **Entity** | **Relationships** |
 |------------|-------------------|
-| `users` | → organizations (N:1), ← user_roles (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
+| `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
 | `user_roles` | → users (N:1), → organizations (N:1) |
 | `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N) |
+| `one_time_tokens` | → users (N:1) |
+| `user_devices` | → users (N:1) |
 | `awards` | → users (N:1), → award_categories (N:1), ← documents (1:N), ← award_requests (1:1) |
 | `award_categories` | → award_categories (N:1, self), ← award_categories (1:N), ← awards (1:N) |
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
