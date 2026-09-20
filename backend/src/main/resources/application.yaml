@@ -88,11 +88,34 @@ spring:
       - public
     default-schema: public
 
-  # Security Configuration
-  security:
-    user:
-      name: ${ADMIN_USERNAME:admin}
-      password: ${ADMIN_PASSWORD:admin}
+  mvc:
+    problemdetails:
+      enabled: true
+
+  messages:
+    basename: messages
+    fallback-to-system-locale: false
+
+  thymeleaf:
+    cache: true
+
+# =============================================================================
+# Authorization server
+# =============================================================================
+app:
+  auth:
+    issuer: ${AUTH_ISSUER:http://localhost:8080}
+    allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200}
+    client:
+      id: award-web
+      redirect-uris: ${AUTH_REDIRECT_URIS:http://localhost:4200/callback,http://localhost:4200/silent-refresh.html}
+      post-logout-redirect-uris: ${AUTH_POST_LOGOUT_REDIRECT_URIS:http://localhost:4200}
+      access-token-ttl: 15m
+      refresh-token-ttl: 7d
+    jwk:
+      key-id: ${AUTH_JWK_KEY_ID:}
+      private-key: ${AUTH_JWK_PRIVATE_KEY:}
+      public-key: ${AUTH_JWK_PUBLIC_KEY:}
 
 # Server Configuration
 server:
@@ -188,6 +211,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration,classpath:db/seed/local
+  thymeleaf:
+    cache: false
   data:
     redis:
       host: localhost

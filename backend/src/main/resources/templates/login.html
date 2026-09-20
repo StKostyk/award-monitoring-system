@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="#{login.title}">Sign in</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+<main class="card">
+    <header class="card__header">
+        <span class="card__brand">ChNU Awards</span>
+        <a class="card__lang" th:href="@{/login(lang=${#locale.language == 'uk'} ? 'en' : 'uk')}"
+           th:text="#{login.language}">English</a>
+    </header>
+    <h1 th:text="#{login.heading}">Sign in</h1>
+    <p class="alert" th:if="${error}" th:text="#{${error}}" role="alert">Error</p>
+    <p class="notice" th:if="${param.logout}" th:text="#{login.loggedOut}">Signed out</p>
+    <form th:action="@{/login}" method="post" autocomplete="on">
+        <label for="username" th:text="#{login.email}">Email</label>
+        <input id="username" name="username" type="email" autocomplete="username" required autofocus>
+        <label for="password" th:text="#{login.password}">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button type="submit" th:text="#{login.submit}">Sign in</button>
+    </form>
+</main>
+</body>
+</html>

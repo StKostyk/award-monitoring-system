@@ -162,7 +162,9 @@ The application is rendered client-side only. Server-side rendering (SSR) was pa
 - SSR requires a Node runtime in the container and hydration-safe code around browser-only APIs (token storage, PKCE), which adds complexity without user value.
 - The static bundle is served by nginx (see `frontend/Dockerfile`), which matches ADR-017.
 
-Localisation is provided through Angular i18n with Ukrainian as the default locale and English as the second locale.
+Localisation is provided at runtime with Transloco (`@jsverse/transloco`): one build serves both languages, Ukrainian is the default, English is switched from the toolbar and the choice is remembered in the browser. The compile-time `$localize` approach was considered and rejected because it produces one bundle per language, doubles the routes and redirect URIs the authorization server must know, and makes the language switch a full reload.
+
+Authentication in the browser uses `angular-oauth2-oidc` as a public OpenID Connect client of the application's own authorization server (authorization code flow with PKCE); tokens are kept in session storage and refreshed automatically.
 
 ---
 
@@ -172,6 +174,7 @@ Localisation is provided through Angular i18n with Ukrainian as the default loca
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-09-19 | Stefan Kostyk | Addendum: client-side rendering only, i18n locales | Scaffold cleanup before Sprint 2 |
+| 2026-09-21 | Stefan Kostyk | Runtime localisation with Transloco; OpenID Connect client library | Feature 1.1, story 1.1.1 |
 
 ---
 

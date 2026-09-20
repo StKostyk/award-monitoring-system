@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 1.1 — story 1.1.1 (authorization server, PKCE login, auth shell).
+Feature 1.1 — story 1.1.1 in review; 1.1.2 (registration) next.
 
 ## Stories
 
@@ -24,7 +24,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 1.1.0 User domain entities and auth schema | 1.1 | 3 | SCRUM-6 | #42 | no | Done 2026-09-20 |
-| 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | Ready |
+| 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | In review |
 | 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | Ready |
 | 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Ready |
 | 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Ready |
@@ -54,15 +54,16 @@ Closed without implementation: #30 and #34 (folded into 1.1.1), #47 (no HR syste
 | 2026-09-21 | MFA (TOTP, SMS, WebAuthn) deferred beyond Epic 1 | Not required for the thesis demo; the design remains valid for a later increment | AUTH §2 |
 | 2026-09-21 | New-device and security emails go through Spring application events and an async listener; message broker decided at Epic 7 | Kafka decision is deferred by the roadmap | ADR-006 |
 | 2026-09-21 | Existing migrations V001–V013 are the base; auth tables land in a new V014 | Versioned migrations are immutable once merged | MIGRATION_STRATEGY |
+| 2026-09-21 | Tokens kept by the SPA in session storage; actuator: health, info and prometheus open, the rest needs `SYSTEM_ADMIN` | Reload without re-login; scraping without tokens inside the network | PRD D-1, AUTH §9 |
 
 ## Documentation deviations to resolve
 
 Each item is applied in the PR of the story that touches it, after approval.
 
-1. `openapi.yml` describes a password-style `/auth/login`, `/auth/refresh`, `/auth/logout`. The authorization server exposes `/oauth2/authorize`, `/oauth2/token`, `/oauth2/revoke`, `/oauth2/jwks`, `/.well-known/openid-configuration`. Replace the three paths with the standard endpoints plus `/auth/register`, `/auth/verify-email`, `/auth/password-reset/*` (story 1.1.1, 1.1.2, 1.1.3).
-2. `openapi.yml` `User` schema uses a UUID id, a single `role` and a three-value `status`; the schema of record has a numeric id, many roles and seven statuses (story 1.1.0).
-3. AUTH §1.4 registers a confidential client with `CLIENT_SECRET_BASIC`; update to a public PKCE client and add the login-page decision as an addendum (story 1.1.1).
-4. AUTH §1.2 stores the refresh token in an HttpOnly cookie; with a public client the token is returned in the token response and held in memory by the SPA. Record the trade-off (story 1.1.1).
+1. ~~`openapi.yml` describes a password-style `/auth/login`, `/auth/refresh`, `/auth/logout`~~ — replaced by the standard endpoints in 1.1.1; `/auth/register`, `/auth/verify-email`, `/auth/password-reset/*` follow in 1.1.2 and 1.1.3.
+2. ~~`openapi.yml` `User` schema uses a UUID id, a single `role` and a three-value `status`~~ — aligned in 1.1.0.
+3. ~~AUTH §1.4 registers a confidential client with `CLIENT_SECRET_BASIC`~~ — addendum §9 written in 1.1.1.
+4. ~~AUTH §1.2 stores the refresh token in an HttpOnly cookie~~ — trade-off recorded in AUTH §9 in 1.1.1.
 5. ADR-009 lists `SUPER_ADMIN` and four sample permissions; align the role list with the dictionary (story 1.2.1).
 6. Role-assignment authority: US-002 lets a dean assign roles within the faculty, `RBAC_matrix.md` reserves it for the rector's office, AUTH §3.3 gives `user:manage` to `SYSTEM_ADMIN` only. Agreed rule: a user may assign roles below their own level inside their own organisation subtree; university-level roles only by `RECTOR` or `SYSTEM_ADMIN`. Add `user:manage:faculty` to the permission matrix (story 1.2.2).
 7. `RBAC_matrix.md` says only employees submit awards; AUTH §3.3 grants `award:create` up to rector. Left to Epic 2, but the permission strings created in 1.2.1 follow AUTH §3.3.
@@ -75,7 +76,8 @@ Each item is applied in the PR of the story that touches it, after approval.
 - Token customizer reads roles from `user_roles` valid on the day of issue; permissions derive from a static role→permission map (AUTH §3.3), not a table.
 - Lockout: 5 failures within 15 minutes lock the account for 30 minutes (roadmap 1.1.2); counters in Redis, event in `audit_logs`.
 - Verification links expire after 24 hours; password-reset links after 1 hour.
-- Frontend: `angular-oauth2-oidc` for the PKCE flow, tokens in memory, silent renew via refresh token; `core/auth` holds the guard, interceptor and store.
+- Frontend: `angular-oauth2-oidc` for the PKCE flow, tokens in session storage, automatic silent refresh; `core/auth` holds the guard, callback and profile signal; Transloco for runtime translation.
+- The library withholds refresh tokens from public clients and only authenticates them on the PKCE code exchange; `RotatingRefreshTokenGenerator` and `PublicClientRefreshAuthenticationConverter/Provider` add both for `award-web`.
 
 ## Risks
 

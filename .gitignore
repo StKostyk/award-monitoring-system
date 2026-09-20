@@ -174,3 +174,8 @@ TODO.local.md
 NOTES.local.md
 
 infra/k8s/secrets.yml
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/

@@ -13,7 +13,7 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 1.1.0 | User domain entities and auth schema | 3 | ✅ Done | SCRUM-6 | [#42](https://github.com/StKostyk/award-monitoring-system/issues/42) |
-| 1.1.1 | Authorization server, PKCE login and auth shell | 8 | ⏳ Sprint | SCRUM-7 | [#36](https://github.com/StKostyk/award-monitoring-system/issues/36) |
+| 1.1.1 | Authorization server, PKCE login and auth shell | 8 | 👀 In review | SCRUM-7 | [#36](https://github.com/StKostyk/award-monitoring-system/issues/36) |
 | 1.1.2 | Employee registration and email verification (US-001) | 5 | ⏳ Sprint | SCRUM-8 | [#29](https://github.com/StKostyk/award-monitoring-system/issues/29) |
 | 1.1.3 | Password reset | 3 | ⏳ Sprint | SCRUM-9 | [#46](https://github.com/StKostyk/award-monitoring-system/issues/46) |
 | 1.1.4 | Login rate limiting, lockout and auth audit | 3 | ⏳ Sprint | SCRUM-10 | [#31](https://github.com/StKostyk/award-monitoring-system/issues/31) |

@@ -2,8 +2,8 @@
 ## Award Monitoring & Tracking System
 
 > **Phase 10 Deliverable**: Security Architecture & Privacy Design  
-> **Document Version**: 1.0  
-> **Last Updated**: December 2025  
+> **Document Version**: 1.1  
+> **Last Updated**: September 2026  
 > **Author**: Stefan Kostyk  
 > **Security Model**: OAuth2 + JWT + RBAC  
 > **Classification**: Internal
@@ -1311,6 +1311,25 @@ public class SecurityAuditService {
 | ABAC Policy Engine | ✅ Designed | Organizational scope |
 | Resource-Level Security | ✅ Designed | Owner/scope checks |
 | Audit Logging | ✅ Designed | All auth events |
+
+---
+
+## 9. Implementation Addendum (September 2026)
+
+The first increment (Feature 1.1) settled the following points where the implementation differs from the
+design above. The design sections stay as the reference for the reasoning; this section records what runs.
+
+| **Topic** | **Design above** | **Implemented** | **Why** |
+|-----------|------------------|-----------------|---------|
+| Browser client | Confidential client with `CLIENT_SECRET_BASIC` (§1.4) | Public client `award-web`: authorization code + PKCE (S256), no secret, consent screen disabled | A single-page application cannot keep a secret |
+| Login page | Not specified | Served by the authorization server at `/login` (Ukrainian by default, English via `?lang=en` or browser preference, choice kept in a cookie); registration, password reset and profile pages live in the Angular app | The authorization code flow requires credentials to be posted to the server |
+| Refresh token | HttpOnly cookie (§1.2) | Returned in the token response and kept by the SPA in session storage; single use with rotation. Presenting a rotated token again revokes the whole authorization (`RefreshTokenReuseGuard`, rotated-token hashes kept in Redis for the token lifetime) | OAuth 2.1 allows refresh tokens for public clients when they are one-time use; session storage survives a page reload without exposing the token to other tabs or sites |
+| Token storage | Redis for active tokens and blacklist (§5.1) | Authorizations, registered clients and consents in PostgreSQL (`oauth2_*` tables, JDBC services); Redis holds only short-lived counters and rotated-token markers | Durable, standard persistence of the library; Redis for what expires |
+| Access-token claims | §1.3 | `sub` (user id), `email`, `name`, `roles`, `permissions`, `org_id` (string), `org_type`; no `mfa_verified` or `session_id` | MFA is deferred; the server session is not exposed to the API |
+| Permissions | §3.3 matrix | Same matrix, resolved from current role assignments at token issue time (`RolePermissions`); not stored per user | Roles are the source of truth, permissions derive from them |
+| Account status at login | Not specified | `PENDING`, `INACTIVE`, `SUSPENDED`, `MEMORIAL`, `DELETED` are refused before the password check with a status-specific message; `RETIRED` may sign in | State machine of the user account |
+| Logout | `/logout` | OpenID Connect RP-initiated logout at `/connect/logout` with `id_token_hint`, after revoking the refresh token at `/oauth2/revoke` | Standard endpoints of the library |
+| Signing key | Key rotation every 90 days (§5.1) | One RSA key from configuration (`AUTH_JWK_*`), generated at start-up when absent; rotation is a deployment procedure, not automated yet | Sufficient for the first increment |
 
 ---
 

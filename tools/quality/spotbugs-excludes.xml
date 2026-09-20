@@ -72,6 +72,17 @@
         </Or>
     </Match>
     <Match>
+        <Class name="~.*Properties(\$.*)?"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+    <Match>
+        <Package name="~.*\.auth\.security"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
         <Annotation name="jakarta.persistence.Entity"/>
         <Or>
             <Bug pattern="UWF_UNWRITTEN_FIELD"/>
