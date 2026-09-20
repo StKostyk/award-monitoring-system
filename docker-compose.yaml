@@ -56,7 +56,7 @@ services:
 
   # S3-compatible object storage
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: award-minio
     command: server /data --console-address ":9001"
     environment:
@@ -141,7 +141,7 @@ services:
         - NODE_ENV=production
         - BUILDKIT_INLINE_CACHE=1
       labels:
-        - "com.example.build-date=${BUILD_DATE}"
+        - "com.example.build-date=${BUILD_DATE:-}"
     container_name: award-frontend
     ports:
       - "80:80"
