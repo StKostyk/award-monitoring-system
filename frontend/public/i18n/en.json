@@ -1,0 +1,24 @@
+{
+  "app": {
+    "title": "ChNU Awards",
+    "language": "UK",
+    "logout": "Sign out",
+    "loading": "Loading…"
+  },
+  "home": {
+    "greeting": "Welcome, {{name}}",
+    "roles": "Your roles",
+    "organization": "Organisation",
+    "noRoles": "No roles assigned yet",
+    "email": "Email"
+  },
+  "roles": {
+    "EMPLOYEE": "Employee",
+    "FACULTY_SECRETARY": "Faculty secretary",
+    "DEAN": "Dean",
+    "RECTOR_SECRETARY": "Rector's secretary",
+    "RECTOR": "Rector",
+    "SYSTEM_ADMIN": "System administrator",
+    "GDPR_OFFICER": "Data protection officer"
+  }
+}

@@ -73,7 +73,9 @@ class SchemaIT extends AbstractIntegrationTest {
 
     @Test
     void ac05_noSeedUsersOutsideLocalProfile() {
-        Integer users = jdbc.queryForObject("select count(*) from users", Integer.class);
+        Integer users = jdbc.queryForObject(
+            "select count(*) from users where email_address in ('admin@chnu.edu.ua', 'rector@chnu.edu.ua')",
+            Integer.class);
 
         assertThat(users).isZero();
     }

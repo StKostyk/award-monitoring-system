@@ -1,0 +1,16 @@
+<mat-toolbar color="primary" class="shell__toolbar">
+  <span class="shell__title">{{ 'app.title' | transloco }}</span>
+  <span class="shell__spacer"></span>
+  <button mat-button type="button" class="shell__lang" (click)="language.toggle()" data-testid="language-toggle">
+    {{ 'app.language' | transloco }}
+  </button>
+  @if (auth.isAuthenticated()) {
+    <span class="shell__user" data-testid="user-name">{{ auth.fullName() }}</span>
+    <button mat-icon-button type="button" (click)="logout()" [attr.aria-label]="'app.logout' | transloco" data-testid="logout">
+      <mat-icon>logout</mat-icon>
+    </button>
+  }
+</mat-toolbar>
+<main class="shell__content">
+  <router-outlet />
+</main>

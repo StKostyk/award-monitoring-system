@@ -6,7 +6,8 @@ info:
     RESTful API for enterprise award monitoring and tracking platform.
     
     ## Authentication
-    This API uses OAuth 2.0 with JWT tokens. Include the `Authorization: Bearer <token>` header in all requests.
+    The application is its own OAuth 2.1 / OpenID Connect provider. Browser clients obtain tokens through the
+    authorization code flow with PKCE and send `Authorization: Bearer <access token>` on every `/api` request.
     
     ## Rate Limiting
     - Standard users: 1000 requests/hour
@@ -50,63 +51,104 @@ tags:
 
 paths:
   # ============== Authentication ==============
-  /auth/login:
+  # The application is an OAuth 2.1 / OpenID Connect provider (Spring Authorization Server).
+  # The browser client `award-web` is public and uses the authorization code flow with PKCE.
+  /oauth2/authorize:
+    get:
+      tags: [Authentication]
+      summary: Start the authorization code flow
+      description: |
+        Redirects an anonymous user to the login page (`/login`, Ukrainian by default, `?lang=en` for English)
+        and, once authenticated, back to `redirect_uri` with `code` and `state`.
+      operationId: authorize
+      parameters:
+        - { name: response_type, in: query, required: true, schema: { type: string, enum: [code] } }
+        - { name: client_id, in: query, required: true, schema: { type: string, example: award-web } }
+        - { name: redirect_uri, in: query, required: true, schema: { type: string, format: uri } }
+        - { name: scope, in: query, required: true, schema: { type: string, example: openid profile } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+        - { name: code_challenge, in: query, required: true, schema: { type: string } }
+        - { name: code_challenge_method, in: query, required: true, schema: { type: string, enum: [S256] } }
+      responses:
+        '302':
+          description: Redirect to the login page or to `redirect_uri` with the authorization code
+
+  /oauth2/token:
     post:
       tags: [Authentication]
-      summary: User login
-      description: Authenticate user and receive JWT tokens
-      operationId: login
+      summary: Exchange a code or refresh token for tokens
+      description: |
+        `grant_type=authorization_code` with `code`, `redirect_uri`, `client_id` and `code_verifier`, or
+        `grant_type=refresh_token` with `refresh_token` and `client_id`. Refresh tokens rotate on every use;
+        presenting a rotated token again revokes the whole authorization.
+      operationId: token
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/TokenRequest'
       responses:
         '200':
-          description: Successful authentication
+          description: Tokens issued
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        '400':
+          description: Invalid grant or request (`error` is `invalid_grant`, `invalid_request` or `invalid_client`)
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
-  /auth/refresh:
+  /oauth2/revoke:
     post:
       tags: [Authentication]
-      summary: Refresh access token
-      operationId: refreshToken
+      summary: Revoke a refresh or access token
+      operationId: revokeToken
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/RefreshTokenRequest'
+              type: object
+              required: [token, client_id]
+              properties:
+                token: { type: string }
+                token_type_hint: { type: string, enum: [refresh_token, access_token] }
+                client_id: { type: string }
       responses:
         '200':
-          description: New tokens issued
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: Token revoked (also returned for unknown tokens)
 
-  /auth/logout:
-    post:
+  /oauth2/jwks:
+    get:
       tags: [Authentication]
-      summary: User logout
-      security:
-        - bearerAuth: []
-      operationId: logout
+      summary: Public keys used to verify token signatures (RS256)
+      operationId: jwks
       responses:
-        '204':
-          description: Successfully logged out
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        '200':
+          description: JSON Web Key Set
+
+  /.well-known/openid-configuration:
+    get:
+      tags: [Authentication]
+      summary: OpenID Connect discovery document
+      operationId: discovery
+      responses:
+        '200':
+          description: Endpoint locations and supported features
+
+  /connect/logout:
+    get:
+      tags: [Authentication]
+      summary: End the server session (OpenID Connect RP-initiated logout)
+      operationId: logout
+      parameters:
+        - { name: id_token_hint, in: query, required: true, schema: { type: string } }
+        - { name: post_logout_redirect_uri, in: query, schema: { type: string, format: uri } }
+      responses:
+        '302':
+          description: Session ended; redirect to `post_logout_redirect_uri`
 
   # ============== Awards ==============
   /awards:
@@ -593,7 +635,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT access token from /auth/login
+      description: Access token issued by /oauth2/token
 
   parameters:
     PageParam:
@@ -633,40 +675,46 @@ components:
 
   schemas:
     # Auth
-    LoginRequest:
+    TokenRequest:
       type: object
-      required: [email, password]
+      required: [grant_type, client_id]
       properties:
-        email:
+        grant_type:
           type: string
-          format: email
-          example: user@university.edu.ua
-        password:
+          enum: [authorization_code, refresh_token]
+        client_id:
           type: string
-          format: password
-          minLength: 8
-
-    RefreshTokenRequest:
-      type: object
-      required: [refreshToken]
-      properties:
-        refreshToken:
+          example: award-web
+        code:
+          type: string
+        redirect_uri:
+          type: string
+          format: uri
+        code_verifier:
+          type: string
+        refresh_token:
           type: string
 
     TokenResponse:
       type: object
       properties:
-        accessToken:
+        access_token:
           type: string
-        refreshToken:
+          description: RS256-signed JWT with `sub`, `email`, `name`, `roles`, `permissions`, `org_id`, `org_type`
+        refresh_token:
           type: string
-        tokenType:
+        id_token:
+          type: string
+        token_type:
           type: string
           example: Bearer
-        expiresIn:
+        expires_in:
           type: integer
-          description: Seconds until access token expires
-          example: 3600
+          description: Seconds until the access token expires
+          example: 900
+        scope:
+          type: string
+          example: openid profile
 
     # User
     User:

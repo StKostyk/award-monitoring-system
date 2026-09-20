@@ -5,10 +5,6 @@ spring:
     show-sql: false
   flyway:
     enabled: true
-  security:
-    user:
-      name: test
-      password: test
 
 management:
   endpoint:

@@ -1,0 +1,116 @@
+:root {
+    --primary: #3f51b5;
+    --primary-dark: #303f9f;
+    --error: #b00020;
+    --text: #1f1f1f;
+    --muted: #5f6368;
+    --surface: #ffffff;
+    --background: #f4f5fb;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    color: var(--text);
+    font-family: Roboto, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.card {
+    width: min(420px, 92vw);
+    padding: 32px;
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(31, 31, 31, 0.12);
+}
+
+.card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.card__brand {
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: 0.02em;
+}
+
+.card__lang {
+    font-size: 0.875rem;
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.card__lang:hover {
+    color: var(--primary);
+}
+
+h1 {
+    margin: 0 0 16px;
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+label {
+    display: block;
+    margin: 16px 0 6px;
+    font-size: 0.875rem;
+    color: var(--muted);
+}
+
+input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    border: 1px solid #c4c7d0;
+    border-radius: 6px;
+    background: #fff;
+}
+
+input:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+    border-color: var(--primary);
+}
+
+button {
+    width: 100%;
+    margin-top: 24px;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+    background: var(--primary);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--primary-dark);
+}
+
+.alert {
+    padding: 12px 14px;
+    border-radius: 6px;
+    background: #fde7ea;
+    color: var(--error);
+    font-size: 0.9rem;
+}
+
+.notice {
+    padding: 12px 14px;
+    border-radius: 6px;
+    background: #e8f0fe;
+    color: var(--primary-dark);
+    font-size: 0.9rem;
+}

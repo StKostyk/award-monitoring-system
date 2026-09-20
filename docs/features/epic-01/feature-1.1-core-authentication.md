@@ -64,7 +64,7 @@ None of the stories is marked parallel: the frontend work in each is small and c
 ### 1.1.1 Authorization server, PKCE login and auth shell (SCRUM-7)
 
 - **AC-1.1** Given the Angular app, when an unauthenticated user opens any route, then they are redirected to `/oauth2/authorize` with PKCE (`code_challenge_method=S256`) and land on the server login page.
-- **AC-1.2** Given valid credentials of an `ACTIVE` user, when the login form is submitted, then the browser returns to `http://localhost:4200/callback` with a code, the app exchanges it at `/oauth2/token` and holds an access token (15 min) and refresh token (7 days).
+- **AC-1.2** Given valid credentials of an `ACTIVE` user, when the login form is submitted, then the browser returns to `http://localhost:4200/callback` with a code, the app exchanges it at `/oauth2/token` and holds an access token (15 min) and refresh token (7 days) in session storage.
 - **AC-1.3** Given an access token, when `GET /api/v1/users/me` is called with it, then 200 with the user's profile; without it, 401 with a Problem Details body.
 - **AC-1.4** The access token is a JWT signed RS256 with `kid`, verifiable against `/oauth2/jwks`; claims include `sub` (user id), `email`, `roles`, `permissions`, `org_id`, `org_type`.
 - **AC-1.5** Given a refresh token, when used at `/oauth2/token`, then a new pair is issued and the old refresh token is invalid; reusing it invalidates the whole authorization (reuse detection).
@@ -162,7 +162,7 @@ Proposed deviations (applied to the docs in the story that lands them):
 
 | # | Deviation | Reason | Doc to update |
 |---|-----------|--------|---------------|
-| D-1 | Public PKCE client instead of a confidential client with `CLIENT_SECRET_BASIC`; refresh token returned to the SPA and kept in memory, not in an HttpOnly cookie | A browser app cannot hold a secret; rotation with reuse detection covers the theft case; no BFF is needed for the thesis scope | AUTH §1.2, §1.4 addendum (1.1.1) |
+| D-1 | Public PKCE client instead of a confidential client with `CLIENT_SECRET_BASIC`; refresh token returned to the SPA and kept in session storage (survives a reload, dies with the tab), not in an HttpOnly cookie | A browser app cannot hold a secret; rotation with reuse detection covers the theft case; no BFF is needed for the thesis scope | AUTH §1.2, §1.4 addendum (1.1.1) |
 | D-2 | Login form served by the authorization server, not by Angular | Required by the authorization-code flow | AUTH §1.1 note (1.1.1) |
 | D-3 | `openapi.yml` `/auth/login`, `/auth/refresh`, `/auth/logout` replaced by the standard OAuth2 endpoints; `User` schema aligned with the entity | The custom endpoints contradicted the chosen flow | openapi.yml (1.1.1) |
 | D-4 | Runtime translation with Transloco instead of Angular's build-time `$localize` | One build serves both languages, the toggle is instant, E2E runs once, and redirect URIs stay identical; the compile-time approach would double builds and routes | ADR-013 addendum, CODE_MAP (1.1.1) |

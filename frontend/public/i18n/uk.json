@@ -1,0 +1,24 @@
+{
+  "app": {
+    "title": "Облік нагород ЧНУ",
+    "language": "EN",
+    "logout": "Вийти",
+    "loading": "Завантаження…"
+  },
+  "home": {
+    "greeting": "Вітаємо, {{name}}",
+    "roles": "Ваші ролі",
+    "organization": "Підрозділ",
+    "noRoles": "Ролі ще не призначено",
+    "email": "Електронна пошта"
+  },
+  "roles": {
+    "EMPLOYEE": "Працівник",
+    "FACULTY_SECRETARY": "Секретар факультету",
+    "DEAN": "Декан",
+    "RECTOR_SECRETARY": "Секретар ректора",
+    "RECTOR": "Ректор",
+    "SYSTEM_ADMIN": "Адміністратор системи",
+    "GDPR_OFFICER": "Відповідальний за захист даних"
+  }
+}

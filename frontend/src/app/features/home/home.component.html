@@ -1,0 +1,27 @@
+@if (auth.profile(); as profile) {
+  <mat-card class="home__card" data-testid="profile-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'home.greeting' | transloco: { name: profile.firstName } }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <dl class="home__facts">
+        <dt>{{ 'home.email' | transloco }}</dt>
+        <dd data-testid="profile-email">{{ profile.email }}</dd>
+        <dt>{{ 'home.organization' | transloco }}</dt>
+        <dd>{{ organizationName(profile.organization) }}</dd>
+        <dt>{{ 'home.roles' | transloco }}</dt>
+        <dd>
+          @if (profile.roles.length) {
+            <mat-chip-set data-testid="profile-roles">
+              @for (assignment of profile.roles; track assignment.role + assignment.organization.id) {
+                <mat-chip>{{ 'roles.' + assignment.role | transloco }} · {{ organizationName(assignment.organization) }}</mat-chip>
+              }
+            </mat-chip-set>
+          } @else {
+            {{ 'home.noRoles' | transloco }}
+          }
+        </dd>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+}

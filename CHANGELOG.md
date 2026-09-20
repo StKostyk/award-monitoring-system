@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Authorization server (OAuth 2.1 / OpenID Connect) with a public PKCE browser client, RS256 tokens, refresh-token rotation with reuse detection, server-side login page in Ukrainian and English, `GET /api/v1/users/me`; Angular auth shell with runtime localisation
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
