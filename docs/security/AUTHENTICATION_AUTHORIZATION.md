@@ -1329,7 +1329,11 @@ design above. The design sections stay as the reference for the reasoning; this 
 | Permissions | §3.3 matrix | Same matrix, resolved from current role assignments at token issue time (`RolePermissions`); not stored per user | Roles are the source of truth, permissions derive from them |
 | Account status at login | Not specified | `PENDING`, `INACTIVE`, `SUSPENDED`, `MEMORIAL`, `DELETED` are refused before the password check with a status-specific message; `RETIRED` may sign in | State machine of the user account |
 | Logout | `/logout` | OpenID Connect RP-initiated logout at `/connect/logout` with `id_token_hint`, after revoking the refresh token at `/oauth2/revoke` | Standard endpoints of the library |
-| Signing key | Key rotation every 90 days (§5.1) | One RSA key from configuration (`AUTH_JWK_*`), generated at start-up when absent; rotation is a deployment procedure, not automated yet | Sufficient for the first increment |
+| Signing key | Key rotation every 90 days (§5.1) | One RSA key from configuration (`AUTH_JWK_*`); generated at start-up only outside the production profile, which refuses to start without a configured key; rotation is a deployment procedure, not automated yet | Sufficient for the first increment |
+| Access vs id token at the API | Not specified | Access tokens carry `token_use=access`; the resource server accepts only those, validates the issuer and rejects id tokens signed with the same key | An id token is an identity proof for the SPA, not an API credential |
+| Refresh while the account is blocked | Not specified | The refresh grant re-reads the account status; `INACTIVE`, `SUSPENDED`, `MEMORIAL`, `DELETED` or a missing account revokes the authorization and answers `invalid_grant`; access tokens already issued stay valid until they expire (≤ 15 min) | Suspension must end the session within one access-token lifetime |
+| Status message at login | Not specified | The account status is checked only after the password matched, so a wrong password on a suspended or pending account answers the generic message; unknown error codes render the generic message | No status oracle without credentials |
+| Token values at rest | Redis blacklist (§5.1) | The library stores authorization codes, access, id and refresh token values in clear text in `oauth2_authorization`; only the one-time email tokens are hashed. Hashing the stored refresh tokens is a backlog item | Standard persistence of the library; the database is not exposed |
 
 ---
 

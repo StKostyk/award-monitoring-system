@@ -79,6 +79,16 @@ Each item is applied in the PR of the story that touches it, after approval.
 - Frontend: `angular-oauth2-oidc` for the PKCE flow, tokens in session storage, automatic silent refresh; `core/auth` holds the guard, callback and profile signal; Transloco for runtime translation.
 - The library withholds refresh tokens from public clients and only authenticates them on the PKCE code exchange; `RotatingRefreshTokenGenerator` and `PublicClientRefreshAuthenticationConverter/Provider` add both for `award-web`.
 
+## Security review follow-ups
+
+Findings of the review of the authorization server code (2026-09-20) that were not fixed immediately:
+
+1. Refresh-token values are stored in clear text by the library; hash them at rest through a wrapping `OAuth2AuthorizationService` (backlog, after Feature 1.1).
+2. Rate limiting (story 1.1.4) must key on the last proxy hop (`X-Real-IP`), never the first `X-Forwarded-For` entry; nginx now overwrites the forwarded headers.
+3. Deployment hardening (deployment story): do not publish port 8080 outside the compose network, keep Swagger's redirect URI out of the production client, consider a separate client for Swagger, review `spring.profiles.active` default (`local` seeds demo accounts).
+4. `RefreshTokenReuseGuard` answers 500 when Redis is unavailable during a refresh; degrade to `invalid_grant` (story 1.1.4, together with the fail-open decision for login counters).
+5. `/userinfo` is advertised by discovery but unusable (no resource server on the authorization-server chain); add or hide when the SPA needs it.
+
 ## Risks
 
 1. Login page lives outside Angular; visual consistency and i18n must be handled in the server template.

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.Authentication;
@@ -18,7 +20,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 class PublicClientRefreshAuthenticationTest {
 
     private final PublicClientRefreshAuthenticationConverter converter =
-        new PublicClientRefreshAuthenticationConverter();
+        new PublicClientRefreshAuthenticationConverter("/oauth2/token", "/oauth2/revoke");
     private final RegisteredClientRepository repository = mock(RegisteredClientRepository.class);
     private final PublicClientRefreshAuthenticationProvider provider =
         new PublicClientRefreshAuthenticationProvider(repository);
@@ -36,7 +38,8 @@ class PublicClientRefreshAuthenticationTest {
         OAuth2ClientAuthenticationToken token = (OAuth2ClientAuthenticationToken) result;
         assertThat(token.getPrincipal()).isEqualTo("award-web");
         assertThat(token.getClientAuthenticationMethod()).isEqualTo(ClientAuthenticationMethod.NONE);
-        assertThat(token.getAdditionalParameters()).containsEntry("refresh_token", "r").doesNotContainKey("client_id");
+        assertThat(token.getAdditionalParameters()).containsEntry("refresh_token", "r").doesNotContainKey("client_id")
+            .containsEntry(PublicClientRefreshAuthenticationConverter.MARKER, Boolean.TRUE);
     }
 
     @Test
@@ -77,6 +80,22 @@ class PublicClientRefreshAuthenticationTest {
         code.setParameter("grant_type", "client_credentials");
         code.setParameter("client_id", "c");
         assertThat(converter.convert(code)).isNull();
+
+    }
+
+    @Test
+    void ac12_codeExchangeAndIntrospectionAreNeverConverted() {
+        MockHttpServletRequest strayToken = new MockHttpServletRequest("POST", "/oauth2/token");
+        strayToken.setParameter("grant_type", "authorization_code");
+        strayToken.setParameter("code", "abc");
+        strayToken.setParameter("client_id", "award-web");
+        strayToken.setParameter("token", "x");
+        assertThat(converter.convert(strayToken)).isNull();
+
+        MockHttpServletRequest introspect = new MockHttpServletRequest("POST", "/oauth2/introspect");
+        introspect.setParameter("token", "x");
+        introspect.setParameter("client_id", "award-web");
+        assertThat(converter.convert(introspect)).isNull();
     }
 
     @Test
@@ -86,8 +105,8 @@ class PublicClientRefreshAuthenticationTest {
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN).build();
         when(repository.findByClientId("award-web")).thenReturn(client);
 
-        Authentication result = provider.authenticate(
-            new OAuth2ClientAuthenticationToken("award-web", ClientAuthenticationMethod.NONE, null, null));
+        Authentication result = provider.authenticate(new OAuth2ClientAuthenticationToken("award-web",
+            ClientAuthenticationMethod.NONE, null, Map.of(PublicClientRefreshAuthenticationConverter.MARKER, true)));
 
         assertThat(result.isAuthenticated()).isTrue();
         assertThat(((OAuth2ClientAuthenticationToken) result).getRegisteredClient()).isSameAs(client);
@@ -102,14 +121,29 @@ class PublicClientRefreshAuthenticationTest {
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN).build();
         when(repository.findByClientId("c")).thenReturn(confidential);
 
+        Map<String, Object> marked = Map.of(PublicClientRefreshAuthenticationConverter.MARKER, true);
         assertThatThrownBy(() -> provider.authenticate(
-            new OAuth2ClientAuthenticationToken("ghost", ClientAuthenticationMethod.NONE, null, null)))
+            new OAuth2ClientAuthenticationToken("ghost", ClientAuthenticationMethod.NONE, null, marked)))
             .isInstanceOf(OAuth2AuthenticationException.class);
         assertThatThrownBy(() -> provider.authenticate(
-            new OAuth2ClientAuthenticationToken("c", ClientAuthenticationMethod.NONE, null, null)))
+            new OAuth2ClientAuthenticationToken("c", ClientAuthenticationMethod.NONE, null, marked)))
             .isInstanceOf(OAuth2AuthenticationException.class);
         assertThat(provider.authenticate(
             new OAuth2ClientAuthenticationToken("c", ClientAuthenticationMethod.CLIENT_SECRET_BASIC, "s", null)))
             .isNull();
+    }
+
+    @Test
+    void ac12_tokensFromTheLibraryConverterAreLeftToTheLibrary() {
+        RegisteredClient client = RegisteredClient.withId("award-web").clientId("award-web")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .redirectUri("http://localhost:4200/callback").build();
+        when(repository.findByClientId("award-web")).thenReturn(client);
+
+        assertThat(provider.authenticate(new OAuth2ClientAuthenticationToken("award-web",
+            ClientAuthenticationMethod.NONE, null, Map.of("code_verifier", "v", "code", "c")))).isNull();
+        assertThat(provider.authenticate(
+            new OAuth2ClientAuthenticationToken("award-web", ClientAuthenticationMethod.NONE, null, null))).isNull();
     }
 }

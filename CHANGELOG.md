@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI backend job runs a single `mvn verify`; static analysis is a blocking step
 
 ### Fixed
+- Authorization server: the PKCE verifier was not checked on the browser client's code exchange; refresh is refused for suspended, inactive or deleted accounts; id tokens are no longer accepted as API bearer tokens; account status is disclosed only after a correct password; production refuses to start without a configured signing key and hides stack traces and Swagger; nginx sends the security headers on every response with a strict script policy
 - Swagger UI shows an Authorize button that signs in through the authorization server (PKCE) or accepts a pasted token
 - Container stack: nginx proxies the authorization-server endpoints, the docker profile logs to the console, allowed origins and redirect URIs cover both `http://localhost` and the dev server
 

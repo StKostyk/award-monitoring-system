@@ -15,26 +15,26 @@ import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.StringUtils;
 
 /**
- * Recognises a public client presenting only its {@code client_id} on a refresh or revocation request.
- * The library handles the PKCE code exchange itself; this covers the two other calls a browser client makes.
+ * Recognises a public client presenting only its {@code client_id} on a refresh-token request to the token endpoint or
+ * on a revocation request. The PKCE code exchange is left to the library, which verifies the code verifier.
  */
 public final class PublicClientRefreshAuthenticationConverter implements AuthenticationConverter {
 
+    /** Marker placed in the additional parameters so the matching provider handles only these tokens. */
+    static final String MARKER = PublicClientRefreshAuthenticationConverter.class.getName();
+
+    private final String tokenEndpoint;
+    private final String revocationEndpoint;
+
+    public PublicClientRefreshAuthenticationConverter(String tokenEndpoint, String revocationEndpoint) {
+        this.tokenEndpoint = tokenEndpoint;
+        this.revocationEndpoint = revocationEndpoint;
+    }
+
     @Override
     public Authentication convert(HttpServletRequest request) {
-        if (!"POST".equals(request.getMethod()) || request.getHeader("Authorization") != null) {
-            return null;
-        }
         String clientId = request.getParameter(OAuth2ParameterNames.CLIENT_ID);
-        if (!StringUtils.hasText(clientId)
-            || StringUtils.hasText(request.getParameter(OAuth2ParameterNames.CLIENT_SECRET))
-            || StringUtils.hasText(request.getParameter(PkceParameterNames.CODE_VERIFIER))) {
-            return null;
-        }
-        boolean refresh = AuthorizationGrantType.REFRESH_TOKEN.getValue()
-            .equals(request.getParameter(OAuth2ParameterNames.GRANT_TYPE));
-        boolean revocation = StringUtils.hasText(request.getParameter(OAuth2ParameterNames.TOKEN));
-        if (!refresh && !revocation) {
+        if (!StringUtils.hasText(clientId) || !isPublicClientOnly(request) || !isRefreshOrRevocation(request)) {
             return null;
         }
         Map<String, Object> additional = new HashMap<>();
@@ -43,6 +43,22 @@ public final class PublicClientRefreshAuthenticationConverter implements Authent
                 additional.put(key, values.length == 1 ? values[0] : values);
             }
         });
+        additional.put(MARKER, Boolean.TRUE);
         return new OAuth2ClientAuthenticationToken(clientId, ClientAuthenticationMethod.NONE, null, additional);
+    }
+
+    private static boolean isPublicClientOnly(HttpServletRequest request) {
+        return "POST".equals(request.getMethod())
+            && request.getHeader("Authorization") == null
+            && !StringUtils.hasText(request.getParameter(OAuth2ParameterNames.CLIENT_SECRET))
+            && !StringUtils.hasText(request.getParameter(PkceParameterNames.CODE_VERIFIER))
+            && !StringUtils.hasText(request.getParameter(OAuth2ParameterNames.CODE));
+    }
+
+    private boolean isRefreshOrRevocation(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        boolean refresh = path.equals(tokenEndpoint) && AuthorizationGrantType.REFRESH_TOKEN.getValue()
+            .equals(request.getParameter(OAuth2ParameterNames.GRANT_TYPE));
+        return refresh || path.equals(revocationEndpoint);
     }
 }

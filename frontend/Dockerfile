@@ -43,6 +43,7 @@ COPY --from=builder /build/dist/frontend/browser /usr/share/nginx/html
 
 # Custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY security-headers.conf /etc/nginx/snippets/security-headers.conf
 
 # Security: Run as non-root (nginx user = 101)
 RUN chown -R nginx:nginx /usr/share/nginx/html && \

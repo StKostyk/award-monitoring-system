@@ -24,6 +24,7 @@ public class WebLocaleConfig implements WebMvcConfigurer {
     LocaleResolver localeResolver() {
         CookieLocaleResolver resolver = new CookieLocaleResolver("lang");
         resolver.setCookieMaxAge(COOKIE_AGE);
+        resolver.setRejectInvalidCookies(false);
         resolver.setDefaultLocaleFunction(request -> prefersEnglish(request.getHeader("Accept-Language"))
             ? Locale.ENGLISH : UKRAINIAN);
         return resolver;
@@ -41,6 +42,7 @@ public class WebLocaleConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName("lang");
+        interceptor.setIgnoreInvalidLocale(true);
         registry.addInterceptor(interceptor);
     }
 }

@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
@@ -33,6 +35,8 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
     public static final String CLAIM_PERMISSIONS = "permissions";
     public static final String CLAIM_ORG_ID = "org_id";
     public static final String CLAIM_ORG_TYPE = "org_type";
+    public static final String CLAIM_TOKEN_USE = "token_use";
+    public static final String TOKEN_USE_ACCESS = "access";
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
@@ -47,10 +51,8 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             return;
         }
         String email = context.getPrincipal().getName();
-        User user = userRepository.findByEmailAddressIgnoreCase(email).orElse(null);
-        if (user == null) {
-            return;
-        }
+        User user = userRepository.findByEmailAddressIgnoreCase(email)
+            .orElseThrow(() -> new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT));
         List<RoleType> roles = userRoleRepository.findCurrentByUserId(user.getId(), LocalDate.now()).stream()
             .map(UserRole::getRoleType)
             .distinct()
@@ -65,6 +67,7 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             claims.put(CLAIM_ORG_TYPE, user.getOrganization().getOrgType().name());
             if (accessToken) {
                 claims.put(CLAIM_PERMISSIONS, new ArrayList<>(rolePermissions.union(roles)));
+                claims.put(CLAIM_TOKEN_USE, TOKEN_USE_ACCESS);
             }
         });
     }

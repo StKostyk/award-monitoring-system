@@ -226,7 +226,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ### 1.6 Authorization server tables
 
-`oauth2_registered_client`, `oauth2_authorization` and `oauth2_authorization_consent` follow the reference schema of Spring Authorization Server with the PostgreSQL adjustments it recommends (`blob` → `TEXT`, `timestamp` → `TIMESTAMPTZ`). Their columns are owned by the library and are not listed here; `oauth2_authorization.principal_name` holds the user's email address and is indexed for revocation queries.
+`oauth2_registered_client`, `oauth2_authorization` and `oauth2_authorization_consent` follow the reference schema of Spring Authorization Server with the PostgreSQL adjustments it recommends (`blob` → `TEXT`, `timestamp` → `TIMESTAMPTZ`). Their columns are owned by the library and are not listed here; `oauth2_authorization.principal_name` holds the user's email address and is indexed for revocation queries. Token values in `oauth2_authorization` are stored as issued (GDPR: Confidential); access to the table is limited to the application role.
 
 ---
 

@@ -10,6 +10,6 @@ export const authConfig: AuthConfig = {
   responseType: 'code',
   scope: 'openid profile',
   showDebugInformation: !environment.production,
-  strictDiscoveryDocumentValidation: false,
+  strictDiscoveryDocumentValidation: true,
   clearHashAfterLogin: true,
 };
