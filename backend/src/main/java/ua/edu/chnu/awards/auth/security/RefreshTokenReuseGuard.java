@@ -16,9 +16,14 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2RefreshTokenAuthenticationToken;
 
+import ua.edu.chnu.awards.user.entity.AccountStatus;
+import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.UserRepository;
+
 /**
- * Detects a rotated refresh token being presented again and revokes the whole authorization it belonged to.
- * The hash of every refresh token that was rotated is remembered in Redis for the token lifetime.
+ * Guards the refresh grant: a rotated refresh token presented again revokes the whole authorization it belonged
+ * to (the hash of every rotated token is remembered in Redis for the token lifetime), and an account whose status no
+ * longer allows signing in cannot refresh either.
  */
 public final class RefreshTokenReuseGuard implements AuthenticationProvider {
 
@@ -26,13 +31,15 @@ public final class RefreshTokenReuseGuard implements AuthenticationProvider {
 
     private final AuthenticationProvider delegate;
     private final OAuth2AuthorizationService authorizationService;
+    private final UserRepository userRepository;
     private final StringRedisTemplate redis;
     private final Duration remember;
 
     public RefreshTokenReuseGuard(AuthenticationProvider delegate, OAuth2AuthorizationService authorizationService,
-                                  StringRedisTemplate redis, Duration remember) {
+                                  UserRepository userRepository, StringRedisTemplate redis, Duration remember) {
         this.delegate = delegate;
         this.authorizationService = authorizationService;
+        this.userRepository = userRepository;
         this.redis = redis;
         this.remember = remember;
     }
@@ -46,9 +53,15 @@ public final class RefreshTokenReuseGuard implements AuthenticationProvider {
             revokeFamilyOf(presented);
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
         }
-        Authentication result = delegate.authenticate(authentication);
+        AccountStatus status = userRepository.findByEmailAddressIgnoreCase(authorization.getPrincipalName())
+            .map(User::getAccountStatus)
+            .orElse(AccountStatus.DELETED);
+        if (!status.canLogIn()) {
+            authorizationService.remove(authorization);
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
+        }
         redis.opsForValue().set(KEY_PREFIX + sha256(presented), authorization.getId(), remember);
-        return result;
+        return delegate.authenticate(authentication);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.auth.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -61,6 +63,7 @@ class TokenClaimsCustomizerTest {
         @SuppressWarnings("unchecked")
         List<String> permissions = (List<String>) claims.get("permissions");
         assertThat(permissions).contains("award:approve:level2", "award:read:faculty");
+        assertThat(claims).containsEntry("token_use", "access");
     }
 
     @Test
@@ -74,18 +77,18 @@ class TokenClaimsCustomizerTest {
         customizer.customize(context);
 
         Map<String, Object> claims = context.getClaims().build().getClaims();
-        assertThat(claims).containsEntry("roles", List.of()).doesNotContainKey("permissions");
+        assertThat(claims).containsEntry("roles", List.of()).doesNotContainKey("permissions")
+            .doesNotContainKey("token_use");
     }
 
     @Test
-    void refreshTokensAndUnknownUsersAreLeftAlone() {
+    void refreshTokensAreLeftAloneAndUnknownUsersGetNoToken() {
         customizer.customize(context(OAuth2TokenType.REFRESH_TOKEN, "e@chnu.edu.ua"));
         verifyNoInteractions(userRepository);
 
         when(userRepository.findByEmailAddressIgnoreCase("ghost@chnu.edu.ua")).thenReturn(Optional.empty());
         JwtEncodingContext context = context(OAuth2TokenType.ACCESS_TOKEN, "ghost@chnu.edu.ua");
-        customizer.customize(context);
-        assertThat(context.getClaims().build().getClaims()).doesNotContainKey("roles");
+        assertThatThrownBy(() -> customizer.customize(context)).isInstanceOf(OAuth2AuthenticationException.class);
     }
 
     private static JwtEncodingContext context(OAuth2TokenType type, String principalName) {

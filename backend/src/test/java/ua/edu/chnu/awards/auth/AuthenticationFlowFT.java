@@ -121,6 +121,22 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac12_codeExchangeRequiresTheMatchingVerifier() {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
+        String code = flow.loginAndGetCode(DEAN, PASSWORD);
+
+        flow.exchange(code, "not-the-verifier-that-was-used-to-start-the-flow").then().statusCode(400)
+            .body("error", equalTo("invalid_grant"));
+        RestAssured.given()
+            .formParam("grant_type", "authorization_code")
+            .formParam("code", code)
+            .formParam("redirect_uri", AuthorizationCodeFlow.REDIRECT_URI)
+            .formParam("client_id", AuthorizationCodeFlow.CLIENT_ID)
+            .formParam("token", "stray")
+            .post("/oauth2/token").then().statusCode(401);
+    }
+
+    @Test
     void ac15_refreshRotatesAndReuseRevokesTheWholeAuthorization() {
         AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
         Response first = flow.exchange(flow.loginAndGetCode(DEAN, PASSWORD));
@@ -133,6 +149,30 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
 
         AuthorizationCodeFlow.refresh(firstRefresh).then().statusCode(400).body("error", equalTo("invalid_grant"));
         AuthorizationCodeFlow.refresh(secondRefresh).then().statusCode(400).body("error", equalTo("invalid_grant"));
+    }
+
+    @Test
+    void ac15_suspendedAccountCannotRefreshAndIdTokenIsNotABearerToken() {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
+        Response tokens = flow.exchange(flow.loginAndGetCode(DEAN, PASSWORD));
+        String refreshToken = tokens.jsonPath().getString("refresh_token");
+
+        RestAssured.given().header("Authorization", "Bearer " + tokens.jsonPath().getString("id_token"))
+            .get("/api/v1/users/me").then().statusCode(401);
+
+        setStatus(DEAN, AccountStatus.SUSPENDED);
+        try {
+            AuthorizationCodeFlow.refresh(refreshToken).then().statusCode(400).body("error", equalTo("invalid_grant"));
+        } finally {
+            setStatus(DEAN, AccountStatus.ACTIVE);
+        }
+        AuthorizationCodeFlow.refresh(refreshToken).then().statusCode(400).body("error", equalTo("invalid_grant"));
+    }
+
+    private void setStatus(String email, AccountStatus status) {
+        User user = userRepository.findByEmailAddressIgnoreCase(email).orElseThrow();
+        user.setAccountStatus(status);
+        userRepository.saveAndFlush(user);
     }
 
     @Test
@@ -149,6 +189,12 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
         AuthorizationCodeFlow wrong = new AuthorizationCodeFlow();
         wrong.authorize();
         assertThat(wrong.submitLogin(DEAN, "wrong").getHeader("Location")).endsWith("/login?error=BAD_CREDENTIALS");
+
+        AuthorizationCodeFlow probe = new AuthorizationCodeFlow();
+        probe.authorize();
+        assertThat(probe.submitLogin(SUSPENDED, "wrong").getHeader("Location"))
+            .endsWith("/login?error=BAD_CREDENTIALS");
+        assertThat(probe.loginPage("error=DROP%20TABLE").asString()).contains("lang=").doesNotContain("DROP");
     }
 
     @Test
@@ -184,6 +230,7 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
         assertThat(logout.getHeader("Location")).startsWith("http://localhost:4200");
 
         Response afterLogout = RestAssured.given().redirects().follow(false).cookies(flow.cookies())
+            .accept("text/html")
             .get("/oauth2/authorize?response_type=code&client_id=award-web&scope=openid"
                 + "&redirect_uri=http://localhost:4200/callback&code_challenge=abc&code_challenge_method=S256");
         assertThat(afterLogout.getHeader("Location")).endsWith("/login");

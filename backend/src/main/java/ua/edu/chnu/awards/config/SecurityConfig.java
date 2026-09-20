@@ -22,6 +22,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
 import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
@@ -46,16 +47,19 @@ public class SecurityConfig {
     @Bean
     @Order(API_ORDER)
     SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, JwtAuthorityConverter authorityConverter,
+                                               AccessTokenDecoder accessTokenDecoder,
                                                ProblemDetailsEntryPoint entryPoint) throws Exception {
         http
             .securityMatcher("/api/**", "/actuator/**")
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/v1/auth/**", "/api/v1/organizations/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/verify-email",
+                    "/api/v1/auth/resend-verification").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/organizations").permitAll()
                 .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/actuator/**").hasRole(ROLE_SYSTEM_ADMIN)
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(authorityConverter))
+                .jwt(jwt -> jwt.decoder(accessTokenDecoder.decoder()).jwtAuthenticationConverter(authorityConverter))
                 .authenticationEntryPoint(entryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .csrf(AbstractHttpConfigurer::disable)
@@ -87,7 +91,7 @@ public class SecurityConfig {
                                                         AccountStatusChecker statusChecker) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
-        provider.setPreAuthenticationChecks(statusChecker);
+        provider.setPostAuthenticationChecks(statusChecker);
         return provider;
     }
 

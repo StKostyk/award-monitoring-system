@@ -2,6 +2,8 @@ package ua.edu.chnu.awards.config;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+import java.util.Set;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -26,6 +28,7 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import ua.edu.chnu.awards.auth.security.PublicClientRefreshAuthenticationConverter;
 import ua.edu.chnu.awards.auth.security.PublicClientRefreshAuthenticationProvider;
 import ua.edu.chnu.awards.auth.security.RefreshTokenReuseGuard;
+import ua.edu.chnu.awards.user.repository.UserRepository;
 
 /**
  * OAuth2 / OpenID Connect provider endpoints backed by the database.
@@ -40,8 +43,10 @@ public class AuthorizationServerConfig {
     @Order(AUTHORIZATION_SERVER_ORDER)
     SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
                                                                OAuth2AuthorizationService authorizationService,
+                                                               UserRepository userRepository,
                                                                StringRedisTemplate redisTemplate,
                                                                RegisteredClientRepository registeredClientRepository,
+                                                               AuthorizationServerSettings settings,
                                                                AuthProperties properties) throws Exception {
         OAuth2AuthorizationServerConfigurer authorizationServer =
             OAuth2AuthorizationServerConfigurer.authorizationServer();
@@ -50,26 +55,33 @@ public class AuthorizationServerConfig {
             .with(authorizationServer, server -> server
                 .oidc(withDefaults())
                 .clientAuthentication(client -> client
-                    .authenticationConverter(new PublicClientRefreshAuthenticationConverter())
+                    .authenticationConverter(new PublicClientRefreshAuthenticationConverter(
+                        settings.getTokenEndpoint(), settings.getTokenRevocationEndpoint()))
                     .authenticationProvider(
                         new PublicClientRefreshAuthenticationProvider(registeredClientRepository)))
                 .tokenEndpoint(token -> token.authenticationProviders(providers ->
                     providers.replaceAll(provider -> guardRefreshTokens(provider, authorizationService,
-                        redisTemplate, properties)))))
+                        userRepository, redisTemplate, properties)))))
             .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
             .cors(withDefaults())
             .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
-                new LoginUrlAuthenticationEntryPoint("/login"),
-                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)));
+                new LoginUrlAuthenticationEntryPoint("/login"), browserRequests()));
         return http.build();
+    }
+
+    private static MediaTypeRequestMatcher browserRequests() {
+        MediaTypeRequestMatcher matcher = new MediaTypeRequestMatcher(MediaType.TEXT_HTML);
+        matcher.setIgnoredMediaTypes(Set.of(MediaType.ALL));
+        return matcher;
     }
 
     private static AuthenticationProvider guardRefreshTokens(AuthenticationProvider provider,
                                                              OAuth2AuthorizationService authorizationService,
+                                                             UserRepository userRepository,
                                                              StringRedisTemplate redisTemplate,
                                                              AuthProperties properties) {
         if (provider instanceof OAuth2RefreshTokenAuthenticationProvider) {
-            return new RefreshTokenReuseGuard(provider, authorizationService, redisTemplate,
+            return new RefreshTokenReuseGuard(provider, authorizationService, userRepository, redisTemplate,
                 properties.client().refreshTokenTtl());
         }
         return provider;

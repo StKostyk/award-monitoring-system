@@ -10,9 +10,10 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
 /**
- * Authenticates a public client by its registration alone, for the tokens produced by
- * {@link PublicClientRefreshAuthenticationConverter}. Possession of the refresh token is the real proof;
- * the grant provider verifies it afterwards.
+ * Authenticates a public client by its registration alone, but only for the tokens produced by
+ * {@link PublicClientRefreshAuthenticationConverter}; every other client authentication, including the PKCE
+ * code exchange, is left to the library. Possession of the refresh token is the real proof and is verified by the
+ * grant provider afterwards.
  */
 public final class PublicClientRefreshAuthenticationProvider implements AuthenticationProvider {
 
@@ -26,7 +27,9 @@ public final class PublicClientRefreshAuthenticationProvider implements Authenti
     public Authentication authenticate(Authentication authentication) {
         OAuth2ClientAuthenticationToken clientAuthentication = (OAuth2ClientAuthenticationToken) authentication;
         if (!ClientAuthenticationMethod.NONE.equals(clientAuthentication.getClientAuthenticationMethod())
-            || clientAuthentication.getRegisteredClient() != null) {
+            || clientAuthentication.getRegisteredClient() != null
+            || !Boolean.TRUE.equals(clientAuthentication.getAdditionalParameters()
+                .get(PublicClientRefreshAuthenticationConverter.MARKER))) {
             return null;
         }
         String clientId = clientAuthentication.getPrincipal().toString();

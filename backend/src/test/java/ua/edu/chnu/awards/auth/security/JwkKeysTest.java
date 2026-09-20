@@ -10,6 +10,7 @@ import java.util.Base64;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import com.nimbusds.jose.jwk.RSAKey;
 
@@ -19,7 +20,7 @@ class JwkKeysTest {
 
     @Test
     void ac14_generatesAKeyWhenNoneIsConfigured() {
-        JwkKeys keys = new JwkKeys(properties(new AuthProperties.Jwk("", "", "")));
+        JwkKeys keys = new JwkKeys(properties(new AuthProperties.Jwk("", "", "")), new MockEnvironment());
 
         RSAKey key = keys.rsaKey();
         assertThat(key.getKeyID()).isNotBlank();
@@ -37,7 +38,8 @@ class JwkKeysTest {
         String publicPem = "-----BEGIN PUBLIC KEY-----\n"
             + Base64.getMimeEncoder().encodeToString(pair.getPublic().getEncoded()) + "\n-----END PUBLIC KEY-----";
 
-        JwkKeys keys = new JwkKeys(properties(new AuthProperties.Jwk("key-2026", privatePem, publicPem)));
+        JwkKeys keys = new JwkKeys(properties(new AuthProperties.Jwk("key-2026", privatePem, publicPem)),
+            new MockEnvironment());
 
         assertThat(keys.rsaKey().getKeyID()).isEqualTo("key-2026");
         assertThat(keys.rsaKey().toRSAPublicKey()).isEqualTo(pair.getPublic());
@@ -45,8 +47,19 @@ class JwkKeysTest {
 
     @Test
     void rejectsGarbagePem() {
-        assertThatThrownBy(() -> new JwkKeys(properties(new AuthProperties.Jwk("k", "AAAA", "AAAA"))))
+        assertThatThrownBy(() -> new JwkKeys(properties(new AuthProperties.Jwk("k", "AAAA", "AAAA")),
+            new MockEnvironment()))
             .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void productionRefusesToStartWithoutAConfiguredKey() {
+        MockEnvironment production = new MockEnvironment();
+        production.setActiveProfiles("production");
+
+        assertThatThrownBy(() -> new JwkKeys(properties(new AuthProperties.Jwk("", "", "")), production))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("AUTH_JWK_PRIVATE_KEY");
     }
 
     private static AuthProperties properties(AuthProperties.Jwk jwk) {

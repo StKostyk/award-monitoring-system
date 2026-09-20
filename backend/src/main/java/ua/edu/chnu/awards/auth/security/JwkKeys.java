@@ -12,6 +12,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.UUID;
 
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import com.nimbusds.jose.jwk.RSAKey;
@@ -31,9 +32,13 @@ public final class JwkKeys {
 
     private final RSAKey rsaKey;
 
-    public JwkKeys(AuthProperties properties) {
+    public JwkKeys(AuthProperties properties, Environment environment) {
         AuthProperties.Jwk jwk = properties.jwk();
         if (jwk.privateKey().isBlank() || jwk.publicKey().isBlank()) {
+            if (environment.matchesProfiles("production")) {
+                throw new IllegalStateException(
+                    "AUTH_JWK_PRIVATE_KEY and AUTH_JWK_PUBLIC_KEY are required in production");
+            }
             log.warn("No signing key configured; generating a key that will not survive a restart");
             this.rsaKey = generate();
         } else {

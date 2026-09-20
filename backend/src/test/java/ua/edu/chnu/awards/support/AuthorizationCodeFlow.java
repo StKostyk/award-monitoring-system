@@ -38,7 +38,7 @@ public final class AuthorizationCodeFlow {
      * @return the authorize response (302 to /login for an anonymous browser)
      */
     public Response authorize() {
-        Response response = RestAssured.given().redirects().follow(false).cookies(cookies)
+        Response response = RestAssured.given().redirects().follow(false).cookies(cookies).accept("text/html")
             .queryParam("response_type", "code")
             .queryParam("client_id", CLIENT_ID)
             .queryParam("redirect_uri", REDIRECT_URI)
@@ -92,7 +92,7 @@ public final class AuthorizationCodeFlow {
     public String loginAndGetCode(String email, String password) {
         authorize();
         Response afterLogin = submitLogin(email, password);
-        Response redirect = RestAssured.given().redirects().follow(false).cookies(cookies)
+        Response redirect = RestAssured.given().redirects().follow(false).cookies(cookies).accept("text/html")
             .urlEncodingEnabled(false)
             .get(afterLogin.getHeader("Location"));
         remember(redirect);
@@ -117,13 +117,26 @@ public final class AuthorizationCodeFlow {
      * @return the token endpoint response
      */
     public Response exchange(String code) {
-        return RestAssured.given()
+        return exchange(code, verifier);
+    }
+
+    /**
+     * Exchanges the code with an arbitrary verifier (null omits the parameter).
+     *
+     * @param code         the authorization code
+     * @param codeVerifier the PKCE verifier to present
+     * @return the token endpoint response
+     */
+    public Response exchange(String code, String codeVerifier) {
+        var request = RestAssured.given()
             .formParam("grant_type", "authorization_code")
             .formParam("code", code)
             .formParam("redirect_uri", REDIRECT_URI)
-            .formParam("client_id", CLIENT_ID)
-            .formParam("code_verifier", verifier)
-            .post("/oauth2/token");
+            .formParam("client_id", CLIENT_ID);
+        if (codeVerifier != null) {
+            request.formParam("code_verifier", codeVerifier);
+        }
+        return request.post("/oauth2/token");
     }
 
     /**

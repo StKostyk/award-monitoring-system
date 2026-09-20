@@ -1,9 +1,13 @@
 package ua.edu.chnu.awards.auth.web;
 
+import java.util.Arrays;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import ua.edu.chnu.awards.user.entity.AccountStatus;
 
 /**
  * Serves the sign-in page of the authorization server.
@@ -12,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class LoginController {
 
     /**
-     * Renders the login form; an error code from a failed attempt is translated by the template.
+     * Renders the login form; a known error code from a failed attempt is translated by the template.
      *
      * @param error error code set by the failure handler, if any
      * @param model view model
@@ -20,7 +24,13 @@ public class LoginController {
      */
     @GetMapping("/login")
     public String login(@RequestParam(required = false) String error, Model model) {
-        model.addAttribute("error", error == null ? null : "login.error." + error);
+        model.addAttribute("error", error == null ? null : "login.error." + knownCode(error));
         return "login";
+    }
+
+    private static String knownCode(String code) {
+        boolean known = "BAD_CREDENTIALS".equals(code) || "LOCKED".equals(code)
+            || Arrays.stream(AccountStatus.values()).anyMatch(status -> status.name().equals(code));
+        return known ? code : "BAD_CREDENTIALS";
     }
 }

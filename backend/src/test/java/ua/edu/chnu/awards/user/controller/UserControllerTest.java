@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
@@ -46,6 +48,9 @@ class UserControllerTest {
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
+
+    @MockitoBean(answers = Answers.RETURNS_MOCKS)
+    private AccessTokenDecoder accessTokenDecoder;
 
     @MockitoBean
     private ua.edu.chnu.awards.auth.security.JpaUserDetailsService userDetailsService;

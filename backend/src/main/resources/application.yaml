@@ -277,6 +277,23 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD}
 
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+  servlet:
+    session:
+      cookie:
+        secure: true
+        same-site: lax
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 management:
   endpoints:
     web:
