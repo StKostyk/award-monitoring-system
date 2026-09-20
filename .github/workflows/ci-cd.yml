@@ -184,12 +184,15 @@ jobs:
 
       - name: SonarQube analysis
         # Only run SonarQube if the token is configured
-        if: ${{ secrets.SONAR_TOKEN != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "SONAR_TOKEN not configured, skipping analysis"
+            exit 0
+          fi
           mvn sonar:sonar -B \
             -Dsonar.projectKey=award-monitoring-system \
             -Dsonar.organization=kostyk-stefan \
