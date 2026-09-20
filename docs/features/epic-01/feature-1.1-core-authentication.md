@@ -193,6 +193,8 @@ Coverage target 85 % lines per `mvn verify`; static analysis clean.
 
 ## 9. Manual verification
 
+Container stack instead of dev mode: after `docker compose up -d --build`, every `http://localhost:4200` below is `http://localhost` and every `http://localhost:8080` (except Swagger, which stays on 8080) is also `http://localhost`.
+
 Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root — it starts the containers, the backend with the `local` profile on `http://localhost:8080` (its own window, about a minute) and the frontend on `http://localhost:4200`, and waits for the health check. By hand the same is `docker compose up -d postgres redis mailpit minio`, then `cd backend; .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"`, then `cd frontend; npm start`. Mailpit inbox at `http://localhost:8025`. Seed accounts (password `Passw0rd-demo` for all):
 
 | Email | Roles | Organisation |
@@ -217,7 +219,7 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 6. Open `http://localhost:4200`. Expected: redirect to `http://localhost:8080/login?...` in Ukrainian. Switch to English with the language link; reload keeps English. (AC-1.1, 1.7)
 7. Sign in as `employee.fmi@chnu.edu.ua`. Expected: return to the app; toolbar shows the name and a logout button. (AC-1.2)
 8. In DevTools → Network, copy the access token from the `/oauth2/token` response; paste it at `https://jwt.io`: header `alg: RS256`, `kid` present; payload has `roles: ["EMPLOYEE"]`, `org_id`, `org_type: "DEPARTMENT"`. (AC-1.4)
-9. Swagger UI `http://localhost:8080/swagger-ui.html` → Authorize with the token → `GET /api/v1/users/me` returns the profile; without the token, 401. (AC-1.3, 1.9)
+9. Swagger UI `http://localhost:8080/swagger-ui.html` → **Authorize** → tick `openid`/`profile` under *oauth2* → Authorize → sign in in the popup → the dialog shows *Logout* → Close → `GET /api/v1/users/me` → Try it out → Execute → 200 with the profile. Log out of Swagger (Authorize → Logout) → Execute again → 401. (AC-1.3, 1.9)
 10. Sign out; the app returns to the login page; the old refresh token fails at `/oauth2/token` (repeat the request from DevTools → `invalid_grant`). (AC-1.8, 1.5)
 11. Sign in as `pending@chnu.edu.ua`. Expected: login page says the address is not verified yet. (AC-1.6)
 

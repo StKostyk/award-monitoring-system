@@ -196,7 +196,12 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
         RestAssured.when().get("/oauth2/jwks").then().statusCode(200).body("keys[0].kty", equalTo("RSA"));
         RestAssured.when().get("/login").then().statusCode(200);
         RestAssured.when().get("/actuator/health").then().statusCode(200).body("status", equalTo("UP"));
-        RestAssured.when().get("/v3/api-docs").then().statusCode(200);
+        RestAssured.when().get("/v3/api-docs").then().statusCode(200)
+            .body("components.securitySchemes.oauth2.flows.authorizationCode.tokenUrl", equalTo("http://localhost:8080/oauth2/token"))
+            .body("components.securitySchemes.bearer.scheme", equalTo("bearer"));
+        String initializer = RestAssured.when().get("/swagger-ui/swagger-initializer.js").then().statusCode(200)
+            .extract().asString();
+        assertThat(initializer).contains("award-web").contains("usePkceWithAuthorizationCodeGrant");
         RestAssured.given().redirects().follow(false).when().get("/swagger-ui.html").then().statusCode(302)
             .header("Location", startsWith("/swagger-ui"));
 

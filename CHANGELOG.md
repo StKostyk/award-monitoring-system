@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI backend job runs a single `mvn verify`; static analysis is a blocking step
 
 ### Fixed
+- Swagger UI shows an Authorize button that signs in through the authorization server (PKCE) or accepts a pasted token
 - Container stack: nginx proxies the authorization-server endpoints, the docker profile logs to the console, allowed origins and redirect URIs cover both `http://localhost` and the dev server
 
 ### Removed
