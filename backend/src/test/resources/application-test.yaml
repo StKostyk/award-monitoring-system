@@ -1,0 +1,30 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+  security:
+    user:
+      name: test
+      password: test
+
+management:
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  tracing:
+    enabled: false
+
+otel:
+  sdk:
+    disabled: true
+
+logging:
+  level:
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.testcontainers: INFO
+    ua.edu.chnu: DEBUG

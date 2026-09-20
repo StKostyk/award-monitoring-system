@@ -303,6 +303,7 @@ This project follows an enterprise-grade pre-development methodology. See the [r
 ### **Phase 12: Development Environment & Toolchain** ✅
 - [🛠️ Development Environment](./docs/development/DEVELOPMENT_ENVIRONMENT.md) - Complete dev setup guide with Docker, IDE, and database configuration
 - [🔍 Code Quality Tools](./docs/development/CODE_QUALITY_TOOLS.md) - Checkstyle, PMD, SpotBugs, SonarQube integration guide
+- [🗺️ Code Map](./docs/development/CODE_MAP.md) - Package layout, test layers and conventions
 - **Setup Scripts** (`tools/`)
   - [dev-environment-setup.sh](./tools/dev-environment-setup.sh) - Unix/Linux/macOS automated setup
   - [dev-environment-setup.ps1](./tools/dev-environment-setup.ps1) - Windows PowerShell automated setup
@@ -329,7 +330,7 @@ This project follows an enterprise-grade pre-development methodology. See the [r
 ### **Phase 13: Quality Assurance Strategy** ✅
 - **Spring Boot Application** (`backend/`)
   - [pom.xml](./backend/pom.xml) - All Necessary Dependencies and Plugins
-  - [AwardMonitoringSystemApplication](./backend/src/main/java/ua/edu/chnu/award_monitoring_system/AwardMonitoringSystemApplication.java) - Main Entry Point
+  - [AwardMonitoringSystemApplication](./backend/src/main/java/ua/edu/chnu/awards/AwardMonitoringSystemApplication.java) - Main Entry Point
 - **Angular Application** (`frontend/`)
   - [index.html](./frontend/src/index.html) Main HTML Page
   - Node modules and Different config files
@@ -365,8 +366,8 @@ This project follows an enterprise-grade pre-development methodology. See the [r
   - [logstash.conf](./infra/logstash/logstash.conf) - Log pipeline configuration
   - [Grafana dashboards](./infra/grafana/dashboards/) - Application overview dashboard
 - **Application Configuration** (`backend/`)
-  - [MetricsConfiguration.java](./backend/src/main/java/ua/edu/chnu/award_monitoring_system/config/MetricsConfiguration.java) - Micrometer setup
-  - [BusinessMetricsService.java](./backend/src/main/java/ua/edu/chnu/award_monitoring_system/metrics/BusinessMetricsService.java) - Custom business metrics
+  - [MetricsConfiguration.java](./backend/src/main/java/ua/edu/chnu/awards/config/MetricsConfiguration.java) - Micrometer setup
+  - [BusinessMetricsService.java](./backend/src/main/java/ua/edu/chnu/awards/metrics/BusinessMetricsService.java) - Custom business metrics
   - [logback-spring.xml](./backend/src/main/resources/logback-spring.xml) - Structured JSON logging
 
 **Key Achievements:**

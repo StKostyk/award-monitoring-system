@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Backend quality gates are now enforced in `mvn verify`: unit, integration (`*IT`) and functional (`*FT`) tests on TestContainers, JaCoCo line coverage ≥ 85%, Checkstyle, PMD 7 and SpotBugs with zero tolerance
+- Base package renamed to `ua.edu.chnu.awards`
+- Frontend runs client-side only; SSR scaffold removed (ADR-013 addendum)
+- Docker Compose adds Mailpit (SMTP) and MinIO (S3) for local development
+- CI backend job runs a single `mvn verify`; static analysis is a blocking step
+
+### Removed
+- H2 test database; tests use PostgreSQL and Redis containers
+
 ### Planned
 - Phase 18: Portfolio Preparation & Presentation
 - Phase 19: Final Review & Sign-off

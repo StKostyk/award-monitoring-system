@@ -23,10 +23,12 @@
     <!-- Allow magic numbers in tests -->
     <suppress files=".*Test\.java$" checks="MagicNumber"/>
     <suppress files=".*IT\.java$" checks="MagicNumber"/>
+    <suppress files=".*FT\.java$" checks="MagicNumber"/>
     
     <!-- Allow longer methods in tests -->
     <suppress files=".*Test\.java$" checks="MethodLength"/>
     <suppress files=".*IT\.java$" checks="MethodLength"/>
+    <suppress files=".*FT\.java$" checks="MethodLength"/>
     
     <!-- Allow more complex tests -->
     <suppress files=".*Test\.java$" checks="CyclomaticComplexity"/>
@@ -34,6 +36,7 @@
     <!-- Allow missing Javadoc in tests -->
     <suppress files=".*Test\.java$" checks="Javadoc.*"/>
     <suppress files=".*IT\.java$" checks="Javadoc.*"/>
+    <suppress files=".*FT\.java$" checks="Javadoc.*"/>
 
     <!-- ===================================================================== -->
     <!-- Configuration Classes -->

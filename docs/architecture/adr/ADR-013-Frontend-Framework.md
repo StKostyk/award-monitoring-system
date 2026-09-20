@@ -154,11 +154,24 @@ ng add @ngrx/store
 
 ---
 
+## Addendum 2026-09: Rendering Mode
+
+The application is rendered client-side only. Server-side rendering (SSR) was part of the initial scaffold but removed before feature development:
+
+- Every screen sits behind authentication, so SSR brings no SEO or first-paint benefit for anonymous visitors.
+- SSR requires a Node runtime in the container and hydration-safe code around browser-only APIs (token storage, PKCE), which adds complexity without user value.
+- The static bundle is served by nginx (see `frontend/Dockerfile`), which matches ADR-017.
+
+Localisation is provided through Angular i18n with Ukrainian as the default locale and English as the second locale.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-09-19 | Stefan Kostyk | Addendum: client-side rendering only, i18n locales | Scaffold cleanup before Sprint 2 |
 
 ---
 

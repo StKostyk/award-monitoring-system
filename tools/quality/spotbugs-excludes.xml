@@ -47,12 +47,6 @@
         </Or>
     </Match>
 
-    <!-- Spring @Bean methods may return null intentionally -->
-    <Match>
-        <Bug pattern="NP_NONNULL_RETURN_VIOLATION"/>
-        <Method annotation="org.springframework.context.annotation.Bean"/>
-    </Match>
-
     <!-- Spring configuration classes -->
     <Match>
         <Class name="~.*Configuration$"/>
@@ -78,12 +72,6 @@
             <Bug pattern="NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
             <Bug pattern="SS_SHOULD_BE_STATIC"/>
         </Or>
-    </Match>
-
-    <!-- Entity ID fields -->
-    <Match>
-        <Field annotation="jakarta.persistence.Id"/>
-        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
     <!-- Embeddable classes -->
@@ -175,10 +163,20 @@
     <!-- Concurrency Exclusions -->
     <!-- ===================================================================== -->
 
-    <!-- Spring-managed singletons handle concurrency -->
+    <!-- Spring-managed beans hold injected singletons by design -->
     <Match>
-        <Annotation name="org.springframework.stereotype.Service"/>
-        <Bug pattern="EI_EXPOSE_REP"/>
+        <Or>
+            <Annotation name="org.springframework.stereotype.Service"/>
+            <Annotation name="org.springframework.stereotype.Component"/>
+            <Annotation name="org.springframework.stereotype.Repository"/>
+            <Annotation name="org.springframework.web.bind.annotation.RestController"/>
+            <Annotation name="org.springframework.context.annotation.Configuration"/>
+            <Annotation name="org.springframework.boot.test.context.TestConfiguration"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
     </Match>
 
     <!-- ===================================================================== -->
@@ -207,7 +205,7 @@
 
     <!-- Configuration packages often have unusual patterns -->
     <Match>
-        <Package name="~ua\.kostyk\.award\.config\..*"/>
+        <Package name="~ua.edu.chnu.awards\.config\..*"/>
         <Bug pattern="MS_SHOULD_BE_FINAL"/>
     </Match>
 

@@ -168,7 +168,7 @@
        ========================================================================= -->
 
   <!-- Application Loggers -->
-  <logger name="ua.edu.chnu.award_monitoring_system" level="DEBUG"/>
+  <logger name="ua.edu.chnu.awards" level="DEBUG"/>
 
   <!-- Spring Framework -->
   <logger name="org.springframework" level="INFO"/>
@@ -214,7 +214,7 @@
     </root>
 
     <!-- Keep application logs at INFO in production -->
-    <logger name="ua.edu.chnu.award_monitoring_system" level="INFO"/>
+    <logger name="ua.edu.chnu.awards" level="INFO"/>
   </springProfile>
 
 </configuration>
