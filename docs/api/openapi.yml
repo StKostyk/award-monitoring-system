@@ -150,6 +150,109 @@ paths:
         '302':
           description: Session ended; redirect to `post_logout_redirect_uri`
 
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register an employee account
+      description: |
+        Open endpoint. Requires an institutional address (`@chnu.edu.ua`), a password of at least 10 characters and
+        at most 72 bytes that is not on the common-password list, names made of letters, and an active department.
+        Addresses are stored lower-case. The account is created `PENDING` with the
+        `EMPLOYEE` role and a verification email (24-hour link) is sent.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created, verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          description: Malformed body (bean validation)
+        '409':
+          description: Address already registered (`urn:awards:problem:email-taken`)
+        '422':
+          description: |
+            `urn:awards:problem:institutional-email-required`, `organisation-invalid`,
+            `password-too-short`, `password-too-long` or `password-too-common`
+
+  /auth/verify-email:
+    post:
+      tags: [Authentication]
+      summary: Confirm an address with the token from the email link
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200':
+          description: Account is now `ACTIVE`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '409':
+          description: Account is not awaiting verification (`urn:awards:problem:account-not-pending`)
+        '410':
+          description: Token unknown, expired or already used (`urn:awards:problem:token-invalid`)
+
+  /auth/resend-verification:
+    post:
+      tags: [Authentication]
+      summary: Send a fresh verification link
+      description: Always answers 202 for known and unknown addresses; at most one email per address per minute.
+      operationId: resendVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202':
+          description: Accepted
+        '429':
+          description: An email was sent within the last minute (`urn:awards:problem:too-many-requests`)
+
+  # ============== Organisations ==============
+  /organizations:
+    get:
+      tags: [Users]
+      summary: List active organisations of one level with their parent
+      description: Open endpoint, used by the registration form to pick a department.
+      operationId: listOrganizations
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [UNIVERSITY, COLLEGE, FACULTY, SPECIALITY, DEPARTMENT]
+            default: DEPARTMENT
+      responses:
+        '200':
+          description: Organisations ordered by English name
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationSummary'
+
   # ============== Awards ==============
   /awards:
     get:
@@ -715,6 +818,47 @@ components:
         scope:
           type: string
           example: openid profile
+
+    RegisterRequest:
+      type: object
+      required: [email, password, firstName, lastName, organizationId]
+      properties:
+        email:
+          type: string
+          format: email
+          example: anastasia.k@chnu.edu.ua
+        password:
+          type: string
+          format: password
+          minLength: 10
+          maxLength: 72
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        organizationId:
+          type: integer
+          format: int64
+          description: Department the employee belongs to
+
+    RegistrationResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+
+    OrganizationSummary:
+      allOf:
+        - $ref: '#/components/schemas/OrganizationRef'
+        - type: object
+          properties:
+            parent:
+              $ref: '#/components/schemas/OrganizationRef'
 
     # User
     User:

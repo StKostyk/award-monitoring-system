@@ -69,7 +69,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `uk_users_email` - Unique on `email_address`
 - `idx_users_organization` - B-tree on `organization_id`
 - `idx_users_status` - B-tree on `account_status`
-- `idx_users_lower_email` - Expression index on `LOWER(email_address)`
+- `uk_users_email_lower` - Unique expression index on `LOWER(email_address)` (V015); addresses are stored lower-case
 
 **Relationships**:
 - BELONGS TO `organizations` (N:1) via `organization_id`

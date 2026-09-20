@@ -53,6 +53,15 @@ class UserRepositoryIT extends AbstractJpaSliceTest {
     }
 
     @Test
+    void rejectsDuplicateEmailInAnyLetterCase() {
+        Organization department = entityManager.find(Organization.class, TestUsers.DAI_DEPARTMENT_ID);
+        entityManager.persistAndFlush(TestUsers.user("case@chnu.edu.ua", department));
+
+        assertThatThrownBy(() -> entityManager.persistAndFlush(TestUsers.user("CASE@chnu.edu.ua", department)))
+            .isInstanceOf(jakarta.persistence.PersistenceException.class);
+    }
+
+    @Test
     void rejectsDuplicateEmail() {
         Organization department = entityManager.find(Organization.class, TestUsers.DAI_DEPARTMENT_ID);
         entityManager.persistAndFlush(TestUsers.user("dup@chnu.edu.ua", department));

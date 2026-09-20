@@ -75,7 +75,7 @@ None of the stories is marked parallel: the frontend work in each is small and c
 
 ### 1.1.2 Employee registration and email verification (SCRUM-8)
 
-- **AC-2.1** Given a new `@chnu.edu.ua` address, a password of 10–128 characters, first and last name and a department id, when `POST /api/v1/auth/register` is called, then 201, the user is created `PENDING` in that department with role `EMPLOYEE`, and a verification email is delivered (visible in Mailpit).
+- **AC-2.1** Given a new `@chnu.edu.ua` address, a password of at least 10 characters and at most 72 bytes, first and last name and a department id, when `POST /api/v1/auth/register` is called, then 201, the user is created `PENDING` in that department with role `EMPLOYEE`, and a verification email is delivered (visible in Mailpit).
 - **AC-2.2** Given an address with another domain, then 422 with problem type `institutional-email-required` and a message directing the person to the faculty secretary; nothing is stored.
 - **AC-2.3** Given an address already registered (any case), then 409; the response does not reveal whether the account is verified.
 - **AC-2.4** Given an organisation id that is not a `DEPARTMENT` or is inactive, then 422.
@@ -169,7 +169,7 @@ Proposed deviations (applied to the docs in the story that lands them):
 | D-5 | Organisation types are five (`UNIVERSITY`, `COLLEGE`, `FACULTY`, `SPECIALITY`, `DEPARTMENT`) as in V002 and the seed, not three | The migration and seed already hold real university structure | DATA_DICTIONARY §1.3 (1.1.0) |
 | D-6 | One `one_time_tokens` table with a `purpose` column instead of separate verification and reset tables; tokens stored as SHA-256 hashes | One code path, no raw secrets in the database | DATA_DICTIONARY new entity (1.1.0) |
 | D-7 | Notifications via Spring application events and an `@Async` listener, no Kafka | Broker decision deferred to Epic 7 | none (already in the epic tracker) |
-| D-8 | Password rule: 10–128 characters, no composition rules, checked against a small list of common passwords | Length beats composition; openapi's `minLength: 8` is raised | openapi.yml, SECURITY_ARCHITECTURE password note (1.1.2) |
+| D-8 | Password rule: at least 10 characters and at most 72 bytes (the BCrypt limit), no composition rules, checked against a small list of common passwords | Length beats composition; openapi's `minLength: 8` is raised | openapi.yml (1.1.2) |
 | D-9 | Dev seed users are loaded by Flyway from a profile-specific location (`db/seed/local`), not by the repeatable migrations in `db/migration` | Repeatable seeds run everywhere; demo accounts must never reach production | MIGRATION_STRATEGY note (1.1.0) |
 
 ## 8. Test plan
@@ -225,12 +225,12 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 
 ### After 1.1.2 (SCRUM-8)
 
-12. Open `http://localhost:4200/register`; submit `test.user@gmail.com`. Expected: inline error about institutional address. (AC-2.2)
-13. Submit `test.user@chnu.edu.ua`, password `correct-horse-battery`, a name, department "Кафедра ..." chosen from the list. Expected: page `/registration-pending`; Mailpit shows the verification email. (AC-2.1, 2.7, 2.8)
-14. Try to sign in before verifying → "not verified" message. (AC-1.6)
-15. Click the email link → `/verify-email?token=…` shows success; open the same link again → "link already used". (AC-2.5)
+12. Open `http://localhost:4200/register` (or click «Зареєструватися» under the login form); type `test.user@gmail.com` and leave the field. Expected: inline error «Потрібна адреса в домені chnu.edu.ua». (AC-2.2)
+13. Fill `test.user@chnu.edu.ua`, password `correct-horse-battery`, a first and last name, and pick «Кафедра алгебри та інформатики» (departments are grouped by faculty). Submit. Expected: page `/registration-pending`; http://localhost:8025 shows «Підтвердження адреси / Confirm your address». (AC-2.1, 2.7, 2.8)
+14. Click «Увійти» on the pending page and sign in with the new address → login page says «Адресу ще не підтверджено…». (AC-1.6)
+15. Open the link from the Mailpit message → `/verify-email?token=…` shows «Адресу … підтверджено»; open the same link again → «Посилання недійсне, прострочене або вже використане» with a button to request a new one. (AC-2.5)
 16. Sign in with the new account → app opens. In psql: `SELECT role_type FROM user_roles WHERE user_id = (SELECT user_id FROM users WHERE email_address = 'test.user@chnu.edu.ua');` → `EMPLOYEE`. (AC-2.1)
-17. Register the same address again → 409 message. (AC-2.3)
+17. Register the same address again → «Обліковий запис із цією адресою вже існує». On `/registration-pending` press «Надіслати ще раз» twice within a minute → second time «Лист уже надсилали нещодавно». (AC-2.3, 2.6)
 
 ### After 1.1.3 (SCRUM-9)
 
