@@ -26,6 +26,7 @@ import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
+import ua.edu.chnu.awards.config.LoginSessionConfig;
 import ua.edu.chnu.awards.config.SecurityConfig;
 import ua.edu.chnu.awards.user.dto.OrganizationRef;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
@@ -37,7 +38,8 @@ import ua.edu.chnu.awards.user.service.UserNotFoundException;
 import ua.edu.chnu.awards.user.service.UserProfileService;
 
 @WebMvcTest(UserController.class)
-@Import({SecurityConfig.class, JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class, ApiExceptionHandler.class})
+@Import({SecurityConfig.class, LoginSessionConfig.class, JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class,
+    ApiExceptionHandler.class})
 class UserControllerTest {
 
     @Autowired

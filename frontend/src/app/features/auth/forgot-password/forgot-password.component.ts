@@ -4,17 +4,14 @@ import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { RegistrationService } from '../registration.service';
 
-export type VerificationState = 'form' | 'verified' | 'invalid' | 'failed';
-
 @Component({
-  selector: 'app-verify-email',
+  selector: 'app-forgot-password',
   imports: [
     ReactiveFormsModule,
     MatCard,
@@ -26,48 +23,31 @@ export type VerificationState = 'form' | 'verified' | 'invalid' | 'failed';
     MatError,
     MatInput,
     MatButton,
-    RouterLink,
     TranslocoPipe,
   ],
-  templateUrl: './verify-email.component.html',
-  styleUrl: './verify-email.component.scss',
+  templateUrl: './forgot-password.component.html',
+  styleUrl: './forgot-password.component.scss',
 })
-export class VerifyEmailComponent {
+export class ForgotPasswordComponent {
   private readonly api = inject(RegistrationService);
   private readonly auth = inject(AuthService);
-  private readonly token = inject(ActivatedRoute).snapshot.queryParamMap.get('token');
 
-  readonly password = new FormControl('', { nonNullable: true, validators: Validators.required });
-  readonly state = signal<VerificationState>(this.token ? 'form' : 'invalid');
-  readonly email = signal('');
+  readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] });
+  readonly sent = signal(false);
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
 
-  constructor() {
-    if (this.token) {
-      void inject(Router).navigate([], { queryParams: {}, replaceUrl: true });
-    }
-  }
-
   submit(): void {
-    if (this.password.invalid || this.submitting() || !this.token) {
-      this.password.markAsTouched();
+    if (this.email.invalid || this.submitting()) {
+      this.email.markAsTouched();
       return;
     }
     this.submitting.set(true);
     this.error.set(null);
-    this.api.verifyEmail(this.token, this.password.value).subscribe({
-      next: (response) => {
-        this.email.set(response.email);
-        this.state.set('verified');
-      },
+    this.api.requestPasswordReset(this.email.value.trim()).subscribe({
+      next: () => this.sent.set(true),
       error: (err) => {
-        const type = problemType(err);
-        if (type === 'password-mismatch') {
-          this.error.set('verify.errors.password-mismatch');
-        } else {
-          this.state.set(type === 'token-invalid' ? 'invalid' : 'failed');
-        }
+        this.error.set(`forgot.errors.${problemType(err)}`);
         this.submitting.set(false);
       },
     });

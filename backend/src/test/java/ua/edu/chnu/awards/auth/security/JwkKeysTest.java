@@ -64,7 +64,7 @@ class JwkKeysTest {
 
     private static AuthProperties properties(AuthProperties.Jwk jwk) {
         return new AuthProperties("http://localhost:8080", "http://localhost:4200", List.of("http://localhost:4200"),
-            List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofMinutes(1),
+            List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofMinutes(1),
             new AuthProperties.Client("award-web", List.of("http://localhost:4200/callback"),
                 List.of("http://localhost:4200"), Duration.ofMinutes(15), Duration.ofDays(7)),
             jwk);

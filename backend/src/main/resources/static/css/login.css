@@ -127,3 +127,14 @@ button:hover {
     text-decoration: none;
     margin-left: 4px;
 }
+
+.card__link {
+    margin: 12px 0 0;
+    text-align: right;
+    font-size: 0.9rem;
+}
+
+.card__link a {
+    color: var(--primary);
+    text-decoration: none;
+}

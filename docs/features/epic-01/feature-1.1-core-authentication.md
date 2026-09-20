@@ -79,15 +79,15 @@ None of the stories is marked parallel: the frontend work in each is small and c
 - **AC-2.2** Given an address with another domain, then 422 with problem type `institutional-email-required` and a message directing the person to the faculty secretary; nothing is stored.
 - **AC-2.3** Given an address already registered (any case), then 409; the response does not reveal whether the account is verified.
 - **AC-2.4** Given an organisation id that is not a `DEPARTMENT` or is inactive, then 422.
-- **AC-2.5** Given the verification link is opened within 24 hours, when `POST /api/v1/auth/verify-email` is called with the token, then the user becomes `ACTIVE`, the token is marked used and a second use returns 410.
+- **AC-2.5** Given the verification link is opened within 24 hours, when `POST /api/v1/auth/verify-email` is called with the token and the registration password, then the user becomes `ACTIVE`, the token is marked used and a second use returns 410. A wrong password answers 403 and leaves the token usable (added in 1.1.3: without it, anyone could register a colleague's address and have the colleague activate an account with the registrant's password).
 - **AC-2.6** Given the token is older than 24 hours, then 410 and the page offers "send again"; `POST /api/v1/auth/resend-verification` issues a new token at most once per minute per address (429 otherwise) and always answers 202.
 - **AC-2.7** `GET /api/v1/organizations?type=DEPARTMENT` returns active departments with their faculty, in both languages, without a token.
 - **AC-2.8** Angular pages `/register`, `/registration-pending`, `/verify-email` exist in both languages with client-side validation matching the server rules.
 
 ### 1.1.3 Password reset (SCRUM-9)
 
-- **AC-3.1** `POST /api/v1/auth/password-reset/request` answers 202 for any address; for an existing `ACTIVE` user an email with a 1-hour link is delivered; at most one request per minute per address.
-- **AC-3.2** `POST /api/v1/auth/password-reset/confirm` with a valid token and a new password updates the hash (BCrypt strength 12), marks the token used, revokes every authorization of the user and answers 204; expired or used tokens answer 410.
+- **AC-3.1** `POST /api/v1/auth/password-reset/request` answers 202 for any address; for an existing `ACTIVE` user an email with a 1-hour link is delivered; at most one email per minute per address (further requests inside the interval are accepted silently, so the response stays neutral).
+- **AC-3.2** `POST /api/v1/auth/password-reset/confirm` with a valid token and a new password that meets D-8 updates the hash (BCrypt strength 12), marks the token used, revokes every authorization of the user (refresh tokens stop working at once) and expires the user's login sessions of the authorization server (a signed-in browser is sent to the login page on its next authorize request) and answers 204; expired or used tokens answer 410, a refused password 422.
 - **AC-3.3** After a reset, the old password fails and the new one succeeds at the login page.
 - **AC-3.4** Angular pages `/forgot-password` and `/reset-password` exist in both languages.
 
@@ -226,29 +226,30 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 ### After 1.1.2 (SCRUM-8)
 
 12. Open `http://localhost:4200/register` (or click «Зареєструватися» under the login form); type `test.user@gmail.com` and leave the field. Expected: inline error «Потрібна адреса в домені chnu.edu.ua». (AC-2.2)
-13. Fill `test.user@chnu.edu.ua`, password `correct-horse-battery`, a first and last name, and pick «Кафедра алгебри та інформатики» (departments are grouped by faculty). Submit. Expected: page `/registration-pending`; http://localhost:8025 shows «Підтвердження адреси / Confirm your address». (AC-2.1, 2.7, 2.8)
+13. Fill `test.user@chnu.edu.ua`, password `correct-horse-battery`, a first and last name, and pick «Кафедра алгебри та інформатики» (departments are grouped by faculty). Submit. Expected: page `/registration-pending`; http://localhost:8025 shows «Підтвердження адреси / Confirm your address» and the letter says the confirmation page asks for the registration password. (AC-2.1, 2.7, 2.8)
 14. Click «Увійти» on the pending page and sign in with the new address → login page says «Адресу ще не підтверджено…». (AC-1.6)
-15. Open the link from the Mailpit message → `/verify-email?token=…` shows «Адресу … підтверджено»; open the same link again → «Посилання недійсне, прострочене або вже використане» with a button to request a new one. (AC-2.5)
+15. Open the link from the Mailpit message → `/verify-email?token=…` asks for the registration password. Type `wrong-password-1` → «Пароль не збігається з обраним під час реєстрації», the form stays. Type `correct-horse-battery` → «Адресу … підтверджено». Open the same link again, enter the password → «Посилання недійсне, прострочене або вже використане» with a button to request a new one. (AC-2.5)
 16. Sign in with the new account → app opens. In psql: `SELECT role_type FROM user_roles WHERE user_id = (SELECT user_id FROM users WHERE email_address = 'test.user@chnu.edu.ua');` → `EMPLOYEE`. (AC-2.1)
 17. Register the same address again → «Обліковий запис із цією адресою вже існує». On `/registration-pending` press «Надіслати ще раз» twice within a minute → second time «Лист уже надсилали нещодавно». (AC-2.3, 2.6)
 
 ### After 1.1.3 (SCRUM-9)
 
-18. On the login page click "Forgot password", enter `test.user@chnu.edu.ua`. Expected: neutral confirmation; Mailpit shows the reset email. Repeat within a minute → still neutral, no second email. (AC-3.1)
-19. Open the link, set a new password. Expected: success page; old password fails, new one works. (AC-3.2, 3.3)
-20. Open the same link again → "link expired or used". (AC-3.2)
+18. Sign in as `test.user@chnu.edu.ua` in a second browser (or a private window) and keep it open. In the first browser open `http://localhost:8080/login` and click «Забули пароль?» → `http://localhost:4200/forgot-password`. Enter `test.user@chnu.edu.ua`, submit. Expected: «Якщо адресу … зареєстровано, лист із посиланням уже в дорозі. Посилання дійсне 1 годину.»; Mailpit shows «Скидання пароля / Password reset». Go back, submit the same address again within a minute → same message, no second email. Submit `nobody@chnu.edu.ua` → same message, no email. (AC-3.1, 3.4)
+19. Open the link from Mailpit → `/reset-password?token=…`. Type `short` → inline «Пароль має бути щонайменше 10 символів…»; type `password123` → «Цей пароль надто поширений»; type `staple-battery-horse` → «Пароль змінено. Увійдіть із новим паролем.» (AC-3.2, 3.4)
+20. Open the same link again and submit a password → «Посилання недійсне, прострочене або вже використане» with «Запитати нове посилання». (AC-3.2)
+21. In the second browser reload the app after 15 minutes at most (or click «Вийти» and «Увійти»): the old session no longer refreshes and the login page appears instead of a silent re-login. Sign in with `correct-horse-battery` → «Невірна адреса або пароль»; sign in with `staple-battery-horse` → app opens. (AC-3.2, 3.3)
 
 ### After 1.1.4 (SCRUM-10)
 
-21. Sign in as `employee.fmi@chnu.edu.ua` with a wrong password five times. Expected: fifth attempt shows "temporarily locked"; the correct password is refused. Mailpit shows the admin notification addressed to `admin@chnu.edu.ua`. (AC-4.1, 4.4)
-22. In psql: `SELECT action_type, ip_address, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 10;` → `LOGIN_FAILED` ×5 and `ACCOUNT_LOCKED`. (AC-4.3)
-23. Restart the backend and retry the correct password → still locked. (AC-4.5)
-24. Run `for i in $(seq 1 25); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/oauth2/token -d grant_type=refresh_token -d refresh_token=x -d client_id=award-web; done` → the tail of the output is `429`. (AC-4.2)
+22. Sign in as `employee.fmi@chnu.edu.ua` with a wrong password five times. Expected: fifth attempt shows "temporarily locked"; the correct password is refused. Mailpit shows the admin notification addressed to `admin@chnu.edu.ua`. (AC-4.1, 4.4)
+23. In psql: `SELECT action_type, ip_address, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 10;` → `LOGIN_FAILED` ×5 and `ACCOUNT_LOCKED`. (AC-4.3)
+24. Restart the backend and retry the correct password → still locked. (AC-4.5)
+25. Run `for i in $(seq 1 25); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/oauth2/token -d grant_type=refresh_token -d refresh_token=x -d client_id=award-web; done` → the tail of the output is `429`. (AC-4.2)
 
 ### After 1.1.5 (SCRUM-11)
 
-25. Sign in as `dean.fmi@chnu.edu.ua` in Chrome. Expected: Mailpit shows "New sign-in" with browser, OS, IP. Sign out and in again → no second email. (AC-5.1, 5.2)
-26. Sign in from another browser (or with a changed user-agent in DevTools). Expected: another email. Click "This was not me". Expected: confirmation page; the app session in the first browser is refused on the next token refresh; Mailpit shows a password-reset email. (AC-5.3, 5.4)
+26. Sign in as `dean.fmi@chnu.edu.ua` in Chrome. Expected: Mailpit shows "New sign-in" with browser, OS, IP. Sign out and in again → no second email. (AC-5.1, 5.2)
+27. Sign in from another browser (or with a changed user-agent in DevTools). Expected: another email. Click "This was not me". Expected: confirmation page; the app session in the first browser is refused on the next token refresh; Mailpit shows a password-reset email. (AC-5.3, 5.4)
 
 ## 10. Risks
 

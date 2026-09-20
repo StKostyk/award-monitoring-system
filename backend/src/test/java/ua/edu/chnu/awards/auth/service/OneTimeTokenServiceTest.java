@@ -59,6 +59,25 @@ class OneTimeTokenServiceTest {
     }
 
     @Test
+    void ac25_peekReturnsOnlyUsableTokensWithoutConsumingThem() {
+        String hash = OneTimeTokenService.hash("raw");
+        OneTimeToken usable = OneTimeToken.builder().purpose(TokenPurpose.EMAIL_VERIFICATION)
+            .expiresAt(NOW.plusSeconds(60)).build();
+        OneTimeToken used = OneTimeToken.builder().purpose(TokenPurpose.EMAIL_VERIFICATION)
+            .expiresAt(NOW.plusSeconds(60)).usedAt(NOW.minusSeconds(1)).build();
+        OneTimeToken expired = OneTimeToken.builder().purpose(TokenPurpose.EMAIL_VERIFICATION)
+            .expiresAt(NOW.minusSeconds(1)).build();
+        when(repository.findByTokenHashAndPurpose(hash, TokenPurpose.EMAIL_VERIFICATION))
+            .thenReturn(Optional.of(usable), Optional.of(used), Optional.of(expired), Optional.empty());
+
+        assertThat(service.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).contains(usable);
+        assertThat(service.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).isEmpty();
+        assertThat(service.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).isEmpty();
+        assertThat(service.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).isEmpty();
+        verify(repository, never()).redeem(any(), any(), any());
+    }
+
+    @Test
     void ac26_expiredOrUnknownTokensAreNotRedeemed() {
         when(repository.redeem(any(), any(), any())).thenReturn(0);
 

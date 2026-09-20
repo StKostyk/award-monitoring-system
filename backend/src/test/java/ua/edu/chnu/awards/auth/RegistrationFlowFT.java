@@ -74,8 +74,10 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
         assertThat(link).startsWith("http://localhost:4200/verify-email?token=");
         String token = UriComponentsBuilder.fromUri(URI.create(link)).build().getQueryParams().getFirst("token");
 
-        verify(token).then().statusCode(200).body("status", equalTo("ACTIVE"));
-        verify(token).then().statusCode(410).body("type", equalTo("urn:awards:problem:token-invalid"));
+        verify(token, "not-the-registration-password").then().statusCode(403)
+            .body("type", equalTo("urn:awards:problem:password-mismatch"));
+        verify(token, PASSWORD).then().statusCode(200).body("status", equalTo("ACTIVE"));
+        verify(token, PASSWORD).then().statusCode(410).body("type", equalTo("urn:awards:problem:token-invalid"));
 
         AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
         Response tokens = flow.exchange(flow.loginAndGetCode(EMAIL, PASSWORD));
@@ -124,8 +126,8 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
             .post("/api/v1/auth/register");
     }
 
-    private static Response verify(String token) {
-        return RestAssured.given().contentType(ContentType.JSON).body(Map.of("token", token))
+    private static Response verify(String token, String password) {
+        return RestAssured.given().contentType(ContentType.JSON).body(Map.of("token", token, "password", password))
             .post("/api/v1/auth/verify-email");
     }
 

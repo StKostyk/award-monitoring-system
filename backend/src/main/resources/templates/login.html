@@ -23,6 +23,9 @@
         <input id="password" name="password" type="password" autocomplete="current-password" required>
         <button type="submit" th:text="#{login.submit}">Sign in</button>
     </form>
+    <p class="card__link">
+        <a th:href="${forgotPasswordUrl}" th:text="#{login.forgotPassword}" id="forgot-password">Forgot password?</a>
+    </p>
     <p class="card__footer">
         <span th:text="#{login.noAccount}">No account yet?</span>
         <a th:href="${registerUrl}" th:text="#{login.register}">Register</a>

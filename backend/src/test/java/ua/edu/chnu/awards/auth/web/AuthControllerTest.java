@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.auth.web;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -27,14 +28,17 @@ import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
+import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.config.LoginSessionConfig;
 import ua.edu.chnu.awards.config.SecurityConfig;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class, ApiExceptionHandler.class})
+@Import({SecurityConfig.class, LoginSessionConfig.class, JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class,
+    ApiExceptionHandler.class})
 class AuthControllerTest {
 
     private static final String VALID = """
@@ -47,6 +51,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private RegistrationService registrationService;
+
+    @MockitoBean
+    private PasswordResetService passwordResetService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -94,14 +101,41 @@ class AuthControllerTest {
     }
 
     @Test
-    void ac25_verifyReturnsTheNewStatus() throws Exception {
-        when(registrationService.verify("raw"))
+    void ac25_verifyTakesTheTokenAndPasswordAndReturnsTheNewStatus() throws Exception {
+        when(registrationService.verify("raw", "correct-horse-battery"))
             .thenReturn(new RegistrationResponse("new.user@chnu.edu.ua", AccountStatus.ACTIVE));
 
         mockMvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"token\":\"raw\"}"))
+                .content("{\"token\":\"raw\",\"password\":\"correct-horse-battery\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        mockMvc.perform(post("/api/v1/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"raw\"}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void ac31_resetRequestIsAlwaysAccepted() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"ghost@chnu.edu.ua\"}"))
+            .andExpect(status().isAccepted());
+        verify(passwordResetService).request("ghost@chnu.edu.ua");
+    }
+
+    @Test
+    void ac32_resetConfirmIsNoContentOrGone() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"raw\",\"password\":\"new-horse-battery\"}"))
+            .andExpect(status().isNoContent());
+        verify(passwordResetService).confirm("raw", "new-horse-battery");
+
+        doThrow(new ApiProblemException(HttpStatus.GONE, "token-invalid", "Expired"))
+            .when(passwordResetService).confirm("old", "new-horse-battery");
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"old\",\"password\":\"new-horse-battery\"}"))
+            .andExpect(status().isGone())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:token-invalid"));
     }
 
     @Test

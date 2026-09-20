@@ -56,6 +56,19 @@ public class OneTimeTokenService {
     }
 
     /**
+     * Looks a raw token up without consuming it.
+     *
+     * @param raw     the token from the link
+     * @param purpose expected purpose
+     * @return the token when it is still usable for the purpose, empty otherwise
+     */
+    @Transactional(readOnly = true)
+    public Optional<OneTimeToken> peek(String raw, TokenPurpose purpose) {
+        return repository.findByTokenHashAndPurpose(hash(raw), purpose)
+            .filter(token -> token.isUsableAt(clock.instant()));
+    }
+
+    /**
      * Redeems a raw token: marks it used and returns it when it is valid for the purpose.
      *
      * @param raw     the token from the link

@@ -185,17 +185,17 @@ paths:
   /auth/verify-email:
     post:
       tags: [Authentication]
-      summary: Confirm an address with the token from the email link
+      summary: Confirm an address with the token from the email link and the registration password
+      description: |
+        The password chosen at registration must be presented with the token, so that only the person who
+        registered can activate the account; a wrong password leaves the token usable.
       operationId: verifyEmail
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [token]
-              properties:
-                token: { type: string }
+              $ref: '#/components/schemas/TokenWithPasswordRequest'
       responses:
         '200':
           description: Account is now `ACTIVE`
@@ -203,6 +203,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RegistrationResponse'
+        '403':
+          description: Password differs from the one chosen at registration (`urn:awards:problem:password-mismatch`)
         '409':
           description: Account is not awaiting verification (`urn:awards:problem:account-not-pending`)
         '410':
@@ -228,6 +230,53 @@ paths:
           description: Accepted
         '429':
           description: An email was sent within the last minute (`urn:awards:problem:too-many-requests`)
+
+  /auth/password-reset/request:
+    post:
+      tags: [Authentication]
+      summary: Send a password reset link
+      description: |
+        Always answers 202 so the response does not reveal whether an address is registered. An `ACTIVE` account
+        receives an email with a 1-hour single-use link; pending, disabled and unknown addresses receive nothing.
+        At most one email per address per minute; further requests inside the interval are accepted silently.
+      operationId: requestPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202':
+          description: Accepted
+
+  /auth/password-reset/confirm:
+    post:
+      tags: [Authentication]
+      summary: Set a new password with the token from the email link
+      description: |
+        Replaces the password hash (BCrypt strength 12), marks the token used and revokes every authorization of
+        the user, so each signed-in browser has to log in again with the new password.
+      operationId: confirmPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenWithPasswordRequest'
+      responses:
+        '204':
+          description: Password changed, all sessions revoked
+        '409':
+          description: Account is not `ACTIVE` (`urn:awards:problem:account-not-active`)
+        '410':
+          description: Token unknown, expired or already used (`urn:awards:problem:token-invalid`)
+        '422':
+          description: |
+            `urn:awards:problem:password-too-short`, `password-too-long` or `password-too-common`
 
   # ============== Organisations ==============
   /organizations:
@@ -842,6 +891,19 @@ components:
           type: integer
           format: int64
           description: Department the employee belongs to
+
+    TokenWithPasswordRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          description: Raw token from the email link
+        password:
+          type: string
+          format: password
+          maxLength: 72
+          description: Registration password when confirming an address; the new password when resetting it
 
     RegistrationResponse:
       type: object

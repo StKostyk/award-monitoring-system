@@ -13,12 +13,13 @@ import ua.edu.chnu.awards.auth.dto.EmailRequest;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.dto.TokenRequest;
+import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * Registration and email verification, open without a token.
+ * Registration, email verification and password reset, open without a token.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -26,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final RegistrationService registrationService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -35,12 +37,24 @@ public class AuthController {
 
     @PostMapping("/verify-email")
     public RegistrationResponse verifyEmail(@Valid @RequestBody TokenRequest request) {
-        return registrationService.verify(request.token());
+        return registrationService.verify(request.token(), request.password());
     }
 
     @PostMapping("/resend-verification")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void resendVerification(@Valid @RequestBody EmailRequest request) {
         registrationService.resend(request.email());
+    }
+
+    @PostMapping("/password-reset/request")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void requestPasswordReset(@Valid @RequestBody EmailRequest request) {
+        passwordResetService.request(request.email());
+    }
+
+    @PostMapping("/password-reset/confirm")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmPasswordReset(@Valid @RequestBody TokenRequest request) {
+        passwordResetService.confirm(request.token(), request.password());
     }
 }
