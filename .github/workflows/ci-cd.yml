@@ -243,7 +243,7 @@ jobs:
           retention-days: 30
 
       - name: Run Trivy vulnerability scanner on filesystem
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           scan-type: 'fs'
           scan-ref: './backend'
@@ -350,9 +350,9 @@ jobs:
 
       # Scan the built images for vulnerabilities
       - name: Run Trivy vulnerability scanner on backend image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.36.0
         with:
-          image-ref: ${{ steps.prep.outputs.backend_image }}:${{ github.sha }}
+          image-ref: ${{ steps.prep.outputs.backend_image }}:${{ github.ref_name }}
           format: 'sarif'
           output: 'trivy-backend-image.sarif'
           severity: 'CRITICAL,HIGH'
