@@ -206,6 +206,12 @@
     </root>
   </springProfile>
 
+  <springProfile name="!local &amp; !dev &amp; !staging &amp; !production">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
   <springProfile name="production">
     <root level="WARN">
       <appender-ref ref="CONSOLE"/>

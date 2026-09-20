@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker Compose adds Mailpit (SMTP) and MinIO (S3) for local development
 - CI backend job runs a single `mvn verify`; static analysis is a blocking step
 
+### Fixed
+- Container stack: nginx proxies the authorization-server endpoints, the docker profile logs to the console, allowed origins and redirect URIs cover both `http://localhost` and the dev server
+
 ### Removed
 - H2 test database; tests use PostgreSQL and Redis containers
 
