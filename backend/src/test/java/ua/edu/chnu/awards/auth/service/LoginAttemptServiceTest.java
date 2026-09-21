@@ -124,13 +124,6 @@ class LoginAttemptServiceTest {
     }
 
     @Test
-    void normalisesTypedAddresses() {
-        assertThat(LoginAttemptService.normalize(null)).isEmpty();
-        assertThat(LoginAttemptService.normalize("  A\u0000b@X.ua\n")).isEqualTo("ab@x.ua");
-        assertThat(LoginAttemptService.normalize("x".repeat(300))).hasSize(254);
-    }
-
-    @Test
     void redisOutageFailsOpen() {
         when(redis.hasKey(anyString())).thenThrow(new QueryTimeoutException("down"));
         when(values.increment(anyString())).thenThrow(new QueryTimeoutException("down"));

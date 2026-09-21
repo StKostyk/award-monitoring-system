@@ -1,21 +1,20 @@
 package ua.edu.chnu.awards.auth.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.HexFormat;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.repository.OneTimeTokenRepository;
+import ua.edu.chnu.awards.common.HashUtils;
+import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.user.entity.User;
 
 import lombok.RequiredArgsConstructor;
@@ -85,6 +84,37 @@ public class OneTimeTokenService {
     }
 
     /**
+     * Owner of a still usable token, without consuming it.
+     *
+     * @param raw     the token from the link
+     * @param purpose expected purpose
+     * @return the owner
+     * @throws ApiProblemException 410 {@code token-invalid} when the token is unknown, expired or used
+     */
+    @Transactional(readOnly = true)
+    public User peekOwner(String raw, TokenPurpose purpose) {
+        return peek(raw, purpose).map(OneTimeToken::getUser).orElseThrow(OneTimeTokenService::gone);
+    }
+
+    /**
+     * Redeems a token and returns its owner.
+     *
+     * @param raw     the token from the link
+     * @param purpose expected purpose
+     * @return the owner
+     * @throws ApiProblemException 410 {@code token-invalid} when the token is unknown, expired or used
+     */
+    @Transactional
+    public User redeemOwner(String raw, TokenPurpose purpose) {
+        return redeem(raw, purpose).map(OneTimeToken::getUser).orElseThrow(OneTimeTokenService::gone);
+    }
+
+    private static ApiProblemException gone() {
+        return new ApiProblemException(HttpStatus.GONE, "token-invalid",
+            "The link is invalid, expired or already used");
+    }
+
+    /**
      * Cancels every unused token of the user for the purpose, so older links in the inbox stop working.
      *
      * @param user    owner
@@ -97,11 +127,6 @@ public class OneTimeTokenService {
     }
 
     static String hash(String raw) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(raw.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is not available", e);
-        }
+        return HashUtils.sha256Hex(raw);
     }
 }

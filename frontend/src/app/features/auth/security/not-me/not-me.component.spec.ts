@@ -17,7 +17,9 @@ describe('NotMeComponent', () => {
         NotMeComponent,
         NoopAnimationsModule,
         TranslocoTestingModule.forRoot({
-          langs: { uk: { notMe: { done: 'Доступ відкликано', errors: { network: 'Сервер недоступний' } } } },
+          langs: {
+            uk: { notMe: { done: 'Доступ відкликано', errors: { network: 'Сервер недоступний' } } },
+          },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
         }),
       ],
@@ -25,7 +27,10 @@ describe('NotMeComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } },
+        },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -40,14 +45,18 @@ describe('NotMeComponent', () => {
     const fixture = await setup('raw');
     http.expectNone(`${environment.apiUrl}/auth/security/revoke`);
 
-    (fixture.nativeElement.querySelector('[data-testid="not-me-confirm"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="not-me-confirm"]') as HTMLButtonElement
+    ).click();
     const request = http.expectOne(`${environment.apiUrl}/auth/security/revoke`);
     expect(request.request.body).toEqual({ token: 'raw' });
     request.flush(null, { status: 204, statusText: 'No Content' });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('done');
-    expect(fixture.nativeElement.querySelector('[data-testid="not-me-done"]').textContent).toContain('відкликано');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="not-me-done"]').textContent,
+    ).toContain('відкликано');
   });
 
   it('ac53 treats a used link as invalid and offers a password reset', async () => {
@@ -67,11 +76,15 @@ describe('NotMeComponent', () => {
     const fixture = await setup('raw');
 
     fixture.componentInstance.confirm();
-    http.expectOne(`${environment.apiUrl}/auth/security/revoke`).error(new ProgressEvent('error'), { status: 0 });
+    http
+      .expectOne(`${environment.apiUrl}/auth/security/revoke`)
+      .error(new ProgressEvent('error'), { status: 0 });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('confirm');
-    expect(fixture.nativeElement.querySelector('[data-testid="not-me-error"]').textContent).toContain('недоступний');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="not-me-error"]').textContent,
+    ).toContain('недоступний');
   });
 
   it('ac53 a missing token is invalid from the start and never calls the server', async () => {

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.service.LoginAttemptService;
+import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
@@ -44,7 +45,7 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
                                         AuthenticationException exception) throws IOException {
         String code = codeOf(exception);
-        String email = LoginAttemptService.normalize(request.getParameter("username"));
+        String email = EmailUtils.normalize(request.getParameter("username"));
         User user = userRepository.findByEmailAddressIgnoreCase(email).orElse(null);
         if (BAD_CREDENTIALS.equals(code)
             && (attempts.isLocked(email) || attempts.recordFailure(email, ClientRequest.from(request).ip()))) {

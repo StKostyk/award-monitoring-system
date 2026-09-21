@@ -34,6 +34,17 @@ public record AuthProperties(
     @DefaultValue Jwk jwk) {
 
     /**
+     * A browser-application link carrying a one-time token.
+     *
+     * @param path  page path such as {@code /verify-email}
+     * @param token the raw token
+     * @return absolute URL
+     */
+    public String link(String path, String token) {
+        return frontendUrl() + path + "?token=" + token;
+    }
+
+    /**
      * Registered browser client.
      *
      * @param id                     OAuth2 client id

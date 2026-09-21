@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -16,10 +17,13 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.repository.OneTimeTokenRepository;
+import ua.edu.chnu.awards.common.HashUtils;
+import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.user.entity.User;
 
 class OneTimeTokenServiceTest {
@@ -53,8 +57,27 @@ class OneTimeTokenServiceTest {
     }
 
     @Test
+    void ac25_ac32_ownerLookupsAnswerGoneForUnusableTokens() {
+        User user = User.builder().id(1L).build();
+        OneTimeToken token = OneTimeToken.builder().user(user).expiresAt(NOW.plusSeconds(60)).build();
+        String hash = HashUtils.sha256Hex("raw");
+        when(repository.findByTokenHashAndPurpose(hash, TokenPurpose.PASSWORD_RESET)).thenReturn(Optional.of(token));
+        when(repository.redeem(hash, TokenPurpose.PASSWORD_RESET, NOW)).thenReturn(1);
+
+        assertThat(service.peekOwner("raw", TokenPurpose.PASSWORD_RESET)).isSameAs(user);
+        assertThat(service.redeemOwner("raw", TokenPurpose.PASSWORD_RESET)).isSameAs(user);
+        assertThatThrownBy(() -> service.peekOwner("other", TokenPurpose.PASSWORD_RESET))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.GONE);
+                assertThat(e.getType()).isEqualTo("token-invalid");
+            });
+        assertThatThrownBy(() -> service.redeemOwner("other", TokenPurpose.PASSWORD_RESET))
+            .isInstanceOf(ApiProblemException.class);
+    }
+
+    @Test
     void ac25_redeemsATokenThroughOneAtomicUpdate() {
-        String hash = OneTimeTokenService.hash("raw");
+        String hash = HashUtils.sha256Hex("raw");
         OneTimeToken token = OneTimeToken.builder().purpose(TokenPurpose.EMAIL_VERIFICATION)
             .expiresAt(NOW.plusSeconds(60)).build();
         when(repository.redeem(hash, TokenPurpose.EMAIL_VERIFICATION, NOW)).thenReturn(1, 0);
@@ -68,7 +91,7 @@ class OneTimeTokenServiceTest {
 
     @Test
     void ac25_peekReturnsOnlyUsableTokensWithoutConsumingThem() {
-        String hash = OneTimeTokenService.hash("raw");
+        String hash = HashUtils.sha256Hex("raw");
         OneTimeToken usable = OneTimeToken.builder().purpose(TokenPurpose.EMAIL_VERIFICATION)
             .expiresAt(NOW.plusSeconds(60)).build();
         OneTimeToken used = OneTimeToken.builder().purpose(TokenPurpose.EMAIL_VERIFICATION)

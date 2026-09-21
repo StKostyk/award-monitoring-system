@@ -8,7 +8,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import ua.edu.chnu.awards.common.web.ApiProblemException;
 
 /**
  * Password rule: at least 10 characters, at most 72 bytes of UTF-8 (the limit of BCrypt) and not on the list of
@@ -52,5 +55,18 @@ public final class PasswordPolicy {
             return "too-common";
         }
         return "";
+    }
+
+    /**
+     * Refuses an unacceptable password with a 422 problem typed {@code password-<reason>}.
+     *
+     * @param password candidate
+     */
+    public void require(String password) {
+        String problem = problem(password);
+        if (!problem.isEmpty()) {
+            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "password-" + problem,
+                "The password does not meet the policy (" + problem + ")");
+        }
     }
 }

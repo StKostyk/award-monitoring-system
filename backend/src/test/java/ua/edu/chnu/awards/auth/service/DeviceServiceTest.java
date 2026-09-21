@@ -21,11 +21,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
-import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.entity.UserDevice;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
@@ -97,8 +97,7 @@ class DeviceServiceTest {
 
     @Test
     void ac53_revokingSignsOutEverywhereForgetsDevicesAndForcesAPasswordReset() {
-        OneTimeToken token = OneTimeToken.builder().user(olena).purpose(TokenPurpose.SECURITY_REVOKE).build();
-        when(tokens.redeem("raw", TokenPurpose.SECURITY_REVOKE)).thenReturn(Optional.of(token));
+        when(tokens.redeemOwner("raw", TokenPurpose.SECURITY_REVOKE)).thenReturn(olena);
         when(tokens.issue(olena, TokenPurpose.PASSWORD_RESET, Duration.ofHours(1))).thenReturn("reset-token");
         when(authorizations.revokeAll("olena@chnu.edu.ua")).thenReturn(2);
         when(devices.deleteByUserId(7L)).thenReturn(3);
@@ -117,7 +116,8 @@ class DeviceServiceTest {
 
     @Test
     void ac53_anUnknownOrUsedTokenIsRefusedWithoutSideEffects() {
-        when(tokens.redeem("stale", TokenPurpose.SECURITY_REVOKE)).thenReturn(Optional.empty());
+        when(tokens.redeemOwner("stale", TokenPurpose.SECURITY_REVOKE))
+            .thenThrow(new ApiProblemException(HttpStatus.GONE, "token-invalid", "The link is invalid"));
 
         assertThatThrownBy(() -> service.revoke("stale"))
             .isInstanceOf(ApiProblemException.class)

@@ -6,7 +6,6 @@ import java.util.Locale;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,9 +15,9 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
-import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -49,7 +48,7 @@ public class RegistrationService {
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher events;
-    private final StringRedisTemplate redis;
+    private final RequestThrottle throttle;
     private final AuthProperties properties;
     private final AuditService audit;
     private final Clock clock;
@@ -62,13 +61,9 @@ public class RegistrationService {
      */
     @Transactional
     public RegistrationResponse register(RegisterRequest request) {
-        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        String email = EmailUtils.normalize(request.email());
         requireInstitutionalDomain(email);
-        String passwordProblem = passwordPolicy.problem(request.password());
-        if (!passwordProblem.isEmpty()) {
-            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "password-" + passwordProblem,
-                "The password does not meet the policy (" + passwordProblem + ")");
-        }
+        passwordPolicy.require(request.password());
         if (userRepository.existsByEmailAddressIgnoreCase(email)) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "email-taken",
                 "An account with this address already exists");
@@ -98,7 +93,7 @@ public class RegistrationService {
             .organization(department)
             .validFrom(LocalDate.now(clock))
             .build());
-        throttle(email);
+        throttle.claim(RESEND_KEY_PREFIX + email, properties.resendInterval());
         sendVerification(user);
         return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
     }
@@ -113,18 +108,12 @@ public class RegistrationService {
      */
     @Transactional
     public RegistrationResponse verify(String rawToken, String password) {
-        ApiProblemException gone = new ApiProblemException(HttpStatus.GONE, "token-invalid",
-            "The verification link is invalid, expired or already used");
-        User owner = tokens.peek(rawToken, TokenPurpose.EMAIL_VERIFICATION)
-            .map(OneTimeToken::getUser)
-            .orElseThrow(() -> gone);
+        User owner = tokens.peekOwner(rawToken, TokenPurpose.EMAIL_VERIFICATION);
         if (!passwordEncoder.matches(password, owner.getPasswordHash())) {
             throw new ApiProblemException(HttpStatus.FORBIDDEN, "password-mismatch",
                 "The password does not match the one chosen at registration");
         }
-        User user = tokens.redeem(rawToken, TokenPurpose.EMAIL_VERIFICATION)
-            .map(OneTimeToken::getUser)
-            .orElseThrow(() -> gone);
+        User user = tokens.redeemOwner(rawToken, TokenPurpose.EMAIL_VERIFICATION);
         if (user.getAccountStatus() != AccountStatus.PENDING) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "account-not-pending",
                 "The account is not awaiting verification");
@@ -142,19 +131,14 @@ public class RegistrationService {
      */
     @Transactional
     public void resend(String email) {
-        String normalized = email.trim().toLowerCase(Locale.ROOT);
-        if (!throttle(normalized)) {
+        String normalized = EmailUtils.normalize(email);
+        if (!throttle.claim(RESEND_KEY_PREFIX + normalized, properties.resendInterval())) {
             throw new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests",
                 "A verification email was sent recently; try again in a minute");
         }
         userRepository.findByEmailAddressIgnoreCase(normalized)
             .filter(user -> user.getAccountStatus() == AccountStatus.PENDING)
             .ifPresent(this::sendVerification);
-    }
-
-    private boolean throttle(String email) {
-        Boolean first = redis.opsForValue().setIfAbsent(RESEND_KEY_PREFIX + email, "1", properties.resendInterval());
-        return !Boolean.FALSE.equals(first);
     }
 
     private void requireInstitutionalDomain(String email) {
@@ -169,7 +153,7 @@ public class RegistrationService {
 
     private void sendVerification(User user) {
         String raw = tokens.issue(user, TokenPurpose.EMAIL_VERIFICATION, properties.verificationTtl());
-        String link = properties.frontendUrl() + "/verify-email?token=" + raw;
+        String link = properties.link("/verify-email", raw);
         events.publishEvent(new VerificationRequested(user.getEmailAddress(), user.getFirstName(), link));
     }
 }

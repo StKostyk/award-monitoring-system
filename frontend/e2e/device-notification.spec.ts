@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { countMessages, linkFor, registerAndVerify, signIn } from './mailpit';
+import { countMessages, linkFor, registerAndVerify, signIn } from './helpers';
 
 const firefoxOnMac = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:130.0) Gecko/20100101 Firefox/130.0';
 

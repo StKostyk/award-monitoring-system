@@ -44,7 +44,6 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             try {
                 return UUID.fromString(header.trim());
             } catch (IllegalArgumentException ignored) {
-                // a caller-supplied id that is not a UUID is replaced
             }
         }
         return UUID.randomUUID();

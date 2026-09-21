@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -30,7 +28,6 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
-import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
@@ -56,10 +53,8 @@ class RegistrationServiceTest {
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
+    private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
-    @SuppressWarnings("unchecked")
-    private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofMinutes(1),
@@ -72,9 +67,8 @@ class RegistrationServiceTest {
     @BeforeEach
     void setUp() {
         service = new RegistrationService(userRepository, userRoleRepository, organizationRepository, tokens,
-            new PasswordPolicy(), passwordEncoder, events, redis, properties, audit,
+            new PasswordPolicy(), passwordEncoder, events, throttle, properties, audit,
             Clock.fixed(Instant.parse("2026-09-21T10:00:00Z"), ZoneOffset.UTC));
-        when(redis.opsForValue()).thenReturn(values);
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
         when(organizationRepository.findById(64L)).thenReturn(Optional.of(department));
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
@@ -94,7 +88,7 @@ class RegistrationServiceTest {
         assertThat(response.email()).isEqualTo("new.user@chnu.edu.ua");
         ArgumentCaptor<User> user = ArgumentCaptor.forClass(User.class);
         verify(userRepository).saveAndFlush(user.capture());
-        verify(values).setIfAbsent("auth:resend:new.user@chnu.edu.ua", "1", Duration.ofMinutes(1));
+        verify(throttle).claim("auth:resend:new.user@chnu.edu.ua", Duration.ofMinutes(1));
         assertThat(user.getValue().getPasswordHash()).isEqualTo("$2a$12$hash");
         assertThat(user.getValue().getOrganization()).isSameAs(department);
         ArgumentCaptor<UserRole> role = ArgumentCaptor.forClass(UserRole.class);
@@ -167,9 +161,8 @@ class RegistrationServiceTest {
     void ac25_validTokenAndTheRegistrationPasswordActivateThePendingAccount() {
         User user = User.builder().id(42L).emailAddress("x@chnu.edu.ua").passwordHash("$2a$12$hash")
             .accountStatus(AccountStatus.PENDING).build();
-        OneTimeToken token = OneTimeToken.builder().user(user).build();
-        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
-        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
+        when(tokens.peekOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
+        when(tokens.redeemOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
         when(passwordEncoder.matches("correct-horse-battery", "$2a$12$hash")).thenReturn(true);
 
         RegistrationResponse response = service.verify("raw", "correct-horse-battery");
@@ -182,8 +175,7 @@ class RegistrationServiceTest {
     @Test
     void ac25_wrongPasswordIsForbiddenAndLeavesTheTokenUsable() {
         User user = User.builder().id(42L).passwordHash("$2a$12$hash").accountStatus(AccountStatus.PENDING).build();
-        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION))
-            .thenReturn(Optional.of(OneTimeToken.builder().user(user).build()));
+        when(tokens.peekOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
         when(passwordEncoder.matches("wrong-password-1", "$2a$12$hash")).thenReturn(false);
 
         assertThatThrownBy(() -> service.verify("raw", "wrong-password-1"))
@@ -191,13 +183,14 @@ class RegistrationServiceTest {
                 assertThat(e.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
                 assertThat(e.getType()).isEqualTo("password-mismatch");
             });
-        verify(tokens, never()).redeem(any(), any());
+        verify(tokens, never()).redeemOwner(any(), any());
         assertThat(user.getAccountStatus()).isEqualTo(AccountStatus.PENDING);
     }
 
     @Test
     void ac25_ac26_unknownExpiredOrUsedTokenIsGone() {
-        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
+        when(tokens.peekOwner("raw", TokenPurpose.EMAIL_VERIFICATION))
+            .thenThrow(new ApiProblemException(HttpStatus.GONE, "token-invalid", "The link is invalid"));
 
         assertThatThrownBy(() -> service.verify("raw", "correct-horse-battery"))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
@@ -209,10 +202,10 @@ class RegistrationServiceTest {
     @Test
     void ac25_tokenRedeemedConcurrentlyIsGone() {
         User user = User.builder().id(42L).passwordHash("$2a$12$hash").accountStatus(AccountStatus.PENDING).build();
-        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION))
-            .thenReturn(Optional.of(OneTimeToken.builder().user(user).build()));
+        when(tokens.peekOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
-        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
+        when(tokens.redeemOwner("raw", TokenPurpose.EMAIL_VERIFICATION))
+            .thenThrow(new ApiProblemException(HttpStatus.GONE, "token-invalid", "The link is invalid"));
 
         assertThatThrownBy(() -> service.verify("raw", "correct-horse-battery"))
             .isInstanceOfSatisfying(ApiProblemException.class,
@@ -222,9 +215,8 @@ class RegistrationServiceTest {
     @Test
     void verifyingASuspendedAccountDoesNotReactivateIt() {
         User user = User.builder().id(42L).passwordHash("$2a$12$hash").accountStatus(AccountStatus.SUSPENDED).build();
-        OneTimeToken token = OneTimeToken.builder().user(user).build();
-        when(tokens.peek("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
-        when(tokens.redeem("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(token));
+        when(tokens.peekOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
+        when(tokens.redeemOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
 
         assertThatThrownBy(() -> service.verify("raw", "correct-horse-battery"))
@@ -235,8 +227,7 @@ class RegistrationServiceTest {
 
     @Test
     void ac26_resendIsThrottledPerAddressAndSilentForUnknownAddresses() {
-        when(values.setIfAbsent("auth:resend:x@chnu.edu.ua", "1", Duration.ofMinutes(1))).thenReturn(true, false);
-        when(values.setIfAbsent("auth:resend:new.user@chnu.edu.ua", "1", Duration.ofMinutes(1))).thenReturn(true);
+        when(throttle.claim("auth:resend:x@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true, false);
         User pending = User.builder().id(1L).emailAddress("x@chnu.edu.ua").firstName("A")
             .accountStatus(AccountStatus.PENDING).build();
         when(userRepository.findByEmailAddressIgnoreCase("x@chnu.edu.ua")).thenReturn(Optional.of(pending));
@@ -248,7 +239,7 @@ class RegistrationServiceTest {
             .isInstanceOfSatisfying(ApiProblemException.class,
                 e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
 
-        when(values.setIfAbsent("auth:resend:ghost@chnu.edu.ua", "1", Duration.ofMinutes(1))).thenReturn(true);
+        when(throttle.claim("auth:resend:ghost@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true);
         when(userRepository.findByEmailAddressIgnoreCase("ghost@chnu.edu.ua")).thenReturn(Optional.empty());
         service.resend("ghost@chnu.edu.ua");
         verify(events).publishEvent(any(VerificationRequested.class));

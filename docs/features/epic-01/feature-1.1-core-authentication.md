@@ -114,7 +114,7 @@ None of the stories is marked parallel: the frontend work in each is small and c
 - Refresh token used after the user became `INACTIVE`/`SUSPENDED`: the token endpoint refuses (`invalid_grant`) — the customizer re-checks status on every refresh.
 - Password reset requested for a `PENDING` user: 202, no email (the address is unproven); for unknown addresses: 202, no email.
 - Mail server down: registration still succeeds; the email is retried three times by the async sender and the failure is logged; "send again" is available to the user.
-- Redis down: login proceeds without counting (fail-open, logged as an error); the health endpoint reports Redis DOWN.
+- Redis down: login proceeds without counting and the verification/reset email throttles let the request through (fail-open, logged as an error); the health endpoint reports Redis DOWN.
 - Clock skew: tokens carry `nbf` with a 60-second leeway on the resource server.
 - Login page accessed while already authenticated: redirect to the app.
 - Same person registering from two departments: not supported; one account per address.

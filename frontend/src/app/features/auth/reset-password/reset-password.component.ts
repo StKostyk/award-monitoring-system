@@ -4,12 +4,13 @@ import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PASSWORD_VALIDATORS } from '../password-rules';
+import { consumeLinkToken } from '../link-token';
 import { RegistrationService } from '../registration.service';
 
 export type ResetState = 'form' | 'done' | 'invalid';
@@ -36,18 +37,12 @@ export type ResetState = 'form' | 'done' | 'invalid';
 export class ResetPasswordComponent {
   private readonly api = inject(RegistrationService);
   private readonly auth = inject(AuthService);
-  private readonly token = inject(ActivatedRoute).snapshot.queryParamMap.get('token');
+  private readonly token = consumeLinkToken();
 
   readonly password = new FormControl('', { nonNullable: true, validators: PASSWORD_VALIDATORS });
   readonly state = signal<ResetState>(this.token ? 'form' : 'invalid');
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
-
-  constructor() {
-    if (this.token) {
-      void inject(Router).navigate([], { queryParams: {}, replaceUrl: true });
-    }
-  }
 
   submit(): void {
     if (this.password.invalid || this.submitting() || !this.token) {
