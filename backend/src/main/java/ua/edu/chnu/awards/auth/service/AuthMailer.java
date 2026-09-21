@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.auth.event.AccountLocked;
+import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 
@@ -53,6 +54,12 @@ public class AuthMailer {
     @TransactionalEventListener
     public void onPasswordResetRequested(PasswordResetRequested event) {
         deliver(event.email(), "Скидання пароля / Password reset", resetBody(event));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void onNewDeviceSignedIn(NewDeviceSignedIn event) {
+        deliver(event.email(), "Новий вхід до облікового запису / New sign-in to your account", deviceBody(event));
     }
 
     @Async
@@ -121,6 +128,26 @@ public class AuthMailer {
             + "Account " + event.email() + " was locked for " + minutes
             + " minutes after repeated failed sign-in attempts.\n"
             + "Address: " + event.ip() + "\nTime: " + event.at() + "\n";
+    }
+
+    static String deviceBody(NewDeviceSignedIn event) {
+        String facts = "Браузер / Browser: " + event.browser() + "\n"
+            + "Система / Operating system: " + event.operatingSystem() + "\n"
+            + "IP: " + event.ip() + "\n"
+            + "Час / Time: " + event.at() + "\n\n";
+        return "Вітаємо, " + event.firstName() + "!\n\n"
+            + "До вашого облікового запису в системі обліку нагород ЧНУ щойно увійшли з нового пристрою.\n\n"
+            + facts
+            + "Якщо це були ви, нічого робити не потрібно. Якщо ні, натисніть «Це був не я» протягом 24 годин, "
+            + "щоб завершити всі сеанси й задати новий пароль:\n"
+            + event.link() + "\n\n"
+            + "---\n\n"
+            + "Hello " + event.firstName() + ",\n\n"
+            + "Your ChNU award monitoring account was just signed in from a new device.\n\n"
+            + facts
+            + "If this was you, nothing needs to be done. If not, use \"This was not me\" within 24 hours to end "
+            + "every session and set a new password:\n"
+            + event.link() + "\n";
     }
 
     static String resetBody(PasswordResetRequested event) {

@@ -89,6 +89,7 @@ public class PasswordResetService {
                 "The account is not active");
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+        tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
         authorizations.revokeAll(user.getEmailAddress());
         audit.record(AuditAction.PASSWORD_RESET, user.getId());
     }

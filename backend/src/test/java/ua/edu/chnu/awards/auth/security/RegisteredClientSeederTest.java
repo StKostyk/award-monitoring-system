@@ -43,7 +43,7 @@ class RegisteredClientSeederTest {
     void savesTheClientOnStartup() {
         RegisteredClientRepository repository = mock(RegisteredClientRepository.class);
         AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200", List.of(), List.of("chnu.edu.ua"),
-            Duration.ofHours(24), Duration.ofHours(1), Duration.ofMinutes(1), SETTINGS,
+            Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24), Duration.ofMinutes(1), SETTINGS,
             new AuthProperties.Jwk("", "", ""));
 
         new RegisteredClientSeeder(repository, properties).run(null);

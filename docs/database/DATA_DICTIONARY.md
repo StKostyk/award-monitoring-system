@@ -205,7 +205,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Business Rules**:
 - Fingerprint is a SHA-256 digest of browser family, operating-system family and accept-language
 - One row per user and fingerprint; `last_used_at` and `last_ip_address` are refreshed on every sign-in
-- Rows are removed when the user revokes a device or is deleted
+- A "this was not me" confirmation (`SECURITY_REVOKE` token) removes every row of the user, so each browser announces itself again after the password is reset; rows are also removed with the user
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|

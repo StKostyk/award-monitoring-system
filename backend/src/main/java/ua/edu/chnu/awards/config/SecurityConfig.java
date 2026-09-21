@@ -58,7 +58,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/verify-email",
                     "/api/v1/auth/resend-verification", "/api/v1/auth/password-reset/request",
-                    "/api/v1/auth/password-reset/confirm").permitAll()
+                    "/api/v1/auth/password-reset/confirm", "/api/v1/auth/security/revoke").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/organizations").permitAll()
                 .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/actuator/**").hasRole(ROLE_SYSTEM_ADMIN)

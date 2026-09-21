@@ -127,6 +127,7 @@ app:
     allowed-email-domains: ${AUTH_ALLOWED_EMAIL_DOMAINS:chnu.edu.ua}
     verification-ttl: 24h
     password-reset-ttl: 1h
+    security-revoke-ttl: 24h
     protection:
       max-failures: 5
       failure-window: 15m

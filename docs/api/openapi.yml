@@ -280,6 +280,28 @@ paths:
           description: |
             `urn:awards:problem:password-too-short`, `password-too-long` or `password-too-common`
 
+  /auth/security/revoke:
+    post:
+      tags: [Authentication]
+      summary: Deny a sign-in reported by a new-device email ("This was not me")
+      description: |
+        Takes the 24-hour single-use token from the "New sign-in" email. Revokes every authorization and login
+        session of the user, cancels the user's other unused "not me" links, forgets all known devices, replaces
+        the current password with an unusable one and emails a 1-hour password-reset link. The account stays `ACTIVE`; `SECURITY_REVOKE` is written to the
+        audit log.
+      operationId: revokeAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        '204':
+          description: Sessions revoked, reset link sent
+        '410':
+          description: Token unknown, expired or already used (`urn:awards:problem:token-invalid`)
+
   # ============== Organisations ==============
   /organizations:
     get:
@@ -893,6 +915,14 @@ components:
           type: integer
           format: int64
           description: Department the employee belongs to
+
+    RevokeRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: Raw token from the "New sign-in" email
 
     TokenWithPasswordRequest:
       type: object

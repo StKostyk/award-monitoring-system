@@ -106,5 +106,18 @@
       "network": "The server is unreachable. Try again later.",
       "unknown": "The password could not be changed. Try again later."
     }
+  },
+  "notMe": {
+    "title": "Was this sign-in yours?",
+    "text": "If you did not sign in from the device named in the email, confirm below. Every session will be ended, the known devices forgotten and the current password disabled; a link to set a new password will be emailed to you.",
+    "confirm": "This was not me",
+    "done": "Access has been revoked. Check your inbox for the link to set a new password; it is valid for 1 hour.",
+    "invalid": "The link is invalid, expired or already used. If you still suspect misuse, reset your password.",
+    "resetPassword": "Reset password",
+    "errors": {
+      "too-many-requests": "Too many requests from this address. Try again in a minute.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The request could not be completed. Try again later."
+    }
   }
 }

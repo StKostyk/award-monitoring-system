@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param allowedEmailDomains email domains accepted at registration
  * @param verificationTtl     lifetime of an email verification link
  * @param passwordResetTtl    lifetime of a password reset link
+ * @param securityRevokeTtl   lifetime of the "this was not me" link in a new-device email
  * @param resendInterval      minimum time between two verification or reset emails to the same address
  * @param client              the single public browser client
  * @param jwk                 signing key material; generated at start-up when absent
@@ -27,6 +28,7 @@ public record AuthProperties(
     @DefaultValue("chnu.edu.ua") List<String> allowedEmailDomains,
     @DefaultValue("24h") Duration verificationTtl,
     @DefaultValue("1h") Duration passwordResetTtl,
+    @DefaultValue("24h") Duration securityRevokeTtl,
     @DefaultValue("1m") Duration resendInterval,
     @DefaultValue Client client,
     @DefaultValue Jwk jwk) {

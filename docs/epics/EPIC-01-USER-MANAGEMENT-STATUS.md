@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 1.1 — story 1.1.4 in review; 1.1.5 (new device notification) next.
+Feature 1.1 — story 1.1.5 in review; all five stories built, `/feature-validate 1.1` next.
 
 ## Stories
 
@@ -27,8 +27,8 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | Done 2026-09-20 |
 | 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | Done 2026-09-20 |
 | 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Done 2026-09-20 |
-| 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | In review |
-| 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | Ready |
+| 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Done 2026-09-21 |
+| 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | In review |
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Ready |
 | 8 | 1.2.2 Role assignment | 1.2 | 8 | SCRUM-13 | #32 | yes | Ready |
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Ready |

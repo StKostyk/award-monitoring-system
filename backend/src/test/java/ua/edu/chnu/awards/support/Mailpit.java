@@ -40,10 +40,24 @@ public final class Mailpit {
      * @return message summaries as returned by Mailpit
      */
     public List<Map<String, Object>> messagesTo(String recipient) {
+        return messagesTo(recipient, "");
+    }
+
+    /**
+     * Messages addressed to the given recipient whose subject contains the given text, newest first.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @return message summaries as returned by Mailpit
+     */
+    public List<Map<String, Object>> messagesTo(String recipient, String subject) {
         Response response = RestAssured.given().queryParam("limit", PAGE).get(apiUrl + "/api/v1/messages");
         response.then().statusCode(OK);
         List<Map<String, Object>> all = response.jsonPath().getList("messages");
-        return all.stream().filter(message -> addressedTo(message, recipient)).toList();
+        return all.stream()
+            .filter(message -> addressedTo(message, recipient))
+            .filter(message -> String.valueOf(message.get("Subject")).contains(subject))
+            .toList();
     }
 
     @SuppressWarnings("unchecked")
@@ -59,9 +73,32 @@ public final class Mailpit {
      * @return text body of the newest message
      */
     public String latestTextTo(String recipient) {
+        return latestTextTo(recipient, "");
+    }
+
+    /**
+     * Waits briefly for a message to the recipient with the given subject text and returns its plain-text body.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @return text body of the newest matching message
+     */
+    public String latestTextTo(String recipient, String subject) {
+        return latestTextTo(recipient, subject, 1);
+    }
+
+    /**
+     * Waits until at least the given number of matching messages reached the recipient and returns the newest.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @param count     how many matching messages must be present
+     * @return text body of the newest matching message
+     */
+    public String latestTextTo(String recipient, String subject, int count) {
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
-            List<Map<String, Object>> messages = messagesTo(recipient);
-            if (!messages.isEmpty()) {
+            List<Map<String, Object>> messages = messagesTo(recipient, subject);
+            if (messages.size() >= count) {
                 String id = String.valueOf(messages.get(0).get("ID"));
                 return RestAssured.given().get(apiUrl + "/api/v1/message/" + id).jsonPath().getString("Text");
             }

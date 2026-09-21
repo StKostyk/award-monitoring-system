@@ -57,4 +57,8 @@ export class RegistrationService {
   confirmPasswordReset(token: string, password: string): Observable<void> {
     return this.http.post<void>(`${this.base}/password-reset/confirm`, { token, password });
   }
+
+  revokeAccess(token: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/security/revoke`, { token });
+  }
 }

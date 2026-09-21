@@ -35,6 +35,7 @@ class ClientRequestTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr("127.0.0.1");
         request.addHeader("User-Agent", "x".repeat(600));
+        request.addHeader("Accept-Language", "uk-UA,uk;q=0.9,en;q=0.8");
         UUID id = UUID.randomUUID();
         request.setAttribute(ClientRequest.CORRELATION_ATTRIBUTE, id);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
@@ -42,6 +43,7 @@ class ClientRequestTest {
         ClientRequest client = ClientRequest.current();
 
         assertThat(client.userAgent()).hasSize(500);
+        assertThat(client.acceptLanguage()).isEqualTo("uk-UA,uk;q=0.9,en;q=0.8");
         assertThat(client.correlationId()).isEqualTo(id);
         assertThat(client.ip()).isEqualTo("127.0.0.1");
     }
@@ -53,7 +55,7 @@ class ClientRequestTest {
         assertThat(client.ip()).isNull();
         assertThat(client.address()).isNull();
         assertThat(client.correlationId()).isNull();
-        assertThat(new ClientRequest("attacker.example", null, null).address()).isNull();
-        assertThat(new ClientRequest("::1", null, null).address().isLoopbackAddress()).isTrue();
+        assertThat(new ClientRequest("attacker.example", null, null, null).address()).isNull();
+        assertThat(new ClientRequest("::1", null, null, null).address().isLoopbackAddress()).isTrue();
     }
 }

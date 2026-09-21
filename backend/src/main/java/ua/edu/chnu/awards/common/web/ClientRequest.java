@@ -15,15 +15,16 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * the client the reverse proxy asserted in {@code X-Forwarded-For} when the peer is a trusted proxy (Tomcat's
  * remote-IP valve, {@code server.tomcat.remoteip.internal-proxies}).
  *
- * @param ip            client address as text, null outside a request
- * @param userAgent     user agent trimmed to the audit column, null when absent
- * @param correlationId id set by {@link CorrelationIdFilter}, null outside a request
+ * @param ip             client address as text, null outside a request
+ * @param userAgent      user agent trimmed to the audit column, null when absent
+ * @param acceptLanguage the {@code Accept-Language} header, null when absent
+ * @param correlationId  id set by {@link CorrelationIdFilter}, null outside a request
  */
-public record ClientRequest(String ip, String userAgent, UUID correlationId) {
+public record ClientRequest(String ip, String userAgent, String acceptLanguage, UUID correlationId) {
 
     public static final String CORRELATION_ATTRIBUTE = ClientRequest.class.getName() + ".correlationId";
     public static final int USER_AGENT_LENGTH = 500;
-    static final ClientRequest NONE = new ClientRequest(null, null, null);
+    static final ClientRequest NONE = new ClientRequest(null, null, null, null);
     private static final Pattern IPV4 = Pattern.compile("^(\\d{1,3}\\.){3}\\d{1,3}$");
     private static final Pattern IPV6 = Pattern.compile("^[0-9a-fA-F:.]*:[0-9a-fA-F:.]*$");
 
@@ -50,7 +51,8 @@ public record ClientRequest(String ip, String userAgent, UUID correlationId) {
             agent = agent.substring(0, USER_AGENT_LENGTH);
         }
         Object correlation = request.getAttribute(CORRELATION_ATTRIBUTE);
-        return new ClientRequest(request.getRemoteAddr(), agent, correlation instanceof UUID id ? id : null);
+        return new ClientRequest(request.getRemoteAddr(), agent, request.getHeader("Accept-Language"),
+            correlation instanceof UUID id ? id : null);
     }
 
     /**

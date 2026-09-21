@@ -104,7 +104,7 @@ None of the stories is marked parallel: the frontend work in each is small and c
 
 - **AC-5.1** Given a successful login from a browser whose fingerprint (hash of user agent family, OS family and accept-language) is unknown for the user, then a `user_devices` row is created and an email is sent within one minute listing browser, OS, IP and time.
 - **AC-5.2** Given a known fingerprint, then `last_used_at` and `last_ip_address` are updated and no email is sent.
-- **AC-5.3** The email contains a "This was not me" link valid for 24 hours; opening it revokes all authorizations, removes the device, forces a password reset (account stays `ACTIVE`, a reset email is sent) and records `SECURITY_REVOKE` in the audit log.
+- **AC-5.3** The email contains a "This was not me" link valid for 24 hours; confirming it revokes all authorizations, removes the user's known devices, forces a password reset (the current password stops working, the account stays `ACTIVE`, a reset email is sent) and records `SECURITY_REVOKE` in the audit log.
 - **AC-5.4** Angular page `/security/not-me` confirms the outcome in both languages.
 
 ## 5. Edge cases
@@ -249,8 +249,8 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 
 ### After 1.1.5 (SCRUM-11)
 
-27. Sign in as `dean.fmi@chnu.edu.ua` in Chrome. Expected: Mailpit shows "New sign-in" with browser, OS, IP. Sign out and in again → no second email. (AC-5.1, 5.2)
-28. Sign in from another browser (or with a changed user-agent in DevTools). Expected: another email. Click "This was not me". Expected: confirmation page; the app session in the first browser is refused on the next token refresh; Mailpit shows a password-reset email. (AC-5.3, 5.4)
+27. Sign in as `dean.fmi@chnu.edu.ua` at `http://localhost:4200` in Chrome (first sign-in from this browser since the feature; to repeat later run `docker compose exec postgres psql -U postgres award_monitoring -c "delete from user_devices"`). Expected: Mailpit shows «Новий вхід до облікового запису / New sign-in to your account» with `Browser: Chrome`, `Operating system: Windows`, `IP: 127.0.0.1` (or `0:0:0:0:0:0:0:1`), the time and a link `http://localhost:4200/security/not-me?token=…`. Sign out and in again → no second email; psql `select browser, last_used_at from user_devices` shows one row with a fresh `last_used_at`. (AC-5.1, 5.2)
+28. Sign in as the same user from Firefox or Edge (or in Chrome DevTools → Network conditions → untick "Use browser default" user agent and pick Firefox). Expected: a second email naming the other browser. Open its link. Expected: page «Це був ваш вхід?» with the button «Це був не я»; the language toggle switches it to "Was this sign-in yours?" / "This was not me". Click the button. Expected: «Доступ відкликано…»; opening the link again and clicking → «Посилання недійсне…» with a "Reset password" link. In the first browser: reload the app → still open (the access token lives up to 15 minutes), then open a new tab on `http://localhost:4200` after closing the old one → login page instead of an automatic sign-in; the old password answers «Невірна адреса або пароль»; Mailpit shows «Скидання пароля / Password reset»; its link sets a new password and the login works again. psql: `select action_type from audit_logs where action_type = 'SECURITY_REVOKE'` → one row; `user_devices` is empty for the user until the next sign-in. (AC-5.3, 5.4)
 
 ## 10. Risks
 

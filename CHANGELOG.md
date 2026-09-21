@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- New-device sign-in notification: browsers are recognised by a fingerprint of browser and OS family plus accepted languages (`user_devices`); an unknown browser triggers a "New sign-in" email with browser, OS, IP, time and a 24-hour "This was not me" link (`/security/not-me`, `POST /api/v1/auth/security/revoke`) that ends every session, forgets the devices, disables the current password and sends a reset link; `SECURITY_REVOKE` audit event
 - Login protection: account lockout after 5 failures in 15 minutes (30 minutes, Redis-backed, admins notified by email), 20 requests per minute per address on the authentication endpoints (429 with `Retry-After`), authentication events in `audit_logs` with IP, user agent and correlation id (`X-Correlation-Id`), monthly partitions through 2027-12 (V016)
 - Password reset by a 1-hour email link (`/forgot-password`, `/reset-password`), neutral responses for unknown addresses, all sessions revoked on reset; the verification page now asks for the registration password before activating an account
 - Employee self-registration with an institutional address and department, verification email (24-hour single-use link, Mailpit locally), resend with a one-minute throttle, public organisation directory; registration, pending and verification pages in Ukrainian and English
