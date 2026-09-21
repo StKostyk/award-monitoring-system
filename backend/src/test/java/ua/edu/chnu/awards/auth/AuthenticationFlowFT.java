@@ -1,13 +1,19 @@
 package ua.edu.chnu.awards.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -257,5 +263,35 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
         RestAssured.when().get("/actuator/metrics").then().statusCode(401);
         RestAssured.given().header("Authorization", "Bearer not-a-token").get("/api/v1/users/me")
             .then().statusCode(401);
+    }
+
+    @Test
+    void ac62_ac63_directLoginLandsOnTheAppAndAStaleFormReturnsToTheLoginPage() {
+        AuthorizationCodeFlow direct = new AuthorizationCodeFlow();
+        assertThat(direct.submitLogin(DEAN, PASSWORD).getHeader("Location")).isEqualTo("http://localhost:4200");
+        assertThat(direct.loginPage("").getHeader("Location")).isEqualTo("http://localhost:4200");
+        RestAssured.given().redirects().follow(false).cookies(direct.cookies()).when().get("/")
+            .then().statusCode(302).header("Location", "http://localhost:4200");
+        RestAssured.given().redirects().follow(false).when().get("/")
+            .then().statusCode(302).header("Location", "http://localhost:4200");
+
+        RestAssured.given().redirects().follow(false)
+            .formParam("username", DEAN).formParam("password", PASSWORD).formParam("_csrf", "stale")
+            .post("/login").then().statusCode(302).header("Location", endsWith("/login?error=EXPIRED"));
+        RestAssured.given().queryParam("error", "EXPIRED").when().get("/login").then().statusCode(200)
+            .body(containsString("Сторінка застаріла"));
+        RestAssured.given().redirects().follow(false).accept("text/html").formParam("_csrf", "stale")
+            .post("/logout").then().statusCode(403).body(containsString("Щось пішло не так"))
+            .body(containsString("href=\"/\""));
+
+        Map<String, String> detour = new HashMap<>(RestAssured.given().redirects().follow(false).accept("text/html")
+            .when().get("/favicon.ico").then().statusCode(302).extract().cookies());
+        Response form = RestAssured.given().redirects().follow(false).cookies(detour).get("/login");
+        detour.putAll(form.getCookies());
+        Matcher csrf = Pattern.compile("name=\"_csrf\"[^>]*value=\"([^\"]+)\"").matcher(form.asString());
+        assertThat(csrf.find()).isTrue();
+        RestAssured.given().redirects().follow(false).cookies(detour)
+            .formParam("username", DEAN).formParam("password", PASSWORD).formParam("_csrf", csrf.group(1))
+            .post("/login").then().statusCode(302).header("Location", "http://localhost:4200");
     }
 }

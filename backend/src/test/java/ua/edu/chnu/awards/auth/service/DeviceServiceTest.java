@@ -99,7 +99,7 @@ class DeviceServiceTest {
     void ac53_revokingSignsOutEverywhereForgetsDevicesAndForcesAPasswordReset() {
         when(tokens.redeemOwner("raw", TokenPurpose.SECURITY_REVOKE)).thenReturn(olena);
         when(tokens.issue(olena, TokenPurpose.PASSWORD_RESET, Duration.ofHours(1))).thenReturn("reset-token");
-        when(authorizations.revokeAll("olena@chnu.edu.ua")).thenReturn(2);
+        when(authorizations.revokeAll(olena)).thenReturn(2);
         when(devices.deleteByUserId(7L)).thenReturn(3);
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$12$random");
 
@@ -107,7 +107,7 @@ class DeviceServiceTest {
 
         assertThat(olena.getPasswordHash()).isEqualTo("$2a$12$random");
         verify(tokens).invalidate(olena, TokenPurpose.SECURITY_REVOKE);
-        verify(authorizations).revokeAll("olena@chnu.edu.ua");
+        verify(authorizations).revokeAll(olena);
         verify(devices).deleteByUserId(7L);
         verify(events).publishEvent(new PasswordResetRequested("olena@chnu.edu.ua", "Олена",
             "http://localhost:4200/reset-password?token=reset-token"));
@@ -123,7 +123,7 @@ class DeviceServiceTest {
             .isInstanceOf(ApiProblemException.class)
             .hasMessageContaining("invalid");
 
-        verify(authorizations, never()).revokeAll(anyString());
+        verify(authorizations, never()).revokeAll(any());
         verify(tokens, never()).invalidate(any(), any());
         verify(devices, never()).deleteByUserId(any());
         verify(events, never()).publishEvent(any());

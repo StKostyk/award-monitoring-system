@@ -92,7 +92,7 @@ public class DeviceService {
         byte[] secret = new byte[SECRET_BYTES];
         RANDOM.nextBytes(secret);
         user.setPasswordHash(passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)));
-        int revoked = authorizations.revokeAll(user.getEmailAddress());
+        int revoked = authorizations.revokeAll(user);
         int forgotten = devices.deleteByUserId(user.getId());
         String raw = tokens.issue(user, TokenPurpose.PASSWORD_RESET, properties.passwordResetTtl());
         events.publishEvent(new PasswordResetRequested(user.getEmailAddress(), user.getFirstName(),

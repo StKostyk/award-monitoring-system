@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import jakarta.servlet.ServletException;
 
@@ -23,6 +24,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.cors.CorsConfiguration;
 
 import ua.edu.chnu.awards.config.ProtectionProperties;
 
@@ -35,7 +37,7 @@ class RateLimitFilterTest {
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final RateLimitFilter filter = new RateLimitFilter(redis,
         new ProtectionProperties(5, Duration.ofMinutes(15), Duration.ofMinutes(30), 20),
-        Clock.fixed(NOW, ZoneOffset.UTC));
+        Clock.fixed(NOW, ZoneOffset.UTC), request -> allowedOrigins());
 
     @BeforeEach
     void setUp() {
@@ -69,6 +71,39 @@ class RateLimitFilterTest {
         assertThat(api.getContentAsString()).contains("urn:awards:problem:too-many-requests");
         assertThat(browser.getStatus()).isEqualTo(429);
         assertThat(browser.getHeader("Retry-After")).isEqualTo("45");
+    }
+
+    @Test
+    void ac42_theRefusalCarriesCorsHeadersSoTheBrowserApplicationCanReadIt() throws ServletException, IOException {
+        when(values.increment(anyString())).thenReturn(21L);
+        MockHttpServletRequest request = request("application/json");
+        request.addHeader("Origin", "http://localhost:4200");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(429);
+        assertThat(response.getHeader("Access-Control-Allow-Origin")).isEqualTo("http://localhost:4200");
+    }
+
+    @Test
+    void ac42_aForeignOriginIsRefusedByCorsBeforeTheLimitAnswers() throws ServletException, IOException {
+        when(values.increment(anyString())).thenReturn(21L);
+        MockHttpServletRequest request = request("application/json");
+        request.addHeader("Origin", "http://evil.example");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getHeader("Retry-After")).isNull();
+    }
+
+    private static CorsConfiguration allowedOrigins() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("POST"));
+        return configuration;
     }
 
     @Test

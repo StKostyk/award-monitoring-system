@@ -64,6 +64,7 @@ class DeviceNotificationFT extends AbstractIntegrationTest {
     private String mailpitApiUrl;
 
     private Mailpit mailpit;
+    private String lastAccessToken;
     private Long userId;
 
     @BeforeAll
@@ -85,7 +86,7 @@ class DeviceNotificationFT extends AbstractIntegrationTest {
     }
 
     @Test
-    void ac51_ac52_ac53_newBrowsersAreAnnouncedOnceAndTheNotMeLinkEndsEverySession() {
+    void ac51_ac52_ac53_ac65_newBrowsersAreAnnouncedOnceAndTheNotMeLinkEndsEverySession() {
         mailpit.clear();
 
         final String chromeRefresh = signIn(CHROME_WINDOWS, "uk-UA,uk;q=0.9");
@@ -96,6 +97,9 @@ class DeviceNotificationFT extends AbstractIntegrationTest {
         assertKnownBrowserIsSilent();
 
         final String firefoxRefresh = signIn(FIREFOX_MAC, "en-US,en;q=0.9");
+        final String firefoxAccess = lastAccessToken;
+        RestAssured.given().header("Authorization", "Bearer " + firefoxAccess).get("/api/v1/users/me")
+            .then().statusCode(200);
         String firefoxMail = mailpit.latestTextTo(EMAIL, NEW_SIGN_IN, 2);
         assertThat(firefoxMail).contains("Firefox").contains("Mac OS X");
         assertThat(mailpit.messagesTo(EMAIL, NEW_SIGN_IN)).hasSize(2);
@@ -108,6 +112,8 @@ class DeviceNotificationFT extends AbstractIntegrationTest {
 
         AuthorizationCodeFlow.refresh(chromeRefresh).then().statusCode(400).body("error", equalTo("invalid_grant"));
         AuthorizationCodeFlow.refresh(firefoxRefresh).then().statusCode(400).body("error", equalTo("invalid_grant"));
+        RestAssured.given().header("Authorization", "Bearer " + firefoxAccess).get("/api/v1/users/me")
+            .then().statusCode(401);
         assertAccountRevokedButActive();
         recoverWithTheResetLink();
     }
@@ -150,12 +156,13 @@ class DeviceNotificationFT extends AbstractIntegrationTest {
         assertThat(devices()).hasSize(1);
     }
 
-    private static String signIn(String userAgent, String acceptLanguage) {
+    private String signIn(String userAgent, String acceptLanguage) {
         AuthorizationCodeFlow flow = new AuthorizationCodeFlow()
             .header("User-Agent", userAgent)
             .header("Accept-Language", acceptLanguage);
         Response tokens = flow.exchange(flow.loginAndGetCode(EMAIL, PASSWORD));
         tokens.then().statusCode(200);
+        lastAccessToken = tokens.jsonPath().getString("access_token");
         return tokens.jsonPath().getString("refresh_token");
     }
 

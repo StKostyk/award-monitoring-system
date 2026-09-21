@@ -12,4 +12,5 @@ export const authConfig: AuthConfig = {
   showDebugInformation: !environment.production,
   strictDiscoveryDocumentValidation: true,
   clearHashAfterLogin: true,
+  clockSkewInSec: 60,
 };

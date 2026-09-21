@@ -9,13 +9,13 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 1.1 Core Authentication System | Done (validated, manual run pending) | 2026-09-21 | 2026-09-21 |
+| 1.1 Core Authentication System | Done (validated; fixes from the manual run in 1.1.6) | 2026-09-21 | 2026-09-21 |
 | 1.2 Role-Based Access Control | Planned | | |
 | 1.3 User Profile Management | Planned | | |
 
 ## Current focus
 
-Feature 1.1 validated (PRD §12, PASSED WITH NOTES); refactor PR from the sweep, then Feature 1.2 kickoff.
+Story 1.1.6 fixes the defects the manual run found (PRD §12 F-5…F-10); Feature 1.2 kickoff follows (order agreed: 1.2.1 → 1.2.2 → 1.2.3).
 
 ## Stories
 
@@ -29,6 +29,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Done 2026-09-20 |
 | 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Done 2026-09-21 |
 | 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | Done 2026-09-21 |
+| 6a | 1.1.6 Fixes from the manual run | 1.1 | 3 | SCRUM-18 | #64 | no | In progress |
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Ready |
 | 8 | 1.2.2 Role assignment | 1.2 | 8 | SCRUM-13 | #32 | yes | Ready |
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Ready |
@@ -36,7 +37,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Ready |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Ready |
 
-Total: 54 points, planned across sprints 2–4.
+Total: 57 points, planned across sprints 2–4.
 
 Closed without implementation: #30 and #34 (folded into 1.1.1), #47 (no HR system exists; replaced by institutional-domain check and organisation selection at registration). Deferred: #41 MFA (see decisions).
 
@@ -55,7 +56,10 @@ Closed without implementation: #30 and #34 (folded into 1.1.1), #47 (no HR syste
 | 2026-09-21 | New-device and security emails go through Spring application events and an async listener; message broker decided at Epic 7 | Kafka decision is deferred by the roadmap | ADR-006 |
 | 2026-09-21 | Existing migrations V001–V013 are the base; auth tables land in a new V014 | Versioned migrations are immutable once merged | MIGRATION_STRATEGY |
 | 2026-09-21 | Tokens kept by the SPA in session storage; actuator: health, info and prometheus open, the rest needs `SYSTEM_ADMIN` | Reload without re-login; scraping without tokens inside the network | PRD D-1, AUTH §9 |
-| 2026-09-20 | Self-registered accounts get no role until the faculty secretary or an administrator confirms department membership (Feature 1.2); the confirmation is one strategy behind an interface so an HR/LDAP lookup can replace the manual step when the university provides one | Students share the `@chnu.edu.ua` domain; the HR lookup (#47) was dropped, not ruled out | `/design` at Feature 1.2 kickoff, state-machine-user-account.puml |
+| 2026-09-20 | Self-registered accounts get no role until the faculty secretary or an administrator confirms department membership (Feature 1.2); the confirmation is one strategy behind an interface so an HR/LDAP lookup can replace the manual step when the university provides one | Students share the `@chnu.edu.ua` domain; the HR lookup (#47) was dropped, not ruled out | Settled in the Feature 1.2 PRD, state-machine-user-account.puml |
+| 2026-09-21 | A password reset or a "not me" revocation invalidates access tokens issued before it immediately: the revocation instant is kept in Redis (`auth:nbf:<user>`, TTL = access-token lifetime) and the resource server compares it with `iat`; fails open without Redis | Waiting up to 15 minutes after a suspected compromise was judged too long; one Redis read per API call is cheap | AUTH §9, PRD 1.1 AC-6.5 |
+| 2026-09-21 | A new password must differ from the current one; no password history is kept | Reuse of the just-reset password defeats the reset; a history table would store old hashes for little gain | PRD 1.1 AC-6.4 |
+| 2026-09-21 | Delegation (1.2.3) ships its schema, service, UI and effective-authority check in Feature 1.2; the "delegated by" stamp on approvals is an Epic 4 acceptance criterion | No awards exist to approve before Epic 4 | Feature 1.2 PRD |
 | 2026-09-20 | The verification page asks for the registration password before activating the account | Stops a colleague activating an account somebody else registered for their address (pre-hijacking) | PRD AC-2.5 addendum (1.1.3) |
 
 ## Documentation deviations to resolve
@@ -81,7 +85,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 - Frontend: `angular-oauth2-oidc` for the PKCE flow, tokens in session storage, automatic silent refresh; `core/auth` holds the guard, callback and profile signal; Transloco for runtime translation.
 - The library withholds refresh tokens from public clients and only authenticates them on the PKCE code exchange; `RotatingRefreshTokenGenerator` and `PublicClientRefreshAuthenticationConverter/Provider` add both for `award-web`.
 
-- Validation of Feature 1.1 (2026-09-21, PRD §12): `/login` opened by an already authenticated browser renders the form instead of redirecting to the app (cosmetic; the SPA never links there). Refactor sweep items deferred: inject `Clock` in `LoginSuccessListener`, `TokenClaimsCustomizer`, `UserProfileService`, `RotatingRefreshTokenGenerator`; drop `OneTimeToken.markUsed` and narrow entity setters; `OrganizationRef.of(Organization)` factory; shared FT base class (port, Mailpit, `RestAssured.port`), `AuthApi` helper for the six auth POSTs, `TestUsers.active/pending` builders, composed `@WebMvcTest` annotation; `RegistrationFlowFT` order dependence on `ac21`; wall-clock sleep in `LoginProtectionFT` (mutable `Clock`); Angular `OnPush` on the auth components, shared Transloco/route test stubs, `LanguageService.localName`, shared `errors.network` key.
+- Validation of Feature 1.1 (2026-09-21, PRD §12): the author's manual run found six defects (blank page after a failed refresh, default 403 page after a restart, 404 after a direct sign-in, password reuse, 15-minute lag before other browsers were signed out, a second Redis on the developer machine); all fixed or explained in story 1.1.6. Refactor sweep items deferred: inject `Clock` in `LoginSuccessListener`, `TokenClaimsCustomizer`, `UserProfileService`, `RotatingRefreshTokenGenerator`; drop `OneTimeToken.markUsed` and narrow entity setters; `OrganizationRef.of(Organization)` factory; shared FT base class (port, Mailpit, `RestAssured.port`), `AuthApi` helper for the six auth POSTs, `TestUsers.active/pending` builders, composed `@WebMvcTest` annotation; `RegistrationFlowFT` order dependence on `ac21`; wall-clock sleep in `LoginProtectionFT` (mutable `Clock`); Angular `OnPush` on the auth components, shared Transloco/route test stubs, `LanguageService.localName`, shared `errors.network` key.
 
 ## Security review follow-ups
 
@@ -91,10 +95,11 @@ Findings of the review of the authorization server code (2026-09-20) that were n
 2. ~~Rate limiting (story 1.1.4) must key on the last proxy hop (`X-Real-IP`), never the first `X-Forwarded-For` entry~~ — done in 1.1.4: `server.forward-headers-strategy=native` with `server.tomcat.remoteip.internal-proxies` (loopback and the compose network, `SERVER_TRUSTED_PROXIES`), so `X-Forwarded-*` count only from nginx; the application reads the socket peer.
 3. Deployment hardening (deployment story): do not publish port 8080 outside the compose network, keep Swagger's redirect URI out of the production client, consider a separate client for Swagger, review `spring.profiles.active` default (`local` seeds demo accounts).
 4. ~~`RefreshTokenReuseGuard` answers 500 when Redis is unavailable during a refresh~~ — done in 1.1.4: the guard, the failure counters and the request limit all fail open with an error log entry when Redis is down; the resend and reset email throttles followed in the refactor after Feature 1.1 validation (`RequestThrottle`).
-5. `/userinfo` is advertised by discovery but unusable (no resource server on the authorization-server chain); add or hide when the SPA needs it.
-6. A `PENDING` account registered by a third party for somebody else's address blocks that address: registration answers 409 and password reset ignores pending accounts (review of 1.1.3). Decide in Feature 1.2 together with membership confirmation: let a new registration replace an unverified account, or expire pending accounts after the verification TTL.
-7. The login-session registry of the authorization server is in-memory (1.1.3); a multi-instance deployment needs Spring Session on Redis so a password reset ends sessions on every node (deployment story).
-8. The request limit (1.1.4) is 20 per minute per client address and includes every `/oauth2/token` refresh; behind one campus NAT that budget is shared, so raise `AUTH_RATE_LIMIT_PER_MINUTE` or key refreshes separately before the pilot (deployment story). Port 8080 must stay unpublished so only nginx can set forwarded headers (item 3).
+5. ~~Access tokens issued before a reset or "not me" stayed valid for up to 15 minutes~~ — done in 1.1.6: `RevokedTokenValidator` refuses tokens older than the user's last sign-out-everywhere (Redis, fail-open).
+6. `/userinfo` is advertised by discovery but unusable (no resource server on the authorization-server chain); add or hide when the SPA needs it.
+7. A `PENDING` account registered by a third party for somebody else's address blocks that address: registration answers 409 and password reset ignores pending accounts (review of 1.1.3). Decide in Feature 1.2 together with membership confirmation: let a new registration replace an unverified account, or expire pending accounts after the verification TTL.
+8. The login-session registry of the authorization server is in-memory (1.1.3); a multi-instance deployment needs Spring Session on Redis so a password reset ends sessions on every node (deployment story).
+9. The request limit (1.1.4) is 20 per minute per client address (120 in the `local` profile since 1.1.6, for the browser test suite) and includes every `/oauth2/token` refresh; behind one campus NAT that budget is shared, so raise `AUTH_RATE_LIMIT_PER_MINUTE` or key refreshes separately before the pilot (deployment story). Port 8080 must stay unpublished so only nginx can set forwarded headers (item 3).
 
 ## Risks
 

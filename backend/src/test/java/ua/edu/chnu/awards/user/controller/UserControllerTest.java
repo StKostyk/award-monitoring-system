@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
+import ua.edu.chnu.awards.auth.security.LoginAccessDeniedHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.config.InfrastructureConfig;
@@ -41,7 +42,7 @@ import ua.edu.chnu.awards.user.service.UserProfileService;
 
 @WebMvcTest(UserController.class)
 @Import({SecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class, JwtAuthorityConverter.class,
-    ProblemDetailsEntryPoint.class, ApiExceptionHandler.class})
+    ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class, ApiExceptionHandler.class})
 class UserControllerTest {
 
     @Autowired

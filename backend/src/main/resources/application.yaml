@@ -157,6 +157,13 @@ server:
       internal-proxies: ${SERVER_TRUSTED_PROXIES:127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}}
   compression:
     enabled: true
+  servlet:
+    session:
+      # never rewrite URLs with ;jsessionid=
+      tracking-modes: cookie
+      cookie:
+        http-only: true
+        same-site: lax
   error:
     include-message: always
     include-binding-errors: always
@@ -255,6 +262,12 @@ spring:
       host: localhost
       port: 6379
       password:
+
+app:
+  auth:
+    protection:
+      # room for the browser test suite; the container and production stacks keep the default
+      requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:120}
 
 ---
 spring:

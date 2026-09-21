@@ -16,18 +16,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
-import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
-import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
-import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
+import ua.edu.chnu.awards.auth.security.LoginAccessDeniedHandler;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.auth.security.RetryRequestSessionExpiredStrategy;
@@ -45,7 +42,6 @@ public class SecurityConfig {
     private static final int API_ORDER = 2;
     private static final int UNLIMITED_SESSIONS = -1;
     private static final int LOGIN_ORDER = 3;
-    private static final int BCRYPT_STRENGTH = 12;
     private static final String ROLE_SYSTEM_ADMIN = "SYSTEM_ADMIN";
 
     @Bean
@@ -76,40 +72,28 @@ public class SecurityConfig {
     @Order(LOGIN_ORDER)
     SecurityFilterChain loginSecurityFilterChain(HttpSecurity http, DaoAuthenticationProvider authenticationProvider,
                                                  LoginFailureHandler failureHandler,
-                                                 SessionRegistry sessionRegistry) throws Exception {
+                                                 LoginAccessDeniedHandler accessDeniedHandler,
+                                                 SessionRegistry sessionRegistry, RequestCache requestCache,
+                                                 AuthProperties properties) throws Exception {
         http
             .sessionManagement(session -> session
                 .maximumSessions(UNLIMITED_SESSIONS)
                 .sessionRegistry(sessionRegistry)
                 .expiredSessionStrategy(new RetryRequestSessionExpiredStrategy()))
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/login", "/error", "/css/**", "/img/**").permitAll()
+                .requestMatchers("/", "/login", "/error", "/css/**", "/img/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider)
+            .requestCache(cache -> cache.requestCache(requestCache))
+            .exceptionHandling(handling -> handling.accessDeniedHandler(accessDeniedHandler))
             .formLogin(form -> form
                 .loginPage("/login")
+                .defaultSuccessUrl(properties.frontendUrl())
                 .failureHandler(failureHandler))
             .logout(withDefaults());
         return http.build();
-    }
-
-    @Bean
-    DaoAuthenticationProvider daoAuthenticationProvider(JpaUserDetailsService userDetailsService,
-                                                        PasswordEncoder passwordEncoder,
-                                                        AccountStatusChecker statusChecker,
-                                                        LockedAccountChecker lockChecker) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
-        provider.setPreAuthenticationChecks(lockChecker);
-        provider.setPostAuthenticationChecks(statusChecker);
-        return provider;
-    }
-
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(BCRYPT_STRENGTH);
     }
 
     @Bean
@@ -118,7 +102,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(properties.allowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Accept-Language"));
-        configuration.setExposedHeaders(List.of("Location"));
+        configuration.setExposedHeaders(List.of("Location", "Retry-After"));
         configuration.setAllowCredentials(false);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

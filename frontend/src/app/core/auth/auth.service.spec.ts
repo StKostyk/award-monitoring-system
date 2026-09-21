@@ -1,7 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { OAuthEvent, OAuthService } from 'angular-oauth2-oidc';
+import { Router, provideRouter } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { OAuthErrorEvent, OAuthEvent, OAuthService } from 'angular-oauth2-oidc';
 import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -21,6 +23,10 @@ const profile: UserProfile = {
   lastLoginAt: null,
 };
 
+function refreshError(status: number): OAuthEvent {
+  return new OAuthErrorEvent('token_refresh_error', new HttpErrorResponse({ status }));
+}
+
 describe('AuthService', () => {
   let events: Subject<OAuthEvent>;
   let oauth: {
@@ -30,6 +36,7 @@ describe('AuthService', () => {
     hasValidAccessToken: ReturnType<typeof vi.fn>;
     initCodeFlow: ReturnType<typeof vi.fn>;
     revokeTokenAndLogout: ReturnType<typeof vi.fn>;
+    logOut: ReturnType<typeof vi.fn>;
     events: Subject<OAuthEvent>;
     state: string | undefined;
   };
@@ -45,11 +52,17 @@ describe('AuthService', () => {
       hasValidAccessToken: vi.fn().mockReturnValue(false),
       initCodeFlow: vi.fn(),
       revokeTokenAndLogout: vi.fn().mockResolvedValue(undefined),
+      logOut: vi.fn(),
       events,
       state: undefined,
     };
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: OAuthService, useValue: oauth }],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: '**', children: [] }]),
+        { provide: OAuthService, useValue: oauth },
+      ],
     });
     service = TestBed.inject(AuthService);
     http = TestBed.inject(HttpTestingController);
@@ -57,9 +70,11 @@ describe('AuthService', () => {
 
   afterEach(() => http.verify());
 
-  it('ac11 starts the code flow with the target url when login is requested', () => {
+  it('ac11 starts the code flow with the target url when login is requested, once per page', () => {
     service.login('/awards/3');
+    service.login('/');
 
+    expect(oauth.initCodeFlow).toHaveBeenCalledTimes(1);
     expect(oauth.initCodeFlow).toHaveBeenCalledWith('/awards/3');
   });
 
@@ -87,8 +102,75 @@ describe('AuthService', () => {
     events.next({ type: 'token_received' } as OAuthEvent);
     expect(service.isAuthenticated()).toBe(true);
 
-    events.next({ type: 'token_refresh_error' } as OAuthEvent);
+    events.next(refreshError(400));
     expect(service.isAuthenticated()).toBe(false);
+  });
+
+  it('ac61 drops the tokens and starts the sign-in flow when the refresh fails', async () => {
+    oauth.hasValidAccessToken.mockReturnValue(true);
+    const init = service.init();
+    await Promise.resolve();
+    http.expectOne(`${environment.apiUrl}/users/me`).flush(profile);
+    await init;
+
+    events.next(refreshError(400));
+
+    expect(oauth.logOut).toHaveBeenCalledWith(true);
+    expect(service.isAuthenticated()).toBe(false);
+    expect(service.profile()).toBeNull();
+    expect(oauth.initCodeFlow).toHaveBeenCalledWith('/');
+  });
+
+  it('ac61 keeps the session when the refresh fails for a transient reason', async () => {
+    oauth.hasValidAccessToken.mockReturnValue(true);
+    const init = service.init();
+    await Promise.resolve();
+    http.expectOne(`${environment.apiUrl}/users/me`).flush(profile);
+    await init;
+
+    events.next(refreshError(0));
+    events.next(refreshError(503));
+
+    expect(oauth.logOut).not.toHaveBeenCalled();
+    expect(service.isAuthenticated()).toBe(true);
+    expect(oauth.initCodeFlow).not.toHaveBeenCalled();
+  });
+
+  it('ac61 a lost session on a public page drops the tokens without starting the sign-in flow', async () => {
+    oauth.hasValidAccessToken.mockReturnValue(true);
+    const init = service.init();
+    await Promise.resolve();
+    http.expectOne(`${environment.apiUrl}/users/me`).flush(profile);
+    await init;
+    await TestBed.inject(Router).navigateByUrl('/reset-password?token=abc');
+
+    service.signedOutElsewhere();
+
+    expect(oauth.logOut).toHaveBeenCalledWith(true);
+    expect(service.isAuthenticated()).toBe(false);
+    expect(oauth.initCodeFlow).not.toHaveBeenCalled();
+  });
+
+  it('ac61 treats a refused profile at start-up as not signed in instead of failing', async () => {
+    oauth.hasValidAccessToken.mockReturnValue(true);
+    const init = service.init();
+    await Promise.resolve();
+    http.expectOne(`${environment.apiUrl}/users/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
+    await init;
+
+    expect(oauth.logOut).toHaveBeenCalledWith(true);
+    expect(service.isAuthenticated()).toBe(false);
+    expect(service.profile()).toBeNull();
+    expect(oauth.initCodeFlow).not.toHaveBeenCalled();
+  });
+
+  it('ac61 still fails at start-up on a server error so the outage is visible', async () => {
+    oauth.hasValidAccessToken.mockReturnValue(true);
+    const init = service.init();
+    await Promise.resolve();
+    http.expectOne(`${environment.apiUrl}/users/me`).flush({}, { status: 500, statusText: 'Server Error' });
+
+    await expect(init).rejects.toBeTruthy();
   });
 
   it('ac18 revokes the token and forgets the profile on logout', async () => {

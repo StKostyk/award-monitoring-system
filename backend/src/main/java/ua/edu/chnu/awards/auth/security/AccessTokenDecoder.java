@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.auth.security;
 
 import java.util.List;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -21,21 +22,24 @@ import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import ua.edu.chnu.awards.config.AuthProperties;
 
 /**
- * Decoder for bearer tokens presented to the API: signature, timestamps, issuer and the {@code token_use} claim,
- * so that id tokens signed with the same key are not accepted as access tokens.
+ * Decoder for bearer tokens presented to the API: signature, timestamps, issuer, the {@code token_use} claim (so
+ * that id tokens signed with the same key are not accepted as access tokens) and the last sign-out-everywhere
+ * of the user.
  */
 @Component
 public final class AccessTokenDecoder {
 
     private final JwtDecoder decoder;
 
-    public AccessTokenDecoder(JWKSource<SecurityContext> jwkSource, AuthProperties properties) {
+    public AccessTokenDecoder(JWKSource<SecurityContext> jwkSource, AuthProperties properties,
+                              StringRedisTemplate redis) {
         DefaultJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
         processor.setJWSKeySelector(new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, jwkSource));
         processor.setJWTClaimsSetVerifier((claims, context) -> { });
         NimbusJwtDecoder nimbus = new NimbusJwtDecoder(processor);
         nimbus.setJwtValidator(new DelegatingOAuth2TokenValidator<>(List.of(
-            JwtValidators.createDefaultWithIssuer(properties.issuer()), accessTokenOnly())));
+            JwtValidators.createDefaultWithIssuer(properties.issuer()), accessTokenOnly(),
+            new RevokedTokenValidator(redis))));
         this.decoder = nimbus;
     }
 

@@ -68,11 +68,14 @@ class PasswordResetFlowFT extends AbstractIntegrationTest {
     }
 
     @Test
-    void ac31_ac32_ac33_requestResetSignInWithTheNewPasswordAndLoseOldSessions() {
+    void ac31_ac32_ac33_ac64_ac65_requestResetSignInWithTheNewPasswordAndLoseOldSessions() {
         mailpit.clear();
         AuthorizationCodeFlow before = new AuthorizationCodeFlow();
-        String refreshToken = before.exchange(before.loginAndGetCode(EMAIL, OLD_PASSWORD))
-            .jsonPath().getString("refresh_token");
+        Response tokens = before.exchange(before.loginAndGetCode(EMAIL, OLD_PASSWORD));
+        String refreshToken = tokens.jsonPath().getString("refresh_token");
+        String accessToken = tokens.jsonPath().getString("access_token");
+        RestAssured.given().header("Authorization", "Bearer " + accessToken).get("/api/v1/users/me")
+            .then().statusCode(200);
 
         requestReset(EMAIL).then().statusCode(202);
         requestReset(EMAIL).then().statusCode(202);
@@ -86,11 +89,15 @@ class PasswordResetFlowFT extends AbstractIntegrationTest {
 
         confirmReset(token, "password123").then().statusCode(422)
             .body("type", equalTo("urn:awards:problem:password-too-common"));
+        confirmReset(token, OLD_PASSWORD).then().statusCode(422)
+            .body("type", equalTo("urn:awards:problem:password-same-as-current"));
         confirmReset(token, NEW_PASSWORD).then().statusCode(204);
         confirmReset(token, NEW_PASSWORD).then().statusCode(410)
             .body("type", equalTo("urn:awards:problem:token-invalid"));
 
         AuthorizationCodeFlow.refresh(refreshToken).then().statusCode(400).body("error", equalTo("invalid_grant"));
+        RestAssured.given().header("Authorization", "Bearer " + accessToken).get("/api/v1/users/me")
+            .then().statusCode(401);
         assertThat(before.authorize().getHeader("Location")).doesNotStartWith(AuthorizationCodeFlow.REDIRECT_URI);
         assertThat(before.authorize().getHeader("Location")).endsWith("/login");
 
