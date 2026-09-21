@@ -14,6 +14,7 @@ import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -26,19 +27,21 @@ import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
 import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
+import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.config.InfrastructureConfig;
 import ua.edu.chnu.awards.config.LoginSessionConfig;
 import ua.edu.chnu.awards.config.SecurityConfig;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, LoginSessionConfig.class, JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class,
-    ApiExceptionHandler.class})
+@Import({SecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class, JwtAuthorityConverter.class,
+    ProblemDetailsEntryPoint.class, ApiExceptionHandler.class})
 class AuthControllerTest {
 
     private static final String VALID = """
@@ -69,6 +72,12 @@ class AuthControllerTest {
 
     @MockitoBean
     private LoginFailureHandler failureHandler;
+
+    @MockitoBean
+    private LockedAccountChecker lockChecker;
+
+    @MockitoBean(answers = Answers.RETURNS_DEEP_STUBS)
+    private StringRedisTemplate redisTemplate;
 
     @Test
     void ac21_registerIsOpenAndAnswersCreated() throws Exception {

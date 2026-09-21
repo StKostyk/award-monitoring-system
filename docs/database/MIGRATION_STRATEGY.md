@@ -90,6 +90,7 @@ src/main/resources/
         ├── V013__create_audit_triggers.sql
         ├── V014__create_auth_tables.sql
         ├── V015__users_email_unique_lower.sql
+        ├── V016__audit_logs_partitions_2027.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql
@@ -412,6 +413,14 @@ $$ LANGUAGE plpgsql;
 -- Archive old partitions (move to archive schema or drop)
 -- DROP TABLE audit_logs_2018_01;  -- After data exported to cold storage
 ```
+
+Partitions through 2027-12 are created by V016 (`fn_create_audit_partition()` covers the month after that when it is
+scheduled). Flyway runs every migration with `SET TIME ZONE 'UTC'` (`spring.flyway.init-sql`) and V016 writes its bounds with an
+explicit offset (`'2026-07-01 00:00:00+00'`): the JDBC session otherwise runs in the application's time zone, and a
+bare date would shift the boundary and overlap the neighbouring partition.
+When the default partition already holds rows of a month being added, the migration detaches it, creates the months
+and a new default, re-inserts the rows and drops the old default (the parent's no-delete rule does not apply to a
+detached table).
 
 ### 3.4 GDPR Data Deletion Procedures
 

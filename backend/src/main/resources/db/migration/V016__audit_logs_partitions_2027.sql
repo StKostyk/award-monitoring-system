@@ -1,0 +1,65 @@
+-- V016__audit_logs_partitions_2027.sql
+-- Description: Monthly audit_logs partitions from 2026-07 to 2027-12; rows that landed in the default
+-- partition meanwhile are moved into their month.
+
+ALTER TABLE audit_logs DETACH PARTITION audit_logs_default;
+ALTER TABLE audit_logs_default RENAME TO audit_logs_default_old;
+
+CREATE TABLE audit_logs_2026_07 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-07-01 00:00:00+00') TO ('2026-08-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2026_08 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-08-01 00:00:00+00') TO ('2026-09-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2026_09 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-09-01 00:00:00+00') TO ('2026-10-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2026_10 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-10-01 00:00:00+00') TO ('2026-11-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2026_11 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-11-01 00:00:00+00') TO ('2026-12-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2026_12 PARTITION OF audit_logs
+    FOR VALUES FROM ('2026-12-01 00:00:00+00') TO ('2027-01-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_01 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-01-01 00:00:00+00') TO ('2027-02-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_02 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-02-01 00:00:00+00') TO ('2027-03-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_03 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-03-01 00:00:00+00') TO ('2027-04-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_04 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-04-01 00:00:00+00') TO ('2027-05-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_05 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-05-01 00:00:00+00') TO ('2027-06-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_06 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-06-01 00:00:00+00') TO ('2027-07-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_07 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-07-01 00:00:00+00') TO ('2027-08-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_08 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-08-01 00:00:00+00') TO ('2027-09-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_09 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-09-01 00:00:00+00') TO ('2027-10-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_10 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-10-01 00:00:00+00') TO ('2027-11-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_11 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-11-01 00:00:00+00') TO ('2027-12-01 00:00:00+00');
+
+CREATE TABLE audit_logs_2027_12 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-12-01 00:00:00+00') TO ('2028-01-01 00:00:00+00');
+
+CREATE TABLE audit_logs_default PARTITION OF audit_logs DEFAULT;
+
+INSERT INTO audit_logs SELECT * FROM audit_logs_default_old;
+DROP TABLE audit_logs_default_old;

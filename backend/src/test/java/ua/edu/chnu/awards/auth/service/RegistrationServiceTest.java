@@ -26,6 +26,8 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
@@ -55,6 +57,7 @@ class RegistrationServiceTest {
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
+    private final AuditService audit = mock(AuditService.class);
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
@@ -68,7 +71,7 @@ class RegistrationServiceTest {
     @BeforeEach
     void setUp() {
         service = new RegistrationService(userRepository, userRoleRepository, organizationRepository, tokens,
-            new PasswordPolicy(), passwordEncoder, events, redis, properties,
+            new PasswordPolicy(), passwordEncoder, events, redis, properties, audit,
             Clock.fixed(Instant.parse("2026-09-21T10:00:00Z"), ZoneOffset.UTC));
         when(redis.opsForValue()).thenReturn(values);
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
@@ -172,6 +175,7 @@ class RegistrationServiceTest {
 
         assertThat(response.status()).isEqualTo(AccountStatus.ACTIVE);
         assertThat(user.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
+        verify(audit).record(AuditAction.EMAIL_VERIFIED, 42L);
     }
 
     @Test

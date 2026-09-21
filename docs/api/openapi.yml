@@ -155,7 +155,9 @@ paths:
       tags: [Authentication]
       summary: Register an employee account
       description: |
-        Open endpoint. Requires an institutional address (`@chnu.edu.ua`), a password of at least 10 characters and
+        Open endpoint. Like every `/auth/**` endpoint, `/oauth2/token` and `/login`, it is limited to 20 requests per
+        minute per client address; the 21st answers 429 with `Retry-After` (`urn:awards:problem:too-many-requests`).
+        Every response carries `X-Correlation-Id` (a caller-supplied UUID is kept). Requires an institutional address (`@chnu.edu.ua`), a password of at least 10 characters and
         at most 72 bytes that is not on the common-password list, names made of letters, and an active department.
         Addresses are stored lower-case. The account is created `PENDING` with the
         `EMPLOYEE` role and a verification email (24-hour link) is sent.

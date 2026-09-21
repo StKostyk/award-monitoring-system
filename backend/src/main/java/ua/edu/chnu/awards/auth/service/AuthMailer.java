@@ -4,6 +4,7 @@ import java.util.function.LongConsumer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,6 +12,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 
@@ -53,7 +55,22 @@ public class AuthMailer {
         deliver(event.email(), "Скидання пароля / Password reset", resetBody(event));
     }
 
+    @Async
+    @EventListener
+    public void onAccountLocked(AccountLocked event) {
+        if (event.recipients().isEmpty()) {
+            log.warn("Account {} locked but no administrator address to notify", event.email());
+            return;
+        }
+        deliver(event.recipients().toArray(String[]::new), "Обліковий запис заблоковано / Account locked",
+            lockedBody(event));
+    }
+
     private void deliver(String to, String subject, String text) {
+        deliver(new String[] {to}, subject, text);
+    }
+
+    private void deliver(String[] to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(to);
@@ -94,6 +111,16 @@ public class AuthMailer {
             + event.link() + "\n\n"
             + "The confirmation page asks for the password you chose when registering.\n"
             + "If you did not register, ignore this message.\n";
+    }
+
+    static String lockedBody(AccountLocked event) {
+        long minutes = event.lockedFor().toMinutes();
+        return "Обліковий запис " + event.email() + " заблоковано на " + minutes
+            + " хв після повторних невдалих спроб входу.\n"
+            + "Адреса: " + event.ip() + "\nЧас: " + event.at() + "\n\n---\n\n"
+            + "Account " + event.email() + " was locked for " + minutes
+            + " minutes after repeated failed sign-in attempts.\n"
+            + "Address: " + event.ip() + "\nTime: " + event.at() + "\n";
     }
 
     static String resetBody(PasswordResetRequested event) {

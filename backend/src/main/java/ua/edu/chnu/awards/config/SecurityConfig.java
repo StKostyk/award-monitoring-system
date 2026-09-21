@@ -27,6 +27,7 @@ import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
 import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
+import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.auth.security.RetryRequestSessionExpiredStrategy;
@@ -97,9 +98,11 @@ public class SecurityConfig {
     @Bean
     DaoAuthenticationProvider daoAuthenticationProvider(JpaUserDetailsService userDetailsService,
                                                         PasswordEncoder passwordEncoder,
-                                                        AccountStatusChecker statusChecker) {
+                                                        AccountStatusChecker statusChecker,
+                                                        LockedAccountChecker lockChecker) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
+        provider.setPreAuthenticationChecks(lockChecker);
         provider.setPostAuthenticationChecks(statusChecker);
         return provider;
     }

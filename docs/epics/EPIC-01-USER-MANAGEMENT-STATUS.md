@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 1.1 — story 1.1.3 in review; 1.1.4 (rate limiting, lockout, audit) next.
+Feature 1.1 — story 1.1.4 in review; 1.1.5 (new device notification) next.
 
 ## Stories
 
@@ -26,8 +26,8 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 1 | 1.1.0 User domain entities and auth schema | 1.1 | 3 | SCRUM-6 | #42 | no | Done 2026-09-20 |
 | 2 | 1.1.1 Authorization server, PKCE login and auth shell | 1.1 | 8 | SCRUM-7 | #36 | no | Done 2026-09-20 |
 | 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | Done 2026-09-20 |
-| 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | In review |
-| 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Ready |
+| 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Done 2026-09-20 |
+| 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | In review |
 | 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | Ready |
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Ready |
 | 8 | 1.2.2 Role assignment | 1.2 | 8 | SCRUM-13 | #32 | yes | Ready |
@@ -69,7 +69,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 5. ADR-009 lists `SUPER_ADMIN` and four sample permissions; align the role list with the dictionary (story 1.2.1).
 6. Role-assignment authority: US-002 lets a dean assign roles within the faculty, `RBAC_matrix.md` reserves it for the rector's office, AUTH §3.3 gives `user:manage` to `SYSTEM_ADMIN` only. Agreed rule: a user may assign roles below their own level inside their own organisation subtree; university-level roles only by `RECTOR` or `SYSTEM_ADMIN`. Add `user:manage:faculty` to the permission matrix (story 1.2.2).
 7. `RBAC_matrix.md` says only employees submit awards; AUTH §3.3 grants `award:create` up to rector. Left to Epic 2, but the permission strings created in 1.2.1 follow AUTH §3.3.
-8. `audit_logs` partitions end at 2026-06; rows now fall into the default partition. Add partitions through 2027 in the migration of story 1.1.4.
+8. ~~`audit_logs` partitions end at 2026-06; rows now fall into the default partition~~ — V016 (1.1.4) adds partitions through 2027-12 and moves the rows out of the default partition.
 
 ## Technical notes
 
@@ -86,12 +86,13 @@ Each item is applied in the PR of the story that touches it, after approval.
 Findings of the review of the authorization server code (2026-09-20) that were not fixed immediately:
 
 1. Refresh-token values are stored in clear text by the library; hash them at rest through a wrapping `OAuth2AuthorizationService` (backlog, after Feature 1.1).
-2. Rate limiting (story 1.1.4) must key on the last proxy hop (`X-Real-IP`), never the first `X-Forwarded-For` entry; nginx now overwrites the forwarded headers.
+2. ~~Rate limiting (story 1.1.4) must key on the last proxy hop (`X-Real-IP`), never the first `X-Forwarded-For` entry~~ — done in 1.1.4: `server.forward-headers-strategy=native` with `server.tomcat.remoteip.internal-proxies` (loopback and the compose network, `SERVER_TRUSTED_PROXIES`), so `X-Forwarded-*` count only from nginx; the application reads the socket peer.
 3. Deployment hardening (deployment story): do not publish port 8080 outside the compose network, keep Swagger's redirect URI out of the production client, consider a separate client for Swagger, review `spring.profiles.active` default (`local` seeds demo accounts).
-4. `RefreshTokenReuseGuard` answers 500 when Redis is unavailable during a refresh; degrade to `invalid_grant` (story 1.1.4, together with the fail-open decision for login counters).
+4. ~~`RefreshTokenReuseGuard` answers 500 when Redis is unavailable during a refresh~~ — done in 1.1.4: the guard, the failure counters and the request limit all fail open with an error log entry when Redis is down.
 5. `/userinfo` is advertised by discovery but unusable (no resource server on the authorization-server chain); add or hide when the SPA needs it.
 6. A `PENDING` account registered by a third party for somebody else's address blocks that address: registration answers 409 and password reset ignores pending accounts (review of 1.1.3). Decide in Feature 1.2 together with membership confirmation: let a new registration replace an unverified account, or expire pending accounts after the verification TTL.
 7. The login-session registry of the authorization server is in-memory (1.1.3); a multi-instance deployment needs Spring Session on Redis so a password reset ends sessions on every node (deployment story).
+8. The request limit (1.1.4) is 20 per minute per client address and includes every `/oauth2/token` refresh; behind one campus NAT that budget is shared, so raise `AUTH_RATE_LIMIT_PER_MINUTE` or key refreshes separately before the pilot (deployment story). Port 8080 must stay unpublished so only nginx can set forwarded headers (item 3).
 
 ## Risks
 

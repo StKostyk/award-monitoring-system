@@ -4,9 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +19,7 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
+import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 
@@ -48,6 +52,26 @@ class AuthMailerTest {
         assertThat(message.getSubject()).contains("Скидання пароля").contains("Password reset");
         assertThat(message.getText()).contains("Олена").contains("token=xyz").contains("within 1 hour")
             .doesNotContain("24 hours");
+    }
+
+    @Test
+    void ac44_tellsEveryAdministratorAboutALockedAccount() {
+        mailer.onAccountLocked(new AccountLocked("dean@chnu.edu.ua", "203.0.113.7",
+            Instant.parse("2026-09-21T10:00:00Z"), Duration.ofMinutes(45),
+            List.of("admin@chnu.edu.ua", "admin2@chnu.edu.ua")));
+
+        SimpleMailMessage message = sent();
+        assertThat(message.getTo()).containsExactly("admin@chnu.edu.ua", "admin2@chnu.edu.ua");
+        assertThat(message.getText()).contains("dean@chnu.edu.ua").contains("203.0.113.7")
+            .contains("2026-09-21T10:00:00Z").contains("45 minutes");
+    }
+
+    @Test
+    void ac44_noAdministratorMeansNoMessage() {
+        mailer.onAccountLocked(new AccountLocked("dean@chnu.edu.ua", "203.0.113.7", Instant.now(),
+            Duration.ofMinutes(30), List.of()));
+
+        verify(sender, never()).send(any(SimpleMailMessage.class));
     }
 
     @Test

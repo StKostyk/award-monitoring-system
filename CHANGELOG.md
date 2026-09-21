@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Login protection: account lockout after 5 failures in 15 minutes (30 minutes, Redis-backed, admins notified by email), 20 requests per minute per address on the authentication endpoints (429 with `Retry-After`), authentication events in `audit_logs` with IP, user agent and correlation id (`X-Correlation-Id`), monthly partitions through 2027-12 (V016)
 - Password reset by a 1-hour email link (`/forgot-password`, `/reset-password`), neutral responses for unknown addresses, all sessions revoked on reset; the verification page now asks for the registration password before activating an account
 - Employee self-registration with an institutional address and department, verification email (24-hour single-use link, Mailpit locally), resend with a one-minute throttle, public organisation directory; registration, pending and verification pages in Ukrainian and English
 - Authorization server (OAuth 2.1 / OpenID Connect) with a public PKCE browser client, RS256 tokens, refresh-token rotation with reuse detection, server-side login page in Ukrainian and English, `GET /api/v1/users/me`; Angular auth shell with runtime localisation

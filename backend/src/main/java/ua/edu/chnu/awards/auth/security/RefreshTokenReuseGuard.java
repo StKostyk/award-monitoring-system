@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
@@ -20,11 +21,14 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Guards the refresh grant: a rotated refresh token presented again revokes the whole authorization it belonged
  * to (the hash of every rotated token is remembered in Redis for the token lifetime), and an account whose status no
  * longer allows signing in cannot refresh either.
  */
+@Slf4j
 public final class RefreshTokenReuseGuard implements AuthenticationProvider {
 
     static final String KEY_PREFIX = "auth:rotated:";
@@ -60,7 +64,12 @@ public final class RefreshTokenReuseGuard implements AuthenticationProvider {
             authorizationService.remove(authorization);
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
         }
-        redis.opsForValue().set(KEY_PREFIX + sha256(presented), authorization.getId(), remember);
+        try {
+            redis.opsForValue().set(KEY_PREFIX + sha256(presented), authorization.getId(), remember);
+        } catch (DataAccessException e) {
+            log.error("Redis unavailable; rotated refresh token not remembered for reuse detection: {}",
+                e.getMessage());
+        }
         return delegate.authenticate(authentication);
     }
 
@@ -71,15 +80,19 @@ public final class RefreshTokenReuseGuard implements AuthenticationProvider {
 
     private void revokeFamilyOf(String presented) {
         String key = KEY_PREFIX + sha256(presented);
-        String authorizationId = redis.opsForValue().get(key);
-        if (authorizationId == null) {
-            return;
+        try {
+            String authorizationId = redis.opsForValue().get(key);
+            if (authorizationId == null) {
+                return;
+            }
+            OAuth2Authorization family = authorizationService.findById(authorizationId);
+            if (family != null) {
+                authorizationService.remove(family);
+            }
+            redis.delete(key);
+        } catch (DataAccessException e) {
+            log.error("Redis unavailable; refresh token reuse could not be checked: {}", e.getMessage());
         }
-        OAuth2Authorization family = authorizationService.findById(authorizationId);
-        if (family != null) {
-            authorizationService.remove(family);
-        }
-        redis.delete(key);
     }
 
     static String sha256(String value) {
