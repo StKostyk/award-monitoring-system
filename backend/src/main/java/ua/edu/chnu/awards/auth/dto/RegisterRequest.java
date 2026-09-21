@@ -16,7 +16,7 @@ import jakarta.validation.constraints.Size;
  * @param organizationId department the person belongs to
  */
 public record RegisterRequest(
-    @NotBlank @Email @Size(max = 255) String email,
+    @NotBlank @Email @Size(max = 254) String email,
     @NotBlank @Size(max = 72) String password,
     @NotBlank @Size(max = 100) @Pattern(regexp = NAME) String firstName,
     @NotBlank @Size(max = 100) @Pattern(regexp = NAME) String lastName,

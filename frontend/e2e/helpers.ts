@@ -12,7 +12,9 @@ interface MessageSummary {
 async function messagesTo(email: string, subject = ''): Promise<MessageSummary[]> {
   const list = await (await fetch(`${mailpit}/api/v1/messages?limit=100`)).json();
   return ((list.messages ?? []) as MessageSummary[]).filter(
-    (m) => m.To?.some((to) => to.Address.toLowerCase() === email.toLowerCase()) && m.Subject.includes(subject),
+    (m) =>
+      m.To?.some((to) => to.Address.toLowerCase() === email.toLowerCase()) &&
+      m.Subject.includes(subject),
   );
 }
 
@@ -42,11 +44,21 @@ export async function countMessages(email: string, subject: string): Promise<num
 }
 
 /** Registers and verifies a fresh account through the API and the verification page. */
-export async function registerAndVerify(page: Page, email: string, password: string): Promise<void> {
+export async function registerAndVerify(
+  page: Page,
+  email: string,
+  password: string,
+): Promise<void> {
   await fetch('http://localhost:8080/api/v1/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, firstName: 'Ірина', lastName: 'Нова', organizationId: 64 }),
+    body: JSON.stringify({
+      email,
+      password,
+      firstName: 'Ірина',
+      lastName: 'Нова',
+      organizationId: 64,
+    }),
   });
   await page.goto(await linkFor(email, 'verify-email'));
   await page.getByTestId('verify-password').fill(password);

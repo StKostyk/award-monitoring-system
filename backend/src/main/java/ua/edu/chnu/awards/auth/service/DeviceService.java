@@ -7,7 +7,6 @@ import java.util.Base64;
 import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -15,14 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
-import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.entity.UserDevice;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
-import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.User;
@@ -78,7 +75,7 @@ public class DeviceService {
             String raw = tokens.issue(user, TokenPurpose.SECURITY_REVOKE, properties.securityRevokeTtl());
             events.publishEvent(new NewDeviceSignedIn(user.getEmailAddress(), user.getFirstName(),
                 device.browser(), device.operatingSystem(), client.ip(), now,
-                properties.frontendUrl() + "/security/not-me?token=" + raw));
+                properties.link("/security/not-me", raw)));
         });
     }
 
@@ -90,10 +87,7 @@ public class DeviceService {
      */
     @Transactional
     public void revoke(String rawToken) {
-        User user = tokens.redeem(rawToken, TokenPurpose.SECURITY_REVOKE)
-            .map(OneTimeToken::getUser)
-            .orElseThrow(() -> new ApiProblemException(HttpStatus.GONE, "token-invalid",
-                "The link is invalid, expired or already used"));
+        User user = tokens.redeemOwner(rawToken, TokenPurpose.SECURITY_REVOKE);
         tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
         byte[] secret = new byte[SECRET_BYTES];
         RANDOM.nextBytes(secret);
@@ -102,7 +96,7 @@ public class DeviceService {
         int forgotten = devices.deleteByUserId(user.getId());
         String raw = tokens.issue(user, TokenPurpose.PASSWORD_RESET, properties.passwordResetTtl());
         events.publishEvent(new PasswordResetRequested(user.getEmailAddress(), user.getFirstName(),
-            properties.frontendUrl() + "/reset-password?token=" + raw));
+            properties.link("/reset-password", raw)));
         audit.record(AuditAction.SECURITY_REVOKE, user.getId(), Map.of("authorizations", revoked,
             "devices", forgotten));
     }

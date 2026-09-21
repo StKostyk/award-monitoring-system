@@ -3,9 +3,7 @@ package ua.edu.chnu.awards.auth.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
@@ -15,6 +13,7 @@ import org.springframework.stereotype.Service;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.event.AccountLocked;
+import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.config.ProtectionProperties;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
@@ -37,7 +36,6 @@ public class LoginAttemptService {
 
     static final String FAILURE_KEY_PREFIX = "auth:fail:";
     static final String LOCK_KEY_PREFIX = "auth:lock:";
-    static final int MAX_ADDRESS_LENGTH = 254;
 
     private final StringRedisTemplate redis;
     private final ProtectionProperties properties;
@@ -55,7 +53,7 @@ public class LoginAttemptService {
      */
     public boolean isLocked(String email) {
         try {
-            return Boolean.TRUE.equals(redis.hasKey(LOCK_KEY_PREFIX + normalize(email)));
+            return Boolean.TRUE.equals(redis.hasKey(LOCK_KEY_PREFIX + EmailUtils.normalize(email)));
         } catch (DataAccessException e) {
             log.error("Redis unavailable; lock state unknown, allowing the attempt: {}", e.getMessage());
             return false;
@@ -70,7 +68,7 @@ public class LoginAttemptService {
      * @return true when this failure locked the address
      */
     public boolean recordFailure(String email, String ip) {
-        String normalized = normalize(email);
+        String normalized = EmailUtils.normalize(email);
         String failureKey = FAILURE_KEY_PREFIX + normalized;
         try {
             Long failures = redis.opsForValue().increment(failureKey);
@@ -97,23 +95,10 @@ public class LoginAttemptService {
      */
     public void reset(String email) {
         try {
-            redis.delete(FAILURE_KEY_PREFIX + normalize(email));
+            redis.delete(FAILURE_KEY_PREFIX + EmailUtils.normalize(email));
         } catch (DataAccessException e) {
             log.error("Redis unavailable; failure counter not reset: {}", e.getMessage());
         }
-    }
-
-    /**
-     * Normalises a typed address for keys and comparisons: trimmed, lower-case, without control characters,
-     * capped at the length of a valid address.
-     *
-     * @param email the typed value, may be null
-     * @return the normalised value, empty for null
-     */
-    public static String normalize(String email) {
-        String value = Optional.ofNullable(email).orElse("").replaceAll("\\p{Cntrl}", "").trim()
-            .toLowerCase(Locale.ROOT);
-        return value.length() > MAX_ADDRESS_LENGTH ? value.substring(0, MAX_ADDRESS_LENGTH) : value;
     }
 
     private void report(User user, String ip) {

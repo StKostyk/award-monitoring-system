@@ -1,25 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-const mailpit = 'http://localhost:8025';
-const password = 'correct-horse-battery';
+import { linkFor, signIn } from './helpers';
 
-async function verificationLink(email: string): Promise<string> {
-  for (let attempt = 0; attempt < 40; attempt++) {
-    const list = await (await fetch(`${mailpit}/api/v1/messages?limit=50`)).json();
-    const message = list.messages?.find((m: { To: { Address: string }[] }) =>
-      m.To?.some((to) => to.Address.toLowerCase() === email.toLowerCase()),
-    );
-    if (message) {
-      const full = await (await fetch(`${mailpit}/api/v1/message/${message.ID}`)).json();
-      const match = /http:\/\/localhost:4200\/verify-email\?token=[A-Za-z0-9_-]+/.exec(full.Text ?? '');
-      if (match) {
-        return match[0];
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-  throw new Error(`No verification email for ${email}`);
-}
+const password = 'correct-horse-battery';
 
 test.describe('registration', () => {
   test('ac21 ac25 ac28 registers, verifies the address from the email and signs in', async ({ page }) => {
@@ -46,7 +29,7 @@ test.describe('registration', () => {
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL(/error=PENDING/);
 
-    const link = await verificationLink(email);
+    const link = await linkFor(email, 'verify-email');
     await page.goto(link);
     await page.getByTestId('verify-password').fill('not-the-registration-password');
     await page.getByTestId('verify-submit').click();
@@ -62,11 +45,7 @@ test.describe('registration', () => {
 
     await page.getByTestId('verify-go-pending').click();
     await expect(page).toHaveURL(/registration-pending/);
-    await page.goto('/');
-    await expect(page).toHaveURL(/localhost:8080\/login/);
-    await page.fill('#username', email);
-    await page.fill('#password', password);
-    await page.click('button[type="submit"]');
+    await signIn(page, email, password);
     await expect(page.getByTestId('user-name')).toHaveText('Олена Нова');
     await expect(page.getByTestId('profile-roles')).toContainText('Працівник');
   });

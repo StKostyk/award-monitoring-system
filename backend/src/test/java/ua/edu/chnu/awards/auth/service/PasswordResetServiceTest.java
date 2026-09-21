@@ -17,14 +17,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
-import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
@@ -44,10 +41,8 @@ class PasswordResetServiceTest {
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final AuthorizationRevoker revoker = mock(AuthorizationRevoker.class);
-    private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
+    private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
-    @SuppressWarnings("unchecked")
-    private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofMinutes(1),
@@ -60,9 +55,8 @@ class PasswordResetServiceTest {
     @BeforeEach
     void setUp() {
         service = new PasswordResetService(userRepository, tokens, new PasswordPolicy(), passwordEncoder, events,
-            revoker, redis, properties, audit);
-        when(redis.opsForValue()).thenReturn(values);
-        when(values.setIfAbsent(any(), any(), any(Duration.class))).thenReturn(true);
+            revoker, throttle, properties, audit);
+        when(throttle.claim(any(), any())).thenReturn(true);
         when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$12$new");
     }
 
@@ -73,7 +67,7 @@ class PasswordResetServiceTest {
 
         service.request(" Olena@chnu.edu.ua ");
 
-        verify(values).setIfAbsent("auth:reset:" + EMAIL, "1", Duration.ofMinutes(1));
+        verify(throttle).claim("auth:reset:" + EMAIL, Duration.ofMinutes(1));
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
         verify(events).publishEvent(event.capture());
         PasswordResetRequested requested = (PasswordResetRequested) event.getValue();
@@ -98,7 +92,7 @@ class PasswordResetServiceTest {
 
     @Test
     void ac31_secondRequestWithinTheIntervalSendsNothing() {
-        when(values.setIfAbsent("auth:reset:" + EMAIL, "1", Duration.ofMinutes(1))).thenReturn(false);
+        when(throttle.claim("auth:reset:" + EMAIL, Duration.ofMinutes(1))).thenReturn(false);
 
         service.request(EMAIL);
 
@@ -107,8 +101,7 @@ class PasswordResetServiceTest {
 
     @Test
     void ac32_validTokenReplacesTheHashAndRevokesEveryAuthorization() {
-        when(tokens.redeem("raw", TokenPurpose.PASSWORD_RESET))
-            .thenReturn(Optional.of(OneTimeToken.builder().user(active).build()));
+        when(tokens.redeemOwner("raw", TokenPurpose.PASSWORD_RESET)).thenReturn(active);
 
         service.confirm("raw", NEW_PASSWORD);
 
@@ -120,7 +113,8 @@ class PasswordResetServiceTest {
 
     @Test
     void ac32_expiredOrUsedTokenIsGoneAndNothingChanges() {
-        when(tokens.redeem("raw", TokenPurpose.PASSWORD_RESET)).thenReturn(Optional.empty());
+        when(tokens.redeemOwner("raw", TokenPurpose.PASSWORD_RESET))
+            .thenThrow(new ApiProblemException(HttpStatus.GONE, "token-invalid", "The link is invalid"));
 
         assertThatThrownBy(() -> service.confirm("raw", NEW_PASSWORD))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
@@ -137,15 +131,14 @@ class PasswordResetServiceTest {
                 assertThat(e.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
                 assertThat(e.getType()).isEqualTo("password-too-common");
             });
-        verify(tokens, never()).redeem(any(), any());
+        verify(tokens, never()).redeemOwner(any(), any());
     }
 
     @Test
     void ac32_suspendedAccountKeepsItsPassword() {
         User suspended = User.builder().id(9L).emailAddress("s@chnu.edu.ua").passwordHash("$2a$12$old")
             .accountStatus(AccountStatus.SUSPENDED).build();
-        when(tokens.redeem("raw", TokenPurpose.PASSWORD_RESET))
-            .thenReturn(Optional.of(OneTimeToken.builder().user(suspended).build()));
+        when(tokens.redeemOwner("raw", TokenPurpose.PASSWORD_RESET)).thenReturn(suspended);
 
         assertThatThrownBy(() -> service.confirm("raw", NEW_PASSWORD))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {

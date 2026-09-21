@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { signIn } from './helpers';
+
 const employee = { email: 'employee.fmi@chnu.edu.ua', password: 'Passw0rd-demo', name: 'Анастасія Працівник' };
 
 test.describe('authentication', () => {
@@ -23,11 +25,7 @@ test.describe('authentication', () => {
   });
 
   test('ac16 a pending account is refused with an explanation', async ({ page }) => {
-    await page.goto('/');
-    await expect(page).toHaveURL(/localhost:8080\/login/);
-    await page.fill('#username', 'pending@chnu.edu.ua');
-    await page.fill('#password', employee.password);
-    await page.click('button[type="submit"]');
+    await signIn(page, 'pending@chnu.edu.ua', employee.password);
 
     await expect(page).toHaveURL(/error=PENDING/);
     await expect(page.locator('.alert')).toContainText('не підтверджено');

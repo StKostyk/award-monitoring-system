@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { linkFor, registerAndVerify, signIn } from './mailpit';
+import { linkFor, registerAndVerify, signIn } from './helpers';
 
 test.describe('password reset', () => {
   test('ac31 ac32 ac33 ac34 resets the password from the email link and signs in with the new one', async ({ page }) => {

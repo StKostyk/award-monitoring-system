@@ -1,9 +1,14 @@
 package ua.edu.chnu.awards.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import ua.edu.chnu.awards.common.web.ApiProblemException;
 
 class PasswordPolicyTest {
 
@@ -24,6 +29,16 @@ class PasswordPolicyTest {
         assertThat(policy.problem("a".repeat(73))).isEqualTo("too-long");
         assertThat(policy.problem("ю".repeat(37))).isEqualTo("too-long");
         assertThat(policy.problem("Password123")).isEqualTo("too-common");
+    }
+
+    @Test
+    void ac21_ac32_requireRefusesWithATypedProblem() {
+        assertThatCode(() -> policy.require("correct-horse-battery")).doesNotThrowAnyException();
+        assertThatThrownBy(() -> policy.require("password123"))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                assertThat(e.getType()).isEqualTo("password-too-common");
+            });
     }
 
     @Test
