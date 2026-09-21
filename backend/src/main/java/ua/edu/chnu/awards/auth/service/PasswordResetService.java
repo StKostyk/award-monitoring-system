@@ -63,7 +63,8 @@ public class PasswordResetService {
     }
 
     /**
-     * Replaces the password behind a reset token and revokes every authorization of the user.
+     * Replaces the password behind a reset token (it must differ from the current one) and signs the user out
+     * everywhere.
      *
      * @param rawToken    token from the link
      * @param newPassword the password to set
@@ -76,9 +77,13 @@ public class PasswordResetService {
             throw new ApiProblemException(HttpStatus.CONFLICT, "account-not-active",
                 "The account is not active");
         }
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "password-same-as-current",
+                "The new password must differ from the current one");
+        }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
-        authorizations.revokeAll(user.getEmailAddress());
+        authorizations.revokeAll(user);
         audit.record(AuditAction.PASSWORD_RESET, user.getId());
     }
 }

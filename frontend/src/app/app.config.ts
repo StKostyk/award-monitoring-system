@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import {
   ApplicationConfig,
   inject,
@@ -15,6 +15,7 @@ import { provideOAuthClient } from 'angular-oauth2-oidc';
 
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
+import { unauthorizedInterceptor } from './core/api/unauthorized.interceptor';
 import { AuthService } from './core/auth/auth.service';
 import { LanguageService } from './core/i18n/language.service';
 import { TranslocoHttpLoader } from './core/i18n/transloco.loader';
@@ -23,7 +24,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withInterceptorsFromDi(), withInterceptors([unauthorizedInterceptor])),
     provideOAuthClient({
       resourceServer: { allowedUrls: [environment.apiUrl], sendAccessToken: true },
     }),

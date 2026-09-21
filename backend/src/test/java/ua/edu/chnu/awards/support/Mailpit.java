@@ -17,7 +17,7 @@ public final class Mailpit {
 
     private static final int OK = 200;
     private static final int PAGE = 200;
-    private static final int ATTEMPTS = 60;
+    private static final int ATTEMPTS = 120;
     private static final long PAUSE_MS = 250;
 
     private final String apiUrl;

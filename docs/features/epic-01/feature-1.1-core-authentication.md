@@ -2,8 +2,8 @@
 
 > **Epic**: 1 — User Management & Authentication (SCRUM-5)
 > **Sprint**: 2–3 (2026-09-21 → 2026-10-04)
-> **Points**: 25 (six stories)
-> **Status**: Done — validated 2026-09-21 (§12), pending the manual run of §9 by the author
+> **Points**: 28 (seven stories)
+> **Status**: Done — validated 2026-09-21 (§12); the manual run found F-5…F-11, fixed in 1.1.6, pending a repeat of §9 steps 21, 24, 27–32
 > **Author**: Stefan Kostyk
 > **Governing docs**: ADR-009, AUTHENTICATION_AUTHORIZATION.md §1, §5–§7, THREAT_MODEL §2.2.2, DATA_DICTIONARY §1, §4.1, state-machine-user-account.puml, openapi.yml, US-001
 
@@ -47,6 +47,7 @@ Every later epic depends on knowing who the caller is and which organisation the
 | SCRUM-9 (#46) | 1.1.3 Password reset | 3 | no | SCRUM-8 |
 | SCRUM-10 (#31) | 1.1.4 Login rate limiting, lockout and auth audit | 3 | no | SCRUM-7 |
 | SCRUM-11 (#33) | 1.1.5 New device login notification | 3 | no | SCRUM-8 |
+| SCRUM-18 (#64) | 1.1.6 Fixes from the manual run | 3 | no | SCRUM-11 |
 
 None of the stories is marked parallel: the frontend work in each is small and coupled to the server's redirect flow.
 
@@ -107,6 +108,17 @@ None of the stories is marked parallel: the frontend work in each is small and c
 - **AC-5.3** The email contains a "This was not me" link valid for 24 hours; confirming it revokes all authorizations, removes the user's known devices, forces a password reset (the current password stops working, the account stays `ACTIVE`, a reset email is sent) and records `SECURITY_REVOKE` in the audit log.
 - **AC-5.4** Angular page `/security/not-me` confirms the outcome in both languages.
 
+### 1.1.6 Fixes from the manual run (SCRUM-18)
+
+Defects found by the author's run of §9 (findings F-5 to F-9 in §12) and one hardening decision taken with them.
+
+- **AC-6.1** Given the refresh token is refused (`invalid_grant`/401) or the session ends, then the SPA drops its tokens and, on a guarded page, starts the sign-in flow (login page, or silent re-login while the authorization-server session lives) instead of rendering an empty shell; a transient refresh failure (network, 5xx, 429) keeps the session; a reload with an expired access token never fails the application start (a 401 on `/users/me` means "not signed in"); a 401 from the API while signed in triggers the same sign-in.
+- **AC-6.2** Given a `POST /login` with a missing or stale CSRF token, then the browser returns to `/login?error=EXPIRED` with a translated message; a 403 or a server error on the authorization server shows a branded page with a link to the app instead of the default error page.
+- **AC-6.3** Given a sign-in at `/login` without a pending authorization request, then the browser lands on the app; `GET /login` while signed in and `GET /` redirect to the app; only an interrupted `/oauth2/authorize` request is resumed after login, any other saved request is dropped.
+- **AC-6.4** Given a password reset with the current password, then it is refused with 422 `password-same-as-current` and the reset page explains it.
+- **AC-6.5** Given a password reset or a "not me" revocation, then access tokens issued up to and including the second of the revocation are refused by the API immediately (401), not only at expiry; the revocation instant is recorded after the transaction commits; without Redis the check fails open and logs the outage.
+- **AC-6.6** Given a Redis server on `localhost:6379` that is not the compose container, then the dev start script warns before starting the backend.
+
 ## 5. Edge cases
 
 - Concurrent registration of the same address: the unique index wins; the second request gets 409.
@@ -116,7 +128,9 @@ None of the stories is marked parallel: the frontend work in each is small and c
 - Mail server down: registration still succeeds; the email is retried three times by the async sender and the failure is logged; "send again" is available to the user.
 - Redis down: login proceeds without counting and the verification/reset email throttles let the request through (fail-open, logged as an error); the health endpoint reports Redis DOWN.
 - Clock skew: tokens carry `nbf` with a 60-second leeway on the resource server.
-- Login page accessed while already authenticated: redirect to the app.
+- Login page accessed while already authenticated, or the authorization server's root: redirect to the app.
+- Login form posted after the server restarted (stale CSRF token): back to the form with "the page has expired".
+- Access token still valid by time after a reset or "not me": refused, because the API compares `iat` with the user's last sign-out-everywhere kept in Redis for the token lifetime.
 - Same person registering from two departments: not supported; one account per address.
 
 ## 6. Dependencies
@@ -188,6 +202,9 @@ Proposed deviations (applied to the docs in the story that lands them):
 | 4.1, 4.2, 4.5 | ✓ counter logic | | ✓ Redis | ✓ 6th attempt, 21st request | |
 | 4.3, 4.4, 4.6 | ✓ | | ✓ partitions, audit rows | | |
 | 5.x | ✓ fingerprint | | ✓ | ✓ | ✓ |
+| 6.1 | ✓ auth service, 401 interceptor | | | | ✓ expired token reload, revoked refresh in an open tab |
+| 6.2, 6.3 | ✓ access-denied handler | | | ✓ direct login, stale form | ✓ direct login |
+| 6.4, 6.5 | ✓ reset service, revoker (after commit), validator (boundary) | | | ✓ reset flow, not-me flow | ✓ same password |
 
 Coverage target 85 % lines per `mvn verify`; static analysis clean.
 
@@ -244,13 +261,20 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 22. Sign in as `employee.fmi@chnu.edu.ua` with a wrong password five times. Expected: the first four say «Невірна адреса або пароль», the fifth «Забагато невдалих спроб. Спробуйте пізніше.»; the correct password is refused with the same message. Mailpit shows «Обліковий запис заблоковано / Account locked» addressed to `admin@chnu.edu.ua` with the address, IP and time (in the container stack the IP is `172.25.0.1`, the host as nginx sees it). (AC-4.1, 4.4)
 23. In psql: `SELECT action_type, host(ip_address), user_agent, correlation_id, created_at FROM audit_logs WHERE entity_type = 'AUTHENTICATION' ORDER BY created_at DESC LIMIT 10;` → `LOGIN_FAILED` ×6 and `ACCOUNT_LOCKED`, every row with IP, user agent and correlation id. (AC-4.3)
 24. Restart the backend (Ctrl+C in its window, run `.\tools\dev-up.ps1` again) and retry the correct password → still locked. Unlock without waiting: `docker compose exec redis redis-cli DEL auth:lock:employee.fmi@chnu.edu.ua`, sign in → app opens; psql shows `LOGIN_SUCCESS`. Sign out → `LOGOUT`. (AC-4.5, 4.3)
-25. Run `for i in $(seq 1 25); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/oauth2/token -d grant_type=refresh_token -d refresh_token=x -d client_id=award-web; done` → the first 20 lines are `400`, the rest `429`. Then open `http://localhost:8080/login` in the browser within the same minute → «Забагато запитів» page (429). One minute later the login page works again. (AC-4.2)
+25. Run `for i in $(seq 1 125); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/oauth2/token -d grant_type=refresh_token -d refresh_token=x -d client_id=award-web; done` → the first 120 lines are `400`, the rest `429` (the `local` profile allows 120 requests a minute so the browser test suite fits; the container stack and production keep 20 — there, run 25 requests against `http://localhost`). Then open `http://localhost:8080/login` in the browser within the same minute → «Забагато запитів» page (429). One minute later the login page works again. (AC-4.2)
 26. `\d+ audit_logs` in psql → partitions `audit_logs_2026_07` … `audit_logs_2027_12` plus `audit_logs_default`. (AC-4.6)
 
 ### After 1.1.5 (SCRUM-11)
 
 27. Sign in as `dean.fmi@chnu.edu.ua` at `http://localhost:4200` in Chrome (first sign-in from this browser since the feature; to repeat later run `docker compose exec postgres psql -U postgres award_monitoring -c "delete from user_devices"`). Expected: Mailpit shows «Новий вхід до облікового запису / New sign-in to your account» with `Browser: Chrome`, `Operating system: Windows`, `IP: 127.0.0.1` (or `0:0:0:0:0:0:0:1`), the time and a link `http://localhost:4200/security/not-me?token=…`. Sign out and in again → no second email; psql `select browser, last_used_at from user_devices` shows one row with a fresh `last_used_at`. (AC-5.1, 5.2)
 28. Sign in as the same user from Firefox or Edge (or in Chrome DevTools → Network conditions → untick "Use browser default" user agent and pick Firefox). Expected: a second email naming the other browser. Open its link. Expected: page «Це був ваш вхід?» with the button «Це був не я»; the language toggle switches it to "Was this sign-in yours?" / "This was not me". Click the button. Expected: «Доступ відкликано…»; opening the link again and clicking → «Посилання недійсне…» with a "Reset password" link. In the first browser: reload the app → still open (the access token lives up to 15 minutes), then open a new tab on `http://localhost:4200` after closing the old one → login page instead of an automatic sign-in; the old password answers «Невірна адреса або пароль»; Mailpit shows «Скидання пароля / Password reset»; its link sets a new password and the login works again. psql: `select action_type from audit_logs where action_type = 'SECURITY_REVOKE'` → one row; `user_devices` is empty for the user until the next sign-in. (AC-5.3, 5.4)
+
+### After 1.1.6 (SCRUM-18)
+
+29. Repeat step 21 with a second browser signed in: after the reset, reload the app in the second browser at once. Expected: the login page (or, within 15 minutes, a reload of an already open page shows the login page instead of a blank screen — never an empty shell). In the reset page, first submit the old password → «Новий пароль має відрізнятися від поточного». (AC-6.1, 6.4, 6.5)
+30. Open `http://localhost:8080/login`, restart the backend (Ctrl+C in its window, `.\tools\dev-up.ps1`), then submit the stale form. Expected: the form again with «Сторінка застаріла. Спробуйте ще раз.»; signing in from that form lands on `http://localhost:4200` with the app open. Open `http://localhost:8080/login` and `http://localhost:8080/` while signed in → both redirect to the app. (AC-6.2, 6.3)
+31. In the browser app, exhaust the limit (step 25) and then submit the "forgot password" form within the same minute. Expected: «Не вдалося… Спробуйте пізніше» (the 429 reaches the app with its CORS headers), not «Сервер недоступний». (AC-6.2)
+32. With the dev backend running, `docker compose exec redis redis-cli KEYS 'auth:*'` after a lock-out shows the `auth:lock:` key — the backend and the container are the same Redis; `.\tools\dev-up.ps1` prints a warning when they are not. (AC-6.6)
 
 ## 10. Risks
 
@@ -356,7 +380,14 @@ Known accepted gaps are the tracker's "Security review follow-ups" 1, 3, 5–8 (
 |---|---------|--------|
 | F-1 | AC-0.6 had no automated test | `OpenApiContractTest` added in the validation PR: the `User` schema of `openapi.yml` must list exactly the properties of `UserProfileResponse` and the values of `AccountStatus` |
 | F-2 | Resend and reset throttles answered 500 when Redis is down, unlike login, limit and refresh | Fixed in the refactor PR: shared fail-open guard |
-| F-3 | `/login` opened by an already authenticated browser shows the form | Tracker technical note; harmless, revisit with the deployment story |
+| F-3 | `/login` opened by an already authenticated browser shows the form | Fixed in 1.1.6 together with F-7 |
+| F-5 | Step 21: after the silent refresh failed (revoked refresh token) the SPA rendered an empty shell, and a reload within 10 minutes of expiry failed the application start (`clockSkewInSec` default 600 s made the SPA call `/users/me` with an expired token) | Fixed in 1.1.6 (AC-6.1) |
+| F-6 | Step 24: a login form rendered before a backend restart posted a stale CSRF token and got the default 403 page | Fixed in 1.1.6 (AC-6.2) |
+| F-7 | Steps 27–28: signing in at `/login` directly ended on a 404 for `/` (no saved request); same root cause as F-3 | Fixed in 1.1.6 (AC-6.3), closes F-3 |
+| F-8 | Step 19: the reset accepted the previous password | Fixed in 1.1.6 (AC-6.4) |
+| F-9 | Step 21: a second browser stayed signed in for up to 15 minutes after the reset (documented, but unwanted) | Fixed in 1.1.6 (AC-6.5): tokens issued before the revocation are refused at once |
+| F-11 | The browser test suite exceeded the 20-requests-a-minute budget once it grew past ten tests, and the 429 came back without CORS headers, so the app reported «Сервер недоступний» | Fixed in 1.1.6: the refusal carries the CORS headers; the `local` profile allows 120 a minute (container stack and production keep 20) |
+| F-10 | Step 24: `redis-cli DEL` through the container had no effect because a `redis-server` inside WSL was answering `localhost:6379` for the dev backend | Environment, not code; WSL server disabled; dev script warns (AC-6.6) |
 | F-4 | Refactor sweep (21 items): duplicated SHA-256 helper, link building, redeem-or-410, password check, email normalisation; narrative comment in `CorrelationIdFilter`; Angular token-link lifecycle copied in three components; e2e helpers duplicated | Worth-it items in the `refactor(auth)` PR; the rest listed in the tracker's technical notes |
 
 Verdict: **PASSED WITH NOTES** — pending the author's run of §9 in the browser.

@@ -102,6 +102,7 @@
       "password-too-short": "The password is too short.",
       "password-too-long": "The password is too long.",
       "password-too-common": "This password is too common; choose another one.",
+      "password-same-as-current": "The new password must differ from the current one.",
       "account-not-active": "The account is not active. Contact the administrator.",
       "network": "The server is unreachable. Try again later.",
       "unknown": "The password could not be changed. Try again later."

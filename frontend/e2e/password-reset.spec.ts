@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { linkFor, registerAndVerify, signIn } from './helpers';
 
 test.describe('password reset', () => {
-  test('ac31 ac32 ac33 ac34 resets the password from the email link and signs in with the new one', async ({ page }) => {
+  test('ac31 ac32 ac33 ac34 ac64 resets the password from the email link and signs in with the new one', async ({ page }) => {
     const email = `e2e.reset.${Date.now()}@chnu.edu.ua`;
     const oldPassword = 'correct-horse-battery';
     const newPassword = 'staple-battery-horse';
@@ -23,6 +23,9 @@ test.describe('password reset', () => {
     await page.getByTestId('reset-password').fill('short');
     await page.getByTestId('reset-submit').click();
     await expect(page.locator('mat-error')).toContainText('10 символів');
+    await page.getByTestId('reset-password').fill(oldPassword);
+    await page.getByTestId('reset-submit').click();
+    await expect(page.getByTestId('reset-error')).toContainText('відрізнятися від поточного');
     await page.getByTestId('reset-password').fill(newPassword);
     await page.getByTestId('reset-submit').click();
     await expect(page.getByTestId('reset-done')).toBeVisible();

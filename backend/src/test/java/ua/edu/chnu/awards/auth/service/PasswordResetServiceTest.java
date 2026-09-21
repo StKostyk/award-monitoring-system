@@ -106,7 +106,7 @@ class PasswordResetServiceTest {
         service.confirm("raw", NEW_PASSWORD);
 
         assertThat(active.getPasswordHash()).isEqualTo("$2a$12$new");
-        verify(revoker).revokeAll(EMAIL);
+        verify(revoker).revokeAll(active);
         verify(tokens).invalidate(active, TokenPurpose.SECURITY_REVOKE);
         verify(audit).record(AuditAction.PASSWORD_RESET, 7L);
     }
@@ -132,6 +132,20 @@ class PasswordResetServiceTest {
                 assertThat(e.getType()).isEqualTo("password-too-common");
             });
         verify(tokens, never()).redeemOwner(any(), any());
+    }
+
+    @Test
+    void ac64_theCurrentPasswordIsRefused() {
+        when(tokens.redeemOwner("raw", TokenPurpose.PASSWORD_RESET)).thenReturn(active);
+        when(passwordEncoder.matches("same-horse-battery", "$2a$12$old")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.confirm("raw", "same-horse-battery"))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                assertThat(e.getType()).isEqualTo("password-same-as-current");
+            });
+        assertThat(active.getPasswordHash()).isEqualTo("$2a$12$old");
+        verifyNoInteractions(revoker);
     }
 
     @Test

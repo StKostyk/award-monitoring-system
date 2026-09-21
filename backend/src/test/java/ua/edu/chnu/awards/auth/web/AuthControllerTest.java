@@ -28,6 +28,7 @@ import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
 import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
 import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
+import ua.edu.chnu.awards.auth.security.LoginAccessDeniedHandler;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.auth.service.DeviceService;
@@ -42,7 +43,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
 
 @WebMvcTest(AuthController.class)
 @Import({SecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class, JwtAuthorityConverter.class,
-    ProblemDetailsEntryPoint.class, ApiExceptionHandler.class})
+    ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class, ApiExceptionHandler.class})
 class AuthControllerTest {
 
     private static final String VALID = """

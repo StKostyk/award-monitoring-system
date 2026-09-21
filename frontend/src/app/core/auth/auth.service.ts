@@ -1,16 +1,30 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { OAuthService } from 'angular-oauth2-oidc';
+import { Router } from '@angular/router';
+import { OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { authConfig } from './auth.config';
 import { UserProfile } from './user-profile';
 
+/** Routes that work without a session; a lost session there must not bounce the visitor to the login page. */
+const PUBLIC_ROUTES = [
+  '/register',
+  '/registration-pending',
+  '/verify-email',
+  '/forgot-password',
+  '/reset-password',
+  '/security/not-me',
+  '/callback',
+];
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly oauth = inject(OAuthService);
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  private loginStarted = false;
 
   readonly isAuthenticated = signal(false);
   readonly profile = signal<UserProfile | null>(null);
@@ -25,20 +39,41 @@ export class AuthService {
       if (event.type === 'token_received' || event.type === 'token_refreshed') {
         this.isAuthenticated.set(this.oauth.hasValidAccessToken());
       }
-      if (event.type === 'logout' || event.type === 'token_refresh_error' || event.type === 'session_terminated') {
-        this.isAuthenticated.set(false);
-        this.profile.set(null);
+      if (event.type === 'logout') {
+        this.forget();
+      }
+      if (event.type === 'session_terminated' || (event.type === 'token_refresh_error' && refused(event))) {
+        this.signedOutElsewhere();
+      }
+    });
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        this.loginStarted = false;
       }
     });
     await this.oauth.loadDiscoveryDocumentAndTryLogin();
     this.oauth.setupAutomaticSilentRefresh();
-    this.isAuthenticated.set(this.oauth.hasValidAccessToken());
-    if (this.isAuthenticated()) {
-      await this.loadProfile();
+    if (this.oauth.hasValidAccessToken()) {
+      try {
+        await this.loadProfile();
+        this.isAuthenticated.set(true);
+      } catch (err) {
+        if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
+          this.oauth.logOut(true);
+          this.forget();
+        } else {
+          throw err;
+        }
+      }
     }
   }
 
+  /** Starts the code flow once per page; the guard and a failed refresh may both ask for it. */
   login(targetUrl = '/'): void {
+    if (this.loginStarted) {
+      return;
+    }
+    this.loginStarted = true;
     this.oauth.initCodeFlow(targetUrl);
   }
 
@@ -50,8 +85,7 @@ export class AuthService {
 
   async logout(): Promise<void> {
     await this.oauth.revokeTokenAndLogout();
-    this.isAuthenticated.set(false);
-    this.profile.set(null);
+    this.forget();
   }
 
   async loadProfile(): Promise<UserProfile> {
@@ -59,4 +93,31 @@ export class AuthService {
     this.profile.set(profile);
     return profile;
   }
+
+  /** The session was ended elsewhere (reset, revocation): drop the tokens and, on a guarded page, sign in again. */
+  signedOutElsewhere(): void {
+    if (!this.isAuthenticated()) {
+      return;
+    }
+    this.oauth.logOut(true);
+    this.forget();
+    const url = this.router.url;
+    if (!PUBLIC_ROUTES.some((route) => url.startsWith(route))) {
+      this.login(url);
+    }
+  }
+
+  private forget(): void {
+    this.isAuthenticated.set(false);
+    this.profile.set(null);
+  }
+}
+
+/** A refresh answered 400 (`invalid_grant`) or 401: the refresh token is gone. Other failures are transient. */
+function refused(event: OAuthErrorEvent | { type: string }): boolean {
+  const reason = (event as OAuthErrorEvent).reason;
+  return (
+    reason instanceof HttpErrorResponse &&
+    (reason.status === HttpStatusCode.BadRequest || reason.status === HttpStatusCode.Unauthorized)
+  );
 }

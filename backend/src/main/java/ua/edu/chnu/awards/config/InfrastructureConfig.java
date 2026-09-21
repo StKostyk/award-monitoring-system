@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 import io.lettuce.core.ClientOptions;
+import io.lettuce.core.TimeoutOptions;
 
 /**
  * Shared clock (injectable for tests), asynchronous execution for listeners and Redis client behaviour.
@@ -30,6 +31,7 @@ public class InfrastructureConfig {
     @Bean
     LettuceClientConfigurationBuilderCustomizer rejectCommandsWhileDisconnected() {
         return builder -> builder.clientOptions(ClientOptions.builder()
+            .timeoutOptions(TimeoutOptions.enabled())
             .disconnectedBehavior(ClientOptions.DisconnectedBehavior.REJECT_COMMANDS)
             .build());
     }

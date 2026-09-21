@@ -14,6 +14,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.CorsProcessor;
+import org.springframework.web.cors.DefaultCorsProcessor;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import ua.edu.chnu.awards.common.web.ClientRequest;
@@ -23,7 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Fixed one-minute window per client address over the authentication endpoints. Browsers get the 429 error
- * page, API clients a Problem Details body; both carry {@code Retry-After}. Without Redis nothing is limited.
+ * page, API clients a Problem Details body; both carry {@code Retry-After} and the CORS headers the browser
+ * application needs to read the refusal. Without Redis nothing is limited.
  */
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -38,11 +42,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final StringRedisTemplate redis;
     private final ProtectionProperties properties;
     private final Clock clock;
+    private final CorsConfigurationSource cors;
+    private final CorsProcessor corsProcessor = new DefaultCorsProcessor();
 
-    public RateLimitFilter(StringRedisTemplate redis, ProtectionProperties properties, Clock clock) {
+    public RateLimitFilter(StringRedisTemplate redis, ProtectionProperties properties, Clock clock,
+                           CorsConfigurationSource cors) {
         this.redis = redis;
         this.properties = properties;
         this.clock = clock;
+        this.cors = cors;
     }
 
     @Override
@@ -76,8 +84,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    private static void refuse(HttpServletRequest request, HttpServletResponse response, long retryAfter)
+    private void refuse(HttpServletRequest request, HttpServletResponse response, long retryAfter)
             throws IOException {
+        if (!corsProcessor.processRequest(cors.getCorsConfiguration(request), request, response)) {
+            return;
+        }
         response.setHeader("Retry-After", String.valueOf(Math.max(1, retryAfter)));
         String accept = request.getHeader("Accept");
         if (accept != null && accept.contains(MediaType.TEXT_HTML_VALUE)) {

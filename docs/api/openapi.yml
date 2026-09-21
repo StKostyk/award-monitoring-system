@@ -278,7 +278,8 @@ paths:
           description: Token unknown, expired or already used (`urn:awards:problem:token-invalid`)
         '422':
           description: |
-            `urn:awards:problem:password-too-short`, `password-too-long` or `password-too-common`
+            `urn:awards:problem:password-too-short`, `password-too-long`, `password-too-common` or
+            `password-same-as-current`
 
   /auth/security/revoke:
     post:

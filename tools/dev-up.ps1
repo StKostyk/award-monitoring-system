@@ -21,6 +21,28 @@ $root = Split-Path -Parent $PSScriptRoot
 
 docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio
 
+function Get-RedisRunId([string]$reply) {
+    if ($reply -match 'run_id:([0-9a-f]+)') { return $Matches[1] }
+    return ''
+}
+$containerRun = Get-RedisRunId (docker compose -f (Join-Path $root 'docker-compose.yaml') exec -T redis redis-cli INFO server 2>$null | Out-String)
+try {
+    $client = [System.Net.Sockets.TcpClient]::new('127.0.0.1', 6379)
+    $stream = $client.GetStream()
+    $bytes = [System.Text.Encoding]::ASCII.GetBytes("INFO server`r`nQUIT`r`n")
+    $stream.Write($bytes, 0, $bytes.Length)
+    Start-Sleep -Milliseconds 300
+    $buffer = New-Object byte[] 4096
+    $read = $stream.Read($buffer, 0, $buffer.Length)
+    $hostRun = Get-RedisRunId ([System.Text.Encoding]::ASCII.GetString($buffer, 0, $read))
+    $client.Close()
+} catch {
+    $hostRun = ''
+}
+if ($containerRun -and $hostRun -and $containerRun -ne $hostRun) {
+    Write-Warning 'localhost:6379 is answered by a Redis that is not the compose container (another server on the loopback interface, e.g. redis-server inside WSL). The backend will use that one; stop it or lock-outs and throttles will not be visible through docker compose exec redis.'
+}
+
 if (-not (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue)) {
     Start-Process pwsh -ArgumentList '-NoExit', '-Command', "Set-Location '$root\backend'; .\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=local'"
     Write-Host 'Backend starting in a new window (about a minute)...'
