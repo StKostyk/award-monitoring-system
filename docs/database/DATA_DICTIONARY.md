@@ -542,9 +542,9 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Log entry timestamp |
 
 **Action Types** (common values):
-- `CREATE`, `UPDATE`, `DELETE` - CRUD operations
-- `LOGIN`, `LOGOUT`, `LOGIN_FAILED` - Authentication
-- `PASSWORD_CHANGE`, `PASSWORD_RESET` - Security
+- `INSERT`, `UPDATE`, `DELETE` - row changes written by the audit triggers (`entity_type` = table name)
+- `LOGIN_SUCCESS`, `LOGIN_FAILED`, `ACCOUNT_LOCKED`, `LOGOUT`, `EMAIL_VERIFIED`, `PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET` - authentication events written by the application (`entity_type` = `AUTHENTICATION`, `entity_id` = user id, facts such as the failure reason in `new_values`)
+- `PASSWORD_CHANGE` - Security
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
 - `DATA_EXPORT`, `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
@@ -558,7 +558,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 **Partitioning**:
 - Partitioned by `RANGE (created_at)`
-- Monthly partitions for efficient retention management
+- Monthly partitions for efficient retention management: `audit_logs_2026_01` … `audit_logs_2027_12` exist (V009, V016) plus `audit_logs_default`; `fn_create_audit_partition()` adds the next month
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`

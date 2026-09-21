@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
@@ -39,6 +41,7 @@ public class PasswordResetService {
     private final AuthorizationRevoker authorizations;
     private final StringRedisTemplate redis;
     private final AuthProperties properties;
+    private final AuditService audit;
 
     /**
      * Sends a reset link to an active account, at most once per interval per address. Unknown, pending and
@@ -59,6 +62,7 @@ public class PasswordResetService {
             .ifPresent(user -> {
                 String raw = tokens.issue(user, TokenPurpose.PASSWORD_RESET, properties.passwordResetTtl());
                 String link = properties.frontendUrl() + "/reset-password?token=" + raw;
+                audit.record(AuditAction.PASSWORD_RESET_REQUESTED, user.getId());
                 events.publishEvent(new PasswordResetRequested(user.getEmailAddress(), user.getFirstName(), link));
             });
     }
@@ -86,5 +90,6 @@ public class PasswordResetService {
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         authorizations.revokeAll(user.getEmailAddress());
+        audit.record(AuditAction.PASSWORD_RESET, user.getId());
     }
 }

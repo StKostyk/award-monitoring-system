@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
@@ -49,6 +51,7 @@ public class RegistrationService {
     private final ApplicationEventPublisher events;
     private final StringRedisTemplate redis;
     private final AuthProperties properties;
+    private final AuditService audit;
     private final Clock clock;
 
     /**
@@ -127,6 +130,7 @@ public class RegistrationService {
                 "The account is not awaiting verification");
         }
         user.setAccountStatus(AccountStatus.ACTIVE);
+        audit.record(AuditAction.EMAIL_VERIFIED, user.getId());
         return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
     }
 

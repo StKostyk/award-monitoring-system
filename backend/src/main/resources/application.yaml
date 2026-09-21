@@ -78,6 +78,7 @@ spring:
     locations: classpath:db/migration
     validate-on-migrate: true
     out-of-order: false
+    init-sql: SET TIME ZONE 'UTC'
     clean-disabled: true
     placeholder-replacement: true
     placeholders:
@@ -126,6 +127,11 @@ app:
     allowed-email-domains: ${AUTH_ALLOWED_EMAIL_DOMAINS:chnu.edu.ua}
     verification-ttl: 24h
     password-reset-ttl: 1h
+    protection:
+      max-failures: 5
+      failure-window: 15m
+      lock-duration: 30m
+      requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:20}
     resend-interval: 1m
     allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200,http://localhost,http://localhost:8080}
     client:
@@ -143,7 +149,11 @@ app:
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
-  forward-headers-strategy: framework
+  # X-Forwarded-* are honoured only when the peer is one of these proxies (loopback and the compose network)
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      internal-proxies: ${SERVER_TRUSTED_PROXIES:127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}}
   compression:
     enabled: true
   error:

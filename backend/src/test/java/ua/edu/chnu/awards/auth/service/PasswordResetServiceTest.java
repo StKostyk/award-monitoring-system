@@ -22,6 +22,8 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
@@ -43,6 +45,7 @@ class PasswordResetServiceTest {
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final AuthorizationRevoker revoker = mock(AuthorizationRevoker.class);
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
+    private final AuditService audit = mock(AuditService.class);
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
@@ -56,7 +59,7 @@ class PasswordResetServiceTest {
     @BeforeEach
     void setUp() {
         service = new PasswordResetService(userRepository, tokens, new PasswordPolicy(), passwordEncoder, events,
-            revoker, redis, properties);
+            revoker, redis, properties, audit);
         when(redis.opsForValue()).thenReturn(values);
         when(values.setIfAbsent(any(), any(), any(Duration.class))).thenReturn(true);
         when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$12$new");
@@ -76,6 +79,7 @@ class PasswordResetServiceTest {
         assertThat(requested.email()).isEqualTo(EMAIL);
         assertThat(requested.firstName()).isEqualTo("Олена");
         assertThat(requested.link()).isEqualTo("http://localhost:4200/reset-password?token=raw-token");
+        verify(audit).record(AuditAction.PASSWORD_RESET_REQUESTED, 7L);
     }
 
     @Test
@@ -109,6 +113,7 @@ class PasswordResetServiceTest {
 
         assertThat(active.getPasswordHash()).isEqualTo("$2a$12$new");
         verify(revoker).revokeAll(EMAIL);
+        verify(audit).record(AuditAction.PASSWORD_RESET, 7L);
     }
 
     @Test

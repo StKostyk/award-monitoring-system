@@ -93,8 +93,8 @@ None of the stories is marked parallel: the frontend work in each is small and c
 
 ### 1.1.4 Login rate limiting, lockout and auth audit (SCRUM-10)
 
-- **AC-4.1** Given 5 failed logins for one account within 15 minutes, then the account is locked for 30 minutes: the login page says so and correct credentials are refused until the lock expires.
-- **AC-4.2** Given more than 20 requests per minute from one IP to `/oauth2/token`, `/login` or `/api/v1/auth/**`, then 429 with a `Retry-After` header.
+- **AC-4.1** Given 5 failed logins for one account within 15 minutes, then the account is locked for 30 minutes: the login page says so (from the fifth failure on) and correct credentials are refused until the lock expires. Unknown addresses are locked the same way so the message reveals nothing; only an existing account is audited and reported.
+- **AC-4.2** Given more than 20 requests per minute from one IP to `/oauth2/token`, `/login` or `/api/v1/auth/**`, then 429 with a `Retry-After` header (Problem Details for API clients, a bilingual page for browsers). The limit is `AUTH_RATE_LIMIT_PER_MINUTE`; the client IP is the socket peer, or the address the reverse proxy asserted in `X-Forwarded-For` when the peer is a trusted proxy (`SERVER_TRUSTED_PROXIES`, default loopback and the compose network).
 - **AC-4.3** Every `LOGIN_SUCCESS`, `LOGIN_FAILED`, `ACCOUNT_LOCKED`, `LOGOUT`, `PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET`, `EMAIL_VERIFIED` event is stored in `audit_logs` with user id (when known), IP, user agent and correlation id.
 - **AC-4.4** When an account is locked, every user holding `SYSTEM_ADMIN` receives an email naming the account, the IP and the time.
 - **AC-4.5** Counters and locks live in Redis with TTL; restarting the application does not clear an active lock.
@@ -241,15 +241,16 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 
 ### After 1.1.4 (SCRUM-10)
 
-22. Sign in as `employee.fmi@chnu.edu.ua` with a wrong password five times. Expected: fifth attempt shows "temporarily locked"; the correct password is refused. Mailpit shows the admin notification addressed to `admin@chnu.edu.ua`. (AC-4.1, 4.4)
-23. In psql: `SELECT action_type, ip_address, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 10;` → `LOGIN_FAILED` ×5 and `ACCOUNT_LOCKED`. (AC-4.3)
-24. Restart the backend and retry the correct password → still locked. (AC-4.5)
-25. Run `for i in $(seq 1 25); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/oauth2/token -d grant_type=refresh_token -d refresh_token=x -d client_id=award-web; done` → the tail of the output is `429`. (AC-4.2)
+22. Sign in as `employee.fmi@chnu.edu.ua` with a wrong password five times. Expected: the first four say «Невірна адреса або пароль», the fifth «Забагато невдалих спроб. Спробуйте пізніше.»; the correct password is refused with the same message. Mailpit shows «Обліковий запис заблоковано / Account locked» addressed to `admin@chnu.edu.ua` with the address, IP and time. (AC-4.1, 4.4)
+23. In psql: `SELECT action_type, host(ip_address), user_agent, correlation_id, created_at FROM audit_logs WHERE entity_type = 'AUTHENTICATION' ORDER BY created_at DESC LIMIT 10;` → `LOGIN_FAILED` ×6 and `ACCOUNT_LOCKED`, every row with IP, user agent and correlation id. (AC-4.3)
+24. Restart the backend (Ctrl+C in its window, run `.\tools\dev-up.ps1` again) and retry the correct password → still locked. Unlock without waiting: `docker compose exec redis redis-cli DEL auth:lock:employee.fmi@chnu.edu.ua`, sign in → app opens; psql shows `LOGIN_SUCCESS`. Sign out → `LOGOUT`. (AC-4.5, 4.3)
+25. Run `for i in $(seq 1 25); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/oauth2/token -d grant_type=refresh_token -d refresh_token=x -d client_id=award-web; done` → the first 20 lines are `400`, the rest `429`. Then open `http://localhost:8080/login` in the browser within the same minute → «Забагато запитів» page (429). One minute later the login page works again. (AC-4.2)
+26. `\d+ audit_logs` in psql → partitions `audit_logs_2026_07` … `audit_logs_2027_12` plus `audit_logs_default`. (AC-4.6)
 
 ### After 1.1.5 (SCRUM-11)
 
-26. Sign in as `dean.fmi@chnu.edu.ua` in Chrome. Expected: Mailpit shows "New sign-in" with browser, OS, IP. Sign out and in again → no second email. (AC-5.1, 5.2)
-27. Sign in from another browser (or with a changed user-agent in DevTools). Expected: another email. Click "This was not me". Expected: confirmation page; the app session in the first browser is refused on the next token refresh; Mailpit shows a password-reset email. (AC-5.3, 5.4)
+27. Sign in as `dean.fmi@chnu.edu.ua` in Chrome. Expected: Mailpit shows "New sign-in" with browser, OS, IP. Sign out and in again → no second email. (AC-5.1, 5.2)
+28. Sign in from another browser (or with a changed user-agent in DevTools). Expected: another email. Click "This was not me". Expected: confirmation page; the app session in the first browser is refused on the next token refresh; Mailpit shows a password-reset email. (AC-5.3, 5.4)
 
 ## 10. Risks
 

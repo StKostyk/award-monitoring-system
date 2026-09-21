@@ -3,7 +3,8 @@
     Runs the Playwright end-to-end suite against a locally booted backend.
 
 .DESCRIPTION
-    Starts the infrastructure containers and the backend with the local profile unless port 8080 is already in use,
+    Starts the infrastructure containers and the backend with the local profile (request limit raised so the suite
+    is not rate limited) unless port 8080 is already in use,
     runs `npx playwright test` in frontend/ (Playwright starts the dev server itself), then stops the backend it started.
 
 .EXAMPLE
@@ -20,6 +21,7 @@ docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis m
 if (-not (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue)) {
     $log = Join-Path $root 'build\e2e-backend.log'
     New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null
+    $env:AUTH_RATE_LIMIT_PER_MINUTE = '1000'
     $started = Start-Process -FilePath (Join-Path $root 'backend\mvnw.cmd') `
         -ArgumentList 'spring-boot:run', '-Dspring-boot.run.profiles=local' `
         -WorkingDirectory (Join-Path $root 'backend') -RedirectStandardOutput $log -PassThru -WindowStyle Hidden

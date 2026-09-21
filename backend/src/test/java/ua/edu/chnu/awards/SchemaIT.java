@@ -31,7 +31,7 @@ class SchemaIT extends AbstractIntegrationTest {
             "select version from flyway_schema_history where success and version is not null "
                 + "order by installed_rank desc limit 1", String.class);
 
-        assertThat(version).isEqualTo("015");
+        assertThat(version).isEqualTo("016");
     }
 
     @Test
@@ -69,6 +69,17 @@ class SchemaIT extends AbstractIntegrationTest {
 
         assertThat(valueType).isEqualTo("text");
         assertThat(timeType).isEqualTo("timestamp with time zone");
+    }
+
+    @Test
+    void ac46_auditLogsHasMonthlyPartitionsThroughDecember2027() {
+        List<String> partitions = jdbc.queryForList(
+            "select c.relname from pg_inherits i join pg_class c on c.oid = i.inhrelid "
+                + "join pg_class p on p.oid = i.inhparent where p.relname = 'audit_logs' order by c.relname",
+            String.class);
+
+        assertThat(partitions).contains("audit_logs_2026_01", "audit_logs_2026_07", "audit_logs_2026_09",
+            "audit_logs_2027_01", "audit_logs_2027_12", "audit_logs_default").hasSize(25);
     }
 
     @Test

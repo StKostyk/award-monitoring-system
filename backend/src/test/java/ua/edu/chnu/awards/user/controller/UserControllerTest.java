@@ -18,6 +18,7 @@ import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,6 +27,7 @@ import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
+import ua.edu.chnu.awards.config.InfrastructureConfig;
 import ua.edu.chnu.awards.config.LoginSessionConfig;
 import ua.edu.chnu.awards.config.SecurityConfig;
 import ua.edu.chnu.awards.user.dto.OrganizationRef;
@@ -38,8 +40,8 @@ import ua.edu.chnu.awards.user.service.UserNotFoundException;
 import ua.edu.chnu.awards.user.service.UserProfileService;
 
 @WebMvcTest(UserController.class)
-@Import({SecurityConfig.class, LoginSessionConfig.class, JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class,
-    ApiExceptionHandler.class})
+@Import({SecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class, JwtAuthorityConverter.class,
+    ProblemDetailsEntryPoint.class, ApiExceptionHandler.class})
 class UserControllerTest {
 
     @Autowired
@@ -62,6 +64,12 @@ class UserControllerTest {
 
     @MockitoBean
     private ua.edu.chnu.awards.auth.security.LoginFailureHandler failureHandler;
+
+    @MockitoBean
+    private ua.edu.chnu.awards.auth.security.LockedAccountChecker lockChecker;
+
+    @MockitoBean(answers = Answers.RETURNS_DEEP_STUBS)
+    private StringRedisTemplate redisTemplate;
 
     @Test
     void ac13_meReturnsTheProfileOfTheTokenSubject() throws Exception {
