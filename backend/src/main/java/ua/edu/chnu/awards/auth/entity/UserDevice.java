@@ -12,9 +12,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import ua.edu.chnu.awards.user.entity.User;
 
 import lombok.AccessLevel;
@@ -57,11 +54,9 @@ public class UserDevice {
     @Column(name = "last_ip_address", length = 45)
     private String lastIpAddress;
 
-    @CreationTimestamp
     @Column(name = "first_seen_at", nullable = false, updatable = false)
     private Instant firstSeenAt;
 
-    @UpdateTimestamp
     @Column(name = "last_used_at", nullable = false)
     private Instant lastUsedAt;
 }

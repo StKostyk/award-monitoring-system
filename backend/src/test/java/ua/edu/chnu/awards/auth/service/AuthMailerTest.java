@@ -20,6 +20,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import ua.edu.chnu.awards.auth.event.AccountLocked;
+import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 
@@ -52,6 +53,19 @@ class AuthMailerTest {
         assertThat(message.getSubject()).contains("Скидання пароля").contains("Password reset");
         assertThat(message.getText()).contains("Олена").contains("token=xyz").contains("within 1 hour")
             .doesNotContain("24 hours");
+    }
+
+    @Test
+    void ac51_ac53_announcesANewDeviceWithItsFactsAndTheNotMeLink() {
+        mailer.onNewDeviceSignedIn(new NewDeviceSignedIn("olena@chnu.edu.ua", "Олена", "Chrome", "Windows",
+            "203.0.113.7", Instant.parse("2026-09-21T10:00:00Z"),
+            "http://localhost:4200/security/not-me?token=dev"));
+
+        SimpleMailMessage message = sent();
+        assertThat(message.getTo()).containsExactly("olena@chnu.edu.ua");
+        assertThat(message.getSubject()).contains("Новий вхід").contains("New sign-in");
+        assertThat(message.getText()).contains("Олена").contains("Chrome").contains("Windows")
+            .contains("203.0.113.7").contains("2026-09-21T10:00:00Z").contains("token=dev").contains("24 hours");
     }
 
     @Test

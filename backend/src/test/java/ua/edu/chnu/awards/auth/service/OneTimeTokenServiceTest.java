@@ -45,6 +45,14 @@ class OneTimeTokenServiceTest {
     }
 
     @Test
+    void ac53_invalidateCancelsEveryUnusedTokenOfTheUserForThePurpose() {
+        User user = User.builder().id(1L).build();
+        when(repository.cancelUnused(1L, TokenPurpose.SECURITY_REVOKE, NOW)).thenReturn(2);
+
+        assertThat(service.invalidate(user, TokenPurpose.SECURITY_REVOKE)).isEqualTo(2);
+    }
+
+    @Test
     void ac25_redeemsATokenThroughOneAtomicUpdate() {
         String hash = OneTimeTokenService.hash("raw");
         OneTimeToken token = OneTimeToken.builder().purpose(TokenPurpose.EMAIL_VERIFICATION)

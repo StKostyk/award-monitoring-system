@@ -42,6 +42,8 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     container_name: award-mailpit
+    environment:
+      MP_SMTP_DISABLE_RDNS: "true"
     ports:
       - "1025:1025"
       - "8025:8025"

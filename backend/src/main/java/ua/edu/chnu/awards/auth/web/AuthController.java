@@ -12,14 +12,16 @@ import org.springframework.web.bind.annotation.RestController;
 import ua.edu.chnu.awards.auth.dto.EmailRequest;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
+import ua.edu.chnu.awards.auth.dto.RevokeRequest;
 import ua.edu.chnu.awards.auth.dto.TokenRequest;
+import ua.edu.chnu.awards.auth.service.DeviceService;
 import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * Registration, email verification and password reset, open without a token.
+ * Registration, email verification, password reset and sign-in denial, open without a token.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -28,6 +30,7 @@ public class AuthController {
 
     private final RegistrationService registrationService;
     private final PasswordResetService passwordResetService;
+    private final DeviceService deviceService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -56,5 +59,11 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirmPasswordReset(@Valid @RequestBody TokenRequest request) {
         passwordResetService.confirm(request.token(), request.password());
+    }
+
+    @PostMapping("/security/revoke")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void revokeAccess(@Valid @RequestBody RevokeRequest request) {
+        deviceService.revoke(request.token());
     }
 }

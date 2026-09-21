@@ -1,33 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const mailpit = 'http://localhost:8025';
-
-async function linkFor(email: string, path: string): Promise<string> {
-  const pattern = new RegExp(`http://localhost:4200/${path}\\?token=[A-Za-z0-9_-]+`);
-  for (let attempt = 0; attempt < 40; attempt++) {
-    const list = await (await fetch(`${mailpit}/api/v1/messages?limit=50`)).json();
-    const message = list.messages?.find((m: { To: { Address: string }[] }) =>
-      m.To?.some((to) => to.Address.toLowerCase() === email.toLowerCase()),
-    );
-    if (message) {
-      const full = await (await fetch(`${mailpit}/api/v1/message/${message.ID}`)).json();
-      const match = pattern.exec(full.Text ?? '');
-      if (match) {
-        return match[0];
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-  throw new Error(`No ${path} email for ${email}`);
-}
-
-async function signIn(page: import('@playwright/test').Page, email: string, password: string): Promise<void> {
-  await page.goto('/');
-  await expect(page).toHaveURL(/localhost:8080\/login/);
-  await page.fill('#username', email);
-  await page.fill('#password', password);
-  await page.click('button[type="submit"]');
-}
+import { linkFor, registerAndVerify, signIn } from './mailpit';
 
 test.describe('password reset', () => {
   test('ac31 ac32 ac33 ac34 resets the password from the email link and signs in with the new one', async ({ page }) => {
@@ -35,15 +8,7 @@ test.describe('password reset', () => {
     const oldPassword = 'correct-horse-battery';
     const newPassword = 'staple-battery-horse';
 
-    await fetch('http://localhost:8080/api/v1/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: oldPassword, firstName: 'Ірина', lastName: 'Нова', organizationId: 64 }),
-    });
-    await page.goto(await linkFor(email, 'verify-email'));
-    await page.getByTestId('verify-password').fill(oldPassword);
-    await page.getByTestId('verify-submit').click();
-    await expect(page.getByTestId('verify-success')).toContainText(email);
+    await registerAndVerify(page, email, oldPassword);
 
     await page.goto('/');
     await expect(page).toHaveURL(/localhost:8080\/login/);

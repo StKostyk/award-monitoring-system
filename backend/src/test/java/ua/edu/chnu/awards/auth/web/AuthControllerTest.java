@@ -30,6 +30,7 @@ import ua.edu.chnu.awards.auth.security.JwtAuthorityConverter;
 import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
+import ua.edu.chnu.awards.auth.service.DeviceService;
 import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
@@ -57,6 +58,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private PasswordResetService passwordResetService;
+
+    @MockitoBean
+    private DeviceService deviceService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -145,6 +149,25 @@ class AuthControllerTest {
                 .content("{\"token\":\"old\",\"password\":\"new-horse-battery\"}"))
             .andExpect(status().isGone())
             .andExpect(jsonPath("$.type").value("urn:awards:problem:token-invalid"));
+    }
+
+    @Test
+    void ac53_securityRevokeIsOpenAndAnswersNoContentOrGone() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/security/revoke").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"raw\"}"))
+            .andExpect(status().isNoContent());
+        verify(deviceService).revoke("raw");
+
+        doThrow(new ApiProblemException(HttpStatus.GONE, "token-invalid", "Expired"))
+            .when(deviceService).revoke("old");
+        mockMvc.perform(post("/api/v1/auth/security/revoke").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"old\"}"))
+            .andExpect(status().isGone())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:token-invalid"));
+
+        mockMvc.perform(post("/api/v1/auth/security/revoke").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\" \"}"))
+            .andExpect(status().isBadRequest());
     }
 
     @Test

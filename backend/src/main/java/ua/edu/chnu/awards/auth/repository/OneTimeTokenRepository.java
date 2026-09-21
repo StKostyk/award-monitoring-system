@@ -33,4 +33,20 @@ public interface OneTimeTokenRepository extends JpaRepository<OneTimeToken, Long
         """)
     int redeem(@Param("tokenHash") String tokenHash, @Param("purpose") TokenPurpose purpose,
                @Param("now") Instant now);
+
+    /**
+     * Marks every unused token of a user and purpose as used.
+     *
+     * @param userId  the owner
+     * @param purpose the purpose
+     * @param now     the current moment
+     * @return number of tokens cancelled
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("""
+        update OneTimeToken t set t.usedAt = :now
+        where t.user.id = :userId and t.purpose = :purpose and t.usedAt is null
+        """)
+    int cancelUnused(@Param("userId") Long userId, @Param("purpose") TokenPurpose purpose,
+                     @Param("now") Instant now);
 }

@@ -1,0 +1,31 @@
+<mat-card class="auth-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'notMe.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @switch (state()) {
+      @case ('confirm') {
+        <p class="auth-card__hint">{{ 'notMe.text' | transloco }}</p>
+        @if (error(); as error) {
+          <p class="auth-form__error" role="alert" data-testid="not-me-error">{{ error | transloco }}</p>
+        }
+        <div class="auth-actions">
+          <button mat-flat-button type="button" (click)="confirm()" [disabled]="submitting()" data-testid="not-me-confirm">
+            {{ 'notMe.confirm' | transloco }}
+          </button>
+        </div>
+      }
+      @case ('done') {
+        <p role="status" data-testid="not-me-done">{{ 'notMe.done' | transloco }}</p>
+      }
+      @case ('invalid') {
+        <p role="alert" data-testid="not-me-invalid">{{ 'notMe.invalid' | transloco }}</p>
+        <div class="auth-actions">
+          <a mat-stroked-button routerLink="/forgot-password" data-testid="not-me-go-forgot">
+            {{ 'notMe.resetPassword' | transloco }}
+          </a>
+        </div>
+      }
+    }
+  </mat-card-content>
+</mat-card>

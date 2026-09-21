@@ -29,8 +29,21 @@ public final class AuthorizationCodeFlow {
     private static final int RANDOM_BYTES = 32;
 
     private final Map<String, String> cookies = new HashMap<>();
+    private final Map<String, String> headers = new HashMap<>();
     private final String verifier = randomUrlSafe();
     private final String state = randomUrlSafe();
+
+    /**
+     * Adds a header to every browser-side request of this flow (user agent, accepted languages).
+     *
+     * @param name  header name
+     * @param value header value
+     * @return this flow
+     */
+    public AuthorizationCodeFlow header(String name, String value) {
+        headers.put(name, value);
+        return this;
+    }
 
     /**
      * Starts the flow: the authorize request must bounce to the login page.
@@ -38,7 +51,8 @@ public final class AuthorizationCodeFlow {
      * @return the authorize response (302 to /login for an anonymous browser)
      */
     public Response authorize() {
-        Response response = RestAssured.given().redirects().follow(false).cookies(cookies).accept("text/html")
+        Response response = RestAssured.given().redirects().follow(false).headers(headers).cookies(cookies)
+            .accept("text/html")
             .queryParam("response_type", "code")
             .queryParam("client_id", CLIENT_ID)
             .queryParam("redirect_uri", REDIRECT_URI)
@@ -58,7 +72,7 @@ public final class AuthorizationCodeFlow {
      * @return response of the login page
      */
     public Response loginPage(String query) {
-        Response response = RestAssured.given().redirects().follow(false).cookies(cookies)
+        Response response = RestAssured.given().redirects().follow(false).headers(headers).cookies(cookies)
             .get("/login" + (query.isEmpty() ? "" : "?" + query));
         remember(response);
         return response;
@@ -73,7 +87,7 @@ public final class AuthorizationCodeFlow {
      */
     public Response submitLogin(String email, String password) {
         String csrf = csrfToken(loginPage("").asString());
-        Response response = RestAssured.given().redirects().follow(false).cookies(cookies)
+        Response response = RestAssured.given().redirects().follow(false).headers(headers).cookies(cookies)
             .formParam("username", email)
             .formParam("password", password)
             .formParam("_csrf", csrf)
@@ -92,7 +106,8 @@ public final class AuthorizationCodeFlow {
     public String loginAndGetCode(String email, String password) {
         authorize();
         Response afterLogin = submitLogin(email, password);
-        Response redirect = RestAssured.given().redirects().follow(false).cookies(cookies).accept("text/html")
+        Response redirect = RestAssured.given().redirects().follow(false).headers(headers).cookies(cookies)
+            .accept("text/html")
             .urlEncodingEnabled(false)
             .get(afterLogin.getHeader("Location"));
         remember(redirect);

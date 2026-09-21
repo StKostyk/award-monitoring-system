@@ -12,4 +12,6 @@ import ua.edu.chnu.awards.auth.entity.UserDevice;
 public interface UserDeviceRepository extends JpaRepository<UserDevice, Long> {
 
     Optional<UserDevice> findByUserIdAndFingerprint(Long userId, String fingerprint);
+
+    int deleteByUserId(Long userId);
 }

@@ -77,8 +77,8 @@ class PasswordResetFlowFT extends AbstractIntegrationTest {
         requestReset(EMAIL).then().statusCode(202);
         requestReset(EMAIL).then().statusCode(202);
         requestReset("nobody@chnu.edu.ua").then().statusCode(202);
-        String text = mailpit.latestTextTo(EMAIL);
-        assertThat(mailpit.messagesTo(EMAIL)).hasSize(1);
+        String text = mailpit.latestTextTo(EMAIL, "Password reset");
+        assertThat(mailpit.messagesTo(EMAIL, "Password reset")).hasSize(1);
         assertThat(mailpit.messagesTo("nobody@chnu.edu.ua")).isEmpty();
         String link = Mailpit.linkIn(text);
         assertThat(link).startsWith("http://localhost:4200/reset-password?token=");

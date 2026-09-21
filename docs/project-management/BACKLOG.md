@@ -16,10 +16,11 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 1.1.1 | Authorization server, PKCE login and auth shell | 8 | ✅ Done | SCRUM-7 | [#36](https://github.com/StKostyk/award-monitoring-system/issues/36) |
 | 1.1.2 | Employee registration and email verification (US-001) | 5 | ✅ Done | SCRUM-8 | [#29](https://github.com/StKostyk/award-monitoring-system/issues/29) |
 | 1.1.3 | Password reset | 3 | ✅ Done | SCRUM-9 | [#46](https://github.com/StKostyk/award-monitoring-system/issues/46) |
-| 1.1.4 | Login rate limiting, lockout and auth audit | 3 | 👀 In review | SCRUM-10 | [#31](https://github.com/StKostyk/award-monitoring-system/issues/31) |
+| 1.1.4 | Login rate limiting, lockout and auth audit | 3 | ✅ Done | SCRUM-10 | [#31](https://github.com/StKostyk/award-monitoring-system/issues/31) |
+| 1.1.5 | New device login notification | 3 | 👀 In review | SCRUM-11 | [#33](https://github.com/StKostyk/award-monitoring-system/issues/33) |
 
 Sprint Goal: a user can register, verify the address, log in through the authorization server and call a protected endpoint.  
-Committed Points: 22
+Committed Points: 25
 
 ---
 
@@ -28,7 +29,6 @@ Committed Points: 22
 ### Epic 1 — remaining (Sprints 3–4)
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
-| 1.1.5 | New device login notification | 3 | 1.1 | SCRUM-11 | [#33](https://github.com/StKostyk/award-monitoring-system/issues/33) |
 | 1.2.1 | Permission model and organisation-scoped access | 5 | 1.2 | SCRUM-12 | [#35](https://github.com/StKostyk/award-monitoring-system/issues/35) |
 | 1.2.2 | Role assignment (US-002) | 8 | 1.2 | SCRUM-13 | [#32](https://github.com/StKostyk/award-monitoring-system/issues/32) |
 | 1.2.3 | Approval authority delegation | 5 | 1.2 | SCRUM-14 | [#37](https://github.com/StKostyk/award-monitoring-system/issues/37) |

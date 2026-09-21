@@ -74,6 +74,8 @@ class AuthRepositoriesIT extends AbstractJpaSliceTest {
             .browser("Chrome 130")
             .operatingSystem("Windows 11")
             .lastIpAddress("192.168.1.10")
+            .firstSeenAt(Instant.now())
+            .lastUsedAt(Instant.now())
             .build();
         entityManager.persistAndFlush(device);
 
@@ -83,7 +85,7 @@ class AuthRepositoriesIT extends AbstractJpaSliceTest {
         assertThat(found.getLastUsedAt()).isNotNull();
         assertThat(deviceRepository.findByUserIdAndFingerprint(user.getId(), "b".repeat(64))).isEmpty();
         assertThatThrownBy(() -> entityManager.persistAndFlush(UserDevice.builder()
-            .user(user).fingerprint(HASH).build()))
+            .user(user).fingerprint(HASH).firstSeenAt(Instant.now()).lastUsedAt(Instant.now()).build()))
             .isInstanceOf(jakarta.persistence.PersistenceException.class);
     }
 

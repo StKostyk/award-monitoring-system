@@ -49,7 +49,8 @@ class PasswordResetServiceTest {
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
-        List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofMinutes(1),
+        List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
+        Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
         new AuthProperties.Jwk("", "", ""));
     private final User active = User.builder().id(7L).emailAddress(EMAIL).firstName("Олена")
@@ -113,6 +114,7 @@ class PasswordResetServiceTest {
 
         assertThat(active.getPasswordHash()).isEqualTo("$2a$12$new");
         verify(revoker).revokeAll(EMAIL);
+        verify(tokens).invalidate(active, TokenPurpose.SECURITY_REVOKE);
         verify(audit).record(AuditAction.PASSWORD_RESET, 7L);
     }
 

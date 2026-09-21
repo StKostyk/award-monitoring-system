@@ -84,6 +84,18 @@ public class OneTimeTokenService {
         return repository.findByTokenHashAndPurpose(hash, purpose);
     }
 
+    /**
+     * Cancels every unused token of the user for the purpose, so older links in the inbox stop working.
+     *
+     * @param user    owner
+     * @param purpose the purpose
+     * @return number of tokens cancelled
+     */
+    @Transactional
+    public int invalidate(User user, TokenPurpose purpose) {
+        return repository.cancelUnused(user.getId(), purpose, clock.instant());
+    }
+
     static String hash(String raw) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
