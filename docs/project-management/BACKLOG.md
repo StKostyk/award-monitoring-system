@@ -17,7 +17,7 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 1.1.2 | Employee registration and email verification (US-001) | 5 | ✅ Done | SCRUM-8 | [#29](https://github.com/StKostyk/award-monitoring-system/issues/29) |
 | 1.1.3 | Password reset | 3 | ✅ Done | SCRUM-9 | [#46](https://github.com/StKostyk/award-monitoring-system/issues/46) |
 | 1.1.4 | Login rate limiting, lockout and auth audit | 3 | ✅ Done | SCRUM-10 | [#31](https://github.com/StKostyk/award-monitoring-system/issues/31) |
-| 1.1.5 | New device login notification | 3 | 👀 In review | SCRUM-11 | [#33](https://github.com/StKostyk/award-monitoring-system/issues/33) |
+| 1.1.5 | New device login notification | 3 | ✅ Done | SCRUM-11 | [#33](https://github.com/StKostyk/award-monitoring-system/issues/33) |
 
 Sprint Goal: a user can register, verify the address, log in through the authorization server and call a protected endpoint.  
 Committed Points: 25
@@ -67,8 +67,9 @@ Committed Points: 25
 | Sprint | Stories | Points |
 |--------|---------|--------|
 | Sprint 1 | Setup (7 tasks) | 14 |
+| Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.5) | 25 |
 
-Total Completed: 14 / 154 points (9%)
+Total Completed: 39 / 154 points (25%)
 
 ---
 

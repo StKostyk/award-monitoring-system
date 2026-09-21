@@ -9,13 +9,13 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 1.1 Core Authentication System | In progress | 2026-09-21 | |
+| 1.1 Core Authentication System | Done (validated, manual run pending) | 2026-09-21 | 2026-09-21 |
 | 1.2 Role-Based Access Control | Planned | | |
 | 1.3 User Profile Management | Planned | | |
 
 ## Current focus
 
-Feature 1.1 — story 1.1.5 in review; all five stories built, `/feature-validate 1.1` next.
+Feature 1.1 validated (PRD §12, PASSED WITH NOTES); refactor PR from the sweep, then Feature 1.2 kickoff.
 
 ## Stories
 
@@ -28,7 +28,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 3 | 1.1.2 Employee registration and email verification | 1.1 | 5 | SCRUM-8 | #29 | no | Done 2026-09-20 |
 | 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Done 2026-09-20 |
 | 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Done 2026-09-21 |
-| 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | In review |
+| 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | Done 2026-09-21 |
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Ready |
 | 8 | 1.2.2 Role assignment | 1.2 | 8 | SCRUM-13 | #32 | yes | Ready |
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Ready |
@@ -80,6 +80,8 @@ Each item is applied in the PR of the story that touches it, after approval.
 - Verification links expire after 24 hours; password-reset links after 1 hour. One-time tokens are issued by `OneTimeTokenService` (raw value only in the email, SHA-256 at rest); emails go out after commit through `VerificationMailer` (three attempts). The functional tests read delivered mail from a Mailpit container.
 - Frontend: `angular-oauth2-oidc` for the PKCE flow, tokens in session storage, automatic silent refresh; `core/auth` holds the guard, callback and profile signal; Transloco for runtime translation.
 - The library withholds refresh tokens from public clients and only authenticates them on the PKCE code exchange; `RotatingRefreshTokenGenerator` and `PublicClientRefreshAuthenticationConverter/Provider` add both for `award-web`.
+
+- Validation of Feature 1.1 (2026-09-21, PRD §12): `/login` opened by an already authenticated browser renders the form instead of redirecting to the app (cosmetic; the SPA never links there). Refactor sweep items deferred: inject `Clock` in `LoginSuccessListener`, `TokenClaimsCustomizer`, `UserProfileService`, `RotatingRefreshTokenGenerator`; drop `OneTimeToken.markUsed` and narrow entity setters; `OrganizationRef.of(Organization)` factory; shared FT base class (port, Mailpit, `RestAssured.port`), `AuthApi` helper for the six auth POSTs, `TestUsers.active/pending` builders, composed `@WebMvcTest` annotation; `RegistrationFlowFT` order dependence on `ac21`; wall-clock sleep in `LoginProtectionFT` (mutable `Clock`); Angular `OnPush` on the auth components, shared Transloco/route test stubs, `LanguageService.localName`, shared `errors.network` key.
 
 ## Security review follow-ups
 

@@ -3,7 +3,7 @@
 > **Epic**: 1 — User Management & Authentication (SCRUM-5)
 > **Sprint**: 2–3 (2026-09-21 → 2026-10-04)
 > **Points**: 25 (six stories)
-> **Status**: Approved (2026-09-20)
+> **Status**: Done — validated 2026-09-21 (§12), pending the manual run of §9 by the author
 > **Author**: Stefan Kostyk
 > **Governing docs**: ADR-009, AUTHENTICATION_AUTHORIZATION.md §1, §5–§7, THREAT_MODEL §2.2.2, DATA_DICTIONARY §1, §4.1, state-machine-user-account.puml, openapi.yml, US-001
 
@@ -208,7 +208,7 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 
 ### After 1.1.0 (SCRUM-6)
 
-1. Start the backend with the `local` profile. Expected: log shows Flyway at version 14 and no schema validation error. (AC-0.1, 0.2)
+1. Start the backend with the `local` profile. Expected: log shows Flyway at version 16 (V014 auth tables, V015 case-insensitive email index, V016 audit partitions) and no schema validation error. (AC-0.1, 0.2)
 2. `GET http://localhost:8080/actuator/health` → `status: UP`, `db` and `redis` UP.
 3. In psql (`docker compose exec postgres psql -U postgres award_monitoring`): `\dt oauth2_*` lists three tables; `\d one_time_tokens` and `\d user_devices` show the columns of §6. (AC-0.2)
 4. `SELECT email_address, account_status FROM users ORDER BY user_id;` → the six seed accounts, five `ACTIVE`, one `PENDING`. (AC-0.5)
@@ -241,7 +241,7 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 
 ### After 1.1.4 (SCRUM-10)
 
-22. Sign in as `employee.fmi@chnu.edu.ua` with a wrong password five times. Expected: the first four say «Невірна адреса або пароль», the fifth «Забагато невдалих спроб. Спробуйте пізніше.»; the correct password is refused with the same message. Mailpit shows «Обліковий запис заблоковано / Account locked» addressed to `admin@chnu.edu.ua` with the address, IP and time. (AC-4.1, 4.4)
+22. Sign in as `employee.fmi@chnu.edu.ua` with a wrong password five times. Expected: the first four say «Невірна адреса або пароль», the fifth «Забагато невдалих спроб. Спробуйте пізніше.»; the correct password is refused with the same message. Mailpit shows «Обліковий запис заблоковано / Account locked» addressed to `admin@chnu.edu.ua` with the address, IP and time (in the container stack the IP is `172.25.0.1`, the host as nginx sees it). (AC-4.1, 4.4)
 23. In psql: `SELECT action_type, host(ip_address), user_agent, correlation_id, created_at FROM audit_logs WHERE entity_type = 'AUTHENTICATION' ORDER BY created_at DESC LIMIT 10;` → `LOGIN_FAILED` ×6 and `ACCOUNT_LOCKED`, every row with IP, user agent and correlation id. (AC-4.3)
 24. Restart the backend (Ctrl+C in its window, run `.\tools\dev-up.ps1` again) and retry the correct password → still locked. Unlock without waiting: `docker compose exec redis redis-cli DEL auth:lock:employee.fmi@chnu.edu.ua`, sign in → app opens; psql shows `LOGIN_SUCCESS`. Sign out → `LOGOUT`. (AC-4.5, 4.3)
 25. Run `for i in $(seq 1 25); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/oauth2/token -d grant_type=refresh_token -d refresh_token=x -d client_id=award-web; done` → the first 20 lines are `400`, the rest `429`. Then open `http://localhost:8080/login` in the browser within the same minute → «Забагато запитів» page (429). One minute later the login page works again. (AC-4.2)
@@ -269,3 +269,94 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 - `openapi.yml`, `DATA_DICTIONARY.md`, AUTH addendum, ADR-013 addendum, `CHANGELOG.md [Unreleased]`, epic tracker and backlog updated in the PR that changes them
 - Manual verification steps of the story performed and recorded in the tracker
 - Jira story Done, GitHub issue closed by the PR
+
+## 12. Validation (2026-09-21, `develop` at 05245b4)
+
+Gates on `develop`: `mvn verify` — 124 unit, 22 integration (`*IT`, TestContainers Postgres 17 + Redis 7), 20 functional (`*FT`, REST-assured against the booted application, Mailpit container), 97.5 % lines, Checkstyle 0, PMD 0, SpotBugs 0. Frontend: ESLint clean, 39 Vitest specs, Playwright 10/10 (`auth`, `registration`, `password-reset`, `device-notification`). Container stack `docker compose up -d --build`: all six services healthy; the flow below was driven through nginx.
+
+### AC evidence
+
+Test methods are named after the AC they prove (`ac21_…`); a story's functional test covers the whole flow, unit and slice tests the branches.
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 0.1 | `SchemaIT#ac01_latestMigrationIsApplied`, `UserRepositoryIT#ac01_persistsEveryMappedColumn`, `ApplicationContextIT` | pass |
+| 0.2 | `SchemaIT#ac02_authTablesExist/…HaveExpectedConstraints/…UseTextAndTimestamptz`, `AuthRepositoriesIT#ac02_*` (3) | pass |
+| 0.3 | `UserRepositoryIT#ac03_findsUserByEmailIgnoringCase` | pass |
+| 0.4 | `UserRoleRepositoryIT#ac04_returnsOnlyRolesValidToday`, `UserRoleTest#ac04_*` (2) | pass |
+| 0.5 | `DevSeedIT#ac05_*` (2), `SchemaIT#ac05_noSeedUsersOutsideLocalProfile` | pass |
+| 0.6 | `OpenApiContractTest#ac06_userSchemaMatchesTheProfileResponse` (added at validation); also compared by hand with the live `/v3/api-docs` `UserProfileResponse`: same nine properties, seven-value `status`, `roles[]` with `organization` | pass (finding F-1) |
+| 1.1 | `AuthenticationFlowFT#ac11_anonymousAuthorizeRequestIsSentToTheLoginPage`, `RegisteredClientSeederTest#ac11_*`; `auth.guard.spec`, `auth.service.spec`; E2E `auth.spec` | pass |
+| 1.2 | `AuthenticationFlowFT#ac12_ac14_loginIssuesPkceCodeExchangeableForSignedTokens`, `#ac12_codeExchangeRequiresTheMatchingVerifier`, `PublicClientRefreshAuthenticationTest#ac12_*`, `RotatingRefreshTokenGeneratorTest#ac12_*`; `callback.component.spec`, `shell.component.spec`; E2E `auth.spec` | pass |
+| 1.3 | `UserControllerTest#ac13_meReturnsTheProfileOfTheTokenSubject`, `#ac13_meWithoutTokenIsUnauthorizedProblemDetails`; `home.component.spec` | pass |
+| 1.4 | `AuthenticationFlowFT#ac12_ac14_…`, `JwkKeysTest#ac14_*` (2), `TokenClaimsCustomizerTest#ac14_*` (2), `JwtAuthorityConverterTest#ac14_*`, `RolePermissionsTest#ac14_*` (2) | pass |
+| 1.5 | `AuthenticationFlowFT#ac15_refreshRotatesAndReuseRevokesTheWholeAuthorization`, `#ac15_suspendedAccountCannotRefresh…`, `RefreshTokenReuseGuardTest#ac15_*` (2), `PublicClientRefreshAuthenticationTest#ac15_*` (2) | pass |
+| 1.6 | `AuthenticationFlowFT#ac16_pendingAndSuspendedUsersAreRefusedWithTheirStatus`, `AccountStatusCheckerTest#ac16_*` (2), `LoginFailureHandlerTest#ac16_*`; E2E `auth.spec` | pass |
+| 1.7 | `AuthenticationFlowFT#ac17_loginPageIsUkrainianByDefaultAndEnglishOnRequest`; `language.service.spec`, `shell.component.spec`; E2E `auth.spec` | pass |
+| 1.8 | `AuthenticationFlowFT#ac18_revokedRefreshTokenCannotBeUsedAndLogoutEndsTheSession`, `PublicClientRefreshAuthenticationTest#ac18_*`; `auth.service.spec`; E2E `auth.spec` | pass |
+| 1.9 | `AuthenticationFlowFT#ac19_publicPathsAreOpenAndTheApiRequiresAToken` | pass |
+| 2.1 | `RegistrationFlowFT#ac21_ac25_registerVerifyAndSignIn`, `RegistrationServiceTest#ac21_*`, `AuthControllerTest#ac21_*`, `AuthMailerTest#ac21_*`, `OneTimeTokenServiceTest#ac21_*`, `PasswordPolicyTest#ac21_*`; `register.component.spec`; E2E `registration.spec` | pass |
+| 2.2 | `RegistrationFlowFT#ac22_ac23_ac24_registrationRefusals`, `RegistrationServiceTest#ac22_*`, `AuthControllerTest#ac22_*`; E2E `registration.spec` | pass |
+| 2.3 | `RegistrationFlowFT#ac22_ac23_ac24_…`, `RegistrationServiceTest#ac23_existingAddressIsAConflict`, `#ac23_concurrentRegistrationLosingTheRaceIsAConflictToo`; `register.component.spec` | pass |
+| 2.4 | `RegistrationFlowFT#ac22_ac23_ac24_…`, `RegistrationServiceTest#ac24_facultyOrInactiveOrganisationIsRefused` | pass |
+| 2.5 | `RegistrationFlowFT#ac21_ac25_…`, `RegistrationServiceTest#ac25_*` (4), `OneTimeTokenServiceTest#ac25_*` (2), `AuthControllerTest#ac25_*`; `verify-email.component.spec`; E2E `registration.spec` | pass |
+| 2.6 | `RegistrationFlowFT#ac26_resendIsThrottledAndSilentAboutUnknownAddresses`, `RegistrationServiceTest#ac26_*`, `#ac25_ac26_*`, `OneTimeTokenServiceTest#ac26_*`, `AuthControllerTest#ac26_*`; `registration-pending.component.spec`, `verify-email.component.spec`; E2E `registration.spec` | pass |
+| 2.7 | `RegistrationFlowFT#ac27_departmentsAreListedWithTheirFacultyWithoutAToken`; `register.component.spec` | pass |
+| 2.8 | `register.component.spec` (validation mirrors D-8 and the domain rule); E2E `registration.spec` in both languages | pass |
+| 3.1 | `PasswordResetFlowFT#ac31_ac32_ac33_…`, `PasswordResetServiceTest#ac31_*` (3), `AuthControllerTest#ac31_*`, `AuthMailerTest#ac31_*`; `forgot-password.component.spec`; E2E `password-reset.spec` | pass |
+| 3.2 | `PasswordResetFlowFT#ac31_ac32_ac33_…`, `PasswordResetServiceTest#ac32_*` (4), `AuthorizationRevokerTest#ac32_*`, `RetryRequestSessionExpiredStrategyTest#ac32_*` (2), `AuthControllerTest#ac32_*`; `reset-password.component.spec`; E2E `password-reset.spec` | pass |
+| 3.3 | `PasswordResetFlowFT#ac31_ac32_ac33_requestResetSignInWithTheNewPasswordAndLoseOldSessions`; E2E `password-reset.spec` | pass |
+| 3.4 | `forgot-password.component.spec`, `reset-password.component.spec`; E2E `password-reset.spec` | pass |
+| 4.1 | `LoginProtectionFT#ac41_ac43_ac44_ac45_fiveFailuresLockTheAccountNotifyAdminsAndAreAudited`, `LoginAttemptServiceTest#ac41_*` (5), `LoginFailureHandlerTest#ac41_*` (4), `LockedAccountCheckerTest#ac41_*` (2) | pass |
+| 4.2 | `LoginProtectionFT#ac42_aBurstFromOneAddressIsRefusedWithRetryAfter`, `RateLimitFilterTest#ac42_*` (3) | pass |
+| 4.3 | `LoginProtectionFT#ac41_ac43_…`, `#ac43_everyResponseCarriesACorrelationId`, `AuditLogRepositoryIT#ac43_ac46_*`, `AuditServiceTest#ac43_*` (2), `ClientRequestTest#ac43_*` (2), `CorrelationIdFilterTest#ac43_*` (2), `LoginSuccessListenerTest#ac43_*` (2), `LoginFailureHandlerTest#ac41_ac43_*` | pass |
+| 4.4 | `LoginProtectionFT#ac41_ac43_ac44_ac45_…`, `LoginAttemptServiceTest#ac41_ac44_*`, `AuthMailerTest#ac44_*` (2) | pass |
+| 4.5 | `LoginProtectionFT#ac41_ac43_ac44_ac45_…` (lock TTL read from Redis), `LoginAttemptServiceTest#ac41_ac45_lockStateIsReadFromRedis…` | pass |
+| 4.6 | `SchemaIT#ac46_auditLogsHasMonthlyPartitionsThroughDecember2027`, `AuditLogRepositoryIT#ac43_ac46_rowLandsInTheMonthPartition…` | pass |
+| 5.1 | `DeviceNotificationFT#ac51_ac52_ac53_…`, `DeviceServiceTest#ac51_*`, `DeviceFingerprintTest#ac51_*` (3), `LoginSuccessListenerTest#ac43_ac51_*`, `#ac51_aFailedDeviceRecordDoesNotBreakTheLogin`, `AuthMailerTest#ac51_ac53_*`; E2E `device-notification.spec` | pass |
+| 5.2 | `DeviceNotificationFT#ac51_ac52_ac53_…` (stale row refreshed, no second email), `DeviceServiceTest#ac52_*`, `DeviceFingerprintTest#ac51_ac52_*`; E2E `device-notification.spec` | pass |
+| 5.3 | `DeviceNotificationFT#ac51_ac52_ac53_…`, `DeviceServiceTest#ac53_*` (2), `OneTimeTokenServiceTest#ac53_*`, `AuthControllerTest#ac53_*`; `not-me.component.spec`; E2E `device-notification.spec` | pass |
+| 5.4 | `not-me.component.spec`; E2E `device-notification.spec` (uk and en) | pass |
+
+### Edge cases (§5)
+
+| Edge case | Evidence | Result |
+|-----------|----------|--------|
+| Concurrent registration of the same address | `RegistrationServiceTest#ac23_concurrentRegistrationLosingTheRaceIsAConflictToo` | covered |
+| Verification of a user meanwhile `SUSPENDED` | `RegistrationServiceTest#verifyingASuspendedAccountDoesNotReactivateIt` | covered |
+| Refresh after `INACTIVE`/`SUSPENDED` | `AuthenticationFlowFT#ac15_suspendedAccountCannotRefresh…`, `RefreshTokenReuseGuardTest#suspendedOrDeletedAccountsCannotRefresh…` | covered |
+| Reset for `PENDING` or unknown address | `PasswordResetServiceTest#ac31_unknownAndPendingAddressesAreAcceptedSilently`, `PasswordResetFlowFT` | covered |
+| Mail server down | `AuthMailerTest#retriesTwiceThenGivesUp` (three attempts, pauses 2 s and 5 s); "send again" on the pending page | covered |
+| Redis down | `LoginAttemptServiceTest#redisOutageFailsOpen`, `RateLimitFilterTest#redisOutageDoesNotLimit`, `RefreshTokenReuseGuardTest` — login, limit and refresh fail open. The resend and reset throttles (`RegistrationService.throttle`, `PasswordResetService.request`) did not: a Redis outage answered 500 there | fixed in the refactor PR (finding F-2) |
+| Clock skew | Library default: `JwtTimestampValidator` allows 60 s; no explicit configuration or test | accepted, not tested |
+| Login page while already authenticated | Not implemented: `/login` renders the form again; the SPA never links to it directly and an authenticated browser at `/oauth2/authorize` receives a code without seeing the form | open (finding F-3, cosmetic) |
+| One account per address | Unique index `users(lower(email_address))` (V015); `UserRepositoryIT#ac03_*` | covered |
+
+### Security checklist
+
+| OWASP | Control | Where |
+|-------|---------|-------|
+| A01 Broken access control | Stateless resource-server chain: `/api/**` requires a bearer access token except the listed registration/reset/revoke/organisation paths; `/actuator/**` beyond health/info/prometheus needs `ROLE_SYSTEM_ADMIN`; id tokens are rejected as API credentials (`token_use=access`) | `SecurityConfig.apiSecurityFilterChain`, `AccessTokenDecoder`, `AuthenticationFlowFT#ac19_*`, `#ac15_…IdTokenIsNotABearerToken` |
+| A02 Cryptographic failures | RS256 with a configured or generated RSA key and `kid`; BCrypt strength 12; one-time tokens are 32 random bytes from `SecureRandom`, only their SHA-256 stored; refresh tokens rotate, rotated values kept as hashes in Redis; the revoke path replaces the password hash with a random one | `JwkKeys`, `SecurityConfig.passwordEncoder`, `OneTimeTokenService`, `RefreshTokenReuseGuard`, `DeviceService.revoke` |
+| A03 Injection | JPA with bound parameters everywhere; the two JPQL bulk updates and the one JDBC delete use placeholders; Bean Validation on every request body (`@Email`, `@Size`, `@NotBlank`), user-agent capped at 500 chars before parsing; Thymeleaf escapes the login page | `OneTimeTokenRepository`, `AuthorizationRevoker`, DTOs in `auth/dto`, `ClientRequest.from` |
+| A07 Identification and authentication failures | PKCE S256 enforced for the public client; 5 failures / 15 min → 30-min lock in Redis, unknown addresses locked identically (no enumeration); 20 requests/min per client address on the authentication endpoints; account status checked after the password (no status oracle); neutral 202/409 answers on registration and reset; verification requires the registration password; new-device email with a revoke link; every event audited with IP, agent and correlation id | `RegisteredClientSeeder`, `LoginAttemptService`, `RateLimitFilter`, `AccountStatusChecker`, `LoginFailureHandler`, `RegistrationService.verify`, `DeviceService`, `AuditService` |
+
+Known accepted gaps are the tracker's "Security review follow-ups" 1, 3, 5–8 (refresh-token values at rest, deployment hardening, `/userinfo`, pending accounts blocking an address, in-memory session registry, shared-NAT request budget).
+
+### Integration check
+
+- `docker compose up -d --build` from a clean image build: `award-postgres`, `award-redis`, `award-mailpit`, `award-minio`, `award-backend`, `award-frontend` all healthy.
+- Migrations on an empty database: every `*IT` run starts a fresh Postgres 17 container and applies V001–V016 plus the repeatable seeds (`SchemaIT#ac01_latestMigrationIsApplied`).
+- `openapi.yml` vs live `/v3/api-docs`: the eight controller endpoints of the feature match path by path (`/auth/register`, `/auth/verify-email`, `/auth/resend-verification`, `/auth/password-reset/request`, `/auth/password-reset/confirm`, `/auth/security/revoke`, `/organizations`, `/users/me`); `/oauth2/*`, `/connect/logout`, `/.well-known/openid-configuration` and `/actuator/health` are provided by the library and are documented only in the spec; `PATCH /users/me` belongs to Feature 1.3. `User` and `UserProfileResponse` carry the same properties.
+- Through nginx (`http://localhost`): discovery advertises issuer `http://localhost` and `S256`; register 201 / other domain 422 / duplicate (upper case) 409 / faculty id 422; verify with the wrong password 403, right password 200 `ACTIVE`, replay 410; resend 429 within the minute; reset request 202 for known and unknown addresses; revoke with a bad token 410; PKCE login → RS256 access token with `kid`, `iss`, `email`, `roles`, `org_type`, `token_use`; `/users/me` 200; refresh rotates, the old token and then the rotated one answer `invalid_grant`; five wrong passwords → `LOCKED`, the right one refused, admin email to `admin@chnu.edu.ua`; audit rows `EMAIL_VERIFIED`, `LOGIN_SUCCESS`, `LOGIN_FAILED` ×6, `ACCOUNT_LOCKED`, `PASSWORD_RESET_REQUESTED`; `user_devices` row `Chrome / Windows / 172.25.0.1`; Mailpit holds the verification, reset and new-sign-in messages.
+
+### Findings
+
+| # | Finding | Action |
+|---|---------|--------|
+| F-1 | AC-0.6 had no automated test | `OpenApiContractTest` added in the validation PR: the `User` schema of `openapi.yml` must list exactly the properties of `UserProfileResponse` and the values of `AccountStatus` |
+| F-2 | Resend and reset throttles answered 500 when Redis is down, unlike login, limit and refresh | Fixed in the refactor PR: shared fail-open guard |
+| F-3 | `/login` opened by an already authenticated browser shows the form | Tracker technical note; harmless, revisit with the deployment story |
+| F-4 | Refactor sweep (21 items): duplicated SHA-256 helper, link building, redeem-or-410, password check, email normalisation; narrative comment in `CorrelationIdFilter`; Angular token-link lifecycle copied in three components; e2e helpers duplicated | Worth-it items in the `refactor(auth)` PR; the rest listed in the tracker's technical notes |
+
+Verdict: **PASSED WITH NOTES** — pending the author's run of §9 in the browser.
