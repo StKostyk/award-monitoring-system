@@ -9,13 +9,13 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 1.1 Core Authentication System | Done (validated; fixes from the manual run in 1.1.6) | 2026-09-21 | 2026-09-21 |
-| 1.2 Role-Based Access Control | Planned | | |
+| 1.1 Core Authentication System | Done (validated; fixes from the manual run merged, author's retest pending) | 2026-09-21 | 2026-09-21 |
+| 1.2 Role-Based Access Control | In progress (PRD approved) | 2026-09-21 | |
 | 1.3 User Profile Management | Planned | | |
 
 ## Current focus
 
-Story 1.1.6 fixes the defects the manual run found (PRD §12 F-5…F-10); Feature 1.2 kickoff follows (order agreed: 1.2.1 → 1.2.2 → 1.2.3).
+Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model in progress, then 1.2.2 role assignment and 1.2.3 delegation.
 
 ## Stories
 
@@ -29,9 +29,9 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 4 | 1.1.3 Password reset | 1.1 | 3 | SCRUM-9 | #46 | no | Done 2026-09-20 |
 | 5 | 1.1.4 Login rate limiting, lockout and auth audit | 1.1 | 3 | SCRUM-10 | #31 | no | Done 2026-09-21 |
 | 6 | 1.1.5 New device login notification | 1.1 | 3 | SCRUM-11 | #33 | no | Done 2026-09-21 |
-| 6a | 1.1.6 Fixes from the manual run | 1.1 | 3 | SCRUM-18 | #64 | no | In progress |
-| 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Ready |
-| 8 | 1.2.2 Role assignment | 1.2 | 8 | SCRUM-13 | #32 | yes | Ready |
+| 6a | 1.1.6 Fixes from the manual run | 1.1 | 3 | SCRUM-18 | #64 | no | Done 2026-09-21 |
+| 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | In progress |
+| 8 | 1.2.2 Role assignment and membership confirmation | 1.2 | 8 | SCRUM-13 | #32 | yes | Ready |
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Ready |
 | 10 | 1.3.1 Profile information update | 1.3 | 3 | SCRUM-15 | #38 | yes | Ready |
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Ready |
@@ -70,9 +70,9 @@ Each item is applied in the PR of the story that touches it, after approval.
 2. ~~`openapi.yml` `User` schema uses a UUID id, a single `role` and a three-value `status`~~ — aligned in 1.1.0.
 3. ~~AUTH §1.4 registers a confidential client with `CLIENT_SECRET_BASIC`~~ — addendum §9 written in 1.1.1.
 4. ~~AUTH §1.2 stores the refresh token in an HttpOnly cookie~~ — trade-off recorded in AUTH §9 in 1.1.1.
-5. ADR-009 lists `SUPER_ADMIN` and four sample permissions; align the role list with the dictionary (story 1.2.1).
-6. Role-assignment authority: US-002 lets a dean assign roles within the faculty, `RBAC_matrix.md` reserves it for the rector's office, AUTH §3.3 gives `user:manage` to `SYSTEM_ADMIN` only. Agreed rule: a user may assign roles below their own level inside their own organisation subtree; university-level roles only by `RECTOR` or `SYSTEM_ADMIN`. Add `user:manage:faculty` to the permission matrix (story 1.2.2).
-7. `RBAC_matrix.md` says only employees submit awards; AUTH §3.3 grants `award:create` up to rector. Left to Epic 2, but the permission strings created in 1.2.1 follow AUTH §3.3.
+5. ~~ADR-009 lists `SUPER_ADMIN` and four sample permissions~~ — aligned with the dictionary and AUTH §3.3 in 1.2.1.
+6. ~~Role-assignment authority: US-002 lets a dean assign roles within the faculty, `RBAC_matrix.md` reserves it for the rector's office, AUTH §3.3 gives `user:manage` to `SYSTEM_ADMIN` only~~ — agreed rule (a user may assign roles below their own level inside their own organisation subtree; university roles only by `RECTOR`, system roles only by `SYSTEM_ADMIN`) implemented as `RoleLevel` and `@access.canManage` in 1.2.1; `user:read:scope` and `user:manage:scope` added to AUTH §3.3 (named `scope` rather than `faculty` because the rector's scope is the university). Story 1.2.2 applies it to assignments.
+7. ~~`RBAC_matrix.md` says only employees submit awards; AUTH §3.3 grants `award:create` up to rector~~ — the permission strings follow AUTH §3.3 (1.2.1); whether approvers may also submit is decided at Epic 2 kickoff.
 8. ~~`audit_logs` partitions end at 2026-06; rows now fall into the default partition~~ — V016 (1.1.4) adds partitions through 2027-12 and moves the rows out of the default partition.
 
 ## Technical notes
@@ -117,4 +117,4 @@ Findings of the review of the authorization server code (2026-09-20) that were n
 - [User account state machine](../diagrams/uml/state-machine-user-account.puml)
 - [OpenAPI](../api/openapi.yml)
 - [User stories US-001, US-002](../requirements/USER_STORIES.md)
-- PRDs: [Feature 1.1](../features/epic-01/feature-1.1-core-authentication.md)
+- PRDs: [Feature 1.1](../features/epic-01/feature-1.1-core-authentication.md), [Feature 1.2](../features/epic-01/feature-1.2-role-based-access-control.md)

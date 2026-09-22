@@ -27,6 +27,18 @@ class RolePermissionsTest {
     }
 
     @Test
+    void ac11_approvalRolesReadAndManageUsersInsideTheirScopeOnly() {
+        for (RoleType role : List.of(RoleType.FACULTY_SECRETARY, RoleType.DEAN, RoleType.RECTOR_SECRETARY,
+            RoleType.RECTOR)) {
+            assertThat(permissions.of(role)).as(role.name()).contains("user:read:scope", "user:manage:scope")
+                .doesNotContain("user:read:all", "user:manage");
+        }
+        assertThat(permissions.of(RoleType.EMPLOYEE)).doesNotContain("user:read:scope", "user:manage:scope");
+        assertThat(permissions.of(RoleType.SYSTEM_ADMIN)).contains("user:read:all", "user:manage")
+            .doesNotContain("user:manage:scope");
+    }
+
+    @Test
     void ac14_unionIsSortedAndDeduplicated() {
         List<String> union = permissions.union(List.of(RoleType.EMPLOYEE, RoleType.FACULTY_SECRETARY));
 

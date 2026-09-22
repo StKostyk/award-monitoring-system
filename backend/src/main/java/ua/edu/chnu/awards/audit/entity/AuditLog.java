@@ -37,6 +37,7 @@ import lombok.NoArgsConstructor;
 public class AuditLog {
 
     public static final String AUTHENTICATION = "AUTHENTICATION";
+    public static final String AUTHORIZATION = "AUTHORIZATION";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.auth.security;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import ua.edu.chnu.awards.authz.RoleScope;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
@@ -32,6 +34,7 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
     public static final String CLAIM_EMAIL = "email";
     public static final String CLAIM_NAME = "name";
     public static final String CLAIM_ROLES = "roles";
+    public static final String CLAIM_ROLE_SCOPES = "role_scopes";
     public static final String CLAIM_PERMISSIONS = "permissions";
     public static final String CLAIM_ORG_ID = "org_id";
     public static final String CLAIM_ORG_TYPE = "org_type";
@@ -41,6 +44,7 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final RolePermissions rolePermissions;
+    private final Clock clock;
 
     @Override
     @Transactional(readOnly = true)
@@ -53,8 +57,14 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
         String email = context.getPrincipal().getName();
         User user = userRepository.findByEmailAddressIgnoreCase(email)
             .orElseThrow(() -> new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT));
-        List<RoleType> roles = userRoleRepository.findCurrentByUserId(user.getId(), LocalDate.now()).stream()
+        List<UserRole> assignments = userRoleRepository.findCurrentByUserId(user.getId(), LocalDate.now(clock));
+        List<RoleType> roles = assignments.stream()
             .map(UserRole::getRoleType)
+            .distinct()
+            .sorted()
+            .toList();
+        List<String> scopes = assignments.stream()
+            .map(assignment -> new RoleScope(assignment.getRoleType(), assignment.getOrganization().getId()).toClaim())
             .distinct()
             .sorted()
             .toList();
@@ -63,6 +73,7 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             claims.put(CLAIM_EMAIL, user.getEmailAddress());
             claims.put(CLAIM_NAME, user.getFullName());
             claims.put(CLAIM_ROLES, new ArrayList<>(roles.stream().map(Enum::name).toList()));
+            claims.put(CLAIM_ROLE_SCOPES, new ArrayList<>(scopes));
             claims.put(CLAIM_ORG_ID, String.valueOf(user.getOrganization().getId()));
             claims.put(CLAIM_ORG_TYPE, user.getOrganization().getOrgType().name());
             if (accessToken) {

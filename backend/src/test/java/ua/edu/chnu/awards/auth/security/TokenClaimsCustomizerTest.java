@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ class TokenClaimsCustomizerTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final UserRoleRepository userRoleRepository = mock(UserRoleRepository.class);
     private final TokenClaimsCustomizer customizer = new TokenClaimsCustomizer(userRepository, userRoleRepository,
-        new RolePermissions());
+        new RolePermissions(), Clock.systemUTC());
 
     @Test
     void ac14_accessTokenCarriesIdentityRolesPermissionsAndOrganisation() {
@@ -45,10 +46,11 @@ class TokenClaimsCustomizerTest {
         User user = User.builder().id(3L).emailAddress("dean.fmi@chnu.edu.ua").firstName("Martyn")
             .lastName("Martyniuk").organization(faculty).build();
         when(userRepository.findByEmailAddressIgnoreCase("dean.fmi@chnu.edu.ua")).thenReturn(Optional.of(user));
+        Organization department = Organization.builder().id(64L).orgType(OrganizationType.DEPARTMENT).build();
         when(userRoleRepository.findCurrentByUserId(eq(3L), any(LocalDate.class))).thenReturn(List.of(
-            UserRole.builder().roleType(RoleType.DEAN).build(),
-            UserRole.builder().roleType(RoleType.EMPLOYEE).build(),
-            UserRole.builder().roleType(RoleType.DEAN).build()));
+            UserRole.builder().roleType(RoleType.DEAN).organization(faculty).build(),
+            UserRole.builder().roleType(RoleType.EMPLOYEE).organization(department).build(),
+            UserRole.builder().roleType(RoleType.DEAN).organization(faculty).build()));
         JwtEncodingContext context = context(OAuth2TokenType.ACCESS_TOKEN, "dean.fmi@chnu.edu.ua");
 
         customizer.customize(context);
@@ -58,11 +60,13 @@ class TokenClaimsCustomizerTest {
             .containsEntry("email", "dean.fmi@chnu.edu.ua")
             .containsEntry("name", "Martyn Martyniuk")
             .containsEntry("roles", List.of("EMPLOYEE", "DEAN"))
+            .containsEntry("role_scopes", List.of("DEAN:9", "EMPLOYEE:64"))
             .containsEntry("org_id", "9")
             .containsEntry("org_type", "FACULTY");
         @SuppressWarnings("unchecked")
         List<String> permissions = (List<String>) claims.get("permissions");
-        assertThat(permissions).contains("award:approve:level2", "award:read:faculty");
+        assertThat(permissions).contains("award:approve:level2", "award:read:faculty", "user:read:scope",
+            "user:manage:scope").doesNotContain("user:manage", "user:read:all");
         assertThat(claims).containsEntry("token_use", "access");
     }
 
@@ -77,7 +81,8 @@ class TokenClaimsCustomizerTest {
         customizer.customize(context);
 
         Map<String, Object> claims = context.getClaims().build().getClaims();
-        assertThat(claims).containsEntry("roles", List.of()).doesNotContainKey("permissions")
+        assertThat(claims).containsEntry("roles", List.of()).containsEntry("role_scopes", List.of())
+            .doesNotContainKey("permissions")
             .doesNotContainKey("token_use");
     }
 

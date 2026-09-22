@@ -1,7 +1,9 @@
 package ua.edu.chnu.awards.user.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -29,6 +31,43 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
           and (r.validTo is null or r.validTo >= :day)
         """)
     List<UserRole> findCurrentByUserId(@Param("userId") Long userId, @Param("day") LocalDate day);
+
+    /**
+     * Every assignment of a user, newest first, with the organisation loaded.
+     *
+     * @param userId the user
+     * @return assignments past, present and future
+     */
+    @Query("""
+        select r from UserRole r join fetch r.organization
+        where r.user.id = :userId
+        order by r.validFrom desc, r.id desc
+        """)
+    List<UserRole> findHistoryByUserId(@Param("userId") Long userId);
+
+    /**
+     * Current assignments of several users at once, with the organisation loaded.
+     *
+     * @param userIds the users
+     * @param day     the day the roles must be valid on
+     * @return matching assignments
+     */
+    @Query("""
+        select r from UserRole r join fetch r.organization
+        where r.user.id in :userIds
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    List<UserRole> findCurrentByUserIds(@Param("userIds") Collection<Long> userIds, @Param("day") LocalDate day);
+
+    /**
+     * Users among the given ones who have ever held a role.
+     *
+     * @param userIds the users
+     * @return ids with at least one assignment
+     */
+    @Query("select distinct r.user.id from UserRole r where r.user.id in :userIds")
+    Set<Long> findEverAssignedUserIds(@Param("userIds") Collection<Long> userIds);
 
     /**
      * Addresses of the users holding a role on the given day.

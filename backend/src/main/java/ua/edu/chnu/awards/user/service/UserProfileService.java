@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.user.service;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -25,6 +26,7 @@ public class UserProfileService {
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final UserProfileMapper mapper;
+    private final Clock clock;
 
     /**
      * Profile of the user identified by the token subject.
@@ -36,7 +38,7 @@ public class UserProfileService {
     public UserProfileResponse profileOf(long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
-        List<UserRole> roles = userRoleRepository.findCurrentByUserId(userId, LocalDate.now());
+        List<UserRole> roles = userRoleRepository.findCurrentByUserId(userId, LocalDate.now(clock));
         return mapper.toProfile(user, roles);
     }
 }
