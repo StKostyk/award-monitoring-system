@@ -707,31 +707,88 @@ paths:
   /users:
     get:
       tags: [Users]
-      summary: List users (Admin only)
+      summary: User directory
+      description: |
+        Everybody for `user:read:all`; for `user:read:scope` only members of the organisations inside the
+        caller's role scopes. Unverified accounts never appear. Sorted by last name, first name.
       security:
         - bearerAuth: []
       operationId: listUsers
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
-        - name: role
-          in: query
-          schema:
-            $ref: '#/components/schemas/UserRole'
         - name: organization
           in: query
+          description: Limit to this organisation and its descendants; must lie inside the caller's scope
           schema:
             type: integer
             format: int64
+        - name: role
+          in: query
+          description: Holders of the role today
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: status
+          in: query
+          description: Without it, every status except `PENDING` and `DELETED`
+          schema:
+            $ref: '#/components/schemas/AccountStatus'
+        - name: unconfirmed
+          in: query
+          description: Only users who have never held a role
+          schema:
+            type: boolean
+            default: false
+        - name: q
+          in: query
+          description: Case-insensitive fragment of the name or address; ignored under two characters
+          schema:
+            type: string
       responses:
         '200':
-          description: User list
+          description: One page; `size` is capped at 100
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserPage'
         '403':
+          description: |
+            `urn:awards:problem:access-denied` — the caller lacks `user:read:all`/`user:read:scope`, or
+            `organization` is outside the caller's scope; the `detail` names what is missing
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: One user with the role history
+      security:
+        - bearerAuth: []
+      operationId: getUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+        '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Unknown, unverified, or outside the caller's scope (the directory does not confirm foreign ids)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   # ============== Reports ==============
   /reports/awards/summary:
@@ -877,7 +934,9 @@ components:
       properties:
         access_token:
           type: string
-          description: RS256-signed JWT with `sub`, `email`, `name`, `roles`, `permissions`, `org_id`, `org_type`
+          description: |
+            RS256-signed JWT with `sub`, `email`, `name`, `roles`, `role_scopes` (`ROLE:orgId` per current
+            assignment), `permissions`, `org_id`, `org_type`
         refresh_token:
           type: string
         id_token:
@@ -991,6 +1050,9 @@ components:
     RoleAssignment:
       type: object
       properties:
+        id:
+          type: integer
+          format: int64
         role:
           $ref: '#/components/schemas/UserRole'
         organization:
@@ -1026,6 +1088,50 @@ components:
         notificationPreferences:
           $ref: '#/components/schemas/NotificationPreferences'
 
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        roles:
+          type: array
+          description: Roles in effect today
+          items:
+            $ref: '#/components/schemas/RoleAssignment'
+        membershipConfirmed:
+          type: boolean
+          description: Whether somebody has ever granted the user a role
+
+    UserDetail:
+      allOf:
+        - $ref: '#/components/schemas/UserSummary'
+        - type: object
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+            lastLoginAt:
+              type: string
+              format: date-time
+              nullable: true
+            roleHistory:
+              type: array
+              description: Every assignment ever made, newest first
+              items:
+                $ref: '#/components/schemas/RoleAssignment'
+
     UserPage:
       allOf:
         - $ref: '#/components/schemas/Page'
@@ -1034,7 +1140,7 @@ components:
             content:
               type: array
               items:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserSummary'
 
     NotificationPreferences:
       type: object

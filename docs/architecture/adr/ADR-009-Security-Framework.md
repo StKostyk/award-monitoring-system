@@ -99,9 +99,10 @@ public class SecurityConfig {
 ```
 
 ### RBAC Implementation
-- **Roles**: EMPLOYEE, FACULTY_SECRETARY, DEAN, RECTOR_SECRETARY, RECTOR, SUPER_ADMIN
-- **Permissions**: award:read, award:create, award:approve, user:manage
-- **Method Security**: `@PreAuthorize` annotations for fine-grained control
+- **Roles**: EMPLOYEE, FACULTY_SECRETARY, DEAN, RECTOR_SECRETARY, RECTOR, SYSTEM_ADMIN, GDPR_OFFICER (the data dictionary's `user_roles.role_type`)
+- **Permissions**: the matrix of AUTHENTICATION_AUTHORIZATION.md §3.3 — `award:read:{own,department,faculty,all}`, `award:create`, `award:update:own`, `award:approve:{level1,level2,level3,final}`, `user:read:{all,scope}`, `user:manage`, `user:manage:scope`, `system:configure`, `data:export`, `consent:manage`, `audit:read`
+- **Scope**: every role is held within an organisation; the access token carries `role_scopes` (`ROLE:orgId`) and the resource server resolves "inside my subtree" from an in-memory organisation tree (`@access` in `@PreAuthorize` expressions)
+- **Method Security**: `@PreAuthorize` annotations for fine-grained control; every denial is audited as `ACCESS_DENIED`
 
 ---
 

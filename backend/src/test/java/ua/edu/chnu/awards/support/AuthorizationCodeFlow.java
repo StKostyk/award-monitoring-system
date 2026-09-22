@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import io.restassured.RestAssured;
@@ -185,6 +186,17 @@ public final class AuthorizationCodeFlow {
 
     public Map<String, String> cookies() {
         return Map.copyOf(cookies);
+    }
+
+    /**
+     * Claims of a token issued by the booted application, verified against its JWKS.
+     *
+     * @param token a JWT
+     * @return the claims
+     */
+    public static Map<String, Object> claimsOf(String token) {
+        return NimbusJwtDecoder.withJwkSetUri("http://localhost:" + RestAssured.port + "/oauth2/jwks").build()
+            .decode(token).getClaims();
     }
 
     private void remember(Response response) {
