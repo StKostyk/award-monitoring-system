@@ -1,21 +1,31 @@
 package ua.edu.chnu.awards.user.controller;
 
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ua.edu.chnu.awards.common.web.PageResponse;
+import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
+import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
 import ua.edu.chnu.awards.user.dto.UserDetailResponse;
 import ua.edu.chnu.awards.user.dto.UserDirectoryQuery;
 import ua.edu.chnu.awards.user.dto.UserProfileResponse;
 import ua.edu.chnu.awards.user.dto.UserSummaryResponse;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.user.service.RoleAssignmentService;
 import ua.edu.chnu.awards.user.service.UserDirectoryService;
 import ua.edu.chnu.awards.user.service.UserProfileService;
 
@@ -30,9 +40,11 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private static final String CAN_READ = "@access.require('user:read:all', 'user:read:scope')";
+    private static final String CAN_MANAGE = "@access.require('user:manage', 'user:manage:scope')";
 
     private final UserProfileService profileService;
     private final UserDirectoryService directoryService;
+    private final RoleAssignmentService roleAssignmentService;
 
     /**
      * Profile of the caller.
@@ -80,5 +92,33 @@ public class UserController {
     @PreAuthorize(CAN_READ)
     public UserDetailResponse detail(@PathVariable long id) {
         return directoryService.detail(id);
+    }
+
+    /**
+     * Grants a role to a user; the caller must outrank it inside their own organisation subtree.
+     *
+     * @param id      who receives the role
+     * @param request role, organisation and validity
+     * @return the new assignment
+     */
+    @PostMapping("/{id}/roles")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize(CAN_MANAGE)
+    public RoleAssignmentResponse assignRole(@PathVariable long id,
+                                             @Valid @RequestBody RoleAssignmentRequest request) {
+        return roleAssignmentService.assign(id, request);
+    }
+
+    /**
+     * Takes a role back; it ends on the previous day and the holder is signed out everywhere.
+     *
+     * @param id     who holds the role
+     * @param roleId the assignment to end
+     */
+    @DeleteMapping("/{id}/roles/{roleId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize(CAN_MANAGE)
+    public void revokeRole(@PathVariable long id, @PathVariable long roleId) {
+        roleAssignmentService.revoke(id, roleId);
     }
 }

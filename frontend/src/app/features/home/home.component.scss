@@ -2,6 +2,22 @@
   max-width: 720px;
 }
 
+.home__banner {
+  margin-bottom: 16px;
+  border-left: 4px solid var(--mat-sys-tertiary, #3f5f90);
+  background: var(--mat-sys-tertiary-container, #dbe2f9);
+  color: var(--mat-sys-on-tertiary-container, #101c2b);
+}
+
+.home__banner-text {
+  margin: 4px 0 0;
+}
+
+.home__banner-hint {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+}
+
 .home__facts {
   display: grid;
   grid-template-columns: max-content 1fr;

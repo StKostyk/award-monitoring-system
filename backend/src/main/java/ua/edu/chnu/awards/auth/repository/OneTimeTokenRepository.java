@@ -35,6 +35,21 @@ public interface OneTimeTokenRepository extends JpaRepository<OneTimeToken, Long
                @Param("now") Instant now);
 
     /**
+     * Counts the tokens of a user and purpose that are neither used nor expired.
+     *
+     * @param userId  the owner
+     * @param purpose the purpose
+     * @param now     the current moment
+     * @return number of tokens that can still be redeemed
+     */
+    @Query("""
+        select count(t) from OneTimeToken t
+        where t.user.id = :userId and t.purpose = :purpose and t.usedAt is null and t.expiresAt > :now
+        """)
+    long countUsable(@Param("userId") Long userId, @Param("purpose") TokenPurpose purpose,
+                     @Param("now") Instant now);
+
+    /**
      * Marks every unused token of a user and purpose as used.
      *
      * @param userId  the owner

@@ -1,8 +1,7 @@
 package ua.edu.chnu.awards.auth.service;
 
-import java.time.Clock;
-import java.time.LocalDate;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,12 +22,11 @@ import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.entity.UserRole;
 import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.MembershipConfirmation;
 
 import lombok.RequiredArgsConstructor;
 
@@ -51,7 +49,7 @@ public class RegistrationService {
     private final RequestThrottle throttle;
     private final AuthProperties properties;
     private final AuditService audit;
-    private final Clock clock;
+    private final MembershipConfirmation membership;
 
     /**
      * Creates a pending account and requests the verification email.
@@ -64,18 +62,23 @@ public class RegistrationService {
         String email = EmailUtils.normalize(request.email());
         requireInstitutionalDomain(email);
         passwordPolicy.require(request.password());
-        if (userRepository.existsByEmailAddressIgnoreCase(email)) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "email-taken",
-                "An account with this address already exists");
-        }
         Organization department = organizationRepository.findById(request.organizationId())
             .filter(org -> org.getOrgType() == OrganizationType.DEPARTMENT && org.isActive())
             .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
                 "Choose an active department"));
+        User user = userRepository.findByEmailAddressIgnoreCase(email)
+            .map(existing -> replaceAbandoned(existing, request, department))
+            .orElseGet(() -> create(email, request, department));
 
-        User user;
+        membership.confirm(user, department).ifPresent(userRoleRepository::save);
+        throttle.claim(RESEND_KEY_PREFIX + email, properties.resendInterval());
+        sendVerification(user);
+        return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
+    }
+
+    private User create(String email, RegisterRequest request, Organization department) {
         try {
-            user = userRepository.saveAndFlush(User.builder()
+            return userRepository.saveAndFlush(User.builder()
                 .emailAddress(email)
                 .firstName(request.firstName().trim())
                 .lastName(request.lastName().trim())
@@ -87,15 +90,28 @@ public class RegistrationService {
             throw new ApiProblemException(HttpStatus.CONFLICT, "email-taken",
                 "An account with this address already exists", e);
         }
-        userRoleRepository.save(UserRole.builder()
-            .user(user)
-            .roleType(RoleType.EMPLOYEE)
-            .organization(department)
-            .validFrom(LocalDate.now(clock))
-            .build());
-        throttle.claim(RESEND_KEY_PREFIX + email, properties.resendInterval());
-        sendVerification(user);
-        return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
+    }
+
+    /**
+     * A pending account whose newest verification link has run out is taken over by the new registration, so an
+     * address is not lost to somebody who mistyped it or never opened the email. While a link is still usable
+     * the address stays taken.
+     */
+    private User replaceAbandoned(User existing, RegisterRequest request, Organization department) {
+        boolean abandoned = existing.getAccountStatus() == AccountStatus.PENDING
+            && tokens.countUsable(existing, TokenPurpose.EMAIL_VERIFICATION) == 0;
+        if (!abandoned) {
+            throw new ApiProblemException(HttpStatus.CONFLICT, "email-taken",
+                "An account with this address already exists");
+        }
+        existing.setFirstName(request.firstName().trim());
+        existing.setLastName(request.lastName().trim());
+        existing.setPasswordHash(passwordEncoder.encode(request.password()));
+        existing.setOrganization(department);
+        tokens.invalidate(existing, TokenPurpose.EMAIL_VERIFICATION);
+        audit.record(AuditAction.REGISTRATION_REPLACED, existing.getId(),
+            Map.of("organizationId", department.getId()));
+        return existing;
     }
 
     /**

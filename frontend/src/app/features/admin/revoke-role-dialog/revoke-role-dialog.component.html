@@ -1,0 +1,15 @@
+<h2 mat-dialog-title>{{ 'admin.revoke.title' | transloco }}</h2>
+<mat-dialog-content>
+  <p data-testid="revoke-text">
+    {{ 'admin.revoke.text' | transloco: { role: roleName(), organization: organization(), name: data.name } }}
+  </p>
+  <p>{{ 'admin.revoke.warning' | transloco }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" [mat-dialog-close]="false" data-testid="revoke-cancel">
+    {{ 'admin.revoke.cancel' | transloco }}
+  </button>
+  <button mat-flat-button type="button" [mat-dialog-close]="true" data-testid="revoke-confirm">
+    {{ 'admin.revoke.confirm' | transloco }}
+  </button>
+</mat-dialog-actions>

@@ -115,6 +115,18 @@ public class OneTimeTokenService {
     }
 
     /**
+     * How many links of the user for the purpose can still be opened.
+     *
+     * @param user    owner
+     * @param purpose the purpose
+     * @return number of unused, unexpired tokens
+     */
+    @Transactional(readOnly = true)
+    public long countUsable(User user, TokenPurpose purpose) {
+        return repository.countUsable(user.getId(), purpose, clock.instant());
+    }
+
+    /**
      * Cancels every unused token of the user for the purpose, so older links in the inbox stop working.
      *
      * @param user    owner

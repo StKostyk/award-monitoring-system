@@ -46,6 +46,20 @@ public class AuditService {
     }
 
     /**
+     * Stores one event of a given entity type, joining the caller's transaction so the trail and the change it
+     * describes stand or fall together.
+     *
+     * @param action     what happened
+     * @param entityType the audited area, such as {@link AuditLog#AUTHORIZATION}
+     * @param userId     the account concerned, null when unknown
+     * @param details    extra facts kept as JSON (no secrets)
+     */
+    @Transactional
+    public void record(AuditAction action, String entityType, Long userId, Map<String, Object> details) {
+        write(action, entityType, userId, details);
+    }
+
+    /**
      * Stores one event of a given entity type in its own transaction, so a refusal that rolls the caller back
      * still leaves its trace.
      *
@@ -55,7 +69,12 @@ public class AuditService {
      * @param details    extra facts kept as JSON (no secrets)
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void record(AuditAction action, String entityType, Long userId, Map<String, Object> details) {
+    public void recordSeparately(AuditAction action, String entityType, Long userId,
+                                 Map<String, Object> details) {
+        write(action, entityType, userId, details);
+    }
+
+    private void write(AuditAction action, String entityType, Long userId, Map<String, Object> details) {
         ClientRequest client = ClientRequest.current();
         repository.save(AuditLog.builder()
             .userId(userId)

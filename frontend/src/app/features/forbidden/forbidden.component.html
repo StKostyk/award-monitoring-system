@@ -1,0 +1,11 @@
+<mat-card class="forbidden__card" data-testid="forbidden-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'admin.forbidden.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <p>{{ 'admin.forbidden.text' | transloco }}</p>
+    <a mat-flat-button routerLink="/" data-testid="forbidden-home">
+      {{ 'admin.forbidden.home' | transloco }}
+    </a>
+  </mat-card-content>
+</mat-card>

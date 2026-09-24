@@ -87,9 +87,10 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 **Business Rules**:
 - Users can have multiple roles across different organizations
-- Role validity period cannot have `valid_to` before `valid_from`
-- Current roles are those where `valid_to IS NULL OR valid_to >= CURRENT_DATE`
-- Role hierarchy determines approval authority
+- Role validity period cannot have `valid_to` before `valid_from - 1`: revocation ends an assignment on the previous day, so a role taken back on the day it began ends one day before it started and the day stays free for a fresh assignment (V017)
+- Current roles are those where `valid_from <= CURRENT_DATE AND (valid_to IS NULL OR valid_to >= CURRENT_DATE)`
+- The same role is held at most once per organization while it is open-ended (`uk_user_roles_current`); nothing is ever deleted, so the history stays readable
+- Role hierarchy determines approval authority; a role is granted only by somebody holding a role strictly above it inside the same organization subtree
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -98,7 +99,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `role_type` | `VARCHAR(30)` | NO | - | CK | Role type (see enum below) |
 | `organization_id` | `BIGINT` | NO | - | FK→organizations | Organizational scope of role |
 | `valid_from` | `DATE` | NO | `CURRENT_DATE` | - | Role effective start date |
-| `valid_to` | `DATE` | YES | - | CK | Role effective end date (NULL=current) |
+| `valid_to` | `DATE` | YES | - | CK | Role effective end date (NULL=open-ended); revocation sets it to yesterday |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `created_by` | `BIGINT` | YES | - | FK→users | Admin who assigned the role |
 
@@ -118,6 +119,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `idx_user_roles_user` - B-tree on `user_id`
 - `idx_user_roles_org` - B-tree on `organization_id`
 - `idx_user_roles_current` - Partial index for active roles
+- `uk_user_roles_current` - Partial unique index on `(user_id, role_type, organization_id) WHERE valid_to IS NULL` (V017)
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
@@ -544,6 +546,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Action Types** (common values):
 - `INSERT`, `UPDATE`, `DELETE` - row changes written by the audit triggers (`entity_type` = table name)
 - `LOGIN_SUCCESS`, `LOGIN_FAILED`, `ACCOUNT_LOCKED`, `LOGOUT`, `EMAIL_VERIFIED`, `PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET` - authentication events written by the application (`entity_type` = `AUTHENTICATION`, `entity_id` = user id, facts such as the failure reason in `new_values`)
+- `ACCESS_DENIED`, `ROLE_ASSIGNED`, `ROLE_REVOKED` - authorization events written by the application (`entity_type` = `AUTHORIZATION`, `entity_id` = the user concerned; `new_values` carries the missing requirement for a refusal, or the actor, role, organization and validity for a role change)
 - `PASSWORD_CHANGE` - Security
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
 - `DATA_EXPORT`, `DATA_DELETE` - GDPR rights

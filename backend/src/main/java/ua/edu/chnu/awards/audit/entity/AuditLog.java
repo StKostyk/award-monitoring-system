@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -26,9 +27,11 @@ import lombok.NoArgsConstructor;
 
 /**
  * One immutable audit row. Only the columns the application writes are mapped; the trigger-written change
- * columns are not.
+ * columns are not. The row is never updated: {@code audit_logs} is partitioned by {@code created_at}, so an
+ * update by {@code log_id} alone would miss, and a trail that can be rewritten is not a trail.
  */
 @Entity
+@Immutable
 @Table(name = "audit_logs")
 @Getter
 @Builder

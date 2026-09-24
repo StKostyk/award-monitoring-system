@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.user.repository;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -68,6 +69,46 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
      */
     @Query("select distinct r.user.id from UserRole r where r.user.id in :userIds")
     Set<Long> findEverAssignedUserIds(@Param("userIds") Collection<Long> userIds);
+
+    /**
+     * One assignment of a user, with the organisation loaded.
+     *
+     * @param id     the assignment
+     * @param userId the user it must belong to
+     * @return the assignment when it belongs to that user
+     */
+    @Query("select r from UserRole r join fetch r.organization where r.id = :id and r.user.id = :userId")
+    Optional<UserRole> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * Whether the user has ever been granted a role.
+     *
+     * @param userId the user
+     * @return true when at least one assignment exists
+     */
+    boolean existsByUserId(Long userId);
+
+    /**
+     * Assignments of the same role in the same organisation whose validity overlaps the given period.
+     *
+     * @param userId         the user
+     * @param role           the role
+     * @param organizationId where the role would apply
+     * @param from           first day of the new period
+     * @param to             last day of the new period; {@link LocalDate#MAX} for an open-ended one
+     * @return overlapping assignments
+     */
+    @Query("""
+        select r from UserRole r
+        where r.user.id = :userId
+          and r.roleType = :role
+          and r.organization.id = :organizationId
+          and r.validFrom <= :to
+          and (r.validTo is null or r.validTo >= :from)
+        """)
+    List<UserRole> findOverlapping(@Param("userId") Long userId, @Param("role") RoleType role,
+                                   @Param("organizationId") Long organizationId, @Param("from") LocalDate from,
+                                   @Param("to") LocalDate to);
 
     /**
      * Addresses of the users holding a role on the given day.

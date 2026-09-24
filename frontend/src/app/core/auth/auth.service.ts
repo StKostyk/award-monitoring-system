@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { authConfig } from './auth.config';
+import { readPermissions } from './permissions';
 import { UserProfile } from './user-profile';
 
 /** Routes that work without a session; a lost session there must not bounce the visitor to the login page. */
@@ -27,17 +28,19 @@ export class AuthService {
   private loginStarted = false;
 
   readonly isAuthenticated = signal(false);
+  readonly accessToken = signal<string | null>(null);
   readonly profile = signal<UserProfile | null>(null);
   readonly fullName = computed(() => {
     const profile = this.profile();
     return profile ? `${profile.firstName} ${profile.lastName}` : '';
   });
+  readonly permissions = computed(() => readPermissions(this.accessToken()));
 
   async init(): Promise<void> {
     this.oauth.configure(authConfig);
     this.oauth.events.subscribe((event) => {
       if (event.type === 'token_received' || event.type === 'token_refreshed') {
-        this.isAuthenticated.set(this.oauth.hasValidAccessToken());
+        this.remember();
       }
       if (event.type === 'logout') {
         this.forget();
@@ -56,7 +59,7 @@ export class AuthService {
     if (this.oauth.hasValidAccessToken()) {
       try {
         await this.loadProfile();
-        this.isAuthenticated.set(true);
+        this.remember();
       } catch (err) {
         if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
           this.oauth.logOut(true);
@@ -107,8 +110,14 @@ export class AuthService {
     }
   }
 
+  private remember(): void {
+    this.isAuthenticated.set(this.oauth.hasValidAccessToken());
+    this.accessToken.set(this.oauth.getAccessToken() ?? null);
+  }
+
   private forget(): void {
     this.isAuthenticated.set(false);
+    this.accessToken.set(null);
     this.profile.set(null);
   }
 }

@@ -66,7 +66,7 @@ public class AccessDenials {
             missing(request).ifPresent(missing -> details.put("required", missing));
         });
         try {
-            audit.record(AuditAction.ACCESS_DENIED, AuditLog.AUTHORIZATION, subjectOf(token), details);
+            audit.recordSeparately(AuditAction.ACCESS_DENIED, AuditLog.AUTHORIZATION, subjectOf(token), details);
         } catch (DataAccessException e) {
             log.error("Access denial of user {} on {} not audited: {}", subjectOf(token), details.get("path"),
                 e.getMessage());

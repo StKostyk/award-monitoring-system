@@ -1,0 +1,46 @@
+.admin__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 16px;
+}
+
+.admin__filters {
+  margin-bottom: 16px;
+}
+
+.admin__filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin__filter {
+  min-width: 200px;
+}
+
+.admin__filter--wide {
+  flex: 1 1 280px;
+}
+
+.admin__table {
+  width: 100%;
+}
+
+.admin__badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  background: var(--mat-sys-tertiary-container, #dbe2f9);
+  color: var(--mat-sys-on-tertiary-container, #101c2b);
+}
+
+.admin__problem {
+  color: var(--mat-sys-error, #b3261e);
+}
+
+.admin__empty {
+  padding: 24px;
+  text-align: center;
+}

@@ -159,8 +159,11 @@ paths:
         minute per client address; the 21st answers 429 with `Retry-After` (`urn:awards:problem:too-many-requests`).
         Every response carries `X-Correlation-Id` (a caller-supplied UUID is kept). Requires an institutional address (`@chnu.edu.ua`), a password of at least 10 characters and
         at most 72 bytes that is not on the common-password list, names made of letters, and an active department.
-        Addresses are stored lower-case. The account is created `PENDING` with the
-        `EMPLOYEE` role and a verification email (24-hour link) is sent.
+        Addresses are stored lower-case. The account is created `PENDING` with no role at all and a verification
+        email (24-hour link) is sent; the first role is granted by somebody who may manage the department
+        (membership confirmation), so a freshly verified account carries no roles or permissions in its token.
+        Registering an address that already has a `PENDING` account whose newest verification link has expired
+        replaces that account (name, organisation, password, fresh link) and answers 201.
       operationId: register
       requestBody:
         required: true
@@ -178,7 +181,9 @@ paths:
         '400':
           description: Malformed body (bean validation)
         '409':
-          description: Address already registered (`urn:awards:problem:email-taken`)
+          description: |
+            Address already registered (`urn:awards:problem:email-taken`); a `PENDING` account whose
+            verification link is still valid answers 409 as well
         '422':
           description: |
             `urn:awards:problem:institutional-email-required`, `organisation-invalid`,
@@ -790,6 +795,114 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
+  /users/{id}/roles:
+    post:
+      tags: [Users]
+      summary: Grant a role to a user
+      description: |
+        Needs `user:manage` (any role anywhere) or `user:manage:scope` (a role strictly below one the caller
+        holds, in an organisation inside that role's subtree). The target must be `ACTIVE` and must not already
+        hold the role in that organisation today. Granting `EMPLOYEE` with `updateOrganization` is the
+        membership confirmation of a self-registered account: the user's primary organisation is corrected to
+        `organizationId` and a current `EMPLOYEE` role in the previous department is revoked in the same
+        request. The new role reaches the user's token with the next silent refresh or sign-in.
+      security:
+        - bearerAuth: []
+      operationId: assignRole
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleAssignmentRequest'
+      responses:
+        '201':
+          description: The assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAssignment'
+        '400':
+          description: Malformed body (bean validation)
+        '403':
+          description: |
+            `urn:awards:problem:access-denied` without the permission, or
+            `urn:awards:problem:role-above-level` when the role is not below the caller's level in that
+            organisation (university and system roles are granted by the rector's office or the administrator)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Unknown user, or outside the caller's scope
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: |
+            `urn:awards:problem:role-already-assigned` — the user already holds the role in that organisation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: |
+            `urn:awards:problem:role-organization-mismatch` (the organisation type does not fit the role),
+            `organisation-invalid` (unknown or inactive), `user-not-active`, `role-validity`, or
+            `membership-role-required` when `updateOrganization` is sent with a role other than `EMPLOYEE`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /users/{id}/roles/{roleId}:
+    delete:
+      tags: [Users]
+      summary: Revoke a role
+      description: |
+        Allowed to callers who could have granted the role. Nothing is deleted: `validTo` becomes yesterday, so
+        the history stays readable. The target's sessions and tokens are ended everywhere, so the lost
+        permissions take effect at once. A caller cannot revoke their own last role above `EMPLOYEE`.
+      security:
+        - bearerAuth: []
+      operationId: revokeRole
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - name: roleId
+          in: path
+          required: true
+          description: Assignment identifier
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Revoked
+        '403':
+          description: |
+            `urn:awards:problem:access-denied`, `role-above-level`, or `role-last-own` when the caller would
+            strip their own last role above `EMPLOYEE`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Unknown user or assignment, or outside the caller's scope
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: |
+            `urn:awards:problem:role-already-revoked` — the assignment has already ended
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
   # ============== Reports ==============
   /reports/awards/summary:
     get:
@@ -906,6 +1019,15 @@ components:
       schema:
         type: string
         format: uuid
+
+    UserIdParam:
+      name: id
+      in: path
+      required: true
+      description: User identifier
+      schema:
+        type: integer
+        format: int64
 
   schemas:
     # Auth
@@ -1042,6 +1164,11 @@ components:
         lastLoginAt:
           type: string
           format: date-time
+        membershipConfirmed:
+          type: boolean
+          description: |
+            Whether somebody has ever granted the user a role; false until the department confirms a
+            self-registered account, which is why the token carries no roles or permissions
 
     AccountStatus:
       type: string
@@ -1064,6 +1191,35 @@ components:
           type: string
           format: date
           nullable: true
+
+    RoleAssignmentRequest:
+      type: object
+      required: [role, organizationId]
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        organizationId:
+          type: integer
+          format: int64
+          description: |
+            Where the role applies. `EMPLOYEE` needs a department, `DEAN` a faculty or college,
+            `FACULTY_SECRETARY` a faculty or a department, and `RECTOR`, `RECTOR_SECRETARY`, `SYSTEM_ADMIN`
+            and `GDPR_OFFICER` the university
+        validFrom:
+          type: string
+          format: date
+          description: First day the role applies; today when omitted, never in the past
+        validTo:
+          type: string
+          format: date
+          nullable: true
+          description: Last day the role applies; open-ended when omitted
+        updateOrganization:
+          type: boolean
+          default: false
+          description: |
+            Membership confirmation: move the user's primary organisation to `organizationId` and revoke a
+            current `EMPLOYEE` role in the previous department. Only with `role: EMPLOYEE`
 
     UserRole:
       type: string

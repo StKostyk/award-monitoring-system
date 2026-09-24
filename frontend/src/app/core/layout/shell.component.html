@@ -1,5 +1,10 @@
 <mat-toolbar color="primary" class="shell__toolbar">
   <span class="shell__title">{{ 'app.title' | transloco }}</span>
+  @if (canOpenUsers()) {
+    <a mat-button routerLink="/admin/users" class="shell__nav" data-testid="nav-users">
+      {{ 'admin.users.title' | transloco }}
+    </a>
+  }
   <span class="shell__spacer"></span>
   <button mat-button type="button" class="shell__lang" (click)="language.toggle()" data-testid="language-toggle">
     {{ 'app.language' | transloco }}
