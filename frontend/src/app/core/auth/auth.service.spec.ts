@@ -21,10 +21,15 @@ const profile: UserProfile = {
   status: 'ACTIVE',
   createdAt: '2026-09-01T00:00:00Z',
   lastLoginAt: null,
+  membershipConfirmed: false,
 };
 
 function refreshError(status: number): OAuthEvent {
   return new OAuthErrorEvent('token_refresh_error', new HttpErrorResponse({ status }));
+}
+
+function tokenWith(claims: Record<string, unknown>): string {
+  return `header.${btoa(JSON.stringify(claims))}.signature`;
 }
 
 describe('AuthService', () => {
@@ -34,6 +39,7 @@ describe('AuthService', () => {
     loadDiscoveryDocumentAndTryLogin: ReturnType<typeof vi.fn>;
     setupAutomaticSilentRefresh: ReturnType<typeof vi.fn>;
     hasValidAccessToken: ReturnType<typeof vi.fn>;
+    getAccessToken: ReturnType<typeof vi.fn>;
     initCodeFlow: ReturnType<typeof vi.fn>;
     revokeTokenAndLogout: ReturnType<typeof vi.fn>;
     logOut: ReturnType<typeof vi.fn>;
@@ -50,6 +56,7 @@ describe('AuthService', () => {
       loadDiscoveryDocumentAndTryLogin: vi.fn().mockResolvedValue(true),
       setupAutomaticSilentRefresh: vi.fn(),
       hasValidAccessToken: vi.fn().mockReturnValue(false),
+      getAccessToken: vi.fn().mockReturnValue(null),
       initCodeFlow: vi.fn(),
       revokeTokenAndLogout: vi.fn().mockResolvedValue(undefined),
       logOut: vi.fn(),
@@ -91,6 +98,26 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBe(true);
     expect(service.profile()).toEqual(profile);
     expect(service.fullName()).toBe('Anastasia Employee');
+  });
+
+  it('ac2_10_exposes_the_permissions_carried_by_the_access_token', async () => {
+    oauth.hasValidAccessToken.mockReturnValue(true);
+    oauth.getAccessToken.mockReturnValue(
+      tokenWith({ permissions: ['user:read:scope'], role_scopes: ['DEAN:9'] }),
+    );
+
+    const init = service.init();
+    await Promise.resolve();
+    http.expectOne(`${environment.apiUrl}/users/me`).flush(profile);
+    await init;
+
+    expect(service.permissions().hasPermission('user:read:scope')).toBe(true);
+    expect(service.permissions().roleScopes).toEqual([{ role: 'DEAN', organizationId: 9 }]);
+
+    await service.logout();
+
+    expect(service.accessToken()).toBeNull();
+    expect(service.permissions().permissions).toEqual([]);
   });
 
   it('ac12 stays anonymous without a token and reacts to token events', async () => {

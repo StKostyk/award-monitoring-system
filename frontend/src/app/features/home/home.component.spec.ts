@@ -14,6 +14,7 @@ const profile: UserProfile = {
   lastName: 'Martyniuk',
   roles: [
     {
+      id: 11,
       role: 'DEAN',
       organization: { id: 9, name: 'Faculty of Mathematics', nameUk: 'Факультет математики', code: 'FMI', type: 'FACULTY' },
       validFrom: '2026-09-01',
@@ -24,6 +25,20 @@ const profile: UserProfile = {
   status: 'ACTIVE',
   createdAt: '2026-09-01T00:00:00Z',
   lastLoginAt: null,
+  membershipConfirmed: true,
+};
+
+const newcomer: UserProfile = {
+  ...profile,
+  roles: [],
+  organization: {
+    id: 64,
+    name: 'Department of Algebra',
+    nameUk: 'Кафедра алгебри',
+    code: 'DAI',
+    type: 'DEPARTMENT',
+  },
+  membershipConfirmed: false,
 };
 
 describe('HomeComponent', () => {
@@ -38,7 +53,18 @@ describe('HomeComponent', () => {
         TranslocoTestingModule.forRoot({
           langs: {
             uk: {
-              home: { greeting: 'Вітаємо, {{name}}', roles: 'Ролі', organization: 'Підрозділ', email: 'Пошта', noRoles: 'Немає' },
+              home: {
+                greeting: 'Вітаємо, {{name}}',
+                roles: 'Ролі',
+                organization: 'Підрозділ',
+                email: 'Пошта',
+                noRoles: 'Немає',
+                membership: {
+                  title: 'Членство у підрозділі не підтверджено',
+                  text: 'Ваше членство у підрозділі ще не підтверджено: {{organization}}.',
+                  hint: 'Зверніться до секретаря факультету.',
+                },
+              },
               roles: { DEAN: 'Декан' },
             },
           },
@@ -71,6 +97,26 @@ describe('HomeComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Faculty of Mathematics');
+  });
+
+  it('ac2_6_shows_the_membership_banner_until_the_department_confirms', () => {
+    lang = 'uk';
+    auth.profile.set(newcomer);
+    const fixture = TestBed.createComponent(HomeComponent);
+    fixture.detectChanges();
+    const banner = fixture.nativeElement.querySelector('[data-testid="membership-banner"]');
+
+    expect(banner).not.toBeNull();
+    expect(banner.textContent).toContain('Ваше членство у підрозділі ще не підтверджено');
+    expect(banner.textContent).toContain('Кафедра алгебри');
+  });
+
+  it('ac2_6_hides_the_membership_banner_once_a_role_is_granted', () => {
+    auth.profile.set(profile);
+    const fixture = TestBed.createComponent(HomeComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="membership-banner"]')).toBeNull();
   });
 
   it('renders nothing until the profile is loaded', () => {

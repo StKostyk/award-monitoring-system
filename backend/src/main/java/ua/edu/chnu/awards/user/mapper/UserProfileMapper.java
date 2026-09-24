@@ -22,11 +22,12 @@ public class UserProfileMapper {
     /**
      * Builds the profile response.
      *
-     * @param user  the user
-     * @param roles the user's current role assignments
+     * @param user      the user
+     * @param roles     the user's current role assignments
+     * @param confirmed whether the user has ever held a role
      * @return response
      */
-    public UserProfileResponse toProfile(User user, List<UserRole> roles) {
+    public UserProfileResponse toProfile(User user, List<UserRole> roles, boolean confirmed) {
         return new UserProfileResponse(
             user.getId(),
             user.getEmailAddress(),
@@ -36,7 +37,8 @@ public class UserProfileMapper {
             toRef(user.getOrganization()),
             user.getAccountStatus(),
             user.getCreatedAt(),
-            user.getLastLoginAt());
+            user.getLastLoginAt(),
+            confirmed);
     }
 
     /**
@@ -68,7 +70,13 @@ public class UserProfileMapper {
             history.stream().map(this::toAssignment).toList(), !history.isEmpty());
     }
 
-    RoleAssignmentResponse toAssignment(UserRole role) {
+    /**
+     * Builds one role assignment.
+     *
+     * @param role the assignment
+     * @return response
+     */
+    public RoleAssignmentResponse toAssignment(UserRole role) {
         return new RoleAssignmentResponse(role.getId(), role.getRoleType(), toRef(role.getOrganization()),
             role.getValidFrom(), role.getValidTo());
     }

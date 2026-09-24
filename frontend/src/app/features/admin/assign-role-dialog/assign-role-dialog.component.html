@@ -1,0 +1,72 @@
+<h2 mat-dialog-title>{{ 'admin.assign.title' | transloco }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="admin__form">
+    @if (roles.length) {
+      <mat-form-field appearance="outline" class="admin__field">
+        <mat-label>{{ 'admin.assign.role' | transloco }}</mat-label>
+        <mat-select
+          formControlName="role"
+          (selectionChange)="roleChanged($event.value)"
+          data-testid="assign-role"
+        >
+          @for (role of roles; track role) {
+            <mat-option [value]="role">{{ 'roles.' + role | transloco }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.role.hasError('required')) {
+          <mat-error>{{ 'admin.assign.validation.required' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="admin__field">
+        <mat-label>{{ 'admin.assign.organization' | transloco }}</mat-label>
+        <mat-select formControlName="organizationId" data-testid="assign-organization">
+          @for (organization of organizations(); track organization.id) {
+            <mat-option [value]="organization.id">{{ name(organization) }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.organizationId.hasError('required')) {
+          <mat-error>{{ 'admin.assign.validation.required' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="admin__field">
+        <mat-label>{{ 'admin.assign.validFrom' | transloco }}</mat-label>
+        <input matInput type="date" formControlName="validFrom" [min]="minimumDate" data-testid="assign-valid-from" />
+        @if (form.controls.validFrom.hasError('past')) {
+          <mat-error>{{ 'admin.assign.validation.past' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="admin__field">
+        <mat-label>{{ 'admin.assign.validTo' | transloco }}</mat-label>
+        <input matInput type="date" formControlName="validTo" data-testid="assign-valid-to" />
+        @if (form.controls.validTo.hasError('order')) {
+          <mat-error>{{ 'admin.assign.validation.order' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+    } @else {
+      <p data-testid="assign-no-roles">{{ 'admin.assign.noRoles' | transloco }}</p>
+    }
+
+    @if (error(); as error) {
+      <p class="admin__problem" role="alert" data-testid="assign-error">{{ error | transloco }}</p>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialog.close()" data-testid="assign-cancel">
+    {{ 'admin.assign.cancel' | transloco }}
+  </button>
+  @if (roles.length) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="submitting()"
+      (click)="submit()"
+      data-testid="assign-submit"
+    >
+      {{ 'admin.assign.submit' | transloco }}
+    </button>
+  }
+</mat-dialog-actions>

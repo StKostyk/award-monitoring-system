@@ -10,7 +10,12 @@
     "roles": "Your roles",
     "organization": "Organisation",
     "noRoles": "No roles assigned yet",
-    "email": "Email"
+    "email": "Email",
+    "membership": {
+      "title": "Department membership not confirmed",
+      "text": "Your department membership is not confirmed yet: {{organization}}.",
+      "hint": "Ask your faculty secretary or the head of your department. Once it is confirmed, the roles reach your session after the next sign-in."
+    }
   },
   "roles": {
     "EMPLOYEE": "Employee",
@@ -20,6 +25,120 @@
     "RECTOR": "Rector",
     "SYSTEM_ADMIN": "System administrator",
     "GDPR_OFFICER": "Data protection officer"
+  },
+  "admin": {
+    "users": {
+      "title": "Users",
+      "empty": "No users found",
+      "noRoles": "No roles",
+      "unconfirmedBadge": "Not confirmed",
+      "confirm": "Confirm",
+      "correctDepartment": "Change the department before confirming",
+      "filters": {
+        "q": "Search by name or address",
+        "qHint": "At least 2 characters",
+        "role": "Role",
+        "status": "Status",
+        "anyRole": "Any role",
+        "anyStatus": "Any status",
+        "unconfirmed": "Unconfirmed only"
+      },
+      "columns": {
+        "name": "User",
+        "email": "Email",
+        "organization": "Organisation",
+        "status": "Status",
+        "roles": "Roles",
+        "actions": "Actions"
+      },
+      "paginator": {
+        "itemsPerPage": "Rows per page",
+        "first": "First page",
+        "previous": "Previous page",
+        "next": "Next page",
+        "last": "Last page",
+        "range": "{{from}}–{{to}} of {{total}}"
+      }
+    },
+    "status": {
+      "PENDING": "Pending confirmation",
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "SUSPENDED": "Suspended",
+      "RETIRED": "Retired",
+      "MEMORIAL": "Memorial",
+      "DELETED": "Deleted"
+    },
+    "detail": {
+      "back": "Back to the user list",
+      "email": "Email",
+      "organization": "Organisation",
+      "status": "Status",
+      "created": "Created",
+      "lastLogin": "Last sign-in",
+      "never": "Never signed in",
+      "currentRoles": "Current roles",
+      "history": "Role history",
+      "noRoles": "No roles assigned yet",
+      "noHistory": "The history is empty",
+      "validity": "valid from {{from}}",
+      "validityUntil": "valid from {{from}} to {{to}}",
+      "ended": "Ended",
+      "assign": "Assign role",
+      "revoke": "Revoke",
+      "assigned": "The role is assigned.",
+      "revoked": "The role is revoked.",
+      "sessionHint": "The new role reaches the user's own session with the next silent token refresh or the next sign-in.",
+      "notFound": "User not found",
+      "notFoundHint": "There is no such user, or the user is outside your scope."
+    },
+    "confirmDialog": {
+      "title": "Confirm membership",
+      "text": "{{name}} will receive the Employee role in the selected department.",
+      "department": "Department",
+      "submit": "Confirm",
+      "cancel": "Cancel"
+    },
+    "assign": {
+      "title": "Assign role",
+      "role": "Role",
+      "organization": "Organisation",
+      "validFrom": "Valid from",
+      "validTo": "Valid to (optional)",
+      "submit": "Assign",
+      "cancel": "Cancel",
+      "noRoles": "You cannot assign roles.",
+      "validation": {
+        "required": "Required",
+        "past": "The date cannot be in the past",
+        "order": "\"Valid to\" must not be earlier than \"valid from\""
+      }
+    },
+    "revoke": {
+      "title": "Revoke the role?",
+      "text": "The role \"{{role}}\" in {{organization}} will be revoked from {{name}}.",
+      "warning": "The user will be signed out everywhere, so the lost permissions take effect at once.",
+      "confirm": "Revoke",
+      "cancel": "Cancel"
+    },
+    "problems": {
+      "role-above-level": "This role is not below your level in that organisation. University and system roles are granted by the rector's office or the administrator.",
+      "role-organization-mismatch": "The chosen organisation does not fit this role.",
+      "role-already-assigned": "The user already holds this role in that organisation.",
+      "role-last-own": "You cannot revoke your own last role above Employee.",
+      "role-already-revoked": "This role has already been revoked.",
+      "access-denied": "You lack the permission for this action.",
+      "organisation-invalid": "Choose an active organisation.",
+      "user-not-active": "The account is not active.",
+      "role-validity": "The validity period of the role is invalid.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The action failed. Try again later."
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "text": "You do not have the permission for this page. Ask your faculty secretary or the administrator if you need access.",
+      "home": "Go to the home page"
+    }
   },
   "register": {
     "title": "Registration",

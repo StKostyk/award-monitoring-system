@@ -3,10 +3,10 @@ package ua.edu.chnu.awards.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.AfterAll;
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import io.restassured.RestAssured;
@@ -34,6 +35,7 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 class RegistrationFlowFT extends AbstractIntegrationTest {
 
     private static final String EMAIL = "ft.register@chnu.edu.ua";
+    private static final String ABANDONED = "ft.abandoned@chnu.edu.ua";
     private static final String PASSWORD = "correct-horse-battery";
 
     @LocalServerPort
@@ -41,6 +43,9 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @Value("${mailpit.api-url}")
     private String mailpitApiUrl;
@@ -55,7 +60,8 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
 
     @AfterAll
     void cleanUp() {
-        userRepository.findByEmailAddressIgnoreCase(EMAIL).ifPresent(userRepository::delete);
+        List.of(EMAIL, ABANDONED).forEach(email ->
+            userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
     }
 
     @Test
@@ -85,7 +91,8 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
         RestAssured.given().header("Authorization", "Bearer " + tokens.jsonPath().getString("access_token"))
             .get("/api/v1/users/me").then().statusCode(200)
             .body("status", equalTo("ACTIVE"))
-            .body("roles.role", hasItem("EMPLOYEE"))
+            .body("roles", equalTo(List.of()))
+            .body("membershipConfirmed", equalTo(false))
             .body("organization.code", equalTo("DAI"));
     }
 
@@ -98,6 +105,28 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
         register("FT.REGISTER@chnu.edu.ua", 64L).then().statusCode(409)
             .body("type", equalTo("urn:awards:problem:email-taken"));
         assertThat(userRepository.existsByEmailAddressIgnoreCase("someone@gmail.com")).isFalse();
+    }
+
+    @Test
+    void ac2_8_anAbandonedPendingAccountIsTakenOverByTheNextRegistration() {
+        mailpit.clear();
+        register(ABANDONED, 64L).then().statusCode(201);
+        register(ABANDONED, 64L).then().statusCode(409)
+            .body("type", equalTo("urn:awards:problem:email-taken"));
+
+        jdbc.update("update one_time_tokens set expires_at = now() - interval '1 hour'"
+            + " where purpose = 'EMAIL_VERIFICATION' and user_id ="
+            + " (select user_id from users where email_address = ?)", ABANDONED);
+
+        RestAssured.given().contentType(ContentType.JSON)
+            .body(Map.of("email", ABANDONED, "password", PASSWORD, "firstName", "Друга", "lastName", "Спроба",
+                "organizationId", 65L))
+            .post("/api/v1/auth/register").then().statusCode(201).body("status", equalTo("PENDING"));
+
+        assertThat(userRepository.findByEmailAddressIgnoreCase(ABANDONED).orElseThrow().getFirstName())
+            .isEqualTo("Друга");
+        assertThat(Mailpit.linkIn(mailpit.latestTextTo(ABANDONED, "Підтвердження адреси", 2)))
+            .startsWith("http://localhost:4200/verify-email?token=");
     }
 
     @Test

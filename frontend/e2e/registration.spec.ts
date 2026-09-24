@@ -47,7 +47,7 @@ test.describe('registration', () => {
     await expect(page).toHaveURL(/registration-pending/);
     await signIn(page, email, password);
     await expect(page.getByTestId('user-name')).toHaveText('Олена Нова');
-    await expect(page.getByTestId('profile-roles')).toContainText('Працівник');
+    await expect(page.getByTestId('membership-banner')).toContainText('ще не підтверджено');
   });
 
   test('ac22 ac28 a non-institutional address is refused on the client', async ({ page }) => {

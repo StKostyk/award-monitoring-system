@@ -23,3 +23,8 @@ export function problemType(error: unknown): string {
   }
   return 'unknown';
 }
+
+/** HTTP status of an API error, or 0 when the request never reached the server. */
+export function problemStatus(error: unknown): number {
+  return error instanceof HttpErrorResponse ? error.status : 0;
+}

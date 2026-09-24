@@ -46,10 +46,10 @@ if (-not $backendOk) {
         Select-Object -First 20 | ForEach-Object { $_.Line }
 }
 
-$counts = Select-String -Path $log -Pattern '^\[INFO\] Tests run: (\d+), Failures: (\d+), Errors: (\d+), Skipped: (\d+)$' |
-    ForEach-Object { $_.Matches[0].Groups }
-$unit = if ($counts.Count -ge 1) { $counts[0][1].Value } else { '?' }
-$integration = if ($counts.Count -ge 2) { $counts[1][1].Value } else { '0' }
+$counts = @(Select-String -Path $log -Pattern 'Tests run: (\d+), Failures: \d+, Errors: \d+, Skipped: \d+\s*$' |
+    ForEach-Object { $_.Matches[0].Groups[1].Value })
+$unit = if ($counts.Count -ge 1) { $counts[0] } else { '?' }
+$integration = if ($counts.Count -ge 2) { $counts[-1] } else { '0' }
 
 $coverage = '?'
 $report = Join-Path $backend 'target\site\jacoco\index.html'
@@ -75,8 +75,8 @@ if (-not $SkipFrontend) {
     & npm run test:ci *> (Join-Path $logDir 'gate-frontend.log')
     $testOk = $LASTEXITCODE -eq 0
     Pop-Location
-    $tests = (Select-String -Path (Join-Path $logDir 'gate-frontend.log') -Pattern 'Tests\s+(\d+) passed' |
-        Select-Object -Last 1).Matches.Groups[1].Value
+    $plain = (Get-Content (Join-Path $logDir 'gate-frontend.log') -Raw) -replace '\x1b\[[0-9;]*m', ''
+    $tests = if ($plain -match '(?s).*Tests\s+(\d+) passed') { $Matches[1] } else { '?' }
     $frontend = "lint $(if ($lintOk) { 'PASS' } else { 'FAIL' }), tests $(if ($testOk) { "PASS ($tests)" } else { 'FAIL' })"
 }
 

@@ -27,6 +27,7 @@ export interface OrganizationRef {
 }
 
 export interface RoleAssignment {
+  id: number;
   role: RoleType;
   organization: OrganizationRef;
   validFrom: string;
@@ -43,4 +44,5 @@ export interface UserProfile {
   status: AccountStatus;
   createdAt: string;
   lastLoginAt: string | null;
+  membershipConfirmed: boolean;
 }

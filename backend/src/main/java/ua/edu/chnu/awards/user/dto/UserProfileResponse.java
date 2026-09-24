@@ -17,8 +17,11 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param status       account status
  * @param createdAt    registration time
  * @param lastLoginAt  last successful sign-in, null before the first one
+ * @param membershipConfirmed whether somebody has ever granted the user a role; false until the department
+ *                            confirms a self-registered account
  */
 public record UserProfileResponse(Long id, String email, String firstName, String lastName,
                                   List<RoleAssignmentResponse> roles, OrganizationRef organization,
-                                  AccountStatus status, Instant createdAt, Instant lastLoginAt) {
+                                  AccountStatus status, Instant createdAt, Instant lastLoginAt,
+                                  boolean membershipConfirmed) {
 }

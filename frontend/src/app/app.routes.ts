@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard } from './core/auth/auth.guard';
+import { authGuard, userDirectoryGuard } from './core/auth/auth.guard';
 import { CallbackComponent } from './core/auth/callback.component';
 import { ShellComponent } from './core/layout/shell.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
@@ -9,6 +9,7 @@ import { RegistrationPendingComponent } from './features/auth/registration-pendi
 import { ResetPasswordComponent } from './features/auth/reset-password/reset-password.component';
 import { NotMeComponent } from './features/auth/security/not-me/not-me.component';
 import { VerifyEmailComponent } from './features/auth/verify-email/verify-email.component';
+import { ForbiddenComponent } from './features/forbidden/forbidden.component';
 import { HomeComponent } from './features/home/home.component';
 
 export const routes: Routes = [
@@ -23,6 +24,12 @@ export const routes: Routes = [
       { path: 'forgot-password', component: ForgotPasswordComponent },
       { path: 'reset-password', component: ResetPasswordComponent },
       { path: 'security/not-me', component: NotMeComponent },
+      { path: 'forbidden', component: ForbiddenComponent, canActivate: [authGuard] },
+      {
+        path: 'admin',
+        canActivate: [authGuard, userDirectoryGuard],
+        loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+      },
       { path: '', component: HomeComponent, pathMatch: 'full', canActivate: [authGuard] },
     ],
   },

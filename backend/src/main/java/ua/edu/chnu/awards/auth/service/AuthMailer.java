@@ -1,5 +1,7 @@
 package ua.edu.chnu.awards.auth.service;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.LongConsumer;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,8 @@ import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.user.event.RoleAssigned;
+import ua.edu.chnu.awards.user.event.RoleRevoked;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +32,14 @@ public class AuthMailer {
 
     static final int ATTEMPTS = 3;
     private static final long[] PAUSE_MS = {2_000, 5_000};
+    private static final String HELLO_UK = "Вітаємо, ";
+    private static final String HELLO_EN = "Hello ";
+    private static final String EXCLAMATION = "!\n\n";
+    private static final String COMMA = ",\n\n";
+    private static final String SEPARATOR = "---\n\n";
 
+    /** One conversation with the SMTP server at a time; parallel sends make it drop connections. */
+    private final Lock smtp = new ReentrantLock();
     private final JavaMailSender mailSender;
     private final String from;
     private final LongConsumer pause;
@@ -63,6 +74,18 @@ public class AuthMailer {
     }
 
     @Async
+    @TransactionalEventListener
+    public void onRoleAssigned(RoleAssigned event) {
+        deliver(event.email(), "Роль призначено / Role assigned", roleAssignedBody(event));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void onRoleRevoked(RoleRevoked event) {
+        deliver(event.email(), "Роль відкликано / Role revoked", roleRevokedBody(event));
+    }
+
+    @Async
     @EventListener
     public void onAccountLocked(AccountLocked event) {
         if (event.recipients().isEmpty()) {
@@ -85,7 +108,12 @@ public class AuthMailer {
         message.setText(text);
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             try {
-                mailSender.send(message);
+                smtp.lock();
+                try {
+                    mailSender.send(message);
+                } finally {
+                    smtp.unlock();
+                }
                 return;
             } catch (MailException e) {
                 log.warn("Email '{}' to {} failed (attempt {} of {}): {}", subject, to, attempt, ATTEMPTS,
@@ -107,13 +135,13 @@ public class AuthMailer {
     }
 
     static String verificationBody(VerificationRequested event) {
-        return "Вітаємо, " + event.firstName() + "!\n\n"
+        return HELLO_UK + event.firstName() + EXCLAMATION
             + "Щоб завершити реєстрацію в системі обліку нагород ЧНУ, підтвердьте свою адресу протягом 24 годин:\n"
             + event.link() + "\n\n"
             + "На сторінці підтвердження введіть пароль, який ви обрали під час реєстрації.\n"
             + "Якщо ви не реєструвалися, просто проігноруйте цей лист.\n\n"
-            + "---\n\n"
-            + "Hello " + event.firstName() + ",\n\n"
+            + SEPARATOR
+            + HELLO_EN + event.firstName() + COMMA
             + "To finish registering with the ChNU award monitoring system, confirm your address within 24 hours:\n"
             + event.link() + "\n\n"
             + "The confirmation page asks for the password you chose when registering.\n"
@@ -135,14 +163,14 @@ public class AuthMailer {
             + "Система / Operating system: " + event.operatingSystem() + "\n"
             + "IP: " + event.ip() + "\n"
             + "Час / Time: " + event.at() + "\n\n";
-        return "Вітаємо, " + event.firstName() + "!\n\n"
+        return HELLO_UK + event.firstName() + EXCLAMATION
             + "До вашого облікового запису в системі обліку нагород ЧНУ щойно увійшли з нового пристрою.\n\n"
             + facts
             + "Якщо це були ви, нічого робити не потрібно. Якщо ні, натисніть «Це був не я» протягом 24 годин, "
             + "щоб завершити всі сеанси й задати новий пароль:\n"
             + event.link() + "\n\n"
-            + "---\n\n"
-            + "Hello " + event.firstName() + ",\n\n"
+            + SEPARATOR
+            + HELLO_EN + event.firstName() + COMMA
             + "Your ChNU award monitoring account was just signed in from a new device.\n\n"
             + facts
             + "If this was you, nothing needs to be done. If not, use \"This was not me\" within 24 hours to end "
@@ -150,13 +178,39 @@ public class AuthMailer {
             + event.link() + "\n";
     }
 
+    static String roleAssignedBody(RoleAssigned event) {
+        String until = event.validTo() == null ? "" : " до " + event.validTo();
+        String untilEn = event.validTo() == null ? "" : " until " + event.validTo();
+        return HELLO_UK + event.firstName() + EXCLAMATION
+            + event.actor() + " призначив(ла) вам роль «" + event.role() + "» у підрозділі «"
+            + event.organizationUk() + "» з " + event.validFrom() + until + ".\n"
+            + "Нові права з'являться після наступного входу до системи.\n\n"
+            + SEPARATOR
+            + HELLO_EN + event.firstName() + COMMA
+            + event.actor() + " granted you the role \"" + event.role() + "\" in " + event.organization()
+            + " from " + event.validFrom() + untilEn + ".\n"
+            + "The new permissions apply from your next sign-in.\n";
+    }
+
+    static String roleRevokedBody(RoleRevoked event) {
+        return HELLO_UK + event.firstName() + EXCLAMATION
+            + event.actor() + " відкликав(ла) вашу роль «" + event.role() + "» у підрозділі «"
+            + event.organizationUk() + "»; останній день дії — " + event.lastDay() + ".\n"
+            + "Усі сеанси завершено, тож увійдіть до системи ще раз.\n\n"
+            + SEPARATOR
+            + HELLO_EN + event.firstName() + COMMA
+            + event.actor() + " revoked your role \"" + event.role() + "\" in " + event.organization()
+            + "; its last day is " + event.lastDay() + ".\n"
+            + "Every session was ended, so sign in again.\n";
+    }
+
     static String resetBody(PasswordResetRequested event) {
-        return "Вітаємо, " + event.firstName() + "!\n\n"
+        return HELLO_UK + event.firstName() + EXCLAMATION
             + "Ви попросили скинути пароль у системі обліку нагород ЧНУ. Задайте новий пароль протягом 1 години:\n"
             + event.link() + "\n\n"
             + "Якщо ви не робили цього запиту, проігноруйте цей лист — пароль залишиться незмінним.\n\n"
-            + "---\n\n"
-            + "Hello " + event.firstName() + ",\n\n"
+            + SEPARATOR
+            + HELLO_EN + event.firstName() + COMMA
             + "You asked to reset your password for the ChNU award monitoring system. Set a new one within 1 hour:\n"
             + event.link() + "\n\n"
             + "If you did not ask for this, ignore this message; your password stays unchanged.\n";

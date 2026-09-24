@@ -1,0 +1,134 @@
+<a mat-button routerLink="/admin/users" data-testid="back-to-users">
+  <mat-icon>arrow_back</mat-icon>
+  {{ 'admin.detail.back' | transloco }}
+</a>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" data-testid="detail-loading" />
+}
+
+@if (notFound()) {
+  <mat-card class="admin__card" data-testid="detail-not-found">
+    <mat-card-content>
+      <h2>{{ 'admin.detail.notFound' | transloco }}</h2>
+      <p>{{ 'admin.detail.notFoundHint' | transloco }}</p>
+    </mat-card-content>
+  </mat-card>
+} @else if (problem(); as problem) {
+  <p class="admin__problem" role="alert" data-testid="detail-error">
+    {{ 'admin.problems.' + problem | transloco }}
+  </p>
+}
+
+@if (user(); as user) {
+  <mat-card class="admin__card" data-testid="detail-profile">
+    <mat-card-header>
+      <mat-card-title>{{ user.lastName }} {{ user.firstName }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <dl class="admin__facts">
+        <dt>{{ 'admin.detail.email' | transloco }}</dt>
+        <dd data-testid="detail-email">{{ user.email }}</dd>
+        <dt>{{ 'admin.detail.organization' | transloco }}</dt>
+        <dd>{{ name(user.organization) }}</dd>
+        <dt>{{ 'admin.detail.status' | transloco }}</dt>
+        <dd>{{ 'admin.status.' + user.status | transloco }}</dd>
+        <dt>{{ 'admin.detail.created' | transloco }}</dt>
+        <dd>{{ user.createdAt }}</dd>
+        <dt>{{ 'admin.detail.lastLogin' | transloco }}</dt>
+        <dd>{{ user.lastLoginAt ?? ('admin.detail.never' | transloco) }}</dd>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+
+  @if (message(); as message) {
+    <p class="admin__message" role="status" data-testid="detail-message">
+      {{ message | transloco }}
+      <span class="admin__hint" data-testid="detail-session-hint">
+        {{ 'admin.detail.sessionHint' | transloco }}
+      </span>
+    </p>
+  }
+
+  @if (actionProblem(); as problem) {
+    <p class="admin__problem" role="alert" data-testid="detail-action-error">
+      {{ problem | transloco }}
+    </p>
+  }
+
+  <mat-card class="admin__card">
+    <mat-card-header>
+      <mat-card-title>{{ 'admin.detail.currentRoles' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (user.roles.length) {
+        <ul class="admin__roles" data-testid="current-roles">
+          @for (assignment of user.roles; track assignment.id) {
+            <li class="admin__role">
+              <span>
+                {{ 'roles.' + assignment.role | transloco }} · {{ name(assignment.organization) }}
+              </span>
+              <span class="admin__validity">
+                {{
+                  assignment.validTo
+                    ? ('admin.detail.validityUntil'
+                      | transloco: { from: assignment.validFrom, to: assignment.validTo })
+                    : ('admin.detail.validity' | transloco: { from: assignment.validFrom })
+                }}
+              </span>
+              @if (canRevoke(assignment)) {
+                <button
+                  mat-button
+                  type="button"
+                  (click)="revoke(assignment, user)"
+                  data-testid="revoke-role"
+                >
+                  {{ 'admin.detail.revoke' | transloco }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p data-testid="no-current-roles">{{ 'admin.detail.noRoles' | transloco }}</p>
+      }
+      @if (canAssign) {
+        <button mat-flat-button type="button" (click)="assign(user)" data-testid="assign-role-open">
+          {{ 'admin.detail.assign' | transloco }}
+        </button>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="admin__card">
+    <mat-card-header>
+      <mat-card-title>{{ 'admin.detail.history' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (user.roleHistory.length) {
+        <ul class="admin__roles" data-testid="role-history">
+          @for (assignment of user.roleHistory; track assignment.id) {
+            <li class="admin__role" [class.admin__role--ended]="ended(assignment)">
+              <span>
+                {{ 'roles.' + assignment.role | transloco }} · {{ name(assignment.organization) }}
+              </span>
+              <span class="admin__validity">
+                {{
+                  assignment.validTo
+                    ? ('admin.detail.validityUntil'
+                      | transloco: { from: assignment.validFrom, to: assignment.validTo })
+                    : ('admin.detail.validity' | transloco: { from: assignment.validFrom })
+                }}
+              </span>
+              @if (ended(assignment)) {
+                <span class="admin__ended">{{ 'admin.detail.ended' | transloco }}</span>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p>{{ 'admin.detail.noHistory' | transloco }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+}

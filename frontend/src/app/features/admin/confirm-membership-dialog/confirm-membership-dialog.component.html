@@ -1,0 +1,22 @@
+<h2 mat-dialog-title>{{ 'admin.confirmDialog.title' | transloco }}</h2>
+<mat-dialog-content>
+  <p>
+    {{ 'admin.confirmDialog.text' | transloco: { name: user.firstName + ' ' + user.lastName } }}
+  </p>
+  <mat-form-field appearance="outline" class="admin__field">
+    <mat-label>{{ 'admin.confirmDialog.department' | transloco }}</mat-label>
+    <mat-select [formControl]="department" data-testid="confirm-department">
+      @for (department of departments(); track department.id) {
+        <mat-option [value]="department.id">{{ name(department) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialog.close()" data-testid="confirm-cancel">
+    {{ 'admin.confirmDialog.cancel' | transloco }}
+  </button>
+  <button mat-flat-button type="button" (click)="submit()" data-testid="confirm-submit">
+    {{ 'admin.confirmDialog.submit' | transloco }}
+  </button>
+</mat-dialog-actions>

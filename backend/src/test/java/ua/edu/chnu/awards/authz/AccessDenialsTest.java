@@ -56,7 +56,7 @@ class AccessDenialsTest {
 
         denials.onDenied(new AuthorizationDeniedEvent<>(() -> caller, "users", new AuthorizationDecision(false)));
 
-        verify(audit).record(AuditAction.ACCESS_DENIED, AuditLog.AUTHORIZATION, 7L,
+        verify(audit).recordSeparately(AuditAction.ACCESS_DENIED, AuditLog.AUTHORIZATION, 7L,
             Map.of("method", "GET", "path", "/api/v1/users", "required", "permission user:read:scope is required"));
     }
 
@@ -77,7 +77,7 @@ class AccessDenialsTest {
         denials.onDenied(new AuthorizationDeniedEvent<>(() -> caller, "actuator",
             new AuthorityAuthorizationDecision(false, AuthorityUtils.createAuthorityList("ROLE_SYSTEM_ADMIN"))));
 
-        verify(audit).record(AuditAction.ACCESS_DENIED, AuditLog.AUTHORIZATION, 7L,
+        verify(audit).recordSeparately(AuditAction.ACCESS_DENIED, AuditLog.AUTHORIZATION, 7L,
             Map.of("method", "GET", "path", "/api/v1/users", "required", "authority ROLE_SYSTEM_ADMIN is required"));
         assertThat(denials.problem(request).getDetail()).isEqualTo("authority ROLE_SYSTEM_ADMIN is required");
     }
@@ -99,7 +99,7 @@ class AccessDenialsTest {
 
         denials.onDenied(new AuthorizationDeniedEvent<>(() -> caller, "users", new AuthorizationDecision(false)));
 
-        verify(audit).record(eq(AuditAction.ACCESS_DENIED), eq(AuditLog.AUTHORIZATION), isNull(), any());
+        verify(audit).recordSeparately(eq(AuditAction.ACCESS_DENIED), eq(AuditLog.AUTHORIZATION), isNull(), any());
     }
 
     @Test

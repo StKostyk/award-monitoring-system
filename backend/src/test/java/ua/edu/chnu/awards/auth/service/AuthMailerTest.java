@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,9 @@ import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.user.event.RoleAssigned;
+import ua.edu.chnu.awards.user.event.RoleRevoked;
 
 class AuthMailerTest {
 
@@ -66,6 +70,30 @@ class AuthMailerTest {
         assertThat(message.getSubject()).contains("Новий вхід").contains("New sign-in");
         assertThat(message.getText()).contains("Олена").contains("Chrome").contains("Windows")
             .contains("203.0.113.7").contains("2026-09-21T10:00:00Z").contains("token=dev").contains("24 hours");
+    }
+
+    @Test
+    void ac2_5_tellsTheHolderWhichRoleWasGrantedWhereAndUntilWhen() {
+        mailer.onRoleAssigned(new RoleAssigned("member@chnu.edu.ua", "Анастасія", RoleType.FACULTY_SECRETARY,
+            "Faculty of Mathematics and Informatics", "Факультет математики та інформатики", "Марія Мартинюк",
+            LocalDate.of(2026, 9, 22), LocalDate.of(2026, 10, 22)));
+
+        SimpleMailMessage message = sent();
+        assertThat(message.getTo()).containsExactly("member@chnu.edu.ua");
+        assertThat(message.getSubject()).isEqualTo("Роль призначено / Role assigned");
+        assertThat(message.getText()).contains("FACULTY_SECRETARY", "Факультет математики та інформатики",
+            "Faculty of Mathematics and Informatics", "Марія Мартинюк", "2026-09-22", "2026-10-22");
+    }
+
+    @Test
+    void ac2_5_tellsTheFormerHolderTheLastDayAndThatEverySessionEnded() {
+        mailer.onRoleRevoked(new RoleRevoked("member@chnu.edu.ua", "Анастасія", RoleType.DEAN,
+            "Faculty of Mathematics and Informatics", "Факультет математики та інформатики", "Марія Мартинюк",
+            LocalDate.of(2026, 9, 21)));
+
+        SimpleMailMessage message = sent();
+        assertThat(message.getSubject()).isEqualTo("Роль відкликано / Role revoked");
+        assertThat(message.getText()).contains("DEAN", "2026-09-21", "Every session was ended");
     }
 
     @Test

@@ -1,4 +1,17 @@
 @if (auth.profile(); as profile) {
+  @if (!profile.membershipConfirmed) {
+    <mat-card class="home__card home__banner" role="status" data-testid="membership-banner">
+      <mat-card-content>
+        <strong>{{ 'home.membership.title' | transloco }}</strong>
+        <p class="home__banner-text">
+          {{
+            'home.membership.text' | transloco: { organization: organizationName(profile.organization) }
+          }}
+        </p>
+        <p class="home__banner-hint">{{ 'home.membership.hint' | transloco }}</p>
+      </mat-card-content>
+    </mat-card>
+  }
   <mat-card class="home__card" data-testid="profile-card">
     <mat-card-header>
       <mat-card-title>{{ 'home.greeting' | transloco: { name: profile.firstName } }}</mat-card-title>

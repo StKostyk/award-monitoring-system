@@ -39,6 +39,6 @@ public class UserProfileService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
         List<UserRole> roles = userRoleRepository.findCurrentByUserId(userId, LocalDate.now(clock));
-        return mapper.toProfile(user, roles);
+        return mapper.toProfile(user, roles, userRoleRepository.existsByUserId(userId));
     }
 }

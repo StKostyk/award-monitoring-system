@@ -9,11 +9,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +40,7 @@ import ua.edu.chnu.awards.user.entity.UserRole;
 import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.ManualConfirmation;
 
 class RegistrationServiceTest {
 
@@ -67,8 +67,7 @@ class RegistrationServiceTest {
     @BeforeEach
     void setUp() {
         service = new RegistrationService(userRepository, userRoleRepository, organizationRepository, tokens,
-            new PasswordPolicy(), passwordEncoder, events, throttle, properties, audit,
-            Clock.fixed(Instant.parse("2026-09-21T10:00:00Z"), ZoneOffset.UTC));
+            new PasswordPolicy(), passwordEncoder, events, throttle, properties, audit, new ManualConfirmation());
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
         when(organizationRepository.findById(64L)).thenReturn(Optional.of(department));
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
@@ -81,7 +80,7 @@ class RegistrationServiceTest {
     }
 
     @Test
-    void ac21_registersPendingEmployeeAndRequestsVerificationEmail() {
+    void ac21_registersPendingAccountAndRequestsVerificationEmail() {
         RegistrationResponse response = service.register(VALID);
 
         assertThat(response.status()).isEqualTo(AccountStatus.PENDING);
@@ -91,14 +90,67 @@ class RegistrationServiceTest {
         verify(throttle).claim("auth:resend:new.user@chnu.edu.ua", Duration.ofMinutes(1));
         assertThat(user.getValue().getPasswordHash()).isEqualTo("$2a$12$hash");
         assertThat(user.getValue().getOrganization()).isSameAs(department);
-        ArgumentCaptor<UserRole> role = ArgumentCaptor.forClass(UserRole.class);
-        verify(userRoleRepository).save(role.capture());
-        assertThat(role.getValue().getRoleType()).isEqualTo(RoleType.EMPLOYEE);
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
         verify(events).publishEvent(event.capture());
         VerificationRequested requested = (VerificationRequested) event.getValue();
         assertThat(requested.link()).isEqualTo("http://localhost:4200/verify-email?token=raw-token");
         assertThat(requested.firstName()).isEqualTo("Олена");
+    }
+
+    @Test
+    void ac2_6_registrationGrantsNoRoleSoSomebodyMustConfirmTheMembership() {
+        service.register(VALID);
+
+        verify(userRoleRepository, never()).save(any(UserRole.class));
+    }
+
+    @Test
+    void ac2_6_aProvenMembershipWouldGrantTheEmployeeRoleAtOnce() {
+        RegistrationService proven = new RegistrationService(userRepository, userRoleRepository,
+            organizationRepository, tokens, new PasswordPolicy(), passwordEncoder, events, throttle, properties,
+            audit, (user, where) -> Optional.of(UserRole.builder().user(user).roleType(RoleType.EMPLOYEE)
+                .organization(where).validFrom(LocalDate.of(2026, 9, 21)).build()));
+
+        proven.register(VALID);
+
+        ArgumentCaptor<UserRole> role = ArgumentCaptor.forClass(UserRole.class);
+        verify(userRoleRepository).save(role.capture());
+        assertThat(role.getValue().getRoleType()).isEqualTo(RoleType.EMPLOYEE);
+        assertThat(role.getValue().getOrganization()).isSameAs(department);
+    }
+
+    @Test
+    void ac2_8_pendingAccountWhoseLinkHasExpiredIsReplacedByTheNewRegistration() {
+        User abandoned = User.builder().id(7L).emailAddress("new.user@chnu.edu.ua").firstName("Стара")
+            .lastName("Назва").passwordHash("$2a$12$old").accountStatus(AccountStatus.PENDING)
+            .organization(Organization.builder().id(65L).orgType(OrganizationType.DEPARTMENT).active(true).build())
+            .build();
+        when(userRepository.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(abandoned));
+        when(tokens.countUsable(abandoned, TokenPurpose.EMAIL_VERIFICATION)).thenReturn(0L);
+
+        RegistrationResponse response = service.register(VALID);
+
+        assertThat(response.status()).isEqualTo(AccountStatus.PENDING);
+        assertThat(abandoned.getFirstName()).isEqualTo("Олена");
+        assertThat(abandoned.getPasswordHash()).isEqualTo("$2a$12$hash");
+        assertThat(abandoned.getOrganization()).isSameAs(department);
+        verify(tokens).invalidate(abandoned, TokenPurpose.EMAIL_VERIFICATION);
+        verify(userRepository, never()).saveAndFlush(any(User.class));
+        verify(audit).record(AuditAction.REGISTRATION_REPLACED, 7L, Map.of("organizationId", 64L));
+    }
+
+    @Test
+    void ac2_8_pendingAccountWithAUsableLinkKeepsTheAddress() {
+        User pending = User.builder().id(7L).emailAddress("new.user@chnu.edu.ua")
+            .accountStatus(AccountStatus.PENDING).build();
+        when(userRepository.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(pending));
+        when(tokens.countUsable(pending, TokenPurpose.EMAIL_VERIFICATION)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.register(VALID))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                assertThat(e.getType()).isEqualTo("email-taken");
+            });
     }
 
     @Test
@@ -115,7 +167,8 @@ class RegistrationServiceTest {
 
     @Test
     void ac23_existingAddressIsAConflict() {
-        when(userRepository.existsByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(true);
+        when(userRepository.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(
+            User.builder().id(7L).accountStatus(AccountStatus.ACTIVE).build()));
 
         assertThatThrownBy(() -> service.register(VALID))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
