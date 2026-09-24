@@ -20,7 +20,7 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 1.1.5 | New device login notification | 3 | ✅ Done | SCRUM-11 | [#33](https://github.com/StKostyk/award-monitoring-system/issues/33) |
 | 1.1.6 | Fixes from the Feature 1.1 manual run | 3 | ✅ Done | SCRUM-18 | [#64](https://github.com/StKostyk/award-monitoring-system/issues/64) |
 | 1.2.1 | Permission model and organisation-scoped access | 5 | ✅ Done | SCRUM-12 | [#35](https://github.com/StKostyk/award-monitoring-system/issues/35) |
-| 1.2.2 | Role assignment and membership confirmation | 8 | 🔄 In Review | SCRUM-13 | [#32](https://github.com/StKostyk/award-monitoring-system/issues/32) |
+| 1.2.2 | Role assignment and membership confirmation | 8 | ✅ Done | SCRUM-13 | [#32](https://github.com/StKostyk/award-monitoring-system/issues/32) |
 | 1.2.3 | Approval authority delegation | 5 | 📋 Ready | SCRUM-14 | [#37](https://github.com/StKostyk/award-monitoring-system/issues/37) |
 
 Sprint Goal: a user can register, verify the address, log in through the authorization server and call a protected endpoint.  
