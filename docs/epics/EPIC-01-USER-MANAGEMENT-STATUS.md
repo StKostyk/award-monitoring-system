@@ -10,12 +10,12 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 1.1 Core Authentication System | Done (validated; fixes from the manual run merged, author's retest pending) | 2026-09-21 | 2026-09-21 |
-| 1.2 Role-Based Access Control | In progress (PRD approved) | 2026-09-21 | |
+| 1.2 Role-Based Access Control | Validated with findings (PRD §12); fix story 1.2.4 and author's run of §9 pending | 2026-09-21 | |
 | 1.3 User Profile Management | Planned | | |
 
 ## Current focus
 
-Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model, 1.2.2 role assignment and 1.2.3 delegation done; next feature validation.
+Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model, 1.2.2 role assignment and 1.2.3 delegation done; validated 2026-09-25 (PRD §12, verdict passed with notes). Next: story 1.2.4 for findings F-1…F-9, then the author's run of §9.
 
 ## Stories
 
@@ -86,6 +86,8 @@ Each item is applied in the PR of the story that touches it, after approval.
 - The library withholds refresh tokens from public clients and only authenticates them on the PKCE code exchange; `RotatingRefreshTokenGenerator` and `PublicClientRefreshAuthenticationConverter/Provider` add both for `award-web`.
 
 - Validation of Feature 1.1 (2026-09-21, PRD §12): the author's manual run found six defects (blank page after a failed refresh, default 403 page after a restart, 404 after a direct sign-in, password reuse, 15-minute lag before other browsers were signed out, a second Redis on the developer machine); all fixed or explained in story 1.1.6. Refactor sweep items deferred: inject `Clock` in `LoginSuccessListener`, `TokenClaimsCustomizer`, `UserProfileService`, `RotatingRefreshTokenGenerator`; drop `OneTimeToken.markUsed` and narrow entity setters; `OrganizationRef.of(Organization)` factory; shared FT base class (port, Mailpit, `RestAssured.port`), `AuthApi` helper for the six auth POSTs, `TestUsers.active/pending` builders, composed `@WebMvcTest` annotation; `RegistrationFlowFT` order dependence on `ac21`; wall-clock sleep in `LoginProtectionFT` (mutable `Clock`); Angular `OnPush` on the auth components, shared Transloco/route test stubs, `LanguageService.localName`, shared `errors.network` key.
+
+- Validation of Feature 1.2 (2026-09-25, PRD §12): the detour review found nine defects (stale confirmation undoing a department correction, double revocation of a not-yet-started role, received delegations surviving a department move, deleted accounts readable by id, no reload after a conflict, sign-out on the first 401 without a refresh attempt, raw 429 key, non-numeric user id, unlocked delegation revocation) for story 1.2.4, and one decision (revocation while Redis is down). Refactor sweep items deferred: split `AuthMailer` into delivery, authentication mails and authority-change mails; shared unit-test fixtures for users and organisations.
 
 ## Security review follow-ups
 
