@@ -93,7 +93,7 @@ public class AccessScope {
      * @return true when the caller may grant it somewhere
      */
     public boolean below(RoleType role) {
-        return scopes().stream().anyMatch(scope -> levels.above(scope.role(), role)) && grant()
+        return heldScopes().stream().anyMatch(scope -> levels.above(scope.role(), role)) && grant()
             || refuse("no role above " + role);
     }
 
@@ -106,7 +106,7 @@ public class AccessScope {
      * @return true when allowed
      */
     public boolean canManage(RoleType role, long organizationId) {
-        return scopes().stream().anyMatch(scope -> tree.covers(scope.organizationId(), organizationId)
+        return heldScopes().stream().anyMatch(scope -> tree.covers(scope.organizationId(), organizationId)
             && levels.above(scope.role(), role)) && grant()
             || refuse("no role above " + role + " in the scope of organisation " + organizationId);
     }
@@ -117,10 +117,44 @@ public class AccessScope {
      * @return scopes, empty for an anonymous caller
      */
     public List<RoleScope> scopes() {
+        return claim(TokenClaimsCustomizer.CLAIM_ROLE_SCOPES)
+            .map(claims -> claims.stream().map(RoleScope::parse).flatMap(Optional::stream).toList())
+            .orElse(List.of());
+    }
+
+    private static Optional<List<String>> claim(String name) {
         return current().filter(JwtAuthenticationToken.class::isInstance)
             .map(JwtAuthenticationToken.class::cast)
-            .map(token -> token.getToken().getClaimAsStringList(TokenClaimsCustomizer.CLAIM_ROLE_SCOPES))
+            .map(token -> token.getToken().getClaimAsStringList(name));
+    }
+
+    /**
+     * The scopes of the roles the caller holds themselves, as the token states them separately from the
+     * borrowed ones. Managing users and reading the directory follow the roles a person actually holds, so
+     * borrowed approval authority never widens either, and holding a role that somebody also delegated to you
+     * does not take your own away.
+     *
+     * @return scopes of the caller's own roles
+     */
+    public List<RoleScope> heldScopes() {
+        return claim(TokenClaimsCustomizer.CLAIM_HELD_SCOPES)
             .map(claims -> claims.stream().map(RoleScope::parse).flatMap(Optional::stream).toList())
+            .orElseGet(this::withoutBorrowed);
+    }
+
+    private List<RoleScope> withoutBorrowed() {
+        List<RoleScope> borrowed = delegations().stream().map(DelegatedScope::scope).toList();
+        return scopes().stream().filter(scope -> !borrowed.contains(scope)).toList();
+    }
+
+    /**
+     * The approval authority the caller has borrowed from somebody else.
+     *
+     * @return borrowed authority, empty when none was lent
+     */
+    public List<DelegatedScope> delegations() {
+        return claim(TokenClaimsCustomizer.CLAIM_DELEGATIONS)
+            .map(claims -> claims.stream().map(DelegatedScope::parse).flatMap(Optional::stream).toList())
             .orElse(List.of());
     }
 
@@ -140,7 +174,9 @@ public class AccessScope {
     }
 
     private List<RoleScope> readScopes() {
-        return scopes().stream().filter(scope -> permissions.of(scope.role()).contains(PERMISSION_READ_SCOPE)).toList();
+        return heldScopes().stream()
+            .filter(scope -> permissions.of(scope.role()).contains(PERMISSION_READ_SCOPE))
+            .toList();
     }
 
     /**

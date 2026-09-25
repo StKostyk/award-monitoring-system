@@ -232,6 +232,53 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ---
 
+### 1.7 Entity: `role_delegations`
+
+**Description**: Temporary handover of an approval role to a colleague. The delegate borrows the reading and approving permissions of the role for a bounded period; user management never travels with a delegation (V018).
+
+**Business Rules**:
+- Only the four approval roles can be lent: `FACULTY_SECRETARY`, `DEAN`, `RECTOR_SECRETARY`, `RECTOR` (`ck_role_delegations_type`)
+- The delegator must hold that role in that organization on the day they lend it, and must hold it themselves: borrowed authority is never passed on
+- The delegate must be another active user holding a current role inside the organization's subtree (`ck_role_delegations_parties`)
+- The period is mandatory at both ends and lasts at most 90 days (`ck_role_delegations_dates`); it simply stops applying after `valid_to`, without any job
+- One standing delegation of a role per organization per delegator at a time: overlapping periods are refused by the application
+- A delegation taken back keeps its row with `revoked_at` and `revoked_by`; revoking the underlying role takes back what it had lent in the same transaction
+- The delegate carries the borrowed authority in the `delegations` token claim (`ROLE:orgId:delegatorId`) and in `role_scopes`, and is signed out everywhere when it is taken back
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `delegation_id` | `BIGSERIAL` | NO | Auto | PK | Unique delegation identifier |
+| `delegator_id` | `BIGINT` | NO | - | FK→users | User who lends the approval authority |
+| `delegate_id` | `BIGINT` | NO | - | FK→users, CK | User who borrows it; never the delegator |
+| `organization_id` | `BIGINT` | NO | - | FK→organizations | Organizational scope of the lent role |
+| `role_type` | `VARCHAR(30)` | NO | - | CK | Approval role being lent |
+| `reason` | `VARCHAR(500)` | YES | - | - | Why the authority was handed over, shown to the delegate |
+| `valid_from` | `DATE` | NO | - | CK | First day the borrowed authority applies |
+| `valid_to` | `DATE` | NO | - | CK | Last day it applies; at most `valid_from + 90` |
+| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
+| `revoked_at` | `TIMESTAMPTZ` | YES | - | - | When it was taken back before its last day |
+| `revoked_by` | `BIGINT` | YES | - | FK→users | Who took it back |
+
+**States** (derived, never stored):
+| Value | Meaning |
+|-------|---------|
+| `active` | `revoked_at IS NULL` and today lies between `valid_from` and `valid_to` |
+| `upcoming` | `revoked_at IS NULL` and `valid_from` is in the future |
+| `expired` | `revoked_at IS NULL` and `valid_to` has passed |
+| `revoked` | `revoked_at IS NOT NULL` |
+
+**Indexes**:
+- `pk_role_delegations` - Primary key on `delegation_id`
+- `idx_role_delegations_delegate` - Partial B-tree on `(delegate_id, valid_from, valid_to) WHERE revoked_at IS NULL`, read when a token is issued
+- `idx_role_delegations_delegator` - B-tree on `delegator_id`
+- `idx_role_delegations_role` - Partial B-tree on `(delegator_id, role_type, organization_id) WHERE revoked_at IS NULL`, read when the underlying role is revoked
+
+**Relationships**:
+- BELONGS TO `users` (N:1) via `delegator_id`, `delegate_id` and `revoked_by`
+- BELONGS TO `organizations` (N:1) via `organization_id`
+
+---
+
 ## 2. Award Domain
 
 ### 2.1 Entity: `awards`
@@ -547,6 +594,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `INSERT`, `UPDATE`, `DELETE` - row changes written by the audit triggers (`entity_type` = table name)
 - `LOGIN_SUCCESS`, `LOGIN_FAILED`, `ACCOUNT_LOCKED`, `LOGOUT`, `EMAIL_VERIFIED`, `PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET` - authentication events written by the application (`entity_type` = `AUTHENTICATION`, `entity_id` = user id, facts such as the failure reason in `new_values`)
 - `ACCESS_DENIED`, `ROLE_ASSIGNED`, `ROLE_REVOKED` - authorization events written by the application (`entity_type` = `AUTHORIZATION`, `entity_id` = the user concerned; `new_values` carries the missing requirement for a refusal, or the actor, role, organization and validity for a role change)
+- `DELEGATION_CREATED`, `DELEGATION_REVOKED` - approval authority lent and taken back (`entity_type` = `AUTHORIZATION`, `entity_id` = the delegate; `new_values` carries the actor, both parties, role, organization and period)
 - `PASSWORD_CHANGE` - Security
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
 - `DATA_EXPORT`, `DATA_DELETE` - GDPR rights

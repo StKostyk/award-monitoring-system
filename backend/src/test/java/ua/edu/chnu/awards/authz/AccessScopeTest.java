@@ -138,6 +138,67 @@ class AccessScopeTest {
         assertThat(access.scopes()).containsExactly(new RoleScope(RoleType.DEAN, 9L));
     }
 
+    @Test
+    void ac32_aTokenWithoutHeldScopesFallsBackToSubtractingTheBorrowedOnes() {
+        signInWithDelegation(7L, List.of("EMPLOYEE:64", "DEAN:9"), List.of("DEAN:9:3"), "user:read:scope",
+            "user:manage:scope", "award:approve:level2");
+
+        assertThat(access.delegations()).containsExactly(new DelegatedScope(RoleType.DEAN, 9L, 3L));
+        assertThat(access.heldScopes()).containsExactly(new RoleScope(RoleType.EMPLOYEE, 64L));
+        assertThat(access.canManage(RoleType.EMPLOYEE, 64L)).isFalse();
+        assertThat(access.below(RoleType.EMPLOYEE)).isFalse();
+        assertThat(access.readableOrganizations()).contains(Set.of());
+        assertThat(access.inScope(64L)).isTrue();
+    }
+
+    @Test
+    void ac32_ownRolesStillManageEvenWhileSomethingIsBorrowed() {
+        signInWithDelegation(7L, List.of("FACULTY_SECRETARY:9", "DEAN:9"), List.of("DEAN:9:3"),
+            "user:read:scope", "user:manage:scope");
+
+        assertThat(access.heldScopes()).containsExactly(new RoleScope(RoleType.FACULTY_SECRETARY, 9L));
+        assertThat(access.canManage(RoleType.EMPLOYEE, 64L)).isTrue();
+        assertThat(access.canManage(RoleType.FACULTY_SECRETARY, 9L)).isFalse();
+    }
+
+    @Test
+    void anAbsentDelegationClaimMeansNothingIsBorrowed() {
+        signIn(7L, List.of("DEAN:9"), "user:read:scope");
+
+        assertThat(access.delegations()).isEmpty();
+        assertThat(access.heldScopes()).containsExactly(new RoleScope(RoleType.DEAN, 9L));
+    }
+
+    @Test
+    void ac32_ownRoleSurvivesADelegationOfTheSameRoleInTheSameOrganisation() {
+        signInWithHeld(7L, List.of("DEAN:9"), List.of("DEAN:9"), List.of("DEAN:9:3"), "user:manage:scope",
+            "user:read:scope");
+
+        assertThat(access.heldScopes()).containsExactly(new RoleScope(RoleType.DEAN, 9L));
+        assertThat(access.canManage(RoleType.FACULTY_SECRETARY, 9L)).isTrue();
+        assertThat(access.readableOrganizations()).contains(Set.of(9L, 64L));
+    }
+
+    private void signInWithDelegation(long userId, List<String> scopes, List<String> delegations,
+                                      String... permissions) {
+        Jwt jwt = Jwt.withTokenValue("t").header("alg", "RS256").subject(String.valueOf(userId))
+            .claim("role_scopes", scopes).claim("delegations", delegations)
+            .claim("permissions", List.of(permissions))
+            .issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(60)).build();
+        SecurityContextHolder.getContext().setAuthentication(
+            new JwtAuthenticationToken(jwt, AuthorityUtils.createAuthorityList(permissions)));
+    }
+
+    private void signInWithHeld(long userId, List<String> scopes, List<String> held, List<String> delegations,
+                                String... permissions) {
+        Jwt jwt = Jwt.withTokenValue("t").header("alg", "RS256").subject(String.valueOf(userId))
+            .claim("role_scopes", scopes).claim("held_scopes", held).claim("delegations", delegations)
+            .claim("permissions", List.of(permissions))
+            .issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(60)).build();
+        SecurityContextHolder.getContext().setAuthentication(
+            new JwtAuthenticationToken(jwt, AuthorityUtils.createAuthorityList(permissions)));
+    }
+
     private void signIn(long userId, List<String> scopes, String... permissions) {
         Jwt jwt = Jwt.withTokenValue("t").header("alg", "RS256").subject(String.valueOf(userId))
             .claim("role_scopes", scopes).claim("permissions", List.of(permissions))

@@ -24,6 +24,8 @@ import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.delegation.event.DelegationCreated;
+import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
@@ -94,6 +96,47 @@ class AuthMailerTest {
         SimpleMailMessage message = sent();
         assertThat(message.getSubject()).isEqualTo("Роль відкликано / Role revoked");
         assertThat(message.getText()).contains("DEAN", "2026-09-21", "Every session was ended");
+    }
+
+    @Test
+    void ac3_5_tellsTheDelegateWhatWasLentForHowLongAndWhy() {
+        mailer.onDelegationCreated(new DelegationCreated("secretary@chnu.edu.ua", "Аліна", RoleType.DEAN,
+            "Faculty of Mathematics and Informatics", "Факультет математики та інформатики", "Марія Мартинюк",
+            LocalDate.of(2026, 9, 24), LocalDate.of(2026, 10, 8), "Відпустка"));
+
+        SimpleMailMessage message = sent();
+        assertThat(message.getTo()).containsExactly("secretary@chnu.edu.ua");
+        assertThat(message.getSubject()).isEqualTo("Делеговано повноваження / Authority delegated");
+        assertThat(message.getText()).contains("DEAN", "Факультет математики та інформатики", "Марія Мартинюк",
+            "2026-09-24", "2026-10-08", "Відпустка", "user management is not handed over");
+    }
+
+    @Test
+    void ac3_5_aDelegationWithoutAReasonLeavesTheLineOut() {
+        mailer.onDelegationCreated(new DelegationCreated("secretary@chnu.edu.ua", "Аліна", RoleType.DEAN,
+            "Faculty of Mathematics and Informatics", "Факультет математики та інформатики", "Марія Мартинюк",
+            LocalDate.of(2026, 9, 24), LocalDate.of(2026, 10, 8), null));
+
+        assertThat(sent().getText()).doesNotContain("Причина").doesNotContain("Reason");
+    }
+
+    @Test
+    void ac3_5_tellsBothSidesWhenSomebodyElseTookTheAuthorityBack() {
+        mailer.onDelegationRevoked(new DelegationRevoked(
+            List.of("secretary@chnu.edu.ua", "dean@chnu.edu.ua"), RoleType.DEAN,
+            "Faculty of Mathematics and Informatics", "Факультет математики та інформатики", "Аліна Коваленко",
+            "Олег Адміненко"));
+
+        ArgumentCaptor<SimpleMailMessage> messages = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(sender, times(2)).send(messages.capture());
+        assertThat(messages.getAllValues()).allSatisfy(message -> {
+            assertThat(message.getTo()).hasSize(1);
+            assertThat(message.getSubject()).isEqualTo("Делегування відкликано / Delegation revoked");
+            assertThat(message.getText()).contains("DEAN", "Аліна Коваленко", "Олег Адміненко",
+                "Every session of the delegate was ended");
+        });
+        assertThat(messages.getAllValues()).flatExtracting(message -> List.of(message.getTo()))
+            .containsExactly("secretary@chnu.edu.ua", "dean@chnu.edu.ua");
     }
 
     @Test

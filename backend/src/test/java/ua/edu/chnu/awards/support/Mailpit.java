@@ -17,7 +17,7 @@ public final class Mailpit {
 
     private static final int OK = 200;
     private static final int PAGE = 200;
-    private static final int ATTEMPTS = 120;
+    private static final int ATTEMPTS = 240;
     private static final long PAUSE_MS = 250;
 
     private final String apiUrl;
@@ -104,8 +104,9 @@ public final class Mailpit {
             }
             sleep();
         }
-        throw new IllegalStateException("No message delivered to " + recipient + "; inbox has "
-            + RestAssured.given().get(apiUrl + "/api/v1/messages").jsonPath().getInt("total") + " messages");
+        throw new IllegalStateException("No message with subject '" + subject + "' delivered to " + recipient
+            + "; inbox has " + RestAssured.given().get(apiUrl + "/api/v1/messages").jsonPath().getInt("total")
+            + " messages, " + messagesTo(recipient).size() + " of them to this address");
     }
 
     /**

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ua.edu.chnu.awards.authz.AccessDenials;
+import ua.edu.chnu.awards.delegation.service.DelegationNotFoundException;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,13 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(UserNotFoundException.class)
     ProblemDetail userNotFound(UserNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Not found");
+        return problem;
+    }
+
+    @ExceptionHandler(DelegationNotFoundException.class)
+    ProblemDetail delegationNotFound(DelegationNotFoundException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
         problem.setTitle("Not found");
         return problem;

@@ -44,6 +44,8 @@ tags:
     description: Award approval workflow management
   - name: Users
     description: User account management
+  - name: Delegations
+    description: Temporary delegation of approval authority
   - name: Documents
     description: Document upload and management
   - name: Reports
@@ -903,6 +905,138 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
+
+  # ============== Delegations ==============
+  /delegations:
+    get:
+      tags: [Delegations]
+      summary: Delegations given and received by the caller
+      description: |
+        Approval authority the caller handed to somebody else and authority handed to the caller, newest
+        first. `state` narrows the list; without it every state is returned. A holder of `user:manage` may
+        pass `delegatorId` to read another person's page.
+      security:
+        - bearerAuth: []
+      operationId: listDelegations
+      parameters:
+        - name: state
+          in: query
+          required: false
+          description: Only delegations in this state
+          schema:
+            $ref: '#/components/schemas/DelegationState'
+        - name: delegatorId
+          in: query
+          required: false
+          description: Read this user's page instead of your own; `user:manage` only
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Delegations given and received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegationList'
+        '403':
+          description: |
+            `urn:awards:problem:access-denied` — `delegatorId` without `user:manage`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+    post:
+      tags: [Delegations]
+      summary: Delegate approval authority
+      description: |
+        Hands one approval role the caller currently holds (`FACULTY_SECRETARY`, `DEAN`, `RECTOR_SECRETARY`,
+        `RECTOR`) to a colleague for a bounded period of at most 90 days. The delegate receives the role's
+        `award:read:*` and `award:approve:*` permissions only — never user management — and cannot pass them
+        on. The authority reaches the delegate's token with the next silent refresh or sign-in and disappears
+        by itself after `validTo`.
+      security:
+        - bearerAuth: []
+      operationId: createDelegation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DelegationRequest'
+      responses:
+        '201':
+          description: The delegation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delegation'
+        '400':
+          description: Malformed body (bean validation)
+        '403':
+          description: |
+            `urn:awards:problem:access-denied` — the caller holds no approval role
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Unknown delegate, or outside the caller's scope
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: |
+            `urn:awards:problem:delegation-not-holder` (the caller does not hold that role in that
+            organisation today, or holds it only by delegation), `delegation-bad-delegate` (the delegate is
+            the caller, is not `ACTIVE`, or holds no current role inside the organisation's subtree),
+            `delegation-period` (`validTo` before `validFrom`, in the past, or more than 90 days after
+            `validFrom`), `delegation-overlap` (the caller already delegated that role in that organisation
+            for part of the period), or `organisation-invalid`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /delegations/{id}:
+    delete:
+      tags: [Delegations]
+      summary: Revoke a delegation
+      description: |
+        Allowed to the delegator, to `user:manage`, and to anybody who could revoke the delegator's role.
+        Anybody else is answered 404, so the endpoint does not confirm that a delegation exists or say what
+        state it is in. Nothing is deleted: `revokedAt` and `revokedBy` are recorded. The delegate's sessions
+        and tokens are ended everywhere, so the borrowed authority stops at once.
+      security:
+        - bearerAuth: []
+      operationId: revokeDelegation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Delegation identifier
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Revoked
+        '404':
+          description: |
+            Unknown delegation, or one the caller may not end
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: |
+            `urn:awards:problem:delegation-not-active` — already revoked or expired
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
   # ============== Reports ==============
   /reports/awards/summary:
     get:
@@ -1297,6 +1431,101 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/UserSummary'
+
+    DelegationState:
+      type: string
+      description: |
+        `active` — in effect today; `upcoming` — starts later; `expired` — its last day has passed;
+        `revoked` — taken back before it ended
+      enum: [active, upcoming, expired, revoked]
+
+    Delegation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        role:
+          $ref: '#/components/schemas/UserRole'
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        delegator:
+          $ref: '#/components/schemas/UserBrief'
+        delegate:
+          $ref: '#/components/schemas/UserBrief'
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        reason:
+          type: string
+          nullable: true
+        state:
+          $ref: '#/components/schemas/DelegationState'
+        createdAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DelegationRequest:
+      type: object
+      required: [delegateId, role, organizationId, validFrom, validTo]
+      properties:
+        delegateId:
+          type: integer
+          format: int64
+          description: Who receives the authority; must be somebody else
+        role:
+          $ref: '#/components/schemas/UserRole'
+        organizationId:
+          type: integer
+          format: int64
+          description: Where the delegated role applies; the caller must hold the role there today
+        validFrom:
+          type: string
+          format: date
+          description: First day the authority applies
+        validTo:
+          type: string
+          format: date
+          description: Last day the authority applies; at most 90 days after `validFrom`
+        reason:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    DelegationList:
+      type: object
+      properties:
+        given:
+          type: array
+          description: Delegations the caller handed out, newest first
+          items:
+            $ref: '#/components/schemas/Delegation'
+        received:
+          type: array
+          description: Delegations handed to the caller, newest first
+          items:
+            $ref: '#/components/schemas/Delegation'
+
+    UserBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
 
     NotificationPreferences:
       type: object

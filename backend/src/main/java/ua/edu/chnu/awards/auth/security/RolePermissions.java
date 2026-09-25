@@ -66,6 +66,23 @@ public class RolePermissions {
     }
 
     /**
+     * The permissions of a role that travel with a delegation: reading and approving awards, never managing
+     * users or configuring the system.
+     *
+     * @param role the delegated role
+     * @return sorted permission set
+     */
+    public Set<String> delegableOf(RoleType role) {
+        Set<String> result = new TreeSet<>();
+        of(role).stream().filter(RolePermissions::delegable).forEach(result::add);
+        return Set.copyOf(result);
+    }
+
+    private static boolean delegable(String permission) {
+        return permission.startsWith("award:read:") || permission.startsWith("award:approve:");
+    }
+
+    /**
      * Union of the permissions of several roles, sorted for stable token claims.
      *
      * @param roles the roles held

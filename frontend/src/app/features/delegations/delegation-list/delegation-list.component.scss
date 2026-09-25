@@ -1,0 +1,35 @@
+.delegations__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.delegations__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+}
+
+.delegations__section {
+  font: var(--mat-sys-title-medium);
+  margin: 24px 0 8px;
+}
+
+.delegations__table {
+  width: 100%;
+}
+
+.delegations__message {
+  color: var(--mat-sys-primary, #1b5e9e);
+}
+
+.delegations__problem {
+  color: var(--mat-sys-error, #b3261e);
+}
+
+.delegations__empty {
+  padding: 24px;
+  text-align: center;
+}
