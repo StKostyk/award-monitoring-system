@@ -3,7 +3,7 @@
 > **Epic**: 1 — User Management & Authentication (SCRUM-5)
 > **Sprint**: 2–3 (2026-09-21 → 2026-10-04)
 > **Points**: 18 (three stories)
-> **Status**: Approved (2026-09-21)
+> **Status**: Validated 2026-09-25 (§12) with findings F-1…F-10, pending the fix story 1.2.4 and the author's run of §9
 > **Author**: Stefan Kostyk
 > **Governing docs**: ADR-009, AUTHENTICATION_AUTHORIZATION.md §3–§4 and §9, RBAC_matrix.md §2, DATA_DICTIONARY §1.2–§1.3, use-case-diagram.puml, openapi.yml, US-002, EPIC-01 tracker (deviations 5–7, follow-up 7)
 
@@ -205,6 +205,10 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 21. Press Back after confirming a newcomer, then «Підтвердити» again → 409 shown inline, no duplicate row. Reload the delegation dialog mid-way and re-submit an identical delegation → 422 `delegation-overlap`. (AC-2.7, 3.1)
 22. Assign `EMPLOYEE` to a user who already holds it in the same department (just confirmed) → 409; revoke it and assign it again the same day → 201, two rows in history (the old one ending yesterday). (AC-2.1, 2.4)
 23. Run `docker compose exec redis redis-cli FLUSHDB`, then revoke a role → still 204 and the target's next call is 401 (sessions ended; the not-before key is best effort). (§5)
+24. Two secretaries of faculty 9 open `/admin/users?unconfirmed=true`. The first confirms the newcomer with a corrected department; the second clicks «Підтвердити» on the stale row → 409 inline, the list reloads, the newcomer stays in the corrected department. (AC-2.7, F-1, after 1.2.4)
+25. As the dean assign `FACULTY_SECRETARY` to `employee.fmi` starting next week, revoke it, then revoke the same row again from a stale tab → 409 `role-already-revoked`, one `ROLE_REVOKED` row, one email. (AC-2.4, F-2, after 1.2.4)
+26. Delegate `DEAN` to `secretary.fmi`, then as the administrator move the secretary to another faculty's department → the secretary's next token carries no `delegations` claim and the delegation shows «Відкликано». (AC-3.2, §5, F-3, after 1.2.4)
+27. Open `http://localhost:4200/admin/users/abc` → «Не знайдено». Send more than the local request limit from the assign dialog → a translated «Забагато запитів» message, not a raw key. (AC-1.7, F-7, F-8, after 1.2.4)
 
 ## 10. Risks
 
@@ -222,3 +226,87 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.5–1.7, 2.6–2.10, 3.6
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §1.2 and new §1.7, ADR-009 role and permission list, AUTH §3.3 and §9, `CHANGELOG.md`, tracker rows, `BACKLOG.md`
 - §9 walked through by the author after `/feature-validate`, including the detours
+
+## 12. Validation (2026-09-25, `develop` at b1accd5)
+
+Gates on `develop`: `mvn verify` — 316 unit and slice tests, 85 integration and functional (`*IT` on TestContainers Postgres 17 + Redis 7, `*FT` REST-assured against the booted application with Mailpit), 98.3 % lines (1457/1482), Checkstyle 0, PMD 0, SpotBugs 0. Frontend: ESLint clean, 127 Vitest specs, Playwright 22/22 (`role-assignment` and `delegation` added by this feature). Container stack `docker compose up -d --build`: all six services healthy, Flyway at V019.
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 1.1 | `AccessControlFT#ac11_ac16_…`, `TokenClaimsCustomizerTest#ac14_accessTokenCarries…`, `RolePermissionsTest#ac11_*`, `#ac14_*` (2), `AccessScopeTest#ac11_scopesIgnoreMalformedEntries`; `permissions.spec` | pass |
+| 1.2 | `OrganizationTreeIT#ac12_theSeededHierarchyIsLoadedAtStart`, `OrganizationTreeTest#ac12_*` (3), `#ac13_aParentCycleIsOutsideEveryScope…` | pass |
+| 1.3 | `AccessScopeTest#ac13_*` (2), `OrganizationTreeTest#ac13_*`, `UserControllerTest#ac13_anOrganisationOutsideTheScopeIsForbidden` | pass |
+| 1.4 | `RoleLevelsTest#ac14_*` (4), `AccessScopeTest#ac14_*` (2) | pass |
+| 1.5 | `AccessControlFT#ac15_refusalsAreTypedAndAudited`, `AccessDenialsTest#ac15_*` (5), `ApiExceptionHandlerTest#ac15_*` (2), `AccessScopeTest#ac15_*` (3), `UserControllerTest#ac15_*` (2); E2E `role-assignment.spec` (forbidden page) | pass |
+| 1.6 | `AccessControlFT#ac11_ac16_…`, `UserDirectoryIT#ac16_*` (4), `UserDirectoryServiceTest#ac16_*` (2), `UserControllerTest#ac16_*`, `AccessScopeTest#ac16_*`; `user-list.component.spec` | pass |
+| 1.7 | `AccessControlFT#ac17_aUserOutsideTheScopeIsUnknown…`, `UserDirectoryIT#ac17_*`, `UserDirectoryServiceTest#ac17_*`, `UserControllerTest#ac17_*`; E2E `role-assignment.spec` (unknown user) | pass (F-4, F-8) |
+| 1.8 | ADR-009 and AUTH §3.3 updated in #66; tracker deviations 5–7 closed | pass |
+| 2.1 | `RoleAssignmentFT#ac2_1_ac2_5_ac2_9_…`, `#ac2_1_ac2_2_ac2_3_…`, `RoleAssignmentServiceTest#ac2_1_*` (6), `RoleAssignmentIT#ac2_1_*` (4), `UserRoleEndpointsTest#ac2_1_*` (2); E2E `role-assignment.spec` | pass |
+| 2.2 | `RoleAssignmentFT#ac2_2_theRectorGrantsUniversityRolesButNotSystemOnes`, `RoleAssignmentServiceTest#ac2_2_*` (2), `UserRoleEndpointsTest#ac2_2_*`; `permissions.spec#ac2_2_*` | pass |
+| 2.3 | `RoleAssignmentFT#ac2_1_ac2_2_ac2_3_…`, `RoleAssignmentServiceTest#ac2_3_*` (2), `RoleOrganizationsTest#ac2_3_*` (2) | pass |
+| 2.4 | `RoleAssignmentFT#ac2_4_*` (3), `RoleAssignmentServiceTest#ac2_4_*` (6), `RoleAssignmentIT#ac2_4_*` (3), `UserRoleEndpointsTest#ac2_4_*` (2); `user-detail.component.spec`, `revoke-role-dialog.component.spec`; E2E `role-assignment.spec` | pass (F-2) |
+| 2.5 | `RoleAssignmentFT#ac2_1_ac2_5_ac2_9_…` (Mailpit), `RoleChangeRecorderTest#ac2_5_*` (2), `RoleAssignmentServiceTest#ac2_5_*` (2), `AuthMailerTest#ac2_5_*` (2) | pass |
+| 2.6 | `RoleAssignmentFT#ac2_6_ac2_7_…`, `RegistrationServiceTest#ac2_6_*` (2), `RoleAssignmentIT#ac2_6_*`, `UserControllerTest#ac2_6_*`; `home.component.spec#ac2_6_*` (2); E2E `role-assignment.spec` (banner) | pass |
+| 2.7 | `RoleAssignmentFT#ac2_6_ac2_7_…`, `RoleAssignmentServiceTest#ac2_7_*` (4), `RoleChangeRecorderTest#ac2_7_*`; `user-list.component.spec`, `confirm-membership-dialog.component.spec`, `admin-users.effects.spec`; E2E `role-assignment.spec` | pass (F-1, F-3) |
+| 2.8 | `RegistrationFlowFT#ac2_8_anAbandonedPendingAccountIsTakenOver…`, `RegistrationServiceTest#ac2_8_*` (2), `UserDirectoryIT#ac16_unverifiedAccountsNeverAppear…` | pass |
+| 2.9 | `RoleAssignmentFT#ac2_1_ac2_5_ac2_9_…` (next token carries the role); `user-detail.component.spec#ac2_9_*` | pass |
+| 2.10 | `auth.guard.spec#ac2_10_*` (2), `shell.component.spec#ac2_10_*`, `assign-role-dialog.component.spec` (5), `user-detail`, `user-list`, `admin-users.*`, `users.service`, `forbidden.component` specs; E2E `role-assignment.spec` (uk and en) | pass (F-5, F-7) |
+| 3.1 | `DelegationFT#ac3_1_*` (3), `DelegationServiceTest#ac31_*` (7), `RoleDelegationRepositoryIT#ac3_1_*` (5), `DelegationEndpointsTest#ac3_1_*` (3); `delegate-dialog.component.spec`; E2E `delegation.spec` | pass |
+| 3.2 | `DelegationFT#ac3_1_ac3_2_ac3_5_…`, `#ac3_2_borrowedAuthorityIsNeitherLentOn…`, `TokenClaimsCustomizerTest#ac32_*`, `AccessScopeTest#ac32_*` (3), `DelegatedScopeTest`, `RoleDelegationTest#ac32_*`, `RoleDelegationRepositoryIT#ac3_2_*` (2); `permissions.spec#ac3_2_*` (4); E2E `delegation.spec` | pass (F-3) |
+| 3.3 | `DelegationFT#ac3_3_ac3_5_…`, `TokenClaimsCustomizerTest#ac33_*`, `RoleDelegationTest#ac33_*`, `RoleDelegationRepositoryIT#ac3_2_ac3_3_*` | pass |
+| 3.4 | `DelegationFT#ac3_4_*` (3), `DelegationServiceTest#ac34_*` (6), `DelegationEndpointsTest#ac3_4_*` (3), `RoleDelegationRepositoryIT#ac3_4_*` (2), `RoleDelegationTest#ac34_*`; `delegation-list`, `revoke-delegation-dialog`, `delegations.*` specs; E2E `delegation.spec` | pass (F-9) |
+| 3.5 | `DelegationFT#ac3_5_*`, `DelegationRecorderTest#ac3_5_*` (3), `DelegationServiceTest#ac35_*` (2), `DelegationEndpointsTest#ac3_5_*` (3), `AuthMailerTest#ac3_5_*` (3), `OpenApiContractTest#ac35_*` (2) | pass |
+| 3.6 | `auth.guard.spec#ac3_6_*` (2), `shell.component.spec#ac3_6_*` (2), `delegate-dialog`, `delegation-list` specs; E2E `delegation.spec` (4) | pass |
+
+### Edge cases (§5)
+
+| Edge case | Evidence | Result |
+|-----------|----------|--------|
+| Role starting in the future | `RoleAssignmentFT#ac2_4_ac5_aRoleThatHasNotStartedYet…`, `RoleAssignmentServiceTest#ac2_4_anAssignmentThatHasNotStartedYet…` | covered; revoking it twice is F-2 |
+| Concurrent assignment of the same role | `RoleAssignmentServiceTest#ac2_1_ac5_aConcurrentGrantLosingTheRace…`, `RoleAssignmentIT#ac2_1_theSameOpenEndedRole…` (index `uk_user_roles_current`) | covered |
+| Dean's role revoked while the page is open | `RoleAssignmentFT#ac2_4_ac2_5_…` (sessions ended), `auth.service.spec#ac61_*` | covered server side; UI by §9 step 9 |
+| User moves department | `RoleAssignmentServiceTest#ac2_7_confirmingWithACorrectedDepartment…` | covered; received delegations survive the move (F-3) |
+| Organisation tree changes, inactive organisation | `OrganizationTreeTest#ac12_refreshReplacesTheTreeAtomically`, `RoleAssignmentServiceTest#ac2_3_anInactiveOrganisationIsRefused` | covered |
+| Delegator loses the role | `DelegationFT#ac3_4_ac5_takingTheRoleBack…`, `DelegationServiceTest#ac34_revokingTheRoleTakesBack…`, `#ac34_ac5_losingTheLastRole…` | covered |
+| Delegate suspended or deleted | Known gap, assigned to Feature 1.3 | open (by design) |
+| Time zones | `InfrastructureConfig` clock in `Europe/Kyiv`; services tested with a fixed Kyiv clock | covered |
+| `SYSTEM_ADMIN` and delegation | `DelegationServiceTest#ac31_onlyApprovalRolesAreLent`, `RoleDelegationRepositoryIT#ac3_1_theDatabaseRefusesARole…` | covered |
+| Redis down | `AuthorizationRevokerTest#ac65_revocationStillHappensWhenRedisIsDown`, `RevokedTokenValidatorTest#ac65_failsOpenWhenRedisIsDown`, `AccessDenialsTest#ac15_anAuditFailureDoesNotChangeTheRefusal` (`AuditService` in `REQUIRES_NEW`) | covered; the access token stays usable until it expires (F-10) |
+| Directory search | `UserDirectoryIT#ac16_freeTextMatchesNameOrAddressAndEscapesWildcards`, `UserSpecifications.MIN_QUERY_LENGTH`; `user-list.component.spec#ac2_10_ignores_a_free_text_filter…` | covered |
+
+### Security checklist
+
+| OWASP | Control | Where |
+|-------|---------|-------|
+| A01 Broken access control | `@PreAuthorize` with `@access.inScope/below/canManage` on every user and delegation endpoint; scope from the token's `role_scopes` against the in-memory tree; foreign ids answer 404 in the directory and on delegation revocation; delegated authority carries approval permissions only and is never re-delegable; every refusal typed and audited | `AccessScope`, `OrganizationTree`, `RoleLevel`, `UserDirectoryService`, `DelegationRules`, `AccessDenials`, `AccessControlFT`, `DelegationFT` |
+| A02 Cryptographic failures | No new secrets; role and delegation changes reuse the RS256 tokens of 1.1; revocation ends refresh tokens and marks a not-before time in Redis | `AuthorizationRevoker`, `RevokedTokenValidator` |
+| A03 Injection | Directory filters built as JPA Criteria with bound parameters, `%`/`_` escaped; Bean Validation on `RoleAssignmentRequest` and `DelegationRequest`; database checks on delegation period, self-delegation and role type; exclusion constraint against overlap (V019) | `UserSpecifications`, DTOs, V018, V019 |
+| A07 Identification and authentication failures | Losing a role or a delegation ends the holder's sessions everywhere; a caller cannot revoke their own last role above `EMPLOYEE`; unconfirmed accounts get no permissions | `RoleAssignmentService.revoke`, `DelegationService.revoke`, `TokenClaimsCustomizer` |
+
+### Integration check
+
+- `docker compose up -d --build`: `award-postgres`, `award-redis`, `award-mailpit`, `award-minio`, `award-backend`, `award-frontend` healthy; `flyway_schema_history` at V019, V017–V019 applied successfully.
+- Migrations on an empty database: every `*IT` run starts a fresh Postgres 17 container (`SchemaIT#ac01_latestMigrationIsApplied`).
+- `openapi.yml` vs live `/v3/api-docs`: all 15 controller operations match method and path, including the six of this feature (`GET /users`, `GET /users/{id}`, `POST /users/{id}/roles`, `DELETE /users/{id}/roles/{roleId}`, `GET|POST /delegations`, `DELETE /delegations/{id}`). Spec-only operations are the library endpoints (`/oauth2/*`, `/connect/logout`, discovery, health) and later epics (awards, documents, reports, `PATCH /users/me`).
+
+### Findings
+
+Scenario review of the detour checklist (direct URLs, restart mid-flow, token expiry, second browser, back/reload, repeated actions, stale values, rate limit, Redis and mail down) against the code and tests:
+
+| # | Finding | Action |
+|---|---------|--------|
+| F-1 | A stale «Підтвердити» after somebody else confirmed the user with a corrected department moves the user back and ends the corrected `EMPLOYEE` role (201): `confirmMembership` does not require the user to be unconfirmed, and `updateOrganization` is accepted for confirmed users | 1.2.4: 409 when the user already holds a role; §9 step 24 |
+| F-2 | Revoking a role that has not started yet can be repeated: `valid_to` becomes the day before `valid_from`, which may still be after today, so the "already ended" check passes; duplicate audit row, email and sign-out | 1.2.4: an assignment with `valid_to < valid_from` counts as ended; §9 step 25 |
+| F-3 | A user moved to another department through the confirmation keeps delegations received in the old one; the token query checks only that the delegator still holds the role | 1.2.4: take back received delegations outside the new membership; §9 step 26 |
+| F-4 | `GET /users/{id}` returns a `DELETED` account while the directory hides it | 1.2.4: 404, as for `PENDING` |
+| F-5 | After a 409 on a stale page the dialog or row shows the refusal but the page is not reloaded, so the stale state stays on screen (§9 detour 20 expects a reload) | 1.2.4: reload the detail and the list after a conflict |
+| F-6 | Any 401 from the API signs the user out without trying the refresh token; in the development profile the signing key is generated at start-up, so after a backend restart every open page is signed out (§9 detour 18 cannot pass as written) | 1.2.4: one refresh attempt before signing out; fixed development key in `.env.example` |
+| F-7 | A 429 in the admin and delegation dialogs shows the raw key `…problems.too-many-requests` | 1.2.4: uk and en texts |
+| F-8 | `/admin/users/abc` shows the generic error instead of «Не знайдено» (the API answers 400) | 1.2.4: non-numeric id treated as not found |
+| F-9 | Two simultaneous revocations of one delegation both succeed (no row lock), writing two audit rows and two emails | 1.2.4: pessimistic lock on revocation |
+| F-10 | With Redis down, a revoked role stays usable until the access token expires (≤ 15 min); §5 and AC-2.4 say "at once" | Decision pending: document the window in §5 and AUTH §9, or check revocation against PostgreSQL |
+| F-11 | Refactor sweep (11 items): scope visibility check written three times, `activeOrganization` and `user:manage` constant duplicated, name helpers copied between recorders, `UserDirectoryService.detail` re-implements `UserRole.isCurrentOn`, FT helpers and unit fixtures copied across three classes, organisation-name wrapper in nine Angular components, `delegations` importing from `admin`, `OnPush` missing on admin components, `AuthMailer` serving three domains | Worth-it items in a `refactor(authz)` PR after 1.2.4; `AuthMailer` split listed in the tracker's technical notes |
+
+Verdict: **PASSED WITH NOTES**: every AC has passing evidence, and nine defects need fixing in 1.2.4. The author's run of §9 comes after 1.2.4 is merged.
