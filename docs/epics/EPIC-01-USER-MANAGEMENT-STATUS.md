@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model and 1.2.2 role assignment done; next 1.2.3 delegation.
+Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model, 1.2.2 role assignment and 1.2.3 delegation done; next feature validation.
 
 ## Stories
 
@@ -32,7 +32,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 6a | 1.1.6 Fixes from the manual run | 1.1 | 3 | SCRUM-18 | #64 | no | Done 2026-09-21 |
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Done |
 | 8 | 1.2.2 Role assignment and membership confirmation | 1.2 | 8 | SCRUM-13 | #32 | yes | Done |
-| 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | In Review |
+| 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Done |
 | 10 | 1.3.1 Profile information update | 1.3 | 3 | SCRUM-15 | #38 | yes | Ready |
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Ready |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Ready |
