@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, userDirectoryGuard } from './core/auth/auth.guard';
+import { authGuard, delegationGuard, userDirectoryGuard } from './core/auth/auth.guard';
 import { CallbackComponent } from './core/auth/callback.component';
 import { ShellComponent } from './core/layout/shell.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
@@ -29,6 +29,12 @@ export const routes: Routes = [
         path: 'admin',
         canActivate: [authGuard, userDirectoryGuard],
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+      },
+      {
+        path: 'delegations',
+        canActivate: [authGuard, delegationGuard],
+        loadChildren: () =>
+          import('./features/delegations/delegations.routes').then((m) => m.DELEGATION_ROUTES),
       },
       { path: '', component: HomeComponent, pathMatch: 'full', canActivate: [authGuard] },
     ],

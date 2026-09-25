@@ -28,6 +28,7 @@ import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.RoleLevels;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.delegation.service.DelegationService;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -54,6 +55,7 @@ class RoleAssignmentServiceTest {
     private final AccessScope access = mock(AccessScope.class);
     private final AuthorizationRevoker revoker = mock(AuthorizationRevoker.class);
     private final RoleChangeRecorder recorder = mock(RoleChangeRecorder.class);
+    private final DelegationService delegations = mock(DelegationService.class);
 
     private final Organization faculty = organization(FACULTY_ID, OrganizationType.FACULTY, "FMI");
     private final Organization department = organization(DEPARTMENT_ID, OrganizationType.DEPARTMENT, "DAI");
@@ -67,7 +69,7 @@ class RoleAssignmentServiceTest {
     void setUp() {
         service = new RoleAssignmentService(userRepository, userRoleRepository, organizationRepository,
             new RoleOrganizations(), new RoleLevels(), access, revoker, new UserProfileMapper(),
-            recorder, Clock.fixed(Instant.parse("2026-09-22T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
+            recorder, delegations, Clock.fixed(Instant.parse("2026-09-22T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
         when(access.callerId()).thenReturn(dean.getId());
         when(access.readableOrganizations()).thenReturn(Optional.of(Set.of(FACULTY_ID, DEPARTMENT_ID,
             OTHER_DEPARTMENT_ID)));

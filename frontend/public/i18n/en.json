@@ -140,6 +140,75 @@
       "home": "Go to the home page"
     }
   },
+  "delegations": {
+    "title": "My delegations",
+    "given": "Given",
+    "received": "Received",
+    "emptyGiven": "You have not handed your authority to anybody yet",
+    "emptyReceived": "Nobody has handed you their authority yet",
+    "period": "{{from}} — {{to}}",
+    "actingFor": "Acting for: {{name}}",
+    "columns": {
+      "role": "Role",
+      "organization": "Organisation",
+      "delegate": "Delegate",
+      "delegator": "Delegated by",
+      "period": "Period",
+      "state": "State",
+      "actions": "Actions"
+    },
+    "states": {
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "messages": {
+      "created": "The authority is delegated.",
+      "revoked": "The delegation is revoked."
+    },
+    "create": {
+      "title": "Delegate authority",
+      "role": "Role",
+      "organization": "Organisation",
+      "delegate": "Delegate",
+      "delegateHint": "Start typing a name or an address — at least 2 characters",
+      "validFrom": "Valid from",
+      "validTo": "Valid to",
+      "periodHint": "At most 90 days",
+      "reason": "Reason (optional)",
+      "submit": "Delegate",
+      "cancel": "Cancel",
+      "noRoles": "You hold no approval role of your own to delegate.",
+      "validation": {
+        "required": "Required",
+        "past": "The date cannot be in the past",
+        "order": "\"Valid to\" must not be earlier than \"valid from\"",
+        "range": "The period cannot be longer than 90 days",
+        "reason": "The reason is at most 500 characters"
+      }
+    },
+    "revoke": {
+      "action": "Revoke",
+      "title": "Revoke the delegation?",
+      "text": "The authority of the role \"{{role}}\" in {{organization}} will be revoked from {{name}}.",
+      "warning": "The delegate will be signed out everywhere, so the borrowed authority stops at once.",
+      "confirm": "Revoke",
+      "cancel": "Cancel"
+    },
+    "problems": {
+      "delegation-not-holder": "You do not hold this role in that organisation, or you hold it by delegation yourself.",
+      "delegation-bad-delegate": "This person cannot receive the authority: choose another active colleague inside the organisation.",
+      "delegation-period": "Invalid period: the dates cannot be in the past, \"valid to\" not earlier than \"valid from\" and at most 90 days.",
+      "delegation-overlap": "You have already delegated this role in that organisation for part of the period.",
+      "delegation-not-active": "This delegation has already been revoked or has ended.",
+      "organisation-invalid": "Choose an active organisation.",
+      "access-denied": "You lack the permission for this action.",
+      "user-not-found": "The user was not found, or is outside your scope.",
+      "network": "The server is unreachable. Try again later.",
+      "unknown": "The action failed. Try again later."
+    }
+  },
   "register": {
     "title": "Registration",
     "hint": "Registration is open to university addresses @chnu.edu.ua only. After registering, confirm the address with the link from the email.",

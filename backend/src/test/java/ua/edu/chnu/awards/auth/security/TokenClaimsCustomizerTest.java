@@ -25,6 +25,8 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 
+import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
+import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -37,8 +39,9 @@ class TokenClaimsCustomizerTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
     private final UserRoleRepository userRoleRepository = mock(UserRoleRepository.class);
+    private final RoleDelegationRepository delegationRepository = mock(RoleDelegationRepository.class);
     private final TokenClaimsCustomizer customizer = new TokenClaimsCustomizer(userRepository, userRoleRepository,
-        new RolePermissions(), Clock.systemUTC());
+        delegationRepository, new RolePermissions(), Clock.systemUTC());
 
     @Test
     void ac14_accessTokenCarriesIdentityRolesPermissionsAndOrganisation() {
@@ -61,6 +64,7 @@ class TokenClaimsCustomizerTest {
             .containsEntry("name", "Martyn Martyniuk")
             .containsEntry("roles", List.of("EMPLOYEE", "DEAN"))
             .containsEntry("role_scopes", List.of("DEAN:9", "EMPLOYEE:64"))
+            .containsEntry("held_scopes", List.of("DEAN:9", "EMPLOYEE:64"))
             .containsEntry("org_id", "9")
             .containsEntry("org_type", "FACULTY");
         @SuppressWarnings("unchecked")
@@ -68,6 +72,53 @@ class TokenClaimsCustomizerTest {
         assertThat(permissions).contains("award:approve:level2", "award:read:faculty", "user:read:scope",
             "user:manage:scope").doesNotContain("user:manage", "user:read:all");
         assertThat(claims).containsEntry("token_use", "access");
+    }
+
+    @Test
+    void ac32_delegatedAuthorityAddsScopeAndApprovalPermissionsOnly() {
+        Organization faculty = Organization.builder().id(9L).orgType(OrganizationType.FACULTY).build();
+        Organization department = Organization.builder().id(64L).orgType(OrganizationType.DEPARTMENT).build();
+        User secretary = User.builder().id(5L).emailAddress("secretary.fmi@chnu.edu.ua").firstName("Alina")
+            .lastName("Kovalenko").organization(faculty).build();
+        when(userRepository.findByEmailAddressIgnoreCase("secretary.fmi@chnu.edu.ua"))
+            .thenReturn(Optional.of(secretary));
+        when(userRoleRepository.findCurrentByUserId(eq(5L), any(LocalDate.class))).thenReturn(List.of(
+            UserRole.builder().roleType(RoleType.EMPLOYEE).organization(department).build()));
+        when(delegationRepository.findCurrentByDelegateId(eq(5L), any(LocalDate.class))).thenReturn(List.of(
+            RoleDelegation.builder().roleType(RoleType.DEAN).organization(faculty)
+                .delegator(User.builder().id(3L).build()).build()));
+        JwtEncodingContext context = context(OAuth2TokenType.ACCESS_TOKEN, "secretary.fmi@chnu.edu.ua");
+
+        customizer.customize(context);
+
+        Map<String, Object> claims = context.getClaims().build().getClaims();
+        assertThat(claims).containsEntry("delegations", List.of("DEAN:9:3"))
+            .containsEntry("role_scopes", List.of("DEAN:9", "EMPLOYEE:64"))
+            .containsEntry("held_scopes", List.of("EMPLOYEE:64"))
+            .containsEntry("roles", List.of("EMPLOYEE"));
+        @SuppressWarnings("unchecked")
+        List<String> permissions = (List<String>) claims.get("permissions");
+        assertThat(permissions).contains("award:approve:level1", "award:approve:level2", "award:read:faculty")
+            .doesNotContain("user:manage", "user:manage:scope", "user:read:scope", "user:read:all");
+    }
+
+    @Test
+    void ac33_anExpiredDelegationIsSimplyNotRead() {
+        Organization department = Organization.builder().id(64L).orgType(OrganizationType.DEPARTMENT).build();
+        User employee = User.builder().id(7L).emailAddress("employee.fmi@chnu.edu.ua").firstName("Anastasia")
+            .lastName("Popescu").organization(department).build();
+        when(userRepository.findByEmailAddressIgnoreCase("employee.fmi@chnu.edu.ua"))
+            .thenReturn(Optional.of(employee));
+        when(userRoleRepository.findCurrentByUserId(eq(7L), any(LocalDate.class))).thenReturn(List.of(
+            UserRole.builder().roleType(RoleType.EMPLOYEE).organization(department).build()));
+        when(delegationRepository.findCurrentByDelegateId(eq(7L), any(LocalDate.class))).thenReturn(List.of());
+        JwtEncodingContext context = context(OAuth2TokenType.ACCESS_TOKEN, "employee.fmi@chnu.edu.ua");
+
+        customizer.customize(context);
+
+        Map<String, Object> claims = context.getClaims().build().getClaims();
+        assertThat(claims).containsEntry("delegations", List.of())
+            .containsEntry("role_scopes", List.of("EMPLOYEE:64"));
     }
 
     @Test

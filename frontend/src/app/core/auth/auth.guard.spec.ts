@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 
-import { authGuard, userDirectoryGuard } from './auth.guard';
+import { authGuard, delegationGuard, userDirectoryGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { NO_PERMISSIONS, readPermissions } from './permissions';
 
@@ -63,5 +63,30 @@ describe('authGuard', () => {
     );
 
     expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac3_6_opens_the_delegations_page_for_an_approval_role_of_the_callers_own', () => {
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['DEAN:9'] })));
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      delegationGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+  });
+
+  it('ac3_6_sends_an_employee_and_a_delegate_only_to_the_forbidden_page', () => {
+    for (const claims of [
+      { role_scopes: ['EMPLOYEE:64'] },
+      { role_scopes: ['EMPLOYEE:64', 'DEAN:9'], delegations: ['DEAN:9:2'] },
+    ]) {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+
+      const refused = TestBed.runInInjectionContext(() =>
+        delegationGuard({} as ActivatedRouteSnapshot, state),
+      );
+
+      expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+    }
   });
 });

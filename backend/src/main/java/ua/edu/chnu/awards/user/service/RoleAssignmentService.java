@@ -13,6 +13,7 @@ import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.RoleLevels;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.delegation.service.DelegationService;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -49,6 +50,7 @@ public class RoleAssignmentService {
     private final AuthorizationRevoker revoker;
     private final UserProfileMapper mapper;
     private final RoleChangeRecorder recorder;
+    private final DelegationService delegations;
     private final Clock clock;
 
     /**
@@ -95,7 +97,8 @@ public class RoleAssignmentService {
     }
 
     /**
-     * Takes a role back: it ends on the previous day and the holder is signed out everywhere.
+     * Takes a role back: it ends on the previous day, whatever it had delegated is taken back with it, and
+     * the holder is signed out everywhere.
      *
      * @param userId     who holds the role
      * @param assignment which assignment to end
@@ -119,6 +122,7 @@ public class RoleAssignmentService {
 
         role.setValidTo(lastDayOf(role, today));
         recorder.revoked(actor, role);
+        delegations.revokeForRole(actor, role);
         revoker.revokeAll(target);
     }
 

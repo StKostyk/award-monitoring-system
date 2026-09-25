@@ -1,0 +1,113 @@
+<h2 mat-dialog-title>{{ 'delegations.create.title' | transloco }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="delegations__form">
+    @if (roles.length) {
+      <mat-form-field appearance="outline" class="delegations__field">
+        <mat-label>{{ 'delegations.create.role' | transloco }}</mat-label>
+        <mat-select
+          formControlName="role"
+          (selectionChange)="roleChanged($event.value)"
+          data-testid="delegate-role"
+        >
+          @for (role of roles; track role) {
+            <mat-option [value]="role">{{ 'roles.' + role | transloco }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.role.hasError('required')) {
+          <mat-error>{{ 'delegations.create.validation.required' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="delegations__field">
+        <mat-label>{{ 'delegations.create.organization' | transloco }}</mat-label>
+        <mat-select formControlName="organizationId" data-testid="delegate-organization">
+          @for (organization of organizations(); track organization.id) {
+            <mat-option [value]="organization.id">{{ name(organization) }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.organizationId.hasError('required')) {
+          <mat-error>{{ 'delegations.create.validation.required' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="delegations__field">
+        <mat-label>{{ 'delegations.create.delegate' | transloco }}</mat-label>
+        <input
+          matInput
+          type="text"
+          formControlName="delegate"
+          [matAutocomplete]="people"
+          data-testid="delegate-search"
+        />
+        <mat-autocomplete #people="matAutocomplete" [displayWith]="display">
+          @for (candidate of candidates(); track candidate.id) {
+            <mat-option [value]="candidate">{{ display(candidate) }}</mat-option>
+          }
+        </mat-autocomplete>
+        <mat-hint>{{ 'delegations.create.delegateHint' | transloco }}</mat-hint>
+        @if (form.controls.delegate.hasError('required')) {
+          <mat-error>{{ 'delegations.create.validation.required' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="delegations__field">
+        <mat-label>{{ 'delegations.create.validFrom' | transloco }}</mat-label>
+        <input matInput type="date" formControlName="validFrom" [min]="minimumDate" data-testid="delegate-valid-from" />
+        @if (form.controls.validFrom.hasError('past')) {
+          <mat-error>{{ 'delegations.create.validation.past' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="delegations__field">
+        <mat-label>{{ 'delegations.create.validTo' | transloco }}</mat-label>
+        <input matInput type="date" formControlName="validTo" [min]="minimumDate" data-testid="delegate-valid-to" />
+        <mat-hint>{{ 'delegations.create.periodHint' | transloco }}</mat-hint>
+        @if (form.controls.validTo.hasError('required')) {
+          <mat-error>{{ 'delegations.create.validation.required' | transloco }}</mat-error>
+        }
+        @if (form.controls.validTo.hasError('order')) {
+          <mat-error>{{ 'delegations.create.validation.order' | transloco }}</mat-error>
+        }
+        @if (form.controls.validTo.hasError('range')) {
+          <mat-error>{{ 'delegations.create.validation.range' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="delegations__field">
+        <mat-label>{{ 'delegations.create.reason' | transloco }}</mat-label>
+        <textarea
+          matInput
+          rows="2"
+          formControlName="reason"
+          [maxlength]="reasonLimit"
+          data-testid="delegate-reason"
+        ></textarea>
+        @if (form.controls.reason.hasError('maxlength')) {
+          <mat-error>{{ 'delegations.create.validation.reason' | transloco }}</mat-error>
+        }
+      </mat-form-field>
+    } @else {
+      <p data-testid="delegate-no-roles">{{ 'delegations.create.noRoles' | transloco }}</p>
+    }
+
+    @if (error(); as error) {
+      <p class="delegations__problem" role="alert" data-testid="delegate-error">{{ error | transloco }}</p>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialog.close()" data-testid="delegate-cancel">
+    {{ 'delegations.create.cancel' | transloco }}
+  </button>
+  @if (roles.length) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="submitting()"
+      (click)="submit()"
+      data-testid="delegate-submit"
+    >
+      {{ 'delegations.create.submit' | transloco }}
+    </button>
+  }
+</mat-dialog-actions>

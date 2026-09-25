@@ -18,6 +18,8 @@ import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.delegation.event.DelegationCreated;
+import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
@@ -37,6 +39,8 @@ public class AuthMailer {
     private static final String EXCLAMATION = "!\n\n";
     private static final String COMMA = ",\n\n";
     private static final String SEPARATOR = "---\n\n";
+    private static final String IN_ORGANIZATION = "» у підрозділі «";
+    private static final String IN_EN = " in ";
 
     /** One conversation with the SMTP server at a time; parallel sends make it drop connections. */
     private final Lock smtp = new ReentrantLock();
@@ -83,6 +87,19 @@ public class AuthMailer {
     @TransactionalEventListener
     public void onRoleRevoked(RoleRevoked event) {
         deliver(event.email(), "Роль відкликано / Role revoked", roleRevokedBody(event));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void onDelegationCreated(DelegationCreated event) {
+        deliver(event.email(), "Делеговано повноваження / Authority delegated", delegationCreatedBody(event));
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void onDelegationRevoked(DelegationRevoked event) {
+        event.recipients().forEach(recipient ->
+            deliver(recipient, "Делегування відкликано / Delegation revoked", delegationRevokedBody(event)));
     }
 
     @Async
@@ -182,26 +199,54 @@ public class AuthMailer {
         String until = event.validTo() == null ? "" : " до " + event.validTo();
         String untilEn = event.validTo() == null ? "" : " until " + event.validTo();
         return HELLO_UK + event.firstName() + EXCLAMATION
-            + event.actor() + " призначив(ла) вам роль «" + event.role() + "» у підрозділі «"
+            + event.actor() + " призначив(ла) вам роль «" + event.role() + IN_ORGANIZATION
             + event.organizationUk() + "» з " + event.validFrom() + until + ".\n"
             + "Нові права з'являться після наступного входу до системи.\n\n"
             + SEPARATOR
             + HELLO_EN + event.firstName() + COMMA
-            + event.actor() + " granted you the role \"" + event.role() + "\" in " + event.organization()
+            + event.actor() + " granted you the role \"" + event.role() + "\"" + IN_EN + event.organization()
             + " from " + event.validFrom() + untilEn + ".\n"
             + "The new permissions apply from your next sign-in.\n";
     }
 
     static String roleRevokedBody(RoleRevoked event) {
         return HELLO_UK + event.firstName() + EXCLAMATION
-            + event.actor() + " відкликав(ла) вашу роль «" + event.role() + "» у підрозділі «"
+            + event.actor() + " відкликав(ла) вашу роль «" + event.role() + IN_ORGANIZATION
             + event.organizationUk() + "»; останній день дії — " + event.lastDay() + ".\n"
             + "Усі сеанси завершено, тож увійдіть до системи ще раз.\n\n"
             + SEPARATOR
             + HELLO_EN + event.firstName() + COMMA
-            + event.actor() + " revoked your role \"" + event.role() + "\" in " + event.organization()
+            + event.actor() + " revoked your role \"" + event.role() + "\"" + IN_EN + event.organization()
             + "; its last day is " + event.lastDay() + ".\n"
             + "Every session was ended, so sign in again.\n";
+    }
+
+    static String delegationCreatedBody(DelegationCreated event) {
+        String why = event.reason() == null ? "" : "Причина: " + event.reason() + "\n";
+        String whyEn = event.reason() == null ? "" : "Reason: " + event.reason() + "\n";
+        return HELLO_UK + event.firstName() + EXCLAMATION
+            + event.delegator() + " делегував(ла) вам повноваження ролі «" + event.role() + IN_ORGANIZATION
+            + event.organizationUk() + "» з " + event.validFrom() + " до " + event.validTo() + ".\n"
+            + why
+            + "Ви зможете переглядати й погоджувати нагороди цього підрозділу; керування користувачами не "
+            + "передається. Повноваження з'являться після наступного входу до системи.\n\n"
+            + SEPARATOR
+            + HELLO_EN + event.firstName() + COMMA
+            + event.delegator() + " delegated the authority of the role \"" + event.role() + "\"" + IN_EN
+            + event.organization() + " to you from " + event.validFrom() + " until " + event.validTo() + ".\n"
+            + whyEn
+            + "You may read and approve the awards of that organisation; user management is not handed over. "
+            + "The authority applies from your next sign-in.\n";
+    }
+
+    static String delegationRevokedBody(DelegationRevoked event) {
+        return "Делегування повноважень ролі «" + event.role() + IN_ORGANIZATION + event.organizationUk()
+            + "» для користувача " + event.delegate() + " відкликав(ла) " + event.actor() + ".\n"
+            + "Усі сеанси делегата завершено.\n\n"
+            + SEPARATOR
+            + "The delegation of the role \"" + event.role() + "\"" + IN_EN + event.organization() + " to "
+            + event.delegate() + " was revoked by " + event.actor() + ".\n"
+            + "Every session of the delegate was ended.\n";
     }
 
     static String resetBody(PasswordResetRequested event) {

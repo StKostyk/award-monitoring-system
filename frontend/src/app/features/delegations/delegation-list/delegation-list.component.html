@@ -1,0 +1,134 @@
+<div class="delegations__header">
+  <h1 class="delegations__title">{{ 'delegations.title' | transloco }}</h1>
+  @if (canDelegate) {
+    <button mat-flat-button type="button" (click)="delegate()" data-testid="delegate-open">
+      {{ 'delegations.create.title' | transloco }}
+    </button>
+  }
+</div>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" data-testid="delegations-loading" />
+}
+
+@if (message(); as message) {
+  <p class="delegations__message" role="status" data-testid="delegations-message">
+    {{ message | transloco }}
+  </p>
+}
+
+@if (problem(); as problem) {
+  <p class="delegations__problem" role="alert" data-testid="delegations-error">
+    {{ 'delegations.problems.' + problem | transloco }}
+  </p>
+}
+
+<h2 class="delegations__section">{{ 'delegations.given' | transloco }}</h2>
+<table mat-table [dataSource]="given()" class="delegations__table" data-testid="given-table">
+  <ng-container matColumnDef="role">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.role' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">{{ 'roles.' + delegation.role | transloco }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="organization">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.organization' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">{{ name(delegation.organization) }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="person">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.delegate' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">{{ person(delegation.delegate) }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="period">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.period' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">
+      {{
+        'delegations.period'
+          | transloco: { from: delegation.validFrom, to: delegation.validTo }
+      }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="state">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.state' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">
+      <mat-chip data-testid="given-state">{{ 'delegations.states.' + delegation.state | transloco }}</mat-chip>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.actions' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">
+      @if (delegation.state === 'active' || delegation.state === 'upcoming') {
+        <button
+          mat-button
+          type="button"
+          [disabled]="revokingId() === delegation.id"
+          (click)="revoke(delegation)"
+          data-testid="revoke-delegation"
+        >
+          {{ 'delegations.revoke.action' | transloco }}
+        </button>
+      }
+      @if (problemFor(delegation); as problem) {
+        <span class="delegations__problem" role="alert" data-testid="revoke-delegation-error">
+          {{ problem | transloco }}
+        </span>
+      }
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="givenColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: givenColumns"></tr>
+  <tr class="mat-row" *matNoDataRow>
+    <td class="mat-cell delegations__empty" [attr.colspan]="givenColumns.length" data-testid="given-empty">
+      {{ 'delegations.emptyGiven' | transloco }}
+    </td>
+  </tr>
+</table>
+
+<h2 class="delegations__section">{{ 'delegations.received' | transloco }}</h2>
+<table mat-table [dataSource]="received()" class="delegations__table" data-testid="received-table">
+  <ng-container matColumnDef="role">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.role' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">{{ 'roles.' + delegation.role | transloco }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="organization">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.organization' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">{{ name(delegation.organization) }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="person">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.delegator' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">{{ person(delegation.delegator) }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="period">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.period' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">
+      {{
+        'delegations.period'
+          | transloco: { from: delegation.validFrom, to: delegation.validTo }
+      }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="state">
+    <th mat-header-cell *matHeaderCellDef>{{ 'delegations.columns.state' | transloco }}</th>
+    <td mat-cell *matCellDef="let delegation">
+      <mat-chip data-testid="received-state">
+        {{ 'delegations.states.' + delegation.state | transloco }}
+      </mat-chip>
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="receivedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: receivedColumns"></tr>
+  <tr class="mat-row" *matNoDataRow>
+    <td class="mat-cell delegations__empty" [attr.colspan]="receivedColumns.length" data-testid="received-empty">
+      {{ 'delegations.emptyReceived' | transloco }}
+    </td>
+  </tr>
+</table>

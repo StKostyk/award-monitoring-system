@@ -5,7 +5,17 @@
       {{ 'admin.users.title' | transloco }}
     </a>
   }
+  @if (canOpenDelegations()) {
+    <a mat-button routerLink="/delegations" class="shell__nav" data-testid="nav-delegations">
+      {{ 'delegations.title' | transloco }}
+    </a>
+  }
   <span class="shell__spacer"></span>
+  @if (actingFor(); as delegator) {
+    <span class="shell__acting" data-testid="acting-for">
+      {{ 'delegations.actingFor' | transloco: { name: delegator } }}
+    </span>
+  }
   <button mat-button type="button" class="shell__lang" (click)="language.toggle()" data-testid="language-toggle">
     {{ 'app.language' | transloco }}
   </button>
