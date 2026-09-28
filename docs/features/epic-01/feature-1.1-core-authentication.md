@@ -319,7 +319,7 @@ Test methods are named after the AC they prove (`ac21_…`); a story's functiona
 | 1.7 | `AuthenticationFlowFT#ac17_loginPageIsUkrainianByDefaultAndEnglishOnRequest`; `language.service.spec`, `shell.component.spec`; E2E `auth.spec` | pass |
 | 1.8 | `AuthenticationFlowFT#ac18_revokedRefreshTokenCannotBeUsedAndLogoutEndsTheSession`, `PublicClientRefreshAuthenticationTest#ac18_*`; `auth.service.spec`; E2E `auth.spec` | pass |
 | 1.9 | `AuthenticationFlowFT#ac19_publicPathsAreOpenAndTheApiRequiresAToken` | pass |
-| 2.1 | `RegistrationFlowFT#ac21_ac25_registerVerifyAndSignIn`, `RegistrationServiceTest#ac21_*`, `AuthControllerTest#ac21_*`, `AuthMailerTest#ac21_*`, `OneTimeTokenServiceTest#ac21_*`, `PasswordPolicyTest#ac21_*`; `register.component.spec`; E2E `registration.spec` | pass |
+| 2.1 | `RegistrationFlowFT#ac21_ac25_registerVerifyAndSignIn`, `RegistrationServiceTest#ac21_*`, `AuthControllerTest#ac21_*`, `AuthenticationMailsTest#ac21_*`, `OneTimeTokenServiceTest#ac21_*`, `PasswordPolicyTest#ac21_*`; `register.component.spec`; E2E `registration.spec` | pass |
 | 2.2 | `RegistrationFlowFT#ac22_ac23_ac24_registrationRefusals`, `RegistrationServiceTest#ac22_*`, `AuthControllerTest#ac22_*`; E2E `registration.spec` | pass |
 | 2.3 | `RegistrationFlowFT#ac22_ac23_ac24_…`, `RegistrationServiceTest#ac23_existingAddressIsAConflict`, `#ac23_concurrentRegistrationLosingTheRaceIsAConflictToo`; `register.component.spec` | pass |
 | 2.4 | `RegistrationFlowFT#ac22_ac23_ac24_…`, `RegistrationServiceTest#ac24_facultyOrInactiveOrganisationIsRefused` | pass |
@@ -327,17 +327,17 @@ Test methods are named after the AC they prove (`ac21_…`); a story's functiona
 | 2.6 | `RegistrationFlowFT#ac26_resendIsThrottledAndSilentAboutUnknownAddresses`, `RegistrationServiceTest#ac26_*`, `#ac25_ac26_*`, `OneTimeTokenServiceTest#ac26_*`, `AuthControllerTest#ac26_*`; `registration-pending.component.spec`, `verify-email.component.spec`; E2E `registration.spec` | pass |
 | 2.7 | `RegistrationFlowFT#ac27_departmentsAreListedWithTheirFacultyWithoutAToken`; `register.component.spec` | pass |
 | 2.8 | `register.component.spec` (validation mirrors D-8 and the domain rule); E2E `registration.spec` in both languages | pass |
-| 3.1 | `PasswordResetFlowFT#ac31_ac32_ac33_…`, `PasswordResetServiceTest#ac31_*` (3), `AuthControllerTest#ac31_*`, `AuthMailerTest#ac31_*`; `forgot-password.component.spec`; E2E `password-reset.spec` | pass |
+| 3.1 | `PasswordResetFlowFT#ac31_ac32_ac33_…`, `PasswordResetServiceTest#ac31_*` (3), `AuthControllerTest#ac31_*`, `AuthenticationMailsTest#ac31_*`; `forgot-password.component.spec`; E2E `password-reset.spec` | pass |
 | 3.2 | `PasswordResetFlowFT#ac31_ac32_ac33_…`, `PasswordResetServiceTest#ac32_*` (4), `AuthorizationRevokerTest#ac32_*`, `RetryRequestSessionExpiredStrategyTest#ac32_*` (2), `AuthControllerTest#ac32_*`; `reset-password.component.spec`; E2E `password-reset.spec` | pass |
 | 3.3 | `PasswordResetFlowFT#ac31_ac32_ac33_requestResetSignInWithTheNewPasswordAndLoseOldSessions`; E2E `password-reset.spec` | pass |
 | 3.4 | `forgot-password.component.spec`, `reset-password.component.spec`; E2E `password-reset.spec` | pass |
 | 4.1 | `LoginProtectionFT#ac41_ac43_ac44_ac45_fiveFailuresLockTheAccountNotifyAdminsAndAreAudited`, `LoginAttemptServiceTest#ac41_*` (5), `LoginFailureHandlerTest#ac41_*` (4), `LockedAccountCheckerTest#ac41_*` (2) | pass |
 | 4.2 | `LoginProtectionFT#ac42_aBurstFromOneAddressIsRefusedWithRetryAfter`, `RateLimitFilterTest#ac42_*` (3) | pass |
 | 4.3 | `LoginProtectionFT#ac41_ac43_…`, `#ac43_everyResponseCarriesACorrelationId`, `AuditLogRepositoryIT#ac43_ac46_*`, `AuditServiceTest#ac43_*` (2), `ClientRequestTest#ac43_*` (2), `CorrelationIdFilterTest#ac43_*` (2), `LoginSuccessListenerTest#ac43_*` (2), `LoginFailureHandlerTest#ac41_ac43_*` | pass |
-| 4.4 | `LoginProtectionFT#ac41_ac43_ac44_ac45_…`, `LoginAttemptServiceTest#ac41_ac44_*`, `AuthMailerTest#ac44_*` (2) | pass |
+| 4.4 | `LoginProtectionFT#ac41_ac43_ac44_ac45_…`, `LoginAttemptServiceTest#ac41_ac44_*`, `AuthenticationMailsTest#ac44_*` (2) | pass |
 | 4.5 | `LoginProtectionFT#ac41_ac43_ac44_ac45_…` (lock TTL read from Redis), `LoginAttemptServiceTest#ac41_ac45_lockStateIsReadFromRedis…` | pass |
 | 4.6 | `SchemaIT#ac46_auditLogsHasMonthlyPartitionsThroughDecember2027`, `AuditLogRepositoryIT#ac43_ac46_rowLandsInTheMonthPartition…` | pass |
-| 5.1 | `DeviceNotificationFT#ac51_ac52_ac53_…`, `DeviceServiceTest#ac51_*`, `DeviceFingerprintTest#ac51_*` (3), `LoginSuccessListenerTest#ac43_ac51_*`, `#ac51_aFailedDeviceRecordDoesNotBreakTheLogin`, `AuthMailerTest#ac51_ac53_*`; E2E `device-notification.spec` | pass |
+| 5.1 | `DeviceNotificationFT#ac51_ac52_ac53_…`, `DeviceServiceTest#ac51_*`, `DeviceFingerprintTest#ac51_*` (3), `LoginSuccessListenerTest#ac43_ac51_*`, `#ac51_aFailedDeviceRecordDoesNotBreakTheLogin`, `AuthenticationMailsTest#ac51_ac53_*`; E2E `device-notification.spec` | pass |
 | 5.2 | `DeviceNotificationFT#ac51_ac52_ac53_…` (stale row refreshed, no second email), `DeviceServiceTest#ac52_*`, `DeviceFingerprintTest#ac51_ac52_*`; E2E `device-notification.spec` | pass |
 | 5.3 | `DeviceNotificationFT#ac51_ac52_ac53_…`, `DeviceServiceTest#ac53_*` (2), `OneTimeTokenServiceTest#ac53_*`, `AuthControllerTest#ac53_*`; `not-me.component.spec`; E2E `device-notification.spec` | pass |
 | 5.4 | `not-me.component.spec`; E2E `device-notification.spec` (uk and en) | pass |
@@ -350,7 +350,7 @@ Test methods are named after the AC they prove (`ac21_…`); a story's functiona
 | Verification of a user meanwhile `SUSPENDED` | `RegistrationServiceTest#verifyingASuspendedAccountDoesNotReactivateIt` | covered |
 | Refresh after `INACTIVE`/`SUSPENDED` | `AuthenticationFlowFT#ac15_suspendedAccountCannotRefresh…`, `RefreshTokenReuseGuardTest#suspendedOrDeletedAccountsCannotRefresh…` | covered |
 | Reset for `PENDING` or unknown address | `PasswordResetServiceTest#ac31_unknownAndPendingAddressesAreAcceptedSilently`, `PasswordResetFlowFT` | covered |
-| Mail server down | `AuthMailerTest#retriesTwiceThenGivesUp` (three attempts, pauses 2 s and 5 s); "send again" on the pending page | covered |
+| Mail server down | `MailDeliveryTest#retriesTwiceThenGivesUp` (three attempts, pauses 2 s and 5 s); "send again" on the pending page | covered |
 | Redis down | `LoginAttemptServiceTest#redisOutageFailsOpen`, `RateLimitFilterTest#redisOutageDoesNotLimit`, `RefreshTokenReuseGuardTest` — login, limit and refresh fail open. The resend and reset throttles (`RegistrationService.throttle`, `PasswordResetService.request`) did not: a Redis outage answered 500 there | fixed in the refactor PR (finding F-2) |
 | Clock skew | Library default: `JwtTimestampValidator` allows 60 s; no explicit configuration or test | accepted, not tested |
 | Login page while already authenticated | Not implemented: `/login` renders the form again; the SPA never links to it directly and an authenticated browser at `/oauth2/authorize` receives a code without seeing the form | open (finding F-3, cosmetic) |

@@ -10,12 +10,12 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 1.1 Core Authentication System | Done (validated; fixes from the manual run merged, author's retest pending) | 2026-09-21 | 2026-09-21 |
-| 1.2 Role-Based Access Control | Validated with findings (PRD §12); fix story 1.2.4 and author's run of §9 pending | 2026-09-21 | |
+| 1.2 Role-Based Access Control | Validated; fix story 1.2.4 merged, author's run of §9 pending | 2026-09-21 | |
 | 1.3 User Profile Management | Planned | | |
 
 ## Current focus
 
-Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model, 1.2.2 role assignment and 1.2.3 delegation done; validated 2026-09-25 (PRD §12, verdict passed with notes). Story 1.2.4 (SCRUM-19) for findings F-1…F-10 in progress, then the author's run of §9.
+Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model, 1.2.2 role assignment and 1.2.3 delegation done; validated 2026-09-25 (PRD §12, verdict passed with notes). Story 1.2.4 (SCRUM-19) for findings F-1…F-10 merged 2026-09-28; the author's run of §9 is pending.
 
 ## Stories
 
@@ -33,7 +33,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Done |
 | 8 | 1.2.2 Role assignment and membership confirmation | 1.2 | 8 | SCRUM-13 | #32 | yes | Done |
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Done |
-| 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | In Review |
+| 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | Done |
 | 10 | 1.3.1 Profile information update | 1.3 | 3 | SCRUM-15 | #38 | yes | Ready |
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Ready |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Ready |
@@ -88,7 +88,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 
 - Validation of Feature 1.1 (2026-09-21, PRD §12): the author's manual run found six defects (blank page after a failed refresh, default 403 page after a restart, 404 after a direct sign-in, password reuse, 15-minute lag before other browsers were signed out, a second Redis on the developer machine); all fixed or explained in story 1.1.6. Refactor sweep items deferred: inject `Clock` in `LoginSuccessListener`, `TokenClaimsCustomizer`, `UserProfileService`, `RotatingRefreshTokenGenerator`; drop `OneTimeToken.markUsed` and narrow entity setters; `OrganizationRef.of(Organization)` factory; shared FT base class (port, Mailpit, `RestAssured.port`), `AuthApi` helper for the six auth POSTs, `TestUsers.active/pending` builders, composed `@WebMvcTest` annotation; `RegistrationFlowFT` order dependence on `ac21`; wall-clock sleep in `LoginProtectionFT` (mutable `Clock`); Angular `OnPush` on the auth components, shared Transloco/route test stubs, `LanguageService.localName`, shared `errors.network` key.
 
-- Validation of Feature 1.2 (2026-09-25, PRD §12): the detour review found nine defects (stale confirmation undoing a department correction, double revocation of a not-yet-started role, received delegations surviving a department move, deleted accounts readable by id, no reload after a conflict, sign-out on the first 401 without a refresh attempt, raw 429 key, non-numeric user id, unlocked delegation revocation) for story 1.2.4, and one decision (revocation while Redis is down: the ≤ 15-minute access-token window is accepted and documented in PRD §5 and AUTH §9, decided 2026-09-25). Refactor sweep items deferred: split `AuthMailer` into delivery, authentication mails and authority-change mails; shared unit-test fixtures for users and organisations.
+- Validation of Feature 1.2 (2026-09-25, PRD §12): the detour review found nine defects (stale confirmation undoing a department correction, double revocation of a not-yet-started role, received delegations surviving a department move, deleted accounts readable by id, no reload after a conflict, sign-out on the first 401 without a refresh attempt, raw 429 key, non-numeric user id, unlocked delegation revocation) for story 1.2.4, and one decision (revocation while Redis is down: the ≤ 15-minute access-token window is accepted and documented in PRD §5 and AUTH §9, decided 2026-09-25). Refactor sweep items done after validation: `AuthMailer` split into `MailDelivery` (lock and retries), `AuthenticationMails` and `AuthorityChangeMails`; `TestUsers.person/organization` replace the per-class user and organisation builders of the 1.2 unit tests.
 
 ## Security review follow-ups
 

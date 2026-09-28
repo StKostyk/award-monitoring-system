@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static ua.edu.chnu.awards.support.TestUsers.person;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -18,7 +19,6 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
-import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -34,8 +34,8 @@ class DelegationRecorderTest {
 
     private final Organization faculty = Organization.builder().id(9L).orgType(OrganizationType.FACULTY)
         .name("Faculty of Mathematics and Informatics").nameUk("Факультет математики та інформатики").build();
-    private final User dean = person(1L, "dean.fmi@chnu.edu.ua", "Марія");
-    private final User secretary = person(2L, "secretary.fmi@chnu.edu.ua", "Аліна");
+    private final User dean = person(1L, "dean.fmi@chnu.edu.ua", "Марія", null);
+    private final User secretary = person(2L, "secretary.fmi@chnu.edu.ua", "Аліна", null);
 
     @Test
     void ac3_5_adelegationIsAuditedWithItsFactsAndAnnouncedToTheDelegate() {
@@ -68,7 +68,7 @@ class DelegationRecorderTest {
 
     @Test
     void ac3_5_arevocationBySomebodyElseReachesBothSides() {
-        recorder.revoked(person(3L, "admin@chnu.edu.ua", "Олег"), delegation());
+        recorder.revoked(person(3L, "admin@chnu.edu.ua", "Олег", null), delegation());
 
         verify(audit).record(eq(AuditAction.DELEGATION_REVOKED), eq(AuditLog.AUTHORIZATION),
             eq(secretary.getId()), captor().capture());
@@ -103,10 +103,5 @@ class DelegationRecorderTest {
     private RoleDelegation delegation() {
         return RoleDelegation.builder().id(5L).delegator(dean).delegate(secretary).roleType(RoleType.DEAN)
             .organization(faculty).validFrom(TODAY).validTo(TODAY.plusDays(14)).reason("Відпустка").build();
-    }
-
-    private static User person(long id, String email, String firstName) {
-        return User.builder().id(id).emailAddress(email).firstName(firstName).lastName("Мартинюк")
-            .accountStatus(AccountStatus.ACTIVE).build();
     }
 }
