@@ -335,6 +335,43 @@ paths:
                   $ref: '#/components/schemas/OrganizationSummary'
 
   # ============== Awards ==============
+  /award-categories:
+    get:
+      tags: [Awards]
+      summary: Award category catalogue
+      description: >
+        Active categories as a tree, roots and children in display order. The answer carries
+        `Cache-Control: max-age=3600` and an `ETag`; a request with a matching `If-None-Match` answers 304.
+      security:
+        - bearerAuth: []
+      operationId: listAwardCategories
+      parameters:
+        - name: If-None-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Category tree
+          headers:
+            ETag:
+              schema:
+                type: string
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AwardCategory'
+        '304':
+          description: The caller's copy is current
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /awards:
     get:
       tags: [Awards]
@@ -354,8 +391,8 @@ paths:
         - name: category
           in: query
           schema:
-            type: string
-            format: uuid
+            type: integer
+            format: int64
         - name: dateFrom
           in: query
           schema:
@@ -1157,10 +1194,10 @@ components:
       name: id
       in: path
       required: true
-      description: Award UUID
+      description: Award identifier
       schema:
-        type: string
-        format: uuid
+        type: integer
+        format: int64
 
     UserIdParam:
       name: id
@@ -1572,31 +1609,56 @@ components:
     # Award
     Award:
       type: object
+      description: >
+        An award of one person. Title, category, awarding organisation and date may be empty while the award is
+        a draft; at least one of `title` and `titleUk` is always present (columns relaxed by V020 with the
+        award endpoints).
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         title:
           type: string
+          nullable: true
+        titleUk:
+          type: string
+          nullable: true
         description:
           type: string
+          nullable: true
+        descriptionUk:
+          type: string
+          nullable: true
         category:
-          $ref: '#/components/schemas/AwardCategory'
-        status:
-          $ref: '#/components/schemas/AwardStatus'
-        currentLevel:
-          $ref: '#/components/schemas/ApprovalLevel'
-        submitter:
-          $ref: '#/components/schemas/UserRef'
+          $ref: '#/components/schemas/AwardCategoryRef'
+        awardingOrganization:
+          type: string
+          nullable: true
         awardDate:
           type: string
           format: date
-        issuingOrganization:
+          nullable: true
+        externalUrl:
           type: string
-        documents:
+          format: uri
+          nullable: true
+        status:
+          $ref: '#/components/schemas/AwardStatus'
+        impactScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        owner:
+          $ref: '#/components/schemas/UserRef'
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        request:
+          $ref: '#/components/schemas/AwardRequestSummary'
+        warnings:
           type: array
           items:
-            $ref: '#/components/schemas/DocumentRef'
+            $ref: '#/components/schemas/AwardWarning'
         createdAt:
           type: string
           format: date-time
@@ -1605,78 +1667,167 @@ components:
           format: date-time
         version:
           type: integer
+          format: int64
+          description: Optimistic-lock version, sent back on update and submit
 
     AwardStatus:
       type: string
+      description: Status of the award itself (`awards.status`)
       enum:
         - DRAFT
+        - PENDING
+        - APPROVED
+        - REJECTED
+        - ARCHIVED
+
+    RequestStatus:
+      type: string
+      description: Status of the approval request (`award_requests.status`)
+      enum:
         - SUBMITTED
-        - UNDER_REVIEW
+        - IN_REVIEW
+        - ESCALATED
         - APPROVED
         - REJECTED
         - RETURNED
-        - PUBLISHED
+        - EXPIRED
 
     ApprovalLevel:
       type: string
+      description: Approval levels in the order a request climbs them
       enum:
+        - FACULTY_SECRETARY
+        - DEAN
+        - RECTOR_SECRETARY
+        - RECTOR
+
+    RecognitionLevel:
+      type: string
+      description: >
+        Recognition level of a category. Minimum approval level and impact base score per level are listed in
+        DATA_DICTIONARY §2.2.
+      enum:
+        - SPECIALITY
         - DEPARTMENT
+        - COLLEGE
         - FACULTY
-        - RECTOR_OFFICE
-        - FINAL
+        - LOCAL
+        - UNIVERSITY
+        - REGIONAL
+        - NATIONAL
+        - INTERNATIONAL
+
+    AwardRequestSummary:
+      type: object
+      nullable: true
+      description: The approval request, present once the award is submitted
+      properties:
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        currentLevel:
+          $ref: '#/components/schemas/ApprovalLevel'
+        submittedAt:
+          type: string
+          format: date-time
+
+    AwardWarning:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [RECENT_DATE, POSSIBLE_DUPLICATE]
+        field:
+          type: string
+        matches:
+          type: array
+          description: Own awards that look the same (POSSIBLE_DUPLICATE only)
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+              title:
+                type: string
+              awardDate:
+                type: string
+                format: date
+              status:
+                $ref: '#/components/schemas/AwardStatus'
 
     AwardCategory:
       type: object
+      description: A category of the catalogue with its active subcategories
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         name:
+          type: string
+        nameUk:
           type: string
         description:
           type: string
         level:
+          $ref: '#/components/schemas/RecognitionLevel'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/AwardCategory'
+
+    AwardCategoryRef:
+      type: object
+      nullable: true
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
           type: string
-          enum: [INTERNATIONAL, NATIONAL, REGIONAL, LOCAL]
+        nameUk:
+          type: string
+        level:
+          $ref: '#/components/schemas/RecognitionLevel'
 
     AwardCreateRequest:
       type: object
-      required: [title, categoryId, awardDate]
+      description: A draft needs a title in at least one language; every other field may be empty.
       properties:
         title:
           type: string
-          maxLength: 255
+          maxLength: 500
+        titleUk:
+          type: string
+          maxLength: 500
         description:
           type: string
-          maxLength: 2000
-        categoryId:
+          maxLength: 4000
+        descriptionUk:
           type: string
-          format: uuid
+          maxLength: 4000
+        categoryId:
+          type: integer
+          format: int64
+        awardingOrganization:
+          type: string
+          maxLength: 255
         awardDate:
           type: string
           format: date
-        issuingOrganization:
+        externalUrl:
           type: string
-          maxLength: 255
+          format: uri
+          maxLength: 2048
 
     AwardUpdateRequest:
-      type: object
-      properties:
-        title:
-          type: string
-          maxLength: 255
-        description:
-          type: string
-          maxLength: 2000
-        categoryId:
-          type: string
-          format: uuid
-        awardDate:
-          type: string
-          format: date
-        issuingOrganization:
-          type: string
-          maxLength: 255
+      allOf:
+        - $ref: '#/components/schemas/AwardCreateRequest'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int64
 
     AwardPage:
       allOf:
@@ -1692,8 +1843,8 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         name:
           type: string
         email:

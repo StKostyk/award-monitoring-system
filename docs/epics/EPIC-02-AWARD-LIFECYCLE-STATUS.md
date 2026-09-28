@@ -9,14 +9,14 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 2.1 Award Creation & Validation | PRD approved ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | |
+| 2.1 Award Creation & Validation | In progress, PRD approved ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | |
 | 2.2 Award Version History & Audit Trail | Planned | | |
 | 2.3 Award Status Tracking | Planned | | |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
 
 ## Current focus
 
-Feature 2.1 PRD approved 2026-09-28; next story 2.1.0 (SCRUM-21). After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
+Feature 2.1 in progress: 2.1.0 (SCRUM-21) in review, next 2.1.1 (SCRUM-22). After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
 
 ## Scope
 
@@ -32,7 +32,7 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 2.1.0 Award domain model and category catalogue | 2.1 | 3 | SCRUM-21 | #43 | no | Ready |
+| 1 | 2.1.0 Award domain model and category catalogue | 2.1 | 3 | SCRUM-21 | #43 | no | In Review |
 | 2 | 2.1.1 Award draft and submission (US-003) | 2.1 | 8 | SCRUM-22 | #44 | yes | Ready |
 | 3 | 2.1.2 Award date and duplicate validation | 2.1 | 3 | SCRUM-23 | #76 | no | Ready |
 | 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | Ready |
@@ -61,13 +61,13 @@ Total: 32 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 st
 
 Each item is applied in the PR of the story that touches it, after approval.
 
-1. `openapi.yml` award schemas: UUID ids (the schema uses `BIGSERIAL`), `AwardStatus` enum (`SUBMITTED`, `UNDER_REVIEW`, `RETURNED`, `PUBLISHED`) differs from `awards.status`, `ApprovalLevel` enum differs from `award_requests.current_level`, `issuingOrganization` vs `awarding_organization`, title limit 255 vs `VARCHAR(500)`, no Ukrainian title or description, `AwardCategory.level` has four values. Aligned in 2.1.0.
-2. `GET /awards` filter `category` is a UUID; there is no category endpoint. Added in 2.1.0.
+1. `openapi.yml` award schemas: UUID ids (the schema uses `BIGSERIAL`), `AwardStatus` enum (`SUBMITTED`, `UNDER_REVIEW`, `RETURNED`, `PUBLISHED`) differs from `awards.status`, `ApprovalLevel` enum differs from `award_requests.current_level`, `issuingOrganization` vs `awarding_organization`, title limit 255 vs `VARCHAR(500)`, no Ukrainian title or description, `AwardCategory.level` has four values. Aligned in 2.1.0 (resolved).
+2. `GET /awards` filter `category` is a UUID; there is no category endpoint. Added in 2.1.0 (resolved).
 3. Roadmap task "Flyway migrations V004–V008" is already done; new migrations start at V020.
 4. Roadmap § 2.1 references BRD §4.2.1 and §4.2.3, which do not exist (BRD §4.2 only points to the user stories); validation rules come from BRD §7.3 and the dictionary appendix B.
 5. The award state machine diagram mixes award and request states (`SUBMITTED`, `IN_REVIEW` belong to `award_requests`); the PRD maps them explicitly.
 6. DATA_DICTIONARY §2.1 requires `title`, `category_id`, `awarding_organization`, `award_date` on every award and an English title; drafts and Ukrainian-only titles need them optional outside `DRAFT`. Applied in 2.1.1 (V020).
-7. `R__seed_award_categories.sql` truncates `award_categories` with `CASCADE`, which would delete all awards on the next seed change. Rewritten as upsert in 2.1.0.
+7. `R__seed_award_categories.sql` truncates `award_categories` with `CASCADE`, which would delete all awards on the next seed change. Rewritten as upsert in 2.1.0 (resolved).
 
 ## Technical notes
 

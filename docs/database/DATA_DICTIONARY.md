@@ -323,7 +323,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `ARCHIVED` | Historical record, no longer active | - |
 
 **Impact Score Calculation** (0-100):
-- Base score from category level (Department: 20, Faculty: 40, University: 60, National: 80, International: 100)
+- Base score from the category's recognition level (§2.2: Speciality 10, Department 20, College 30, Faculty 40, Local 45, University 60, Regional 70, National 80, International 100)
 - Modifiers based on awarding organization prestige
 
 **Indexes**:
@@ -367,14 +367,23 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 
-**Recognition Levels** (`level`):
-| Value | Description | Minimum Approval Level |
-|-------|-------------|------------------------|
-| `DEPARTMENT` | Department-level recognition | Faculty Secretary |
-| `FACULTY` | Faculty-level recognition | Dean |
-| `UNIVERSITY` | University-level recognition | Rector |
-| `NATIONAL` | National-level recognition | Rector |
-| `INTERNATIONAL` | International recognition | Rector |
+**Recognition Levels** (`level`, application enum `RecognitionLevel`):
+
+The minimum approval level is the lowest role that may give the final approval; every role above it in the line Faculty Secretary → Dean → Rector's Secretary → Rector may approve as well.
+
+| Value | Description | Minimum Approval Level | Impact Base Score |
+|-------|-------------|------------------------|-------------------|
+| `SPECIALITY` | Recognition within an academic speciality | Faculty Secretary | 10 |
+| `DEPARTMENT` | Department-level recognition | Faculty Secretary | 20 |
+| `COLLEGE` | Recognition by a university college | Dean | 30 |
+| `FACULTY` | Faculty-level recognition | Dean | 40 |
+| `LOCAL` | City or community recognition | Faculty Secretary | 45 |
+| `UNIVERSITY` | University-level recognition | Faculty Secretary | 60 |
+| `REGIONAL` | Oblast-level recognition | Faculty Secretary | 70 |
+| `NATIONAL` | National-level recognition | Rector's Secretary | 80 |
+| `INTERNATIONAL` | International recognition | Rector's Secretary | 100 |
+
+**Reference data**: rows are seeded by `R__seed_award_categories.sql` (one root per level, subcategories below it), upserted by `category_id`; system categories removed from the seed are deactivated, never deleted, so existing awards keep their category.
 
 **Indexes**:
 - `pk_award_categories` - Primary key on `category_id`
