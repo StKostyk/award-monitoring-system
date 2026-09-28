@@ -179,6 +179,38 @@ class AccessScopeTest {
         assertThat(access.readableOrganizations()).contains(Set.of(9L, 64L));
     }
 
+    @Test
+    void ac1_8_awardsAreReadableInsideTheScopeOfARoleThatReadsAwards() {
+        signIn(7L, List.of("EMPLOYEE:64", "DEAN:9"), "award:read:department", "award:read:faculty");
+
+        assertThat(access.canReadAwards(64L)).isTrue();
+        assertThat(access.canReadAwards(10L)).isFalse();
+        assertThat(request.getAttribute(AccessScope.MISSING_ATTRIBUTE))
+            .isEqualTo("awards of organisation 10 are outside your scope");
+    }
+
+    @Test
+    void ac1_8_anEmployeeRoleDoesNotReadColleaguesAwards() {
+        signIn(8L, List.of("EMPLOYEE:64"), "award:read:own");
+
+        assertThat(access.canReadAwards(64L)).isFalse();
+    }
+
+    @Test
+    void ac1_8_readAllCoversEveryOrganisation() {
+        signIn(1L, List.of("SYSTEM_ADMIN:1"), "award:read:all");
+
+        assertThat(access.canReadAwards(10L)).isTrue();
+    }
+
+    @Test
+    void ac1_8_borrowedApprovalAuthorityReadsTheAwardsOfItsScope() {
+        signInWithDelegation(5L, List.of("EMPLOYEE:64", "FACULTY_SECRETARY:9"), List.of("FACULTY_SECRETARY:9:7"),
+            "award:read:own", "award:read:department");
+
+        assertThat(access.canReadAwards(64L)).isTrue();
+    }
+
     private void signInWithDelegation(long userId, List<String> scopes, List<String> delegations,
                                       String... permissions) {
         Jwt jwt = Jwt.withTokenValue("t").header("alg", "RS256").subject(String.valueOf(userId))

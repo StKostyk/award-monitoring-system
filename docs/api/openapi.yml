@@ -375,15 +375,16 @@ paths:
   /awards:
     get:
       tags: [Awards]
-      summary: List awards
-      description: Retrieve paginated list of awards with optional filtering
+      summary: List own awards
+      description: >
+        The caller's own awards in every status, newest first, each with its request once submitted
+        (`award:read:own`). Page size is capped at 100.
       security:
         - bearerAuth: []
       operationId: listAwards
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortParam'
         - name: status
           in: query
           schema:
@@ -417,8 +418,11 @@ paths:
 
     post:
       tags: [Awards]
-      summary: Create award submission
-      description: Submit a new award for review
+      summary: Create an award draft
+      description: >
+        Creates a `DRAFT` owned by the caller in the caller's department (`award:create`). A title in one
+        language is enough; fields that are present are checked (lengths, active category, `http`/`https` link,
+        award date not after today in Europe/Kyiv). Surrounding spaces are removed and blank texts count as empty.
       security:
         - bearerAuth: []
       operationId: createAward
@@ -430,7 +434,7 @@ paths:
               $ref: '#/components/schemas/AwardCreateRequest'
       responses:
         '201':
-          description: Award created
+          description: Draft created
           content:
             application/json:
               schema:
@@ -440,15 +444,25 @@ paths:
               schema:
                 type: string
               description: URL of created resource
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Without `award:create` (`urn:awards:problem:access-denied`); the refusal is audited
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
 
   /awards/{id}:
     get:
       tags: [Awards]
       summary: Get award by ID
+      description: >
+        The owner always gets the award. A holder of `award:read:department`, `award:read:faculty` or
+        `award:read:all` gets a submitted award whose organisation lies in the scope of a role granting that
+        permission. Anybody else, and anybody but the owner for a `DRAFT`, gets 404.
       security:
         - bearerAuth: []
       operationId: getAward
@@ -461,12 +475,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Award'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
     put:
       tags: [Awards]
-      summary: Update award
+      summary: Replace the fields of an own draft
+      description: >
+        Full form with the `version` last read (`award:update:own`). A draft keeps a category deactivated after
+        it was chosen; choosing a deactivated category answers 422.
       security:
         - bearerAuth: []
       operationId: updateAward
@@ -480,21 +499,26 @@ paths:
               $ref: '#/components/schemas/AwardUpdateRequest'
       responses:
         '200':
-          description: Award updated
+          description: Draft updated, with its new version
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Award'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          $ref: '#/components/responses/AwardConflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
 
     delete:
       tags: [Awards]
-      summary: Delete award
+      summary: Delete an own draft
+      description: Deletes the caller's draft (`award:read:own`); the audit trigger keeps the old values.
       security:
         - bearerAuth: []
       operationId: deleteAward
@@ -502,31 +526,62 @@ paths:
         - $ref: '#/components/parameters/AwardIdParam'
       responses:
         '204':
-          description: Award deleted
+          description: Draft deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: The award was submitted (`urn:awards:problem:award-not-editable`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   # ============== Workflows ==============
   /awards/{id}/submit:
     post:
       tags: [Workflows]
-      summary: Submit award for approval
+      summary: Submit an own draft for approval
+      description: >
+        Checks completeness (category, awarding organisation, award date) and the field rules, then in one
+        transaction sets the award `PENDING` with the level base score, creates its request (`SUBMITTED` at
+        `FACULTY_SECRETARY`) and writes an `AWARD_SUBMITTED` audit row. The organisation is refreshed from the
+        owner's department. The draft row is locked, so a repeated submission answers 409 (`award:create`).
       security:
         - bearerAuth: []
       operationId: submitAward
       parameters:
         - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardSubmitRequest'
       responses:
         '200':
-          description: Award submitted for review
+          description: Award submitted for review, with its request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Award'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/AwardConflict'
+        '422':
+          description: >
+            `urn:awards:problem:award-incomplete` naming each empty field in `errors`, or `validation-failed`
+            (category no longer available, date in the future, `version` missing)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   /awards/{id}/approve:
     post:
@@ -1829,6 +1884,15 @@ components:
               type: integer
               format: int64
 
+    AwardSubmitRequest:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: Version of the draft last read
+
     AwardPage:
       allOf:
         - $ref: '#/components/schemas/Page'
@@ -1989,13 +2053,23 @@ components:
           format: date-time
         errors:
           type: array
+          description: One entry per refused field (`validation-failed`, `award-incomplete`)
           items:
             type: object
             properties:
               field:
                 type: string
+              code:
+                type: string
+                enum: [required, too-long, invalid, inactive, future]
               message:
                 type: string
+        currentVersion:
+          type: integer
+          format: int64
+          description: The version of the award now (`award-stale`)
+        awardStatus:
+          $ref: '#/components/schemas/AwardStatus'
 
   responses:
     BadRequest:
@@ -2028,6 +2102,24 @@ components:
 
     Conflict:
       description: Resource conflict (e.g., concurrent modification)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    ValidationFailed:
+      description: >
+        Invalid fields (`urn:awards:problem:validation-failed`), one entry per field in `errors`; a value that
+        cannot be read at all (a date that does not exist, text for a number) is reported with code `invalid`
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    AwardConflict:
+      description: >
+        `urn:awards:problem:award-stale` with `currentVersion` when the award changed since it was read, or
+        `award-not-editable` with `awardStatus` when it is no longer a draft
       content:
         application/problem+json:
           schema:

@@ -16,7 +16,7 @@
 
 ## Current focus
 
-Feature 2.1 in progress: 2.1.0 (SCRUM-21) in review, next 2.1.1 (SCRUM-22). After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
+Feature 2.1 in progress: 2.1.0 (SCRUM-21) done, 2.1.1 (SCRUM-22) in review, next 2.1.2 (SCRUM-23). After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
 
 ## Scope
 
@@ -32,8 +32,8 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 2.1.0 Award domain model and category catalogue | 2.1 | 3 | SCRUM-21 | #43 | no | In Review |
-| 2 | 2.1.1 Award draft and submission (US-003) | 2.1 | 8 | SCRUM-22 | #44 | yes | Ready |
+| 1 | 2.1.0 Award domain model and category catalogue | 2.1 | 3 | SCRUM-21 | #43 | no | Done |
+| 2 | 2.1.1 Award draft and submission (US-003) | 2.1 | 8 | SCRUM-22 | #44 | yes | In Review |
 | 3 | 2.1.2 Award date and duplicate validation | 2.1 | 3 | SCRUM-23 | #76 | no | Ready |
 | 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | Ready |
 | 5 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | Ready |
@@ -66,7 +66,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 3. Roadmap task "Flyway migrations V004–V008" is already done; new migrations start at V020.
 4. Roadmap § 2.1 references BRD §4.2.1 and §4.2.3, which do not exist (BRD §4.2 only points to the user stories); validation rules come from BRD §7.3 and the dictionary appendix B.
 5. The award state machine diagram mixes award and request states (`SUBMITTED`, `IN_REVIEW` belong to `award_requests`); the PRD maps them explicitly.
-6. DATA_DICTIONARY §2.1 requires `title`, `category_id`, `awarding_organization`, `award_date` on every award and an English title; drafts and Ukrainian-only titles need them optional outside `DRAFT`. Applied in 2.1.1 (V020).
+6. DATA_DICTIONARY §2.1 requires `title`, `category_id`, `awarding_organization`, `award_date` on every award and an English title; drafts and Ukrainian-only titles need them optional outside `DRAFT`. Applied in 2.1.1 (V020, resolved).
 7. `R__seed_award_categories.sql` truncates `award_categories` with `CASCADE`, which would delete all awards on the next seed change. Rewritten as upsert in 2.1.0 (resolved).
 
 ## Technical notes
@@ -76,7 +76,6 @@ Each item is applied in the PR of the story that touches it, after approval.
 - `awards.version` is the optimistic-lock column; a stale update answers 409 like the role assignments.
 - `ck_awards_date` compares with `CURRENT_DATE` in the database session zone (UTC), so between 00:00 and 03:00 Kyiv time it refuses an award dated today that the application accepts; V020 recreates it as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`.
 - `trg_awards_audit` reads `app.current_user_id`, which the application never sets: trigger rows carry no actor. Part of the 2.2 design note.
-- `trg_awards_audit` already records every change in `audit_logs` with `app.current_user_id` as the actor.
 
 ## Risks
 

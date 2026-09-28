@@ -1,5 +1,10 @@
 <mat-toolbar color="primary" class="shell__toolbar">
   <span class="shell__title">{{ 'app.title' | transloco }}</span>
+  @if (canOpenAwards()) {
+    <a mat-button routerLink="/awards" class="shell__nav" data-testid="nav-awards">
+      {{ 'awards.title' | transloco }}
+    </a>
+  }
   @if (canOpenUsers()) {
     <a mat-button routerLink="/admin/users" class="shell__nav" data-testid="nav-users">
       {{ 'admin.users.title' | transloco }}

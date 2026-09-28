@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  max-width: 640px;
+}
+
+.award-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.award-detail__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.award-detail__fields {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  gap: 8px 16px;
+  margin: 16px 0;
+}
+
+.award-detail__fields dt {
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.award-detail__fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.award-detail__text {
+  white-space: pre-line;
+}
+
+.award-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.award-detail__problem {
+  color: var(--mat-sys-error, #b3261e);
+}
+
+@media (max-width: 480px) {
+  .award-detail__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .award-detail__fields dd {
+    margin-bottom: 8px;
+  }
+}

@@ -1,0 +1,92 @@
+<div class="awards__header">
+  <h1 class="awards__title">{{ 'awards.title' | transloco }}</h1>
+  @if (canCreate) {
+    <a mat-flat-button routerLink="/awards/new" data-testid="award-add">{{ 'awards.add' | transloco }}</a>
+  }
+</div>
+
+<div class="awards__filters">
+  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+    <mat-label>{{ 'awards.filters.status' | transloco }}</mat-label>
+    <mat-select
+      [ngModel]="filters().status"
+      (ngModelChange)="filter({ status: $event })"
+      data-testid="filter-status"
+    >
+      <mat-option [value]="null">{{ 'awards.filters.all' | transloco }}</mat-option>
+      @for (status of statuses; track status) {
+        <mat-option [value]="status">{{ 'awards.status.' + status | transloco }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+    <mat-label>{{ 'awards.filters.category' | transloco }}</mat-label>
+    <mat-select
+      [ngModel]="filters().category"
+      (ngModelChange)="filter({ category: $event })"
+      data-testid="filter-category"
+    >
+      <mat-option [value]="null">{{ 'awards.filters.all' | transloco }}</mat-option>
+      @for (item of categories(); track item.category.id) {
+        <mat-option [value]="item.category.id" [class.awards__child]="item.depth > 0">
+          {{ optionName(item.category) }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+    <mat-label>{{ 'awards.filters.dateFrom' | transloco }}</mat-label>
+    <input
+      matInput
+      type="date"
+      [ngModel]="filters().dateFrom"
+      (change)="filter({ dateFrom: $any($event.target).value || null })"
+      data-testid="filter-date-from"
+    />
+  </mat-form-field>
+  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+    <mat-label>{{ 'awards.filters.dateTo' | transloco }}</mat-label>
+    <input
+      matInput
+      type="date"
+      [ngModel]="filters().dateTo"
+      (change)="filter({ dateTo: $any($event.target).value || null })"
+      data-testid="filter-date-to"
+    />
+  </mat-form-field>
+</div>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" data-testid="awards-loading" />
+}
+
+@if (problem(); as problem) {
+  <p class="awards__problem" role="alert" data-testid="awards-error">
+    {{ 'awards.problems.' + problem | transloco }}
+  </p>
+}
+
+<ul class="awards__list" data-testid="award-list">
+  @for (award of awards(); track award.id) {
+    <li class="awards__item" data-testid="award-item">
+      <a class="awards__link" [routerLink]="link(award)">
+        <span class="awards__name" data-testid="award-title">{{ title(award) }}</span>
+        <span class="awards__meta">
+          @if (award.category) {
+            <span>{{ category(award) }}</span>
+          }
+          @if (award.awardDate) {
+            <span>{{ award.awardDate }}</span>
+          }
+        </span>
+      </a>
+      <mat-chip class="awards__chip" [class]="'awards__chip--' + award.status" data-testid="award-status">
+        {{ 'awards.status.' + award.status | transloco }}
+      </mat-chip>
+    </li>
+  } @empty {
+    @if (!loading() && !problem()) {
+      <li class="awards__empty" data-testid="awards-empty">{{ 'awards.empty' | transloco }}</li>
+    }
+  }
+</ul>

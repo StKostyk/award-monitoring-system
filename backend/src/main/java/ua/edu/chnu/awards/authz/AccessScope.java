@@ -30,6 +30,9 @@ public class AccessScope {
     public static final String MISSING_ATTRIBUTE = AccessScope.class.getName() + ".missing";
     static final String PERMISSION_READ_ALL = "user:read:all";
     static final String PERMISSION_READ_SCOPE = "user:read:scope";
+    static final String PERMISSION_AWARD_READ_ALL = "award:read:all";
+    static final Set<String> AWARD_READ_SCOPES = Set.of("award:read:department", "award:read:faculty",
+        PERMISSION_AWARD_READ_ALL);
 
     private final OrganizationTree tree;
     private final RoleLevels levels;
@@ -84,6 +87,22 @@ public class AccessScope {
         return has(PERMISSION_READ_ALL) && grant()
             || readScopes().stream().anyMatch(scope -> tree.covers(scope.organizationId(), organizationId)) && grant()
             || refuse("organisation " + organizationId + " is outside your scope");
+    }
+
+    /**
+     * Whether the caller may read the submitted awards of the organisation: a role, held or borrowed, that
+     * grants {@code award:read:department}, {@code award:read:faculty} or {@code award:read:all} and whose scope
+     * covers it, or {@code award:read:all} on the token.
+     *
+     * @param organizationId the organisation the award belongs to
+     * @return true when readable
+     */
+    public boolean canReadAwards(long organizationId) {
+        return has(PERMISSION_AWARD_READ_ALL) && grant()
+            || scopes().stream()
+                .filter(scope -> permissions.of(scope.role()).stream().anyMatch(AWARD_READ_SCOPES::contains))
+                .anyMatch(scope -> tree.covers(scope.organizationId(), organizationId)) && grant()
+            || refuse("awards of organisation " + organizationId + " are outside your scope");
     }
 
     /**

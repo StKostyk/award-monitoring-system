@@ -26,6 +26,105 @@
     "SYSTEM_ADMIN": "System administrator",
     "GDPR_OFFICER": "Data protection officer"
   },
+  "awards": {
+    "title": "My awards",
+    "add": "Add award",
+    "empty": "No awards yet. Add your first one — you can save it as a draft and finish it later.",
+    "notFound": "Not found",
+    "back": "Back to my awards",
+    "edit": "Edit",
+    "filters": {
+      "status": "Status",
+      "category": "Category",
+      "dateFrom": "Date from",
+      "dateTo": "Date to",
+      "all": "All"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING": "Under review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "ARCHIVED": "Archived"
+    },
+    "requestStatus": {
+      "SUBMITTED": "Submitted",
+      "IN_REVIEW": "In review",
+      "ESCALATED": "Escalated",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "RETURNED": "Returned for changes",
+      "EXPIRED": "Expired"
+    },
+    "levels": {
+      "FACULTY_SECRETARY": "faculty secretary",
+      "DEAN": "dean",
+      "RECTOR_SECRETARY": "rector's secretary",
+      "RECTOR": "rector"
+    },
+    "fields": {
+      "title": "Title in English",
+      "titleUk": "Title in Ukrainian",
+      "category": "Category",
+      "awardingOrganization": "Awarded by",
+      "awardDate": "Award date",
+      "description": "Description in English",
+      "descriptionUk": "Description in Ukrainian",
+      "externalUrl": "Link to the award",
+      "owner": "Recipient",
+      "organization": "Department",
+      "request": "Request",
+      "impactScore": "Impact score"
+    },
+    "hints": {
+      "title": "A title in one language is enough"
+    },
+    "form": {
+      "newTitle": "New award",
+      "editTitle": "Award draft",
+      "noCategory": "Not chosen",
+      "saveDraft": "Save draft",
+      "submit": "Submit",
+      "reload": "Load the current version",
+      "photoLater": "A photo of the certificate can be added soon."
+    },
+    "restore": {
+      "question": "Restore unsaved changes?",
+      "accept": "Restore",
+      "discard": "Discard"
+    },
+    "leave": {
+      "title": "You have unsaved changes",
+      "text": "If you leave now, the values you entered will be lost.",
+      "confirm": "Leave without saving",
+      "cancel": "Stay"
+    },
+    "messages": {
+      "saved": "Draft saved."
+    },
+    "submitted": {
+      "title": "Award submitted",
+      "text": "Submitted for review to the faculty secretary.",
+      "toList": "Back to my awards"
+    },
+    "errors": {
+      "required": "Required for a submission",
+      "titleRequired": "Enter a title in Ukrainian or English",
+      "too-long": "At most {{max}} characters",
+      "invalid": "Enter an address starting with http:// or https://",
+      "inactive": "The category is no longer available",
+      "future": "The award date cannot be in the future"
+    },
+    "problems": {
+      "validation-failed": "Check the marked fields.",
+      "award-incomplete": "To submit, fill in the category, who granted the award and the date.",
+      "award-stale": "The award was changed in another window. Your changes are kept in this browser.",
+      "award-not-editable": "The award was already submitted and can no longer be changed.",
+      "access-denied": "You are not allowed to enter awards.",
+      "network": "The server is not reachable. Your values are kept; please try again.",
+      "unknown": "Something went wrong. Please try again."
+    }
+  },
   "admin": {
     "users": {
       "title": "Users",

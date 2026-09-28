@@ -74,8 +74,8 @@ class AwardCategoryRepositoryIT extends AbstractJpaSliceTest {
     void ac04_runningTheSeedAgainKeepsAwardsAndReactivatesSystemCategories() {
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         User owner = userRepository.saveAndFlush(TestUsers.user("seed.owner@chnu.edu.ua", department));
-        jdbc.update("insert into awards (user_id, category_id, title, awarding_organization, award_date) "
-            + "values (?, 13, 'Ministry letter of thanks', 'Ministry of Education', date '2025-05-01')",
+        jdbc.update("insert into awards (user_id, organization_id, category_id, title, awarding_organization, "
+            + "award_date) values (?, 64, 13,'Ministry letter of thanks', 'Ministry of Education', date '2025-05-01')",
             owner.getId());
         jdbc.update("update award_categories set name_uk = 'змінено', is_active = false where category_id = 13");
         jdbc.update("insert into award_categories (category_id, name, level, is_system) "

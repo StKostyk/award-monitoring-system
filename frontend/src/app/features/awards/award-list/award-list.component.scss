@@ -1,0 +1,78 @@
+.awards__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.awards__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+}
+
+.awards__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+
+.awards__filter {
+  width: 100%;
+}
+
+.awards__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.awards__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+}
+
+.awards__link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.awards__name {
+  font: var(--mat-sys-title-medium);
+  overflow-wrap: anywhere;
+}
+
+.awards__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--mat-sys-on-surface-variant, #444746);
+  font: var(--mat-sys-body-medium);
+}
+
+.awards__chip {
+  flex-shrink: 0;
+}
+
+.awards__empty {
+  padding: 24px;
+  text-align: center;
+}
+
+.awards__problem {
+  color: var(--mat-sys-error, #b3261e);
+}
+
+::ng-deep .awards__child {
+  padding-left: 32px;
+}
