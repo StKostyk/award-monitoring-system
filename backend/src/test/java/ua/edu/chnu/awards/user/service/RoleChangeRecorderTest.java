@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static ua.edu.chnu.awards.support.TestUsers.person;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -18,7 +19,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditLog;
 import ua.edu.chnu.awards.audit.service.AuditService;
-import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -108,10 +108,5 @@ class RoleChangeRecorderTest {
     private UserRole assignment(LocalDate from, LocalDate to) {
         return UserRole.builder().user(holder).roleType(RoleType.FACULTY_SECRETARY).organization(faculty)
             .validFrom(from).validTo(to).build();
-    }
-
-    private static User person(long id, String email) {
-        return User.builder().id(id).emailAddress(email).firstName("Марія").lastName("Мартинюк")
-            .accountStatus(AccountStatus.ACTIVE).build();
     }
 }

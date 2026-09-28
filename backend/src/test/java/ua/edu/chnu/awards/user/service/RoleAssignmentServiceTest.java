@@ -9,6 +9,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static ua.edu.chnu.awards.support.TestUsers.organization;
+import static ua.edu.chnu.awards.support.TestUsers.person;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -404,15 +406,6 @@ class RoleAssignmentServiceTest {
                 assertThat(e.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
                 assertThat(e.getType()).isEqualTo("membership-role-required");
             });
-    }
-
-    private static Organization organization(long id, OrganizationType type, String name) {
-        return Organization.builder().id(id).orgType(type).name(name).nameUk(name + " (укр)").active(true).build();
-    }
-
-    private static User person(long id, String email, Organization organization) {
-        return User.builder().id(id).emailAddress(email).firstName("Іван").lastName("Тест")
-            .accountStatus(AccountStatus.ACTIVE).organization(organization).build();
     }
 
     private static UserRole assignment(User user, RoleType role, Organization organization, LocalDate from,
