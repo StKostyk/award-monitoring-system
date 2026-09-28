@@ -10,12 +10,12 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 1.1 Core Authentication System | Done (validated; fixes from the manual run merged, author's retest pending) | 2026-09-21 | 2026-09-21 |
-| 1.2 Role-Based Access Control | Validated with findings (PRD §12); fix story 1.2.4 and author's run of §9 pending | 2026-09-21 | |
+| 1.2 Role-Based Access Control | Validated; fix story 1.2.4 merged, author's run of §9 pending | 2026-09-21 | |
 | 1.3 User Profile Management | Planned | | |
 
 ## Current focus
 
-Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model, 1.2.2 role assignment and 1.2.3 delegation done; validated 2026-09-25 (PRD §12, verdict passed with notes). Story 1.2.4 (SCRUM-19) for findings F-1…F-10 in progress, then the author's run of §9.
+Feature 1.2 (PRD approved 2026-09-21): 1.2.1 permission model, 1.2.2 role assignment and 1.2.3 delegation done; validated 2026-09-25 (PRD §12, verdict passed with notes). Story 1.2.4 (SCRUM-19) for findings F-1…F-10 merged 2026-09-28; the author's run of §9 is pending.
 
 ## Stories
 
@@ -33,7 +33,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 7 | 1.2.1 Permission model and organisation-scoped access | 1.2 | 5 | SCRUM-12 | #35 | no | Done |
 | 8 | 1.2.2 Role assignment and membership confirmation | 1.2 | 8 | SCRUM-13 | #32 | yes | Done |
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Done |
-| 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | In Review |
+| 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | Done |
 | 10 | 1.3.1 Profile information update | 1.3 | 3 | SCRUM-15 | #38 | yes | Ready |
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Ready |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Ready |
