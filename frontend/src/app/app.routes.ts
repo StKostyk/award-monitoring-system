@@ -4,6 +4,7 @@ import { authGuard, delegationGuard, userDirectoryGuard } from './core/auth/auth
 import { CallbackComponent } from './core/auth/callback.component';
 import { ShellComponent } from './core/layout/shell.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
+import { ownAwardsGuard } from './features/awards/awards.guards';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { RegistrationPendingComponent } from './features/auth/registration-pending/registration-pending.component';
 import { ResetPasswordComponent } from './features/auth/reset-password/reset-password.component';
@@ -29,6 +30,11 @@ export const routes: Routes = [
         path: 'admin',
         canActivate: [authGuard, userDirectoryGuard],
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+      },
+      {
+        path: 'awards',
+        canActivate: [authGuard, ownAwardsGuard],
+        loadChildren: () => import('./features/awards/awards.routes').then((m) => m.AWARD_ROUTES),
       },
       {
         path: 'delegations',

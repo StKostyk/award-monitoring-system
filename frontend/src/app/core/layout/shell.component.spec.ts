@@ -118,6 +118,23 @@ describe('ShellComponent', () => {
     expect(link.textContent).toContain('Користувачі');
   });
 
+  it('ac1_9_shows_my_awards_to_a_holder_of_award_read_own', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: [] })));
+    const unconfirmed = TestBed.createComponent(ShellComponent);
+    unconfirmed.detectChanges();
+
+    expect(unconfirmed.nativeElement.querySelector('[data-testid="nav-awards"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="nav-awards"]').getAttribute('href')).toBe(
+      '/awards',
+    );
+  });
+
   it('ac3_6_shows_the_delegations_entry_only_to_a_holder_of_an_approval_role', () => {
     auth.isAuthenticated.set(true);
     auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));

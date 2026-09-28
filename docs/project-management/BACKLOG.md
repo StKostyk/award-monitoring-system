@@ -36,8 +36,8 @@ Feature 2.1 PRD approved 2026-09-28: [feature-2.1-award-creation-validation.md](
 
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
-| 2.1.0 | Award domain model and category catalogue (in review) | 3 | 2.1 | SCRUM-21 | [#43](https://github.com/StKostyk/award-monitoring-system/issues/43) |
-| 2.1.1 | Award draft and submission (US-003) | 8 | 2.1 | SCRUM-22 | [#44](https://github.com/StKostyk/award-monitoring-system/issues/44) |
+| 2.1.0 | Award domain model and category catalogue (done) | 3 | 2.1 | SCRUM-21 | [#43](https://github.com/StKostyk/award-monitoring-system/issues/43) |
+| 2.1.1 | Award draft and submission (US-003) (in review) | 8 | 2.1 | SCRUM-22 | [#44](https://github.com/StKostyk/award-monitoring-system/issues/44) |
 | 2.1.2 | Award date and duplicate validation | 3 | 2.1 | SCRUM-23 | [#76](https://github.com/StKostyk/award-monitoring-system/issues/76) |
 | 2.1.3 | Award category suggestion | 3 | 2.1 | SCRUM-24 | [#77](https://github.com/StKostyk/award-monitoring-system/issues/77) |
 | 2.2.1 | Award version recording | 5 | 2.2 | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |

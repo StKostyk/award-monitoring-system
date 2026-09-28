@@ -58,6 +58,22 @@ export function readPermissions(token: string | null | undefined): TokenPermissi
   );
 }
 
+/** The user id (`sub` claim) of the token, or null when it cannot be read. */
+export function readSubject(token: string | null | undefined): string | null {
+  const subject = payload(token)?.['sub'];
+  return typeof subject === 'string' && subject !== '' ? subject : null;
+}
+
+/** Whether the caller may enter awards. */
+export function canCreateAwards(permissions: TokenPermissions): boolean {
+  return permissions.hasPermission('award:create');
+}
+
+/** Whether the caller may open their own awards. */
+export function canReadOwnAwards(permissions: TokenPermissions): boolean {
+  return permissions.hasPermission('award:read:own');
+}
+
 /** Whether the caller may open the user directory. */
 export function canReadDirectory(permissions: TokenPermissions): boolean {
   return DIRECTORY_PERMISSIONS.some((permission) => permissions.hasPermission(permission));

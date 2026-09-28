@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.user.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import ua.edu.chnu.awards.award.dto.AwardCategoryResponse;
+import ua.edu.chnu.awards.award.dto.AwardForm;
+import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.delegation.dto.DelegationResponse;
@@ -123,6 +126,28 @@ class OpenApiContractTest {
             .doesNotContainKey("issuingOrganization");
         assertThat(property(create, "title")).containsEntry("maxLength", 500);
         assertThat(property(create, "categoryId")).containsEntry("format", "int64");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac1_1_awardSchemaMatchesTheResponseAndTheForm() throws IOException {
+        Map<String, Object> schemas = schemas();
+        Map<String, Object> award = property((Map<String, Object>) schemas.get("Award"), "properties");
+        Map<String, Object> create = property((Map<String, Object>) schemas.get("AwardCreateRequest"),
+            "properties");
+        List<String> response = Stream.of(AwardResponse.class.getRecordComponents())
+            .map(RecordComponent::getName).toList();
+        List<String> form = Stream.of(AwardForm.class.getRecordComponents())
+            .map(RecordComponent::getName).filter(name -> !"version".equals(name)).toList();
+
+        assertThat(award.keySet()).containsExactlyInAnyOrderElementsOf(response);
+        assertThat(create.keySet()).containsExactlyInAnyOrderElementsOf(form);
+        assertThat(property(award, "category")).containsEntry("$ref", "#/components/schemas/AwardCategoryRef");
+        assertThat(property(award, "request")).containsEntry("$ref", "#/components/schemas/AwardRequestSummary");
+        assertThat(property(property((Map<String, Object>) schemas.get("ProblemDetail"), "properties"), "errors"))
+            .extractingByKey("items").asInstanceOf(MAP)
+            .extractingByKey("properties").asInstanceOf(MAP)
+            .containsKeys("field", "code", "message");
     }
 
     @SuppressWarnings("unchecked")

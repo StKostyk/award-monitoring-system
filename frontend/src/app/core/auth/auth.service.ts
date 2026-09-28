@@ -5,8 +5,9 @@ import { OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
 import { debounceTime, filter, firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { FormCopiesService } from '../storage/form-copies.service';
 import { authConfig } from './auth.config';
-import { readPermissions } from './permissions';
+import { readPermissions, readSubject } from './permissions';
 import { UserProfile } from './user-profile';
 
 /** Routes that work without a session; a lost session there must not bounce the visitor to the login page. */
@@ -25,6 +26,7 @@ export class AuthService {
   private readonly oauth = inject(OAuthService);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly formCopies = inject(FormCopiesService);
   private loginStarted = false;
   private refreshing: Promise<string | null> | null = null;
 
@@ -36,6 +38,7 @@ export class AuthService {
     return profile ? `${profile.firstName} ${profile.lastName}` : '';
   });
   readonly permissions = computed(() => readPermissions(this.accessToken()));
+  readonly userId = computed(() => readSubject(this.accessToken()));
 
   async init(): Promise<void> {
     this.oauth.configure(authConfig);
@@ -98,6 +101,7 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    this.formCopies.clearAll();
     await this.oauth.revokeTokenAndLogout();
     this.forget();
   }

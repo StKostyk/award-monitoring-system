@@ -1,10 +1,13 @@
 import {
+  canCreateAwards,
   canDelegate,
   canReadDirectory,
+  canReadOwnAwards,
   delegatableOrganizations,
   delegatableRoles,
   grantableRoles,
   readPermissions,
+  readSubject,
 } from './permissions';
 
 function token(claims: Record<string, unknown>): string {
@@ -149,6 +152,21 @@ describe('permissions', () => {
     expect(delegatableRoles(dean)).toEqual(['DEAN']);
     expect(canDelegate(employee)).toBe(false);
     expect(canDelegate(borrowed)).toBe(false);
+  });
+
+  it('ac1_10_reads_the_user_id_of_the_token', () => {
+    expect(readSubject(token({ sub: '21' }))).toBe('21');
+    expect(readSubject(token({}))).toBeNull();
+    expect(readSubject(null)).toBeNull();
+  });
+
+  it('ac1_2_tells_who_may_enter_and_read_awards', () => {
+    const employee = readPermissions(token({ permissions: ['award:read:own', 'award:create'] }));
+    const admin = readPermissions(token({ permissions: ['award:read:own', 'award:read:all'] }));
+
+    expect(canCreateAwards(employee)).toBe(true);
+    expect(canCreateAwards(admin)).toBe(false);
+    expect(canReadOwnAwards(admin)).toBe(true);
   });
 
   it('ignores role scopes without an organisation', () => {

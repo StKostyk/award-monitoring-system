@@ -1,0 +1,68 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+@if (notFound()) {
+  <p class="award-detail__problem" role="alert" data-testid="award-not-found">{{ 'awards.notFound' | transloco }}</p>
+}
+@if (failed()) {
+  <p class="award-detail__problem" role="alert" data-testid="award-detail-error">
+    {{ 'awards.problems.unknown' | transloco }}
+  </p>
+}
+@if (notice(); as notice) {
+  <p class="award-detail__problem" role="alert" data-testid="award-detail-notice">{{ notice | transloco }}</p>
+}
+
+@if (award(); as award) {
+  <article class="award-detail" data-testid="award-detail">
+    <div class="award-detail__header">
+      <h1 class="award-detail__title" data-testid="award-detail-title">{{ title(award) }}</h1>
+      <mat-chip data-testid="award-detail-status">{{ 'awards.status.' + award.status | transloco }}</mat-chip>
+    </div>
+    <dl class="award-detail__fields">
+      @if (award.titleUk && award.title) {
+        <dt>{{ 'awards.fields.title' | transloco }}</dt>
+        <dd>{{ award.title }}</dd>
+      }
+      <dt>{{ 'awards.fields.category' | transloco }}</dt>
+      <dd data-testid="award-detail-category">{{ category(award) || '—' }}</dd>
+      <dt>{{ 'awards.fields.awardingOrganization' | transloco }}</dt>
+      <dd>{{ award.awardingOrganization || '—' }}</dd>
+      <dt>{{ 'awards.fields.awardDate' | transloco }}</dt>
+      <dd>{{ award.awardDate || '—' }}</dd>
+      @if (award.descriptionUk || award.description) {
+        <dt>{{ 'awards.fields.descriptionUk' | transloco }}</dt>
+        <dd class="award-detail__text">{{ award.descriptionUk || award.description }}</dd>
+      }
+      @if (award.externalUrl) {
+        <dt>{{ 'awards.fields.externalUrl' | transloco }}</dt>
+        <dd>
+          <a [href]="award.externalUrl" target="_blank" rel="noopener noreferrer">{{ award.externalUrl }}</a>
+        </dd>
+      }
+      <dt>{{ 'awards.fields.owner' | transloco }}</dt>
+      <dd>{{ award.owner.name }}</dd>
+      <dt>{{ 'awards.fields.organization' | transloco }}</dt>
+      <dd>{{ organization(award) }}</dd>
+      @if (award.request; as request) {
+        <dt>{{ 'awards.fields.request' | transloco }}</dt>
+        <dd data-testid="award-detail-request">
+          {{ 'awards.requestStatus.' + request.status | transloco }} ·
+          {{ 'awards.levels.' + request.currentLevel | transloco }}
+        </dd>
+      }
+      @if (award.impactScore !== null) {
+        <dt>{{ 'awards.fields.impactScore' | transloco }}</dt>
+        <dd>{{ award.impactScore }}</dd>
+      }
+    </dl>
+    <div class="award-detail__actions">
+      <a mat-button routerLink="/awards" data-testid="award-back">{{ 'awards.back' | transloco }}</a>
+      @if (editable(award)) {
+        <a mat-flat-button [routerLink]="['/awards', award.id, 'edit']" data-testid="award-edit">
+          {{ 'awards.edit' | transloco }}
+        </a>
+      }
+    </div>
+  </article>
+}

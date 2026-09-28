@@ -22,8 +22,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Award Management** |
-| Submit Award Request | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Edit Own Award Request | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Submit Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Edit Own Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Upload Scanned Document | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View All University Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View Own Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
@@ -31,6 +31,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Manage Department Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage Faculty Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage University Profile | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+
+¹ Approvers receive awards too and submit their own like every employee (`award:create`, `award:update:own`; decision of 2026-09-28, Feature 2.1). A request always starts at the faculty secretary; that nobody reviews their own award is enforced in Epic 4. System administrators and GDPR officers read awards for oversight and never submit.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

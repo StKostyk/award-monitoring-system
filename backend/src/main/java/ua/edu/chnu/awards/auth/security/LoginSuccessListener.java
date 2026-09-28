@@ -45,7 +45,7 @@ public class LoginSuccessListener {
         String email = event.getAuthentication().getName();
         ClientRequest client = ClientRequest.current();
         userRepository.findByEmailAddressIgnoreCase(email).ifPresent(user -> {
-            user.setLastLoginAt(Instant.now());
+            userRepository.recordLogin(user.getId(), Instant.now());
             audit.record(AuditAction.LOGIN_SUCCESS, user.getId());
             try {
                 devices.recordSignIn(user, client);

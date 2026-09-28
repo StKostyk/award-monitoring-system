@@ -56,7 +56,22 @@ public class AuditService {
      */
     @Transactional
     public void record(AuditAction action, String entityType, Long userId, Map<String, Object> details) {
-        write(action, entityType, userId, details);
+        write(action, entityType, userId, userId, details);
+    }
+
+    /**
+     * Stores one event about a business record, joining the caller's transaction.
+     *
+     * @param action     what happened
+     * @param entityType the table of the record, such as {@link AuditLog#AWARDS}
+     * @param userId     who did it
+     * @param entityId   the record
+     * @param details    extra facts kept as JSON (no secrets)
+     */
+    @Transactional
+    public void record(AuditAction action, String entityType, Long userId, Long entityId,
+                       Map<String, Object> details) {
+        write(action, entityType, userId, entityId, details);
     }
 
     /**
@@ -71,16 +86,17 @@ public class AuditService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordSeparately(AuditAction action, String entityType, Long userId,
                                  Map<String, Object> details) {
-        write(action, entityType, userId, details);
+        write(action, entityType, userId, userId, details);
     }
 
-    private void write(AuditAction action, String entityType, Long userId, Map<String, Object> details) {
+    private void write(AuditAction action, String entityType, Long userId, Long entityId,
+                       Map<String, Object> details) {
         ClientRequest client = ClientRequest.current();
         repository.save(AuditLog.builder()
             .userId(userId)
             .actionType(action.name())
             .entityType(entityType)
-            .entityId(userId)
+            .entityId(entityId)
             .details(details)
             .ipAddress(client.address())
             .userAgent(client.userAgent())

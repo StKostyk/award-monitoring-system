@@ -28,3 +28,29 @@
   max-width: 1200px;
   margin: 0 auto;
 }
+
+@media (max-width: 600px) {
+  .shell__toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+    padding: 4px 8px;
+  }
+
+  .shell__title {
+    font-size: 1rem;
+  }
+
+  .shell__nav {
+    margin-left: 0;
+  }
+
+  .shell__user,
+  .shell__acting {
+    display: none;
+  }
+
+  .shell__content {
+    padding: 16px;
+  }
+}

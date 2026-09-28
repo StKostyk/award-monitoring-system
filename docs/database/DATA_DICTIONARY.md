@@ -288,7 +288,10 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 **Business Rules**:
 - Each award belongs to exactly one user (recipient)
-- Awards must be categorized via `category_id`
+- An award is entered as a `DRAFT` and may be saved with a title alone (Ukrainian or English, `ck_awards_title`); category, awarding organization and award date are required once it leaves `DRAFT` (`ck_awards_complete`, V020)
+- `organization_id` is the owner's department: set when the draft is created, refreshed at submission and kept afterwards, so scoped reads and reviewer routing do not follow a later transfer
+- Only the owner may change or delete a `DRAFT`; a submitted award is changed only by the workflow
+- Awards must be categorized via `category_id` before submission
 - Award status follows defined workflow progression
 - Verified awards display a verification badge
 - Impact score calculated based on category level and awarding organization
@@ -298,13 +301,14 @@ This Data Dictionary provides comprehensive documentation for all database entit
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `award_id` | `BIGSERIAL` | NO | Auto | PK | Unique award identifier |
 | `user_id` | `BIGINT` | NO | - | FK→users | Award recipient |
-| `category_id` | `BIGINT` | NO | - | FK→award_categories | Award classification |
-| `title` | `VARCHAR(500)` | NO | - | - | Award title/name |
-| `title_uk` | `VARCHAR(500)` | YES | - | - | Ukrainian title |
-| `description` | `TEXT` | YES | - | - | Detailed description |
-| `description_uk` | `TEXT` | YES | - | - | Ukrainian description |
-| `awarding_organization` | `VARCHAR(255)` | NO | - | - | Organization that granted the award |
-| `award_date` | `DATE` | NO | - | - | Date award was granted |
+| `organization_id` | `BIGINT` | NO | - | FK→organizations | Owner's department at submission (V020) |
+| `category_id` | `BIGINT` | YES (draft) | - | FK→award_categories | Award classification; required outside `DRAFT` |
+| `title` | `VARCHAR(500)` | YES | - | CK: `title` or `title_uk` | English title |
+| `title_uk` | `VARCHAR(500)` | YES | - | CK: `title` or `title_uk` | Ukrainian title |
+| `description` | `TEXT` | YES | - | App: ≤ 4000 | Detailed description |
+| `description_uk` | `TEXT` | YES | - | App: ≤ 4000 | Ukrainian description |
+| `awarding_organization` | `VARCHAR(255)` | YES (draft) | - | - | Organization that granted the award; required outside `DRAFT` |
+| `award_date` | `DATE` | YES (draft) | - | CK: ≤ today in Europe/Kyiv | Date award was granted; required outside `DRAFT` |
 | `status` | `VARCHAR(20)` | NO | `'DRAFT'` | CK | Current workflow status |
 | `verification_badge` | `BOOLEAN` | NO | `FALSE` | - | Verified by supporting documents |
 | `impact_score` | `INTEGER` | YES | - | CK: 0-100 | Calculated significance score |
@@ -326,8 +330,18 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - Base score from the category's recognition level (§2.2: Speciality 10, Department 20, College 30, Faculty 40, Local 45, University 60, Regional 70, National 80, International 100)
 - Modifiers based on awarding organization prestige
 
+**Constraints added by V020**:
+- `ck_awards_title` - `title IS NOT NULL OR title_uk IS NOT NULL`
+- `ck_awards_complete` - `status = 'DRAFT'` or category, awarding organization and award date all present
+- `ck_awards_date` - recreated as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`; the V005 version compared with the session date (UTC) and refused awards dated today between 00:00 and 03:00 Kyiv time
+- `fk_awards_organizations` - `organization_id` → `organizations(org_id)`
+
+**Submission** (`POST /awards/{id}/submit`): under a row lock on the draft, `status` becomes `PENDING`, `impact_score` the level base score, `organization_id` the owner's current department, one `award_requests` row is created (`SUBMITTED`, `FACULTY_SECRETARY`) and an `AWARD_SUBMITTED` row is written to `audit_logs` (`entity_type = 'awards'`, `entity_id` = the award).
+
 **Indexes**:
 - `pk_awards` - Primary key on `award_id`
+- `idx_awards_organization_status` - B-tree on `(organization_id, status)` for scoped reads (V020)
+- `idx_awards_user_date` - B-tree on `(user_id, award_date DESC)` (V012), also used by the duplicate check of 2.1.2
 - `idx_awards_user` - B-tree on `user_id`
 - `idx_awards_category` - B-tree on `category_id`
 - `idx_awards_status` - B-tree on `status`
@@ -825,8 +839,12 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `users` | `first_name` | Required, max 100 chars |
 | `users` | `last_name` | Required, max 100 chars |
 | `users` | `password_hash` | BCrypt format |
-| `awards` | `title` | Required, max 500 chars |
-| `awards` | `award_date` | Cannot be future date |
+| `awards` | `title`, `title_uk` | At least one of them, max 500 chars each |
+| `awards` | `description`, `description_uk` | Max 4000 chars |
+| `awards` | `awarding_organization` | Max 255 chars; required outside `DRAFT` |
+| `awards` | `external_url` | `http` or `https` only, max 2048 chars |
+| `awards` | `category_id` | Active category when chosen or submitted; a draft keeps a category deactivated after it was chosen |
+| `awards` | `award_date` | Not after today in Europe/Kyiv; required outside `DRAFT` |
 | `awards` | `impact_score` | Range 0-100 |
 | `documents` | `file_size` | Max 10,485,760 bytes (10MB) |
 | `documents` | `file_type` | One of: PDF, JPG, PNG, WEBP |

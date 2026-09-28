@@ -7,7 +7,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
 import { AuthService } from '../auth/auth.service';
-import { canDelegate, canReadDirectory } from '../auth/permissions';
+import { canDelegate, canReadDirectory, canReadOwnAwards } from '../auth/permissions';
 import { LanguageService } from '../i18n/language.service';
 
 @Component({
@@ -21,6 +21,9 @@ export class ShellComponent {
 
   protected readonly auth = inject(AuthService);
   protected readonly language = inject(LanguageService);
+  protected readonly canOpenAwards = computed(
+    () => this.auth.isAuthenticated() && canReadOwnAwards(this.auth.permissions()),
+  );
   protected readonly canOpenUsers = computed(
     () => this.auth.isAuthenticated() && canReadDirectory(this.auth.permissions()),
   );
