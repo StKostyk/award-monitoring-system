@@ -42,7 +42,10 @@ describe('DelegationsEffects', () => {
 
   beforeEach(() => {
     actions$ = new Subject<Action>();
-    api = { list: vi.fn().mockReturnValue(of(list)), revoke: vi.fn().mockReturnValue(of(undefined)) };
+    api = {
+      list: vi.fn().mockReturnValue(of(list)),
+      revoke: vi.fn().mockReturnValue(of(undefined)),
+    };
     TestBed.configureTestingModule({
       providers: [
         provideStore(),
@@ -86,6 +89,26 @@ describe('DelegationsEffects', () => {
     expect(await result).toEqual(
       DelegationsActions.revokeFailed({ id: 1, problem: 'delegation-not-active' }),
     );
+  });
+
+  it('ac4_5_reloads_the_list_after_a_conflict_and_keeps_the_refusal', () => {
+    api.revoke.mockReturnValue(throwError(() => problem('delegation-not-active', 409)));
+    const emitted: Action[] = [];
+    const subscription = effects.revoke$.subscribe((action) => emitted.push(action));
+    actions$.next(DelegationsActions.revokeRequested({ id: 1 }));
+    subscription.unsubscribe();
+
+    expect(emitted).toEqual([
+      DelegationsActions.revokeFailed({ id: 1, problem: 'delegation-not-active' }),
+      DelegationsActions.refreshed(),
+    ]);
+  });
+
+  it('ac4_5_refreshing_loads_the_list_again', async () => {
+    const result = firstValueFrom(effects.load$);
+    actions$.next(DelegationsActions.refreshed());
+
+    expect(await result).toEqual(DelegationsActions.delegationsLoaded({ list }));
   });
 
   it('ac3_5_reloads_the_lists_after_a_change', async () => {

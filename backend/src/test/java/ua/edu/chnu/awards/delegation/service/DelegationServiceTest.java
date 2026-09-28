@@ -78,6 +78,8 @@ class DelegationServiceTest {
         when(access.subtreeOf(FACULTY_ID)).thenReturn(Set.of(FACULTY_ID, DEPARTMENT_ID));
         when(userRepository.findById(dean.getId())).thenReturn(Optional.of(dean));
         when(userRepository.findById(secretary.getId())).thenReturn(Optional.of(secretary));
+        when(userRepository.findByIdForUpdate(secretary.getId())).thenReturn(Optional.of(secretary));
+        when(userRepository.findByIdForUpdate(dean.getId())).thenReturn(Optional.of(dean));
         when(organizationRepository.findById(FACULTY_ID)).thenReturn(Optional.of(faculty));
         when(userRoleRepository.findCurrentByUserId(anyLong(), any(LocalDate.class))).thenReturn(List.of(
             UserRole.builder().roleType(RoleType.FACULTY_SECRETARY).organization(faculty).build()));
@@ -161,7 +163,7 @@ class DelegationServiceTest {
 
     @Test
     void ac31_anUnknownOrForeignDelegateIsUnknown() {
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        when(userRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(request(99L, RoleType.DEAN, FACULTY_ID, TODAY,
             TODAY.plusDays(7))))
@@ -205,7 +207,7 @@ class DelegationServiceTest {
     @Test
     void ac34_theDelegatorTakesTheAuthorityBackAndTheDelegateIsSignedOut() {
         RoleDelegation delegation = delegation(TODAY, TODAY.plusDays(7));
-        when(delegationRepository.findById(5L)).thenReturn(Optional.of(delegation));
+        when(delegationRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(delegation));
 
         service.revoke(5L);
 
@@ -219,7 +221,7 @@ class DelegationServiceTest {
     @Test
     void ac34_somebodyWhoCouldTakeTheRoleBackMayEndTheDelegation() {
         RoleDelegation delegation = delegation(TODAY, TODAY.plusDays(7));
-        when(delegationRepository.findById(5L)).thenReturn(Optional.of(delegation));
+        when(delegationRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(delegation));
         when(access.callerId()).thenReturn(secretary.getId());
         when(access.canManage(RoleType.DEAN, FACULTY_ID)).thenReturn(true);
 
@@ -231,7 +233,7 @@ class DelegationServiceTest {
     @Test
     void ac34_anUnrelatedCallerIsNotEvenToldThatItExists() {
         RoleDelegation expired = delegation(TODAY.minusDays(9), TODAY.minusDays(2));
-        when(delegationRepository.findById(5L)).thenReturn(Optional.of(expired));
+        when(delegationRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(expired));
         when(access.callerId()).thenReturn(secretary.getId());
         when(access.canManage(RoleType.DEAN, FACULTY_ID)).thenReturn(false);
 
@@ -243,8 +245,8 @@ class DelegationServiceTest {
     void ac34_whatHasAlreadyEndedCannotEndAgain() {
         RoleDelegation revoked = delegation(TODAY, TODAY.plusDays(7));
         revoked.setRevokedAt(Instant.parse("2026-09-23T09:00:00Z"));
-        when(delegationRepository.findById(5L)).thenReturn(Optional.of(revoked));
-        when(delegationRepository.findById(6L))
+        when(delegationRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(revoked));
+        when(delegationRepository.findByIdForUpdate(6L))
             .thenReturn(Optional.of(delegation(TODAY.minusDays(9), TODAY.minusDays(2))));
 
         assertThat(typeOf(() -> service.revoke(5L))).isEqualTo("delegation-not-active");
@@ -252,8 +254,34 @@ class DelegationServiceTest {
     }
 
     @Test
+    void ac4_3_movingTheDelegateOutOfTheOrganisationTakesTheBorrowedAuthorityBack() {
+        RoleDelegation received = delegation(TODAY, TODAY.plusDays(7));
+        when(delegationRepository.findStandingByDelegate(secretary.getId(), TODAY)).thenReturn(List.of(received));
+        Organization elsewhere = organization(OTHER_FACULTY_ID, OrganizationType.FACULTY);
+        when(userRoleRepository.findCurrentByUserId(secretary.getId(), TODAY)).thenReturn(List.of(
+            UserRole.builder().roleType(RoleType.EMPLOYEE).organization(elsewhere).build()));
+
+        service.revokeForMove(dean, secretary);
+
+        assertThat(received.getRevokedBy()).isEqualTo(dean);
+        verify(recorder).revoked(dean, received);
+        verify(revoker).revokeAll(secretary);
+    }
+
+    @Test
+    void ac4_3_aRoleStillHeldInTheOrganisationKeepsTheBorrowedAuthority() {
+        RoleDelegation received = delegation(TODAY, TODAY.plusDays(7));
+        when(delegationRepository.findStandingByDelegate(secretary.getId(), TODAY)).thenReturn(List.of(received));
+
+        service.revokeForMove(dean, secretary);
+
+        assertThat(received.getRevokedAt()).isNull();
+        verify(recorder, never()).revoked(any(), any());
+    }
+
+    @Test
     void anUnknownDelegationIsNotFound() {
-        when(delegationRepository.findById(404L)).thenReturn(Optional.empty());
+        when(delegationRepository.findByIdForUpdate(404L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.revoke(404L)).isInstanceOf(DelegationNotFoundException.class);
     }

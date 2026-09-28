@@ -62,15 +62,18 @@ public record AuthProperties(
     }
 
     /**
-     * RSA key pair in PEM form. Both parts empty means a key is generated on every start.
+     * RSA key pair in PEM form. Both parts empty means a key is generated at start, kept in {@code devKeyFile}
+     * when one is named so that a restarted development server still accepts the tokens it issued.
      *
      * @param keyId      the {@code kid} header value
      * @param privateKey PKCS#8 PEM
      * @param publicKey  X.509 PEM
+     * @param devKeyFile where a generated key is kept outside production; empty for a new key on every start
      */
     public record Jwk(
         @DefaultValue("") String keyId,
         @DefaultValue("") String privateKey,
-        @DefaultValue("") String publicKey) {
+        @DefaultValue("") String publicKey,
+        @DefaultValue("") String devKeyFile) {
     }
 }

@@ -32,6 +32,26 @@ class UserRoleTest {
     }
 
     @Test
+    void ac4_2_anAssignmentTakenBackBeforeItStartedHasEndedEvenThoughItsLastDayIsAhead() {
+        UserRole future = UserRole.builder().roleType(RoleType.DEAN).validFrom(TODAY.plusDays(7))
+            .validTo(TODAY.plusDays(6)).build();
+        UserRole running = UserRole.builder().roleType(RoleType.DEAN).validFrom(TODAY.minusDays(7))
+            .validTo(TODAY).build();
+
+        assertThat(future.hasEndedBy(TODAY)).isTrue();
+        assertThat(running.hasEndedBy(TODAY)).isFalse();
+        assertThat(running.hasEndedBy(TODAY.plusDays(1))).isTrue();
+        assertThat(UserRole.builder().validFrom(TODAY).build().hasEndedBy(TODAY.plusYears(1))).isFalse();
+    }
+
+    @Test
+    void ac4_4_unverifiedAndDeletedAccountsAreNeverListed() {
+        assertThat(AccountStatus.PENDING.isListed()).isFalse();
+        assertThat(AccountStatus.DELETED.isListed()).isFalse();
+        assertThat(AccountStatus.SUSPENDED.isListed()).isTrue();
+    }
+
+    @Test
     void userStatusHelpersFollowTheStateMachine() {
         User user = User.builder().firstName("Anna").lastName("Kovalenko")
             .accountStatus(AccountStatus.ACTIVE).build();

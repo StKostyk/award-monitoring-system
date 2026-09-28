@@ -1,3 +1,4 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
@@ -8,7 +9,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
-import { problemType } from '../../../core/api/problem';
+import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { grantableRoles } from '../../../core/auth/permissions';
 import { OrganizationRef, RoleAssignment } from '../../../core/auth/user-profile';
@@ -107,6 +108,9 @@ export class UserDetailComponent implements OnInit {
       error: (err: unknown) => {
         this.message.set(null);
         this.actionProblem.set(`admin.problems.${problemType(err)}`);
+        if (problemStatus(err) === HttpStatusCode.Conflict) {
+          this.store.dispatch(AdminUsersActions.userReloaded({ id: this.id }));
+        }
       },
     });
   }

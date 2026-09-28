@@ -103,6 +103,21 @@ test.describe('role assignment', () => {
     expect(calls).toHaveLength(1);
   });
 
+  test('ac4_8 a non-numeric user id is not found without asking the server', async ({ page }) => {
+    const calls: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/api/v1/users/abc')) {
+        calls.push(request.url());
+      }
+    });
+    await signIn(page, dean, demo);
+
+    await page.goto('/admin/users/abc');
+
+    await expect(page.getByTestId('detail-not-found')).toContainText('Користувача не знайдено');
+    expect(calls).toHaveLength(0);
+  });
+
   test('ac210 the directory is closed to an employee and reads in English too', async ({ page }) => {
     await signIn(page, employee, demo);
 

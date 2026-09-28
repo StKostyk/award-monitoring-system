@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -26,6 +27,7 @@ import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
 import ua.edu.chnu.awards.support.Mailpit;
 import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
@@ -50,8 +52,9 @@ class RoleAssignmentFT extends AbstractIntegrationTest {
     private static final String RULES = "ft.roles.rules@chnu.edu.ua";
     private static final String REVOKED = "ft.roles.revoked@chnu.edu.ua";
     private static final String NEWCOMER = "ft.roles.newcomer@chnu.edu.ua";
+    private static final String GONE = "ft.roles.gone@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(ADMIN, RECTOR, DEAN, SECRETARY, PROMOTED, SCHEDULED,
-        SENIOR, RULES, REVOKED, NEWCOMER);
+        SENIOR, RULES, REVOKED, NEWCOMER, GONE);
     private static final long OTHER_DEPARTMENT_ID = 65L;
 
     @LocalServerPort
@@ -212,9 +215,24 @@ class RoleAssignmentFT extends AbstractIntegrationTest {
             .extract().jsonPath().getLong("id");
 
         as(deanToken).delete("/api/v1/users/" + scheduledId + "/roles/" + roleId).then().statusCode(204);
+        as(deanToken).delete("/api/v1/users/" + scheduledId + "/roles/" + roleId).then().statusCode(409)
+            .body("type", equalTo("urn:awards:problem:role-already-revoked"));
 
         assertThat(jdbc.queryForObject("select valid_to from user_roles where user_role_id = ?",
             java.sql.Date.class, roleId).toLocalDate()).isEqualTo(LocalDate.now().plusMonths(1).minusDays(1));
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where action_type = 'ROLE_REVOKED'"
+            + " and user_id = ?", Integer.class, scheduledId)).isEqualTo(1);
+    }
+
+    @Test
+    void ac4_4_aDeletedAccountIsUnknownToTheAdministrator() {
+        User gone = TestUsers.user(GONE, organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow());
+        gone.setAccountStatus(AccountStatus.DELETED);
+        long goneId = userRepository.save(gone).getId();
+
+        as(tokenOf(ADMIN)).get("/api/v1/users/" + goneId).then().statusCode(404);
+        as(tokenOf(ADMIN)).queryParam("status", "DELETED").get("/api/v1/users").then().statusCode(200)
+            .body("content", empty());
     }
 
     @Test
@@ -247,6 +265,13 @@ class RoleAssignmentFT extends AbstractIntegrationTest {
             .body("membershipConfirmed", equalTo(true))
             .body("organization.id", equalTo((int) OTHER_DEPARTMENT_ID))
             .body("roles[0].role", equalTo("EMPLOYEE"));
+        as(secretaryToken).contentType(ContentType.JSON)
+            .body(Map.of("role", "EMPLOYEE", "organizationId", TestUsers.DAI_DEPARTMENT_ID, "updateOrganization",
+                true))
+            .post("/api/v1/users/" + newcomerId + "/roles").then().statusCode(409)
+            .body("type", equalTo("urn:awards:problem:membership-already-confirmed"));
+        as(secretaryToken).get("/api/v1/users/" + newcomerId).then().statusCode(200)
+            .body("organization.id", equalTo((int) OTHER_DEPARTMENT_ID));
         @SuppressWarnings("unchecked")
         List<String> permissions = (List<String>) claims(tokenOf(NEWCOMER)).get("permissions");
         assertThat(permissions).contains("award:create");

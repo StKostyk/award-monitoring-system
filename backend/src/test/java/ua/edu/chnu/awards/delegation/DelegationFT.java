@@ -6,9 +6,14 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,9 +62,13 @@ class DelegationFT extends AbstractIntegrationTest {
     private static final String BENCH = "ft.deleg.bench@chnu.edu.ua";
     private static final String CASCADE = "ft.deleg.cascade@chnu.edu.ua";
     private static final String OUTSIDER = "ft.deleg.outsider@chnu.edu.ua";
+    private static final String DEAN_RACE = "ft.deleg.dean7@chnu.edu.ua";
+    private static final String DEAN_MOVE = "ft.deleg.dean8@chnu.edu.ua";
+    private static final String RACER = "ft.deleg.racer@chnu.edu.ua";
+    private static final String MOVER = "ft.deleg.mover@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(ADMIN, DEAN_CLAIMS, DEAN_LEND_ON, DEAN_EXPIRY,
         DEAN_RULES, DEAN_REVOKE, DEAN_AUTHORITY, SECRETARY, STAND_IN, BORROWER, EMPLOYEE, BENCH, CASCADE,
-        OUTSIDER);
+        OUTSIDER, DEAN_RACE, DEAN_MOVE, RACER, MOVER);
     private static final String DELEGATIONS = "/api/v1/delegations";
     private static final String PROBLEM_TYPE = "type";
     private static final String DEAN_ROLE = "DEAN";
@@ -92,6 +101,8 @@ class DelegationFT extends AbstractIntegrationTest {
     private long benchId;
     private long cascadeId;
     private long outsiderId;
+    private long racerId;
+    private long moverId;
 
     @BeforeAll
     void createUsers() {
@@ -99,7 +110,7 @@ class DelegationFT extends AbstractIntegrationTest {
         Organization faculty = organizationRepository.findById(TestUsers.FMI_FACULTY_ID).orElseThrow();
         withRole(ADMIN, university, RoleType.SYSTEM_ADMIN, university);
         claimsDeanId = withRole(DEAN_CLAIMS, faculty, RoleType.DEAN, faculty);
-        List.of(DEAN_LEND_ON, DEAN_EXPIRY, DEAN_RULES, DEAN_REVOKE, DEAN_AUTHORITY)
+        List.of(DEAN_LEND_ON, DEAN_EXPIRY, DEAN_RULES, DEAN_REVOKE, DEAN_AUTHORITY, DEAN_RACE, DEAN_MOVE)
             .forEach(email -> withRole(email, faculty, RoleType.DEAN, faculty));
         secretaryId = withRole(SECRETARY, faculty, RoleType.FACULTY_SECRETARY, faculty);
         standInId = withRole(STAND_IN, faculty, RoleType.FACULTY_SECRETARY, faculty);
@@ -110,6 +121,8 @@ class DelegationFT extends AbstractIntegrationTest {
         employeeId = withRole(EMPLOYEE, department, RoleType.EMPLOYEE, department);
         benchId = withRole(BENCH, department, RoleType.EMPLOYEE, department);
         cascadeId = withRole(CASCADE, department, RoleType.EMPLOYEE, department);
+        racerId = withRole(RACER, department, RoleType.EMPLOYEE, department);
+        moverId = withRole(MOVER, department, RoleType.EMPLOYEE, department);
     }
 
     @AfterAll
@@ -252,6 +265,49 @@ class DelegationFT extends AbstractIntegrationTest {
         assertThat(jdbc.queryForList("select action_type from audit_logs where entity_type = 'AUTHORIZATION'"
             + " and user_id = ? and action_type = 'DELEGATION_REVOKED'", benchId)).hasSize(1);
         assertThat(mailpit.latestTextTo(BENCH, "Делегування відкликано")).contains(DEAN_ROLE);
+    }
+
+    @Test
+    void ac4_9_twoRevocationsArrivingAtOnceEndTheDelegationOnce() throws Exception {
+        String deanToken = tokenOf(DEAN_RACE);
+        long id = as(deanToken).contentType(ContentType.JSON)
+            .body(delegation(racerId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
+                LocalDate.now().plusDays(5)))
+            .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
+
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            Callable<Integer> revoke = () -> as(deanToken).delete(DELEGATIONS + "/" + id).statusCode();
+            List<Integer> statuses = new ArrayList<>();
+            for (Future<Integer> result : pool.invokeAll(List.of(revoke, revoke))) {
+                statuses.add(result.get());
+            }
+            assertThat(statuses).containsExactlyInAnyOrder(204, 409);
+        } finally {
+            pool.shutdown();
+        }
+        assertThat(jdbc.queryForList("select action_type from audit_logs where entity_type = 'AUTHORIZATION'"
+            + " and user_id = ? and action_type = 'DELEGATION_REVOKED'", racerId)).hasSize(1);
+    }
+
+    @Test
+    void ac4_3_movingTheDelegateToAnotherFacultyTakesTheBorrowedAuthorityBack() {
+        long id = as(tokenOf(DEAN_MOVE)).contentType(ContentType.JSON)
+            .body(delegation(moverId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
+                LocalDate.now().plusDays(5)))
+            .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
+        long elsewhere = jdbc.queryForObject("select org_id from organizations where parent_org_id = ?"
+            + " and org_type = 'DEPARTMENT' and is_active order by org_id limit 1", Long.class,
+            OTHER_FACULTY_ID);
+
+        as(tokenOf(ADMIN)).contentType(ContentType.JSON)
+            .body(Map.of("role", "EMPLOYEE", "organizationId", elsewhere, "updateOrganization", true,
+                "fromOrganizationId", TestUsers.DAI_DEPARTMENT_ID))
+            .post("/api/v1/users/" + moverId + "/roles").then().statusCode(201);
+
+        assertThat(jdbc.queryForObject("select revoked_at is not null from role_delegations"
+            + " where delegation_id = ?", Boolean.class, id)).isTrue();
+        assertThat(claims(tokenOf(MOVER)).get("delegations")).isEqualTo(List.of());
     }
 
     @Test

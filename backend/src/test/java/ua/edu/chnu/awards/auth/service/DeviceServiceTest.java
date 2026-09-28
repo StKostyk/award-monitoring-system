@@ -53,7 +53,7 @@ class DeviceServiceTest {
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofMinutes(1), new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15),
-        Duration.ofDays(7)), new AuthProperties.Jwk("", "", ""));
+        Duration.ofDays(7)), new AuthProperties.Jwk("", "", "", ""));
     private final DeviceService service = new DeviceService(devices, new DeviceFingerprint(), tokens, events,
         authorizations, passwordEncoder, audit, properties, Clock.fixed(NOW, ZoneOffset.UTC));
     private final User olena = User.builder().id(7L).emailAddress("olena@chnu.edu.ua").firstName("Олена")

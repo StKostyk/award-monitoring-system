@@ -42,7 +42,7 @@ class AuthorizationRevokerTest {
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
-        new AuthProperties.Jwk("", "", ""));
+        new AuthProperties.Jwk("", "", "", ""));
     private final AuthorizationRevoker revoker = new AuthorizationRevoker(jdbc, sessions, redis, properties,
         Clock.fixed(NOW, ZoneOffset.UTC));
     private final User olena = User.builder().id(7L).emailAddress("olena@chnu.edu.ua").build();

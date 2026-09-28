@@ -54,6 +54,7 @@ export const adminUsersFeature = createFeature({
       confirmingId: null,
       confirmProblem: null,
     })),
+    on(AdminUsersActions.refreshed, (state) => ({ ...state, loading: true, problem: null })),
     on(AdminUsersActions.filtersChanged, (state, { filters }) => ({
       ...state,
       filters,

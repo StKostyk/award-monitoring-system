@@ -87,6 +87,15 @@ class UserDirectoryServiceTest {
     }
 
     @Test
+    void ac4_4_aDeletedAccountIsUnknownEvenToTheAdministrator() {
+        when(access.readableOrganizations()).thenReturn(Optional.empty());
+        member.setAccountStatus(AccountStatus.DELETED);
+        when(userRepository.findById(5L)).thenReturn(Optional.of(member));
+
+        assertThatThrownBy(() -> service.detail(5L)).isInstanceOf(UserNotFoundException.class);
+    }
+
+    @Test
     void ac17_detailSplitsCurrentRolesFromHistoryAndHidesUsersOutsideTheScope() {
         when(access.readableOrganizations()).thenReturn(Optional.of(Set.of(9L, 64L)));
         when(userRepository.findById(5L)).thenReturn(Optional.of(member));

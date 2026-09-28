@@ -59,7 +59,7 @@ class RegistrationServiceTest {
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
-        new AuthProperties.Jwk("", "", ""));
+        new AuthProperties.Jwk("", "", "", ""));
     private final Organization department = Organization.builder().id(64L).orgType(OrganizationType.DEPARTMENT)
         .active(true).build();
     private RegistrationService service;

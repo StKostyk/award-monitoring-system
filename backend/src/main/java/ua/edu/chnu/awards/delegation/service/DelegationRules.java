@@ -96,7 +96,8 @@ public class DelegationRules {
     }
 
     /**
-     * The colleague who may receive the authority.
+     * The colleague who may receive the authority, with their row locked until the transaction ends so that a
+     * department move of the same person runs before or after the delegation, never alongside it.
      *
      * @param delegateId   who would receive it
      * @param delegator    who lends it
@@ -107,8 +108,8 @@ public class DelegationRules {
      * @throws ApiProblemException   when the delegate cannot hold the borrowed authority
      */
     public User eligibleDelegate(long delegateId, User delegator, Organization organization, LocalDate today) {
-        User delegate = userRepository.findById(delegateId)
-            .filter(found -> found.getAccountStatus() != AccountStatus.PENDING)
+        User delegate = userRepository.findByIdForUpdate(delegateId)
+            .filter(found -> found.getAccountStatus().isListed())
             .filter(found -> access.readableOrganizations()
                 .map(ids -> ids.contains(found.getOrganization().getId())).orElse(true))
             .orElseThrow(() -> new UserNotFoundException(delegateId));

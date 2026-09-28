@@ -111,7 +111,7 @@ public class DelegationService {
      */
     @Transactional
     public void revoke(long delegationId) {
-        RoleDelegation delegation = delegationRepository.findById(delegationId)
+        RoleDelegation delegation = delegationRepository.findByIdForUpdate(delegationId)
             .orElseThrow(() -> new DelegationNotFoundException(delegationId));
         User actor = caller();
         if (!mayRevoke(delegation, actor)) {
@@ -140,6 +140,18 @@ public class DelegationService {
                 assignment.getOrganization().getId(), today)
             .forEach(delegation -> end(delegation, actor));
         rules.borrowedOutsideMembership(holder, today).forEach(delegation -> end(delegation, actor));
+    }
+
+    /**
+     * Takes back authority a person borrowed for organisations in which they no longer hold any role, because
+     * they have just been moved to another department. The rule is the one that made them eligible.
+     *
+     * @param actor    who moved the person
+     * @param delegate the person moved, with their new role already saved
+     */
+    @Transactional
+    public void revokeForMove(User actor, User delegate) {
+        rules.borrowedOutsideMembership(delegate, LocalDate.now(clock)).forEach(delegation -> end(delegation, actor));
     }
 
     private void end(RoleDelegation delegation, User actor) {

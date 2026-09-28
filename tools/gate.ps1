@@ -40,6 +40,12 @@ if (-not (Invoke-Maven @('-o', '-q', 'checkstyle:check', 'pmd:check', 'spotbugs:
 }
 if ($StaticOnly) { exit 0 }
 
+docker info --format '{{.ServerVersion}}' *> $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'Docker is not running: the integration and functional tests need it (TestContainers). Start Docker Desktop and run the gate again.'
+    exit 1
+}
+
 $backendOk = Invoke-Maven @('verify') 'verify'
 if (-not $backendOk) {
     Select-String -Path $log -Pattern '^\[ERROR\]\s{3}|Tests run:.*(Failures: [1-9]|Errors: [1-9])' |

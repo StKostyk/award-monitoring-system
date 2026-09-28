@@ -2,27 +2,22 @@ package ua.edu.chnu.awards.user.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.RoleLevels;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.delegation.service.DelegationService;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
-import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 import ua.edu.chnu.awards.user.mapper.UserProfileMapper;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
@@ -38,14 +33,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RoleAssignmentService {
 
-    static final String PERMISSION_MANAGE_ALL = "user:manage";
-    private static final LocalDate OPEN_ENDED = LocalDate.of(9999, 12, 31);
-
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
-    private final OrganizationRepository organizationRepository;
-    private final RoleOrganizations roleOrganizations;
-    private final RoleLevels levels;
+    private final RoleAssignmentRules rules;
     private final AccessScope access;
     private final AuthorizationRevoker revoker;
     private final UserProfileMapper mapper;
@@ -61,22 +51,24 @@ public class RoleAssignmentService {
      * @return the new assignment
      * @throws UserNotFoundException when the user is unknown or outside the caller's scope
      * @throws ApiProblemException   when the caller may not grant it, the organisation does not fit the role,
-     *                               the user is not active or the role is already held there
+     *                               the user is not active, the role is already held there, or a department
+     *                               correction is stale
      */
     @Transactional
     public RoleAssignmentResponse assign(long userId, RoleAssignmentRequest request) {
-        final User target = requireActive(visible(userId));
-        Organization organization = activeOrganization(request.organizationId());
-        requireFit(request.role(), organization);
-        requireAuthority(request.role(), organization.getId());
+        final User target = rules.requireActive(visible(userId));
+        Organization organization = rules.activeOrganization(request.organizationId());
+        rules.requireFit(request.role(), organization);
+        rules.requireAuthority(request.role(), organization.getId());
 
         User actor = caller();
         LocalDate today = LocalDate.now(clock);
-        LocalDate validFrom = startDay(request, today);
-        requireFree(userId, request, organization.getId(), validFrom);
+        LocalDate validFrom = rules.startDay(request, today);
+        rules.requireFree(userId, request, organization.getId(), validFrom);
+        boolean moved = false;
         if (request.updateOrganization()) {
-            requireMembershipRole(request.role());
-            confirmMembership(actor, target, organization, today);
+            rules.requireMembershipChange(request, target);
+            moved = confirmMembership(actor, target, organization, today);
         }
 
         UserRole assignment = UserRole.builder()
@@ -90,7 +82,11 @@ public class RoleAssignmentService {
         try {
             userRoleRepository.saveAndFlush(assignment);
         } catch (DataIntegrityViolationException e) {
-            throw alreadyAssigned(e);
+            throw rules.alreadyAssigned(e);
+        }
+        if (moved) {
+            delegations.revokeForMove(actor, target);
+            revoker.revokeAll(target);
         }
         recorder.granted(actor, assignment);
         return mapper.toAssignment(assignment);
@@ -112,13 +108,10 @@ public class RoleAssignmentService {
         UserRole role = userRoleRepository.findByIdAndUserId(assignment, userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
         LocalDate today = LocalDate.now(clock);
-        if (role.getValidTo() != null && role.getValidTo().isBefore(today)) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "role-already-revoked",
-                "The assignment has already ended");
-        }
-        requireAuthority(role.getRoleType(), role.getOrganization().getId());
+        rules.requireNotEnded(role, today);
+        rules.requireAuthority(role.getRoleType(), role.getOrganization().getId());
         User actor = caller();
-        requireNotOwnLastRole(actor, target, role, today);
+        rules.requireNotOwnLastRole(actor, target, role, today);
 
         role.setValidTo(lastDayOf(role, today));
         recorder.revoked(actor, role);
@@ -126,20 +119,20 @@ public class RoleAssignmentService {
         revoker.revokeAll(target);
     }
 
-    private void confirmMembership(User actor, User target, Organization department, LocalDate today) {
+    private boolean confirmMembership(User actor, User target, Organization department, LocalDate today) {
         if (department.getId().equals(target.getOrganization().getId())) {
-            return;
+            return false;
         }
         userRoleRepository.findCurrentByUserId(target.getId(), today).stream()
             .filter(role -> role.getRoleType() == RoleType.EMPLOYEE)
             .filter(role -> !role.getOrganization().getId().equals(department.getId()))
-            .filter(role -> mayManage(role.getRoleType(), role.getOrganization().getId()))
+            .filter(role -> rules.mayManage(role.getRoleType(), role.getOrganization().getId()))
             .forEach(role -> {
                 role.setValidTo(lastDayOf(role, today));
                 recorder.superseded(actor, role);
             });
         target.setOrganization(department);
-        revoker.revokeAll(target);
+        return true;
     }
 
     /**
@@ -150,78 +143,6 @@ public class RoleAssignmentService {
         return today.isAfter(role.getValidFrom()) ? today.minusDays(1) : role.getValidFrom().minusDays(1);
     }
 
-    private void requireFit(RoleType role, Organization organization) {
-        if (!roleOrganizations.fits(role, organization.getOrgType())) {
-            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "role-organization-mismatch",
-                role + " applies to " + roleOrganizations.levelsOf(role).stream().map(Enum::name)
-                    .sorted().collect(Collectors.joining(" or ")) + ", not to a "
-                    + organization.getOrgType());
-        }
-    }
-
-    private void requireAuthority(RoleType role, long organizationId) {
-        if (!mayManage(role, organizationId)) {
-            throw new ApiProblemException(HttpStatus.FORBIDDEN, "role-above-level",
-                "You may grant only roles below your own inside your organisation; university and system roles "
-                    + "are granted by the rector's office or the administrator");
-        }
-    }
-
-    private boolean mayManage(RoleType role, long organizationId) {
-        return access.has(PERMISSION_MANAGE_ALL) || access.canManage(role, organizationId);
-    }
-
-    private static User requireActive(User target) {
-        if (target.getAccountStatus() != AccountStatus.ACTIVE) {
-            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "user-not-active",
-                "Only an active account can hold a role");
-        }
-        return target;
-    }
-
-    private static LocalDate startDay(RoleAssignmentRequest request, LocalDate today) {
-        LocalDate validFrom = request.validFrom() == null ? today : request.validFrom();
-        if (validFrom.isBefore(today) || request.validTo() != null && request.validTo().isBefore(validFrom)) {
-            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "role-validity",
-                "A role starts today or later and ends no earlier than it starts");
-        }
-        return validFrom;
-    }
-
-    private void requireFree(long userId, RoleAssignmentRequest request, long organizationId,
-                             LocalDate validFrom) {
-        LocalDate until = request.validTo() == null ? OPEN_ENDED : request.validTo();
-        if (!userRoleRepository.findOverlapping(userId, request.role(), organizationId, validFrom, until)
-            .isEmpty()) {
-            throw alreadyAssigned();
-        }
-    }
-
-    private void requireNotOwnLastRole(User actor, User target, UserRole role, LocalDate today) {
-        if (!actor.getId().equals(target.getId()) || !aboveEmployee(role.getRoleType())) {
-            return;
-        }
-        boolean another = userRoleRepository.findCurrentByUserId(target.getId(), today).stream()
-            .filter(held -> !held.getId().equals(role.getId()))
-            .anyMatch(held -> aboveEmployee(held.getRoleType()));
-        if (!another) {
-            throw new ApiProblemException(HttpStatus.FORBIDDEN, "role-last-own",
-                "You cannot take back your own last role above EMPLOYEE; ask somebody above you");
-        }
-    }
-
-    private void requireMembershipRole(RoleType role) {
-        if (role != RoleType.EMPLOYEE) {
-            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "membership-role-required",
-                "The department of a user is corrected only while confirming the membership, with an EMPLOYEE "
-                    + "role");
-        }
-    }
-
-    private boolean aboveEmployee(RoleType role) {
-        return levels.of(role) > 0 || levels.isSystem(role);
-    }
-
     private User caller() {
         long id = access.callerId();
         return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
@@ -229,26 +150,9 @@ public class RoleAssignmentService {
 
     private User visible(long userId) {
         return userRepository.findByIdForUpdate(userId)
-            .filter(found -> found.getAccountStatus() != AccountStatus.PENDING)
+            .filter(found -> found.getAccountStatus().isListed())
             .filter(found -> access.readableOrganizations()
                 .map(ids -> ids.contains(found.getOrganization().getId())).orElse(true))
             .orElseThrow(() -> new UserNotFoundException(userId));
     }
-
-    private Organization activeOrganization(long organizationId) {
-        return organizationRepository.findById(organizationId)
-            .filter(Organization::isActive)
-            .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
-                "Choose an active organisation"));
-    }
-
-    private static ApiProblemException alreadyAssigned() {
-        return alreadyAssigned(null);
-    }
-
-    private static ApiProblemException alreadyAssigned(Throwable cause) {
-        return new ApiProblemException(HttpStatus.CONFLICT, "role-already-assigned",
-            "The user already holds this role in that organisation", cause);
-    }
-
 }

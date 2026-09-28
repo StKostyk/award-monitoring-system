@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Set;
 
-import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 
@@ -83,8 +82,7 @@ public class UserSpecifications {
             if (status == null) {
                 return root.get("accountStatus").in(AccountStatus.PENDING, AccountStatus.DELETED).not();
             }
-            Predicate wanted = builder.equal(root.get("accountStatus"), status);
-            return status == AccountStatus.PENDING ? builder.disjunction() : wanted;
+            return status.isListed() ? builder.equal(root.get("accountStatus"), status) : builder.disjunction();
         };
     }
 

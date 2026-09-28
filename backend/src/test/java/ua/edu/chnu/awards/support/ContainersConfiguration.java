@@ -33,6 +33,7 @@ public class ContainersConfiguration {
     @Bean
     GenericContainer<?> mailpitContainer() {
         return new GenericContainer<>(DockerImageName.parse("axllent/mailpit:latest"))
+            .withEnv("MP_SMTP_DISABLE_RDNS", "true")
             .withExposedPorts(SMTP_PORT, MAILPIT_HTTP_PORT);
     }
 

@@ -131,6 +131,8 @@
       "organisation-invalid": "Choose an active organisation.",
       "user-not-active": "The account is not active.",
       "role-validity": "The validity period of the role is invalid.",
+      "membership-already-confirmed": "This membership has already been confirmed or changed. The page has been reloaded.",
+      "too-many-requests": "Too many requests. Try again later.",
       "network": "The server is unreachable. Try again later.",
       "unknown": "The action failed. Try again later."
     },
@@ -205,6 +207,7 @@
       "organisation-invalid": "Choose an active organisation.",
       "access-denied": "You lack the permission for this action.",
       "user-not-found": "The user was not found, or is outside your scope.",
+      "too-many-requests": "Too many requests. Try again later.",
       "network": "The server is unreachable. Try again later.",
       "unknown": "The action failed. Try again later."
     }

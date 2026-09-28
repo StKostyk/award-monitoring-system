@@ -19,7 +19,6 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.user.dto.UserDetailResponse;
 import ua.edu.chnu.awards.user.dto.UserDirectoryQuery;
 import ua.edu.chnu.awards.user.dto.UserSummaryResponse;
-import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 import ua.edu.chnu.awards.user.mapper.UserProfileMapper;
@@ -85,7 +84,7 @@ public class UserDirectoryService {
     @Transactional(readOnly = true)
     public UserDetailResponse detail(long userId) {
         User user = userRepository.findById(userId)
-            .filter(found -> found.getAccountStatus() != AccountStatus.PENDING)
+            .filter(found -> found.getAccountStatus().isListed())
             .filter(found -> access.readableOrganizations()
                 .map(ids -> ids.contains(found.getOrganization().getId())).orElse(true))
             .orElseThrow(() -> new UserNotFoundException(userId));

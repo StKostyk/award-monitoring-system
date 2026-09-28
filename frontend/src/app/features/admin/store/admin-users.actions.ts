@@ -7,6 +7,7 @@ export const AdminUsersActions = createActionGroup({
   events: {
     Opened: emptyProps(),
     Reloaded: emptyProps(),
+    Refreshed: emptyProps(),
     'Filters Changed': props<{ filters: UserFilters }>(),
     'Page Changed': props<{ page: number; size: number }>(),
     'Users Loaded': props<{ page: UserPage }>(),
