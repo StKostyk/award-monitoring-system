@@ -11,7 +11,7 @@
 |---------|--------|---------|------|
 | 1.1 Core Authentication System | Done (validated; fixes from the manual run merged, author's retest pending) | 2026-09-21 | 2026-09-21 |
 | 1.2 Role-Based Access Control | Validated; fix story 1.2.4 merged, author's run of §9 pending | 2026-09-21 | |
-| 1.3 User Profile Management | Planned | | |
+| 1.3 User Profile Management | Planned after Epic 2 Feature 2.1; 1.3.2 moved to Epic 7 | | |
 
 ## Current focus
 
@@ -35,7 +35,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Done |
 | 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | Done |
 | 10 | 1.3.1 Profile information update | 1.3 | 3 | SCRUM-15 | #38 | yes | Ready |
-| 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Ready |
+| 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Moved to Epic 7 |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Ready |
 
 Total: 57 points, planned across sprints 2–4.
@@ -61,6 +61,7 @@ Closed without implementation: #30 and #34 (folded into 1.1.1), #47 (no HR syste
 | 2026-09-21 | A password reset or a "not me" revocation invalidates access tokens issued before it immediately: the revocation instant is kept in Redis (`auth:nbf:<user>`, TTL = access-token lifetime) and the resource server compares it with `iat`; fails open without Redis | Waiting up to 15 minutes after a suspected compromise was judged too long; one Redis read per API call is cheap | AUTH §9, PRD 1.1 AC-6.5 |
 | 2026-09-21 | A new password must differ from the current one; no password history is kept | Reuse of the just-reset password defeats the reset; a history table would store old hashes for little gain | PRD 1.1 AC-6.4 |
 | 2026-09-21 | Delegation (1.2.3) ships its schema, service, UI and effective-authority check in Feature 1.2; the "delegated by" stamp on approvals is an Epic 4 acceptance criterion | No awards exist to approve before Epic 4 | Feature 1.2 PRD |
+| 2026-09-28 | Feature 1.3 follows Epic 2 Feature 2.1 (1.3.1, 1.3.3); 1.3.2 notification preferences moves to Epic 7 | The data export is only meaningful once awards exist; preferences belong with the notification channels | Epic 2 tracker |
 | 2026-09-20 | The verification page asks for the registration password before activating the account | Stops a colleague activating an account somebody else registered for their address (pre-hijacking) | PRD AC-2.5 addendum (1.1.3) |
 
 ## Documentation deviations to resolve
