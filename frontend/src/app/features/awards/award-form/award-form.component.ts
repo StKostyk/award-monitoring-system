@@ -23,7 +23,7 @@ import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/for
 import { MatInput } from '@angular/material/input';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Observable, debounceTime, map, switchMap, tap } from 'rxjs';
 
@@ -38,12 +38,19 @@ import {
   AwardsService,
   CategoryNode,
   CategoryRef,
+  DuplicateMatch,
+  MAX_AGE_YEARS,
+  awardTitle,
   categoryName,
+  duplicateMatches,
   fieldProblems,
   flattenCategories,
+  isRecent,
   kyivToday,
+  yearsBefore,
 } from '../awards.service';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { DuplicateDialogComponent } from '../duplicate-dialog/duplicate-dialog.component';
 
 const COPY_DEBOUNCE = 400;
 const TITLE_LIMIT = 500;
@@ -55,6 +62,7 @@ const KNOWN_PROBLEMS = [
   'award-incomplete',
   'award-stale',
   'award-not-editable',
+  'award-possible-duplicate',
   'access-denied',
   'network',
 ];
@@ -75,6 +83,7 @@ type FieldName = keyof AwardForm;
     MatOption,
     MatButton,
     MatProgressBar,
+    RouterLink,
     TranslocoPipe,
   ],
   templateUrl: './award-form.component.html',
@@ -97,6 +106,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private leaving = false;
 
   readonly today = kyivToday();
+  readonly oldest = yearsBefore(this.today, MAX_AGE_YEARS);
+  readonly recentDate = signal(false);
   readonly limits = {
     title: TITLE_LIMIT,
     description: DESCRIPTION_LIMIT,
@@ -113,6 +124,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly stale = signal(false);
   readonly restoreOffer = signal<AwardForm | null>(null);
   readonly editing = computed(() => this.current() !== null);
+  readonly duplicates = computed(
+    () => this.current()?.warnings.find((warning) => warning.code === 'POSSIBLE_DUPLICATE')?.matches ?? [],
+  );
   readonly retiredCategory = computed(() => {
     const category = this.current()?.category;
     return category && !this.categories().some((item) => item.category.id === category.id)
@@ -138,6 +152,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.form.valueChanges
       .pipe(debounceTime(COPY_DEBOUNCE), takeUntilDestroyed())
       .subscribe(() => this.keepCopy());
+    this.form.controls.awardDate.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((date) => this.recentDate.set(isRecent(date, this.today)));
   }
 
   ngOnInit(): void {
@@ -245,12 +262,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.store()
       .pipe(switchMap((award) => this.service.submit(award.id, award.version)))
       .subscribe({
-        next: (award) => {
-          this.finish(award, null);
-          this.leaving = true;
-          void this.router.navigate(['/awards', award.id, 'submitted'], { replaceUrl: true });
-        },
-        error: (error: unknown) => this.failed(error),
+        next: (award) => this.submitted(award),
+        error: (error: unknown) => this.submitFailed(error),
       });
   }
 
@@ -273,6 +286,41 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   optionName(category: CategoryRef): string {
     return categoryName(category, this.language.current());
+  }
+
+  matchTitle(match: DuplicateMatch): string {
+    return awardTitle(match, this.language.current());
+  }
+
+  private submitted(award: Award): void {
+    this.finish(award, null);
+    this.leaving = true;
+    void this.router.navigate(['/awards', award.id, 'submitted'], { replaceUrl: true });
+  }
+
+  private submitFailed(error: unknown): void {
+    const matches = duplicateMatches(error);
+    if (problemType(error) !== 'award-possible-duplicate' || !matches.length || this.id === null) {
+      this.failed(error);
+      return;
+    }
+    const id = this.id;
+    this.saving.set(false);
+    this.dropCopy();
+    this.dialog
+      .open(DuplicateDialogComponent, { data: { matches }, width: '480px' })
+      .afterClosed()
+      .subscribe((confirmed?: boolean) => {
+        if (!confirmed) {
+          this.message.set('awards.messages.saved');
+          return;
+        }
+        this.start();
+        this.service.submit(id, this.version, true).subscribe({
+          next: (award) => this.submitted(award),
+          error: (failure: unknown) => this.failed(failure),
+        });
+      });
   }
 
   private load(id: number): void {

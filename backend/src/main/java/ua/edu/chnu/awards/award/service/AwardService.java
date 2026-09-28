@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -15,6 +16,7 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.AwardWarning;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
@@ -43,6 +45,7 @@ public class AwardService {
     private final AwardSpecifications specifications;
     private final AwardInputRules rules;
     private final AwardOwnership ownership;
+    private final AwardWarnings warnings;
     private final AwardMapper mapper;
     private final AccessScope access;
 
@@ -60,7 +63,7 @@ public class AwardService {
             .orElseThrow(() -> new IllegalStateException("Caller has no account"));
         Award award = Award.builder().owner(owner).organization(owner.getOrganization()).build();
         apply(award, clean, category);
-        return mapper.toResponse(awards.saveAndFlush(award), null);
+        return draftResponse(awards.saveAndFlush(award));
     }
 
     /**
@@ -76,7 +79,7 @@ public class AwardService {
         AwardForm clean = rules.normalize(form);
         ownership.requireVersion(award, clean.version());
         apply(award, clean, rules.check(clean, Optional.ofNullable(award.getCategory())));
-        return mapper.toResponse(awards.saveAndFlush(award), null);
+        return draftResponse(awards.saveAndFlush(award));
     }
 
     /**
@@ -104,7 +107,7 @@ public class AwardService {
         if (!visible) {
             throw new AwardNotFoundException(id);
         }
-        return mapper.toResponse(award, requests.findByAwardId(id).orElse(null));
+        return mapper.toResponse(award, requests.findByAwardId(id).orElse(null), warnings.of(award));
     }
 
     /**
@@ -122,7 +125,13 @@ public class AwardService {
         Page<Award> found = awards.findAll(specifications.ownedBy(access.callerId(), query), pageable);
         Map<Long, AwardRequest> byAward = requests.findByAwardIdIn(found.map(Award::getId).getContent()).stream()
             .collect(Collectors.toMap(request -> request.getAward().getId(), Function.identity()));
-        return found.map(award -> mapper.toResponse(award, byAward.get(award.getId())));
+        Map<Long, List<AwardWarning>> hints = warnings.forDrafts(found.getContent());
+        return found.map(award -> mapper.toResponse(award, byAward.get(award.getId()),
+            hints.getOrDefault(award.getId(), List.of())));
+    }
+
+    private AwardResponse draftResponse(Award draft) {
+        return mapper.toResponse(draft, null, warnings.of(draft));
     }
 
     private static void apply(Award award, AwardForm form, Optional<AwardCategory> category) {

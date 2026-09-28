@@ -548,6 +548,8 @@ paths:
         transaction sets the award `PENDING` with the level base score, creates its request (`SUBMITTED` at
         `FACULTY_SECRETARY`) and writes an `AWARD_SUBMITTED` audit row. The organisation is refreshed from the
         owner's department. The draft row is locked, so a repeated submission answers 409 (`award:create`).
+        A draft that looks like another award of the owner (same date, similar title) is submitted only with
+        `acknowledgeDuplicate: true`, and the audit row then records `duplicateAcknowledged`.
       security:
         - bearerAuth: []
       operationId: submitAward
@@ -573,11 +575,17 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/AwardConflict'
+          description: >
+            `urn:awards:problem:award-stale`, `award-not-editable`, or `award-possible-duplicate` listing the
+            similar own awards in `matches` when the submission was not acknowledged; nothing is changed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
         '422':
           description: >
             `urn:awards:problem:award-incomplete` naming each empty field in `errors`, or `validation-failed`
-            (category no longer available, date in the future, `version` missing)
+            (category no longer available, date in the future or more than 50 years ago, `version` missing)
           content:
             application/problem+json:
               schema:
@@ -1712,6 +1720,10 @@ components:
           $ref: '#/components/schemas/AwardRequestSummary'
         warnings:
           type: array
+          description: >
+            Hints that do not block saving, computed for the owner's drafts only (empty for a submitted award):
+            `RECENT_DATE` when the award date lies within the last 30 days, `POSSIBLE_DUPLICATE` when another
+            award of the owner has the same date and a title similarity of at least 0.6
           items:
             $ref: '#/components/schemas/AwardWarning'
         createdAt:
@@ -1793,22 +1805,31 @@ components:
           enum: [RECENT_DATE, POSSIBLE_DUPLICATE]
         field:
           type: string
+          description: The field the warning concerns (`awardDate`, `title`)
         matches:
           type: array
-          description: Own awards that look the same (POSSIBLE_DUPLICATE only)
+          description: Own awards that look the same (POSSIBLE_DUPLICATE only, empty otherwise)
           items:
-            type: object
-            properties:
-              id:
-                type: integer
-                format: int64
-              title:
-                type: string
-              awardDate:
-                type: string
-                format: date
-              status:
-                $ref: '#/components/schemas/AwardStatus'
+            $ref: '#/components/schemas/DuplicateMatch'
+
+    DuplicateMatch:
+      type: object
+      description: An award of the same owner with the same award date and a similar title
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+          nullable: true
+        titleUk:
+          type: string
+          nullable: true
+        awardDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/AwardStatus'
 
     AwardCategory:
       type: object
@@ -1892,6 +1913,10 @@ components:
           type: integer
           format: int64
           description: Version of the draft last read
+        acknowledgeDuplicate:
+          type: boolean
+          default: false
+          description: The owner confirmed that a possible duplicate is another award
 
     AwardPage:
       allOf:
@@ -2061,9 +2086,14 @@ components:
                 type: string
               code:
                 type: string
-                enum: [required, too-long, invalid, inactive, future]
+                enum: [required, too-long, invalid, inactive, future, too-old]
               message:
                 type: string
+        matches:
+          type: array
+          description: The own awards the submitted one looks like (`award-possible-duplicate`)
+          items:
+            $ref: '#/components/schemas/DuplicateMatch'
         currentVersion:
           type: integer
           format: int64

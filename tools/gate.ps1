@@ -32,7 +32,7 @@ function Invoke-Maven([string[]]$Goals, [string]$Label) {
     return $ok
 }
 
-if (-not (Invoke-Maven @('-o', '-q', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
+if (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
     Select-String -Path $log -Pattern '^\[WARN\].*\.java|^\[ERROR\] (High|Medium|Low):|violation|BugInstance' | Select-Object -First 20 |
         ForEach-Object { $_.Line }
     Write-Host 'Fix the violations above, then run the gate again.'

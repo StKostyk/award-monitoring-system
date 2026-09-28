@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.award;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
@@ -8,7 +9,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -57,6 +60,7 @@ class AwardFT extends AbstractIntegrationTest {
     private static final String PROBLEM = "urn:awards:problem:";
     private static final long OTHER_FACULTY_ID = 10L;
     private static final long MINISTRY_CATEGORY = 13L;
+    private static final ZoneId KYIV = ZoneId.of("Europe/Kyiv");
 
     @LocalServerPort
     private int port;
@@ -168,6 +172,54 @@ class AwardFT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac2_1_ac2_2_theDateIsNeitherInTheFutureNorOlderThanFiftyYears() {
+        LocalDate today = LocalDate.now(KYIV);
+
+        dated(today.plusDays(1)).then().statusCode(422).body(TYPE, equalTo(PROBLEM + "validation-failed"))
+            .body("errors.code", contains("future"));
+        dated(today.minusYears(50)).then().statusCode(201);
+        dated(today.minusYears(50).minusDays(1)).then().statusCode(422).body("errors.code", contains("too-old"));
+    }
+
+    @Test
+    void ac2_3_aRecentDateIsAHintThatDoesNotBlockTheSubmission() {
+        Response created = dated(LocalDate.now(KYIV).minusDays(7));
+        created.then().statusCode(201).body("warnings.code", contains("RECENT_DATE"))
+            .body("warnings[0].field", equalTo("awardDate"));
+
+        submit(employee, created.jsonPath().getLong("id"), created.jsonPath().getLong(VERSION), null)
+            .then().statusCode(200).body("warnings", hasSize(0));
+    }
+
+    @Test
+    void ac2_4_ac2_5_aPossibleDuplicateIsSubmittedOnlyWhenAcknowledged() {
+        LocalDate date = LocalDate.now(KYIV).minusYears(2).minusDays(17);
+        long first = submitted(employee, "Грамота Міністерства освіти і науки", date);
+        Response second = as(employee).contentType(ContentType.JSON).body(Map.of(
+                "titleUk", "Грамота Міністерства освіти і науки України", "categoryId", MINISTRY_CATEGORY,
+                "awardingOrganization", "МОН України", "awardDate", date.toString()))
+            .post(AWARDS);
+        second.then().statusCode(201)
+            .body("warnings.code", contains("POSSIBLE_DUPLICATE"))
+            .body("warnings[0].matches.id", contains((int) first))
+            .body("warnings[0].matches[0].status", equalTo("PENDING"));
+        long id = second.jsonPath().getLong("id");
+        long version = second.jsonPath().getLong(VERSION);
+
+        submit(employee, id, version, null).then().statusCode(409)
+            .body(TYPE, equalTo(PROBLEM + "award-possible-duplicate"))
+            .body("matches.id", contains((int) first));
+        as(employee).get(AWARDS + "/" + id).then().statusCode(200).body("status", equalTo("DRAFT"));
+        submit(employee, id, version, true).then().statusCode(200).body("status", equalTo("PENDING"));
+
+        assertThat(jdbc.queryForObject("select new_values ->> 'duplicateAcknowledged' from audit_logs "
+            + "where action_type = 'AWARD_SUBMITTED' and entity_id = ?", String.class, id)).isEqualTo("true");
+        as(tokenOf(SECRETARY)).contentType(ContentType.JSON).body(Map.of(
+                "titleUk", "Грамота Міністерства освіти і науки", "awardDate", date.toString()))
+            .post(AWARDS).then().statusCode(201).body("warnings", hasSize(0));
+    }
+
+    @Test
     void ac1_4_aDraftIsDeletedAndThenUnknown() {
         long id = draft(employee, "Подяка ректора");
 
@@ -250,18 +302,38 @@ class AwardFT extends AbstractIntegrationTest {
     }
 
     private long complete(String token, String title) {
+        return complete(token, title, LocalDate.now(KYIV).minusMonths(3));
+    }
+
+    private long complete(String token, String title, LocalDate date) {
         return as(token).contentType(ContentType.JSON).body(Map.of("titleUk", title,
                 "categoryId", MINISTRY_CATEGORY, "awardingOrganization", "МОН України",
-                "awardDate", LocalDate.now().minusMonths(3).toString()))
+                "awardDate", date.toString()))
             .post(AWARDS).then().statusCode(201).extract().jsonPath().getLong("id");
     }
 
     private long submitted(String token, String title) {
-        long id = complete(token, title);
+        return submitted(token, title, LocalDate.now(KYIV).minusMonths(3));
+    }
+
+    private long submitted(String token, String title, LocalDate date) {
+        long id = complete(token, title, date);
         long version = as(token).get(AWARDS + "/" + id).jsonPath().getLong(VERSION);
-        as(token).contentType(ContentType.JSON).body(Map.of(VERSION, version)).post(AWARDS + "/" + id + "/submit")
-            .then().statusCode(200);
+        submit(token, id, version, null).then().statusCode(200);
         return id;
+    }
+
+    private Response submit(String token, long id, long version, Boolean acknowledgeDuplicate) {
+        Map<String, Object> body = new HashMap<>();
+        body.put(VERSION, version);
+        body.put("acknowledgeDuplicate", acknowledgeDuplicate);
+        return as(token).contentType(ContentType.JSON).body(body).post(AWARDS + "/" + id + "/submit");
+    }
+
+    private Response dated(LocalDate date) {
+        return as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Подяка " + date,
+                "categoryId", MINISTRY_CATEGORY, "awardingOrganization", "МОН України", "awardDate", date.toString()))
+            .post(AWARDS);
     }
 
     private long withRole(String email, Organization home, RoleType role, Organization scope) {

@@ -31,6 +31,7 @@ import org.springframework.http.MediaType;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardQuery;
+import ua.edu.chnu.awards.award.dto.DuplicateMatch;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
@@ -141,7 +142,7 @@ class AwardEndpointsTest extends AbstractAwardEndpointsTest {
 
     @Test
     void ac1_5_submissionAnswersTheAwardWithItsRequest() throws Exception {
-        when(submission.submit(5L, new SubmitRequest(3L))).thenReturn(award(AwardStatus.PENDING));
+        when(submission.submit(5L, new SubmitRequest(3L, null))).thenReturn(award(AwardStatus.PENDING));
 
         mockMvc.perform(post(AWARD + "/submit").contentType(MediaType.APPLICATION_JSON).content("{\"version\":3}")
                 .with(employee()))
@@ -150,6 +151,22 @@ class AwardEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.impactScore").value(80))
             .andExpect(jsonPath("$.request.status").value("SUBMITTED"))
             .andExpect(jsonPath("$.request.currentLevel").value("FACULTY_SECRETARY"));
+    }
+
+    @Test
+    void ac2_5_aPossibleDuplicateAnswers409WithTheMatches() throws Exception {
+        when(submission.submit(5L, new SubmitRequest(3L, false))).thenThrow(new ApiProblemException(
+            HttpStatus.CONFLICT, "award-possible-duplicate", "Looks like an award already entered",
+            Map.of("matches", List.of(new DuplicateMatch(9L, null, "Грамота МОН", LocalDate.of(2025, 5, 1),
+                AwardStatus.PENDING)))));
+
+        mockMvc.perform(post(AWARD + "/submit").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":3,\"acknowledgeDuplicate\":false}").with(employee()))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:award-possible-duplicate"))
+            .andExpect(jsonPath("$.matches[0].id").value(9))
+            .andExpect(jsonPath("$.matches[0].awardDate").value("2025-05-01"))
+            .andExpect(jsonPath("$.matches[0].status").value("PENDING"));
     }
 
     @Test

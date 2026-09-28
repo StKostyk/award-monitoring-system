@@ -113,6 +113,20 @@ describe('AwardFormComponent', () => {
     control?.markAsDirty();
   }
 
+  function fillComplete(): void {
+    type('titleUk', 'Грамота');
+    type('categoryId', 13);
+    type('awardingOrganization', 'МОН України');
+    type('awardDate', '2025-05-01');
+  }
+
+  function duplicateOf(matches: unknown[]): HttpErrorResponse {
+    return new HttpErrorResponse({
+      status: 409,
+      error: { type: 'urn:awards:problem:award-possible-duplicate', matches },
+    });
+  }
+
   beforeEach(() => {
     localStorage.clear();
     Object.values(service).forEach((mock) => mock.mockClear());
@@ -168,6 +182,76 @@ describe('AwardFormComponent', () => {
 
     expect(service.submit).toHaveBeenCalledWith(5, 2);
     expect(router.navigate).toHaveBeenCalledWith(['/awards', 5, 'submitted'], { replaceUrl: true });
+  });
+
+  it('ac2_6_the_date_picker_allows_neither_future_dates_nor_dates_older_than_fifty_years', async () => {
+    await open(null);
+    const input = fixture.nativeElement.querySelector('[data-testid="award-date"]') as HTMLInputElement;
+
+    expect(input.max).toBe(component.today);
+    expect(input.min).toBe(`${Number(component.today.substring(0, 4)) - 50}${component.today.substring(4)}`);
+  });
+
+  it('ac2_3_a_recent_date_shows_the_hint_under_the_date', async () => {
+    await open(null);
+    type('awardDate', component.today);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-recent-date"]')).not.toBeNull();
+
+    type('awardDate', '2020-01-01');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-recent-date"]')).toBeNull();
+  });
+
+  it('ac2_4_a_saved_possible_duplicate_links_the_matching_award', async () => {
+    const match = { id: 9, title: null, titleUk: 'Грамота МОН', awardDate: '2025-05-01', status: 'PENDING' as const };
+    service.get.mockReturnValue(
+      of(award({ warnings: [{ code: 'POSSIBLE_DUPLICATE', field: 'title', matches: [match] }] })),
+    );
+    await open('5');
+
+    const link = fixture.nativeElement.querySelector('[data-testid="award-duplicate-9"]') as HTMLAnchorElement;
+    expect(link.textContent).toContain('Грамота МОН');
+    expect(link.getAttribute('href')).toBe('/awards/9');
+
+    type('awardDate', '2024-01-01');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-duplicate-warning"]')).toBeNull();
+  });
+
+  it('ac2_5_a_possible_duplicate_is_submitted_after_the_owner_confirms_it', async () => {
+    const match = { id: 9, title: null, titleUk: 'Грамота МОН', awardDate: '2025-05-01', status: 'PENDING' };
+    await open(null);
+    service.create.mockReturnValue(of(award({ version: 2 })));
+    service.submit
+      .mockReturnValueOnce(throwError(() => duplicateOf([match])))
+      .mockReturnValueOnce(of(award({ status: 'PENDING', version: 3 })));
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    fillComplete();
+
+    component.submit();
+
+    expect(dialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ data: { matches: [match] } }));
+    expect(service.submit).toHaveBeenLastCalledWith(5, 2, true);
+    expect(router.navigate).toHaveBeenCalledWith(['/awards', 5, 'submitted'], { replaceUrl: true });
+  });
+
+  it('ac2_5_cancelling_the_duplicate_dialog_leaves_a_saved_draft', async () => {
+    await open(null);
+    service.create.mockReturnValue(of(award({ version: 2 })));
+    service.submit.mockReturnValue(throwError(() => duplicateOf([{ id: 9 }])));
+    dialog.open.mockReturnValue({ afterClosed: () => of(false) });
+    fillComplete();
+
+    component.submit();
+
+    expect(service.submit).toHaveBeenCalledTimes(1);
+    expect(component.saving()).toBe(false);
+    expect(component.message()).toBe('awards.messages.saved');
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
   it('ac1_3_a_stale_version_offers_a_reload_and_keeps_the_typed_values', async () => {

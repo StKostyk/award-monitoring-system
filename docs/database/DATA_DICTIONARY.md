@@ -308,7 +308,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `description` | `TEXT` | YES | - | App: ≤ 4000 | Detailed description |
 | `description_uk` | `TEXT` | YES | - | App: ≤ 4000 | Ukrainian description |
 | `awarding_organization` | `VARCHAR(255)` | YES (draft) | - | - | Organization that granted the award; required outside `DRAFT` |
-| `award_date` | `DATE` | YES (draft) | - | CK: ≤ today in Europe/Kyiv | Date award was granted; required outside `DRAFT` |
+| `award_date` | `DATE` | YES (draft) | - | CK: ≤ today in Europe/Kyiv | Date award was granted; required outside `DRAFT`; the application also refuses dates more than 50 years back |
 | `status` | `VARCHAR(20)` | NO | `'DRAFT'` | CK | Current workflow status |
 | `verification_badge` | `BOOLEAN` | NO | `FALSE` | - | Verified by supporting documents |
 | `impact_score` | `INTEGER` | YES | - | CK: 0-100 | Calculated significance score |
@@ -336,7 +336,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `ck_awards_date` - recreated as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`; the V005 version compared with the session date (UTC) and refused awards dated today between 00:00 and 03:00 Kyiv time
 - `fk_awards_organizations` - `organization_id` → `organizations(org_id)`
 
-**Submission** (`POST /awards/{id}/submit`): under a row lock on the draft, `status` becomes `PENDING`, `impact_score` the level base score, `organization_id` the owner's current department, one `award_requests` row is created (`SUBMITTED`, `FACULTY_SECRETARY`) and an `AWARD_SUBMITTED` row is written to `audit_logs` (`entity_type = 'awards'`, `entity_id` = the award).
+**Submission** (`POST /awards/{id}/submit`): under a row lock on the draft, `status` becomes `PENDING`, `impact_score` the level base score, `organization_id` the owner's current department, one `award_requests` row is created (`SUBMITTED`, `FACULTY_SECRETARY`) and an `AWARD_SUBMITTED` row is written to `audit_logs` (`entity_type = 'awards'`, `entity_id` = the award). A draft with another award of the same owner on the same `award_date` and a `pg_trgm` similarity of at least 0.6 on the lower-cased `title` or `title_uk` is submitted only when the owner confirms it; the audit row then carries `duplicateAcknowledged: true`.
 
 **Indexes**:
 - `pk_awards` - Primary key on `award_id`
@@ -844,7 +844,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `awards` | `awarding_organization` | Max 255 chars; required outside `DRAFT` |
 | `awards` | `external_url` | `http` or `https` only, max 2048 chars |
 | `awards` | `category_id` | Active category when chosen or submitted; a draft keeps a category deactivated after it was chosen |
-| `awards` | `award_date` | Not after today in Europe/Kyiv; required outside `DRAFT` |
+| `awards` | `award_date` | Not after today in Europe/Kyiv and not more than 50 years back (exactly 50 accepted); required outside `DRAFT` |
 | `awards` | `impact_score` | Range 0-100 |
 | `documents` | `file_size` | Max 10,485,760 bytes (10MB) |
 | `documents` | `file_type` | One of: PDF, JPG, PNG, WEBP |

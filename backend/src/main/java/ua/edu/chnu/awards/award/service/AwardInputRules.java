@@ -2,8 +2,6 @@ package ua.edu.chnu.awards.award.service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Clock;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -24,8 +22,8 @@ import ua.edu.chnu.awards.common.web.FieldViolation;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Field rules of the award form: what a draft may hold and what a submission needs. "Today" is the day on the
- * application clock ({@code Europe/Kyiv}).
+ * Field rules of the award form: what a draft may hold and what a submission needs. The date rules are those of
+ * {@link AwardDateRules}.
  */
 @Component
 @RequiredArgsConstructor
@@ -40,7 +38,7 @@ public class AwardInputRules {
     private static final Set<String> WEB_SCHEMES = Set.of("http", "https");
 
     private final AwardCategoryRepository categories;
-    private final Clock clock;
+    private final AwardDateRules dates;
 
     /**
      * The form with surrounding spaces removed and blank texts treated as empty.
@@ -64,7 +62,7 @@ public class AwardInputRules {
      */
     public Optional<AwardCategory> check(AwardForm form, Optional<AwardCategory> current) {
         List<FieldViolation> errors = textErrors(form);
-        future(form.awardDate()).ifPresent(errors::add);
+        dates.check(form.awardDate()).ifPresent(errors::add);
         Optional<AwardCategory> category = Optional.ofNullable(form.categoryId())
             .flatMap(categories::findById)
             .filter(found -> found.isActive() || current.map(AwardCategory::getId).filter(found.getId()::equals)
@@ -97,11 +95,11 @@ public class AwardInputRules {
 
     /**
      * Checks that a draft can be submitted: the fields a request needs are filled, the category is still
-     * offered and the date is not in the future.
+     * offered and the date is acceptable.
      *
      * @param award the draft
      * @throws ApiProblemException 422 {@code award-incomplete} naming the empty fields, or
-     *                             {@code validation-failed} for a deactivated category or a future date
+     *                             {@code validation-failed} for a deactivated category or a refused date
      */
     public void checkComplete(Award award) {
         List<FieldViolation> missing = new ArrayList<>();
@@ -121,16 +119,10 @@ public class AwardInputRules {
         if (!award.getCategory().isActive()) {
             errors.add(inactiveCategory());
         }
-        future(award.getAwardDate()).ifPresent(errors::add);
+        dates.check(award.getAwardDate()).ifPresent(errors::add);
         if (!errors.isEmpty()) {
             throw refused("validation-failed", "The award has invalid fields", errors);
         }
-    }
-
-    private Optional<FieldViolation> future(LocalDate date) {
-        return date != null && date.isAfter(LocalDate.now(clock))
-            ? Optional.of(new FieldViolation(AWARD_DATE, "future", "The award date cannot be in the future"))
-            : Optional.empty();
     }
 
     private static boolean tooLong(List<FieldViolation> errors, String field, String value, int max) {

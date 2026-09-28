@@ -7,9 +7,13 @@ import {
   CategoryNode,
   NO_FILTERS,
   awardTitle,
+  daysBefore,
+  duplicateMatches,
   fieldProblems,
   flattenCategories,
+  isRecent,
   kyivToday,
+  yearsBefore,
 } from './awards.service';
 
 const form = {
@@ -52,7 +56,19 @@ describe('AwardsService', () => {
       ...form,
       version: 3,
     });
-    expect(http.expectOne((r) => r.url.endsWith('/awards/5/submit')).request.body).toEqual({ version: 4 });
+    expect(http.expectOne((r) => r.url.endsWith('/awards/5/submit')).request.body).toEqual({
+      version: 4,
+      acknowledgeDuplicate: false,
+    });
+  });
+
+  it('ac2_5_sends_the_acknowledgement_of_a_possible_duplicate', () => {
+    service.submit(5, 4, true).subscribe();
+
+    expect(http.expectOne((r) => r.url.endsWith('/awards/5/submit')).request.body).toEqual({
+      version: 4,
+      acknowledgeDuplicate: true,
+    });
   });
 
   it('ac1_1_creates_gets_and_deletes', () => {
@@ -124,5 +140,28 @@ describe('award helpers', () => {
 
     expect(fieldProblems(problem).map((entry) => entry.field)).toEqual(['title']);
     expect(fieldProblems(new HttpErrorResponse({ status: 500 }))).toEqual([]);
+  });
+
+  it('ac2_2_the_oldest_date_is_fifty_years_back_and_a_leap_day_becomes_the_28th', () => {
+    expect(yearsBefore('2026-09-28', 50)).toBe('1976-09-28');
+    expect(yearsBefore('2028-02-29', 50)).toBe('1978-02-28');
+    expect(yearsBefore('2028-02-29', 4)).toBe('2024-02-29');
+  });
+
+  it('ac2_3_the_last_thirty_days_up_to_today_are_recent', () => {
+    expect(isRecent('2026-09-28', '2026-09-28')).toBe(true);
+    expect(isRecent('2026-08-30', '2026-09-28')).toBe(true);
+    expect(isRecent('2026-08-29', '2026-09-28')).toBe(false);
+    expect(isRecent('2026-09-29', '2026-09-28')).toBe(false);
+    expect(isRecent('', '2026-09-28')).toBe(false);
+    expect(daysBefore('2026-03-01', 1)).toBe('2026-02-28');
+  });
+
+  it('ac2_5_reads_the_matches_of_a_possible_duplicate', () => {
+    const match = { id: 9, title: null, titleUk: 'Грамота', awardDate: '2025-05-01', status: 'PENDING' };
+    const problem = new HttpErrorResponse({ status: 409, error: { matches: [match] } });
+
+    expect(duplicateMatches(problem)).toEqual([match]);
+    expect(duplicateMatches(new HttpErrorResponse({ status: 409 }))).toEqual([]);
   });
 });

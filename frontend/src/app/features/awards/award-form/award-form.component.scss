@@ -43,6 +43,14 @@
   color: var(--mat-sys-error, #b3261e);
 }
 
+.award-form__warning {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--mat-sys-on-surface-variant, #444746);
+  overflow-wrap: anywhere;
+}
+
 .award-form__inline {
   margin: -8px 0 8px;
   font: var(--mat-sys-body-small);
