@@ -45,10 +45,25 @@ export interface AwardRequestSummary {
   submittedAt: string;
 }
 
-export interface AwardWarning {
-  code: string;
-  field: string;
+/** An own award that looks like the one being entered. */
+export interface DuplicateMatch {
+  id: number;
+  title: string | null;
+  titleUk: string | null;
+  awardDate: string;
+  status: AwardStatus;
 }
+
+export interface AwardWarning {
+  code: 'RECENT_DATE' | 'POSSIBLE_DUPLICATE';
+  field: string;
+  matches: DuplicateMatch[];
+}
+
+/** Awards older than this many years are refused. */
+export const MAX_AGE_YEARS = 50;
+/** A date within this many days is pointed out as possibly the submission date. */
+export const RECENT_DAYS = 30;
 
 export interface Award {
   id: number;
@@ -139,8 +154,8 @@ export class AwardsService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
-  submit(id: number, version: number): Observable<Award> {
-    return this.http.post<Award>(`${this.base}/${id}/submit`, { version });
+  submit(id: number, version: number, acknowledgeDuplicate = false): Observable<Award> {
+    return this.http.post<Award>(`${this.base}/${id}/submit`, { version, acknowledgeDuplicate });
   }
 
   /** The category tree, fetched once while the app is open; a failed fetch is tried again next time. */
@@ -176,6 +191,28 @@ export function kyivToday(now = new Date()): string {
   }).format(now);
 }
 
+/** The same day the given number of years earlier; 29 February becomes 28 February in a common year. */
+export function yearsBefore(date: string, years: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(year - years, month, 0)).getUTCDate();
+  return isoDate(Date.UTC(year - years, month - 1, Math.min(day, lastDay)));
+}
+
+/** The day the given number of days earlier. */
+export function daysBefore(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return isoDate(Date.UTC(year, month - 1, day - days));
+}
+
+/** Whether a `YYYY-MM-DD` date lies within the last 30 days: today and the 29 days before it. */
+export function isRecent(date: string | null | undefined, today: string): boolean {
+  return !!date && date <= today && date > daysBefore(today, RECENT_DAYS);
+}
+
+function isoDate(time: number): string {
+  return new Date(time).toISOString().substring(0, 10);
+}
+
 /** Every category of the tree with its depth, parents before their children. */
 export function flattenCategories(
   nodes: CategoryNode[],
@@ -191,4 +228,10 @@ export function flattenCategories(
 export function fieldProblems(error: unknown): FieldProblem[] {
   const body = (error as { error?: { errors?: unknown } } | null)?.error;
   return Array.isArray(body?.errors) ? (body.errors as FieldProblem[]) : [];
+}
+
+/** The matching awards of a 409 `award-possible-duplicate` answer, empty when there are none. */
+export function duplicateMatches(error: unknown): DuplicateMatch[] {
+  const body = (error as { error?: { matches?: unknown } } | null)?.error;
+  return Array.isArray(body?.matches) ? (body.matches as DuplicateMatch[]) : [];
 }

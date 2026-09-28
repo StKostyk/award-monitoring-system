@@ -113,13 +113,25 @@
       "too-long": "At most {{max}} characters",
       "invalid": "Enter an address starting with http:// or https://",
       "inactive": "The category is no longer available",
-      "future": "The award date cannot be in the future"
+      "future": "The award date cannot be in the future",
+      "too-old": "The award date cannot be more than 50 years ago"
+    },
+    "warnings": {
+      "RECENT_DATE": "Check the date: it lies within the last 30 days. Is it the date of the award rather than of the submission?",
+      "POSSIBLE_DUPLICATE": "This looks like an award you already entered:"
+    },
+    "duplicate": {
+      "title": "This award may already be entered",
+      "text": "You already have an award with the same date and a similar title:",
+      "confirm": "It is a different award — submit",
+      "cancel": "Cancel"
     },
     "problems": {
       "validation-failed": "Check the marked fields.",
       "award-incomplete": "To submit, fill in the category, who granted the award and the date.",
       "award-stale": "The award was changed in another window. Your changes are kept in this browser.",
       "award-not-editable": "The award was already submitted and can no longer be changed.",
+      "award-possible-duplicate": "This looks like an award you already entered.",
       "access-denied": "You are not allowed to enter awards.",
       "network": "The server is not reachable. Your values are kept; please try again.",
       "unknown": "Something went wrong. Please try again."

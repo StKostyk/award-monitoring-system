@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditLog;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.DuplicateMatch;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
@@ -52,7 +54,8 @@ class AwardSubmissionTest {
     private final AwardOwnership ownership = mock(AwardOwnership.class);
     private final AwardInputRules rules = mock(AwardInputRules.class);
     private final AuditService audit = mock(AuditService.class);
-    private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules,
+    private final DuplicateFinder duplicates = mock(DuplicateFinder.class);
+    private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules, duplicates,
         new AwardMapper(), audit, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
     private final Organization oldDepartment = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final Organization newDepartment = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
@@ -75,7 +78,7 @@ class AwardSubmissionTest {
 
     @Test
     void ac1_5_submissionCreatesTheRequestAtTheFacultySecretaryAndAuditsIt() {
-        AwardResponse response = submission.submit(5L, new SubmitRequest(4L));
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
 
         assertThat(draft.getStatus()).isEqualTo(AwardStatus.PENDING);
         assertThat(draft.getImpactScore()).isEqualTo(RecognitionLevel.NATIONAL.baseScore());
@@ -89,7 +92,7 @@ class AwardSubmissionTest {
 
     @Test
     void edge_theOrganisationIsRefreshedFromTheOwnersCurrentDepartment() {
-        AwardResponse response = submission.submit(5L, new SubmitRequest(4L));
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
 
         assertThat(response.organization().id()).isEqualTo(69L);
     }
@@ -99,11 +102,41 @@ class AwardSubmissionTest {
         doThrow(new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "award-incomplete", "missing"))
             .when(rules).checkComplete(draft);
 
-        assertThatThrownBy(() -> submission.submit(5L, new SubmitRequest(4L)))
+        assertThatThrownBy(() -> submission.submit(5L, new SubmitRequest(4L, null)))
             .isInstanceOf(ApiProblemException.class);
         assertThat(draft.getStatus()).isEqualTo(AwardStatus.DRAFT);
         verify(requests, never()).saveAndFlush(any());
         verify(audit, never()).record(any(), anyString(), anyLong(), anyLong(), anyMap());
+    }
+
+    @Test
+    void ac2_5_aPossibleDuplicateIsRefusedWithoutAcknowledgementAndNothingChanges() {
+        DuplicateMatch match = new DuplicateMatch(9L, "Letter", null, LocalDate.of(2025, 5, 1),
+            AwardStatus.PENDING);
+        when(duplicates.matches(List.of(5L))).thenReturn(Map.of(5L, List.of(match)));
+
+        assertThatThrownBy(() -> submission.submit(5L, new SubmitRequest(4L, false)))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                assertThat(e.getType()).isEqualTo("award-possible-duplicate");
+                assertThat(e.getProperties()).containsEntry("matches", List.of(match));
+            });
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.DRAFT);
+        verify(requests, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void ac2_5_anAcknowledgedDuplicateIsSubmittedAndTheAuditRowSaysSo() {
+        DuplicateMatch match = new DuplicateMatch(9L, "Letter", null, LocalDate.of(2025, 5, 1),
+            AwardStatus.PENDING);
+        when(duplicates.matches(List.of(5L))).thenReturn(Map.of(5L, List.of(match)));
+
+        submission.submit(5L, new SubmitRequest(4L, true));
+
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.PENDING);
+        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditLog.AWARDS, 21L, 5L,
+            Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L,
+                "duplicateAcknowledged", true));
     }
 
     @Test

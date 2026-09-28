@@ -35,7 +35,8 @@ class AwardInputRulesTest {
     private final AwardCategoryRepository categories = mock(AwardCategoryRepository.class);
     private final Clock justAfterKyivMidnight = Clock.fixed(Instant.parse("2026-09-27T21:30:00Z"),
         ZoneId.of("Europe/Kyiv"));
-    private final AwardInputRules rules = new AwardInputRules(categories, justAfterKyivMidnight);
+    private final AwardInputRules rules = new AwardInputRules(categories,
+        new AwardDateRules(justAfterKyivMidnight));
     private final AwardCategory active = category(13L, true);
     private final AwardCategory retired = category(14L, false);
 
@@ -113,6 +114,20 @@ class AwardInputRulesTest {
             .extracting(e -> ((ApiProblemException) e).getProperties().get("errors"), list(FieldViolation.class))
             .extracting(FieldViolation::field, FieldViolation::code)
             .containsExactly(tuple("awardDate", "future"));
+    }
+
+    @Test
+    void ac2_2_aDateOlderThanFiftyYearsIsRefusedOnSaveAndOnSubmission() {
+        LocalDate tooOld = KYIV_TODAY.minusYears(50).minusDays(1);
+        Award draft = Award.builder().title(TITLE).category(active).awardingOrganization("MON").awardDate(tooOld)
+            .build();
+
+        assertThatThrownBy(() -> rules.check(form(TITLE, null, null, tooOld, null), Optional.empty()))
+            .extracting(e -> ((ApiProblemException) e).getProperties().get("errors"), list(FieldViolation.class))
+            .extracting(FieldViolation::field, FieldViolation::code)
+            .containsExactly(tuple("awardDate", "too-old"));
+        assertThatThrownBy(() -> rules.checkComplete(draft))
+            .satisfies(e -> assertProblem(e, "validation-failed"));
     }
 
     @Test

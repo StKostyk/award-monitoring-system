@@ -59,6 +59,16 @@
         {{ 'awards.errors.titleRequired' | transloco }}
       </p>
     }
+    @if (duplicates().length && form.pristine) {
+      <div class="award-form__warning award-form__inline" role="status" data-testid="award-duplicate-warning">
+        <span>{{ 'awards.warnings.POSSIBLE_DUPLICATE' | transloco }}</span>
+        @for (match of duplicates(); track match.id) {
+          <a [routerLink]="['/awards', match.id]" [attr.data-testid]="'award-duplicate-' + match.id">
+            {{ matchTitle(match) }}
+          </a>
+        }
+      </div>
+    }
 
     <mat-form-field class="award-form__field">
       <mat-label>{{ 'awards.fields.category' | transloco }}</mat-label>
@@ -95,9 +105,19 @@
       }
     </mat-form-field>
 
-    <mat-form-field class="award-form__field">
+    <mat-form-field class="award-form__field" subscriptSizing="dynamic">
       <mat-label>{{ 'awards.fields.awardDate' | transloco }}</mat-label>
-      <input matInput type="date" formControlName="awardDate" [max]="today" data-testid="award-date" />
+      <input
+        matInput
+        type="date"
+        formControlName="awardDate"
+        [min]="oldest"
+        [max]="today"
+        data-testid="award-date"
+      />
+      @if (recentDate()) {
+        <mat-hint data-testid="award-recent-date">{{ 'awards.warnings.RECENT_DATE' | transloco }}</mat-hint>
+      }
       @if (errorKey('awardDate'); as key) {
         <mat-error>{{ key | transloco }}</mat-error>
       }

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.AwardWarning;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
@@ -43,6 +45,7 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 class AwardServiceTest {
 
     private static final long OWNER_ID = 21L;
+    private static final AwardWarning RECENT = new AwardWarning("RECENT_DATE", "awardDate", List.of());
 
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
@@ -51,8 +54,9 @@ class AwardServiceTest {
     private final AwardInputRules rules = mock(AwardInputRules.class);
     private final AccessScope access = mock(AccessScope.class);
     private final AwardOwnership ownership = new AwardOwnership(awards, access);
+    private final AwardWarnings warnings = mock(AwardWarnings.class);
     private final AwardService service = new AwardService(awards, requests, users, specifications, rules,
-        ownership, new AwardMapper(), access);
+        ownership, warnings, new AwardMapper(), access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 
@@ -138,6 +142,7 @@ class AwardServiceTest {
         when(awards.findAll(any(Specification.class), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of(pending, draft)));
         when(requests.findByAwardIdIn(List.of(6L, 5L))).thenReturn(List.of(request(pending)));
+        when(warnings.forDrafts(List.of(pending, draft))).thenReturn(Map.of(5L, List.of(RECENT)));
 
         Page<AwardResponse> page = service.listOwn(query, -1, 500);
 
@@ -150,6 +155,19 @@ class AwardServiceTest {
         assertThat(page.getContent()).extracting(AwardResponse::id).containsExactly(6L, 5L);
         assertThat(page.getContent().get(0).request().status()).isEqualTo(RequestStatus.SUBMITTED);
         assertThat(page.getContent().get(1).request()).isNull();
+        assertThat(page.getContent().get(1).warnings()).containsExactly(RECENT);
+        assertThat(page.getContent().get(0).warnings()).isEmpty();
+    }
+
+    @Test
+    void ac2_3_aSavedOrReadDraftCarriesItsWarnings() {
+        Award draft = award(OWNER_ID, AwardStatus.DRAFT);
+        when(awards.findForUpdate(5L)).thenReturn(Optional.of(draft));
+        when(awards.findWithDetailsById(5L)).thenReturn(Optional.of(draft));
+        when(warnings.of(draft)).thenReturn(List.of(RECENT));
+
+        assertThat(service.update(5L, form(4L)).warnings()).containsExactly(RECENT);
+        assertThat(service.get(5L).warnings()).containsExactly(RECENT);
     }
 
     private Award award(long ownerId, AwardStatus status) {
