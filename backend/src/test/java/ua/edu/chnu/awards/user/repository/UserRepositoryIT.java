@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.user.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,20 @@ class UserRepositoryIT extends AbstractJpaSliceTest {
         assertThat(saved.getVersion()).isNotNull();
         assertThat(saved.getLastLoginAt()).isNull();
         assertThat(saved.getFullName()).isEqualTo("Test User");
+    }
+
+    @Test
+    void ac43_recordingASignInKeepsTheVersionSoParallelSignInsDoNotCollide() {
+        Organization department = entityManager.find(Organization.class, TestUsers.DAI_DEPARTMENT_ID);
+        User saved = entityManager.persistFlushFind(TestUsers.user("signin@chnu.edu.ua", department));
+        Instant at = Instant.parse("2026-09-28T09:00:00Z");
+
+        assertThat(userRepository.recordLogin(saved.getId(), at)).isEqualTo(1);
+        entityManager.clear();
+
+        User reloaded = entityManager.find(User.class, saved.getId());
+        assertThat(reloaded.getLastLoginAt()).isEqualTo(at);
+        assertThat(reloaded.getVersion()).isEqualTo(saved.getVersion());
     }
 
     @Test

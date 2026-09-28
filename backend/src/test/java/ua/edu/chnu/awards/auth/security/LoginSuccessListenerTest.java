@@ -1,13 +1,14 @@
 package ua.edu.chnu.awards.auth.security;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,7 +59,7 @@ class LoginSuccessListenerTest {
         listener.onLogin(new AuthenticationSuccessEvent(
             UsernamePasswordAuthenticationToken.authenticated("dean@chnu.edu.ua", "n/a", List.of())));
 
-        assertThat(dean.getLastLoginAt()).isNotNull();
+        verify(userRepository).recordLogin(eq(5L), any(Instant.class));
         verify(audit).record(AuditAction.LOGIN_SUCCESS, 5L);
         verify(attempts).reset("dean@chnu.edu.ua");
         verify(devices).recordSignIn(dean, new ClientRequest("203.0.113.7", "Mozilla/5.0 Firefox/130.0", "uk", null));
