@@ -47,7 +47,7 @@ class PasswordResetServiceTest {
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
-        new AuthProperties.Jwk("", "", ""));
+        new AuthProperties.Jwk("", "", "", ""));
     private final User active = User.builder().id(7L).emailAddress(EMAIL).firstName("Олена")
         .passwordHash("$2a$12$old").accountStatus(AccountStatus.ACTIVE).build();
     private PasswordResetService service;

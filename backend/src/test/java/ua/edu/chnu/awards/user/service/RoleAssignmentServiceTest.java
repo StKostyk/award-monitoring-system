@@ -67,9 +67,11 @@ class RoleAssignmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new RoleAssignmentService(userRepository, userRoleRepository, organizationRepository,
-            new RoleOrganizations(), new RoleLevels(), access, revoker, new UserProfileMapper(),
-            recorder, delegations, Clock.fixed(Instant.parse("2026-09-22T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
+        service = new RoleAssignmentService(userRepository, userRoleRepository,
+            new RoleAssignmentRules(userRoleRepository, organizationRepository, new RoleOrganizations(),
+                new RoleLevels(), access),
+            access, revoker, new UserProfileMapper(), recorder, delegations,
+            Clock.fixed(Instant.parse("2026-09-22T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
         when(access.callerId()).thenReturn(dean.getId());
         when(access.readableOrganizations()).thenReturn(Optional.of(Set.of(FACULTY_ID, DEPARTMENT_ID,
             OTHER_DEPARTMENT_ID)));
@@ -90,7 +92,7 @@ class RoleAssignmentServiceTest {
     @Test
     void ac2_1_grantsTheRoleAndRecordsWhoDidIt() {
         RoleAssignmentResponse response = service.assign(employee.getId(),
-            new RoleAssignmentRequest(RoleType.FACULTY_SECRETARY, FACULTY_ID, null, null, false));
+            new RoleAssignmentRequest(RoleType.FACULTY_SECRETARY, FACULTY_ID, null, null, false, null));
 
         assertThat(response.role()).isEqualTo(RoleType.FACULTY_SECRETARY);
         assertThat(response.validFrom()).isEqualTo(TODAY);
@@ -103,7 +105,7 @@ class RoleAssignmentServiceTest {
     @Test
     void ac2_1_aDefaultedStartDateIsTodayAndAPastOneIsRefused() {
         RoleAssignmentRequest past = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID,
-            TODAY.minusDays(1), null, false);
+            TODAY.minusDays(1), null, false, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), past))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
@@ -116,7 +118,7 @@ class RoleAssignmentServiceTest {
     void ac2_1_anInactiveAccountCannotHoldARole() {
         employee.setAccountStatus(AccountStatus.SUSPENDED);
         RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null,
-            false);
+            false, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOfSatisfying(ApiProblemException.class,
@@ -127,7 +129,7 @@ class RoleAssignmentServiceTest {
     void ac2_1_aUserOutsideTheCallersScopeIsUnknown() {
         when(access.readableOrganizations()).thenReturn(Optional.of(Set.of(FACULTY_ID)));
         RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null,
-            false);
+            false, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOf(UserNotFoundException.class);
@@ -138,7 +140,7 @@ class RoleAssignmentServiceTest {
         when(userRoleRepository.findOverlapping(eq(employee.getId()), eq(RoleType.EMPLOYEE), eq(DEPARTMENT_ID),
             any(), any())).thenReturn(List.of(assignment(employee, RoleType.EMPLOYEE, department, TODAY, null)));
         RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null,
-            false);
+            false, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
@@ -152,7 +154,7 @@ class RoleAssignmentServiceTest {
         when(userRoleRepository.saveAndFlush(any(UserRole.class)))
             .thenThrow(new DataIntegrityViolationException("uk_user_roles_current"));
         RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null,
-            false);
+            false, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOfSatisfying(ApiProblemException.class,
@@ -165,7 +167,7 @@ class RoleAssignmentServiceTest {
         when(access.has("user:manage")).thenReturn(false);
         when(organizationRepository.findById(1L)).thenReturn(Optional.of(
             organization(1L, OrganizationType.UNIVERSITY, "ChNU")));
-        RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.RECTOR, 1L, null, null, false);
+        RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.RECTOR, 1L, null, null, false, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
@@ -181,14 +183,15 @@ class RoleAssignmentServiceTest {
         when(access.has("user:manage")).thenReturn(true);
 
         service.assign(employee.getId(),
-            new RoleAssignmentRequest(RoleType.FACULTY_SECRETARY, FACULTY_ID, null, null, false));
+            new RoleAssignmentRequest(RoleType.FACULTY_SECRETARY, FACULTY_ID, null, null, false, null));
 
         verify(userRoleRepository).saveAndFlush(any(UserRole.class));
     }
 
     @Test
     void ac2_3_anOrganisationOfTheWrongLevelIsRefused() {
-        RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.DEAN, DEPARTMENT_ID, null, null, false);
+        RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.DEAN, DEPARTMENT_ID, null, null, false,
+            null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
@@ -202,7 +205,7 @@ class RoleAssignmentServiceTest {
         Organization closed = organization(70L, OrganizationType.DEPARTMENT, "Closed");
         closed.setActive(false);
         when(organizationRepository.findById(70L)).thenReturn(Optional.of(closed));
-        RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.EMPLOYEE, 70L, null, null, false);
+        RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.EMPLOYEE, 70L, null, null, false, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOfSatisfying(ApiProblemException.class,
@@ -266,7 +269,7 @@ class RoleAssignmentServiceTest {
     @Test
     void ac2_5_grantingIsRecordedWithTheActorAndTheNewAssignment() {
         service.assign(employee.getId(),
-            new RoleAssignmentRequest(RoleType.FACULTY_SECRETARY, FACULTY_ID, null, TODAY.plusMonths(1), false));
+            new RoleAssignmentRequest(RoleType.FACULTY_SECRETARY, FACULTY_ID, null, TODAY.plusMonths(1), false, null));
 
         ArgumentCaptor<UserRole> granted = ArgumentCaptor.forClass(UserRole.class);
         verify(recorder).granted(eq(dean), granted.capture());
@@ -289,21 +292,76 @@ class RoleAssignmentServiceTest {
     void ac2_7_confirmingWithACorrectedDepartmentMovesTheUserAndEndsTheOldRole() {
         UserRole old = assignment(employee, RoleType.EMPLOYEE, department, TODAY.minusYears(1), null);
         when(userRoleRepository.findCurrentByUserId(employee.getId(), TODAY)).thenReturn(List.of(old));
+        when(userRoleRepository.existsByUserId(employee.getId())).thenReturn(true);
 
         service.assign(employee.getId(),
-            new RoleAssignmentRequest(RoleType.EMPLOYEE, OTHER_DEPARTMENT_ID, null, null, true));
+            new RoleAssignmentRequest(RoleType.EMPLOYEE, OTHER_DEPARTMENT_ID, null, null, true, DEPARTMENT_ID));
 
         assertThat(employee.getOrganization()).isSameAs(other);
         assertThat(old.getValidTo()).isEqualTo(TODAY.minusDays(1));
         verify(recorder).superseded(dean, old);
         verify(recorder).granted(eq(dean), any(UserRole.class));
+        verify(delegations).revokeForMove(dean, employee);
         verify(revoker).revokeAll(employee);
+    }
+
+    @Test
+    void ac4_1_aStaleConfirmationOfAConfirmedUserIsAConflict() {
+        employee.setOrganization(other);
+        when(userRoleRepository.existsByUserId(employee.getId())).thenReturn(true);
+        RoleAssignmentRequest stale = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null, true,
+            null);
+
+        assertThatThrownBy(() -> service.assign(employee.getId(), stale))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                assertThat(e.getType()).isEqualTo("membership-already-confirmed");
+            });
+        assertThat(employee.getOrganization()).isSameAs(other);
+        verify(userRoleRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void ac4_1_aMoveFromADepartmentTheUserHasAlreadyLeftIsAConflict() {
+        employee.setOrganization(other);
+        when(userRoleRepository.existsByUserId(employee.getId())).thenReturn(true);
+        RoleAssignmentRequest stale = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null, true,
+            DEPARTMENT_ID);
+
+        assertThatThrownBy(() -> service.assign(employee.getId(), stale))
+            .isInstanceOfSatisfying(ApiProblemException.class,
+                e -> assertThat(e.getType()).isEqualTo("membership-already-confirmed"));
+        verify(delegations, never()).revokeForMove(any(), any());
+    }
+
+    @Test
+    void ac4_2_aRoleTakenBackBeforeItStartedCannotBeRevokedAgain() {
+        UserRole future = assignment(employee, RoleType.FACULTY_SECRETARY, faculty, TODAY.plusDays(7),
+            TODAY.plusDays(6));
+        when(userRoleRepository.findByIdAndUserId(future.getId(), employee.getId()))
+            .thenReturn(Optional.of(future));
+
+        assertThatThrownBy(() -> service.revoke(employee.getId(), future.getId()))
+            .isInstanceOfSatisfying(ApiProblemException.class,
+                e -> assertThat(e.getType()).isEqualTo("role-already-revoked"));
+        verify(recorder, never()).revoked(any(), any());
+        verify(revoker, never()).revokeAll(any());
+    }
+
+    @Test
+    void ac4_4_aDeletedAccountIsUnknown() {
+        employee.setAccountStatus(AccountStatus.DELETED);
+        RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null,
+            false, null);
+
+        assertThatThrownBy(() -> service.assign(employee.getId(), request))
+            .isInstanceOf(UserNotFoundException.class);
     }
 
     @Test
     void ac2_7_confirmingTheDepartmentTheUserPickedChangesNothingElse() {
         service.assign(employee.getId(),
-            new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null, true));
+            new RoleAssignmentRequest(RoleType.EMPLOYEE, DEPARTMENT_ID, null, null, true, null));
 
         assertThat(employee.getOrganization()).isSameAs(department);
         verify(recorder, never()).superseded(any(), any());
@@ -318,7 +376,7 @@ class RoleAssignmentServiceTest {
         when(access.canManage(RoleType.EMPLOYEE, 80L)).thenReturn(false);
 
         service.assign(employee.getId(),
-            new RoleAssignmentRequest(RoleType.EMPLOYEE, OTHER_DEPARTMENT_ID, null, null, true));
+            new RoleAssignmentRequest(RoleType.EMPLOYEE, OTHER_DEPARTMENT_ID, null, null, true, null));
 
         assertThat(outside.getValidTo()).isNull();
         verify(recorder, never()).superseded(any(), any());
@@ -339,7 +397,7 @@ class RoleAssignmentServiceTest {
     @Test
     void ac2_7_onlyTheEmployeeRoleMayCorrectTheDepartment() {
         RoleAssignmentRequest request = new RoleAssignmentRequest(RoleType.FACULTY_SECRETARY, FACULTY_ID, null,
-            null, true);
+            null, true, null);
 
         assertThatThrownBy(() -> service.assign(employee.getId(), request))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {

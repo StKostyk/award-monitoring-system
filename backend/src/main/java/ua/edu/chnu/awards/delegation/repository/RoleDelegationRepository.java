@@ -2,8 +2,12 @@ package ua.edu.chnu.awards.delegation.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+
+import jakarta.persistence.LockModeType;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -40,6 +44,17 @@ public interface RoleDelegationRepository extends JpaRepository<RoleDelegation, 
         """)
     List<RoleDelegation> findCurrentByDelegateId(@Param("delegateId") Long delegateId,
                                                  @Param("day") LocalDate day);
+
+    /**
+     * One delegation with its row locked until the transaction ends, so two revocations arriving at once are
+     * applied one after the other and the second finds it already revoked.
+     *
+     * @param id the delegation
+     * @return the delegation
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select d from RoleDelegation d where d.id = :id")
+    Optional<RoleDelegation> findByIdForUpdate(@Param("id") Long id);
 
     /**
      * Every delegation a user has given, newest first.
@@ -99,10 +114,11 @@ public interface RoleDelegationRepository extends JpaRepository<RoleDelegation, 
      * @param role           the role lent
      * @param organizationId where it applies
      * @param day            delegations ending before this day are left alone
-     * @return delegations to take back with the role
+     * @return delegations to take back with the role, locked so a concurrent revocation cannot end them twice
      */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-        select d from RoleDelegation d join fetch d.organization join fetch d.delegate join fetch d.delegator
+        select d from RoleDelegation d
         where d.delegator.id = :delegatorId
           and d.roleType = :role
           and d.organization.id = :organizationId
@@ -119,10 +135,12 @@ public interface RoleDelegationRepository extends JpaRepository<RoleDelegation, 
      *
      * @param delegateId who borrowed the authority
      * @param day        delegations ending before this day are left alone
-     * @return delegations to reconsider when the delegate's own roles change
+     * @return delegations to reconsider when the delegate's own roles change, locked so a concurrent revocation
+     *         cannot end them twice
      */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-        select d from RoleDelegation d join fetch d.organization join fetch d.delegate join fetch d.delegator
+        select d from RoleDelegation d
         where d.delegate.id = :delegateId
           and d.revokedAt is null
           and d.validTo >= :day

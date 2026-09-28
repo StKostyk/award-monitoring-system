@@ -116,6 +116,41 @@ describe('AdminUsersEffects', () => {
     );
   });
 
+  it('ac4_5_reloads_the_list_after_a_stale_confirmation_and_keeps_the_refusal', async () => {
+    api.assignRole.mockReturnValue(throwError(() => problem('membership-already-confirmed', 409)));
+    const emitted: Action[] = [];
+    const subscription = effects.confirmMembership$.subscribe((action) => emitted.push(action));
+    actions$.next(AdminUsersActions.membershipConfirmed({ id: 7, organizationId: 64 }));
+    subscription.unsubscribe();
+
+    expect(emitted).toEqual([
+      AdminUsersActions.membershipConfirmFailed({ id: 7, problem: 'membership-already-confirmed' }),
+      AdminUsersActions.refreshed(),
+    ]);
+  });
+
+  it('ac4_5_does_not_reload_after_a_refusal_that_is_not_a_conflict', async () => {
+    api.assignRole.mockReturnValue(throwError(() => problem('too-many-requests', 429)));
+    const emitted: Action[] = [];
+    const subscription = effects.confirmMembership$.subscribe((action) => emitted.push(action));
+    actions$.next(AdminUsersActions.membershipConfirmed({ id: 7, organizationId: 64 }));
+    subscription.unsubscribe();
+
+    expect(emitted).toEqual([
+      AdminUsersActions.membershipConfirmFailed({ id: 7, problem: 'too-many-requests' }),
+    ]);
+  });
+
+  it('ac4_8_treats_a_non_numeric_id_as_not_found_without_asking_the_api', async () => {
+    const result = firstValueFrom(effects.loadUser$);
+    actions$.next(AdminUsersActions.userOpened({ id: Number('abc') }));
+
+    expect(await result).toEqual(
+      AdminUsersActions.userLoadFailed({ problem: 'unknown', notFound: true }),
+    );
+    expect(api.get).not.toHaveBeenCalled();
+  });
+
   it('ac2_10_answers_a_missing_user_with_a_not_found_state_and_one_request', async () => {
     api.get.mockReturnValue(throwError(() => problem('user-not-found', 404)));
     const result = firstValueFrom(effects.loadUser$);

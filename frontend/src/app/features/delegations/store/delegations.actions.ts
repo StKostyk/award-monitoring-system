@@ -7,6 +7,7 @@ export const DelegationsActions = createActionGroup({
   events: {
     Opened: emptyProps(),
     Reloaded: emptyProps(),
+    Refreshed: emptyProps(),
     'Delegations Loaded': props<{ list: DelegationList }>(),
     'Delegations Load Failed': props<{ problem: string }>(),
     Created: props<{ delegation: Delegation }>(),

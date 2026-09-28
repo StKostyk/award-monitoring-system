@@ -43,6 +43,8 @@ describe('AuthService', () => {
     initCodeFlow: ReturnType<typeof vi.fn>;
     revokeTokenAndLogout: ReturnType<typeof vi.fn>;
     logOut: ReturnType<typeof vi.fn>;
+    getRefreshToken: ReturnType<typeof vi.fn>;
+    refreshToken: ReturnType<typeof vi.fn>;
     events: Subject<OAuthEvent>;
     state: string | undefined;
   };
@@ -60,6 +62,8 @@ describe('AuthService', () => {
       initCodeFlow: vi.fn(),
       revokeTokenAndLogout: vi.fn().mockResolvedValue(undefined),
       logOut: vi.fn(),
+      getRefreshToken: vi.fn().mockReturnValue(null),
+      refreshToken: vi.fn(),
       events,
       state: undefined,
     };
@@ -76,6 +80,59 @@ describe('AuthService', () => {
   });
 
   afterEach(() => http.verify());
+
+  it('ac4_6 refreshes once for requests refused together and hands out the new token', async () => {
+    oauth.getRefreshToken.mockReturnValue('refresh');
+    oauth.refreshToken.mockResolvedValue({});
+    oauth.getAccessToken.mockReturnValue('fresh-token');
+
+    const [first, second] = await Promise.all([service.refreshOnce(), service.refreshOnce()]);
+
+    expect([first, second]).toEqual(['fresh-token', 'fresh-token']);
+    expect(oauth.refreshToken).toHaveBeenCalledTimes(1);
+  });
+
+  it('ac4_6 answers null without a refresh token or when the server refuses the refresh', async () => {
+    await expect(service.refreshOnce()).resolves.toBeNull();
+    expect(oauth.refreshToken).not.toHaveBeenCalled();
+
+    oauth.getRefreshToken.mockReturnValue('refresh');
+    oauth.refreshToken.mockRejectedValue(new HttpErrorResponse({ status: 400 }));
+    await expect(service.refreshOnce()).resolves.toBeNull();
+  });
+
+  it('ac4_6 lets a network failure of the refresh reject so the session is kept', async () => {
+    oauth.getRefreshToken.mockReturnValue('refresh');
+    oauth.refreshToken.mockRejectedValue(new HttpErrorResponse({ status: 0 }));
+
+    await expect(service.refreshOnce()).rejects.toMatchObject({ status: 0 });
+  });
+
+  it('ac4_6 hands out a token renewed meanwhile without refreshing again', async () => {
+    oauth.getRefreshToken.mockReturnValue('refresh');
+    oauth.getAccessToken.mockReturnValue('renewed-token');
+    oauth.hasValidAccessToken.mockReturnValue(true);
+
+    await expect(service.refreshOnce('refused-token')).resolves.toBe('renewed-token');
+    expect(oauth.refreshToken).not.toHaveBeenCalled();
+  });
+
+  it('ac4_6 the expiry timer refreshes through the same single flight', async () => {
+    vi.useFakeTimers();
+    try {
+      oauth.getRefreshToken.mockReturnValue('refresh');
+      oauth.refreshToken.mockResolvedValue({});
+      await service.init();
+
+      events.next({ type: 'token_expires' } as OAuthEvent);
+      events.next({ type: 'token_expires' } as OAuthEvent);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(oauth.refreshToken).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
   it('ac11 starts the code flow with the target url when login is requested, once per page', () => {
     service.login('/awards/3');
@@ -94,7 +151,7 @@ describe('AuthService', () => {
     await init;
 
     expect(oauth.configure).toHaveBeenCalled();
-    expect(oauth.setupAutomaticSilentRefresh).toHaveBeenCalled();
+    expect(oauth.setupAutomaticSilentRefresh).not.toHaveBeenCalled();
     expect(service.isAuthenticated()).toBe(true);
     expect(service.profile()).toEqual(profile);
     expect(service.fullName()).toBe('Anastasia Employee');
@@ -182,7 +239,9 @@ describe('AuthService', () => {
     oauth.hasValidAccessToken.mockReturnValue(true);
     const init = service.init();
     await Promise.resolve();
-    http.expectOne(`${environment.apiUrl}/users/me`).flush({}, { status: 401, statusText: 'Unauthorized' });
+    http
+      .expectOne(`${environment.apiUrl}/users/me`)
+      .flush({}, { status: 401, statusText: 'Unauthorized' });
     await init;
 
     expect(oauth.logOut).toHaveBeenCalledWith(true);
@@ -195,7 +254,9 @@ describe('AuthService', () => {
     oauth.hasValidAccessToken.mockReturnValue(true);
     const init = service.init();
     await Promise.resolve();
-    http.expectOne(`${environment.apiUrl}/users/me`).flush({}, { status: 500, statusText: 'Server Error' });
+    http
+      .expectOne(`${environment.apiUrl}/users/me`)
+      .flush({}, { status: 500, statusText: 'Server Error' });
 
     await expect(init).rejects.toBeTruthy();
   });

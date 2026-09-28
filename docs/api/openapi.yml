@@ -737,7 +737,7 @@ paths:
             $ref: '#/components/schemas/UserRole'
         - name: status
           in: query
-          description: Without it, every status except `PENDING` and `DELETED`
+          description: Without it, every status except `PENDING` and `DELETED`, which are never listed
           schema:
             $ref: '#/components/schemas/AccountStatus'
         - name: unconfirmed
@@ -791,7 +791,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          description: Unknown, unverified, or outside the caller's scope (the directory does not confirm foreign ids)
+          description: Unknown, unverified, deleted, or outside the caller's scope (the directory does not confirm foreign ids)
           content:
             application/problem+json:
               schema:
@@ -807,7 +807,10 @@ paths:
         hold the role in that organisation today. Granting `EMPLOYEE` with `updateOrganization` is the
         membership confirmation of a self-registered account: the user's primary organisation is corrected to
         `organizationId` and a current `EMPLOYEE` role in the previous department is revoked in the same
-        request. The new role reaches the user's token with the next silent refresh or sign-in.
+        request. For a user who has already held a role the same request moves them to another department;
+        it must then carry `fromOrganizationId`, and delegations the user received for organisations in which
+        they no longer hold any current role are revoked. The new role reaches the user's token with the next
+        silent refresh or sign-in.
       security:
         - bearerAuth: []
       operationId: assignRole
@@ -845,7 +848,10 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '409':
           description: |
-            `urn:awards:problem:role-already-assigned` — the user already holds the role in that organisation
+            `urn:awards:problem:role-already-assigned` — the user already holds the role in that organisation;
+            `membership-already-confirmed` — `updateOrganization` for a user who has already held a role
+            without `fromOrganizationId`, or with one that is no longer the user's organisation (a stale
+            confirmation)
           content:
             application/problem+json:
               schema:
@@ -899,7 +905,8 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '409':
           description: |
-            `urn:awards:problem:role-already-revoked` — the assignment has already ended
+            `urn:awards:problem:role-already-revoked` — the assignment has already ended, or was taken back
+            before it started
           content:
             application/problem+json:
               schema:
@@ -1032,7 +1039,8 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '409':
           description: |
-            `urn:awards:problem:delegation-not-active` — already revoked or expired
+            `urn:awards:problem:delegation-not-active` — already revoked or expired; of two revocations arriving
+            at once, the second (the row is locked while the first runs)
           content:
             application/problem+json:
               schema:
@@ -1354,6 +1362,13 @@ components:
           description: |
             Membership confirmation: move the user's primary organisation to `organizationId` and revoke a
             current `EMPLOYEE` role in the previous department. Only with `role: EMPLOYEE`
+        fromOrganizationId:
+          type: integer
+          format: int64
+          nullable: true
+          description: |
+            The user's current organisation as the caller saw it. Required with `updateOrganization` for a
+            user who has already held a role (a department move); ignored for a first confirmation
 
     UserRole:
       type: string

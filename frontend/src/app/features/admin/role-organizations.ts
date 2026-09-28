@@ -20,15 +20,8 @@ export const ROLES: RoleType[] = [
   'GDPR_OFFICER',
 ];
 
-export const STATUSES: AccountStatus[] = [
-  'PENDING',
-  'ACTIVE',
-  'INACTIVE',
-  'SUSPENDED',
-  'RETIRED',
-  'MEMORIAL',
-  'DELETED',
-];
+/** Statuses the directory can list; unverified and deleted accounts never appear in it. */
+export const STATUSES: AccountStatus[] = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'RETIRED', 'MEMORIAL'];
 
 /** Organisation types an assignment of the role may point at; the server has the final say. */
 export function organizationTypesFor(role: RoleType): OrganizationType[] {

@@ -76,4 +76,15 @@ public class UserRole {
     public boolean isCurrentOn(LocalDate day) {
         return !day.isBefore(validFrom) && (validTo == null || !day.isAfter(validTo));
     }
+
+    /**
+     * Whether the assignment is over by the given day: its last day has passed, or it was taken back before it
+     * started (its last day precedes its first).
+     *
+     * @param day the day to check
+     * @return true when the assignment can no longer apply
+     */
+    public boolean hasEndedBy(LocalDate day) {
+        return validTo != null && (validTo.isBefore(day) || validTo.isBefore(validFrom));
+    }
 }

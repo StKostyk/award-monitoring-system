@@ -26,4 +26,13 @@ public enum AccountStatus {
     public boolean canLogIn() {
         return loginAllowed;
     }
+
+    /**
+     * Whether accounts in this state appear in the user directory: unverified and deleted ones never do.
+     *
+     * @return false for {@code PENDING} and {@code DELETED}
+     */
+    public boolean isListed() {
+        return this != PENDING && this != DELETED;
+    }
 }

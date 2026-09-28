@@ -3,7 +3,7 @@
 > **Epic**: 1 — User Management & Authentication (SCRUM-5)
 > **Sprint**: 2–3 (2026-09-21 → 2026-10-04)
 > **Points**: 18 (three stories)
-> **Status**: Validated 2026-09-25 (§12) with findings F-1…F-10, pending the fix story 1.2.4 and the author's run of §9
+> **Status**: Validated 2026-09-25 (§12) with findings F-1…F-10, fix story 1.2.4 (SCRUM-19) in progress, then the author's run of §9
 > **Author**: Stefan Kostyk
 > **Governing docs**: ADR-009, AUTHENTICATION_AUTHORIZATION.md §3–§4 and §9, RBAC_matrix.md §2, DATA_DICTIONARY §1.2–§1.3, use-case-diagram.puml, openapi.yml, US-002, EPIC-01 tracker (deviations 5–7, follow-up 7)
 
@@ -41,6 +41,7 @@ Feature 1.1 knows who the caller is; nothing yet decides what they may touch. Ev
 | SCRUM-12 (#35) | 1.2.1 Permission model and organisation-scoped access | 5 | no | Feature 1.1 |
 | SCRUM-13 (#32) | 1.2.2 Role assignment and membership confirmation | 8 | yes | SCRUM-12 |
 | SCRUM-14 (#37) | 1.2.3 Approval authority delegation | 5 | yes | SCRUM-12 |
+| SCRUM-19 (#73) | 1.2.4 Fixes from the Feature 1.2 validation (§12 F-1…F-10) | 5 | no | SCRUM-13, SCRUM-14 |
 
 SCRUM-13 and SCRUM-14 fix their API contract in `openapi.yml` first; the Angular pages are then built against the contract while the backend is in progress.
 
@@ -79,6 +80,19 @@ SCRUM-13 and SCRUM-14 fix their API contract in `openapi.yml` first; the Angular
 - **AC-3.5** `GET /api/v1/delegations` lists delegations given and received by the caller (`state` = `active` | `upcoming` | `expired` | `revoked`); `SYSTEM_ADMIN` may list for any `delegatorId`. Creation and revocation write `DELEGATION_CREATED` / `DELEGATION_REVOKED` to `audit_logs` and email the delegate (and the delegator on revocation by somebody else).
 - **AC-3.6** Angular: `/delegations` (guarded by an approval role) shows «Мої делегування» given and received with state chips, «Делегувати повноваження» dialog (role from the caller's roles, delegate picked from the scoped directory, dates with the 90-day limit, reason), revoke with confirmation; the profile header shows «Діє за дорученням: <ім'я>» while a received delegation is active.
 
+### 1.2.4 Fixes from the Feature 1.2 validation (SCRUM-19)
+
+- **AC-4.1** Given a user who already holds or held a role, when `updateOrganization` arrives without `fromOrganizationId` (a stale «Підтвердити»: the app never sends it) or with one that is no longer the user's organisation, then 409 `membership-already-confirmed` and neither the organisation nor the roles change. A deliberate department move (§5) sends the department it moves the user from. (F-1)
+- **AC-4.2** Given an assignment whose `valid_to` is before its `valid_from` (revoked before it started), then it counts as ended: a second revocation answers 409 `role-already-revoked` with no audit row, email or sign-out. (F-2)
+- **AC-4.3** Given a user moved to another department through the confirmation, then delegations the user received for organisations in whose subtree they no longer hold any current role are revoked in the same transaction (`revoked_by` = the actor, audited, delegate and delegator emailed) — the same rule that made them eligible (AC-3.1). A delegation for an organisation where the user still holds another role survives the move. (F-3)
+- **AC-4.4** Given `GET /api/v1/users/{id}` for a `DELETED` account, then 404, as for `PENDING`. (F-4)
+- **AC-4.5** Given a 409 in the assign, confirm, revoke or delegation dialogs, then the refusal is shown and the user detail, the user list or the delegation list is reloaded. (F-5)
+- **AC-4.6** Given a 401 from the API while a refresh token is held, then the app refreshes once and repeats the request, signing out only if that fails; in the `local` profile a generated signing key is kept in `~/.award-monitoring/dev-jwk.json` (`AUTH_JWK_DEV_KEY_FILE`) and reused on the next start, so a backend restart keeps pages signed in. No private key is committed. (F-6)
+- **AC-4.7** Given a 429 in the admin and delegation dialogs, then «Забагато запитів. Спробуйте пізніше.» / "Too many requests. Try again later." is shown. (F-7)
+- **AC-4.8** Given `/admin/users/abc` or any non-numeric id, then the «Не знайдено» page is shown without calling the API. (F-8)
+- **AC-4.9** Given two simultaneous revocations of one delegation, then the row is locked, one answers 204 and the other 409, with one audit row and one email. (F-9)
+- **AC-4.10** §5 and AUTH §9 state the Redis-down window of role and delegation revocation (F-10).
+
 ## 5. Edge cases
 
 - Role rows with `valid_from` in the future are not current: they neither appear in the token nor count for scope until that day; they are listed under "upcoming" in the user detail.
@@ -90,7 +104,7 @@ SCRUM-13 and SCRUM-14 fix their API contract in `openapi.yml` first; the Angular
 - A delegate who is suspended or deleted: the token customizer only issues tokens to accounts that can log in, so nothing extra; the delegation stays listed as active and is cleaned up by revocation when the delegator notices — recorded as a known gap for Feature 1.3 (account deactivation revokes received delegations).
 - Time zones: validity dates are calendar dates in `Europe/Kyiv`; the application clock carries that zone and the customizer, the profile and the directory use `LocalDate.now(clock)`, so a delegation ending "today" works until midnight Kyiv time.
 - `SYSTEM_ADMIN` never receives approval delegations (not an approval role) and cannot be a delegator.
-- Redis down: role revocation still ends sessions (the not-before key is best effort, as in 1.1.6); the access-denied audit row is written to PostgreSQL in its own transaction, so a refusal inside a rolled-back request still leaves its trace, and a failing audit insert never turns a 403 into a 500.
+- Redis down: role revocation still ends sessions (the not-before key is best effort, as in 1.1.6), so no new access token is issued, but an access token issued before the revocation stays usable until it expires (at most 15 minutes) — "at once" in AC-2.4 and AC-3.4 holds while Redis is up. Accepted: the outage is logged, the window equals the one AUTH §9 already accepts for account suspension, and checking every API call against PostgreSQL would put a query on each request to close a window that exists only during an outage; the access-denied audit row is written to PostgreSQL in its own transaction, so a refusal inside a rolled-back request still leaves its trace, and a failing audit insert never turns a 403 into a 500.
 - Directory search `q` shorter than two characters is ignored; email matching is case-insensitive; no wildcard injection (parameters bound, `%`/`_` escaped).
 
 ## 6. Dependencies
@@ -207,8 +221,9 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 23. Run `docker compose exec redis redis-cli FLUSHDB`, then revoke a role → still 204 and the target's next call is 401 (sessions ended; the not-before key is best effort). (§5)
 24. Two secretaries of faculty 9 open `/admin/users?unconfirmed=true`. The first confirms the newcomer with a corrected department; the second clicks «Підтвердити» on the stale row → 409 inline, the list reloads, the newcomer stays in the corrected department. (AC-2.7, F-1, after 1.2.4)
 25. As the dean assign `FACULTY_SECRETARY` to `employee.fmi` starting next week, revoke it, then revoke the same row again from a stale tab → 409 `role-already-revoked`, one `ROLE_REVOKED` row, one email. (AC-2.4, F-2, after 1.2.4)
-26. Delegate `DEAN` to `secretary.fmi`, then as the administrator move the secretary to another faculty's department → the secretary's next token carries no `delegations` claim and the delegation shows «Відкликано». (AC-3.2, §5, F-3, after 1.2.4)
-27. Open `http://localhost:4200/admin/users/abc` → «Не знайдено». Send more than the local request limit from the assign dialog → a translated «Забагато запитів» message, not a raw key. (AC-1.7, F-7, F-8, after 1.2.4)
+26. As the dean delegate `DEAN` to `employee.fmi` (only role `EMPLOYEE` in department 64), then as the administrator in Swagger move them to another faculty's department: `POST /api/v1/users/{employee id}/roles` with `{"role": "EMPLOYEE", "organizationId": 69, "updateOrganization": true, "fromOrganizationId": 64}` → 201; the old `EMPLOYEE` role ends yesterday, the next token carries no `delegations` claim and the delegation shows «Відкликано». The same body again → 409 `membership-already-confirmed` (the user is no longer in 64). (AC-3.2, §5, F-1, F-3, after 1.2.4)
+27. Open `http://localhost:4200/admin/users/abc` → «Не знайдено», and the browser's network tab shows no request for `abc`. The API limits only the authentication endpoints, so a 429 cannot be provoked from the admin dialogs by hand; the translated «Забагато запитів» text is covered by `assign-role-dialog.component.spec`. (AC-1.7, F-7, F-8, after 1.2.4)
+28. With the admin page open as the dean, restart the backend (`Ctrl+C`, then `./mvnw spring-boot:run -Dspring-boot.run.profiles=local`) and click a filter once it is healthy → the list reloads, no login page; the backend log names the kept key file instead of "generating a key that will not survive a restart". (AC-4.6, F-6, after 1.2.4)
 
 ## 10. Risks
 
@@ -306,7 +321,7 @@ Scenario review of the detour checklist (direct URLs, restart mid-flow, token ex
 | F-7 | A 429 in the admin and delegation dialogs shows the raw key `…problems.too-many-requests` | 1.2.4: uk and en texts |
 | F-8 | `/admin/users/abc` shows the generic error instead of «Не знайдено» (the API answers 400) | 1.2.4: non-numeric id treated as not found |
 | F-9 | Two simultaneous revocations of one delegation both succeed (no row lock), writing two audit rows and two emails | 1.2.4: pessimistic lock on revocation |
-| F-10 | With Redis down, a revoked role stays usable until the access token expires (≤ 15 min); §5 and AC-2.4 say "at once" | Decision pending: document the window in §5 and AUTH §9, or check revocation against PostgreSQL |
+| F-10 | With Redis down, a revoked role stays usable until the access token expires (≤ 15 min); §5 and AC-2.4 say "at once" | Accepted and documented in §5 and AUTH §9 (1.2.4, AC-4.10) |
 | F-11 | Refactor sweep (11 items): scope visibility check written three times, `activeOrganization` and `user:manage` constant duplicated, name helpers copied between recorders, `UserDirectoryService.detail` re-implements `UserRole.isCurrentOn`, FT helpers and unit fixtures copied across three classes, organisation-name wrapper in nine Angular components, `delegations` importing from `admin`, `OnPush` missing on admin components, `AuthMailer` serving three domains | Worth-it items in a `refactor(authz)` PR after 1.2.4; `AuthMailer` split listed in the tracker's technical notes |
 
 Verdict: **PASSED WITH NOTES**: every AC has passing evidence, and nine defects need fixing in 1.2.4. The author's run of §9 comes after 1.2.4 is merged.

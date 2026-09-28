@@ -1,3 +1,4 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
@@ -12,15 +13,17 @@ import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { Store } from '@ngrx/store';
 import { forkJoin } from 'rxjs';
 
-import { problemType } from '../../../core/api/problem';
+import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { grantableRoles } from '../../../core/auth/permissions';
 import { RoleAssignment, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { OrganizationSummary } from '../../auth/registration.service';
 import { organizationName, organizationTypesFor, today } from '../role-organizations';
+import { AdminUsersActions } from '../store/admin-users.actions';
 import { UserSummary, UsersService } from '../users.service';
 
 @Component({
@@ -41,9 +44,17 @@ import { UserSummary, UsersService } from '../users.service';
   ],
   templateUrl: './assign-role-dialog.component.html',
   styles: `
-    .admin__form { display: flex; flex-direction: column; }
-    .admin__field { width: 100%; }
-    .admin__problem { color: var(--mat-sys-error, #b3261e); margin: 0; }
+    .admin__form {
+      display: flex;
+      flex-direction: column;
+    }
+    .admin__field {
+      width: 100%;
+    }
+    .admin__problem {
+      color: var(--mat-sys-error, #b3261e);
+      margin: 0;
+    }
   `,
 })
 export class AssignRoleDialogComponent {
@@ -51,6 +62,7 @@ export class AssignRoleDialogComponent {
   private readonly api = inject(UsersService);
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
+  private readonly store = inject(Store);
 
   protected readonly user = inject<UserSummary>(MAT_DIALOG_DATA);
   protected readonly dialog =
@@ -108,6 +120,9 @@ export class AssignRoleDialogComponent {
         error: (err: unknown) => {
           this.error.set(`admin.problems.${problemType(err)}`);
           this.submitting.set(false);
+          if (problemStatus(err) === HttpStatusCode.Conflict) {
+            this.store.dispatch(AdminUsersActions.userReloaded({ id: this.user.id }));
+          }
         },
       });
   }

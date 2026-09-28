@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/h
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
-import { firstValueFrom } from 'rxjs';
+import { debounceTime, filter, firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { authConfig } from './auth.config';
@@ -26,6 +26,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private loginStarted = false;
+  private refreshing: Promise<string | null> | null = null;
 
   readonly isAuthenticated = signal(false);
   readonly accessToken = signal<string | null>(null);
@@ -45,7 +46,10 @@ export class AuthService {
       if (event.type === 'logout') {
         this.forget();
       }
-      if (event.type === 'session_terminated' || (event.type === 'token_refresh_error' && refused(event))) {
+      if (
+        event.type === 'session_terminated' ||
+        (event.type === 'token_refresh_error' && refused(event))
+      ) {
         this.signedOutElsewhere();
       }
     });
@@ -55,7 +59,14 @@ export class AuthService {
       }
     });
     await this.oauth.loadDiscoveryDocumentAndTryLogin();
-    this.oauth.setupAutomaticSilentRefresh();
+    this.oauth.events
+      .pipe(
+        filter((event) => event.type === 'token_expires'),
+        debounceTime(1000),
+      )
+      .subscribe(() => {
+        this.refreshOnce().catch(() => undefined);
+      });
     if (this.oauth.hasValidAccessToken()) {
       try {
         await this.loadProfile();
@@ -92,9 +103,43 @@ export class AuthService {
   }
 
   async loadProfile(): Promise<UserProfile> {
-    const profile = await firstValueFrom(this.http.get<UserProfile>(`${environment.apiUrl}/users/me`));
+    const profile = await firstValueFrom(
+      this.http.get<UserProfile>(`${environment.apiUrl}/users/me`),
+    );
     this.profile.set(profile);
     return profile;
+  }
+
+  /**
+   * Renews the access token once for the expiry timer and every request refused at the same moment, because a
+   * refresh token presented twice ends the whole session. A token renewed since the refused request was sent
+   * is handed out without another refresh.
+   *
+   * @param refusedToken the access token the refused request carried, if any
+   * @returns the access token to use, or null when there is no refresh token or the server refused it; a
+   *          network or server failure rejects, so the caller keeps the session
+   */
+  refreshOnce(refusedToken?: string | null): Promise<string | null> {
+    const current = this.oauth.getAccessToken() || null;
+    if (refusedToken && current && current !== refusedToken && this.oauth.hasValidAccessToken()) {
+      return Promise.resolve(current);
+    }
+    if (!this.oauth.getRefreshToken()) {
+      return Promise.resolve(null);
+    }
+    this.refreshing ??= this.oauth
+      .refreshToken()
+      .then(() => this.oauth.getAccessToken() || null)
+      .catch((err: unknown) => {
+        if (refusedError(err)) {
+          return null;
+        }
+        throw err;
+      })
+      .finally(() => {
+        this.refreshing = null;
+      });
+    return this.refreshing;
   }
 
   /** The session was ended elsewhere (reset, revocation): drop the tokens and, on a guarded page, sign in again. */
@@ -124,7 +169,10 @@ export class AuthService {
 
 /** A refresh answered 400 (`invalid_grant`) or 401: the refresh token is gone. Other failures are transient. */
 function refused(event: OAuthErrorEvent | { type: string }): boolean {
-  const reason = (event as OAuthErrorEvent).reason;
+  return refusedError((event as OAuthErrorEvent).reason);
+}
+
+function refusedError(reason: unknown): boolean {
   return (
     reason instanceof HttpErrorResponse &&
     (reason.status === HttpStatusCode.BadRequest || reason.status === HttpStatusCode.Unauthorized)

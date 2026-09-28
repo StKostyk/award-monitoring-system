@@ -45,6 +45,7 @@ export const delegationsFeature = createFeature({
       revokingId: null,
       revokeProblem: null,
     })),
+    on(DelegationsActions.refreshed, (state) => ({ ...state, loading: true, problem: null })),
     on(DelegationsActions.delegationsLoaded, (state, { list }) => ({
       ...state,
       given: list.given,

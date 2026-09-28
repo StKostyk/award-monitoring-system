@@ -146,6 +146,7 @@ app:
       key-id: ${AUTH_JWK_KEY_ID:}
       private-key: ${AUTH_JWK_PRIVATE_KEY:}
       public-key: ${AUTH_JWK_PUBLIC_KEY:}
+      dev-key-file: ${AUTH_JWK_DEV_KEY_FILE:}
 
 # Server Configuration
 server:
@@ -269,6 +270,9 @@ app:
     protection:
       # room for the browser test suite; the container and production stacks keep the default
       requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:120}
+    # a restarted development server keeps accepting the tokens it issued
+    jwk:
+      dev-key-file: ${AUTH_JWK_DEV_KEY_FILE:${user.home}/.award-monitoring/dev-jwk.json}
 
 ---
 spring:

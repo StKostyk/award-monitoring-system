@@ -1,3 +1,4 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
@@ -19,6 +20,7 @@ export class AdminUsersEffects {
       ofType(
         AdminUsersActions.opened,
         AdminUsersActions.reloaded,
+        AdminUsersActions.refreshed,
         AdminUsersActions.filtersChanged,
         AdminUsersActions.pageChanged,
       ),
@@ -42,9 +44,15 @@ export class AdminUsersEffects {
           .assignRole(id, { role: 'EMPLOYEE', organizationId, updateOrganization: true })
           .pipe(
             map(() => AdminUsersActions.reloaded()),
-            catchError((error: unknown) =>
-              of(AdminUsersActions.membershipConfirmFailed({ id, problem: problemType(error) })),
-            ),
+            catchError((error: unknown) => {
+              const failed = AdminUsersActions.membershipConfirmFailed({
+                id,
+                problem: problemType(error),
+              });
+              return problemStatus(error) === HttpStatusCode.Conflict
+                ? of(failed, AdminUsersActions.refreshed())
+                : of(failed);
+            }),
           ),
       ),
     ),
@@ -54,17 +62,19 @@ export class AdminUsersEffects {
     this.actions$.pipe(
       ofType(AdminUsersActions.userOpened, AdminUsersActions.userReloaded),
       switchMap(({ id }) =>
-        this.users.get(id).pipe(
-          map((user) => AdminUsersActions.userLoaded({ user })),
-          catchError((error: unknown) =>
-            of(
-              AdminUsersActions.userLoadFailed({
-                problem: problemType(error),
-                notFound: problemStatus(error) === 404,
-              }),
+        !Number.isSafeInteger(id) || id <= 0
+          ? of(AdminUsersActions.userLoadFailed({ problem: 'unknown', notFound: true }))
+          : this.users.get(id).pipe(
+              map((user) => AdminUsersActions.userLoaded({ user })),
+              catchError((error: unknown) =>
+                of(
+                  AdminUsersActions.userLoadFailed({
+                    problem: problemType(error),
+                    notFound: problemStatus(error) === 404,
+                  }),
+                ),
+              ),
             ),
-          ),
-        ),
       ),
     ),
   );

@@ -5,12 +5,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { Store } from '@ngrx/store';
 import { vi } from 'vitest';
 
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { AdminUsersActions } from '../store/admin-users.actions';
 import { UserSummary } from '../users.service';
 import { AssignRoleDialogComponent } from './assign-role-dialog.component';
 
@@ -46,10 +48,16 @@ const translations = {
         submit: 'Призначити',
         cancel: 'Скасувати',
         noRoles: 'Ви не можете призначати ролі.',
-        validation: { required: 'Обовʼязкове поле', past: 'Не в минулому', order: 'Хибний порядок' },
+        validation: {
+          required: 'Обовʼязкове поле',
+          past: 'Не в минулому',
+          order: 'Хибний порядок',
+        },
       },
       problems: {
         'role-above-level': 'Роль вища за ваш рівень',
+        'role-already-assigned': 'Користувач уже має цю роль',
+        'too-many-requests': 'Забагато запитів. Спробуйте пізніше.',
         network: 'Сервер недоступний. Спробуйте пізніше.',
       },
     },
@@ -64,8 +72,10 @@ async function build(scopes: string[]): Promise<{
   fixture: ComponentFixture<AssignRoleDialogComponent>;
   http: HttpTestingController;
   close: ReturnType<typeof vi.fn>;
+  dispatch: ReturnType<typeof vi.fn>;
 }> {
   const close = vi.fn();
+  const dispatch = vi.fn();
   await TestBed.configureTestingModule({
     imports: [
       AssignRoleDialogComponent,
@@ -81,6 +91,7 @@ async function build(scopes: string[]): Promise<{
       { provide: MAT_DIALOG_DATA, useValue: user },
       { provide: MatDialogRef, useValue: { close } },
       { provide: LanguageService, useValue: { current: () => 'uk' } },
+      { provide: Store, useValue: { dispatch } },
       {
         provide: AuthService,
         useValue: { permissions: signal(readPermissions(token({ role_scopes: scopes }))) },
@@ -89,7 +100,13 @@ async function build(scopes: string[]): Promise<{
   }).compileComponents();
   const fixture = TestBed.createComponent(AssignRoleDialogComponent);
   fixture.detectChanges();
-  return { fixture, http: TestBed.inject(HttpTestingController), close };
+  return { fixture, http: TestBed.inject(HttpTestingController), close, dispatch };
+}
+
+function refuse(http: HttpTestingController, type: string, status: number): void {
+  http
+    .expectOne(`${environment.apiUrl}/users/7/roles`)
+    .flush({ type: `urn:awards:problem:${type}`, status }, { status, statusText: 'Refused' });
 }
 
 describe('AssignRoleDialogComponent', () => {
@@ -99,7 +116,9 @@ describe('AssignRoleDialogComponent', () => {
     const secretary = await build(['FACULTY_SECRETARY:9']);
 
     expect(secretary.fixture.componentInstance.form.enabled).toBe(true);
-    expect(secretary.fixture.nativeElement.textContent).not.toContain('Ви не можете призначати ролі.');
+    expect(secretary.fixture.nativeElement.textContent).not.toContain(
+      'Ви не можете призначати ролі.',
+    );
     TestBed.resetTestingModule();
 
     const dean = await build(['DEAN:9']);
@@ -116,9 +135,9 @@ describe('AssignRoleDialogComponent', () => {
   it('ac2_10_tells_a_caller_without_grant_rights_that_nothing_can_be_assigned', async () => {
     const { fixture } = await build(['EMPLOYEE:64']);
 
-    expect(fixture.nativeElement.querySelector('[data-testid="assign-no-roles"]').textContent).toContain(
-      'Ви не можете призначати ролі.',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="assign-no-roles"]').textContent,
+    ).toContain('Ви не можете призначати ролі.');
     expect(fixture.nativeElement.querySelector('[data-testid="assign-submit"]')).toBeNull();
   });
 
@@ -150,9 +169,9 @@ describe('AssignRoleDialogComponent', () => {
     request.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="assign-error"]').textContent).toContain(
-      'Сервер недоступний',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="assign-error"]').textContent,
+    ).toContain('Сервер недоступний');
     expect(form.controls.organizationId.value).toBe(64);
     expect(close).not.toHaveBeenCalled();
   });
@@ -170,9 +189,37 @@ describe('AssignRoleDialogComponent', () => {
       );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="assign-error"]').textContent).toContain(
-      'Роль вища за ваш рівень',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="assign-error"]').textContent,
+    ).toContain('Роль вища за ваш рівень');
     expect(close).not.toHaveBeenCalled();
+  });
+
+  it('ac4_5_reloads_the_user_behind_the_dialog_after_a_conflict', async () => {
+    const { fixture, http, dispatch } = await build(['DEAN:9']);
+    fixture.componentInstance.form.patchValue({ role: 'EMPLOYEE', organizationId: 64 });
+
+    fixture.componentInstance.submit();
+    refuse(http, 'role-already-assigned', 409);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="assign-error"]').textContent,
+    ).toContain('Користувач уже має цю роль');
+    expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.userReloaded({ id: 7 }));
+  });
+
+  it('ac4_7_translates_a_rate_limit_refusal_and_reloads_nothing', async () => {
+    const { fixture, http, dispatch } = await build(['DEAN:9']);
+    fixture.componentInstance.form.patchValue({ role: 'EMPLOYEE', organizationId: 64 });
+
+    fixture.componentInstance.submit();
+    refuse(http, 'too-many-requests', 429);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="assign-error"]').textContent,
+    ).toContain('Забагато запитів');
+    expect(dispatch).not.toHaveBeenCalled();
   });
 });

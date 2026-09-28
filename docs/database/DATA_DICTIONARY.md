@@ -242,7 +242,8 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - The delegate must be another active user holding a current role inside the organization's subtree (`ck_role_delegations_parties`)
 - The period is mandatory at both ends and lasts at most 90 days (`ck_role_delegations_dates`); it simply stops applying after `valid_to`, without any job
 - One standing delegation of a role per organization per delegator at a time: overlapping periods are refused by the application
-- A delegation taken back keeps its row with `revoked_at` and `revoked_by`; revoking the underlying role takes back what it had lent in the same transaction
+- A delegation taken back keeps its row with `revoked_at` and `revoked_by`; revoking the underlying role takes back what it had lent in the same transaction, and moving the delegate to another department takes back what they had borrowed for organizations in which they no longer hold any role
+- Every revocation path locks the rows it ends (`SELECT … FOR UPDATE`), so two revocations arriving at once end a delegation once
 - The delegate carries the borrowed authority in the `delegations` token claim (`ROLE:orgId:delegatorId`) and in `role_scopes`, and is signed out everywhere when it is taken back
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
