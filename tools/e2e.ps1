@@ -18,6 +18,12 @@ $started = $null
 
 docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio | Out-Null
 
+if (docker ps --filter 'name=^award-backend$' --filter 'status=running' --format '{{.Names}}') {
+    Write-Host 'Port 8080 is served by the award-backend container, not by this branch.'
+    Write-Host 'Stop it first: docker compose stop app'
+    exit 1
+}
+
 if (-not (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue)) {
     $log = Join-Path $root 'build\e2e-backend.log'
     New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null
