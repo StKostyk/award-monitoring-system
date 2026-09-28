@@ -4,7 +4,7 @@
 > **Last Updated**: September 2026  
 > **Total Story Points**: 154  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
-> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5
+> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20
 
 Every story is tracked twice: a Jira issue for the sprint board and a GitHub issue that the pull request closes.
 
@@ -31,22 +31,24 @@ Committed Points: 46 (Feature 1.2 pulled forward: the sprint goal was met on day
 
 ## Backlog (Prioritized)
 
-### Epic 1 — remaining (Sprint 3)
+### Epic 2 — next (Jira epic SCRUM-20)
+Feature 2.1 PRD approved 2026-09-28: [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md).
+
+| ID | Story | Points | Feature | Jira | Issue |
+|----|-------|--------|---------|------|-------|
+| 2.1.0 | Award domain model and category catalogue (in review) | 3 | 2.1 | SCRUM-21 | [#43](https://github.com/StKostyk/award-monitoring-system/issues/43) |
+| 2.1.1 | Award draft and submission (US-003) | 8 | 2.1 | SCRUM-22 | [#44](https://github.com/StKostyk/award-monitoring-system/issues/44) |
+| 2.1.2 | Award date and duplicate validation | 3 | 2.1 | SCRUM-23 | [#76](https://github.com/StKostyk/award-monitoring-system/issues/76) |
+| 2.1.3 | Award category suggestion | 3 | 2.1 | SCRUM-24 | [#77](https://github.com/StKostyk/award-monitoring-system/issues/77) |
+| 2.2.1 | Award version recording | 5 | 2.2 | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
+| 2.2.2 | Version history view and audit export | 5 | 2.2 | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
+| 2.3.1 | Award status tracking (US-005) | 5 | 2.3 | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
+
+### Epic 1 — remaining (after Feature 2.1)
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
 | 1.3.1 | Profile information update | 3 | 1.3 | SCRUM-15 | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
-| 1.3.2 | Notification preferences | 3 | 1.3 | SCRUM-16 | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |
 | 1.3.3 | GDPR data portability (US-011, partial) | 5 | 1.3 | SCRUM-17 | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
-
-### Epic 2 — next
-| ID | Story | Points | Epic | Issue |
-|----|-------|--------|------|-------|
-| 2.0 | Award domain entities | 5 | Awards | [#43](https://github.com/StKostyk/award-monitoring-system/issues/43) |
-| US-003 | Quick Award Submission | 8 | Awards | [#44](https://github.com/StKostyk/award-monitoring-system/issues/44) |
-| 2.1.2 | Award Date Validation | - | Awards | |
-| 2.1.3 | Smart Award Categorization | - | Awards | |
-| 2.2.1 | Automatic Change Tracking | - | Awards | |
-| 2.2.2 | Version History Display | - | Awards | |
 
 ### Later epics
 | ID | Story | Points | Epic |
@@ -56,9 +58,9 @@ Committed Points: 46 (Feature 1.2 pulled forward: the sprint goal was met on day
 | US-007 | Confidence Score Display | - | Documents |
 | US-004 | Multi-Level Approval Routing | - | Workflows |
 | 4.2.1 | Automatic Escalation | - | Workflows |
-| US-005 | Real-Time Status Updates | - | Awards |
-| 2.4.1 | Award Error Correction | - | Awards |
-| 2.4.2 | GDPR-Compliant Deletion | - | Awards |
+| 2.4.1 | Award correction by reviewers (end of Epic 4) | 5 | Workflows |
+| 1.3.2 | Notification preferences (SCRUM-16, [#39](https://github.com/StKostyk/award-monitoring-system/issues/39)) | 3 | Notifications |
+| 2.4.2 | GDPR-compliant award deletion | 5 | Compliance |
 | US-008 | Personal Dashboard | 13 | Analytics |
 | US-010 | Executive Dashboard | 21 | Analytics |
 

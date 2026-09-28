@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -14,6 +15,9 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
+import ua.edu.chnu.awards.award.dto.AwardCategoryResponse;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
+import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.delegation.dto.DelegationResponse;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -29,7 +33,7 @@ class OpenApiContractTest {
         Map<String, Object> user = (Map<String, Object>) schemas.get("User");
         Map<String, Object> properties = (Map<String, Object>) user.get("properties");
         List<String> dto = Stream.of(UserProfileResponse.class.getRecordComponents())
-            .map(component -> component.getName()).toList();
+            .map(RecordComponent::getName).toList();
 
         assertThat(properties.keySet()).containsExactlyInAnyOrderElementsOf(dto);
         assertThat(property(properties, "id")).containsEntry("format", "int64");
@@ -57,7 +61,7 @@ class OpenApiContractTest {
         Map<String, Object> delegation = (Map<String, Object>) schemas.get("Delegation");
         Map<String, Object> properties = (Map<String, Object>) delegation.get("properties");
         List<String> dto = Stream.of(DelegationResponse.class.getRecordComponents())
-            .map(component -> component.getName()).toList();
+            .map(RecordComponent::getName).toList();
 
         assertThat(properties.keySet()).containsExactlyInAnyOrderElementsOf(dto);
         assertThat(property(properties, "organization"))
@@ -74,6 +78,51 @@ class OpenApiContractTest {
 
         assertThat((List<String>) state.get("enum")).containsExactlyElementsOf(
             Arrays.stream(DelegationState.values()).map(DelegationState::value).toList());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac05_awardCategorySchemaMatchesTheCatalogueNode() throws IOException {
+        Map<String, Object> category = (Map<String, Object>) schemas().get("AwardCategory");
+        Map<String, Object> properties = (Map<String, Object>) category.get("properties");
+        List<String> dto = Stream.of(AwardCategoryResponse.class.getRecordComponents())
+            .map(RecordComponent::getName).toList();
+
+        assertThat(properties.keySet()).containsExactlyInAnyOrderElementsOf(dto);
+        assertThat(property(properties, "id")).containsEntry("format", "int64");
+        assertThat(property(properties, "level")).containsEntry("$ref", "#/components/schemas/RecognitionLevel");
+        assertThat(property(property(properties, "children"), "items"))
+            .containsEntry("$ref", "#/components/schemas/AwardCategory");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac05_levelEnumsMatchTheSchemaOfRecord() throws IOException {
+        Map<String, Object> schemas = schemas();
+
+        assertThat((List<String>) ((Map<String, Object>) schemas.get("RecognitionLevel")).get("enum"))
+            .containsExactlyElementsOf(Arrays.stream(RecognitionLevel.values()).map(Enum::name).toList());
+        assertThat((List<String>) ((Map<String, Object>) schemas.get("ApprovalLevel")).get("enum"))
+            .containsExactlyElementsOf(Arrays.stream(ApprovalLevel.values()).map(Enum::name).toList());
+        assertThat((List<String>) ((Map<String, Object>) schemas.get("AwardStatus")).get("enum"))
+            .containsExactly("DRAFT", "PENDING", "APPROVED", "REJECTED", "ARCHIVED");
+        assertThat((List<String>) ((Map<String, Object>) schemas.get("RequestStatus")).get("enum"))
+            .containsExactly("SUBMITTED", "IN_REVIEW", "ESCALATED", "APPROVED", "REJECTED", "RETURNED", "EXPIRED");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac05_awardIdsAreIntegersAndTheTitleFollowsTheColumn() throws IOException {
+        Map<String, Object> schemas = schemas();
+        Map<String, Object> award = property((Map<String, Object>) schemas.get("Award"), "properties");
+        Map<String, Object> create = property((Map<String, Object>) schemas.get("AwardCreateRequest"),
+            "properties");
+
+        assertThat(property(award, "id")).containsEntry("format", "int64");
+        assertThat(award).containsKeys("titleUk", "descriptionUk", "awardingOrganization", "request")
+            .doesNotContainKey("issuingOrganization");
+        assertThat(property(create, "title")).containsEntry("maxLength", 500);
+        assertThat(property(create, "categoryId")).containsEntry("format", "int64");
     }
 
     @SuppressWarnings("unchecked")

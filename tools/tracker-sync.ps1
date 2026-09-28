@@ -8,6 +8,8 @@
       create-epic  create a Jira epic: -Summary
       create-story create a Jira story: -Summary, -Points, -Epic SCRUM-nn, optional -GitHub nn (link added to the description)
       set-epic     attach a story to an epic: -Jira SCRUM-nn -Epic SCRUM-nn
+      describe     replace the description: -BodyFile file, -Jira SCRUM-nn and/or -GitHub nn; lines starting
+                   with "- " become a bullet list in Jira, other non-empty lines paragraphs; GitHub gets the file as is
       fields       print the Jira field ids used (story points, epic link)
 
     Jira uses the REST API with an API token:
@@ -18,12 +20,13 @@
 
 .EXAMPLE
     .\tools\tracker-sync.ps1 status -Jira SCRUM-12 -GitHub 42 -Status InProgress
+    .\tools\tracker-sync.ps1 describe -Jira SCRUM-21 -GitHub 43 -BodyFile story.md
     .\tools\tracker-sync.ps1 create-story -Summary "1.1.0 User domain entities and auth schema" -Points 3 -Epic SCRUM-1 -GitHub 42
 #>
 [CmdletBinding()]
 param(
     [Parameter(Position = 0, Mandatory = $true)]
-    [ValidateSet('status', 'create-epic', 'create-story', 'set-epic', 'fields')]
+    [ValidateSet('status', 'create-epic', 'create-story', 'set-epic', 'describe', 'fields')]
     [string]$Action,
     [string]$Jira,
     [int]$GitHub,
@@ -32,6 +35,7 @@ param(
     [string]$Summary,
     [int]$Points,
     [string]$Epic,
+    [string]$BodyFile,
     [string]$Project = 'SCRUM',
     [string]$Repo = 'StKostyk/award-monitoring-system'
 )
@@ -104,6 +108,32 @@ switch ($Action) {
         if (-not $Jira -or -not $Epic) { throw '-Jira and -Epic are required' }
         Jira-Put "/issue/$Jira" @{ fields = @{ parent = @{ key = $Epic } } } | Out-Null
         Write-Host "$Jira -> $Epic"
+    }
+    'describe' {
+        if (-not $BodyFile -or -not (Test-Path $BodyFile)) { throw '-BodyFile must name an existing file' }
+        if ($Jira) {
+            $blocks = [System.Collections.Generic.List[object]]::new()
+            $items = [System.Collections.Generic.List[object]]::new()
+            foreach ($line in (Get-Content -Encoding UTF8 $BodyFile | Where-Object { $_.Trim() })) {
+                if ($line.StartsWith('- ')) {
+                    $items.Add(@{ type = 'listItem'; content = @((Adf $line.Substring(2)).content[0]) })
+                } else {
+                    $blocks.Add((Adf $line).content[0])
+                }
+            }
+            if ($items.Count) { $blocks.Add(@{ type = 'bulletList'; content = $items.ToArray() }) }
+            $doc = @{ type = 'doc'; version = 1; content = $blocks.ToArray() }
+            $json = @{ fields = @{ description = $doc } } | ConvertTo-Json -Depth 20
+            $headers = Jira-Headers
+            $headers['Content-Type'] = 'application/json; charset=utf-8'
+            Invoke-RestMethod -Uri "$base/issue/$Jira" -Headers $headers -Method Put `
+                -Body ([Text.Encoding]::UTF8.GetBytes($json)) | Out-Null
+            Write-Host "$Jira description updated"
+        }
+        if ($GitHub) {
+            & gh issue edit $GitHub --repo $Repo --body-file $BodyFile | Out-Null
+            Write-Host "#$GitHub body updated"
+        }
     }
     'create-epic' {
         if (-not $Summary) { throw '-Summary is required' }
