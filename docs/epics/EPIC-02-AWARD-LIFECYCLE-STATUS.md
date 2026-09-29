@@ -16,7 +16,7 @@
 
 ## Current focus
 
-Feature 2.1 in validation: 2.1.0–2.1.3 (SCRUM-21–24) done; the validation run of 2026-09-29 found the defects fixed in 2.1.4 (SCRUM-28, in review), then the manual run of PRD §9. After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
+Feature 2.1 in validation: 2.1.0–2.1.3 (SCRUM-21–24) done; the validation run of 2026-09-29 found the defects fixed in 2.1.4 (SCRUM-28, done), then the manual run of PRD §9. After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
 
 ## Scope
 
@@ -36,7 +36,7 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 2 | 2.1.1 Award draft and submission (US-003) | 2.1 | 8 | SCRUM-22 | #44 | yes | Done |
 | 3 | 2.1.2 Award date and duplicate validation | 2.1 | 3 | SCRUM-23 | #76 | no | Done |
 | 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | Done |
-| 5 | 2.1.4 Fixes from the Feature 2.1 validation | 2.1 | 5 | SCRUM-28 | #85 | no | In Review |
+| 5 | 2.1.4 Fixes from the Feature 2.1 validation | 2.1 | 5 | SCRUM-28 | #85 | no | Done |
 | 6 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | Ready |
 | 7 | 2.2.2 Version history view and audit export | 2.2 | 5 | SCRUM-26 | #79 | yes | Ready |
 | 8 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | yes | Ready |
@@ -81,6 +81,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 - `ck_awards_date` compares with `CURRENT_DATE` in the database session zone (UTC), so between 00:00 and 03:00 Kyiv time it refuses an award dated today that the application accepts; V020 recreates it as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`.
 - `trg_awards_audit` reads `app.current_user_id`, which the application never sets: trigger rows carry no actor. Part of the 2.2 design note.
 - Known limits of the category suggestion (Feature 2.1 validation): a unit of another university with the same name as a ChNU unit ("Faculty of Law, …") matches the ChNU unit; the keywords, the organisation tree and the caller's history are read on every request, without a cache. Revisit if the pilot shows wrong chips or slow answers.
+- `award-form.component.ts` holds about 560 lines (form, date rules, suggestions, duplicate dialog, local copies). Split the suggestion chips and the duplicate handling into child components when Feature 2.2 adds the review view to it.
 
 ## Risks
 

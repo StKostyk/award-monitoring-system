@@ -38,7 +38,7 @@ import {
   tap,
 } from 'rxjs';
 
-import { problemStatus, problemType } from '../../../core/api/problem';
+import { fieldProblems, problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
@@ -56,7 +56,6 @@ import {
   awardTitle,
   categoryName,
   duplicateMatches,
-  fieldProblems,
   flattenCategories,
   isRecent,
   kyivToday,

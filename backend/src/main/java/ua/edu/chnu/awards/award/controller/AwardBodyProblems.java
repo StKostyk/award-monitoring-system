@@ -1,13 +1,11 @@
 package ua.edu.chnu.awards.award.controller;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 
+import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
 
 /**
@@ -24,8 +23,6 @@ import ua.edu.chnu.awards.common.web.FieldViolation;
 @RestControllerAdvice(assignableTypes = AwardController.class)
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class AwardBodyProblems {
-
-    static final String TYPE = "urn:awards:problem:validation-failed";
 
     /**
      * Turns an unreadable body into a field error.
@@ -39,12 +36,8 @@ public class AwardBodyProblems {
             ? mapping.getPath().stream().map(JsonMappingException.Reference::getFieldName)
                 .filter(Objects::nonNull).collect(Collectors.joining("."))
             : "";
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY,
-            "The award form could not be read");
-        problem.setType(URI.create(TYPE));
-        problem.setTitle(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase());
-        problem.setProperty("errors", List.of(new FieldViolation(field.isEmpty() ? "body" : field, "invalid",
-            "The value cannot be read")));
-        return problem;
+        return ApiProblemException.validationFailed("The award form could not be read",
+            List.of(new FieldViolation(field.isEmpty() ? "body" : field, "invalid", "The value cannot be read")))
+            .toProblem();
     }
 }

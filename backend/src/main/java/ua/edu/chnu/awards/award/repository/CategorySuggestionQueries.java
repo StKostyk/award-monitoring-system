@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class CategorySuggestionQueries {
 
     private static final String CATEGORIES = """
-        select category_id, name, name_uk, level, parent_category_id, sort_order, keywords
+        select category_id, name, name_uk, level, parent_category_id, keywords
           from award_categories
          where is_active
          order by sort_order, name
@@ -49,7 +49,7 @@ public class CategorySuggestionQueries {
     public List<Candidate> activeCategories() {
         return jdbc.query(CATEGORIES, (row, index) -> new Candidate(row.getLong("category_id"), row.getString("name"),
             row.getString("name_uk"), RecognitionLevel.valueOf(row.getString("level")),
-            row.getObject("parent_category_id", Long.class), row.getInt("sort_order"), keywords(row)));
+            row.getObject("parent_category_id", Long.class), keywords(row)));
     }
 
     /**
@@ -75,16 +75,15 @@ public class CategorySuggestionQueries {
     /**
      * An active category as the suggestion scores it.
      *
-     * @param id        identifier
-     * @param name      English name
-     * @param nameUk    Ukrainian name
-     * @param level     recognition level
-     * @param parentId  parent category, null for the root of a level
-     * @param sortOrder display order
-     * @param keywords  lower-case stems
+     * @param id       identifier
+     * @param name     English name
+     * @param nameUk   Ukrainian name
+     * @param level    recognition level
+     * @param parentId parent category, null for the root of a level
+     * @param keywords lower-case stems
      */
     public record Candidate(long id, String name, String nameUk, RecognitionLevel level, Long parentId,
-                            int sortOrder, List<String> keywords) {
+                            List<String> keywords) {
 
         /**
          * Keeps an unmodifiable copy of the keywords.

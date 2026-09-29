@@ -36,6 +36,7 @@ import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
+import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
@@ -45,7 +46,8 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 class AwardServiceTest {
 
     private static final long OWNER_ID = 21L;
-    private static final AwardWarning RECENT = new AwardWarning("RECENT_DATE", "awardDate", List.of());
+    private static final AwardWarning RECENT =
+        new AwardWarning(AwardWarning.RECENT_DATE, AwardDateRules.AWARD_DATE, List.of());
 
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
@@ -148,7 +150,7 @@ class AwardServiceTest {
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(awards).findAll(any(Specification.class), pageable.capture());
-        assertThat(pageable.getValue().getPageSize()).isEqualTo(AwardService.MAX_PAGE_SIZE);
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(PageResponse.MAX_SIZE);
         assertThat(pageable.getValue().getPageNumber()).isZero();
         assertThat(pageable.getValue().getSort().getOrderFor("createdAt").getDirection())
             .isEqualTo(Sort.Direction.DESC);

@@ -1,8 +1,11 @@
 package ua.edu.chnu.awards.common.web;
 
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 
 /**
  * A request that cannot be fulfilled for a business reason; rendered as a Problem Details response.
@@ -33,6 +36,18 @@ public class ApiProblemException extends RuntimeException {
         this.properties = Map.copyOf(properties);
     }
 
+    /**
+     * A form with refused fields: 422 {@code validation-failed} listing them under {@code errors}.
+     *
+     * @param detail what was refused, for the problem detail
+     * @param errors the refused fields
+     * @return the exception
+     */
+    public static ApiProblemException validationFailed(String detail, List<FieldViolation> errors) {
+        return new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "validation-failed", detail,
+            Map.of("errors", List.copyOf(errors)));
+    }
+
     public HttpStatus getStatus() {
         return status;
     }
@@ -53,5 +68,18 @@ public class ApiProblemException extends RuntimeException {
      */
     public Map<String, Object> getProperties() {
         return properties;
+    }
+
+    /**
+     * Renders the problem as a Problem Details body.
+     *
+     * @return the problem with status, typed URN, reason phrase as title and the extra members
+     */
+    public ProblemDetail toProblem() {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, getMessage());
+        problem.setType(URI.create(ApiExceptionHandler.TYPE_PREFIX + type));
+        problem.setTitle(status.getReasonPhrase());
+        properties.forEach(problem::setProperty);
+        return problem;
     }
 }

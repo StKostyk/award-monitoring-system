@@ -50,14 +50,14 @@ class CategorySuggesterTest {
         when(organizations.level(any())).thenReturn(Optional.empty());
         when(queries.mostUsedCategories(CALLER, CategorySuggester.LIMIT)).thenReturn(List.of());
         when(queries.activeCategories()).thenReturn(List.of(
-            candidate(1, null, RecognitionLevel.INTERNATIONAL, 100, "international", "міжнародн"),
-            candidate(3, 1L, RecognitionLevel.INTERNATIONAL, 102, "best paper", "conferenc"),
-            candidate(4, 1L, RecognitionLevel.INTERNATIONAL, 103, "grant"),
-            candidate(10, null, RecognitionLevel.NATIONAL, 200, "national", "україн"),
-            candidate(13, 10L, RecognitionLevel.NATIONAL, 203, "міністерств"),
-            candidate(30, null, RecognitionLevel.FACULTY, 400, "факультет", "faculty"),
-            candidate(40, null, RecognitionLevel.DEPARTMENT, 500, "кафедр", "department"),
-            candidate(41, 40L, RecognitionLevel.DEPARTMENT, 501, "подяк кафедр")));
+            candidate(1, null, RecognitionLevel.INTERNATIONAL, "international", "міжнародн"),
+            candidate(3, 1L, RecognitionLevel.INTERNATIONAL, "best paper", "conferenc"),
+            candidate(4, 1L, RecognitionLevel.INTERNATIONAL, "grant"),
+            candidate(10, null, RecognitionLevel.NATIONAL, "national", "україн"),
+            candidate(13, 10L, RecognitionLevel.NATIONAL, "міністерств"),
+            candidate(30, null, RecognitionLevel.FACULTY, "факультет", "faculty"),
+            candidate(40, null, RecognitionLevel.DEPARTMENT, "кафедр", "department"),
+            candidate(41, 40L, RecognitionLevel.DEPARTMENT, "подяк кафедр")));
     }
 
     @Test
@@ -152,10 +152,10 @@ class CategorySuggesterTest {
     @Test
     void ac3_1_aNestedCategoryInheritsTheLevelKeywordsOfItsRootNotItsParent() {
         when(queries.activeCategories()).thenReturn(List.of(
-            candidate(1, null, RecognitionLevel.INTERNATIONAL, 100, "international"),
-            candidate(3, 1L, RecognitionLevel.INTERNATIONAL, 102, "best paper"),
-            candidate(6, 3L, RecognitionLevel.INTERNATIONAL, 105, "workshop"),
-            candidate(7, 99L, RecognitionLevel.INTERNATIONAL, 106, "workshop")));
+            candidate(1, null, RecognitionLevel.INTERNATIONAL, "international"),
+            candidate(3, 1L, RecognitionLevel.INTERNATIONAL, "best paper"),
+            candidate(6, 3L, RecognitionLevel.INTERNATIONAL, "workshop"),
+            candidate(7, 99L, RecognitionLevel.INTERNATIONAL, "workshop")));
 
         List<CategorySuggestion> found = suggester.suggest("Best paper, international workshop", null);
 
@@ -170,8 +170,7 @@ class CategorySuggesterTest {
         assertThat(suggester.suggest("Something else", "Somewhere")).isEmpty();
     }
 
-    private static Candidate candidate(long id, Long parentId, RecognitionLevel level, int sortOrder,
-                                       String... keywords) {
-        return new Candidate(id, "Category " + id, "Категорія " + id, level, parentId, sortOrder, List.of(keywords));
+    private static Candidate candidate(long id, Long parentId, RecognitionLevel level, String... keywords) {
+        return new Candidate(id, "Category " + id, "Категорія " + id, level, parentId, List.of(keywords));
     }
 }

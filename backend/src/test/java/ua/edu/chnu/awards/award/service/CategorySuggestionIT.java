@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static ua.edu.chnu.awards.support.AwardRows.award;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,8 +38,6 @@ class CategorySuggestionIT extends AbstractJpaSliceTest {
 
     private static final String FIXTURE = "/suggestions/labelled-awards.csv";
     private static final int REQUIRED_HITS = 24;
-    private static final String INSERT = "insert into awards (user_id, organization_id, title, status, category_id,"
-        + " awarding_organization, award_date) values (?, 64, ?, 'DRAFT', ?, 'ЧНУ', ?)";
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -98,13 +97,13 @@ class CategorySuggestionIT extends AbstractJpaSliceTest {
             department));
         LocalDate date = LocalDate.of(2025, 3, 1);
         for (int i = 0; i < 3; i++) {
-            jdbc.update(INSERT, colleague.getId(), "Колега " + i, 52L, date);
+            award(jdbc, colleague.getId()).title("Колега " + i).category(52L).awardDate(date).insert();
         }
-        jdbc.update(INSERT, caller.getId(), "Відзнака міськради", 71L, date);
-        jdbc.update(INSERT, caller.getId(), "Друга відзнака", 71L, date.plusDays(1));
-        jdbc.update(INSERT, caller.getId(), "Премія", 83L, date);
-        jdbc.update("insert into awards (user_id, organization_id, title, status, award_date)"
-            + " values (?, 64, 'Без категорії', 'DRAFT', ?)", caller.getId(), date);
+        award(jdbc, caller.getId()).title("Відзнака міськради").category(71L).awardDate(date).insert();
+        award(jdbc, caller.getId()).title("Друга відзнака").category(71L).awardDate(date.plusDays(1)).insert();
+        award(jdbc, caller.getId()).title("Премія").category(83L).awardDate(date).insert();
+        award(jdbc, caller.getId()).title("Без категорії").category(null).awardingOrganization(null).awardDate(date)
+            .insert();
         when(access.callerId()).thenReturn(caller.getId());
 
         assertThat(queries.mostUsedCategories(caller.getId(), 3)).containsExactly(71L, 83L);

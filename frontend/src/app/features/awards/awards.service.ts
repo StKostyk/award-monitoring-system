@@ -124,13 +124,6 @@ export interface AwardPage {
   number: number;
 }
 
-/** One refused field of a problem answer. */
-export interface FieldProblem {
-  field: string;
-  code: string;
-  message: string;
-}
-
 export const NO_FILTERS: AwardFilters = { status: null, category: null, dateFrom: null, dateTo: null };
 
 @Injectable({ providedIn: 'root' })
@@ -239,12 +232,6 @@ export function flattenCategories(
     { category: node, depth },
     ...flattenCategories(node.children, depth + 1),
   ]);
-}
-
-/** The field errors of a 422 answer, empty when there are none. */
-export function fieldProblems(error: unknown): FieldProblem[] {
-  const body = (error as { error?: { errors?: unknown } } | null)?.error;
-  return Array.isArray(body?.errors) ? (body.errors as FieldProblem[]) : [];
 }
 
 /** The matching awards of a 409 `award-possible-duplicate` answer, empty when there are none. */

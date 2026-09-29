@@ -24,6 +24,7 @@ import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
+import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
@@ -36,8 +37,6 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AwardService {
-
-    static final int MAX_PAGE_SIZE = 100;
 
     private final AwardRepository awards;
     private final AwardRequestRepository requests;
@@ -120,7 +119,7 @@ public class AwardService {
      */
     @Transactional(readOnly = true)
     public Page<AwardResponse> listOwn(AwardQuery query, int page, int size) {
-        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE),
+        PageRequest pageable = PageResponse.request(page, size,
             Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
         Page<Award> found = awards.findAll(specifications.ownedBy(access.callerId(), query), pageable);
         Map<Long, AwardRequest> byAward = requests.findByAwardIdIn(found.map(Award::getId).getContent()).stream()

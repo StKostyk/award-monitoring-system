@@ -25,15 +25,6 @@ public class AwardDateRules {
     private final Clock clock;
 
     /**
-     * Today on the application clock.
-     *
-     * @return the Kyiv date
-     */
-    public LocalDate today() {
-        return LocalDate.now(clock);
-    }
-
-    /**
      * Refuses a date in the future or more than 50 years before today; exactly 50 years ago is accepted.
      *
      * @param date the award date, may be null
@@ -62,5 +53,9 @@ public class AwardDateRules {
     public boolean isRecent(LocalDate date) {
         LocalDate today = today();
         return date != null && !date.isAfter(today) && date.isAfter(today.minusDays(RECENT_DAYS));
+    }
+
+    private LocalDate today() {
+        return LocalDate.now(clock);
     }
 }

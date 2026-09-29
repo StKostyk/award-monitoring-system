@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.award.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ua.edu.chnu.awards.support.AwardRows.award;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -74,9 +75,8 @@ class AwardCategoryRepositoryIT extends AbstractJpaSliceTest {
     void ac04_runningTheSeedAgainKeepsAwardsAndReactivatesSystemCategories() {
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         User owner = userRepository.saveAndFlush(TestUsers.user("seed.owner@chnu.edu.ua", department));
-        jdbc.update("insert into awards (user_id, organization_id, category_id, title, awarding_organization, "
-            + "award_date) values (?, 64, 13,'Ministry letter of thanks', 'Ministry of Education', date '2025-05-01')",
-            owner.getId());
+        award(jdbc, owner.getId()).title("Ministry letter of thanks").awardingOrganization("Ministry of Education")
+            .insert();
         jdbc.update("update award_categories set name_uk = 'змінено', is_active = false where category_id = 13");
         jdbc.update("insert into award_categories (category_id, name, level, is_system) "
             + "values (99, 'Retired system category', 'LOCAL', true)");

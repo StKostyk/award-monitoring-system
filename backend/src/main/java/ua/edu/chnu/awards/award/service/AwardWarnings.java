@@ -54,7 +54,7 @@ public class AwardWarnings {
             }
             List<DuplicateMatch> same = matches.getOrDefault(draft.getId(), List.of());
             if (!same.isEmpty()) {
-                warnings.add(new AwardWarning(AwardWarning.POSSIBLE_DUPLICATE, "title", same));
+                warnings.add(new AwardWarning(AwardWarning.POSSIBLE_DUPLICATE, AwardInputRules.TITLE, same));
             }
             found.put(draft.getId(), warnings);
         }

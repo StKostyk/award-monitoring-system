@@ -17,6 +17,14 @@ param(
     [switch]$SkipFrontend
 )
 
+$runningBackend = Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" |
+    Where-Object { $_.CommandLine -like '*spring-boot:run*' }
+if ($runningBackend) {
+    Write-Host 'A backend started with spring-boot:run is running (e2e.ps1 or a manual run) and shares backend/target.'
+    Write-Host "Stop it first (PID $($runningBackend.ProcessId -join ', ')), then run the gate again."
+    exit 1
+}
+
 $root = Split-Path -Parent $PSScriptRoot
 $backend = Join-Path $root 'backend'
 $logDir = Join-Path $root 'build'
@@ -35,6 +43,13 @@ function Invoke-Maven([string[]]$Goals, [string]$Label) {
 if (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
     Select-String -Path $log -Pattern '^\[WARN\].*\.java|^\[ERROR\] (High|Medium|Low):|violation|BugInstance' | Select-Object -First 20 |
         ForEach-Object { $_.Line }
+    $checkstyle = Join-Path $backend 'target\checkstyle-result.xml'
+    if (Test-Path $checkstyle) {
+        ([xml](Get-Content $checkstyle -Raw)).checkstyle.file | Where-Object { $_.error } | ForEach-Object {
+            $file = Split-Path -Leaf $_.name
+            $_.error | ForEach-Object { "checkstyle ${file}:$($_.line) $($_.message)" }
+        } | Select-Object -First 20
+    }
     Write-Host 'Fix the violations above, then run the gate again.'
     exit 1
 }

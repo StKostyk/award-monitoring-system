@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.award.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ua.edu.chnu.awards.support.AwardRows.award;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,8 +26,6 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class AwardSchemaIT extends AbstractJpaSliceTest {
 
-    private static final String INSERT = "insert into awards (user_id, organization_id, title, title_uk, status, "
-        + "category_id, awarding_organization, award_date) values (?, 64, ?, ?, ?, ?, ?, ?)";
     private static final String KYIV_TODAY = "(now() at time zone 'Europe/Kyiv')::date";
 
     @Autowired
@@ -65,14 +64,14 @@ class AwardSchemaIT extends AbstractJpaSliceTest {
 
     @Test
     void ac1_1_anAwardWithoutAnyTitleIsRefused() {
-        assertThatThrownBy(() -> jdbc.update(INSERT, owner.getId(), null, null, "DRAFT", null, null, null))
+        assertThatThrownBy(() -> award(jdbc, owner.getId()).title(null).category(null).awardingOrganization(null)
+            .awardDate(null).insert())
             .isInstanceOf(DataIntegrityViolationException.class).hasMessageContaining("ck_awards_title");
     }
 
     @Test
     void edge_theDatabaseRefusesAnIncompleteAwardOutsideDraft() {
-        assertThatThrownBy(() -> jdbc.update(INSERT, owner.getId(), "Letter", null, "PENDING", 13L, null,
-            LocalDate.of(2025, 5, 1)))
+        assertThatThrownBy(() -> award(jdbc, owner.getId()).status("PENDING").awardingOrganization(null).insert())
             .isInstanceOf(DataIntegrityViolationException.class).hasMessageContaining("ck_awards_complete");
     }
 
@@ -89,8 +88,7 @@ class AwardSchemaIT extends AbstractJpaSliceTest {
 
     @Test
     void ac1_6_anAwardHasOneRequestAtMost() {
-        Long awardId = jdbc.queryForObject(INSERT + " returning award_id", Long.class, owner.getId(), "Letter",
-            null, "PENDING", 13L, "MON", LocalDate.of(2025, 5, 1));
+        long awardId = award(jdbc, owner.getId()).status("PENDING").insert();
         String request = "insert into award_requests (award_id, submitter_id, current_level) "
             + "values (?, ?, 'FACULTY_SECRETARY')";
         jdbc.update(request, awardId, owner.getId());
@@ -103,11 +101,11 @@ class AwardSchemaIT extends AbstractJpaSliceTest {
 
     @Test
     void ac1_7_theOwnListFiltersByStatusCategoryAndDate() {
-        jdbc.update(INSERT, owner.getId(), "Draft", null, "DRAFT", null, null, null);
-        jdbc.update(INSERT, owner.getId(), "Old", null, "PENDING", 13L, "MON", LocalDate.of(2020, 1, 1));
-        jdbc.update(INSERT, owner.getId(), "New", null, "PENDING", 13L, "MON", LocalDate.of(2025, 5, 1));
+        award(jdbc, owner.getId()).title("Draft").category(null).awardingOrganization(null).awardDate(null).insert();
+        award(jdbc, owner.getId()).title("Old").status("PENDING").awardDate(LocalDate.of(2020, 1, 1)).insert();
+        award(jdbc, owner.getId()).title("New").status("PENDING").insert();
         User other = userRepository.saveAndFlush(TestUsers.user("schema.other@chnu.edu.ua", department));
-        jdbc.update(INSERT, other.getId(), "Theirs", null, "PENDING", 13L, "MON", LocalDate.of(2025, 5, 1));
+        award(jdbc, other.getId()).title("Theirs").status("PENDING").insert();
         AwardSpecifications specifications = new AwardSpecifications();
 
         assertThat(awards.findAll(specifications.ownedBy(owner.getId(), new AwardQuery(null, null, null, null)),

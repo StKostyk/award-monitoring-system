@@ -1,7 +1,5 @@
 package ua.edu.chnu.awards.common.web;
 
-import java.net.URI;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpStatus;
@@ -63,10 +61,6 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ApiProblemException.class)
     ProblemDetail apiProblem(ApiProblemException exception) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(exception.getStatus(), exception.getMessage());
-        problem.setType(URI.create(TYPE_PREFIX + exception.getType()));
-        problem.setTitle(exception.getStatus().getReasonPhrase());
-        exception.getProperties().forEach(problem::setProperty);
-        return problem;
+        return exception.toProblem();
     }
 }
