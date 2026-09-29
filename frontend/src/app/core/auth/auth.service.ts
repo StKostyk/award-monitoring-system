@@ -162,6 +162,10 @@ export class AuthService {
   private remember(): void {
     this.isAuthenticated.set(this.oauth.hasValidAccessToken());
     this.accessToken.set(this.oauth.getAccessToken() ?? null);
+    const userId = this.userId();
+    if (userId) {
+      this.formCopies.clearOthers(userId);
+    }
   }
 
   private forget(): void {

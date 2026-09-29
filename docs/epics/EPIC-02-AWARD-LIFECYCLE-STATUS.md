@@ -16,7 +16,7 @@
 
 ## Current focus
 
-Feature 2.1 in progress: 2.1.0 (SCRUM-21) done, 2.1.1 (SCRUM-22) done, 2.1.2 (SCRUM-23) done, 2.1.3 (SCRUM-24) in review, next /feature-validate 2.1. After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
+Feature 2.1 in validation: 2.1.0–2.1.3 (SCRUM-21–24) done; the validation run of 2026-09-29 found the defects fixed in 2.1.4 (SCRUM-28, in review), then the manual run of PRD §9. After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
 
 ## Scope
 
@@ -35,12 +35,13 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 1 | 2.1.0 Award domain model and category catalogue | 2.1 | 3 | SCRUM-21 | #43 | no | Done |
 | 2 | 2.1.1 Award draft and submission (US-003) | 2.1 | 8 | SCRUM-22 | #44 | yes | Done |
 | 3 | 2.1.2 Award date and duplicate validation | 2.1 | 3 | SCRUM-23 | #76 | no | Done |
-| 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | In Review |
-| 5 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | Ready |
-| 6 | 2.2.2 Version history view and audit export | 2.2 | 5 | SCRUM-26 | #79 | yes | Ready |
-| 7 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | yes | Ready |
+| 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | Done |
+| 5 | 2.1.4 Fixes from the Feature 2.1 validation | 2.1 | 5 | SCRUM-28 | #85 | no | In Review |
+| 6 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | Ready |
+| 7 | 2.2.2 Version history view and audit export | 2.2 | 5 | SCRUM-26 | #79 | yes | Ready |
+| 8 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | yes | Ready |
 
-Total: 32 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
+Total: 37 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 
 ## Decisions
 
@@ -56,6 +57,9 @@ Total: 32 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 st
 | 2026-09-28 | Minimum approval level and impact base score per recognition level: `SPECIALITY`, `DEPARTMENT`, `LOCAL`, `UNIVERSITY`, `REGIONAL` → faculty secretary; `COLLEGE`, `FACULTY` → dean; `NATIONAL`, `INTERNATIONAL` → rector's secretary; scores 10/20/45/60/70, 30/40, 80/100. No level needs the rector as the minimum; the rector approves any level. A minimum admits every role above it in the line | Local and regional recognition is confirmed inside the faculty; the score still ranks by reach | Feature 2.1 PRD D-3 |
 | 2026-09-28 | Feature 2.1 schema changes: `awards.organization_id`, draft columns nullable outside `DRAFT`, Ukrainian-only title allowed, `ck_awards_date` on the Kyiv calendar (V020); category seed as upsert; `award_categories.keywords` (V021) | Scoped reads and routing must not follow a person who moves; US-003 "complete later"; the V005 check refuses valid awards after midnight Kyiv time; the truncating seed would delete awards | Feature 2.1 PRD §7 |
 | 2026-09-28 | Epic 1 stories 1.3.1 and 1.3.3 follow Feature 2.1; 1.3.2 notification preferences moves to Epic 7 | The data export is only meaningful once awards exist; preferences belong with the notification channels | Epic 1 tracker |
+| 2026-09-29 | Drafts can be deleted from the form and the detail page («Видалити чернетку»); the award list says «Показано перші 100 з N» instead of paging | Deletion existed only in the API; one page of 100 covers a person's awards, the note makes the limit visible | Feature 2.1 validation, SCRUM-28 |
+| 2026-09-29 | Local form copies survive an expired session for the same user and are removed on sign-out and when another user signs in on the browser | AC-1.10 offers the copy back after an expired session; the shared-computer risk is closed at the next sign-in | Feature 2.1 PRD §10, SCRUM-28 |
+| 2026-09-29 | The unused GIN index on `award_categories.keywords` (V021) is kept for now | Matching runs in Java; the index costs little on a small reference table and serves a later SQL search | Feature 2.1 validation |
 
 ## Documentation deviations to resolve
 
@@ -76,6 +80,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 - `awards.version` is the optimistic-lock column; a stale update answers 409 like the role assignments.
 - `ck_awards_date` compares with `CURRENT_DATE` in the database session zone (UTC), so between 00:00 and 03:00 Kyiv time it refuses an award dated today that the application accepts; V020 recreates it as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`.
 - `trg_awards_audit` reads `app.current_user_id`, which the application never sets: trigger rows carry no actor. Part of the 2.2 design note.
+- Known limits of the category suggestion (Feature 2.1 validation): a unit of another university with the same name as a ChNU unit ("Faculty of Law, …") matches the ChNU unit; the keywords, the organisation tree and the caller's history are read on every request, without a cache. Revisit if the pilot shows wrong chips or slow answers.
 
 ## Risks
 

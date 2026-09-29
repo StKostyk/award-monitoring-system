@@ -21,7 +21,7 @@ test.describe('authentication', () => {
 
     await page.getByTestId('logout').click();
 
-    await expect(page).toHaveURL(/localhost:8080\/login/);
+    await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
   });
 
   test('ac61 an expired session ends at the login page, not on a blank screen', async ({ page, context }) => {

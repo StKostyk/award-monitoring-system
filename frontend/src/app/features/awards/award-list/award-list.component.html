@@ -60,6 +60,10 @@
   <mat-progress-bar mode="indeterminate" data-testid="awards-loading" />
 }
 
+@if (notice(); as notice) {
+  <p class="awards__notice" role="status" data-testid="awards-notice">{{ notice | transloco }}</p>
+}
+
 @if (problem(); as problem) {
   <p class="awards__problem" role="alert" data-testid="awards-error">
     {{ 'awards.problems.' + problem | transloco }}
@@ -90,3 +94,9 @@
     }
   }
 </ul>
+
+@if (total() > awards().length) {
+  <p class="awards__more" data-testid="awards-more">
+    {{ 'awards.more' | transloco: { shown: awards().length, total: total() } }}
+  </p>
+}

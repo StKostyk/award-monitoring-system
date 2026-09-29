@@ -185,6 +185,18 @@
     <p class="award-form__photo">{{ 'awards.form.photoLater' | transloco }}</p>
 
     <div class="award-form__actions">
+      @if (editing()) {
+        <button
+          mat-button
+          type="button"
+          class="award-form__remove"
+          [disabled]="saving() || loading()"
+          (click)="remove()"
+          data-testid="award-remove"
+        >
+          {{ 'awards.remove.action' | transloco }}
+        </button>
+      }
       <button mat-stroked-button type="submit" [disabled]="saving() || loading()" data-testid="award-save">
         {{ 'awards.form.saveDraft' | transloco }}
       </button>

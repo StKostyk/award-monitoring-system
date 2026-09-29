@@ -29,6 +29,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 
+import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -47,6 +48,7 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
     private static final String DEAN = "ft.dean@chnu.edu.ua";
     private static final String PENDING = "ft.pending@chnu.edu.ua";
     private static final String SUSPENDED = "ft.suspended@chnu.edu.ua";
+    private static final String SIGNED_OUT = "ft.signed-out@chnu.edu.ua";
 
     @LocalServerPort
     private int port;
@@ -60,6 +62,9 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
     @Autowired
     private OrganizationRepository organizationRepository;
 
+    @Autowired
+    private AuthorizationRevoker revoker;
+
     @BeforeAll
     void createUsers() {
         Organization faculty = organizationRepository.findById(TestUsers.FMI_FACULTY_ID).orElseThrow();
@@ -72,11 +77,12 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
         User suspended = TestUsers.user(SUSPENDED, faculty);
         suspended.setAccountStatus(AccountStatus.SUSPENDED);
         userRepository.save(suspended);
+        userRepository.save(TestUsers.user(SIGNED_OUT, faculty));
     }
 
     @AfterAll
     void deleteUsers() {
-        List.of(DEAN, PENDING, SUSPENDED).forEach(email ->
+        List.of(DEAN, PENDING, SUSPENDED, SIGNED_OUT).forEach(email ->
             userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
     }
 
@@ -240,6 +246,35 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
             .get("/oauth2/authorize?response_type=code&client_id=award-web&scope=openid"
                 + "&redirect_uri=http://localhost:4200/callback&code_challenge=abc&code_challenge_method=S256");
         assertThat(afterLogout.getHeader("Location")).endsWith("/login");
+    }
+
+    @Test
+    void ac18_signingOutAfterBeingSignedOutEverywhereEndsOnTheLoginPage() {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
+        String idToken = flow.exchange(flow.loginAndGetCode(SIGNED_OUT, PASSWORD)).jsonPath().getString("id_token");
+        revoker.revokeAll(userRepository.findByEmailAddressIgnoreCase(SIGNED_OUT).orElseThrow());
+
+        Response logout = RestAssured.given().redirects().follow(false).cookies(flow.cookies())
+            .queryParam("id_token_hint", idToken)
+            .queryParam("post_logout_redirect_uri", "http://localhost:4200")
+            .get("/connect/logout");
+
+        assertThat(logout.getStatusCode()).isEqualTo(302);
+        assertThat(logout.getHeader("Location")).endsWith("/login");
+    }
+
+    @Test
+    void ac18_aRefusedLogoutStillEndsTheSessionOfTheBrowserThatAskedForIt() {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
+        flow.exchange(flow.loginAndGetCode(DEAN, PASSWORD));
+
+        Response logout = RestAssured.given().redirects().follow(false).cookies(flow.cookies())
+            .queryParam("id_token_hint", "unknown.id.token")
+            .get("/connect/logout");
+
+        assertThat(logout.getStatusCode()).isEqualTo(302);
+        assertThat(logout.getHeader("Location")).endsWith("/login");
+        assertThat(flow.authorize().getHeader("Location")).endsWith("/login");
     }
 
     @Test

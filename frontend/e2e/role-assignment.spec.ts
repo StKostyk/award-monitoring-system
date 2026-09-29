@@ -47,12 +47,14 @@ test.describe('role assignment', () => {
   });
 
   test('ac210 the dean assigns a role and revokes it after the confirmation', async ({ page }) => {
+    const email = `assignee.${Date.now()}@chnu.edu.ua`;
+    await registerAndVerify(page, email, password);
     await signIn(page, dean, demo);
     await page.goto('/admin/users');
-    await page.getByTestId('filter-q').fill(employee);
-    await page.getByRole('row').filter({ hasText: employee }).getByTestId('user-link').click();
+    await page.getByTestId('filter-q').fill(email);
+    await page.getByRole('row').filter({ hasText: email }).getByTestId('user-link').click();
 
-    await expect(page.getByTestId('detail-email')).toHaveText(employee);
+    await expect(page.getByTestId('detail-email')).toHaveText(email);
 
     await page.getByTestId('assign-role-open').click();
     await page.getByTestId('assign-role').click();

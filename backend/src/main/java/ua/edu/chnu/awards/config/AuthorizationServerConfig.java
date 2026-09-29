@@ -28,6 +28,7 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import ua.edu.chnu.awards.auth.security.PublicClientRefreshAuthenticationConverter;
 import ua.edu.chnu.awards.auth.security.PublicClientRefreshAuthenticationProvider;
 import ua.edu.chnu.awards.auth.security.RefreshTokenReuseGuard;
+import ua.edu.chnu.awards.auth.security.RefusedLogoutHandler;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 /**
@@ -53,7 +54,7 @@ public class AuthorizationServerConfig {
         http
             .securityMatcher(authorizationServer.getEndpointsMatcher())
             .with(authorizationServer, server -> server
-                .oidc(withDefaults())
+                .oidc(oidc -> oidc.logoutEndpoint(logout -> logout.errorResponseHandler(new RefusedLogoutHandler())))
                 .clientAuthentication(client -> client
                     .authenticationConverter(new PublicClientRefreshAuthenticationConverter(
                         settings.getTokenEndpoint(), settings.getTokenRevocationEndpoint()))

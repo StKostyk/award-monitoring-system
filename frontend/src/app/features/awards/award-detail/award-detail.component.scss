@@ -43,6 +43,10 @@
   gap: 12px;
 }
 
+.award-detail__remove {
+  color: var(--mat-sys-error, #b3261e);
+}
+
 .award-detail__problem {
   color: var(--mat-sys-error, #b3261e);
 }

@@ -30,6 +30,7 @@ import {
   catchError,
   debounceTime,
   distinctUntilChanged,
+  filter,
   map,
   merge,
   of,
@@ -61,11 +62,13 @@ import {
   kyivToday,
   yearsBefore,
 } from '../awards.service';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent, confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
 import { DuplicateDialogComponent } from '../duplicate-dialog/duplicate-dialog.component';
 
 const COPY_DEBOUNCE = 400;
 const SUGGEST_DEBOUNCE = 400;
+/** Characters of each text sent for suggestions; enough for the rules and short enough for a request line. */
+const SUGGEST_TEXT_LIMIT = 300;
 const TITLE_LIMIT = 500;
 const DESCRIPTION_LIMIT = 4000;
 const ORGANIZATION_LIMIT = 255;
@@ -115,6 +118,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private readonly language = inject(LanguageService);
 
   private id: number | null = null;
+  private owner: string | null = null;
   private version = 0;
   private leaving = false;
 
@@ -207,7 +211,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   keepOnUnload(event: BeforeUnloadEvent): void {
     if (this.form.dirty && !this.leaving) {
       this.keepCopy();
-      event.preventDefault();
+      if (this.auth.isAuthenticated() && this.copies.keepsCopies()) {
+        event.preventDefault();
+      }
     }
   }
 
@@ -295,6 +301,20 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       });
   }
 
+  remove(): void {
+    const id = this.id;
+    if (id === null || this.saving()) {
+      return;
+    }
+    confirmRemoval(this.dialog)
+      .pipe(filter(Boolean), switchMap(() => this.startRemoval(id)))
+      .subscribe({
+        next: () => this.removed(),
+        error: (error: unknown) =>
+          problemStatus(error) === HttpStatusCode.NotFound ? this.removed() : this.failed(error),
+      });
+  }
+
   errorKey(field: FieldName): string | null {
     const errors = this.form.controls[field].errors;
     if (!errors) {
@@ -325,16 +345,28 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     return awardTitle(match, this.language.current());
   }
 
+  private startRemoval(id: number): Observable<void> {
+    this.start();
+    return this.service.remove(id);
+  }
+
+  private removed(): void {
+    this.saving.set(false);
+    this.dropCopy();
+    this.leaving = true;
+    void this.router.navigate(['/awards'], { replaceUrl: true, state: { notice: 'awards.messages.removed' } });
+  }
+
   private suggestionInput(): Observable<{ title: string; organization: string }> {
     const { title, titleUk, awardingOrganization } = this.form.controls;
     return merge(title.valueChanges, titleUk.valueChanges, awardingOrganization.valueChanges).pipe(
       debounceTime(SUGGEST_DEBOUNCE),
       map(() => ({
         title: [titleUk.value, title.value]
-          .map((value) => value?.trim() ?? '')
+          .map((value) => value?.trim().substring(0, SUGGEST_TEXT_LIMIT) ?? '')
           .filter((value) => value !== '')
           .join(' '),
-        organization: awardingOrganization.value?.trim() ?? '',
+        organization: awardingOrganization.value?.trim().substring(0, SUGGEST_TEXT_LIMIT) ?? '',
       })),
       distinctUntilChanged((a, b) => a.title === b.title && a.organization === b.organization),
     );
@@ -445,6 +477,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   private failed(error: unknown): void {
     this.saving.set(false);
+    if (this.id !== null && problemStatus(error) === HttpStatusCode.NotFound) {
+      this.deletedElsewhere();
+      return;
+    }
     const type = problemType(error);
     if (type === 'award-not-editable' && this.id !== null) {
       this.dropCopy();
@@ -462,6 +498,19 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       control?.markAsTouched();
     }
     this.problem.set(this.problemKey(error));
+  }
+
+  /** The draft was deleted in another window: the typed values become a new draft that is not saved yet. */
+  private deletedElsewhere(): void {
+    this.dropCopy();
+    this.id = null;
+    this.version = 0;
+    this.current.set(null);
+    this.stale.set(false);
+    this.location.replaceState('/awards/new');
+    this.form.markAsDirty();
+    this.keepCopy();
+    this.problem.set('awards.problems.award-deleted');
   }
 
   private problemKey(error: unknown): string {
@@ -493,24 +542,30 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   }
 
   private offerCopy(): void {
-    const userId = this.auth.userId();
+    const userId = this.copyOwner();
     const copy = userId ? this.copies.load<AwardForm>(userId, this.copyName()) : null;
     const differs = copy && JSON.stringify(copy) !== JSON.stringify(this.value());
     this.restoreOffer.set(differs ? copy : null);
   }
 
   private keepCopy(evenIfPristine = false): void {
-    const userId = this.auth.userId();
+    const userId = this.copyOwner();
     if (userId && (this.form.dirty || evenIfPristine) && !this.leaving) {
       this.copies.save(userId, this.copyName(), this.value());
     }
   }
 
   private dropCopy(): void {
-    const userId = this.auth.userId();
+    const userId = this.copyOwner();
     if (userId) {
       this.copies.remove(userId, this.copyName());
     }
+  }
+
+  /** The user the form was opened for; the copy stays theirs while the session is being renewed or has ended. */
+  private copyOwner(): string | null {
+    this.owner ??= this.auth.userId();
+    return this.owner;
   }
 
   private copyName(): string {
