@@ -73,6 +73,11 @@
   color: var(--mat-sys-error, #b3261e);
 }
 
+.awards__notice,
+.awards__more {
+  color: var(--mat-sys-on-surface-variant, #44474e);
+}
+
 ::ng-deep .awards__child {
   padding-left: 32px;
 }

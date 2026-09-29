@@ -8,6 +8,7 @@ import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { environment } from '../../../environments/environment';
+import { FormCopiesService } from '../storage/form-copies.service';
 import { AuthService } from './auth.service';
 import { UserProfile } from './user-profile';
 
@@ -188,6 +189,21 @@ describe('AuthService', () => {
 
     events.next(refreshError(400));
     expect(service.isAuthenticated()).toBe(false);
+  });
+
+  it('f4 a sign-in removes the form copies of other users and keeps the own ones', async () => {
+    const copies = TestBed.inject(FormCopiesService);
+    localStorage.clear();
+    copies.save('21', 'award-new', { titleUk: 'Своя' });
+    copies.save('22', 'award-5', { titleUk: 'Чужа' });
+    await service.init();
+
+    oauth.hasValidAccessToken.mockReturnValue(true);
+    oauth.getAccessToken.mockReturnValue(tokenWith({ sub: '21' }));
+    events.next({ type: 'token_received' } as OAuthEvent);
+
+    expect(copies.load('21', 'award-new')).toEqual({ titleUk: 'Своя' });
+    expect(copies.load('22', 'award-5')).toBeNull();
   });
 
   it('ac61 drops the tokens and starts the sign-in flow when the refresh fails', async () => {

@@ -250,3 +250,21 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.9, 1.10, 2.6, 3.4, including a 360 px viewport
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §2.1–§2.2 and appendix B, RBAC_matrix.md, `CHANGELOG.md`, tracker rows and deviations 1–2 closed, `BACKLOG.md`
 - §9 walked through by the author after `/feature-validate`, including the detours
+
+## 12. Validation findings
+
+Found by the validation run of 2026-09-29 (scenario review of the untested detours, F-1…F-9; the E2E runs of the fix, F-10 and F-11) and fixed in 2.1.4 (SCRUM-28, #85).
+
+| # | Finding | Fix |
+|---|---------|-----|
+| F-1 | `/awards/:id/submitted` showed «Подано на розгляд…» for any id: a draft, an unknown id, another person's award | Only the caller's own submitted award is confirmed; a draft opens its form, another person's award its read-only page, anything else «Не знайдено» |
+| F-2 | Behind nginx a restarting backend answers 502/504, which the form showed as an unknown error | 502, 503 and 504 count as «Сервер недоступний», like no answer at all |
+| F-3 | A draft deleted in another tab made the next save or submission fail with an unknown error | The typed values become a new unsaved draft with «Чернетку видалено в іншому вікні» |
+| F-4 | Signing out with a filled form re-saved the local copy while the page unloaded, so it was offered again after the next sign-in; an ended session held the redirect with the browser's leave prompt | No copy is kept once sign-out has begun; a sign-in removes the copies of other users; no leave prompt without a session. A merely expired session keeps the copy for the same user (AC-1.10) |
+| F-5 | Suggestions sent the whole title in both languages (up to 1000 characters, about 7.5 KB of encoded Cyrillic) in the query string | At most 300 characters per field are sent |
+| F-6 | A non-numeric or overflowing id answered Spring's plain 400 body | 400 problem details `invalid-parameter` naming the parameter |
+| F-7 | Submission with a deactivated category and with a stale or missing version were tested with mocks only | Functional tests against the seeded database |
+| F-8 | The list loads one page of 100 and silently left out the rest | «Показано перші 100 з N» under the list |
+| F-9 | Deleting a draft was possible through the API only | «Видалити чернетку» on the form and the detail page, with a confirmation |
+| F-10 | The logout E2E failed in 2 of 3 runs. Causes: the role-assignment E2E revoked a role of the shared `employee.fmi` account while the logout test ran in parallel (a revocation signs the holder out everywhere), and F-11 | The role-assignment E2E uses its own freshly registered account; the redirect wait is 15 s like the others |
+| F-11 | «Вийти» showed «Щось пішло не так» (400 from `/connect/logout`) when the user had been signed out everywhere (the authorization is deleted) or was signed in on another browser at the same time (the library puts the `sid` of the user's most recent login session into the id token, so the logout of the other browser fails the `sid` check) | For a refused hint the login page is shown; the requesting session is ended only when the hint is a valid id token of that session's user, so a forged logout link signs nobody out (AUTH § logout) |

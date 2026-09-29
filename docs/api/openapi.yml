@@ -1298,7 +1298,9 @@ components:
       name: id
       in: path
       required: true
-      description: Award identifier
+      description: >
+        Award identifier; a value that is not a 64-bit integer answers 400 `urn:awards:problem:invalid-parameter`
+        naming the parameter
       schema:
         type: integer
         format: int64
@@ -2167,7 +2169,9 @@ components:
 
   responses:
     BadRequest:
-      description: Invalid request parameters
+      description: >
+        Invalid request parameters; a path or query value of the wrong type answers
+        `urn:awards:problem:invalid-parameter` with the name in `parameter`
       content:
         application/problem+json:
           schema:

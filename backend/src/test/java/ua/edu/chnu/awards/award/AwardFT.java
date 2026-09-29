@@ -63,6 +63,7 @@ class AwardFT extends AbstractIntegrationTest {
     private static final String PROBLEM = "urn:awards:problem:";
     private static final long OTHER_FACULTY_ID = 10L;
     private static final long MINISTRY_CATEGORY = 13L;
+    private static final long COMMUNITY_CATEGORY = 72L;
     private static final ZoneId KYIV = ZoneId.of("Europe/Kyiv");
 
     @LocalServerPort
@@ -293,6 +294,56 @@ class AwardFT extends AbstractIntegrationTest {
 
         assertThat(jdbc.queryForObject("select current_level from award_requests where award_id = ?", String.class,
             id)).isEqualTo("FACULTY_SECRETARY");
+    }
+
+    @Test
+    void edge_aCategoryDeactivatedSinceTheDraftWasSavedStopsTheSubmissionOnly() {
+        Response created = as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Подяка громади",
+                "categoryId", COMMUNITY_CATEGORY, "awardingOrganization", "Чернівецька міська рада",
+                "awardDate", LocalDate.now(KYIV).minusMonths(4).toString()))
+            .post(AWARDS);
+        long id = created.jsonPath().getLong("id");
+        long version = created.jsonPath().getLong(VERSION);
+        jdbc.update("update award_categories set is_active = false where category_id = ?", COMMUNITY_CATEGORY);
+        try {
+            submit(employee, id, version, null).then().statusCode(422)
+                .body(TYPE, equalTo(PROBLEM + "validation-failed"))
+                .body("errors.field", contains("categoryId"))
+                .body("errors.code", contains("inactive"));
+            as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Подяка міської громади",
+                    "categoryId", COMMUNITY_CATEGORY, VERSION, version))
+                .put(AWARDS + "/" + id).then().statusCode(200).body("category.id", equalTo((int) COMMUNITY_CATEGORY));
+        } finally {
+            jdbc.update("update award_categories set is_active = true where category_id = ?", COMMUNITY_CATEGORY);
+        }
+        assertThat(jdbc.queryForObject("select count(*) from award_requests where award_id = ?", Integer.class, id))
+            .isZero();
+    }
+
+    @Test
+    void ac1_3_aSubmissionWithAStaleOrMissingVersionChangesNothing() {
+        long id = complete(employee, "Відзнака з двох вкладок");
+        long version = as(employee).get(AWARDS + "/" + id).jsonPath().getLong(VERSION);
+        long current = as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Відзнака з вкладки",
+                "categoryId", MINISTRY_CATEGORY, "awardingOrganization", "МОН України",
+                "awardDate", LocalDate.now(KYIV).minusMonths(3).toString(), VERSION, version))
+            .put(AWARDS + "/" + id).then().statusCode(200).extract().jsonPath().getLong(VERSION);
+
+        submit(employee, id, version, null).then().statusCode(409)
+            .body(TYPE, equalTo(PROBLEM + "award-stale"))
+            .body("currentVersion", equalTo((int) current));
+        as(employee).contentType(ContentType.JSON).body(Map.of()).post(AWARDS + "/" + id + "/submit")
+            .then().statusCode(422).body("errors.field", hasItem(VERSION));
+        assertThat(jdbc.queryForObject("select count(*) from award_requests where award_id = ?", Integer.class, id))
+            .isZero();
+    }
+
+    @Test
+    void ac3_1_aLongUkrainianTitleStillGetsSuggestions() {
+        as(employee).queryParam("title", "Грамота Міністерства освіти і науки України ".repeat(7))
+            .queryParam("organization", "Міністерство освіти і науки України")
+            .get(SUGGESTIONS).then().statusCode(200)
+            .body("[0].level", equalTo("NATIONAL"));
     }
 
     @Test

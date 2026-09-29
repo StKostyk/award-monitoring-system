@@ -39,7 +39,8 @@ Feature 2.1 PRD approved 2026-09-28: [feature-2.1-award-creation-validation.md](
 | 2.1.0 | Award domain model and category catalogue (done) | 3 | 2.1 | SCRUM-21 | [#43](https://github.com/StKostyk/award-monitoring-system/issues/43) |
 | 2.1.1 | Award draft and submission (US-003) (done) | 8 | 2.1 | SCRUM-22 | [#44](https://github.com/StKostyk/award-monitoring-system/issues/44) |
 | 2.1.2 | Award date and duplicate validation (done) | 3 | 2.1 | SCRUM-23 | [#76](https://github.com/StKostyk/award-monitoring-system/issues/76) |
-| 2.1.3 | Award category suggestion (in review) | 3 | 2.1 | SCRUM-24 | [#77](https://github.com/StKostyk/award-monitoring-system/issues/77) |
+| 2.1.3 | Award category suggestion (done) | 3 | 2.1 | SCRUM-24 | [#77](https://github.com/StKostyk/award-monitoring-system/issues/77) |
+| 2.1.4 | Fixes from the Feature 2.1 validation (in review) | 5 | 2.1 | SCRUM-28 | [#85](https://github.com/StKostyk/award-monitoring-system/issues/85) |
 | 2.2.1 | Award version recording | 5 | 2.2 | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
 | 2.2.2 | Version history view and audit export | 5 | 2.2 | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
 | 2.3.1 | Award status tracking (US-005) | 5 | 2.3 | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |

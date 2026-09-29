@@ -102,6 +102,10 @@
   flex: 1 1 140px;
 }
 
+.award-form__actions .award-form__remove {
+  color: var(--mat-sys-error, #b3261e);
+}
+
 ::ng-deep .award-form__child {
   padding-left: 32px;
 }

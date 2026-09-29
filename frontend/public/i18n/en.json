@@ -100,7 +100,16 @@
       "cancel": "Stay"
     },
     "messages": {
-      "saved": "Draft saved."
+      "saved": "Draft saved.",
+      "removed": "Draft deleted."
+    },
+    "more": "Showing the first {{shown}} of {{total}}. Narrow the list with the filters.",
+    "remove": {
+      "action": "Delete draft",
+      "title": "Delete the draft?",
+      "text": "The draft will be deleted and cannot be restored.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
     },
     "submitted": {
       "title": "Award submitted",
@@ -131,6 +140,7 @@
       "award-incomplete": "To submit, fill in the category, who granted the award and the date.",
       "award-stale": "The award was changed in another window. Your changes are kept in this browser.",
       "award-not-editable": "The award was already submitted and can no longer be changed.",
+      "award-deleted": "The draft was deleted in another window. Your values will be saved as a new draft.",
       "award-possible-duplicate": "This looks like an award you already entered.",
       "access-denied": "You are not allowed to enter awards.",
       "network": "The server is not reachable. Your values are kept; please try again.",

@@ -1,10 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { MockInstance, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -46,7 +47,9 @@ const translations = {
 };
 
 describe('AwardDetailComponent', () => {
-  const service = { get: vi.fn() };
+  const service = { get: vi.fn(), remove: vi.fn() };
+  const dialog = { open: vi.fn() };
+  let navigate: MockInstance<Router['navigate']>;
 
   async function open<T>(component: new () => T, id: string): Promise<ComponentFixture<T>> {
     await TestBed.configureTestingModule({
@@ -63,14 +66,20 @@ describe('AwardDetailComponent', () => {
         { provide: AwardsService, useValue: service },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { userId: signal('21') } },
+        { provide: MatDialog, useValue: dialog },
       ],
     }).compileComponents();
+    navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(component);
     fixture.detectChanges();
     return fixture;
   }
 
-  beforeEach(() => service.get.mockReset());
+  beforeEach(() => {
+    service.get.mockReset();
+    service.remove.mockReset();
+    dialog.open.mockReset();
+  });
 
   it('ac1_9_shows_a_submitted_award_read_only_with_its_request', async () => {
     service.get.mockReturnValue(of(pending));
@@ -117,5 +126,76 @@ describe('AwardDetailComponent', () => {
     expect(element.querySelector('[data-testid="award-submitted-text"]')?.textContent).toContain(
       'секретарю факультету',
     );
+  });
+
+  it('f1_a_draft_is_no_submission_and_opens_its_form', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
+    const fixture = await open(AwardSubmittedComponent, '5');
+
+    expect(navigate).toHaveBeenCalledWith(['/awards', 5, 'edit'], { replaceUrl: true });
+    expect(fixture.nativeElement.querySelector('[data-testid="award-submitted"]')).toBeNull();
+  });
+
+  it('f1_somebody_elses_award_opens_read_only_without_a_confirmation', async () => {
+    service.get.mockReturnValue(of({ ...pending, owner: { ...pending.owner, id: 22 } }));
+    const fixture = await open(AwardSubmittedComponent, '5');
+
+    expect(navigate).toHaveBeenCalledWith(['/awards', 5], { replaceUrl: true });
+    expect(fixture.nativeElement.querySelector('[data-testid="award-submitted"]')).toBeNull();
+  });
+
+  it('f1_an_unknown_or_malformed_id_confirms_nothing', async () => {
+    service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    const unknown = await open(AwardSubmittedComponent, '999999');
+    expect(unknown.nativeElement.querySelector('[data-testid="award-submitted"]')).toBeNull();
+    expect(unknown.nativeElement.querySelector('[data-testid="award-not-found"]')).not.toBeNull();
+
+    TestBed.resetTestingModule();
+    service.get.mockClear();
+    const malformed = await open(AwardSubmittedComponent, 'abc');
+    expect(malformed.nativeElement.querySelector('[data-testid="award-not-found"]')).not.toBeNull();
+    expect(service.get).not.toHaveBeenCalled();
+  });
+
+  it('f9_an_own_draft_is_deleted_after_confirmation', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
+    service.remove.mockReturnValue(of(undefined));
+    const fixture = await open(AwardDetailComponent, '5');
+    const button = fixture.nativeElement.querySelector('[data-testid="award-remove"]') as HTMLButtonElement;
+
+    dialog.open.mockReturnValue({ afterClosed: () => of(false) });
+    button.click();
+    expect(service.remove).not.toHaveBeenCalled();
+
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    button.click();
+    expect(service.remove).toHaveBeenCalledWith(5);
+    expect(navigate).toHaveBeenCalledWith(['/awards'], {
+      replaceUrl: true,
+      state: { notice: 'awards.messages.removed' },
+    });
+  });
+
+  it('f9_a_draft_submitted_meanwhile_is_not_deleted', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
+    service.remove.mockReturnValue(
+      throwError(
+        () => new HttpErrorResponse({ status: 409, error: { type: 'urn:awards:problem:award-not-editable' } }),
+      ),
+    );
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    const fixture = await open(AwardDetailComponent, '5');
+
+    fixture.componentInstance.remove(fixture.componentInstance.award() as Award);
+
+    expect(fixture.componentInstance.notice()).toBe('awards.problems.award-not-editable');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('f9_a_submitted_award_offers_no_deletion', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-remove"]')).toBeNull();
   });
 });

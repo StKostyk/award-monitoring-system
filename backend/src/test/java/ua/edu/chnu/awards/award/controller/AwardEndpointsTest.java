@@ -199,7 +199,11 @@ class AwardEndpointsTest extends AbstractAwardEndpointsTest {
         when(awardService.get(5L)).thenThrow(new AwardNotFoundException(5L));
 
         mockMvc.perform(get(AWARD).with(administrator())).andExpect(status().isNotFound());
-        mockMvc.perform(get(AWARDS + "/abc").with(employee())).andExpect(status().isBadRequest());
+        mockMvc.perform(get(AWARDS + "/abc").with(employee())).andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:invalid-parameter"))
+            .andExpect(jsonPath("$.parameter").value("id"));
+        mockMvc.perform(get(AWARDS + "/99999999999999999999").with(employee())).andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:invalid-parameter"));
         verify(awardService, never()).listOwn(any(), anyInt(), anyInt());
         verify(submission, never()).submit(anyLong(), any());
     }

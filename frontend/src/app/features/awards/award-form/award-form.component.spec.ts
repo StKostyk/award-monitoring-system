@@ -75,9 +75,11 @@ describe('AwardFormComponent', () => {
     create: vi.fn(),
     update: vi.fn(),
     submit: vi.fn(),
+    remove: vi.fn(),
     suggestions: vi.fn((): Observable<CategorySuggestion[]> => of([])),
   };
   const dialog = { open: vi.fn() };
+  const auth = { userId: signal<string | null>('21'), isAuthenticated: signal(true) };
 
   async function open(id: string | null): Promise<void> {
     await TestBed.configureTestingModule({
@@ -95,7 +97,7 @@ describe('AwardFormComponent', () => {
         { provide: AwardsService, useValue: service },
         { provide: MatDialog, useValue: dialog },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
-        { provide: AuthService, useValue: { userId: signal('21') } },
+        { provide: AuthService, useValue: auth },
       ],
     }).compileComponents();
     router = TestBed.inject(Router);
@@ -135,6 +137,8 @@ describe('AwardFormComponent', () => {
     service.suggestions.mockReset();
     service.suggestions.mockReturnValue(of([]));
     dialog.open.mockReset();
+    auth.userId.set('21');
+    auth.isAuthenticated.set(true);
   });
 
   it('ac1_1_saves_a_draft_with_only_a_title_and_moves_to_its_address', async () => {
@@ -351,6 +355,120 @@ describe('AwardFormComponent', () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
+  it('f4_an_ended_session_keeps_the_copy_for_its_user_without_holding_the_page', async () => {
+    await open(null);
+    type('titleUk', 'Половина');
+    auth.userId.set(null);
+    auth.isAuthenticated.set(false);
+    const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
+
+    component.keepOnUnload(event);
+
+    expect(copies.load('21', 'award-new')).toEqual(expect.objectContaining({ titleUk: 'Половина' }));
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('f4_signing_out_with_a_filled_form_neither_keeps_a_copy_nor_holds_the_page', async () => {
+    await open(null);
+    type('titleUk', 'Половина');
+    copies.clearAll();
+    const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
+
+    component.keepOnUnload(event);
+
+    expect(copies.load('21', 'award-new')).toBeNull();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('f2_a_proxy_answer_while_the_server_restarts_counts_as_unreachable', async () => {
+    await open(null);
+    service.create.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 502, error: '<html>Bad Gateway</html>' })),
+    );
+    type('titleUk', 'Грамота');
+
+    component.save();
+
+    expect(component.problem()).toBe('awards.problems.network');
+    expect(component.form.controls.titleUk.value).toBe('Грамота');
+  });
+
+  it('f3_a_draft_deleted_in_another_window_becomes_a_new_unsaved_draft', async () => {
+    service.get.mockReturnValue(of(award()));
+    await open('5');
+    copies.save('21', 'award-5', emptyForm());
+    service.update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    type('titleUk', 'Змінена грамота');
+
+    component.save();
+
+    expect(component.problem()).toBe('awards.problems.award-deleted');
+    expect(component.editing()).toBe(false);
+    expect(location.replaceState).toHaveBeenCalledWith('/awards/new');
+    expect(copies.load('21', 'award-5')).toBeNull();
+    expect(copies.load('21', 'award-new')).toEqual(expect.objectContaining({ titleUk: 'Змінена грамота' }));
+
+    service.create.mockReturnValue(of(award({ id: 6, titleUk: 'Змінена грамота' })));
+    component.save();
+
+    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ titleUk: 'Змінена грамота' }));
+    expect(location.replaceState).toHaveBeenCalledWith('/awards/6/edit');
+  });
+
+  it('f9_a_draft_is_deleted_after_confirmation_and_the_list_is_shown', async () => {
+    service.get.mockReturnValue(of(award()));
+    await open('5');
+    fixture.detectChanges();
+    copies.save('21', 'award-5', emptyForm());
+    service.remove.mockReturnValue(of(undefined));
+
+    dialog.open.mockReturnValue({ afterClosed: () => of(false) });
+    (fixture.nativeElement.querySelector('[data-testid="award-remove"]') as HTMLButtonElement).click();
+    expect(service.remove).not.toHaveBeenCalled();
+
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    component.remove();
+
+    expect(service.remove).toHaveBeenCalledWith(5);
+    expect(copies.load('21', 'award-5')).toBeNull();
+    expect(router.navigate).toHaveBeenCalledWith(['/awards'], {
+      replaceUrl: true,
+      state: { notice: 'awards.messages.removed' },
+    });
+    expect(component.confirmLeave()).toBe(true);
+  });
+
+  it('f9_a_new_form_has_nothing_to_delete', async () => {
+    await open(null);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-remove"]')).toBeNull();
+    component.remove();
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('f9_a_draft_already_deleted_elsewhere_counts_as_deleted', async () => {
+    service.get.mockReturnValue(of(award()));
+    await open('5');
+    service.remove.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+
+    component.remove();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/awards'], expect.objectContaining({ replaceUrl: true }));
+  });
+
+  it('f9_a_submitted_draft_is_not_deleted_and_opens_read_only', async () => {
+    service.get.mockReturnValue(of(award()));
+    await open('5');
+    service.remove.mockReturnValue(throwError(() => problem('award-not-editable', 409)));
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+
+    component.remove();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], { state: { problem: 'award-not-editable' } });
+  });
+
   it('ac1_10_leaving_with_unsaved_values_asks_first', async () => {
     await open(null);
     expect(component.confirmLeave()).toBe(true);
@@ -482,6 +600,17 @@ describe('AwardFormComponent', () => {
       fixture.detectChanges();
 
       expect(chips()).toHaveLength(1);
+    });
+
+    it('f5_long_texts_are_cut_before_they_are_sent', async () => {
+      await openWithTimers();
+      type('titleUk', 'Грамота '.repeat(60));
+      type('awardingOrganization', 'М'.repeat(255));
+      vi.advanceTimersByTime(400);
+
+      const [title, organization] = service.suggestions.mock.calls[0] as unknown as [string, string];
+      expect(title.length).toBe(300);
+      expect(organization.length).toBe(255);
     });
 
     it('ac3_1_short_inputs_are_not_sent_and_clear_the_chips', async () => {

@@ -59,6 +59,9 @@
     <div class="award-detail__actions">
       <a mat-button routerLink="/awards" data-testid="award-back">{{ 'awards.back' | transloco }}</a>
       @if (editable(award)) {
+        <button mat-button type="button" class="award-detail__remove" (click)="remove(award)" data-testid="award-remove">
+          {{ 'awards.remove.action' | transloco }}
+        </button>
         <a mat-flat-button [routerLink]="['/awards', award.id, 'edit']" data-testid="award-edit">
           {{ 'awards.edit' | transloco }}
         </a>

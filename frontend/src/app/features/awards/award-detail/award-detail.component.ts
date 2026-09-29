@@ -2,15 +2,18 @@ import { HttpStatusCode } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatChip } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { filter, switchMap, tap } from 'rxjs';
 
-import { problemStatus } from '../../../core/api/problem';
+import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../admin/role-organizations';
 import { Award, AwardsService, awardTitle, categoryName } from '../awards.service';
+import { confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-award-detail',
@@ -21,6 +24,8 @@ import { Award, AwardsService, awardTitle, categoryName } from '../awards.servic
 })
 export class AwardDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
   private readonly service = inject(AwardsService);
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
@@ -58,6 +63,26 @@ export class AwardDetailComponent implements OnInit {
     });
   }
 
+  remove(award: Award): void {
+    confirmRemoval(this.dialog)
+      .pipe(
+        filter(Boolean),
+        tap(() => this.loading.set(true)),
+        switchMap(() => this.service.remove(award.id)),
+      )
+      .subscribe({
+        next: () => this.removed(),
+        error: (error: unknown) => {
+          this.loading.set(false);
+          if (problemStatus(error) === HttpStatusCode.NotFound) {
+            this.removed();
+          } else {
+            this.notice.set(`awards.problems.${problemType(error)}`);
+          }
+        },
+      });
+  }
+
   editable(award: Award): boolean {
     return award.status === 'DRAFT' && String(award.owner.id) === this.auth.userId();
   }
@@ -72,5 +97,10 @@ export class AwardDetailComponent implements OnInit {
 
   organization(award: Award): string {
     return organizationName(award.organization, this.language.current());
+  }
+
+  private removed(): void {
+    this.loading.set(false);
+    void this.router.navigate(['/awards'], { replaceUrl: true, state: { notice: 'awards.messages.removed' } });
   }
 }

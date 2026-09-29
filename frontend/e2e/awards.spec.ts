@@ -38,6 +38,10 @@ async function openAwards(page: Page): Promise<void> {
   await loaded;
 }
 
+function storedCopies(page: Page): Promise<number> {
+  return page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('awards.form-copy.')).length);
+}
+
 async function chooseCategory(page: Page, id: number): Promise<void> {
   await page.getByTestId('award-category').click();
   await page.getByTestId(`category-option-${id}`).click();
@@ -94,7 +98,7 @@ test.describe('award drafts and submission on a phone', () => {
     await page.getByTestId('award-add').click();
     await page.getByTestId('award-title-uk').fill(title);
     await page.getByTestId('award-organization').fill('ЧНУ');
-    await page.waitForTimeout(600);
+    await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
 
     await page.reload();
     await expect(page.getByTestId('restore-offer')).toContainText('Відновити незбережені зміни?');
@@ -112,6 +116,63 @@ test.describe('award drafts and submission on a phone', () => {
     await expect(page).toHaveURL(/\/awards$/);
     await page.getByTestId('award-add').click();
     await expect(page.getByTestId('restore-offer')).toHaveCount(0);
+  });
+
+  test('ac1_10 f4 signing out removes the unsaved copy', async ({ page }) => {
+    await openAwards(page);
+    await page.getByTestId('award-add').click();
+    await page.getByTestId('award-title-uk').fill(`Подяка декана ${token()}`);
+    await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
+
+    await page.getByTestId('logout').click();
+    await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
+    await signIn(page, employee, demo);
+    await expect(page.getByTestId('nav-awards')).toBeVisible();
+    await page.goto('/awards/new');
+
+    await expect(page.getByTestId('award-title-uk')).toBeVisible();
+    await expect(page.getByTestId('restore-offer')).toHaveCount(0);
+    expect(await storedCopies(page)).toBe(0);
+  });
+
+  test('f9 a draft is deleted from its form after confirmation', async ({ page }) => {
+    const title = `Чернетка на видалення ${token()}`;
+    await openAwards(page);
+    await page.getByTestId('award-add').click();
+    await expect(page.getByTestId('award-remove')).toHaveCount(0);
+    await page.getByTestId('award-title-uk').fill(title);
+    await page.getByTestId('award-save').click();
+    await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
+    const id = /\/awards\/(\d+)\/edit$/.exec(page.url())?.[1];
+
+    await page.getByTestId('award-remove').click();
+    await page.getByTestId('confirm-cancel').click();
+    await expect(page).toHaveURL(/\/edit$/);
+    await page.getByTestId('award-remove').click();
+    await page.getByTestId('confirm-accept').click();
+
+    await expect(page).toHaveURL(/\/awards$/);
+    await expect(page.getByTestId('awards-notice')).toContainText('Чернетку видалено');
+    await expect(page.getByTestId('award-item').filter({ hasText: title })).toHaveCount(0);
+    await page.goto(`/awards/${id}`);
+    await expect(page.getByTestId('award-not-found')).toBeVisible();
+  });
+
+  test('f1 the confirmation page confirms only an own submitted award', async ({ page }) => {
+    await openAwards(page);
+    await page.getByTestId('award-add').click();
+    await page.getByTestId('award-title-uk').fill(`Недопрацьована ${token()}`);
+    await page.getByTestId('award-save').click();
+    await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
+    const id = /\/awards\/(\d+)\/edit$/.exec(page.url())?.[1];
+
+    await page.goto(`/awards/${id}/submitted`);
+    await expect(page).toHaveURL(new RegExp(`/awards/${id}/edit$`));
+    await expect(page.getByTestId('award-submitted')).toHaveCount(0);
+
+    await page.goto('/awards/999999999/submitted');
+    await expect(page.getByTestId('award-not-found')).toBeVisible();
+    await expect(page.getByTestId('award-submitted')).toHaveCount(0);
   });
 
   test('ac2_3 ac2_6 the date picker is limited and a recent date is pointed out', async ({ page }) => {

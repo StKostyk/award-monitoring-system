@@ -49,6 +49,8 @@ const translations = {
       title: 'Мої нагороди',
       add: 'Додати нагороду',
       empty: 'Нагород ще немає.',
+      more: 'Показано {{shown}} з {{total}}',
+      messages: { removed: 'Чернетку видалено.' },
       status: { DRAFT: 'Чернетка', PENDING: 'На розгляді' },
     },
   },
@@ -120,6 +122,38 @@ describe('AwardListComponent', () => {
 
     expect(fixture.nativeElement.querySelector('[data-testid="awards-empty"]')?.textContent).toContain(
       'Нагород ще немає.',
+    );
+  });
+
+  it('f8_says_how_many_awards_the_first_page_leaves_out', async () => {
+    await create();
+    const element: HTMLElement = fixture.nativeElement;
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: { content: [award()], totalElements: 1, totalPages: 1, size: 100, number: 0 },
+      }),
+    );
+    fixture.detectChanges();
+    expect(element.querySelector('[data-testid="awards-more"]')).toBeNull();
+
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: { content: [award(), award({ id: 6 })], totalElements: 130, totalPages: 65, size: 2, number: 0 },
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(element.querySelector('[data-testid="awards-more"]')?.textContent).toContain('Показано 2 з 130');
+  });
+
+  it('f9_shows_the_notice_of_a_deleted_draft', async () => {
+    history.replaceState({ notice: 'awards.messages.removed' }, '');
+    await create();
+    fixture.detectChanges();
+    history.replaceState(null, '');
+
+    expect(fixture.nativeElement.querySelector('[data-testid="awards-notice"]')?.textContent).toContain(
+      'Чернетку видалено.',
     );
   });
 

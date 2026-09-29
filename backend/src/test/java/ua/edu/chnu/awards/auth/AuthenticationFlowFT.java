@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -29,6 +30,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 
+import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -47,6 +49,7 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
     private static final String DEAN = "ft.dean@chnu.edu.ua";
     private static final String PENDING = "ft.pending@chnu.edu.ua";
     private static final String SUSPENDED = "ft.suspended@chnu.edu.ua";
+    private static final String SIGNED_OUT = "ft.signed-out@chnu.edu.ua";
 
     @LocalServerPort
     private int port;
@@ -60,6 +63,12 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
     @Autowired
     private OrganizationRepository organizationRepository;
 
+    @Autowired
+    private AuthorizationRevoker revoker;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
     @BeforeAll
     void createUsers() {
         Organization faculty = organizationRepository.findById(TestUsers.FMI_FACULTY_ID).orElseThrow();
@@ -72,11 +81,12 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
         User suspended = TestUsers.user(SUSPENDED, faculty);
         suspended.setAccountStatus(AccountStatus.SUSPENDED);
         userRepository.save(suspended);
+        userRepository.save(TestUsers.user(SIGNED_OUT, faculty));
     }
 
     @AfterAll
     void deleteUsers() {
-        List.of(DEAN, PENDING, SUSPENDED).forEach(email ->
+        List.of(DEAN, PENDING, SUSPENDED, SIGNED_OUT).forEach(email ->
             userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
     }
 
@@ -240,6 +250,56 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
             .get("/oauth2/authorize?response_type=code&client_id=award-web&scope=openid"
                 + "&redirect_uri=http://localhost:4200/callback&code_challenge=abc&code_challenge_method=S256");
         assertThat(afterLogout.getHeader("Location")).endsWith("/login");
+    }
+
+    @Test
+    void ac18_signingOutAfterBeingSignedOutEverywhereEndsOnTheLoginPage() {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
+        String idToken = flow.exchange(flow.loginAndGetCode(SIGNED_OUT, PASSWORD)).jsonPath().getString("id_token");
+        revoker.revokeAll(userRepository.findByEmailAddressIgnoreCase(SIGNED_OUT).orElseThrow());
+
+        Response logout = RestAssured.given().redirects().follow(false).cookies(flow.cookies())
+            .queryParam("id_token_hint", idToken)
+            .queryParam("post_logout_redirect_uri", "http://localhost:4200")
+            .get("/connect/logout");
+
+        assertThat(logout.getStatusCode()).isEqualTo(302);
+        assertThat(logout.getHeader("Location")).endsWith("/login");
+    }
+
+    @Test
+    void ac18_aRefusedLogoutWithTheOwnIdTokenStillEndsTheSessionOfThatBrowser() {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
+        String idToken = flow.exchange(flow.loginAndGetCode(SIGNED_OUT, PASSWORD)).jsonPath().getString("id_token");
+        jdbc.update("delete from oauth2_authorization where principal_name = ?", SIGNED_OUT);
+
+        Response logout = logout(flow, idToken);
+
+        assertThat(logout.getStatusCode()).isEqualTo(302);
+        assertThat(logout.getHeader("Location")).endsWith("/login");
+        assertThat(flow.authorize().getHeader("Location")).endsWith("/login");
+    }
+
+    @Test
+    void ac18_aForgedLogoutSignsNobodyOut() {
+        AuthorizationCodeFlow victim = new AuthorizationCodeFlow();
+        victim.exchange(victim.loginAndGetCode(DEAN, PASSWORD));
+        AuthorizationCodeFlow attacker = new AuthorizationCodeFlow();
+        String foreign = attacker.exchange(attacker.loginAndGetCode(SIGNED_OUT, PASSWORD)).jsonPath()
+            .getString("id_token");
+
+        assertThat(logout(victim, foreign).getStatusCode()).isEqualTo(400);
+        assertThat(logout(victim, "unknown.id.token").getStatusCode()).isEqualTo(400);
+        assertThat(RestAssured.given().redirects().follow(false).cookies(victim.cookies())
+            .get("/connect/logout").getStatusCode()).isEqualTo(400);
+        assertThat(victim.authorize().getHeader("Location")).startsWith(AuthorizationCodeFlow.REDIRECT_URI);
+    }
+
+    private static Response logout(AuthorizationCodeFlow flow, String idToken) {
+        return RestAssured.given().redirects().follow(false).cookies(flow.cookies())
+            .queryParam("id_token_hint", idToken)
+            .queryParam("post_logout_redirect_uri", "http://localhost:4200")
+            .get("/connect/logout");
     }
 
     @Test

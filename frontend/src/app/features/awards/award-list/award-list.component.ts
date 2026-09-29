@@ -59,8 +59,11 @@ export class AwardListComponent implements OnInit {
   readonly filters = this.store.selectSignal(awardsFeature.selectFilters);
   readonly loading = this.store.selectSignal(awardsFeature.selectLoading);
   readonly problem = this.store.selectSignal(awardsFeature.selectProblem);
+  readonly total = this.store.selectSignal(awardsFeature.selectTotal);
+  readonly notice = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);
     this.store.dispatch(AwardsActions.opened());
     this.service.categories().subscribe({
       next: (tree) => this.categories.set(flattenCategories(tree)),

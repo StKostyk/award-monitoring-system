@@ -38,6 +38,30 @@ describe('FormCopiesService', () => {
     expect(localStorage.getItem('lang')).toBe('en');
   });
 
+  it('ac1_10_f4_a_form_closing_during_sign_out_keeps_no_copy', () => {
+    expect(copies.keepsCopies()).toBe(true);
+
+    copies.clearAll();
+    copies.save('21', 'award-new', { titleUk: 'Пізня' });
+
+    expect(copies.load('21', 'award-new')).toBeNull();
+    expect(copies.keepsCopies()).toBe(false);
+  });
+
+  it('f4_a_sign_in_keeps_only_the_copies_of_the_signed_in_user', () => {
+    copies.save('21', 'award-new', {});
+    copies.save('2', 'award-5', {});
+    copies.save('210', 'award-6', {});
+    localStorage.setItem('lang', 'en');
+
+    copies.clearOthers('21');
+
+    expect(copies.load('21', 'award-new')).toEqual({});
+    expect(copies.load('2', 'award-5')).toBeNull();
+    expect(copies.load('210', 'award-6')).toBeNull();
+    expect(localStorage.getItem('lang')).toBe('en');
+  });
+
   it('ac1_10_treats_unreadable_or_unavailable_storage_as_empty', () => {
     localStorage.setItem('awards.form-copy.21.award-new', '{broken');
     expect(copies.load('21', 'award-new')).toBeNull();
