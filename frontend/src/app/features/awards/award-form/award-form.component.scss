@@ -56,6 +56,36 @@
   font: var(--mat-sys-body-small);
 }
 
+.award-form__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.award-form__suggestions-label {
+  width: 100%;
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.award-form__suggestion {
+  height: auto;
+  max-width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  white-space: normal;
+}
+
+.award-form__suggestion-name,
+.award-form__suggestion-reasons {
+  display: block;
+}
+
+.award-form__suggestion-reasons {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
 .award-form__photo {
   color: var(--mat-sys-on-surface-variant, #444746);
   font: var(--mat-sys-body-small);

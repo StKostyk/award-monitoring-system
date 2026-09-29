@@ -12,7 +12,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
-import { Award, AwardsService, CategoryNode } from '../awards.service';
+import { Award, AwardsService, CategoryNode, CategorySuggestion } from '../awards.service';
 import { AwardFormComponent } from './award-form.component';
 
 const tree: CategoryNode[] = [
@@ -75,6 +75,7 @@ describe('AwardFormComponent', () => {
     create: vi.fn(),
     update: vi.fn(),
     submit: vi.fn(),
+    suggestions: vi.fn((): Observable<CategorySuggestion[]> => of([])),
   };
   const dialog = { open: vi.fn() };
 
@@ -131,6 +132,8 @@ describe('AwardFormComponent', () => {
     localStorage.clear();
     Object.values(service).forEach((mock) => mock.mockClear());
     service.categories.mockImplementation(() => of(tree));
+    service.suggestions.mockReset();
+    service.suggestions.mockReturnValue(of([]));
     dialog.open.mockReset();
   });
 
@@ -394,6 +397,105 @@ describe('AwardFormComponent', () => {
 
     expect(component.retiredCategory()?.id).toBe(44);
     expect(component.form.controls.categoryId.value).toBe(44);
+  });
+
+  describe('category suggestions', () => {
+    const ministry: CategorySuggestion = {
+      id: 13,
+      name: 'Ministry Recognition',
+      nameUk: 'Відзнака міністерства',
+      level: 'NATIONAL',
+      score: 110,
+      reasons: ['KEYWORD', 'HISTORY'],
+    };
+
+    function chips(): HTMLElement[] {
+      return Array.from(fixture.nativeElement.querySelectorAll('[data-testid^="category-suggestion-"]'));
+    }
+
+    async function openWithTimers(): Promise<void> {
+      await open(null);
+      vi.useFakeTimers();
+    }
+
+    afterEach(() => vi.useRealTimers());
+
+    it('ac3_4_asks_once_the_title_and_organisation_rest_for_400_ms_and_shows_chips', async () => {
+      service.suggestions.mockReturnValue(of([ministry]));
+      await openWithTimers();
+      type('titleUk', 'Грамота');
+      type('title', 'Letter');
+      type('awardingOrganization', 'Міністерство освіти');
+
+      vi.advanceTimersByTime(399);
+      expect(service.suggestions).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+      fixture.detectChanges();
+
+      expect(service.suggestions).toHaveBeenCalledTimes(1);
+      expect(service.suggestions).toHaveBeenCalledWith('Грамота Letter', 'Міністерство освіти');
+      expect(chips().map((chip) => chip.dataset['testid'])).toEqual(['category-suggestion-13']);
+      expect(chips()[0].textContent).toContain('Відзнака міністерства');
+      expect(chips()[0].textContent).toContain('categories.levels.NATIONAL');
+      expect(chips()[0].textContent).toContain('categories.reasons.HISTORY');
+    });
+
+    it('ac3_4_choosing_a_chip_fills_the_category_and_hides_the_chips', async () => {
+      service.suggestions.mockReturnValue(of([ministry]));
+      await openWithTimers();
+      type('titleUk', 'Грамота МОН');
+      vi.advanceTimersByTime(400);
+      fixture.detectChanges();
+
+      chips()[0].click();
+      fixture.detectChanges();
+
+      expect(component.form.controls.categoryId.value).toBe(13);
+      expect(component.form.dirty).toBe(true);
+      expect(chips()).toHaveLength(0);
+    });
+
+    it('ac3_4_a_category_the_user_picked_is_never_replaced', async () => {
+      service.suggestions.mockReturnValue(of([ministry]));
+      await openWithTimers();
+      type('categoryId', 10);
+      type('titleUk', 'Грамота МОН');
+      vi.advanceTimersByTime(400);
+      fixture.detectChanges();
+
+      expect(component.form.controls.categoryId.value).toBe(10);
+      expect(chips()).toHaveLength(0);
+    });
+
+    it('ac3_4_no_chips_when_the_service_fails_and_later_input_still_asks', async () => {
+      service.suggestions.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500 })));
+      service.suggestions.mockReturnValueOnce(of([ministry]));
+      await openWithTimers();
+      type('titleUk', 'Грамота МОН');
+      vi.advanceTimersByTime(400);
+      fixture.detectChanges();
+
+      expect(chips()).toHaveLength(0);
+
+      type('titleUk', 'Грамота МОН України');
+      vi.advanceTimersByTime(400);
+      fixture.detectChanges();
+
+      expect(chips()).toHaveLength(1);
+    });
+
+    it('ac3_1_short_inputs_are_not_sent_and_clear_the_chips', async () => {
+      service.suggestions.mockReturnValue(of([ministry]));
+      await openWithTimers();
+      type('titleUk', 'Грамота МОН');
+      vi.advanceTimersByTime(400);
+      type('titleUk', 'Гр');
+      vi.advanceTimersByTime(400);
+      fixture.detectChanges();
+
+      expect(service.suggestions).toHaveBeenCalledTimes(1);
+      expect(chips()).toHaveLength(0);
+    });
   });
 });
 

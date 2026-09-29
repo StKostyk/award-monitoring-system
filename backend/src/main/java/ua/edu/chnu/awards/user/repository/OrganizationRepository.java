@@ -15,4 +15,11 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
 
     @EntityGraph(attributePaths = "parent")
     List<Organization> findByOrgTypeAndActiveTrueOrderByName(OrganizationType orgType);
+
+    /**
+     * Active organisations of every type, without their parents.
+     *
+     * @return the organisations
+     */
+    List<Organization> findByActiveTrue();
 }

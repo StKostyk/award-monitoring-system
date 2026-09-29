@@ -5,7 +5,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.time.LocalDate;
@@ -55,6 +57,7 @@ class AwardFT extends AbstractIntegrationTest {
     private static final String NEWCOMER = "ft.award.newcomer@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(EMPLOYEE, DEAN, SECRETARY, OUTSIDER, ADMIN, NEWCOMER);
     private static final String AWARDS = "/api/v1/awards";
+    private static final String SUGGESTIONS = "/api/v1/award-categories/suggestions";
     private static final String TYPE = "type";
     private static final String VERSION = "version";
     private static final String PROBLEM = "urn:awards:problem:";
@@ -236,6 +239,23 @@ class AwardFT extends AbstractIntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from audit_logs where action_type = 'ACCESS_DENIED' "
             + "and new_values ->> 'path' = ? and user_id = (select user_id from users where email_address = ?)",
             Integer.class, AWARDS, ADMIN)).isPositive();
+    }
+
+    @Test
+    void ac3_1_categorySuggestionsAreRankedForTheCreatorAndRefusedToTheAdministrator() {
+        as(employee).queryParam("title", "Best paper award")
+            .queryParam("organization", "IEEE International Conference on Software Engineering")
+            .get(SUGGESTIONS).then().statusCode(200)
+            .body("size()", lessThanOrEqualTo(3))
+            .body("[0].id", equalTo(3))
+            .body("[0].level", equalTo("INTERNATIONAL"))
+            .body("[0].reasons", hasItem("KEYWORD"));
+        as(employee).queryParam("title", "Подяка").queryParam("organization", "Факультет математики та інформатики")
+            .get(SUGGESTIONS).then().statusCode(200)
+            .body("[0].level", equalTo("FACULTY"))
+            .body("[0].reasons", hasItem("ORGANISATION"));
+        as(employee).queryParam("title", "ab").get(SUGGESTIONS).then().statusCode(200).body("", hasSize(0));
+        as(tokenOf(ADMIN)).queryParam("title", "Best paper").get(SUGGESTIONS).then().statusCode(403);
     }
 
     @Test

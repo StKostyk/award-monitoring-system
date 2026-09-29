@@ -16,7 +16,7 @@
 
 ## Current focus
 
-Feature 2.1 in progress: 2.1.0 (SCRUM-21) done, 2.1.1 (SCRUM-22) done, 2.1.2 (SCRUM-23) in review, next 2.1.3 (SCRUM-24). After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
+Feature 2.1 in progress: 2.1.0 (SCRUM-21) done, 2.1.1 (SCRUM-22) done, 2.1.2 (SCRUM-23) done, 2.1.3 (SCRUM-24) in review, next /feature-validate 2.1. After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
 
 ## Scope
 
@@ -34,8 +34,8 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 2.1.0 Award domain model and category catalogue | 2.1 | 3 | SCRUM-21 | #43 | no | Done |
 | 2 | 2.1.1 Award draft and submission (US-003) | 2.1 | 8 | SCRUM-22 | #44 | yes | Done |
-| 3 | 2.1.2 Award date and duplicate validation | 2.1 | 3 | SCRUM-23 | #76 | no | In Review |
-| 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | Ready |
+| 3 | 2.1.2 Award date and duplicate validation | 2.1 | 3 | SCRUM-23 | #76 | no | Done |
+| 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | In Review |
 | 5 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | Ready |
 | 6 | 2.2.2 Version history view and audit export | 2.2 | 5 | SCRUM-26 | #79 | yes | Ready |
 | 7 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | yes | Ready |

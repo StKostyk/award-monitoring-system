@@ -73,7 +73,7 @@
     <mat-form-field class="award-form__field">
       <mat-label>{{ 'awards.fields.category' | transloco }}</mat-label>
       <mat-select formControlName="categoryId" data-testid="award-category">
-        <mat-option [value]="null">{{ 'awards.form.noCategory' | transloco }}</mat-option>
+        <mat-option [value]="null" data-testid="category-option-none">{{ 'awards.form.noCategory' | transloco }}</mat-option>
         @if (retiredCategory(); as retired) {
           <mat-option [value]="retired.id">{{ optionName(retired) }}</mat-option>
         }
@@ -91,6 +91,29 @@
         <mat-error>{{ key | transloco }}</mat-error>
       }
     </mat-form-field>
+    @if (suggestions().length && !categoryChosen()) {
+      <div class="award-form__suggestions award-form__inline" data-testid="category-suggestions">
+        <span class="award-form__suggestions-label">{{ 'categories.suggestions' | transloco }}</span>
+        @for (suggestion of suggestions(); track suggestion.id) {
+          <button
+            mat-stroked-button
+            type="button"
+            class="award-form__suggestion"
+            (click)="choose(suggestion)"
+            [attr.data-testid]="'category-suggestion-' + suggestion.id"
+          >
+            <span class="award-form__suggestion-name">
+              {{ 'categories.levels.' + suggestion.level | transloco }} · {{ optionName(suggestion) }}
+            </span>
+            <span class="award-form__suggestion-reasons">
+              @for (reason of suggestion.reasons; track reason; let last = $last) {
+                {{ 'categories.reasons.' + reason | transloco }}{{ last ? '' : ', ' }}
+              }
+            </span>
+          </button>
+        }
+      </div>
+    }
 
     <mat-form-field class="award-form__field">
       <mat-label>{{ 'awards.fields.awardingOrganization' | transloco }}</mat-label>

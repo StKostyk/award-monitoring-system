@@ -22,7 +22,8 @@ CREATE TEMPORARY TABLE seed_categories (
     description TEXT,
     level VARCHAR(20) NOT NULL,
     parent_category_id BIGINT,
-    sort_order INTEGER NOT NULL
+    sort_order INTEGER NOT NULL,
+    keywords TEXT[] NOT NULL DEFAULT '{}'
 );
 
 INSERT INTO seed_categories (category_id, name, name_uk, description, level, parent_category_id, sort_order)
@@ -77,6 +78,73 @@ VALUES
 (51, 'Speciality Best Lecturer', 'Найкращий викладач спеціальності', 'Best lecturer of a speciality by student vote', 'SPECIALITY', 50, 601),
 (52, 'Speciality Student Supervision', 'Керівництво студентськими роботами спеціальності', 'Recognition for supervising student research', 'SPECIALITY', 50, 602);
 
+-- Keywords for the category suggestion: lower-case stems matching the start of a word, several stems in one
+-- keyword match consecutive words. Stems of a root name its recognition level.
+UPDATE seed_categories s
+SET keywords = k.keywords
+FROM (VALUES
+-- INTERNATIONAL
+(1, ARRAY['міжнародн', 'international', 'світов', 'world', 'європейськ', 'europe', 'global', 'ieee', 'acm',
+          'springer', 'elsevier', 'erasmus', 'fulbright', 'фулбрайт', 'horizon', 'unesco', 'юнеско', 'daad',
+          'nato', 'нато']),
+(2, ARRAY['research award', 'research excellence', 'дослідницьк']),
+(3, ARRAY['best paper', 'best presentation', 'best talk', 'найкращ доповід', 'найкращ статт', 'конференц',
+          'conference', 'симпозіум', 'symposium', 'конгрес', 'congress']),
+(4, ARRAY['грант', 'grant', 'fellowship', 'стипенді', 'scholarship', 'стажуванн', 'internship', 'postdoc']),
+(5, ARRAY['співпрац', 'collaboration', 'партнерств', 'partnership']),
+-- NATIONAL
+(10, ARRAY['національн', 'national', 'україн', 'ukrain', 'верховн рад', 'кабінет міністр', 'cabinet of ministers',
+           'президент', 'president']),
+(11, ARRAY['премі', 'prize', 'учен', 'scientist', 'молод учен', 'young scientist', 'нан україн',
+           'academy of sciences']),
+(12, ARRAY['державн прем', 'state prize', 'заслужен', 'honoured', 'орден', 'order of', 'медал', 'medal',
+           'почесн звання', 'honorary title']),
+(13, ARRAY['міністерств', 'ministry', 'мон україн', 'нагрудн знак', 'badge', 'відмінник освіт']),
+(14, ARRAY['грант', 'grant', 'фонд досліджен', 'research foundation', 'нфду']),
+(15, ARRAY['teaching', 'педагогічн', 'викладацьк майстерн']),
+-- REGIONAL
+(80, ARRAY['обласн', 'област', 'oblast', 'region', 'регіональн', 'облдержадміністрац']),
+(81, ARRAY['державн адміністрац', 'state administration', 'військов адміністрац', 'military administration',
+           'голов обласн', 'губернатор', 'governor']),
+(82, ARRAY['обласн рад', 'regional council', 'oblast council', 'облрад']),
+(83, ARRAY['премі', 'prize', 'science prize']),
+-- LOCAL
+(70, ARRAY['міськ', 'city', 'municipal', 'громад', 'community', 'сільськ', 'селищн', 'village', 'town',
+           'територіальн громад']),
+(71, ARRAY['міськ рад', 'city council', 'міськ голов', 'mayor', 'міськвиконком', 'executive committee']),
+(72, ARRAY['community service', 'служінн громад', 'волонтер', 'volunteer', 'благодійн', 'charity']),
+-- UNIVERSITY
+(20, ARRAY['університет', 'university', 'ректор', 'rector', 'чну', 'chnu', 'чернівецьк національн університет',
+           'chernivtsi national university']),
+(21, ARRAY['excellence', 'досконал', 'university award']),
+(22, ARRAY['кращ викладач', 'найкращ викладач', 'best teacher', 'best lecturer', 'викладач року',
+           'teacher of the year']),
+(23, ARRAY['research achievement', 'науков досягн', 'публікац', 'publication']),
+(24, ARRAY['інновац', 'innovation', 'стартап', 'startup', 'винах', 'invention', 'патент', 'patent']),
+(25, ARRAY['service excellence', 'university service', 'служінн університет']),
+-- FACULTY
+(30, ARRAY['факультет', 'faculty', 'декан', 'dean', 'інститут', 'institute']),
+(31, ARRAY['faculty teaching', 'teaching', 'педагогічн', 'викладанн']),
+(32, ARRAY['науков робот', 'research', 'дослідженн']),
+(33, ARRAY['service', 'служінн']),
+(34, ARRAY['mentor', 'наставн']),
+-- COLLEGE
+(60, ARRAY['коледж', 'college']),
+(61, ARRAY['teaching', 'викладанн', 'педагогічн']),
+(62, ARRAY['service', 'служінн']),
+-- DEPARTMENT
+(40, ARRAY['кафедр', 'department']),
+(41, ARRAY['подяк кафедр', 'appreciation', 'подяк завідувач']),
+(42, ARRAY['team', 'команд']),
+(43, ARRAY['наставн', 'mentor', 'молод викладач', 'young lecturer', 'young teacher']),
+(44, ARRAY['professional development', 'професійн розвит', 'підвищенн кваліфікац', 'training']),
+-- SPECIALITY
+(50, ARRAY['спеціальн', 'speciality', 'specialty', 'освітн програм', 'study program', 'educational program']),
+(51, ARRAY['викладач спеціальн', 'best lecturer', 'голосуванн', 'student vote', 'students vote']),
+(52, ARRAY['student supervision', 'supervision', 'supervisor', 'керівництв', 'науков керівн', 'студентськ робот'])
+) AS k(category_id, keywords)
+WHERE s.category_id = k.category_id;
+
 -- A category created by users is never taken over: stop if it holds a seeded id or name.
 DO $$
 BEGIN
@@ -105,8 +173,8 @@ FROM seed_categories s
 WHERE s.category_id = c.category_id AND c.name <> s.name;
 
 INSERT INTO award_categories (category_id, name, name_uk, description, level, parent_category_id, sort_order,
-                              is_active, is_system)
-SELECT category_id, name, name_uk, description, level, parent_category_id, sort_order, TRUE, TRUE
+                              keywords, is_active, is_system)
+SELECT category_id, name, name_uk, description, level, parent_category_id, sort_order, keywords, TRUE, TRUE
 FROM seed_categories
 ON CONFLICT (category_id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -115,6 +183,7 @@ ON CONFLICT (category_id) DO UPDATE SET
     level = EXCLUDED.level,
     parent_category_id = EXCLUDED.parent_category_id,
     sort_order = EXCLUDED.sort_order,
+    keywords = EXCLUDED.keywords,
     is_active = TRUE,
     updated_at = CURRENT_TIMESTAMP
 WHERE award_categories.is_system;
