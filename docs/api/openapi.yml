@@ -1473,9 +1473,8 @@ components:
           type: string
           format: date
         validTo:
-          type: string
+          type: [string, 'null']
           format: date
-          nullable: true
 
     RoleAssignmentRequest:
       type: object
@@ -1495,9 +1494,8 @@ components:
           format: date
           description: First day the role applies; today when omitted, never in the past
         validTo:
-          type: string
+          type: [string, 'null']
           format: date
-          nullable: true
           description: Last day the role applies; open-ended when omitted
         updateOrganization:
           type: boolean
@@ -1506,9 +1504,8 @@ components:
             Membership confirmation: move the user's primary organisation to `organizationId` and revoke a
             current `EMPLOYEE` role in the previous department. Only with `role: EMPLOYEE`
         fromOrganizationId:
-          type: integer
+          type: [integer, 'null']
           format: int64
-          nullable: true
           description: |
             The user's current organisation as the caller saw it. Required with `updateOrganization` for a
             user who has already held a role (a department move); ignored for a first confirmation
@@ -1571,9 +1568,8 @@ components:
               type: string
               format: date-time
             lastLoginAt:
-              type: string
+              type: [string, 'null']
               format: date-time
-              nullable: true
             roleHistory:
               type: array
               description: Every assignment ever made, newest first
@@ -1618,17 +1614,15 @@ components:
           type: string
           format: date
         reason:
-          type: string
-          nullable: true
+          type: [string, 'null']
         state:
           $ref: '#/components/schemas/DelegationState'
         createdAt:
           type: string
           format: date-time
         revokedAt:
-          type: string
+          type: [string, 'null']
           format: date-time
-          nullable: true
 
     DelegationRequest:
       type: object
@@ -1653,9 +1647,8 @@ components:
           format: date
           description: Last day the authority applies; at most 90 days after `validFrom`
         reason:
-          type: string
+          type: [string, 'null']
           maxLength: 500
-          nullable: true
 
     DelegationList:
       type: object
@@ -1724,37 +1717,29 @@ components:
           type: integer
           format: int64
         title:
-          type: string
-          nullable: true
+          type: [string, 'null']
         titleUk:
-          type: string
-          nullable: true
+          type: [string, 'null']
         description:
-          type: string
-          nullable: true
+          type: [string, 'null']
         descriptionUk:
-          type: string
-          nullable: true
+          type: [string, 'null']
         category:
           $ref: '#/components/schemas/AwardCategoryRef'
         awardingOrganization:
-          type: string
-          nullable: true
+          type: [string, 'null']
         awardDate:
-          type: string
+          type: [string, 'null']
           format: date
-          nullable: true
         externalUrl:
-          type: string
+          type: [string, 'null']
           format: uri
-          nullable: true
         status:
           $ref: '#/components/schemas/AwardStatus'
         impactScore:
-          type: integer
+          type: [integer, 'null']
           minimum: 0
           maximum: 100
-          nullable: true
         owner:
           $ref: '#/components/schemas/UserRef'
         organization:
@@ -1828,8 +1813,7 @@ components:
         - INTERNATIONAL
 
     AwardRequestSummary:
-      type: object
-      nullable: true
+      type: [object, 'null']
       description: The approval request, present once the award is submitted
       properties:
         status:
@@ -1863,11 +1847,9 @@ components:
           type: integer
           format: int64
         title:
-          type: string
-          nullable: true
+          type: [string, 'null']
         titleUk:
-          type: string
-          nullable: true
+          type: [string, 'null']
         awardDate:
           type: string
           format: date
@@ -1918,8 +1900,7 @@ components:
             enum: [KEYWORD, ORGANISATION, HISTORY]
 
     AwardCategoryRef:
-      type: object
-      nullable: true
+      type: [object, 'null']
       properties:
         id:
           type: integer

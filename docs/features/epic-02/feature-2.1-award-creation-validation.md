@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3 (2026-09-28 → 2026-10-04)
 > **Points**: 17 (four stories)
-> **Status**: Approved 2026-09-28
+> **Status**: Done — validated 2026-09-29 (§12); findings F-1…F-11 fixed in 2.1.4 (SCRUM-28), pending the author's run of §9
 > **Author**: Stefan Kostyk
 > **Governing docs**: US-003, roadmap § Feature 2.1, DATA_DICTIONARY §2.1–§2.2 and §3.1, appendix B, BRD §7.3, AUTH §3.3, RBAC_matrix.md, ADR-004, ADR-005, ADR-009, ADR-013, openapi.yml `/awards`, state-machine-award-request.puml, sequence-award-submission.puml, EPIC-02 tracker (decisions and deviations 1–5)
 
@@ -233,6 +233,10 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 26. Open `http://localhost:4200/awards/999999` and `/awards/abc` → «Не знайдено», no request for `abc`; open another person's award id → «Не знайдено». (AC-1.8)
 27. As the administrator deactivate the chosen category in psql (`update award_categories set is_active = false where category_id = <id>;`, restart), then submit a draft that uses it. Expected: 422 on the category («Категорія більше не доступна»); the draft still shows the category name. (§5)
 28. Between 00:00 and 03:00 Kyiv time (the hours when the UTC date is still yesterday), save a draft dated today. Expected: accepted, no future-date error. The same boundary is proven at any hour by `AwardDateRulesTest` with a fixed Kyiv clock and by the database check test in `AwardSchemaIT`. (AC-2.1, §5)
+29. As `employee.fmi` open `http://localhost:4200/awards/<draft id>/submitted`. Expected: the draft's form, no «Подано на розгляд…». The same URL with the id of the step 6 award → the confirmation; with `999999` → «Не знайдено»; as `secretary.fmi` with the step 6 id → the read-only page, no confirmation. (F-1)
+30. Open one draft in two tabs. In the first, «Видалити чернетку» → dialog «Видалити чернетку?» → «Видалити». Expected: the list with «Чернетку видалено.». In the second tab change the title and «Зберегти чернетку». Expected: «Чернетку видалено в іншому вікні. Введені дані збережуться як нова чернетка.», the address becomes `/awards/new`; saving again creates a new draft with the typed values. (F-3, F-9)
+31. On a draft's detail page `/awards/<id>` choose «Видалити чернетку», then «Скасувати». Expected: the draft stays. Repeat with «Видалити» → the list without it. A submitted award shows no delete action. (F-9)
+32. Sign in as `employee.fmi` in two browsers (e.g. Chrome and a Firefox or private window). «Вийти» in the first, then in the second. Expected: both end on the login page, no «Щось пішло не так». Sign in as `secretary.fpp` (preconditions) after step 9, let `admin` revoke its `FACULTY_SECRETARY` role in another browser (a revocation signs the holder out everywhere), then «Вийти» as `secretary.fpp` → the login page. (F-11)
 
 ## 10. Risks
 
@@ -251,9 +255,70 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §2.1–§2.2 and appendix B, RBAC_matrix.md, `CHANGELOG.md`, tracker rows and deviations 1–2 closed, `BACKLOG.md`
 - §9 walked through by the author after `/feature-validate`, including the detours
 
-## 12. Validation findings
+## 12. Validation (2026-09-29, `develop` at 07e3150, refactor sweep at 31d4b13)
 
-Found by the validation run of 2026-09-29 (scenario review of the untested detours, F-1…F-9; the E2E runs of the fix, F-10 and F-11) and fixed in 2.1.4 (SCRUM-28, #85).
+Gates on `develop` before the fixes: `mvn verify` — 445 unit and slice tests, 124 integration and functional, 98.6 % lines, Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 207 Vitest; Playwright 30/30. After 2.1.4 (SCRUM-28) and the refactor sweep (#87): 445 unit and slice, 130 integration and functional, 98.5 % lines, static analysis 0, 227 Vitest, Playwright 33/33. `docker compose up -d --build` starts clean with a healthy backend; all eight award endpoints of `/v3/api-docs` are in `openapi.yml`; every `*IT` applies the migrations to an empty database.
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 0.1 | `RecognitionLevelTest#ac01_*` (4), `AwardCategoryRepositoryIT#ac01_ac03_everyLevelHasARootWithAtLeastTwoChildren` | pass |
+| 0.2 | `AwardCategoryFT#ac02_ac03_anySignedInUserReadsTheCatalogueTreeWithCachingHeaders`, `#ac02_withoutATokenTheCatalogueIsRefused`, `CategoryCatalogueTest#ac02_*` (3), `AwardCategoryRepositoryIT#ac02_inactiveCategoriesAreNotListed` | pass |
+| 0.3 | `AwardCategoryRepositoryIT#ac01_ac03_…`, `AwardCategoryFT#ac02_ac03_…` | pass |
+| 0.4 | `AwardCategoryRepositoryIT#ac04_*` (4) | pass |
+| 0.5 | `OpenApiContractTest#ac05_*` (3), `#ac1_1_awardSchemaMatchesTheResponseAndTheForm` | pass |
+| 1.1 | `AwardFT#ac1_1_to_ac1_6_…`, `#ac1_1_invalidFieldsAreListedOneByOne`, `AwardInputRulesTest#ac1_1_*` (7), `AwardEndpointsTest#ac1_1_*` (3), `AwardServiceTest#ac1_1_*`, `AwardSchemaIT#ac1_1_*` (2); `award-form.component.spec`, `awards.service.spec`; E2E `awards.spec` (draft saved, completed, submitted) | pass |
+| 1.2 | `AwardFT#ac1_2_administratorsAndUnconfirmedAccountsDoNotSubmit`, `AwardEndpointsTest#ac1_2_*` (2); `awards.guards.spec`, `award-list.component.spec` | pass |
+| 1.3 | `AwardFT#ac1_3_aSubmissionWithAStaleOrMissingVersionChangesNothing`, `AwardEndpointsTest#ac1_3_*` (2), `AwardOwnershipTest#ac1_3_*` (2), `AwardServiceTest#ac1_3_*`, `AwardSubmissionTest#ac1_3_*`; `award-form.component.spec` (stale, deleted elsewhere) | pass (F-3, F-7) |
+| 1.4 | `AwardFT#ac1_4_aDraftIsDeletedAndThenUnknown`, `AwardEndpointsTest#ac1_4_*`, `AwardOwnershipTest#ac1_4_*`, `AwardServiceTest#ac1_4_*`; E2E `awards.spec` (f9) | pass (F-9) |
+| 1.5 | `AwardFT#ac1_1_to_ac1_6_…`, `AwardSubmissionTest#ac1_5_*` (2), `AwardInputRulesTest#ac1_5_*` (2), `AwardEndpointsTest#ac1_5_*`; `award-form.component.spec` (server unavailable); E2E `awards.spec` | pass (F-2) |
+| 1.6 | `AwardFT#ac1_6_twoSubmissionsAtOnceCreateOneRequest`, `AwardSchemaIT#ac1_6_*` (2), `AwardEndpointsTest#ac1_6_*`; `award-form.component.spec` | pass |
+| 1.7 | `AwardFT#ac1_7_theListShowsOnlyOwnAwardsWithTheirRequests`, `AwardSchemaIT#ac1_7_*`, `AwardServiceTest#ac1_7_*`, `AwardEndpointsTest#ac1_7_*`; `award-list.component.spec`, `awards.store.spec` | pass (F-8) |
+| 1.8 | `AwardFT#ac1_8_submittedAwardsAreReadInsideTheScopeAndDraftsByTheOwnerOnly`, `AwardServiceTest#ac1_8_*` (2), `AwardOwnershipTest#ac1_8_*`, `AwardEndpointsTest#ac1_8_*`; `award-detail.component.spec`; E2E `awards.spec` (f1, unknown awards) | pass (F-1, F-6) |
+| 1.9 | `award-list`, `award-form`, `award-detail`, `shell.component` specs; E2E `awards.spec` (uk and en) | pass |
+| 1.10 | `form-copies.service.spec`, `award-form.component.spec`, `awards.guards.spec`, `permissions.spec`; E2E `awards.spec` (interrupted form, sign-out removes the copy) | pass (F-4) |
+| 1.11 | `AwardFT#ac1_11_anApproverSubmitsTheirOwnAward`; RBAC_matrix.md rows 25–26 | pass |
+| 2.1 | `AwardDateRulesTest#ac2_1_*` (2), `AwardInputRulesTest#ac2_1_*`, `AwardSchemaIT#ac2_1_*`, `AwardFT#ac2_1_ac2_2_…`; `awards.service.spec` | pass |
+| 2.2 | `AwardDateRulesTest#ac2_2_*` (2), `AwardInputRulesTest#ac2_2_*`, `AwardFT#ac2_1_ac2_2_…` | pass |
+| 2.3 | `AwardWarningsTest#ac2_3_*`, `AwardDateRulesTest#ac2_3_*`, `AwardServiceTest#ac2_3_*`, `AwardFT#ac2_3_…`; E2E `awards.spec` (recent date) | pass |
+| 2.4 | `DuplicateFinderIT#ac2_4_*` (3), `AwardWarningsTest#ac2_4_*` (2), `AwardFT#ac2_4_ac2_5_…`; E2E `awards.spec` (duplicate) | pass |
+| 2.5 | `AwardSubmissionTest#ac2_5_*` (2), `AwardEndpointsTest#ac2_5_*`, `AwardFT#ac2_4_ac2_5_…`; `award-form.component.spec` | pass |
+| 2.6 | `duplicate-dialog.component.spec`, `award-form.component.spec`; E2E `awards.spec` (date picker, duplicate) | pass |
+| 3.1 | `CategorySuggesterTest#ac3_1_*` (11), `OrganizationMatcherTest#ac3_1_*` (10), `SuggestionTextTest#ac3_1_*` (7), `CategorySuggestionIT#ac3_1_*` (2), `AwardCategoryEndpointsTest#ac3_1_*` (3), `AwardFT#ac3_1_*` (2); `awards.service.spec` | pass (F-5) |
+| 3.2 | `CategorySuggestionIT#ac3_2_theExpectedLevelIsAmongTheTopThreeForAtLeast24Of30LabelledAwards` | pass |
+| 3.3 | `CategorySuggestionIT#ac3_3_*` (2) | pass |
+| 3.4 | `award-form.component.spec`; E2E `awards.spec` (chips never replace a choice, no chips when the service fails) | pass |
+
+### Edge cases (§5)
+
+| Edge case | Evidence | Result |
+|-----------|----------|--------|
+| Field limits and link schemes | `AwardInputRulesTest#ac1_1_limitsAreInclusive`, `#ac1_1_onlyHttpAndHttpsLinksAreAccepted`, `#ac1_1_aTooLongLinkIsReportedOnce` | covered |
+| Draft with only a title; incomplete award outside `DRAFT` | `AwardSchemaIT#edge_theDatabaseRefusesAnIncompleteAwardOutsideDraft`, `AwardInputRulesTest#ac1_5_*` | covered |
+| Category deactivated after saving | `AwardFT#edge_aCategoryDeactivatedSinceTheDraftWasSavedStopsTheSubmissionOnly`, `AwardInputRulesTest#edge_*` (2) | covered |
+| Owner moved to another department | `AwardSubmissionTest#edge_theOrganisationIsRefreshedFromTheOwnersCurrentDepartment` | covered |
+| Owner loses `award:create` with a draft open | `AwardEndpointsTest#ac1_2_*`, `permissions.spec`; §9 step 25 | covered server side; UI by §9 |
+| Two tabs editing one draft | `AwardEndpointsTest#ac1_3_aStaleVersionAnswers409WithTheCurrentOne`, `award-form.component.spec`; §9 steps 22, 30 | covered |
+| Stale tab submits an already submitted draft | `AwardFT#ac1_1_to_ac1_6_…`, `AwardEndpointsTest#ac1_6_*`; §9 step 23 | covered |
+| Kyiv date while UTC is yesterday | `AwardDateRulesTest#ac2_1_todayIsTheKyivDayWhileUtcIsStillYesterday`, `AwardSchemaIT#ac2_1_*` | covered |
+| Team awards are not duplicates | `DuplicateFinderIT#ac2_4_anotherDayADifferentTitleOrAnotherOwnerIsNoMatch` | covered |
+| Duplicate check performance | One query on `(user_id, award_date)` in `DuplicateFinder` | by design |
+| Local copy and privacy | `form-copies.service.spec`; E2E `awards.spec` (f4) | covered (F-4) |
+| Suggestions read only the caller's history | `CategorySuggestionIT#ac3_1_historyReadsOnlyTheCallersAwards` | covered |
+
+### Security checklist
+
+| OWASP | Control | Where |
+|-------|---------|-------|
+| A01 Broken access control | `@PreAuthorize` with `award:create` and `award:read:*`; another person's or a hidden award answers 404; drafts readable by the owner only; scoped reads use the organisation subtree of Feature 1.2 | `AwardController`, `AwardOwnership`, `AccessScope` |
+| A03 Injection | Bean Validation and `AwardInputRules` on every field; bound parameters in `DuplicateFinder` and the list specifications; only `http`/`https` links; database checks `ck_awards_complete`, `ck_awards_date` | `AwardInputRules`, V020 |
+| A04 Insecure design | Optimistic `version` on save and submission, a row lock and a unique request per award against double submission | `AwardSubmission`, `AwardSchemaIT#ac1_6_*` |
+| A07 Authentication failures | Unchanged tokens of Feature 1.1; logout accepts only a valid id token of the session's own user (F-11) | AUTH § logout |
+| A09 Logging | `AWARD_SUBMITTED` audit rows with the actor, refusals audited | `AwardSubmission`, `AccessDenials` |
+
+### Findings
+ (scenario review of the untested detours, F-1…F-9; the E2E runs of the fix, F-10 and F-11) and fixed in 2.1.4 (SCRUM-28, #85).
 
 | # | Finding | Fix |
 |---|---------|-----|

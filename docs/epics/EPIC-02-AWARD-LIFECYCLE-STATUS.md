@@ -9,14 +9,14 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 2.1 Award Creation & Validation | In progress, PRD approved ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | |
+| 2.1 Award Creation & Validation | Done (validated, PRD §12; fixes 2.1.4 merged; author's run of §9 pending) ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | 2026-09-29 |
 | 2.2 Award Version History & Audit Trail | Planned | | |
 | 2.3 Award Status Tracking | Planned | | |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
 
 ## Current focus
 
-Feature 2.1 in validation: 2.1.0–2.1.3 (SCRUM-21–24) done; the validation run of 2026-09-29 found the defects fixed in 2.1.4 (SCRUM-28, done), then the manual run of PRD §9. After Feature 2.1: Epic 1 stories 1.3.1 and 1.3.3.
+Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Next: Epic 1 stories 1.3.1 and 1.3.3, then Feature 2.2.
 
 ## Scope
 
