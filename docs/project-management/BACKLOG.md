@@ -2,7 +2,7 @@
 ## Award Monitoring & Tracking System
 
 > **Last Updated**: September 2026  
-> **Total Story Points**: 154  
+> **Total Story Points**: 156  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
 > **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20
 
@@ -38,7 +38,7 @@ Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../featu
 ### Epic 1 — remaining (after Feature 2.1)
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
-| 1.3.1 | Profile information update | 3 | 1.3 | SCRUM-15 | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
+| 1.3.1 | Profile information update | 5 | 1.3 | SCRUM-15 | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
 | 1.3.3 | GDPR data portability (US-011, partial) | 5 | 1.3 | SCRUM-17 | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
 
 ### Later epics
@@ -65,7 +65,7 @@ Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../featu
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4) | 27 |
 
-Total Completed: 87 / 154 points (56%)
+Total Completed: 87 / 156 points (56%)
 
 ---
 
