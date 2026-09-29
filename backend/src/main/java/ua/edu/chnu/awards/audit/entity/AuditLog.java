@@ -26,9 +26,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * One immutable audit row. Only the columns the application writes are mapped; the trigger-written change
- * columns are not. The row is never updated: {@code audit_logs} is partitioned by {@code created_at}, so an
- * update by {@code log_id} alone would miss, and a trail that can be rewritten is not a trail.
+ * One immutable audit row. The application writes its facts to {@code new_values}; a change it records itself
+ * also fills {@code old_values} and {@code changed_fields}. The row is never updated: {@code audit_logs} is
+ * partitioned by {@code created_at}, so an update by {@code log_id} alone would miss, and a trail that can be
+ * rewritten is not a trail.
  */
 @Entity
 @Immutable
@@ -61,8 +62,15 @@ public class AuditLog {
     private Long entityId;
 
     @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "old_values")
+    private Map<String, Object> previous;
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "new_values")
     private Map<String, Object> details;
+
+    @Column(name = "changed_fields")
+    private String[] changedFields;
 
     @Column(name = "ip_address")
     private InetAddress ipAddress;

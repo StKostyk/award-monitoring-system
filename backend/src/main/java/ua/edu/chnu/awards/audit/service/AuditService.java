@@ -75,6 +75,35 @@ public class AuditService {
     }
 
     /**
+     * Stores a change of a record with the old and new values of the changed fields only, joining the caller's
+     * transaction.
+     *
+     * @param action     what happened
+     * @param entityType the audited area
+     * @param userId     who did it
+     * @param entityId   the record
+     * @param oldValues  the changed fields before the change
+     * @param newValues  the changed fields after the change
+     */
+    @Transactional
+    public void recordChange(AuditAction action, String entityType, Long userId, Long entityId,
+                             Map<String, Object> oldValues, Map<String, Object> newValues) {
+        ClientRequest client = ClientRequest.current();
+        repository.save(AuditLog.builder()
+            .userId(userId)
+            .actionType(action.name())
+            .entityType(entityType)
+            .entityId(entityId)
+            .previous(oldValues)
+            .details(newValues)
+            .changedFields(newValues.keySet().stream().sorted().toArray(String[]::new))
+            .ipAddress(client.address())
+            .userAgent(client.userAgent())
+            .correlationId(client.correlationId())
+            .build());
+    }
+
+    /**
      * Stores one event of a given entity type in its own transaction, so a refusal that rolls the caller back
      * still leaves its trace.
      *

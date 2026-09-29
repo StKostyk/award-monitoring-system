@@ -451,5 +451,70 @@
       "network": "The server is unreachable. Try again later.",
       "unknown": "The request could not be completed. Try again later."
     }
+  },
+  "profile": {
+    "menu": "My profile",
+    "title": "My profile",
+    "email": "Sign-in address",
+    "department": "Department",
+    "faculty": "Faculty",
+    "membership": "Membership",
+    "membershipConfirmed": "Membership confirmed",
+    "membershipPending": "Awaiting confirmation by the secretary",
+    "created": "Account created",
+    "lastLogin": "Last sign-in",
+    "never": "Not signed in yet",
+    "roles": "Roles",
+    "noRoles": "No roles yet",
+    "validity": "from {{from}}",
+    "delegations": "Received delegations",
+    "delegatedBy": "from {{name}}",
+    "namesTitle": "First and last name",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "save": "Save",
+    "saved": "Saved",
+    "addressTitle": "Sign-in address",
+    "addressHint": "A new address has to be confirmed from its mailbox. Confirming ends every session.",
+    "changeAddress": "Change address",
+    "validation": {
+      "required": "The field cannot be empty",
+      "too-long": "At most 100 characters",
+      "invalid": "Letters, apostrophe, hyphen and space only, starting with a letter",
+      "not-allowed": "This field cannot be changed here"
+    },
+    "errors": {
+      "load": "The profile could not be loaded. Try again later.",
+      "network": "The server is unavailable. Try again later.",
+      "failed": "The changes could not be saved. Try again later."
+    }
+  },
+  "emailChange": {
+    "title": "Change address",
+    "newEmail": "New address",
+    "password": "Current password",
+    "hint": "The confirmation link goes to the new address",
+    "submit": "Send link",
+    "cancel": "Cancel",
+    "sent": "A link was sent to {{email}}. Open it within 1 hour.",
+    "validation": {
+      "email": "Enter a valid address",
+      "password": "Enter your current password"
+    },
+    "errors": {
+      "password-mismatch": "Wrong password",
+      "institutional-email-required": "An address in the chnu.edu.ua domain is required",
+      "email-taken": "This address is already in use",
+      "unchanged": "This is your current address",
+      "too-many-requests": "Too many requests. Try again later.",
+      "network": "The server is unavailable. Try again later.",
+      "failed": "The link could not be sent. Try again later."
+    },
+    "confirmTitle": "Sign-in address change",
+    "changed": "The address was changed. Sign in with {{email}}.",
+    "signIn": "Sign in",
+    "taken": "This address already belongs to another account. The address was not changed.",
+    "invalid": "The link is invalid or expired.",
+    "failed": "The address could not be changed. Try again later."
   }
 }

@@ -157,7 +157,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 2. Change the last name to `Петренко-Коваль`, save. Expected: «Збережено», the header shows the new name without reloading; psql `select action_type, changed_fields, old_values, new_values from audit_logs where action_type = 'PROFILE_UPDATED' order by created_at desc limit 1;` → only `last_name`, old and new values, with IP. (AC-1.2, 1.3)
 3. Enter `Петренко1` and `   ` in the name fields. Expected: save disabled with field messages. In Swagger `PATCH /api/v1/users/me` with `{"lastName": "X1"}` → 422 with a field error; `{"email": "x@chnu.edu.ua"}` → 422; `{"lastName": "Петренко-Коваль"}` again → 200 and no new audit row. (AC-1.2)
 4. psql: `select new_values ? 'password_hash' from audit_logs where entity_type = 'users' order by created_at desc limit 1;` → `f`. (AC-1.8)
-5. Register and verify `mover@chnu.edu.ua` (Feature 1.1 flow), sign in, open `/profile` → «Змінити адресу»: new address `mover.new@chnu.edu.ua`, wrong password. Expected: «Невірний пароль», nothing sent. With the right password: «Посилання надіслано на mover.new@chnu.edu.ua»; Mailpit has the link addressed to the new address. (AC-1.4)
+5. Register and verify `mover@chnu.edu.ua` (Feature 1.1 flow), sign in, open `/profile` → «Змінити адресу»: new address `mover.new@chnu.edu.ua`, wrong password. Expected: «Невірний пароль», nothing sent. With the right password: «Посилання надіслано на mover.new@chnu.edu.ua»; Mailpit has the link addressed to the new address and a warning «Запит на зміну адреси для входу» to `mover@chnu.edu.ua` naming the new address with a link to the password reset. (AC-1.4)
 6. Open the link from Mailpit. Expected: «Адресу змінено. Увійдіть з новою адресою.»; Mailpit has a notice to `mover@chnu.edu.ua` naming the new address; the open app tab lands on the login page at its next click; signing in with the old address fails, with the new one succeeds and `/profile` shows it. psql shows `EMAIL_CHANGE_REQUESTED` and `EMAIL_CHANGED`. (AC-1.5, 1.6)
 7. In Swagger as the mover request a change to `employee.fmi@chnu.edu.ua` → 409 `email-taken`; to `mover@gmail.com` → 422 `institutional-email-required`; two valid requests within a minute → second 429. (AC-1.4)
 8. Switch the UI to English. Expected: every label of the profile page, dialog and confirm page in English. (AC-1.7)
@@ -177,6 +177,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 16. Edit the name, stop the backend, click save → «Сервер недоступний», the form keeps the input; start the backend and save again → 200. (AC-1.2)
 17. Let the access token expire on `/profile` (15 minutes, or set `expires_at` in session storage to the past), then save the name → silent refresh, 200. (AC-1.7, Feature 1.2 AC-4.6)
 18. Five wrong passwords in the address dialog → the account is locked and signed out; the administrator email of Feature 1.1 arrives. (AC-1.4)
+18a. Request a change, then reset the password from the warning email before opening the link → the link answers 410 and the address stays. (review finding, AC-1.4)
 19. Press Back after the confirm page and reload it → 410 page, the address unchanged a second time. (AC-1.5)
 20. Export in two tabs at once → one download, the other «Забагато запитів». (AC-3.4)
 

@@ -22,6 +22,7 @@ const profile: UserProfile = {
     },
   ],
   organization: { id: 9, name: 'Faculty of Mathematics', nameUk: 'Факультет математики', code: 'FMI', type: 'FACULTY' },
+  faculty: null,
   status: 'ACTIVE',
   createdAt: '2026-09-01T00:00:00Z',
   lastLoginAt: null,

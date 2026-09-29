@@ -309,6 +309,10 @@ lawful_basis_assessment:
 | **Data Portability (20)** | JSON/CSV export functionality | 1 month | Fully automated |
 | **Object (21)** | Opt-out mechanisms | Immediate | Fully automated |
 
+**Implementation notes (Feature 1.3, September 2026)**:
+- Rectification (Art. 16): the `/profile` page corrects first and last name at once; the sign-in address changes after confirmation from the new mailbox. Every change is audited by the application (`PROFILE_UPDATED` with the old and new values of the changed fields only, `EMAIL_CHANGE_REQUESTED`, `EMAIL_CHANGED`), with IP and correlation id, in addition to the trigger row.
+- Audit minimisation: since V022 the audit trigger leaves `password_hash` out of the snapshots of `users` rows, so the seven-year trail keeps no credential material from then on. Rows written before V022 keep the hashes they captured; audit rows are immutable, and whether to purge those values is decided at the end of Epic 1 (thesis sync).
+
 ### **4.4 Cross-Border Transfer Mechanisms**
 
 ```yaml

@@ -50,7 +50,18 @@ public class AuthorizationRevoker {
      * @return number of authorizations removed
      */
     public int revokeAll(User user) {
-        String principalName = user.getEmailAddress();
+        return revokeAll(user.getId(), user.getEmailAddress());
+    }
+
+    /**
+     * Signs a user out everywhere under the sign-in name the sessions were opened with, which differs from the
+     * stored address while that address is being changed.
+     *
+     * @param userId        the account being signed out
+     * @param principalName the sign-in address its sessions and authorizations carry
+     * @return number of authorizations removed
+     */
+    public int revokeAll(Long userId, String principalName) {
         List<SessionInformation> logins = sessions.getAllPrincipals().stream()
             .filter(principal -> principal instanceof UserDetails details
                 && details.getUsername().equalsIgnoreCase(principalName))
@@ -62,11 +73,11 @@ public class AuthorizationRevoker {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    markRevoked(user.getId());
+                    markRevoked(userId);
                 }
             });
         } else {
-            markRevoked(user.getId());
+            markRevoked(userId);
         }
         log.debug("Revoked {} authorizations and {} login sessions of {}", authorizations, logins.size(),
             principalName);

@@ -25,7 +25,15 @@
     {{ 'app.language' | transloco }}
   </button>
   @if (auth.isAuthenticated()) {
-    <span class="shell__user" data-testid="user-name">{{ auth.fullName() }}</span>
+    <button mat-button type="button" class="shell__user" [matMenuTriggerFor]="userMenu" data-testid="user-menu">
+      <span data-testid="user-name">{{ auth.fullName() }}</span>
+    </button>
+    <mat-menu #userMenu="matMenu">
+      <a mat-menu-item routerLink="/profile" data-testid="nav-profile">
+        <mat-icon>person</mat-icon>
+        <span>{{ 'profile.menu' | transloco }}</span>
+      </a>
+    </mat-menu>
     <button mat-icon-button type="button" (click)="logout()" [attr.aria-label]="'app.logout' | transloco" data-testid="logout">
       <mat-icon>logout</mat-icon>
     </button>

@@ -18,6 +18,7 @@ const PUBLIC_ROUTES = [
   '/forgot-password',
   '/reset-password',
   '/security/not-me',
+  '/confirm-email-change',
   '/callback',
 ];
 

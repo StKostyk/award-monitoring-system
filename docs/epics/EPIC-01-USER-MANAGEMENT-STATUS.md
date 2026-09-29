@@ -34,7 +34,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 8 | 1.2.2 Role assignment and membership confirmation | 1.2 | 8 | SCRUM-13 | #32 | yes | Done |
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Done |
 | 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | Done |
-| 10 | 1.3.1 Profile information update | 1.3 | 5 | SCRUM-15 | #38 | yes | Ready |
+| 10 | 1.3.1 Profile information update | 1.3 | 5 | SCRUM-15 | #38 | yes | In Review |
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Moved to Epic 7 |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Ready |
 

@@ -83,6 +83,7 @@ public class PasswordResetService {
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
+        tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
         authorizations.revokeAll(user);
         audit.record(AuditAction.PASSWORD_RESET, user.getId());
     }

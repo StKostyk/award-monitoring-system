@@ -6,5 +6,6 @@ package ua.edu.chnu.awards.auth.entity;
 public enum TokenPurpose {
     EMAIL_VERIFICATION,
     PASSWORD_RESET,
-    SECURITY_REVOKE
+    SECURITY_REVOKE,
+    EMAIL_CHANGE
 }

@@ -42,6 +42,20 @@ public class OneTimeTokenService {
      */
     @Transactional
     public String issue(User user, TokenPurpose purpose, Duration ttl) {
+        return issue(user, purpose, ttl, null);
+    }
+
+    /**
+     * Creates a token that carries a requested sign-in address.
+     *
+     * @param user            owner
+     * @param purpose         what the token allows
+     * @param ttl             lifetime
+     * @param newEmailAddress the address the link confirms, null for purposes without one
+     * @return the raw token to embed in the email link
+     */
+    @Transactional
+    public String issue(User user, TokenPurpose purpose, Duration ttl, String newEmailAddress) {
         byte[] bytes = new byte[TOKEN_BYTES];
         RANDOM.nextBytes(bytes);
         String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -49,6 +63,7 @@ public class OneTimeTokenService {
             .user(user)
             .tokenHash(hash(raw))
             .purpose(purpose)
+            .newEmailAddress(newEmailAddress)
             .expiresAt(clock.instant().plus(ttl))
             .build());
         return raw;
@@ -109,7 +124,7 @@ public class OneTimeTokenService {
         return redeem(raw, purpose).map(OneTimeToken::getUser).orElseThrow(OneTimeTokenService::gone);
     }
 
-    private static ApiProblemException gone() {
+    static ApiProblemException gone() {
         return new ApiProblemException(HttpStatus.GONE, "token-invalid",
             "The link is invalid, expired or already used");
     }

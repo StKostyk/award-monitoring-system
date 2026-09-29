@@ -177,11 +177,12 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ### 1.4 Entity: `one_time_tokens`
 
-**Description**: Single-use tokens delivered by email for address verification, password reset and security revocation. Only the SHA-256 hash of the token is stored; the raw value exists solely in the email link.
+**Description**: Single-use tokens delivered by email for address verification, password reset, security revocation and sign-in address change. Only the SHA-256 hash of the token is stored; the raw value exists solely in the email link.
 
 **Business Rules**:
 - A token is redeemable once: `used_at` is set on first use and later attempts are rejected
-- Lifetime by purpose: `EMAIL_VERIFICATION` 24 hours, `PASSWORD_RESET` 1 hour, `SECURITY_REVOKE` 24 hours
+- Lifetime by purpose: `EMAIL_VERIFICATION` 24 hours, `PASSWORD_RESET` 1 hour, `SECURITY_REVOKE` 24 hours, `EMAIL_CHANGE` 1 hour
+- An `EMAIL_CHANGE` token carries the requested address in `new_email_address`; no other purpose does (V022). A new request cancels the user's earlier unused `EMAIL_CHANGE` tokens; a confirmed change cancels the unused `PASSWORD_RESET` tokens
 - Expired and used rows are removed by a scheduled cleanup
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
@@ -189,7 +190,8 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `id` | `BIGSERIAL` | NO | Auto | PK | Unique token identifier |
 | `token_hash` | `VARCHAR(64)` | NO | - | UK | SHA-256 hex digest of the token |
 | `user_id` | `BIGINT` | NO | - | FK→users | Owner of the token |
-| `purpose` | `VARCHAR(30)` | NO | - | CK | `EMAIL_VERIFICATION`, `PASSWORD_RESET`, `SECURITY_REVOKE` |
+| `purpose` | `VARCHAR(30)` | NO | - | CK | `EMAIL_VERIFICATION`, `PASSWORD_RESET`, `SECURITY_REVOKE`, `EMAIL_CHANGE` |
+| `new_email_address` | `VARCHAR(255)` | YES | - | CK | Requested sign-in address, lower case; present exactly when `purpose` = `EMAIL_CHANGE` (GDPR: Personal Data) |
 | `expires_at` | `TIMESTAMPTZ` | NO | - | - | Moment after which the token is rejected |
 | `used_at` | `TIMESTAMPTZ` | YES | - | - | Moment of redemption (NULL while unused) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
@@ -619,7 +621,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Log entry timestamp |
 
 **Action Types** (common values):
-- `INSERT`, `UPDATE`, `DELETE` - row changes written by the audit triggers (`entity_type` = table name)
+- `INSERT`, `UPDATE`, `DELETE` - row changes written by the audit triggers (`entity_type` = table name); since V022 the snapshots of `users` rows leave out `password_hash` (rows written earlier keep it)
+- `PROFILE_UPDATED`, `EMAIL_CHANGE_REQUESTED`, `EMAIL_CHANGED` - the user's own account changes written by the application (`entity_type` = `USER`, `entity_id` = the user); a name change stores the old and new values of the changed fields only in `old_values`/`new_values` with their names in `changed_fields`; the address events carry the requested address, or the old and new address
 - `LOGIN_SUCCESS`, `LOGIN_FAILED`, `ACCOUNT_LOCKED`, `LOGOUT`, `EMAIL_VERIFIED`, `PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET` - authentication events written by the application (`entity_type` = `AUTHENTICATION`, `entity_id` = user id, facts such as the failure reason in `new_values`)
 - `ACCESS_DENIED`, `ROLE_ASSIGNED`, `ROLE_REVOKED` - authorization events written by the application (`entity_type` = `AUTHORIZATION`, `entity_id` = the user concerned; `new_values` carries the missing requirement for a refusal, or the actor, role, organization and validity for a role change)
 - `DELEGATION_CREATED`, `DELEGATION_REVOKED` - approval authority lent and taken back (`entity_type` = `AUTHORIZATION`, `entity_id` = the delegate; `new_values` carries the actor, both parties, role, organization and period)

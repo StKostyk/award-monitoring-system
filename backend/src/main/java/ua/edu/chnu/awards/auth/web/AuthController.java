@@ -9,19 +9,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ua.edu.chnu.awards.auth.dto.EmailChangeConfirmRequest;
+import ua.edu.chnu.awards.auth.dto.EmailChangeResponse;
 import ua.edu.chnu.awards.auth.dto.EmailRequest;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.dto.RevokeRequest;
 import ua.edu.chnu.awards.auth.dto.TokenRequest;
 import ua.edu.chnu.awards.auth.service.DeviceService;
+import ua.edu.chnu.awards.auth.service.EmailChangeService;
 import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * Registration, email verification, password reset and sign-in denial, open without a token.
+ * Registration, email verification, password reset, address change confirmation and sign-in denial, open without
+ * a token.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -31,6 +35,7 @@ public class AuthController {
     private final RegistrationService registrationService;
     private final PasswordResetService passwordResetService;
     private final DeviceService deviceService;
+    private final EmailChangeService emailChangeService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -59,6 +64,11 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirmPasswordReset(@Valid @RequestBody TokenRequest request) {
         passwordResetService.confirm(request.token(), request.password());
+    }
+
+    @PostMapping("/email-change/confirm")
+    public EmailChangeResponse confirmEmailChange(@Valid @RequestBody EmailChangeConfirmRequest request) {
+        return new EmailChangeResponse(emailChangeService.confirm(request.token()));
     }
 
     @PostMapping("/security/revoke")

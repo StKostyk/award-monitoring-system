@@ -89,6 +89,7 @@ public class DeviceService {
     public void revoke(String rawToken) {
         User user = tokens.redeemOwner(rawToken, TokenPurpose.SECURITY_REVOKE);
         tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
+        tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
         byte[] secret = new byte[SECRET_BYTES];
         RANDOM.nextBytes(secret);
         user.setPasswordHash(passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)));

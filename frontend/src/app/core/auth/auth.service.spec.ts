@@ -19,6 +19,7 @@ const profile: UserProfile = {
   lastName: 'Employee',
   roles: [],
   organization: { id: 64, name: 'Department', nameUk: 'Кафедра', code: 'DAI', type: 'DEPARTMENT' },
+  faculty: null,
   status: 'ACTIVE',
   createdAt: '2026-09-01T00:00:00Z',
   lastLoginAt: null,

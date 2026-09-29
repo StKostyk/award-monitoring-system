@@ -108,6 +108,7 @@ class PasswordResetServiceTest {
         assertThat(active.getPasswordHash()).isEqualTo("$2a$12$new");
         verify(revoker).revokeAll(active);
         verify(tokens).invalidate(active, TokenPurpose.SECURITY_REVOKE);
+        verify(tokens).invalidate(active, TokenPurpose.EMAIL_CHANGE);
         verify(audit).record(AuditAction.PASSWORD_RESET, 7L);
     }
 
