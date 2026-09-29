@@ -1,6 +1,6 @@
 package ua.edu.chnu.awards.common.web;
 
-import java.net.URI;
+import java.util.Map;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -27,11 +27,8 @@ public class InvalidParameterProblems {
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ProblemDetail invalidParameter(MethodArgumentTypeMismatchException exception) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-            "The value of " + exception.getName() + " is not valid");
-        problem.setType(URI.create(ApiExceptionHandler.TYPE_PREFIX + "invalid-parameter"));
-        problem.setTitle(HttpStatus.BAD_REQUEST.getReasonPhrase());
-        problem.setProperty("parameter", exception.getName());
-        return problem;
+        return new ApiProblemException(HttpStatus.BAD_REQUEST, "invalid-parameter",
+            "The value of " + exception.getName() + " is not valid", Map.of("parameter", exception.getName()))
+            .toProblem();
     }
 }

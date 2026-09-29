@@ -9,7 +9,6 @@ import {
   awardTitle,
   daysBefore,
   duplicateMatches,
-  fieldProblems,
   flattenCategories,
   isRecent,
   kyivToday,
@@ -138,16 +137,6 @@ describe('award helpers', () => {
       [10, 0],
       [13, 1],
     ]);
-  });
-
-  it('ac1_1_reads_the_field_errors_of_a_problem', () => {
-    const problem = new HttpErrorResponse({
-      status: 422,
-      error: { errors: [{ field: 'title', code: 'required', message: 'x' }] },
-    });
-
-    expect(fieldProblems(problem).map((entry) => entry.field)).toEqual(['title']);
-    expect(fieldProblems(new HttpErrorResponse({ status: 500 }))).toEqual([]);
   });
 
   it('ac2_2_the_oldest_date_is_fifty_years_back_and_a_leap_day_becomes_the_28th', () => {

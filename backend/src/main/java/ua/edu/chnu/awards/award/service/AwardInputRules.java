@@ -33,8 +33,8 @@ public class AwardInputRules {
     static final int DESCRIPTION_MAX = 4000;
     static final int ORGANIZATION_MAX = 255;
     static final int URL_MAX = 2048;
+    static final String TITLE = "title";
     static final String CATEGORY = "categoryId";
-    static final String AWARD_DATE = "awardDate";
     private static final Set<String> WEB_SCHEMES = Set.of("http", "https");
 
     private final AwardCategoryRepository categories;
@@ -71,7 +71,7 @@ public class AwardInputRules {
             errors.add(inactiveCategory());
         }
         if (!errors.isEmpty()) {
-            throw refused("validation-failed", "The award form has invalid fields", errors);
+            throw ApiProblemException.validationFailed("The award form has invalid fields", errors);
         }
         return category;
     }
@@ -79,9 +79,9 @@ public class AwardInputRules {
     private static List<FieldViolation> textErrors(AwardForm form) {
         List<FieldViolation> errors = new ArrayList<>();
         if (form.title() == null && form.titleUk() == null) {
-            errors.add(new FieldViolation("title", "required", "A title in Ukrainian or English is required"));
+            errors.add(new FieldViolation(TITLE, "required", "A title in Ukrainian or English is required"));
         }
-        tooLong(errors, "title", form.title(), TITLE_MAX);
+        tooLong(errors, TITLE, form.title(), TITLE_MAX);
         tooLong(errors, "titleUk", form.titleUk(), TITLE_MAX);
         tooLong(errors, "description", form.description(), DESCRIPTION_MAX);
         tooLong(errors, "descriptionUk", form.descriptionUk(), DESCRIPTION_MAX);
@@ -110,10 +110,11 @@ public class AwardInputRules {
             missing.add(required("awardingOrganization"));
         }
         if (award.getAwardDate() == null) {
-            missing.add(required(AWARD_DATE));
+            missing.add(required(AwardDateRules.AWARD_DATE));
         }
         if (!missing.isEmpty()) {
-            throw refused("award-incomplete", "The award is missing fields a submission needs", missing);
+            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "award-incomplete",
+                "The award is missing fields a submission needs", Map.of("errors", missing));
         }
         List<FieldViolation> errors = new ArrayList<>();
         if (!award.getCategory().isActive()) {
@@ -121,7 +122,7 @@ public class AwardInputRules {
         }
         dates.check(award.getAwardDate()).ifPresent(errors::add);
         if (!errors.isEmpty()) {
-            throw refused("validation-failed", "The award has invalid fields", errors);
+            throw ApiProblemException.validationFailed("The award has invalid fields", errors);
         }
     }
 
@@ -149,10 +150,6 @@ public class AwardInputRules {
 
     private static FieldViolation inactiveCategory() {
         return new FieldViolation(CATEGORY, "inactive", "The category is no longer available");
-    }
-
-    private static ApiProblemException refused(String type, String detail, List<FieldViolation> errors) {
-        return new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, type, detail, Map.of("errors", errors));
     }
 
     private static String clean(String value) {

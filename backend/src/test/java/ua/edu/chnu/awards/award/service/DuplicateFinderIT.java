@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.award.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static ua.edu.chnu.awards.support.AwardRows.award;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,9 +25,6 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 class DuplicateFinderIT extends AbstractJpaSliceTest {
 
     private static final LocalDate DATE = LocalDate.of(2025, 5, 1);
-    private static final String INSERT = "insert into awards (user_id, organization_id, title, title_uk, status, "
-        + "category_id, awarding_organization, award_date) values (?, 64, ?, ?, ?, 13, 'МОН', ?) "
-        + "returning award_id";
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -79,6 +77,6 @@ class DuplicateFinderIT extends AbstractJpaSliceTest {
     }
 
     private long insert(User user, String title, String titleUk, String status, LocalDate date) {
-        return jdbc.queryForObject(INSERT, Long.class, user.getId(), title, titleUk, status, date);
+        return award(jdbc, user.getId()).title(title).titleUk(titleUk).status(status).awardDate(date).insert();
     }
 }

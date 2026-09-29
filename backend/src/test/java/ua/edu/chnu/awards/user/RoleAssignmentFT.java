@@ -21,10 +21,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 
-import ua.edu.chnu.awards.support.AbstractIntegrationTest;
-import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
+import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.Mailpit;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -33,15 +31,13 @@ import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
 /**
  * Every test owns the account it changes, so the order the methods run in cannot matter.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class RoleAssignmentFT extends AbstractIntegrationTest {
+class RoleAssignmentFT extends AbstractFunctionalTest {
 
-    private static final String PASSWORD = "Passw0rd-demo";
     private static final String ADMIN = "ft.roles.admin@chnu.edu.ua";
     private static final String RECTOR = "ft.roles.rector@chnu.edu.ua";
     private static final String DEAN = "ft.roles.dean@chnu.edu.ua";
@@ -62,9 +58,6 @@ class RoleAssignmentFT extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private UserRoleRepository userRoleRepository;
 
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -275,24 +268,5 @@ class RoleAssignmentFT extends AbstractIntegrationTest {
         @SuppressWarnings("unchecked")
         List<String> permissions = (List<String>) claims(tokenOf(NEWCOMER)).get("permissions");
         assertThat(permissions).contains("award:create");
-    }
-
-    private long withRole(String email, Organization home, RoleType role, Organization scope) {
-        User user = userRepository.save(TestUsers.user(email, home));
-        userRoleRepository.save(TestUsers.role(user, role, scope, LocalDate.now().minusDays(1), null));
-        return user.getId();
-    }
-
-    private static String tokenOf(String email) {
-        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
-        return flow.exchange(flow.loginAndGetCode(email, PASSWORD)).jsonPath().getString("access_token");
-    }
-
-    private static RequestSpecification as(String token) {
-        return RestAssured.given().header("Authorization", "Bearer " + token);
-    }
-
-    private static Map<String, Object> claims(String token) {
-        return AuthorizationCodeFlow.claimsOf(token);
     }
 }

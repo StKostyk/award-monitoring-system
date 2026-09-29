@@ -33,22 +33,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 
-import ua.edu.chnu.awards.support.AbstractIntegrationTest;
-import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
+import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
-import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AwardFT extends AbstractIntegrationTest {
+class AwardFT extends AbstractFunctionalTest {
 
-    private static final String PASSWORD = "Passw0rd-demo";
     private static final String EMPLOYEE = "ft.award.employee@chnu.edu.ua";
     private static final String DEAN = "ft.award.dean@chnu.edu.ua";
     private static final String SECRETARY = "ft.award.secretary@chnu.edu.ua";
@@ -71,9 +66,6 @@ class AwardFT extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private UserRoleRepository userRoleRepository;
 
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -405,20 +397,5 @@ class AwardFT extends AbstractIntegrationTest {
         return as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Подяка " + date,
                 "categoryId", MINISTRY_CATEGORY, "awardingOrganization", "МОН України", "awardDate", date.toString()))
             .post(AWARDS);
-    }
-
-    private long withRole(String email, Organization home, RoleType role, Organization scope) {
-        User user = userRepository.save(TestUsers.user(email, home));
-        userRoleRepository.save(TestUsers.role(user, role, scope, LocalDate.now().minusDays(1), null));
-        return user.getId();
-    }
-
-    private static String tokenOf(String email) {
-        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
-        return flow.exchange(flow.loginAndGetCode(email, PASSWORD)).jsonPath().getString("access_token");
-    }
-
-    private static RequestSpecification as(String token) {
-        return RestAssured.given().header("Authorization", "Bearer " + token);
     }
 }

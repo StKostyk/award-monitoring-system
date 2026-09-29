@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.user.dto.UserDetailResponse;
 import ua.edu.chnu.awards.user.dto.UserDirectoryQuery;
 import ua.edu.chnu.awards.user.dto.UserSummaryResponse;
@@ -36,8 +37,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserDirectoryService {
 
-    public static final int MAX_PAGE_SIZE = 100;
-
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final UserProfileMapper mapper;
@@ -50,7 +49,7 @@ public class UserDirectoryService {
      *
      * @param query filters
      * @param page  0-based page number
-     * @param size  requested page size, capped at {@link #MAX_PAGE_SIZE}
+     * @param size  requested page size, capped at {@link PageResponse#MAX_SIZE}
      * @return the page
      */
     @Transactional(readOnly = true)
@@ -62,7 +61,7 @@ public class UserDirectoryService {
             query.role() == null ? null : specifications.holdingRole(query.role(), today),
             query.unconfirmed() ? specifications.neverConfirmed() : null,
             specifications.matching(query.q()));
-        PageRequest request = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE),
+        PageRequest request = PageResponse.request(page, size,
             Sort.by("lastName", "firstName", "id"));
         Page<User> users = userRepository.findAll(specification, request);
         List<Long> ids = users.map(User::getId).toList();

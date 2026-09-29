@@ -7,6 +7,13 @@ export interface ProblemDetail {
   detail?: string;
 }
 
+/** One refused field of a problem answer. */
+export interface FieldProblem {
+  field: string;
+  code: string;
+  message: string;
+}
+
 const TYPE_PREFIX = 'urn:awards:problem:';
 /** No answer at all, or the proxy's answer while the application is down or restarting. */
 const UNREACHABLE = [0, 502, 503, 504];
@@ -29,4 +36,10 @@ export function problemType(error: unknown): string {
 /** HTTP status of an API error, or 0 when the request never reached the server. */
 export function problemStatus(error: unknown): number {
   return error instanceof HttpErrorResponse ? error.status : 0;
+}
+
+/** The field errors of a 422 answer, empty when there are none. */
+export function fieldProblems(error: unknown): FieldProblem[] {
+  const body = (error as { error?: { errors?: unknown } } | null)?.error;
+  return Array.isArray(body?.errors) ? (body.errors as FieldProblem[]) : [];
 }

@@ -20,10 +20,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import io.restassured.RestAssured;
-import io.restassured.specification.RequestSpecification;
 
-import ua.edu.chnu.awards.support.AbstractIntegrationTest;
-import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
+import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -33,9 +31,8 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AccessControlFT extends AbstractIntegrationTest {
+class AccessControlFT extends AbstractFunctionalTest {
 
-    private static final String PASSWORD = "Passw0rd-demo";
     private static final String DEAN = "ft.scope.dean@chnu.edu.ua";
     private static final String ADMIN = "ft.scope.admin@chnu.edu.ua";
     private static final String MEMBER = "ft.scope.member@chnu.edu.ua";
@@ -154,18 +151,5 @@ class AccessControlFT extends AbstractIntegrationTest {
         as(tokenOf(ADMIN)).get("/api/v1/users/" + outsiderId).then().statusCode(200)
             .body("roles", equalTo(List.of()))
             .body("membershipConfirmed", equalTo(false));
-    }
-
-    private static String tokenOf(String email) {
-        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
-        return flow.exchange(flow.loginAndGetCode(email, PASSWORD)).jsonPath().getString("access_token");
-    }
-
-    private static RequestSpecification as(String token) {
-        return RestAssured.given().header("Authorization", "Bearer " + token);
-    }
-
-    private static Map<String, Object> claims(String token) {
-        return AuthorizationCodeFlow.claimsOf(token);
     }
 }

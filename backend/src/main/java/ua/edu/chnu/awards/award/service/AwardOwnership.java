@@ -65,9 +65,8 @@ public class AwardOwnership {
      */
     public void requireVersion(Award award, Long version) {
         if (version == null) {
-            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "validation-failed",
-                "The version last read is required", Map.of("errors",
-                    List.of(new FieldViolation("version", "required", "The version last read is required"))));
+            throw ApiProblemException.validationFailed("The version last read is required",
+                List.of(new FieldViolation("version", "required", "The version last read is required")));
         }
         if (!version.equals(award.getVersion())) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "award-stale", "The award was changed in the meantime",

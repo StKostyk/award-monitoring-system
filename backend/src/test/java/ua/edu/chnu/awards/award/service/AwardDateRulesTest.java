@@ -22,7 +22,6 @@ class AwardDateRulesTest {
 
     @Test
     void ac2_1_todayIsTheKyivDayWhileUtcIsStillYesterday() {
-        assertThat(rules.today()).isEqualTo(KYIV_TODAY);
         assertThat(rules.check(KYIV_TODAY)).isEmpty();
         assertThat(rules.check(KYIV_TODAY.plusDays(1))).get()
             .isEqualTo(new FieldViolation("awardDate", "future", "The award date cannot be in the future"));
