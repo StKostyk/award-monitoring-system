@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- `openapi.yml` marks optional values with OpenAPI 3.1 type arrays (`type: [string, 'null']`) instead of the 3.0 `nullable` keyword, which 3.1 validators reject
 - Self-registration no longer grants the `EMPLOYEE` role: an institutional address proves employment, not membership of a department, so the first role is the confirmation by somebody who may manage it (`membershipConfirmed` on `GET /users/me`, banner on the home page). Registering an address whose `PENDING` account has an expired verification link replaces that account instead of answering 409
 - Registration resend and password-reset request are no longer refused with 500 while Redis is unavailable: their one-per-minute throttle fails open like the login counters, with an error log entry
 - Backend quality gates are now enforced in `mvn verify`: unit, integration (`*IT`) and functional (`*FT`) tests on TestContainers, JaCoCo line coverage ≥ 85%, Checkstyle, PMD 7 and SpotBugs with zero tolerance
