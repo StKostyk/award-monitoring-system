@@ -9,15 +9,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
-import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2RefreshTokenAuthenticationProvider;
-import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -31,14 +26,19 @@ import ua.edu.chnu.awards.auth.security.RefreshTokenReuseGuard;
 import ua.edu.chnu.awards.auth.security.RefusedLogoutHandler;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * OAuth2 / OpenID Connect provider endpoints backed by the database.
  */
 @Configuration
 @SuppressWarnings("PMD.SignatureDeclareThrowsException")
+@RequiredArgsConstructor
 public class AuthorizationServerConfig {
 
     private static final int AUTHORIZATION_SERVER_ORDER = 1;
+
+    private final RefusedLogoutHandler refusedLogout;
 
     @Bean
     @Order(AUTHORIZATION_SERVER_ORDER)
@@ -54,7 +54,7 @@ public class AuthorizationServerConfig {
         http
             .securityMatcher(authorizationServer.getEndpointsMatcher())
             .with(authorizationServer, server -> server
-                .oidc(oidc -> oidc.logoutEndpoint(logout -> logout.errorResponseHandler(new RefusedLogoutHandler())))
+                .oidc(oidc -> oidc.logoutEndpoint(logout -> logout.errorResponseHandler(refusedLogout)))
                 .clientAuthentication(client -> client
                     .authenticationConverter(new PublicClientRefreshAuthenticationConverter(
                         settings.getTokenEndpoint(), settings.getTokenRevocationEndpoint()))
@@ -86,23 +86,6 @@ public class AuthorizationServerConfig {
                 properties.client().refreshTokenTtl());
         }
         return provider;
-    }
-
-    @Bean
-    RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
-        return new JdbcRegisteredClientRepository(jdbcTemplate);
-    }
-
-    @Bean
-    OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
-                                                    RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
-    }
-
-    @Bean
-    OAuth2AuthorizationConsentService authorizationConsentService(
-        JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
     @Bean

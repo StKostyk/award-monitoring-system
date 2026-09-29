@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -64,6 +65,9 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
 
     @Autowired
     private AuthorizationRevoker revoker;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @BeforeAll
     void createUsers() {
@@ -264,17 +268,38 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
     }
 
     @Test
-    void ac18_aRefusedLogoutStillEndsTheSessionOfTheBrowserThatAskedForIt() {
+    void ac18_aRefusedLogoutWithTheOwnIdTokenStillEndsTheSessionOfThatBrowser() {
         AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
-        flow.exchange(flow.loginAndGetCode(DEAN, PASSWORD));
+        String idToken = flow.exchange(flow.loginAndGetCode(SIGNED_OUT, PASSWORD)).jsonPath().getString("id_token");
+        jdbc.update("delete from oauth2_authorization where principal_name = ?", SIGNED_OUT);
 
-        Response logout = RestAssured.given().redirects().follow(false).cookies(flow.cookies())
-            .queryParam("id_token_hint", "unknown.id.token")
-            .get("/connect/logout");
+        Response logout = logout(flow, idToken);
 
         assertThat(logout.getStatusCode()).isEqualTo(302);
         assertThat(logout.getHeader("Location")).endsWith("/login");
         assertThat(flow.authorize().getHeader("Location")).endsWith("/login");
+    }
+
+    @Test
+    void ac18_aForgedLogoutSignsNobodyOut() {
+        AuthorizationCodeFlow victim = new AuthorizationCodeFlow();
+        victim.exchange(victim.loginAndGetCode(DEAN, PASSWORD));
+        AuthorizationCodeFlow attacker = new AuthorizationCodeFlow();
+        String foreign = attacker.exchange(attacker.loginAndGetCode(SIGNED_OUT, PASSWORD)).jsonPath()
+            .getString("id_token");
+
+        assertThat(logout(victim, foreign).getStatusCode()).isEqualTo(400);
+        assertThat(logout(victim, "unknown.id.token").getStatusCode()).isEqualTo(400);
+        assertThat(RestAssured.given().redirects().follow(false).cookies(victim.cookies())
+            .get("/connect/logout").getStatusCode()).isEqualTo(400);
+        assertThat(victim.authorize().getHeader("Location")).startsWith(AuthorizationCodeFlow.REDIRECT_URI);
+    }
+
+    private static Response logout(AuthorizationCodeFlow flow, String idToken) {
+        return RestAssured.given().redirects().follow(false).cookies(flow.cookies())
+            .queryParam("id_token_hint", idToken)
+            .queryParam("post_logout_redirect_uri", "http://localhost:4200")
+            .get("/connect/logout");
     }
 
     @Test
