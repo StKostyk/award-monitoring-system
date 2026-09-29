@@ -378,6 +378,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `sort_order` | `INTEGER` | NO | `0` | - | Display order |
 | `is_active` | `BOOLEAN` | NO | `TRUE` | - | Active status |
 | `is_system` | `BOOLEAN` | NO | `FALSE` | - | System-defined (non-deletable) |
+| `keywords` | `TEXT[]` | NO | `'{}'` | - | Lower-case Ukrainian and English stems that suggest the category (V021) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 
@@ -399,11 +400,14 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 **Reference data**: rows are seeded by `R__seed_award_categories.sql` (one root per level, subcategories below it), upserted by `category_id`; system categories removed from the seed are deactivated, never deleted, so existing awards keep their category.
 
+**Keywords** (category suggestion, V021): each keyword is one or more stems; a stem matches the start of a word of the award title or awarding organisation, the stems of one keyword match consecutive words. Keywords of a root name its recognition level («міжнародн», «international»), keywords of a subcategory its kind of award («best paper», «грант»). They are reference data written by the category seed.
+
 **Indexes**:
 - `pk_award_categories` - Primary key on `category_id`
 - `uk_award_categories_name` - Unique on `name`
 - `idx_award_categories_level` - B-tree on `level`
 - `idx_award_categories_parent` - B-tree on `parent_category_id`
+- `idx_award_categories_keywords` - GIN on `keywords` (V021)
 
 **Relationships**:
 - BELONGS TO `award_categories` (N:1, self-reference) via `parent_category_id`

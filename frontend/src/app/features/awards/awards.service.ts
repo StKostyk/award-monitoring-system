@@ -39,6 +39,17 @@ export interface CategoryNode extends CategoryRef {
   children: CategoryNode[];
 }
 
+export type SuggestionReason = 'KEYWORD' | 'ORGANISATION' | 'HISTORY';
+
+/** A category suggested for the award being entered, with the rules that produced it. */
+export interface CategorySuggestion extends CategoryRef {
+  score: number;
+  reasons: SuggestionReason[];
+}
+
+/** Title and organisation shorter than this are not used for suggestions. */
+export const SUGGESTION_MIN_LENGTH = 3;
+
 export interface AwardRequestSummary {
   status: RequestStatus;
   currentLevel: string;
@@ -156,6 +167,12 @@ export class AwardsService {
 
   submit(id: number, version: number, acknowledgeDuplicate = false): Observable<Award> {
     return this.http.post<Award>(`${this.base}/${id}/submit`, { version, acknowledgeDuplicate });
+  }
+
+  /** Up to three categories for the title and awarding organisation typed so far. */
+  suggestions(title: string, organization: string): Observable<CategorySuggestion[]> {
+    const params = new HttpParams().set('title', title).set('organization', organization);
+    return this.http.get<CategorySuggestion[]>(`${environment.apiUrl}/award-categories/suggestions`, { params });
   }
 
   /** The category tree, fetched once while the app is open; a failed fetch is tried again next time. */

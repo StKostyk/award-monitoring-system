@@ -81,6 +81,14 @@ describe('AwardsService', () => {
     http.expectOne((r) => r.method === 'DELETE' && r.url.endsWith('/awards/5'));
   });
 
+  it('ac3_1_asks_for_suggestions_with_the_title_and_the_organisation', () => {
+    service.suggestions('Best paper', 'IEEE').subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/award-categories/suggestions'));
+    expect(request.request.params.get('title')).toBe('Best paper');
+    expect(request.request.params.get('organization')).toBe('IEEE');
+  });
+
   it('ac1_9_fetches_the_catalogue_once_and_again_after_a_failure', () => {
     const received: CategoryNode[][] = [];
     service.categories().subscribe({ error: () => undefined });

@@ -128,6 +128,47 @@ test.describe('award drafts and submission on a phone', () => {
     await expect(page.getByTestId('award-recent-date')).toHaveCount(0);
   });
 
+  test('ac3_4 suggested categories appear as chips and never replace a chosen category', async ({ page }) => {
+    await openAwards(page);
+    await page.getByTestId('award-add').click();
+    const chips = page.locator('[data-testid^="category-suggestion-"]');
+
+    await page.getByTestId('award-title').fill('Best paper award');
+    await page.getByTestId('award-organization').fill('IEEE International Conference on Software Engineering');
+    await expect(chips.first()).toContainText('Міжнародний');
+    expect(await chips.count()).toBeLessThanOrEqual(3);
+    await chips.first().click();
+    await expect(page.getByTestId('award-category')).toContainText('Найкраща стаття міжнародної конференції');
+    await expect(chips).toHaveCount(0);
+
+    await page.getByTestId('award-title').fill('');
+    await chooseCategory(page, 13);
+    await page.getByTestId('award-title-uk').fill('Подяка');
+    await page.getByTestId('award-organization').fill('Факультет математики та інформатики ЧНУ');
+    await page.waitForResponse((response) => response.url().includes('/award-categories/suggestions'));
+    await expect(page.getByTestId('award-category')).toContainText('Відзнака міністерства');
+    await expect(chips).toHaveCount(0);
+
+    await page.getByTestId('award-category').click();
+    await page.getByTestId('category-option-none').click();
+    await expect(chips.first()).toContainText('Факультетський');
+    await expect(chips.first()).toContainText('підрозділ університету');
+  });
+
+  test('ac3_4 no chips when the suggestion service fails', async ({ page }) => {
+    await page.route('**/api/v1/award-categories/suggestions**', (route) =>
+      route.fulfill({ status: 500, body: '' }),
+    );
+    await openAwards(page);
+    await page.getByTestId('award-add').click();
+    const failed = page.waitForResponse((response) => response.url().includes('/award-categories/suggestions'));
+    await page.getByTestId('award-title').fill('Best paper award');
+    await failed;
+
+    await expect(page.locator('[data-testid^="category-suggestion-"]')).toHaveCount(0);
+    await expect(page.getByTestId('award-title')).toHaveValue('Best paper award');
+  });
+
   test('ac2_4 ac2_5 ac2_6 a possible duplicate is submitted only after confirmation', async ({ page }) => {
     const title = `Грамота МОН ${token()} ${token()}`;
     const date = pastDay();

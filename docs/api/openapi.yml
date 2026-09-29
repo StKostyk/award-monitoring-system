@@ -372,6 +372,47 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /award-categories/suggestions:
+    get:
+      tags: [Awards]
+      summary: Category suggestions for an award being entered
+      description: >
+        Up to three active categories ranked by score (`award:create`). Rules: category and level keywords
+        found in the title or the awarding organisation (`KEYWORD`), the level of the university unit the
+        awarding organisation names (`ORGANISATION`) and, with the lowest weight, the caller's most used
+        categories (`HISTORY`, only the caller's own awards are read). An input shorter than three characters
+        is ignored; with both ignored the list is empty.
+      security:
+        - bearerAuth: []
+      operationId: suggestAwardCategories
+      parameters:
+        - name: title
+          in: query
+          required: false
+          description: Award title in either language
+          schema:
+            type: string
+        - name: organization
+          in: query
+          required: false
+          description: Awarding organisation
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Suggestions, the best first
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 3
+                items:
+                  $ref: '#/components/schemas/CategorySuggestion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /awards:
     get:
       tags: [Awards]
@@ -1850,6 +1891,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AwardCategory'
+
+    CategorySuggestion:
+      type: object
+      description: A category suggested for the award being entered
+      required: [id, name, level, score, reasons]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        nameUk:
+          type: string
+        level:
+          $ref: '#/components/schemas/RecognitionLevel'
+        score:
+          type: integer
+          description: Rank of the suggestion, higher first
+        reasons:
+          type: array
+          items:
+            type: string
+            enum: [KEYWORD, ORGANISATION, HISTORY]
 
     AwardCategoryRef:
       type: object

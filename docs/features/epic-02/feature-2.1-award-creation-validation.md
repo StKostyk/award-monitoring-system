@@ -182,7 +182,7 @@ None.
 | 2.4, 2.5 | ✓ | | ✓ similarity threshold on real Postgres | ✓ duplicate → 409 → acknowledged | ✓ dialog |
 | 2.6 | ✓ date picker limits, dialog | | | | ✓ |
 | 3.1, 3.3 | ✓ each rule | ✓ controller | ✓ keywords from the seed | ✓ | |
-| 3.2 | ✓ fixture test (≥ 24/30) | | | | |
+| 3.2 | | | ✓ fixture test on the seeded keywords (≥ 24/30) | | |
 | 3.4 | ✓ chips, debounce, no overwrite | | | | ✓ |
 
 Coverage target 85 % lines per `mvn verify`; static analysis clean; Playwright for every UI AC, including a 360 × 740 viewport run of the form.

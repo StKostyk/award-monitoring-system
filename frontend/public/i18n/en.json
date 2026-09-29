@@ -137,6 +137,25 @@
       "unknown": "Something went wrong. Please try again."
     }
   },
+  "categories": {
+    "suggestions": "Suggested categories",
+    "levels": {
+      "SPECIALITY": "Speciality",
+      "DEPARTMENT": "Department",
+      "COLLEGE": "College",
+      "FACULTY": "Faculty",
+      "LOCAL": "Local",
+      "UNIVERSITY": "University",
+      "REGIONAL": "Regional",
+      "NATIONAL": "National",
+      "INTERNATIONAL": "International"
+    },
+    "reasons": {
+      "KEYWORD": "keywords",
+      "ORGANISATION": "university unit",
+      "HISTORY": "chosen before"
+    }
+  },
   "admin": {
     "users": {
       "title": "Users",

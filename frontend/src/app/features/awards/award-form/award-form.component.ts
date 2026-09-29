@@ -25,7 +25,17 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { Observable, debounceTime, map, switchMap, tap } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  merge,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -38,8 +48,10 @@ import {
   AwardsService,
   CategoryNode,
   CategoryRef,
+  CategorySuggestion,
   DuplicateMatch,
   MAX_AGE_YEARS,
+  SUGGESTION_MIN_LENGTH,
   awardTitle,
   categoryName,
   duplicateMatches,
@@ -53,6 +65,7 @@ import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.compone
 import { DuplicateDialogComponent } from '../duplicate-dialog/duplicate-dialog.component';
 
 const COPY_DEBOUNCE = 400;
+const SUGGEST_DEBOUNCE = 400;
 const TITLE_LIMIT = 500;
 const DESCRIPTION_LIMIT = 4000;
 const ORGANIZATION_LIMIT = 255;
@@ -123,6 +136,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly problem = signal<string | null>(null);
   readonly stale = signal(false);
   readonly restoreOffer = signal<AwardForm | null>(null);
+  readonly suggestions = signal<CategorySuggestion[]>([]);
+  readonly categoryChosen = signal(false);
   readonly editing = computed(() => this.current() !== null);
   readonly duplicates = computed(
     () => this.current()?.warnings.find((warning) => warning.code === 'POSSIBLE_DUPLICATE')?.matches ?? [],
@@ -155,6 +170,19 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.form.controls.awardDate.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((date) => this.recentDate.set(isRecent(date, this.today)));
+    this.form.controls.categoryId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => this.categoryChosen.set(id !== null));
+    this.suggestionInput()
+      .pipe(
+        switchMap(({ title, organization }) =>
+          title.length < SUGGESTION_MIN_LENGTH && organization.length < SUGGESTION_MIN_LENGTH
+            ? of([])
+            : this.service.suggestions(title, organization).pipe(catchError(() => of([]))),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((suggestions) => this.suggestions.set(suggestions));
   }
 
   ngOnInit(): void {
@@ -284,12 +312,32 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     return errors['pattern'] ? 'awards.errors.invalid' : null;
   }
 
+  choose(suggestion: CategorySuggestion): void {
+    this.form.controls.categoryId.setValue(suggestion.id);
+    this.form.controls.categoryId.markAsDirty();
+  }
+
   optionName(category: CategoryRef): string {
     return categoryName(category, this.language.current());
   }
 
   matchTitle(match: DuplicateMatch): string {
     return awardTitle(match, this.language.current());
+  }
+
+  private suggestionInput(): Observable<{ title: string; organization: string }> {
+    const { title, titleUk, awardingOrganization } = this.form.controls;
+    return merge(title.valueChanges, titleUk.valueChanges, awardingOrganization.valueChanges).pipe(
+      debounceTime(SUGGEST_DEBOUNCE),
+      map(() => ({
+        title: [titleUk.value, title.value]
+          .map((value) => value?.trim() ?? '')
+          .filter((value) => value !== '')
+          .join(' '),
+        organization: awardingOrganization.value?.trim() ?? '',
+      })),
+      distinctUntilChanged((a, b) => a.title === b.title && a.organization === b.organization),
+    );
   }
 
   private submitted(award: Award): void {

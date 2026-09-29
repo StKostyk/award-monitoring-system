@@ -137,6 +137,25 @@
       "unknown": "Не вдалося виконати дію. Спробуйте ще раз."
     }
   },
+  "categories": {
+    "suggestions": "Можливі категорії",
+    "levels": {
+      "SPECIALITY": "Спеціальність",
+      "DEPARTMENT": "Кафедральний",
+      "COLLEGE": "Коледж",
+      "FACULTY": "Факультетський",
+      "LOCAL": "Місцевий",
+      "UNIVERSITY": "Університетський",
+      "REGIONAL": "Регіональний",
+      "NATIONAL": "Національний",
+      "INTERNATIONAL": "Міжнародний"
+    },
+    "reasons": {
+      "KEYWORD": "ключові слова",
+      "ORGANISATION": "підрозділ університету",
+      "HISTORY": "ви обирали раніше"
+    }
+  },
   "admin": {
     "users": {
       "title": "Користувачі",
