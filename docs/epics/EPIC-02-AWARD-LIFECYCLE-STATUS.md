@@ -16,7 +16,7 @@
 
 ## Current focus
 
-Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; next: 2.2.1 (SCRUM-25).
+Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) in review 2026-09-30.
 
 ## Scope
 
@@ -37,7 +37,7 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 3 | 2.1.2 Award date and duplicate validation | 2.1 | 3 | SCRUM-23 | #76 | no | Done |
 | 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | Done |
 | 5 | 2.1.4 Fixes from the Feature 2.1 validation | 2.1 | 5 | SCRUM-28 | #85 | no | Done |
-| 6 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | Ready |
+| 6 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | In Review |
 | 7 | 2.2.2 Version history view and audit export | 2.2 | 5 | SCRUM-26 | #79 | yes | Ready |
 | 8 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | yes | Ready |
 
@@ -80,7 +80,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 - Owner access uses `award:read:own` and `award:update:own`; scoped reads (`award:read:department|faculty|all`) reuse the organisation-subtree check of Feature 1.2.
 - `awards.version` is the optimistic-lock column; a stale update answers 409 like the role assignments.
 - `ck_awards_date` compares with `CURRENT_DATE` in the database session zone (UTC), so between 00:00 and 03:00 Kyiv time it refuses an award dated today that the application accepts; V020 recreates it as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`.
-- `trg_awards_audit` reads `app.current_user_id`, which the application never sets: trigger rows carry no actor. Set per transaction in 2.2.1 (Feature 2.2 PRD D-3).
+- Trigger rows carry the actor and correlation id since 2.2.1: `AuditingTransactionManager` binds `app.current_user_id`/`app.correlation_id` for read-write transactions of token-authenticated requests (Feature 2.2 PRD D-3). Sign-in, registration and password reset run without a token and stay without an actor.
 - Known limits of the category suggestion (Feature 2.1 validation): a unit of another university with the same name as a ChNU unit ("Faculty of Law, …") matches the ChNU unit; the keywords, the organisation tree and the caller's history are read on every request, without a cache. Revisit if the pilot shows wrong chips or slow answers.
 - `award-form.component.ts` holds about 560 lines (form, date rules, suggestions, duplicate dialog, local copies). Split the suggestion chips and the duplicate handling into child components with the Epic 4 review view (Feature 2.2 puts the history on the detail page, not the form).
 

@@ -11,6 +11,8 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
+import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +25,19 @@ import lombok.RequiredArgsConstructor;
 public class AwardOwnership {
 
     private final AwardRepository awards;
+    private final UserRepository users;
     private final AccessScope access;
+
+    /**
+     * A new, unsaved draft owned by the caller in the caller's department.
+     *
+     * @return the draft
+     */
+    public Award newDraft() {
+        User owner = users.findById(access.callerId())
+            .orElseThrow(() -> new IllegalStateException("Caller has no account"));
+        return Award.builder().owner(owner).organization(owner.getOrganization()).build();
+    }
 
     /**
      * Whether the caller owns the award.
@@ -33,6 +47,16 @@ public class AwardOwnership {
      */
     public boolean isOwn(Award award) {
         return award.getOwner().getId() == access.callerId();
+    }
+
+    /**
+     * Whether the caller may read the award: their own, or a submitted award inside a scope that reads awards.
+     *
+     * @param award the award
+     * @return true when readable
+     */
+    public boolean isReadable(Award award) {
+        return isOwn(award) || !award.isDraft() && access.canReadAwards(award.getOrganization().getId());
     }
 
     /**

@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.audit.service.AuditTrailService;
 import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
 import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
@@ -39,6 +40,7 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.service.AwardHistory;
 import ua.edu.chnu.awards.award.service.AwardService;
 import ua.edu.chnu.awards.award.service.AwardSubmission;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
@@ -68,6 +70,12 @@ abstract class AbstractAwardEndpointsTest {
 
     @MockitoBean
     protected AuditService audit;
+
+    @MockitoBean
+    protected AwardHistory history;
+
+    @MockitoBean
+    protected AuditTrailService auditTrail;
 
     @MockitoBean
     private OrganizationTree tree;

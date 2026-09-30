@@ -20,7 +20,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 |------------|--------------|-------------|
 | **User Domain** | `users`, `user_roles`, `organizations` | Identity, access control, organizational structure |
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
-| **Award Domain** | `awards`, `award_categories`, `documents` | Core business entities for award management |
+| **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions` | Multi-level approval workflow tracking |
 | **Compliance Domain** | `audit_logs`, `consent_records` | GDPR compliance, audit trails |
 | **Notification Domain** | `notifications`, `notification_preferences` | Communication and user preferences |
@@ -317,7 +317,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `external_url` | `VARCHAR(2048)` | YES | - | - | Link to external verification |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
-| `version` | `BIGINT` | NO | `1` | - | Optimistic locking version |
+| `version` | `BIGINT` | NO | `1` | - | Optimistic locking version; a new draft starts at 1 and every save that changes a field adds 1 (`award_versions.version_number`) |
 
 **Status Values** (`status`):
 | Value | Description | Transitions To |
@@ -355,6 +355,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - BELONGS TO `users` (N:1) via `user_id`
 - BELONGS TO `award_categories` (N:1) via `category_id`
 - HAS MANY `documents` (1:N)
+- HAS MANY `award_versions` (1:N), deleted with the award
 - HAS ONE `award_requests` (1:1)
 
 ---
@@ -487,6 +488,44 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 ---
 
+### 2.4 Entity: `award_versions`
+
+**Description**: One row per saved state of an award (Feature 2.2, V023), written by the application in the transaction of the change. It records the business fields as a snapshot; the field changes between two versions are computed when read. The table follows the award's lifecycle, while `audit_logs` stays the untouched compliance record (Feature 2.2 D-2).
+
+**Business Rules**:
+- A version is written after the award is flushed by the draft creation (`CREATED`), a save that moved `awards.version` (`UPDATED`; a save without a change writes none) and the submission (`SUBMITTED`); a failed save writes none, as it rolls back with the change
+- `version_number` is the award's `version` after the change; V023 wrote one `BASELINE` row per existing award with its current state and version and no actor
+- Rows are immutable: `trg_award_versions_immutable` refuses every update except clearing `actor_id` (`ON DELETE SET NULL` when the actor's account is erased)
+- Deleted with the award (`ON DELETE CASCADE`); erasure of submitted awards and their versions is an Epic 6 decision
+- Readable by the owner in full and, from the first `SUBMITTED` version (or the `BASELINE` of an award submitted before V023), by readers whose scope covers `awards.organization_id`
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `version_id` | `BIGSERIAL` | NO | Auto | PK | Row identifier |
+| `award_id` | `BIGINT` | NO | - | FK→awards `ON DELETE CASCADE` | The award |
+| `version_number` | `BIGINT` | NO | - | UNIQUE with `award_id` | `awards.version` after the change |
+| `action` | `VARCHAR(20)` | NO | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED` (Epic 4 adds its review actions) |
+| `actor_id` | `BIGINT` | YES | - | FK→users `ON DELETE SET NULL` | Who saved the version; NULL for baselines and erased accounts |
+| `snapshot` | `JSONB` | NO | - | - | `title`, `titleUk`, `description`, `descriptionUk`, `awardingOrganization`, `awardDate` (ISO date), `categoryId`, `status`, `impactScore`, `verificationBadge`, `externalUrl`, `organizationId` |
+| `changed_fields` | `TEXT[]` | YES | - | - | Snapshot keys that differ from the previous version; NULL for the first |
+| `created_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the version was saved |
+
+**Constraints**:
+- `uk_award_versions_number` - `UNIQUE (award_id, version_number)`
+- `ck_award_versions_action` - action in the list above
+- `fk_award_versions_awards`, `fk_award_versions_actor`
+
+**Indexes**:
+- `pk_award_versions` - Primary key on `version_id`
+- `uk_award_versions_number` - also serves the reads by award, newest first
+- `idx_award_versions_actor` - B-tree on `actor_id` for clearing the actor on erasure
+
+**Relationships**:
+- BELONGS TO `awards` (N:1) via `award_id`
+- BELONGS TO `users` (N:1) via `actor_id`
+
+---
+
 ## 3. Workflow Domain
 
 ### 3.1 Entity: `award_requests`
@@ -600,6 +639,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 **Business Rules**:
 - All data modifications logged automatically via triggers
+- Trigger rows carry the signed-in caller in `user_id` and the request's `correlation_id`: the transaction manager sets `app.current_user_id` and `app.correlation_id` with `set_config(…, true)` when a read-write transaction of a request with an access token begins (Feature 2.2, D-3); changes without a signed-in caller (migrations, seeds, jobs, sign-in and registration) keep `user_id` empty, as do rows written before 2.2.1
+- Trigger rows take `entity_id` from the changed record's own key for `INSERT`, `UPDATE` and, since V023, `DELETE` (V013 used `user_id` of the deleted row, so older `DELETE` rows of `awards` point at the owner and of `user_roles` at the user)
 - Logs are immutable (no UPDATE/DELETE allowed)
 - Retention period: 7 years (per GDPR requirements)
 - Partition by month for performance
@@ -630,6 +671,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
 - `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
 - `DATA_DELETE` - GDPR rights
+- `AUDIT_EXPORT` - an oversight role downloaded an award's audit trail (`entity_type` = `awards`, `entity_id` = the award, row count in `new_values`; written from 2.2.2)
 - `APPROVAL`, `REJECTION` - Workflow decisions
 
 **Indexes**:
@@ -794,7 +836,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N) |
 | `one_time_tokens` | → users (N:1) |
 | `user_devices` | → users (N:1) |
-| `awards` | → users (N:1), → award_categories (N:1), ← documents (1:N), ← award_requests (1:1) |
+| `awards` | → users (N:1), → award_categories (N:1), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
+| `award_versions` | → awards (N:1), → users (N:1, actor) |
 | `award_categories` | → award_categories (N:1, self), ← award_categories (1:N), ← awards (1:N) |
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
@@ -810,6 +853,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 |------------------|-----------------|-----------|
 | User → Organization | N:1 | Required |
 | User → Awards | 1:N | Employee's awards |
+| Award → Versions | 1:N | One per saved state, deleted with the award |
 | Award → Request | 1:1 | Unique request per award |
 | Request → Decisions | 1:N | Multiple decisions per level |
 | Award → Documents | 1:N | Supporting documents |

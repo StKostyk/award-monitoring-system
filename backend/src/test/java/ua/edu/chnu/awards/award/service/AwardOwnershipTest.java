@@ -17,6 +17,7 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class AwardOwnershipTest {
 
@@ -24,7 +25,7 @@ class AwardOwnershipTest {
 
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardOwnership ownership = new AwardOwnership(awards, access);
+    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserRepository.class), access);
 
     @BeforeEach
     void setUp() {
