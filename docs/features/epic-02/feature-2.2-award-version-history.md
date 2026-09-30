@@ -179,7 +179,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 12. «Переглянути версію» on «Створено» → dialog with only the title filled, other fields «—». (AC-2.2)
 13. As `dean.fmi` open the same page. Expected: the history starts at «Подано»; no «Журнал аудиту» tab. (AC-2.4, 2.5)
 14. As `admin` open it. Expected: «Журнал аудиту» tab; rows expand to old and new values. «Експорт CSV» → `award-<id>-audit-<today>.csv`; opened in Excel the Ukrainian title reads correctly; psql shows an `AUDIT_EXPORT` row with the row count. (AC-2.5, 2.6)
-15. As `employee.fmi` create a draft titled `=HYPERLINK("http://example.com")`, then as `admin` export its audit trail. Expected: the cell starts with `'=HYPERLINK`, Excel shows text, not a link. (AC-2.7)
+15. As `employee.fmi` create a draft titled `=HYPERLINK("http://example.com")`, then as `admin` export its audit trail. Expected: the title appears only inside the `new_values` JSON cell, which starts with `{`; Excel shows it as text, not a link. Cells that start with a formula character on their own are prefixed with `'` (covered by `AuditTrailCsvTest`). (AC-2.7)
 16. Switch to English. Expected: «Change history», action and field labels, the dialog and the tab in English. (AC-2.8)
 
 ### Detours

@@ -2,7 +2,9 @@
   <mat-progress-bar mode="indeterminate" />
 }
 @if (notFound()) {
-  <p class="award-detail__problem" role="alert" data-testid="award-not-found">{{ 'awards.notFound' | transloco }}</p>
+  <p class="award-detail__problem" role="alert" data-testid="award-not-found">
+    {{ 'awards.notFound' | transloco }}
+  </p>
 }
 @if (failed()) {
   <p class="award-detail__problem" role="alert" data-testid="award-detail-error">
@@ -10,14 +12,18 @@
   </p>
 }
 @if (notice(); as notice) {
-  <p class="award-detail__problem" role="alert" data-testid="award-detail-notice">{{ notice | transloco }}</p>
+  <p class="award-detail__problem" role="alert" data-testid="award-detail-notice">
+    {{ notice | transloco }}
+  </p>
 }
 
 @if (award(); as award) {
   <article class="award-detail" data-testid="award-detail">
     <div class="award-detail__header">
       <h1 class="award-detail__title" data-testid="award-detail-title">{{ title(award) }}</h1>
-      <mat-chip data-testid="award-detail-status">{{ 'awards.status.' + award.status | transloco }}</mat-chip>
+      <mat-chip data-testid="award-detail-status">{{
+        'awards.status.' + award.status | transloco
+      }}</mat-chip>
     </div>
     <dl class="award-detail__fields">
       @if (award.titleUk && award.title) {
@@ -37,7 +43,9 @@
       @if (award.externalUrl) {
         <dt>{{ 'awards.fields.externalUrl' | transloco }}</dt>
         <dd>
-          <a [href]="award.externalUrl" target="_blank" rel="noopener noreferrer">{{ award.externalUrl }}</a>
+          <a [href]="award.externalUrl" target="_blank" rel="noopener noreferrer">{{
+            award.externalUrl
+          }}</a>
         </dd>
       }
       <dt>{{ 'awards.fields.owner' | transloco }}</dt>
@@ -57,9 +65,17 @@
       }
     </dl>
     <div class="award-detail__actions">
-      <a mat-button routerLink="/awards" data-testid="award-back">{{ 'awards.back' | transloco }}</a>
+      <a mat-button routerLink="/awards" data-testid="award-back">{{
+        'awards.back' | transloco
+      }}</a>
       @if (editable(award)) {
-        <button mat-button type="button" class="award-detail__remove" (click)="remove(award)" data-testid="award-remove">
+        <button
+          mat-button
+          type="button"
+          class="award-detail__remove"
+          (click)="remove(award)"
+          data-testid="award-remove"
+        >
           {{ 'awards.remove.action' | transloco }}
         </button>
         <a mat-flat-button [routerLink]="['/awards', award.id, 'edit']" data-testid="award-edit">
@@ -68,4 +84,26 @@
       }
     </div>
   </article>
+  @if (showHistory(award)) {
+    @if (canAudit()) {
+      <mat-tab-group class="award-detail__history" data-testid="award-history-tabs">
+        <mat-tab [label]="'awards.history.title' | transloco">
+          <app-award-history [award]="award" />
+        </mat-tab>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <span data-testid="award-audit-tab">{{ 'awards.audit.tab' | transloco }}</span>
+          </ng-template>
+          <ng-template matTabContent>
+            <app-award-audit-trail [awardId]="award.id" />
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+    } @else {
+      <section class="award-detail__history" data-testid="award-history-section">
+        <h2 class="award-detail__subtitle">{{ 'awards.history.title' | transloco }}</h2>
+        <app-award-history [award]="award" />
+      </section>
+    }
+  }
 }

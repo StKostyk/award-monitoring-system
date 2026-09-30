@@ -31,7 +31,9 @@ describe('AwardsService', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(AwardsService);
     http = TestBed.inject(HttpTestingController);
   });
@@ -51,7 +53,9 @@ describe('AwardsService', () => {
     service.update(5, form, 3).subscribe();
     service.submit(5, 4).subscribe();
 
-    expect(http.expectOne((r) => r.method === 'PUT' && r.url.endsWith('/awards/5')).request.body).toEqual({
+    expect(
+      http.expectOne((r) => r.method === 'PUT' && r.url.endsWith('/awards/5')).request.body,
+    ).toEqual({
       ...form,
       version: 3,
     });
@@ -75,7 +79,9 @@ describe('AwardsService', () => {
     service.get(5).subscribe();
     service.remove(5).subscribe();
 
-    expect(http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/awards')).request.body).toEqual(form);
+    expect(
+      http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/awards')).request.body,
+    ).toEqual(form);
     http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/awards/5'));
     http.expectOne((r) => r.method === 'DELETE' && r.url.endsWith('/awards/5'));
   });
@@ -91,13 +97,73 @@ describe('AwardsService', () => {
   it('ac1_9_fetches_the_catalogue_once_and_again_after_a_failure', () => {
     const received: CategoryNode[][] = [];
     service.categories().subscribe({ error: () => undefined });
-    http.expectOne((r) => r.url.endsWith('/award-categories')).flush(null, { status: 500, statusText: 'x' });
+    http
+      .expectOne((r) => r.url.endsWith('/award-categories'))
+      .flush(null, { status: 500, statusText: 'x' });
 
     service.categories().subscribe((tree) => received.push(tree));
     service.categories().subscribe((tree) => received.push(tree));
     http.expectOne((r) => r.url.endsWith('/award-categories')).flush([]);
 
     expect(received).toEqual([[], []]);
+  });
+
+  it('ac2_1_pages_the_versions_and_the_audit_trail', () => {
+    service.versions(5, 1).subscribe();
+    service.auditTrail(5, 2, 50).subscribe();
+
+    const versions = http.expectOne((r) => r.url.endsWith('/awards/5/versions'));
+    expect(versions.request.params.get('page')).toBe('1');
+    expect(versions.request.params.get('size')).toBe('20');
+    versions.flush({ content: [], totalElements: 0, totalPages: 0, size: 20, number: 1 });
+    const trail = http.expectOne((r) => r.url.endsWith('/awards/5/audit-trail'));
+    expect(trail.request.params.get('page')).toBe('2');
+    expect(trail.request.params.get('size')).toBe('50');
+    trail.flush({ content: [], totalElements: 0, totalPages: 0, size: 50, number: 2 });
+  });
+
+  it('ac2_6_downloads_the_export_as_a_blob_with_its_headers', () => {
+    let disposition: string | null = null;
+    service
+      .exportAuditTrail(5)
+      .subscribe((response) => (disposition = response.headers.get('Content-Disposition')));
+
+    const request = http.expectOne((r) => r.url.endsWith('/awards/5/audit-trail/export'));
+    expect(request.request.responseType).toBe('blob');
+    request.flush(new Blob(['csv']), {
+      headers: { 'Content-Disposition': 'attachment; filename="a.csv"' },
+    });
+
+    expect(disposition).toBe('attachment; filename="a.csv"');
+  });
+
+  it('ac2_1_fetches_organisation_names_once_and_again_after_a_failure', () => {
+    const received: string[][] = [];
+    service.organizations().subscribe({ error: () => undefined });
+    http
+      .match((r) => r.url.endsWith('/organizations'))[0]
+      .flush(null, { status: 500, statusText: 'x' });
+
+    service
+      .organizations()
+      .subscribe((names) => received.push([...names.values()].map((name) => name.name)));
+    service
+      .organizations()
+      .subscribe((names) => received.push([...names.values()].map((name) => name.name)));
+    const requests = http.match((r) => r.url.endsWith('/organizations'));
+    expect(requests.map((request) => request.request.params.get('type'))).toEqual([
+      'DEPARTMENT',
+      'FACULTY',
+      'COLLEGE',
+    ]);
+    requests[0].flush([{ id: 64, name: 'Algebra', nameUk: null }]);
+    requests[1].flush([{ id: 9, name: 'Mathematics', nameUk: null }]);
+    requests[2].flush([]);
+
+    expect(received).toEqual([
+      ['Algebra', 'Mathematics'],
+      ['Algebra', 'Mathematics'],
+    ]);
   });
 });
 
@@ -155,7 +221,13 @@ describe('award helpers', () => {
   });
 
   it('ac2_5_reads_the_matches_of_a_possible_duplicate', () => {
-    const match = { id: 9, title: null, titleUk: 'Грамота', awardDate: '2025-05-01', status: 'PENDING' };
+    const match = {
+      id: 9,
+      title: null,
+      titleUk: 'Грамота',
+      awardDate: '2025-05-01',
+      status: 'PENDING',
+    };
     const problem = new HttpErrorResponse({ status: 409, error: { matches: [match] } });
 
     expect(duplicateMatches(problem)).toEqual([match]);

@@ -1,0 +1,68 @@
+:host {
+  display: block;
+}
+
+.audit-trail__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.audit-trail__notice {
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.audit-trail__action {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.audit-trail__entity {
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.audit-trail__details {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.audit-trail__details dt {
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.audit-trail__details dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.audit-trail__json {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 0.85em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.audit-trail__more {
+  margin-top: 12px;
+}
+
+.audit-trail__problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--mat-sys-error, #b3261e);
+}
+
+@media (max-width: 480px) {
+  .audit-trail__details {
+    grid-template-columns: 1fr;
+  }
+}

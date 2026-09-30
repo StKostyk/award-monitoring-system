@@ -1,0 +1,72 @@
+<div class="audit-trail__toolbar">
+  <button mat-stroked-button type="button" (click)="exportCsv()" data-testid="audit-export">
+    {{ 'awards.audit.export' | transloco }}
+  </button>
+  @if (notice(); as notice) {
+    <span class="audit-trail__notice" role="status" data-testid="audit-notice">{{
+      notice | transloco
+    }}</span>
+  }
+</div>
+@if (rows().length === 0 && !loading() && !failed()) {
+  <p data-testid="audit-empty">{{ 'awards.audit.empty' | transloco }}</p>
+}
+<mat-accordion multi data-testid="audit-trail">
+  @for (row of rows(); track row.id) {
+    <mat-expansion-panel data-testid="audit-row">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <span class="audit-trail__action" data-testid="audit-action">{{ row.action }}</span>
+          <span class="audit-trail__entity">{{ row.entityType }} #{{ row.entityId }}</span>
+        </mat-panel-title>
+        <mat-panel-description>
+          <time [attr.datetime]="row.createdAt">{{ time(row) }}</time> · {{ actor(row) }}
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <dl class="audit-trail__details">
+        <dt>{{ 'awards.audit.columns.actor' | transloco }}</dt>
+        <dd>
+          {{ actor(row) }}
+          @if (row.actorEmail && row.actorName) {
+            ({{ row.actorEmail }})
+          }
+        </dd>
+        <dt>{{ 'awards.audit.columns.changedFields' | transloco }}</dt>
+        <dd>{{ row.changedFields.length ? row.changedFields.join(', ') : '—' }}</dd>
+        <dt>{{ 'awards.audit.columns.ipAddress' | transloco }}</dt>
+        <dd>{{ row.ipAddress ?? '—' }}</dd>
+        <dt>{{ 'awards.audit.columns.correlationId' | transloco }}</dt>
+        <dd>{{ row.correlationId ?? '—' }}</dd>
+        <dt>{{ 'awards.audit.columns.oldValues' | transloco }}</dt>
+        <dd>
+          <pre class="audit-trail__json" data-testid="audit-old">{{ json(row.oldValues) }}</pre>
+        </dd>
+        <dt>{{ 'awards.audit.columns.newValues' | transloco }}</dt>
+        <dd>
+          <pre class="audit-trail__json" data-testid="audit-new">{{ json(row.newValues) }}</pre>
+        </dd>
+      </dl>
+    </mat-expansion-panel>
+  }
+</mat-accordion>
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+@if (failed()) {
+  <div class="audit-trail__problem" role="alert" data-testid="audit-error">
+    <span>{{ 'awards.audit.failed' | transloco }}</span>
+    <button mat-button type="button" (click)="load()" data-testid="audit-retry">
+      {{ 'awards.history.retry' | transloco }}
+    </button>
+  </div>
+} @else if (hasMore() && !loading()) {
+  <button
+    mat-stroked-button
+    type="button"
+    class="audit-trail__more"
+    (click)="load()"
+    data-testid="audit-more"
+  >
+    {{ 'awards.history.more' | transloco }}
+  </button>
+}

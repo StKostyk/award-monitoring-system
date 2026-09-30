@@ -1,9 +1,17 @@
 import { HttpStatusCode } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatTab, MatTabContent, MatTabGroup, MatTabLabel } from '@angular/material/tabs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, switchMap, tap } from 'rxjs';
@@ -12,12 +20,26 @@ import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../admin/role-organizations';
+import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
+import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { Award, AwardsService, awardTitle, categoryName } from '../awards.service';
 import { confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-award-detail',
-  imports: [RouterLink, MatButton, MatChip, MatProgressBar, TranslocoPipe],
+  imports: [
+    RouterLink,
+    MatButton,
+    MatChip,
+    MatProgressBar,
+    MatTabGroup,
+    MatTab,
+    MatTabLabel,
+    MatTabContent,
+    AwardHistoryComponent,
+    AwardAuditTrailComponent,
+    TranslocoPipe,
+  ],
   templateUrl: './award-detail.component.html',
   styleUrl: './award-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +57,7 @@ export class AwardDetailComponent implements OnInit {
   readonly notFound = signal(false);
   readonly failed = signal(false);
   readonly notice = signal<string | null>(null);
+  readonly canAudit = computed(() => this.auth.permissions().hasPermission('audit:read'));
 
   ngOnInit(): void {
     const problem = (history.state as { problem?: string } | null)?.problem;
@@ -83,6 +106,11 @@ export class AwardDetailComponent implements OnInit {
       });
   }
 
+  /** Drafts are private to their owner; everybody else who may open the award sees it from the submission on. */
+  showHistory(award: Award): boolean {
+    return award.status !== 'DRAFT' || String(award.owner.id) === this.auth.userId();
+  }
+
   editable(award: Award): boolean {
     return award.status === 'DRAFT' && String(award.owner.id) === this.auth.userId();
   }
@@ -101,6 +129,9 @@ export class AwardDetailComponent implements OnInit {
 
   private removed(): void {
     this.loading.set(false);
-    void this.router.navigate(['/awards'], { replaceUrl: true, state: { notice: 'awards.messages.removed' } });
+    void this.router.navigate(['/awards'], {
+      replaceUrl: true,
+      state: { notice: 'awards.messages.removed' },
+    });
   }
 }

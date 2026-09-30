@@ -143,7 +143,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly categoryChosen = signal(false);
   readonly editing = computed(() => this.current() !== null);
   readonly duplicates = computed(
-    () => this.current()?.warnings.find((warning) => warning.code === 'POSSIBLE_DUPLICATE')?.matches ?? [],
+    () =>
+      this.current()?.warnings.find((warning) => warning.code === 'POSSIBLE_DUPLICATE')?.matches ??
+      [],
   );
   readonly retiredCategory = computed(() => {
     const category = this.current()?.category;
@@ -306,7 +308,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       return;
     }
     confirmRemoval(this.dialog)
-      .pipe(filter(Boolean), switchMap(() => this.startRemoval(id)))
+      .pipe(
+        filter(Boolean),
+        switchMap(() => this.startRemoval(id)),
+      )
       .subscribe({
         next: () => this.removed(),
         error: (error: unknown) =>
@@ -353,7 +358,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.saving.set(false);
     this.dropCopy();
     this.leaving = true;
-    void this.router.navigate(['/awards'], { replaceUrl: true, state: { notice: 'awards.messages.removed' } });
+    void this.router.navigate(['/awards'], {
+      replaceUrl: true,
+      state: { notice: 'awards.messages.removed' },
+    });
   }
 
   private suggestionInput(): Observable<{ title: string; organization: string }> {
@@ -430,9 +438,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   private store(): Observable<Award> {
     const value = this.value();
-    const request = this.id === null
-      ? this.service.create(value)
-      : this.service.update(this.id, value, this.version);
+    const request =
+      this.id === null
+        ? this.service.create(value)
+        : this.service.update(this.id, value, this.version);
     return request.pipe(
       tap((award) => {
         if (this.id === null) {

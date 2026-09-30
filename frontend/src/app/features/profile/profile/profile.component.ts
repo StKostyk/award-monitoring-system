@@ -15,6 +15,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../admin/role-organizations';
 import { Delegation, DelegationsService } from '../../delegations/delegations.service';
 import { EmailChangeDialogComponent } from '../email-change-dialog/email-change-dialog.component';
+import { attachmentName, saveFile } from '../../../shared/file-download';
 import { nameValidator } from '../../../shared/name-rules';
 import { NameChange, ProfileService } from '../profile.service';
 
@@ -24,17 +25,7 @@ const DEFAULT_EXPORT_NAME = 'award-monitoring-export.json';
 
 /** The attachment name of a Content-Disposition header, or a default. */
 export function fileName(disposition: string | null): string {
-  const match = /filename="?([^";]+)"?/.exec(disposition ?? '');
-  return match ? match[1] : DEFAULT_EXPORT_NAME;
-}
-
-function saveFile(blob: Blob, name: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(url);
+  return attachmentName(disposition, DEFAULT_EXPORT_NAME);
 }
 
 @Component({
@@ -158,12 +149,17 @@ export class ProfileComponent {
     this.exportProblem.set(null);
     this.api.exportData().subscribe({
       next: (response) => {
-        saveFile(response.body ?? new Blob(), fileName(response.headers.get('Content-Disposition')));
+        saveFile(
+          response.body ?? new Blob(),
+          fileName(response.headers.get('Content-Disposition')),
+        );
         this.exportMessage.set('profile.downloaded');
         this.exporting.set(false);
       },
       error: (err: unknown) => {
-        this.exportProblem.set(problemStatus(err) === 429 ? 'profile.errors.tooMany' : 'profile.errors.export');
+        this.exportProblem.set(
+          problemStatus(err) === 429 ? 'profile.errors.tooMany' : 'profile.errors.export',
+        );
         this.exporting.set(false);
       },
     });

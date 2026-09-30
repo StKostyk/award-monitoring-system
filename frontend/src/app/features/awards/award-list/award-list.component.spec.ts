@@ -22,14 +22,25 @@ function award(overrides: Partial<Award> = {}): Award {
     titleUk: 'Грамота Міністерства освіти і науки',
     description: null,
     descriptionUk: null,
-    category: { id: 13, name: 'Ministry Recognition', nameUk: 'Відзнака міністерства', level: 'NATIONAL' },
+    category: {
+      id: 13,
+      name: 'Ministry Recognition',
+      nameUk: 'Відзнака міністерства',
+      level: 'NATIONAL',
+    },
     awardingOrganization: 'МОН України',
     awardDate: '2025-05-01',
     externalUrl: null,
     status: 'DRAFT',
     impactScore: null,
     owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
-    organization: { id: 64, name: 'Algebra', nameUk: 'Кафедра алгебри', code: 'DAI', type: 'DEPARTMENT' },
+    organization: {
+      id: 64,
+      name: 'Algebra',
+      nameUk: 'Кафедра алгебри',
+      code: 'DAI',
+      type: 'DEPARTMENT',
+    },
     request: null,
     warnings: [],
     createdAt: '2026-09-28T08:00:00Z',
@@ -59,7 +70,9 @@ const translations = {
 describe('AwardListComponent', () => {
   let fixture: ComponentFixture<AwardListComponent>;
   let store: Store;
-  const permissions = signal(readPermissions(token({ permissions: ['award:read:own', 'award:create'] })));
+  const permissions = signal(
+    readPermissions(token({ permissions: ['award:read:own', 'award:create'] })),
+  );
 
   async function create(): Promise<void> {
     await TestBed.configureTestingModule({
@@ -105,7 +118,9 @@ describe('AwardListComponent', () => {
 
     expect(items.length).toBe(2);
     expect(items[0].textContent).toContain('Відзнака міністерства');
-    expect(items[0].querySelector('[data-testid="award-status"]')?.textContent).toContain('Чернетка');
+    expect(items[0].querySelector('[data-testid="award-status"]')?.textContent).toContain(
+      'Чернетка',
+    );
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/awards/5/edit');
     expect(items[1].querySelector('a')?.getAttribute('href')).toBe('/awards/6');
     expect(element.querySelector('[data-testid="award-add"]')).not.toBeNull();
@@ -120,9 +135,9 @@ describe('AwardListComponent', () => {
     );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="awards-empty"]')?.textContent).toContain(
-      'Нагород ще немає.',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="awards-empty"]')?.textContent,
+    ).toContain('Нагород ще немає.');
   });
 
   it('f8_says_how_many_awards_the_first_page_leaves_out', async () => {
@@ -138,12 +153,20 @@ describe('AwardListComponent', () => {
 
     store.dispatch(
       AwardsActions.awardsLoaded({
-        page: { content: [award(), award({ id: 6 })], totalElements: 130, totalPages: 65, size: 2, number: 0 },
+        page: {
+          content: [award(), award({ id: 6 })],
+          totalElements: 130,
+          totalPages: 65,
+          size: 2,
+          number: 0,
+        },
       }),
     );
     fixture.detectChanges();
 
-    expect(element.querySelector('[data-testid="awards-more"]')?.textContent).toContain('Показано 2 з 130');
+    expect(element.querySelector('[data-testid="awards-more"]')?.textContent).toContain(
+      'Показано 2 з 130',
+    );
   });
 
   it('f9_shows_the_notice_of_a_deleted_draft', async () => {
@@ -152,9 +175,9 @@ describe('AwardListComponent', () => {
     fixture.detectChanges();
     history.replaceState(null, '');
 
-    expect(fixture.nativeElement.querySelector('[data-testid="awards-notice"]')?.textContent).toContain(
-      'Чернетку видалено.',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="awards-notice"]')?.textContent,
+    ).toContain('Чернетку видалено.');
   });
 
   it('ac1_7_changing_a_filter_reloads_the_list', async () => {

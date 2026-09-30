@@ -1,19 +1,23 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, shareReplay, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, shareReplay, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { OrganizationRef } from '../../core/auth/user-profile';
+import { OrganizationRef, OrganizationType } from '../../core/auth/user-profile';
+
+/** An organisation name in both languages. */
+export interface OrganizationName {
+  id: number;
+  name: string;
+  nameUk: string | null;
+}
+
+/** Organisation types an award can belong to. */
+const ORGANIZATION_TYPES: OrganizationType[] = ['DEPARTMENT', 'FACULTY', 'COLLEGE'];
 
 export type AwardStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'ARCHIVED';
 export type RequestStatus =
-  | 'SUBMITTED'
-  | 'IN_REVIEW'
-  | 'ESCALATED'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'RETURNED'
-  | 'EXPIRED';
+  'SUBMITTED' | 'IN_REVIEW' | 'ESCALATED' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'EXPIRED';
 export type RecognitionLevel =
   | 'SPECIALITY'
   | 'DEPARTMENT'
@@ -25,7 +29,13 @@ export type RecognitionLevel =
   | 'NATIONAL'
   | 'INTERNATIONAL';
 
-export const AWARD_STATUSES: AwardStatus[] = ['DRAFT', 'PENDING', 'APPROVED', 'REJECTED', 'ARCHIVED'];
+export const AWARD_STATUSES: AwardStatus[] = [
+  'DRAFT',
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'ARCHIVED',
+];
 
 export interface CategoryRef {
   id: number;
@@ -116,21 +126,101 @@ export interface AwardFilters {
   dateTo: string | null;
 }
 
-export interface AwardPage {
-  content: Award[];
+export type AwardPage = Page<Award>;
+
+export const NO_FILTERS: AwardFilters = {
+  status: null,
+  category: null,
+  dateFrom: null,
+  dateTo: null,
+};
+
+/** A page of any list answered by the API. */
+export interface Page<T> {
+  content: T[];
   totalElements: number;
   totalPages: number;
   size: number;
   number: number;
 }
 
-export const NO_FILTERS: AwardFilters = { status: null, category: null, dateFrom: null, dateTo: null };
+export type VersionAction = 'BASELINE' | 'CREATED' | 'UPDATED' | 'SUBMITTED';
+
+/** The business fields of an award as saved in one version. */
+export interface AwardSnapshot {
+  title: string | null;
+  titleUk: string | null;
+  description: string | null;
+  descriptionUk: string | null;
+  awardingOrganization: string | null;
+  awardDate: string | null;
+  categoryId: number | null;
+  status: AwardStatus;
+  impactScore: number | null;
+  verificationBadge: boolean;
+  externalUrl: string | null;
+  organizationId: number | null;
+}
+
+export type SnapshotField = keyof AwardSnapshot;
+
+/** Snapshot fields in the order they are shown. */
+export const SNAPSHOT_FIELDS: SnapshotField[] = [
+  'title',
+  'titleUk',
+  'description',
+  'descriptionUk',
+  'categoryId',
+  'awardingOrganization',
+  'awardDate',
+  'externalUrl',
+  'organizationId',
+  'status',
+  'impactScore',
+  'verificationBadge',
+];
+
+export interface FieldChange {
+  field: SnapshotField;
+  from: unknown;
+  to: unknown;
+}
+
+export interface AwardVersion {
+  number: number;
+  action: VersionAction;
+  actor: { id: number; name: string; email: string } | null;
+  createdAt: string;
+  snapshot: AwardSnapshot;
+  changes: FieldChange[];
+}
+
+/** One row of the audit log about an award. */
+export interface AuditTrailEntry {
+  id: number;
+  createdAt: string;
+  actorId: number | null;
+  actorName: string | null;
+  actorEmail: string | null;
+  action: string;
+  entityType: string;
+  entityId: number | null;
+  changedFields: string[];
+  oldValues: Record<string, unknown>;
+  newValues: Record<string, unknown>;
+  ipAddress: string | null;
+  correlationId: string | null;
+}
+
+/** Header of an audit export that left out older rows. */
+export const TRUNCATED_HEADER = 'X-Audit-Truncated';
 
 @Injectable({ providedIn: 'root' })
 export class AwardsService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/awards`;
   private catalogue$?: Observable<CategoryNode[]>;
+  private organizations$?: Observable<Map<number, OrganizationName>>;
 
   list(filters: AwardFilters, page = 0, size = 20): Observable<AwardPage> {
     let params = new HttpParams().set('page', page).set('size', size);
@@ -162,28 +252,74 @@ export class AwardsService {
     return this.http.post<Award>(`${this.base}/${id}/submit`, { version, acknowledgeDuplicate });
   }
 
-  /** Up to three categories for the title and awarding organisation typed so far. */
-  suggestions(title: string, organization: string): Observable<CategorySuggestion[]> {
-    const params = new HttpParams().set('title', title).set('organization', organization);
-    return this.http.get<CategorySuggestion[]>(`${environment.apiUrl}/award-categories/suggestions`, { params });
+  /** Saved versions of an award, newest first. */
+  versions(id: number, page = 0, size = 20): Observable<Page<AwardVersion>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<AwardVersion>>(`${this.base}/${id}/versions`, { params });
   }
 
-  /** The category tree, fetched once while the app is open; a failed fetch is tried again next time. */
-  categories(): Observable<CategoryNode[]> {
-    this.catalogue$ ??= this.http.get<CategoryNode[]>(`${environment.apiUrl}/award-categories`).pipe(
+  /** Audit rows about an award, newest first; needs `audit:read`. */
+  auditTrail(id: number, page = 0, size = 20): Observable<Page<AuditTrailEntry>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<AuditTrailEntry>>(`${this.base}/${id}/audit-trail`, { params });
+  }
+
+  /** The audit rows about an award as a CSV file. */
+  exportAuditTrail(id: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.base}/${id}/audit-trail/export`, {
+      observe: 'response',
+      responseType: 'blob',
+    });
+  }
+
+  /** Active departments, faculties and colleges by id, fetched once while the app is open. */
+  organizations(): Observable<Map<number, OrganizationName>> {
+    this.organizations$ ??= forkJoin(
+      ORGANIZATION_TYPES.map((type) =>
+        this.http.get<OrganizationName[]>(`${environment.apiUrl}/organizations`, {
+          params: { type },
+        }),
+      ),
+    ).pipe(
+      map((lists) => new Map(lists.flat().map((organization) => [organization.id, organization]))),
       catchError((error: unknown) => {
-        this.catalogue$ = undefined;
+        this.organizations$ = undefined;
         return throwError(() => error);
       }),
       shareReplay({ bufferSize: 1, refCount: false }),
     );
+    return this.organizations$;
+  }
+
+  /** Up to three categories for the title and awarding organisation typed so far. */
+  suggestions(title: string, organization: string): Observable<CategorySuggestion[]> {
+    const params = new HttpParams().set('title', title).set('organization', organization);
+    return this.http.get<CategorySuggestion[]>(
+      `${environment.apiUrl}/award-categories/suggestions`,
+      { params },
+    );
+  }
+
+  /** The category tree, fetched once while the app is open; a failed fetch is tried again next time. */
+  categories(): Observable<CategoryNode[]> {
+    this.catalogue$ ??= this.http
+      .get<CategoryNode[]>(`${environment.apiUrl}/award-categories`)
+      .pipe(
+        catchError((error: unknown) => {
+          this.catalogue$ = undefined;
+          return throwError(() => error);
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
     return this.catalogue$;
   }
 }
 
 /** Title in the interface language, falling back to the other one. */
 export function awardTitle(award: Pick<Award, 'title' | 'titleUk'>, language: string): string {
-  return (language === 'en' ? (award.title ?? award.titleUk) : (award.titleUk ?? award.title)) ?? '';
+  return (
+    (language === 'en' ? (award.title ?? award.titleUk) : (award.titleUk ?? award.title)) ?? ''
+  );
 }
 
 /** Category name in the interface language. */

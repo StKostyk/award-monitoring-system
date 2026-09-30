@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.award-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.award-history__entry {
+  border-left: 2px solid var(--mat-sys-outline-variant, #c4c7c5);
+  padding: 4px 0 8px 16px;
+}
+
+.award-history__entry + .award-history__entry {
+  margin-top: 8px;
+}
+
+.award-history__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.award-history__meta,
+.award-history__field {
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.award-history__changes {
+  margin: 4px 0;
+  padding-left: 16px;
+  overflow-wrap: anywhere;
+}
+
+.award-history__problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--mat-sys-error, #b3261e);
+}
