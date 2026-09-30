@@ -53,6 +53,9 @@ public class OneTimeToken {
     @Column(name = "purpose", nullable = false, length = 30)
     private TokenPurpose purpose;
 
+    @Column(name = "new_email_address", length = 255)
+    private String newEmailAddress;
+
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 

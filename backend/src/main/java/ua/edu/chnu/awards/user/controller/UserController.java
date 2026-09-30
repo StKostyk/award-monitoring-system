@@ -4,8 +4,6 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,18 +19,16 @@ import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
 import ua.edu.chnu.awards.user.dto.UserDetailResponse;
 import ua.edu.chnu.awards.user.dto.UserDirectoryQuery;
-import ua.edu.chnu.awards.user.dto.UserProfileResponse;
 import ua.edu.chnu.awards.user.dto.UserSummaryResponse;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.service.RoleAssignmentService;
 import ua.edu.chnu.awards.user.service.UserDirectoryService;
-import ua.edu.chnu.awards.user.service.UserProfileService;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * User endpoints: the caller's own profile and the directory for those who may read it.
+ * User directory and role assignment for those who may read or manage users.
  */
 @RestController
 @RequestMapping("/api/v1/users")
@@ -42,20 +38,8 @@ public class UserController {
     private static final String CAN_READ = "@access.require('user:read:all', 'user:read:scope')";
     private static final String CAN_MANAGE = "@access.require('user:manage', 'user:manage:scope')";
 
-    private final UserProfileService profileService;
     private final UserDirectoryService directoryService;
     private final RoleAssignmentService roleAssignmentService;
-
-    /**
-     * Profile of the caller.
-     *
-     * @param jwt the access token
-     * @return profile
-     */
-    @GetMapping("/me")
-    public UserProfileResponse me(@AuthenticationPrincipal Jwt jwt) {
-        return profileService.profileOf(Long.parseLong(jwt.getSubject()));
-    }
 
     /**
      * Directory page, limited to the caller's scope unless they may read everybody.

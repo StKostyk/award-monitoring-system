@@ -14,6 +14,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param lastName     last name
  * @param roles        roles in effect today
  * @param organization primary organisation
+ * @param faculty      faculty or college above the primary organisation, null when there is none
  * @param status       account status
  * @param createdAt    registration time
  * @param lastLoginAt  last successful sign-in, null before the first one
@@ -22,6 +23,6 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  */
 public record UserProfileResponse(Long id, String email, String firstName, String lastName,
                                   List<RoleAssignmentResponse> roles, OrganizationRef organization,
-                                  AccountStatus status, Instant createdAt, Instant lastLoginAt,
+                                  OrganizationRef faculty, AccountStatus status, Instant createdAt, Instant lastLoginAt,
                                   boolean membershipConfirmed) {
 }

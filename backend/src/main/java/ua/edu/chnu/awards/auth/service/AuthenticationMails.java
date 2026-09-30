@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.auth.event.AccountLocked;
+import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
+import ua.edu.chnu.awards.auth.event.EmailChanged;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
@@ -19,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Sends the account emails (verification, password reset, new device, lockout) after the requesting
+ * Sends the account emails (verification, password reset, address change, new device, lockout) after the requesting
  * transaction commits.
  */
 @Component
@@ -49,6 +51,32 @@ public class AuthenticationMails {
     @TransactionalEventListener
     public void onPasswordResetRequested(PasswordResetRequested event) {
         delivery.send(event.email(), "Скидання пароля / Password reset", resetBody(event));
+    }
+
+    /**
+     * Sends the confirmation link of a sign-in address change to the new address and a warning to the current one.
+     *
+     * @param event the committed change request
+     */
+    @Async
+    @TransactionalEventListener
+    public void onEmailChangeRequested(EmailChangeRequested event) {
+        delivery.send(event.email(), "Підтвердження нової адреси / Confirm your new address",
+            emailChangeBody(event));
+        delivery.send(event.currentEmail(), "Запит на зміну адреси для входу / Sign-in address change requested",
+            emailChangeWarningBody(event));
+    }
+
+    /**
+     * Tells the previous address that the account now signs in with another one.
+     *
+     * @param event the committed change
+     */
+    @Async
+    @TransactionalEventListener
+    public void onEmailChanged(EmailChanged event) {
+        delivery.send(event.oldEmail(), "Адресу для входу змінено / Your sign-in address was changed",
+            emailChangedBody(event));
     }
 
     /**
@@ -102,6 +130,48 @@ public class AuthenticationMails {
             + "You asked to reset your password for the ChNU award monitoring system. Set a new one within 1 hour:\n"
             + event.link() + "\n\n"
             + "If you did not ask for this, ignore this message; your password stays unchanged.\n";
+    }
+
+    static String emailChangeBody(EmailChangeRequested event) {
+        return helloUk(event.firstName())
+            + "Ви попросили входити до системи обліку нагород ЧНУ з адресою " + event.email()
+            + ". Підтвердьте її протягом 1 години:\n"
+            + event.link() + "\n\n"
+            + "Після підтвердження всі сеанси буде завершено, і ви ввійдете вже з новою адресою.\n"
+            + "Якщо ви не робили цього запиту, проігноруйте цей лист — адреса залишиться незмінною.\n\n"
+            + SEPARATOR
+            + helloEn(event.firstName())
+            + "You asked to sign in to the ChNU award monitoring system with " + event.email()
+            + ". Confirm it within 1 hour:\n"
+            + event.link() + "\n\n"
+            + "Confirming ends every session; you then sign in with the new address.\n"
+            + "If you did not ask for this, ignore this message; your address stays unchanged.\n";
+    }
+
+    static String emailChangeWarningBody(EmailChangeRequested event) {
+        return helloUk(event.firstName())
+            + "Для вашого облікового запису в системі обліку нагород ЧНУ щойно попросили змінити адресу для входу на "
+            + event.email() + ". Посилання для підтвердження надіслано на ту адресу й діє 1 годину.\n\n"
+            + "Якщо це були не ви, негайно змініть пароль — це скасує зміну адреси й завершить усі сеанси:\n"
+            + event.resetLink() + "\n\n"
+            + SEPARATOR
+            + helloEn(event.firstName())
+            + "Somebody just asked to change the sign-in address of your ChNU award monitoring account to "
+            + event.email() + ". The confirmation link went to that address and works for 1 hour.\n\n"
+            + "If this was not you, reset your password at once; that cancels the change and ends every session:\n"
+            + event.resetLink() + "\n";
+    }
+
+    static String emailChangedBody(EmailChanged event) {
+        return helloUk(event.firstName())
+            + "Адресу для входу до вашого облікового запису в системі обліку нагород ЧНУ змінено на "
+            + event.newEmail() + ". Цю адресу більше не використовують для входу.\n"
+            + "Якщо ви цього не робили, негайно зверніться до адміністратора системи.\n\n"
+            + SEPARATOR
+            + helloEn(event.firstName())
+            + "The sign-in address of your ChNU award monitoring account was changed to " + event.newEmail()
+            + ". This address is no longer used to sign in.\n"
+            + "If this was not you, contact the system administrator at once.\n";
     }
 
     static String deviceBody(NewDeviceSignedIn event) {

@@ -33,6 +33,7 @@ import ua.edu.chnu.awards.auth.security.LoginAccessDeniedHandler;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.auth.service.DeviceService;
+import ua.edu.chnu.awards.auth.service.EmailChangeService;
 import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 import ua.edu.chnu.awards.authz.AccessDenials;
@@ -66,6 +67,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private DeviceService deviceService;
+
+    @MockitoBean
+    private EmailChangeService emailChangeService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -111,6 +115,27 @@ class AuthControllerTest {
             .andExpect(content().contentType("application/problem+json"))
             .andExpect(jsonPath("$.type").value("urn:awards:problem:institutional-email-required"))
             .andExpect(jsonPath("$.detail").value("Institutional addresses only"));
+    }
+
+    @Test
+    void ac15_theAddressChangeIsConfirmedWithoutAToken() throws Exception {
+        when(emailChangeService.confirm("raw")).thenReturn("mover.new@chnu.edu.ua");
+
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"raw\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("mover.new@chnu.edu.ua"));
+    }
+
+    @Test
+    void ac15_aSpentAddressChangeLinkIsGone() throws Exception {
+        when(emailChangeService.confirm("raw")).thenThrow(new ApiProblemException(HttpStatus.GONE,
+            "token-invalid", "The link is invalid, expired or already used"));
+
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"raw\"}"))
+            .andExpect(status().isGone())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:token-invalid"));
     }
 
     @Test

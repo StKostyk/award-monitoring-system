@@ -107,6 +107,7 @@ class DeviceServiceTest {
 
         assertThat(olena.getPasswordHash()).isEqualTo("$2a$12$random");
         verify(tokens).invalidate(olena, TokenPurpose.SECURITY_REVOKE);
+        verify(tokens).invalidate(olena, TokenPurpose.EMAIL_CHANGE);
         verify(authorizations).revokeAll(olena);
         verify(devices).deleteByUserId(7L);
         verify(events).publishEvent(new PasswordResetRequested("olena@chnu.edu.ua", "Олена",

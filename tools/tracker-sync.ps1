@@ -9,7 +9,8 @@
       create-story create a Jira story: -Summary, -Points, -Epic SCRUM-nn, optional -GitHub nn (link added to the description)
       set-epic     attach a story to an epic: -Jira SCRUM-nn -Epic SCRUM-nn
       describe     replace the description: -BodyFile file, -Jira SCRUM-nn and/or -GitHub nn; lines starting
-                   with "- " become a bullet list in Jira, other non-empty lines paragraphs; GitHub gets the file as is
+                   with "- " become a bullet list in Jira, other non-empty lines paragraphs; GitHub gets the file as is;
+                   optional -Points also sets the Jira estimate
       fields       print the Jira field ids used (story points, epic link)
 
     Jira uses the REST API with an API token:
@@ -123,7 +124,9 @@ switch ($Action) {
             }
             if ($items.Count) { $blocks.Add(@{ type = 'bulletList'; content = $items.ToArray() }) }
             $doc = @{ type = 'doc'; version = 1; content = $blocks.ToArray() }
-            $json = @{ fields = @{ description = $doc } } | ConvertTo-Json -Depth 20
+            $fields = @{ description = $doc }
+            if ($Points) { $fields[(Story-Points-Field)] = $Points }
+            $json = @{ fields = $fields } | ConvertTo-Json -Depth 20
             $headers = Jira-Headers
             $headers['Content-Type'] = 'application/json; charset=utf-8'
             Invoke-RestMethod -Uri "$base/issue/$Jira" -Headers $headers -Method Put `

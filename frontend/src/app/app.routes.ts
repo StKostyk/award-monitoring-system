@@ -12,6 +12,8 @@ import { NotMeComponent } from './features/auth/security/not-me/not-me.component
 import { VerifyEmailComponent } from './features/auth/verify-email/verify-email.component';
 import { ForbiddenComponent } from './features/forbidden/forbidden.component';
 import { HomeComponent } from './features/home/home.component';
+import { ConfirmEmailChangeComponent } from './features/profile/confirm-email-change/confirm-email-change.component';
+import { ProfileComponent } from './features/profile/profile/profile.component';
 
 export const routes: Routes = [
   { path: 'callback', component: CallbackComponent },
@@ -25,6 +27,8 @@ export const routes: Routes = [
       { path: 'forgot-password', component: ForgotPasswordComponent },
       { path: 'reset-password', component: ResetPasswordComponent },
       { path: 'security/not-me', component: NotMeComponent },
+      { path: 'confirm-email-change', component: ConfirmEmailChangeComponent },
+      { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
       { path: 'forbidden', component: ForbiddenComponent, canActivate: [authGuard] },
       {
         path: 'admin',

@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatToolbar } from '@angular/material/toolbar';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -12,7 +13,18 @@ import { LanguageService } from '../i18n/language.service';
 
 @Component({
   selector: 'app-shell',
-  imports: [MatToolbar, MatButton, MatIconButton, MatIcon, RouterLink, RouterOutlet, TranslocoPipe],
+  imports: [
+    MatToolbar,
+    MatButton,
+    MatIconButton,
+    MatIcon,
+    MatMenu,
+    MatMenuItem,
+    MatMenuTrigger,
+    RouterLink,
+    RouterOutlet,
+    TranslocoPipe,
+  ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })

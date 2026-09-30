@@ -33,7 +33,7 @@ import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest({UserController.class, UserProfileController.class})
 class UserControllerTest extends AbstractUserEndpointsTest {
 
     @Test
@@ -43,7 +43,9 @@ class UserControllerTest extends AbstractUserEndpointsTest {
         when(profileService.profileOf(5L)).thenReturn(new UserProfileResponse(5L, "employee.fmi@chnu.edu.ua",
             "Анастасія", "Працівник",
             List.of(new RoleAssignmentResponse(1L, RoleType.EMPLOYEE, department, LocalDate.of(2026, 9, 1), null)),
-            department, AccountStatus.ACTIVE, Instant.parse("2026-09-01T00:00:00Z"), null, true));
+            department, new OrganizationRef(9L, "Faculty of Mathematics and Informatics",
+                "Факультет математики та інформатики", "FMI", OrganizationType.FACULTY),
+            AccountStatus.ACTIVE, Instant.parse("2026-09-01T00:00:00Z"), null, true));
 
         mockMvc.perform(get("/api/v1/users/me")
                 .with(jwt().jwt(jwt -> jwt.subject("5").claim("email", "employee.fmi@chnu.edu.ua"))))
@@ -53,6 +55,7 @@ class UserControllerTest extends AbstractUserEndpointsTest {
             .andExpect(jsonPath("$.roles[0].role").value("EMPLOYEE"))
             .andExpect(jsonPath("$.roles[0].organization.code").value("DAI"))
             .andExpect(jsonPath("$.organization.type").value("DEPARTMENT"))
+            .andExpect(jsonPath("$.faculty.code").value("FMI"))
             .andExpect(jsonPath("$.membershipConfirmed").value(true))
             .andExpect(jsonPath("$.status").value("ACTIVE"));
     }
@@ -62,7 +65,7 @@ class UserControllerTest extends AbstractUserEndpointsTest {
         OrganizationRef department = new OrganizationRef(64L, "Department of Algebra and Informatics",
             "Кафедра алгебри та інформатики", "DAI", OrganizationType.DEPARTMENT);
         when(profileService.profileOf(6L)).thenReturn(new UserProfileResponse(6L, "newcomer@chnu.edu.ua",
-            "Новий", "Працівник", List.of(), department, AccountStatus.ACTIVE,
+            "Новий", "Працівник", List.of(), department, null, AccountStatus.ACTIVE,
             Instant.parse("2026-09-22T00:00:00Z"), null, false));
 
         mockMvc.perform(get("/api/v1/users/me").with(jwt().jwt(jwt -> jwt.subject("6"))))

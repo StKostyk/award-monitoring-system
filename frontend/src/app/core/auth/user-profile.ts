@@ -41,6 +41,7 @@ export interface UserProfile {
   lastName: string;
   roles: RoleAssignment[];
   organization: OrganizationRef;
+  faculty: OrganizationRef | null;
   status: AccountStatus;
   createdAt: string;
   lastLoginAt: string | null;

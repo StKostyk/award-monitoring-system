@@ -45,6 +45,17 @@ public record AuthProperties(
     }
 
     /**
+     * Whether an address belongs to one of the institutional domains.
+     *
+     * @param email a normalised address
+     * @return true when its domain is allowed
+     */
+    public boolean isInstitutional(String email) {
+        String domain = email.substring(email.lastIndexOf('@') + 1);
+        return allowedEmailDomains().stream().anyMatch(domain::equalsIgnoreCase);
+    }
+
+    /**
      * Registered browser client.
      *
      * @param id                     OAuth2 client id

@@ -16,6 +16,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
+import ua.edu.chnu.awards.auth.dto.EmailChangeConfirmRequest;
+import ua.edu.chnu.awards.auth.dto.EmailChangeRequest;
 import ua.edu.chnu.awards.award.dto.AwardCategoryResponse;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
@@ -46,6 +48,24 @@ class OpenApiContractTest {
         assertThat(property(roles, "items")).containsEntry("$ref", "#/components/schemas/RoleAssignment");
         assertThat(property(properties, "organization"))
             .containsEntry("$ref", "#/components/schemas/OrganizationRef");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac12_ac14_profileChangeSchemasMatchTheRequests() throws IOException {
+        Map<String, Object> schemas = schemas();
+        Map<String, Object> update = (Map<String, Object>) schemas.get("UserUpdateRequest");
+        Map<String, Object> change = (Map<String, Object>) schemas.get("EmailChangeRequest");
+        Map<String, Object> confirm = (Map<String, Object>) schemas.get("EmailChangeConfirmRequest");
+
+        assertThat(((Map<String, Object>) update.get("properties")).keySet())
+            .containsExactlyInAnyOrder("firstName", "lastName");
+        assertThat(update).containsEntry("additionalProperties", false);
+        assertThat(((Map<String, Object>) change.get("properties")).keySet()).containsExactlyInAnyOrderElementsOf(
+            Stream.of(EmailChangeRequest.class.getRecordComponents()).map(RecordComponent::getName).toList());
+        assertThat(((Map<String, Object>) confirm.get("properties")).keySet()).containsExactlyInAnyOrderElementsOf(
+            Stream.of(EmailChangeConfirmRequest.class.getRecordComponents()).map(RecordComponent::getName)
+                .toList());
     }
 
     @Test

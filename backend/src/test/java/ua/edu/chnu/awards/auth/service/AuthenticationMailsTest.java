@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import ua.edu.chnu.awards.auth.event.AccountLocked;
+import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
+import ua.edu.chnu.awards.auth.event.EmailChanged;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
@@ -48,6 +50,31 @@ class AuthenticationMailsTest {
         assertThat(subject.getValue()).contains("Скидання пароля").contains("Password reset");
         assertThat(text.getValue()).contains("Олена").contains("token=xyz").contains("within 1 hour")
             .doesNotContain("24 hours");
+    }
+
+    @Test
+    void ac14_sendsTheLinkToTheNewAddressAndAWarningToTheCurrentOne() {
+        mails.onEmailChangeRequested(new EmailChangeRequested("mover.new@chnu.edu.ua", "mover@chnu.edu.ua",
+            "Петро", "http://localhost:4200/confirm-email-change?token=chg", "http://localhost:4200/forgot-password"));
+
+        verify(delivery).send(eq("mover.new@chnu.edu.ua"), subject.capture(), text.capture());
+        assertThat(subject.getValue()).contains("Підтвердження нової адреси").contains("Confirm your new address");
+        assertThat(text.getValue()).contains("Петро").contains("token=chg").contains("within 1 hour")
+            .contains("mover.new@chnu.edu.ua");
+        verify(delivery).send(eq("mover@chnu.edu.ua"), subject.capture(), text.capture());
+        assertThat(subject.getValue()).contains("Sign-in address change requested");
+        assertThat(text.getValue()).contains("mover.new@chnu.edu.ua").contains("/forgot-password")
+            .doesNotContain("token=chg");
+    }
+
+    @Test
+    void ac15_tellsTheOldAddressWhereTheAccountWent() {
+        mails.onEmailChanged(new EmailChanged("mover@chnu.edu.ua", "mover.new@chnu.edu.ua", "Петро"));
+
+        verify(delivery).send(eq("mover@chnu.edu.ua"), subject.capture(), text.capture());
+        assertThat(subject.getValue()).contains("Адресу для входу змінено").contains("sign-in address was changed");
+        assertThat(text.getValue()).contains("mover.new@chnu.edu.ua").contains("адміністратор")
+            .contains("administrator");
     }
 
     @Test

@@ -288,6 +288,37 @@ paths:
             `urn:awards:problem:password-too-short`, `password-too-long`, `password-too-common` or
             `password-same-as-current`
 
+  /auth/email-change/confirm:
+    post:
+      tags: [Authentication]
+      summary: Confirm a sign-in address change with the token from the email link
+      description: |
+        Open without a token, so the link works in any browser. Moves the account to the address the link was
+        sent to (stored lower-case), marks the token used, cancels the user's other address-change and
+        password-reset links, and signs the user out everywhere: authorizations deleted, login sessions
+        expired, access tokens refused from this second. The previous address receives a notice naming the new
+        one. `EMAIL_CHANGED` is written to the audit log with both addresses.
+      operationId: confirmEmailChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeConfirmRequest'
+      responses:
+        '200':
+          description: Address changed; sign in with the new one
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailChangeResponse'
+        '409':
+          description: |
+            The address was registered by another account since the request (`urn:awards:problem:email-taken`)
+            or the account is not `ACTIVE` (`account-not-active`); the account keeps its address
+        '410':
+          description: Token unknown, expired, already used or replaced by a newer request (`urn:awards:problem:token-invalid`)
+
   /auth/security/revoke:
     post:
       tags: [Authentication]
@@ -835,22 +866,70 @@ paths:
 
     patch:
       tags: [Users]
-      summary: Update current user profile
+      summary: Correct the caller's first and last name
+      description: |
+        Absent or null fields stay as they are; names are trimmed and follow the registration rules. Any other
+        property is refused with 422 (`code: not-allowed`) instead of being ignored. A change writes
+        `PROFILE_UPDATED` to the audit log with the old and new values of the changed fields only; a request
+        that changes nothing answers 200 without an audit row. A write colliding with a concurrent change of
+        the account is retried once.
       security:
         - bearerAuth: []
       operationId: updateCurrentUser
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UserUpdateRequest'
       responses:
         '200':
-          description: Profile updated
+          description: Profile after the change
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '409':
+          description: The account changed twice under the write (`urn:awards:problem:concurrent-update`)
+        '422':
+          description: |
+            `urn:awards:problem:validation-failed`; `errors[]` names each field with `required`, `too-long`,
+            `invalid` or `not-allowed`
+
+  /users/me/email-change:
+    post:
+      tags: [Users]
+      summary: Request a change of the sign-in address
+      description: |
+        Sends a 1-hour single-use link to the new address and cancels the caller's earlier unused links. The
+        current password is required; a wrong one counts as a failed sign-in, and the failure that locks the
+        account also signs it out everywhere and cancels pending links. At most one request per account per
+        minute. The current address receives a warning naming the new one; a password reset, a "this was not me"
+        revocation or a lockout cancels the pending change. `EMAIL_CHANGE_REQUESTED` is written to the audit log.
+      security:
+        - bearerAuth: []
+      operationId: requestEmailChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequest'
+      responses:
+        '202':
+          description: Link sent to the new address
+        '400':
+          description: Malformed body (bean validation)
+        '403':
+          description: Wrong current password (`urn:awards:problem:password-mismatch`)
+        '409':
+          description: The address belongs to another account (`urn:awards:problem:email-taken`)
+        '422':
+          description: |
+            Not an institutional address (`urn:awards:problem:institutional-email-required`) or the current
+            address (`validation-failed`, field `newEmail`, code `unchanged`)
+        '429':
+          description: A link was sent within the last minute (`urn:awards:problem:too-many-requests`)
 
   /users:
     get:
@@ -1441,6 +1520,11 @@ components:
             $ref: '#/components/schemas/RoleAssignment'
         organization:
           $ref: '#/components/schemas/OrganizationRef'
+        faculty:
+          description: Faculty or college above `organization`; null when there is none
+          oneOf:
+            - $ref: '#/components/schemas/OrganizationRef'
+            - type: 'null'
         status:
           $ref: '#/components/schemas/AccountStatus'
         createdAt:
@@ -1523,15 +1607,48 @@ components:
 
     UserUpdateRequest:
       type: object
+      additionalProperties: false
+      description: Notification preferences join this request with the notification channels (Epic 7)
       properties:
         firstName:
           type: string
           maxLength: 100
+          description: Letters, apostrophes, hyphens and spaces, starting with a letter; trimmed
         lastName:
           type: string
           maxLength: 100
-        notificationPreferences:
-          $ref: '#/components/schemas/NotificationPreferences'
+          description: Same rules as `firstName`
+
+    EmailChangeRequest:
+      type: object
+      required: [newEmail, currentPassword]
+      properties:
+        newEmail:
+          type: string
+          format: email
+          maxLength: 254
+          description: Institutional address to sign in with
+        currentPassword:
+          type: string
+          format: password
+          maxLength: 72
+
+    EmailChangeConfirmRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          maxLength: 100
+          description: Raw token from the email link
+
+    EmailChangeResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: The address the account signs in with from now on
 
     UserSummary:
       type: object

@@ -1,6 +1,5 @@
 package ua.edu.chnu.awards.auth.service;
 
-import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -158,10 +157,7 @@ public class RegistrationService {
     }
 
     private void requireInstitutionalDomain(String email) {
-        String domain = email.substring(email.lastIndexOf('@') + 1).toLowerCase(Locale.ROOT);
-        boolean allowed = properties.allowedEmailDomains().stream()
-            .anyMatch(d -> d.equalsIgnoreCase(domain));
-        if (!allowed) {
+        if (!properties.isInstitutional(email)) {
             throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "institutional-email-required",
                 "Registration is open to institutional addresses only; ask your faculty secretary for help");
         }

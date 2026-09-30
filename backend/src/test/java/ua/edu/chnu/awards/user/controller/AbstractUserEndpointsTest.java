@@ -18,6 +18,7 @@ import ua.edu.chnu.awards.auth.security.LoginAccessDeniedHandler;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
 import ua.edu.chnu.awards.auth.security.RolePermissions;
+import ua.edu.chnu.awards.auth.service.EmailChangeService;
 import ua.edu.chnu.awards.authz.AccessDenials;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.OrganizationTree;
@@ -51,6 +52,9 @@ abstract class AbstractUserEndpointsTest {
 
     @MockitoBean
     protected RoleAssignmentService roleAssignmentService;
+
+    @MockitoBean
+    protected EmailChangeService emailChangeService;
 
     @MockitoBean
     protected OrganizationTree tree;

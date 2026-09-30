@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>{{ 'emailChange.title' | transloco }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" (submit)="$event.preventDefault(); submit()" class="email-change__form" novalidate id="email-change-form">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'emailChange.newEmail' | transloco }}</mat-label>
+      <input matInput formControlName="newEmail" type="email" autocomplete="email" data-testid="email-change-new" />
+      <mat-hint>{{ 'emailChange.hint' | transloco }}</mat-hint>
+      @if (form.controls.newEmail.invalid) {
+        <mat-error>{{ 'emailChange.validation.email' | transloco }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'emailChange.password' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="currentPassword"
+        type="password"
+        autocomplete="current-password"
+        data-testid="email-change-password"
+      />
+      @if (form.controls.currentPassword.invalid) {
+        <mat-error>{{ 'emailChange.validation.password' | transloco }}</mat-error>
+      }
+    </mat-form-field>
+    @if (error(); as error) {
+      <p class="email-change__problem" role="alert" data-testid="email-change-error">{{ error | transloco }}</p>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="dialog.close()" data-testid="email-change-cancel">
+    {{ 'emailChange.cancel' | transloco }}
+  </button>
+  <button
+    mat-flat-button
+    type="submit"
+    form="email-change-form"
+    [disabled]="submitting()"
+    data-testid="email-change-submit"
+  >
+    {{ 'emailChange.submit' | transloco }}
+  </button>
+</mat-dialog-actions>
