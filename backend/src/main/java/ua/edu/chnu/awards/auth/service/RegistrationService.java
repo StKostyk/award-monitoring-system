@@ -46,6 +46,7 @@ public class RegistrationService {
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher events;
     private final RequestThrottle throttle;
+    private final EmailAddressRules addressRules;
     private final AuthProperties properties;
     private final AuditService audit;
     private final MembershipConfirmation membership;
@@ -59,7 +60,8 @@ public class RegistrationService {
     @Transactional
     public RegistrationResponse register(RegisterRequest request) {
         String email = EmailUtils.normalize(request.email());
-        requireInstitutionalDomain(email);
+        addressRules.requireInstitutional(email,
+            "Registration is open to institutional addresses only; ask your faculty secretary for help");
         passwordPolicy.require(request.password());
         Organization department = organizationRepository.findById(request.organizationId())
             .filter(org -> org.getOrgType() == OrganizationType.DEPARTMENT && org.isActive())
@@ -70,7 +72,7 @@ public class RegistrationService {
             .orElseGet(() -> create(email, request, department));
 
         membership.confirm(user, department).ifPresent(userRoleRepository::save);
-        throttle.claim(RESEND_KEY_PREFIX + email, properties.resendInterval());
+        throttle.claimForTransaction(RESEND_KEY_PREFIX + email, properties.resendInterval());
         sendVerification(user);
         return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
     }
@@ -86,8 +88,7 @@ public class RegistrationService {
                 .organization(department)
                 .build());
         } catch (DataIntegrityViolationException e) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "email-taken",
-                "An account with this address already exists", e);
+            throw addressRules.taken(e);
         }
     }
 
@@ -100,8 +101,7 @@ public class RegistrationService {
         boolean abandoned = existing.getAccountStatus() == AccountStatus.PENDING
             && tokens.countUsable(existing, TokenPurpose.EMAIL_VERIFICATION) == 0;
         if (!abandoned) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "email-taken",
-                "An account with this address already exists");
+            throw addressRules.taken(null);
         }
         existing.setFirstName(request.firstName().trim());
         existing.setLastName(request.lastName().trim());
@@ -147,20 +147,13 @@ public class RegistrationService {
     @Transactional
     public void resend(String email) {
         String normalized = EmailUtils.normalize(email);
-        if (!throttle.claim(RESEND_KEY_PREFIX + normalized, properties.resendInterval())) {
+        if (!throttle.claimForTransaction(RESEND_KEY_PREFIX + normalized, properties.resendInterval())) {
             throw new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests",
                 "A verification email was sent recently; try again in a minute");
         }
         userRepository.findByEmailAddressIgnoreCase(normalized)
             .filter(user -> user.getAccountStatus() == AccountStatus.PENDING)
             .ifPresent(this::sendVerification);
-    }
-
-    private void requireInstitutionalDomain(String email) {
-        if (!properties.isInstitutional(email)) {
-            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "institutional-email-required",
-                "Registration is open to institutional addresses only; ask your faculty secretary for help");
-        }
     }
 
     private void sendVerification(User user) {

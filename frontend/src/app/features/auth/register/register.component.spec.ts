@@ -88,19 +88,21 @@ describe('RegisterComponent', () => {
     form.controls.password.setValue('ю'.repeat(37));
     expect(form.controls.password.hasError('maxbytes')).toBe(true);
     form.controls.firstName.setValue('<b>Олена</b>');
-    expect(form.controls.firstName.hasError('pattern')).toBe(true);
+    expect(form.controls.firstName.hasError('invalid')).toBe(true);
+    form.controls.firstName.setValue('   ');
+    expect(form.controls.firstName.hasError('required')).toBe(true);
     form.controls.firstName.setValue("Мар'яна-Олена");
     expect(form.controls.firstName.valid).toBe(true);
     http.expectNone(`${environment.apiUrl}/auth/register`);
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('ac21 registers and moves to the pending page', () => {
+  it('ac21 registers with trimmed names and moves to the pending page', () => {
     fixture.componentInstance.form.setValue({
       email: 'new.user@chnu.edu.ua',
       password: 'correct-horse-battery',
-      firstName: 'Олена',
-      lastName: 'Нова',
+      firstName: ' Олена ',
+      lastName: 'Нова  ',
       organizationId: 64,
     });
 

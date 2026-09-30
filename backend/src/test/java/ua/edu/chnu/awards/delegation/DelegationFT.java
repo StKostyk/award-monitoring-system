@@ -17,19 +17,14 @@ import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
-import ua.edu.chnu.awards.support.Mailpit;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -69,9 +64,6 @@ class DelegationFT extends AbstractFunctionalTest {
     private static final String DEAN_ROLE = "DEAN";
     private static final long OTHER_FACULTY_ID = 10L;
 
-    @LocalServerPort
-    private int port;
-
     @Autowired
     private UserRepository userRepository;
 
@@ -81,10 +73,6 @@ class DelegationFT extends AbstractFunctionalTest {
     @Autowired
     private JdbcTemplate jdbc;
 
-    @Value("${mailpit.api-url}")
-    private String mailpitApiUrl;
-
-    private Mailpit mailpit;
     private long claimsDeanId;
     private long secretaryId;
     private long standInId;
@@ -123,12 +111,6 @@ class DelegationFT extends AbstractFunctionalTest {
             + " (select user_id from users where email_address like 'ft.deleg.%')");
         ACCOUNTS.forEach(email ->
             userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
-    }
-
-    @BeforeEach
-    void setUp() {
-        RestAssured.port = port;
-        mailpit = new Mailpit(mailpitApiUrl);
     }
 
     @Test

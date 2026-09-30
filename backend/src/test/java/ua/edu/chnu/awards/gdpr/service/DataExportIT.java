@@ -65,7 +65,7 @@ class DataExportIT extends AbstractIntegrationTest {
         user = userRepository.save(TestUsers.user(EMAIL, department));
         dean = userRepository.save(TestUsers.user(DEAN, department));
         admin = userRepository.save(TestUsers.user(ADMIN, department));
-        redis.delete("gdpr:export:" + user.getId());
+        redis.delete(DataExportService.THROTTLE_KEY_PREFIX + user.getId());
     }
 
     @AfterEach
@@ -77,7 +77,7 @@ class DataExportIT extends AbstractIntegrationTest {
             jdbc.update("delete from awards where user_id = ?", id);
         });
         ids.forEach(userRepository::deleteById);
-        redis.delete("gdpr:export:" + user.getId());
+        redis.delete(DataExportService.THROTTLE_KEY_PREFIX + user.getId());
     }
 
     @Test

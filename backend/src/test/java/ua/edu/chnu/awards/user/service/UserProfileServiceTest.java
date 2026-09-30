@@ -25,6 +25,7 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -76,7 +77,7 @@ class UserProfileServiceTest {
         assertThat(user.getLastName()).isEqualTo("Петренко-Коваль");
         assertThat(profile.lastName()).isEqualTo("Петренко-Коваль");
         verify(userRepository).saveAndFlush(user);
-        verify(audit).recordChange(AuditAction.PROFILE_UPDATED, UserProfileService.AUDIT_ENTITY, 5L, 5L,
+        verify(audit).recordChange(AuditAction.PROFILE_UPDATED, AuditEntityConstants.USER, 5L, 5L,
             Map.of("last_name", "Петренко"), Map.of("last_name", "Петренко-Коваль"));
     }
 

@@ -14,7 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
@@ -42,7 +42,7 @@ class DelegationRecorderTest {
         recorder.created(delegation());
 
         ArgumentCaptor<Map<String, Object>> details = captor();
-        verify(audit).record(eq(AuditAction.DELEGATION_CREATED), eq(AuditLog.AUTHORIZATION),
+        verify(audit).record(eq(AuditAction.DELEGATION_CREATED), eq(AuditEntityConstants.AUTHORIZATION),
             eq(secretary.getId()), details.capture());
         assertThat(details.getValue()).containsEntry("actorId", dean.getId())
             .containsEntry("delegatorId", dean.getId())
@@ -70,7 +70,7 @@ class DelegationRecorderTest {
     void ac3_5_arevocationBySomebodyElseReachesBothSides() {
         recorder.revoked(person(3L, "admin@chnu.edu.ua", "Олег", null), delegation());
 
-        verify(audit).record(eq(AuditAction.DELEGATION_REVOKED), eq(AuditLog.AUTHORIZATION),
+        verify(audit).record(eq(AuditAction.DELEGATION_REVOKED), eq(AuditEntityConstants.AUTHORIZATION),
             eq(secretary.getId()), captor().capture());
         DelegationRevoked event = published(DelegationRevoked.class);
         assertThat(event.recipients())

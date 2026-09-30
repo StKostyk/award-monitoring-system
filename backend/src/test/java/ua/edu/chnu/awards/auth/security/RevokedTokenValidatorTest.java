@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,19 +29,27 @@ class RevokedTokenValidatorTest {
     }
 
     @Test
-    void ac65_tokenIssuedBeforeOrWithinTheSecondOfTheRevocationIsRefused() {
-        when(values.get("auth:nbf:7")).thenReturn(String.valueOf(REVOKED_AT.getEpochSecond()));
+    void ac65_tokenIssuedUpToTheMillisecondOfTheRevocationIsRefused() {
+        when(values.get("auth:nbf:7")).thenReturn(String.valueOf(REVOKED_AT.toEpochMilli()));
 
-        assertThat(validator.validate(token(REVOKED_AT.minusSeconds(1))).hasErrors()).isTrue();
+        assertThat(validator.validate(token(REVOKED_AT.minusMillis(400))).hasErrors()).isTrue();
         assertThat(validator.validate(token(REVOKED_AT)).hasErrors()).isTrue();
     }
 
     @Test
-    void ac65_tokenIssuedAfterTheRevocationIsAccepted() {
-        when(values.get("auth:nbf:7")).thenReturn(String.valueOf(REVOKED_AT.getEpochSecond()));
+    void edge_aSignInWithinTheSecondAfterTheRevocationIsAccepted() {
+        when(values.get("auth:nbf:7")).thenReturn(String.valueOf(REVOKED_AT.toEpochMilli()));
 
-        assertThat(validator.validate(token(REVOKED_AT.plusSeconds(1))).hasErrors()).isFalse();
+        assertThat(validator.validate(token(REVOKED_AT.plusMillis(1))).hasErrors()).isFalse();
         assertThat(validator.validate(token(REVOKED_AT.plusSeconds(30))).hasErrors()).isFalse();
+    }
+
+    @Test
+    void ac65_aTokenWithoutMillisecondsIsRefusedWithinTheSecondOfTheRevocation() {
+        when(values.get("auth:nbf:7")).thenReturn(String.valueOf(REVOKED_AT.plusMillis(500).toEpochMilli()));
+
+        assertThat(validator.validate(secondsOnly(REVOKED_AT)).hasErrors()).isTrue();
+        assertThat(validator.validate(secondsOnly(REVOKED_AT.plusSeconds(1))).hasErrors()).isFalse();
     }
 
     @Test
@@ -58,6 +67,12 @@ class RevokedTokenValidatorTest {
     }
 
     private static Jwt token(Instant issuedAt) {
+        return Jwt.withTokenValue("t").header("alg", "RS256").subject("7")
+            .claim("iat_ms", String.valueOf(issuedAt.toEpochMilli()))
+            .issuedAt(issuedAt.truncatedTo(ChronoUnit.SECONDS)).expiresAt(issuedAt.plusSeconds(900)).build();
+    }
+
+    private static Jwt secondsOnly(Instant issuedAt) {
         return Jwt.withTokenValue("t").header("alg", "RS256").subject("7")
             .issuedAt(issuedAt).expiresAt(issuedAt.plusSeconds(900)).build();
     }

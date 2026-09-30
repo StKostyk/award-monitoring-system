@@ -12,14 +12,10 @@ import java.util.Map;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import io.restassured.RestAssured;
 
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -38,9 +34,6 @@ class AccessControlFT extends AbstractFunctionalTest {
     private static final String MEMBER = "ft.scope.member@chnu.edu.ua";
     private static final String OUTSIDER = "ft.scope.outsider@chnu.edu.ua";
     private static final long OTHER_FACULTY_ID = 10L;
-
-    @LocalServerPort
-    private int port;
 
     @Autowired
     private UserRepository userRepository;
@@ -81,11 +74,6 @@ class AccessControlFT extends AbstractFunctionalTest {
     void deleteUsers() {
         List.of(DEAN, ADMIN, MEMBER, OUTSIDER).forEach(email ->
             userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
-    }
-
-    @BeforeEach
-    void setUp() {
-        RestAssured.port = port;
     }
 
     @Test

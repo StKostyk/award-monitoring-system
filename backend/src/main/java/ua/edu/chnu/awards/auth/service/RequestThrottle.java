@@ -5,6 +5,8 @@ import java.time.Duration;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,29 @@ public class RequestThrottle {
             log.error("Redis unavailable; request not throttled: {}", e.getMessage());
             return true;
         }
+    }
+
+    /**
+     * Claims the key for the interval and gives the claim back when the surrounding transaction does not commit,
+     * so a request that failed half-way can be repeated at once. Must be called inside a transaction.
+     *
+     * @param key      the marker key
+     * @param interval how long the claim lasts
+     * @return true when the key was free (or Redis is down), false when a claim is still active
+     */
+    public boolean claimForTransaction(String key, Duration interval) {
+        if (!claim(key, interval)) {
+            return false;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) {
+                    release(key);
+                }
+            }
+        });
+        return true;
     }
 
     /**

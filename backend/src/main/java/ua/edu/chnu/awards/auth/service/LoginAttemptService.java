@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.config.ProtectionProperties;
@@ -26,21 +27,25 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Counts failed logins per typed address in Redis and locks the address when the limit is reached. Unknown
  * addresses are locked the same way so the lock message reveals nothing; only an existing account is audited
- * and reported to the administrators. Without Redis nothing is counted and nobody is locked; the outage is
- * logged.
+ * and reported to the administrators, and a pending address change of that account is cancelled so the lock
+ * cannot be escaped by moving to the new address. Without Redis nothing is counted and nobody is locked; the
+ * outage is logged.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class LoginAttemptService {
 
-    static final String FAILURE_KEY_PREFIX = "auth:fail:";
-    static final String LOCK_KEY_PREFIX = "auth:lock:";
+    /** Redis key prefix of the failure counter, followed by the normalised address. */
+    public static final String FAILURE_KEY_PREFIX = "auth:fail:";
+    /** Redis key prefix of the lock marker, followed by the normalised address. */
+    public static final String LOCK_KEY_PREFIX = "auth:lock:";
 
     private final StringRedisTemplate redis;
     private final ProtectionProperties properties;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final OneTimeTokenService tokens;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
     private final Clock clock;
@@ -80,12 +85,12 @@ public class LoginAttemptService {
             }
             redis.opsForValue().set(LOCK_KEY_PREFIX + normalized, "1", properties.lockDuration());
             redis.delete(failureKey);
-            userRepository.findByEmailAddressIgnoreCase(normalized).ifPresent(user -> report(user, ip));
-            return true;
         } catch (DataAccessException e) {
             log.error("Redis unavailable; failed login not counted: {}", e.getMessage());
             return false;
         }
+        userRepository.findByEmailAddressIgnoreCase(normalized).ifPresent(user -> report(user, ip));
+        return true;
     }
 
     /**
@@ -102,6 +107,7 @@ public class LoginAttemptService {
     }
 
     private void report(User user, String ip) {
+        tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
         audit.record(AuditAction.ACCOUNT_LOCKED, user.getId(),
             Map.of("email", user.getEmailAddress(), "ip", String.valueOf(ip)));
         List<String> admins = userRoleRepository.findCurrentEmailsByRole(RoleType.SYSTEM_ADMIN, LocalDate.now(clock));

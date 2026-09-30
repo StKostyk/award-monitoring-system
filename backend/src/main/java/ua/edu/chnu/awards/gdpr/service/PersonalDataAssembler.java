@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
@@ -21,7 +21,6 @@ import ua.edu.chnu.awards.gdpr.mapper.PersonalDataMapper;
 import ua.edu.chnu.awards.gdpr.repository.PersonalDataQueries;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
-import ua.edu.chnu.awards.user.service.UserProfileService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,8 +36,8 @@ public class PersonalDataAssembler {
     static final String GDPR_ARTICLE = "Article 20 - Right to Data Portability";
     static final String GIVEN = "GIVEN";
     static final String RECEIVED = "RECEIVED";
-    static final List<String> ACTIVITY_AREAS = List.of(AuditLog.AUTHENTICATION, AuditLog.AUTHORIZATION,
-        UserProfileService.AUDIT_ENTITY, DataExportService.AUDIT_ENTITY);
+    static final List<String> ACTIVITY_AREAS = List.of(AuditEntityConstants.AUTHENTICATION,
+        AuditEntityConstants.AUTHORIZATION, AuditEntityConstants.USER, AuditEntityConstants.GDPR);
     static final List<String> SELF_ACTIONS = Stream.of(AuditAction.LOGIN_SUCCESS, AuditAction.LOGOUT,
         AuditAction.EMAIL_VERIFIED, AuditAction.PASSWORD_RESET, AuditAction.SECURITY_REVOKE,
         AuditAction.PROFILE_UPDATED, AuditAction.EMAIL_CHANGE_REQUESTED, AuditAction.EMAIL_CHANGED,

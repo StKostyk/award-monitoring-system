@@ -67,6 +67,33 @@ test.describe('profile', () => {
     await expect(page.getByTestId('profile-email')).toHaveText(moved);
   });
 
+  test('ac17 f3 a link opened where another user is signed in keeps that session', async ({ page, browser }) => {
+    const stamp = Date.now();
+    const mover = `e2e.lender.${stamp}@chnu.edu.ua`;
+    const moved = `e2e.lent.${stamp}@chnu.edu.ua`;
+    const host = `e2e.host.${stamp}@chnu.edu.ua`;
+    await registerAndVerify(page, mover, PASSWORD);
+    await signIn(page, mover, PASSWORD);
+    await expect(page.getByTestId('user-name')).toBeVisible();
+    await page.goto('/profile');
+    await page.getByTestId('profile-change-address').click();
+    await page.getByTestId('email-change-new').fill(moved);
+    await page.getByTestId('email-change-password').fill(PASSWORD);
+    await page.getByTestId('email-change-submit').click();
+    await expect(page.getByTestId('profile-link-sent')).toContainText(moved);
+
+    const other = await (await browser.newContext()).newPage();
+    await registerAndVerify(other, host, PASSWORD);
+    await signIn(other, host, PASSWORD);
+    await expect(other.getByTestId('user-name')).toBeVisible();
+    await other.goto(await linkFor(moved, 'confirm-email-change'));
+    await expect(other.getByTestId('confirm-email-changed')).toContainText(moved);
+
+    await other.goto('/profile');
+    await expect(other.getByTestId('profile-email')).toHaveText(host);
+    await other.context().close();
+  });
+
   test('ac17 the profile needs a session and returns to it after signing in', async ({ page }) => {
     const email = `e2e.guard.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, PASSWORD);

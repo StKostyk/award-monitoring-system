@@ -24,6 +24,7 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
+import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
 import ua.edu.chnu.awards.support.Mailpit;
@@ -81,7 +82,8 @@ class DeviceNotificationFT extends AbstractIntegrationTest {
 
     @AfterAll
     void cleanUp() {
-        redis.delete(List.of("auth:lock:" + EMAIL, "auth:fail:" + EMAIL));
+        redis.delete(List.of(LoginAttemptService.LOCK_KEY_PREFIX + EMAIL,
+            LoginAttemptService.FAILURE_KEY_PREFIX + EMAIL));
         userRepository.findByEmailAddressIgnoreCase(EMAIL).ifPresent(userRepository::delete);
     }
 

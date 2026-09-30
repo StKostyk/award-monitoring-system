@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -24,8 +23,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -67,43 +64,17 @@ class DataExportServiceTest {
         request.setRemoteAddr("10.0.0.7");
         request.addHeader("User-Agent", FIREFOX);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        TransactionSynchronizationManager.initSynchronization();
         when(users.findById(5L)).thenReturn(Optional.of(user));
     }
 
     @AfterEach
     void unbindRequest() {
-        TransactionSynchronizationManager.clearSynchronization();
         RequestContextHolder.resetRequestAttributes();
     }
 
     @Test
-    void ac34_anExportThatDoesNotCommitGivesItsClaimBack() {
-        when(throttle.claim(anyString(), any())).thenReturn(true);
-        when(assembler.assemble(user)).thenReturn(file);
-        service.export(5L);
-
-        TransactionSynchronizationManager.getSynchronizations()
-            .forEach(sync -> sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
-
-        verify(throttle).release("gdpr:export:5");
-    }
-
-    @Test
-    void ac34_aCommittedExportKeepsItsClaim() {
-        when(throttle.claim(anyString(), any())).thenReturn(true);
-        when(assembler.assemble(user)).thenReturn(file);
-        service.export(5L);
-
-        TransactionSynchronizationManager.getSynchronizations()
-            .forEach(sync -> sync.afterCompletion(TransactionSynchronization.STATUS_COMMITTED));
-
-        verify(throttle, never()).release(anyString());
-    }
-
-    @Test
     void ac31_ac34_theExportIsNamedAfterTheKyivDayAuditedAndAnnounced() {
-        when(throttle.claim("gdpr:export:5", DataExportService.INTERVAL)).thenReturn(true);
+        when(throttle.claimForTransaction("gdpr:export:5", DataExportService.INTERVAL)).thenReturn(true);
         when(assembler.assemble(user)).thenReturn(file);
 
         DataExport export = service.export(5L);
@@ -119,7 +90,7 @@ class DataExportServiceTest {
 
     @Test
     void ac34_aSecondExportWithinAMinuteIsRefusedBeforeAnythingIsRead() {
-        when(throttle.claim(anyString(), any())).thenReturn(false);
+        when(throttle.claimForTransaction(anyString(), any())).thenReturn(false);
 
         assertThatThrownBy(() -> service.export(5L))
             .isInstanceOfSatisfying(ApiProblemException.class, problem -> {

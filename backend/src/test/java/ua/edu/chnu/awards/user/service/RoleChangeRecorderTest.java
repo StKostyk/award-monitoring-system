@@ -17,7 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
@@ -45,7 +45,7 @@ class RoleChangeRecorderTest {
         recorder.granted(actor, assignment(TODAY, TODAY.plusMonths(1)));
 
         ArgumentCaptor<Map<String, Object>> details = captor();
-        verify(audit).record(eq(AuditAction.ROLE_ASSIGNED), eq(AuditLog.AUTHORIZATION), eq(holder.getId()),
+        verify(audit).record(eq(AuditAction.ROLE_ASSIGNED), eq(AuditEntityConstants.AUTHORIZATION), eq(holder.getId()),
             details.capture());
         assertThat(details.getValue()).containsEntry("actorId", actor.getId())
             .containsEntry("role", "FACULTY_SECRETARY")
@@ -63,7 +63,8 @@ class RoleChangeRecorderTest {
     void ac2_5_aRevocationIsAuditedAndAnnouncedWithItsLastDay() {
         recorder.revoked(actor, assignment(TODAY.minusMonths(2), TODAY.minusDays(1)));
 
-        verify(audit).record(eq(AuditAction.ROLE_REVOKED), eq(AuditLog.AUTHORIZATION), eq(holder.getId()), any());
+        verify(audit).record(eq(AuditAction.ROLE_REVOKED), eq(AuditEntityConstants.AUTHORIZATION), eq(holder.getId()),
+            any());
         assertThat(published(RoleRevoked.class).lastDay()).isEqualTo(TODAY.minusDays(1));
     }
 
@@ -71,7 +72,8 @@ class RoleChangeRecorderTest {
     void ac2_7_aRoleSupersededByACorrectedDepartmentIsAuditedWithoutAMessage() {
         recorder.superseded(actor, assignment(TODAY.minusYears(1), TODAY.minusDays(1)));
 
-        verify(audit).record(eq(AuditAction.ROLE_REVOKED), eq(AuditLog.AUTHORIZATION), eq(holder.getId()), any());
+        verify(audit).record(eq(AuditAction.ROLE_REVOKED), eq(AuditEntityConstants.AUTHORIZATION), eq(holder.getId()),
+            any());
         verify(events, never()).publishEvent(any(Object.class));
     }
 

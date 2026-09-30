@@ -40,7 +40,7 @@ class AuthorizationRevokerTest {
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
-        Duration.ofMinutes(1),
+        Duration.ofHours(1), Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
         new AuthProperties.Jwk("", "", "", ""));
     private final AuthorizationRevoker revoker = new AuthorizationRevoker(jdbc, sessions, redis, properties,
@@ -75,7 +75,7 @@ class AuthorizationRevokerTest {
     void ac65_recordsTheRevocationInstantSoEarlierAccessTokensAreRefusedImmediately() {
         revoker.revokeAll(olena);
 
-        verify(values).set("auth:nbf:7", String.valueOf(NOW.getEpochSecond()), Duration.ofMinutes(16));
+        verify(values).set("auth:nbf:7", String.valueOf(NOW.toEpochMilli()), Duration.ofMinutes(16));
     }
 
     @Test
@@ -86,7 +86,7 @@ class AuthorizationRevokerTest {
             verify(values, never()).set(anyString(), anyString(), any(Duration.class));
 
             TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
-            verify(values).set("auth:nbf:7", String.valueOf(NOW.getEpochSecond()), Duration.ofMinutes(16));
+            verify(values).set("auth:nbf:7", String.valueOf(NOW.toEpochMilli()), Duration.ofMinutes(16));
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }

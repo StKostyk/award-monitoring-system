@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.entity.AuditLog;
 import ua.edu.chnu.awards.audit.repository.AuditLogRepository;
 import ua.edu.chnu.awards.common.web.ClientRequest;
@@ -42,7 +43,7 @@ public class AuditService {
      */
     @Transactional
     public void record(AuditAction action, Long userId, Map<String, Object> details) {
-        record(action, AuditLog.AUTHENTICATION, userId, details);
+        record(action, AuditEntityConstants.AUTHENTICATION, userId, details);
     }
 
     /**
@@ -50,7 +51,7 @@ public class AuditService {
      * describes stand or fall together.
      *
      * @param action     what happened
-     * @param entityType the audited area, such as {@link AuditLog#AUTHORIZATION}
+     * @param entityType the audited area, such as {@link AuditEntityConstants#AUTHORIZATION}
      * @param userId     the account concerned, null when unknown
      * @param details    extra facts kept as JSON (no secrets)
      */
@@ -63,7 +64,7 @@ public class AuditService {
      * Stores one event about a business record, joining the caller's transaction.
      *
      * @param action     what happened
-     * @param entityType the table of the record, such as {@link AuditLog#AWARDS}
+     * @param entityType the table of the record, such as {@link AuditEntityConstants#AWARDS}
      * @param userId     who did it
      * @param entityId   the record
      * @param details    extra facts kept as JSON (no secrets)
@@ -88,18 +89,9 @@ public class AuditService {
     @Transactional
     public void recordChange(AuditAction action, String entityType, Long userId, Long entityId,
                              Map<String, Object> oldValues, Map<String, Object> newValues) {
-        ClientRequest client = ClientRequest.current();
-        repository.save(AuditLog.builder()
-            .userId(userId)
-            .actionType(action.name())
-            .entityType(entityType)
-            .entityId(entityId)
+        repository.save(entry(action, entityType, userId, entityId, newValues)
             .previous(oldValues)
-            .details(newValues)
             .changedFields(newValues.keySet().stream().sorted().toArray(String[]::new))
-            .ipAddress(client.address())
-            .userAgent(client.userAgent())
-            .correlationId(client.correlationId())
             .build());
     }
 
@@ -108,7 +100,7 @@ public class AuditService {
      * still leaves its trace.
      *
      * @param action     what happened
-     * @param entityType the audited area, such as {@link AuditLog#AUTHORIZATION}
+     * @param entityType the audited area, such as {@link AuditEntityConstants#AUTHORIZATION}
      * @param userId     the account concerned, null when unknown
      * @param details    extra facts kept as JSON (no secrets)
      */
@@ -120,8 +112,13 @@ public class AuditService {
 
     private void write(AuditAction action, String entityType, Long userId, Long entityId,
                        Map<String, Object> details) {
+        repository.save(entry(action, entityType, userId, entityId, details).build());
+    }
+
+    private static AuditLog.AuditLogBuilder entry(AuditAction action, String entityType, Long userId,
+                                                  Long entityId, Map<String, Object> details) {
         ClientRequest client = ClientRequest.current();
-        repository.save(AuditLog.builder()
+        return AuditLog.builder()
             .userId(userId)
             .actionType(action.name())
             .entityType(entityType)
@@ -129,7 +126,6 @@ public class AuditService {
             .details(details)
             .ipAddress(client.address())
             .userAgent(client.userAgent())
-            .correlationId(client.correlationId())
-            .build());
+            .correlationId(client.correlationId());
     }
 }

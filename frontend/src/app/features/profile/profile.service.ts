@@ -5,6 +5,12 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserProfile } from '../../core/auth/user-profile';
 
+/** Outcome of a confirmed address change. */
+export interface EmailChangeResult {
+  userId: number;
+  email: string;
+}
+
 export interface NameChange {
   firstName?: string;
   lastName?: string;
@@ -28,7 +34,7 @@ export class ProfileService {
     return this.http.get(`${this.base}/export`, { observe: 'response', responseType: 'blob' });
   }
 
-  confirmEmailChange(token: string): Observable<{ email: string }> {
-    return this.http.post<{ email: string }>(`${environment.apiUrl}/auth/email-change/confirm`, { token });
+  confirmEmailChange(token: string): Observable<EmailChangeResult> {
+    return this.http.post<EmailChangeResult>(`${environment.apiUrl}/auth/email-change/confirm`, { token });
   }
 }

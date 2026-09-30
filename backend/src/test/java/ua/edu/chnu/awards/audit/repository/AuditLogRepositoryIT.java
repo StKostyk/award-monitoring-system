@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.entity.AuditLog;
 import ua.edu.chnu.awards.support.AbstractJpaSliceTest;
 
@@ -27,7 +28,7 @@ class AuditLogRepositoryIT extends AbstractJpaSliceTest {
         UUID correlation = UUID.randomUUID();
         AuditLog saved = repository.saveAndFlush(AuditLog.builder()
             .actionType("LOGIN_FAILED")
-            .entityType(AuditLog.AUTHENTICATION)
+            .entityType(AuditEntityConstants.AUTHENTICATION)
             .details(Map.of("reason", "bad_credentials", "email", "x@chnu.edu.ua"))
             .ipAddress(InetAddress.getByName("203.0.113.7"))
             .userAgent("Firefox")

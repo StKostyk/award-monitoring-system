@@ -32,7 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    static final String KEY_PREFIX = "auth:rate:";
+    /** Redis key prefix of the per-address request windows. */
+    public static final String KEY_PREFIX = "auth:rate:";
     static final String PROBLEM_BODY = "{\"type\":\"urn:awards:problem:too-many-requests\","
         + "\"title\":\"Too Many Requests\",\"status\":429,"
         + "\"detail\":\"Too many requests from this address; try again in a minute\"}";

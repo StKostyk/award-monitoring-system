@@ -28,6 +28,7 @@ import org.springframework.data.redis.core.ValueOperations;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.config.ProtectionProperties;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -49,8 +50,9 @@ class LoginAttemptServiceTest {
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final ProtectionProperties properties = new ProtectionProperties(5, Duration.ofMinutes(15),
         Duration.ofMinutes(30), 20);
+    private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final LoginAttemptService service = new LoginAttemptService(redis, properties, userRepository,
-        userRoleRepository, audit, events, Clock.fixed(NOW, ZoneOffset.UTC));
+        userRoleRepository, tokens, audit, events, Clock.fixed(NOW, ZoneOffset.UTC));
 
     @BeforeEach
     void setUp() {
@@ -71,8 +73,8 @@ class LoginAttemptServiceTest {
     @Test
     void ac41_ac44_fifthFailureLocksNotifiesAdminsAndAudits() {
         when(values.increment("auth:fail:" + EMAIL)).thenReturn(5L);
-        when(userRepository.findByEmailAddressIgnoreCase(EMAIL))
-            .thenReturn(Optional.of(User.builder().id(5L).emailAddress(EMAIL).build()));
+        User dean = User.builder().id(5L).emailAddress(EMAIL).build();
+        when(userRepository.findByEmailAddressIgnoreCase(EMAIL)).thenReturn(Optional.of(dean));
         when(userRoleRepository.findCurrentEmailsByRole(RoleType.SYSTEM_ADMIN, LocalDate.of(2026, 9, 21)))
             .thenReturn(List.of("admin@chnu.edu.ua"));
 
@@ -81,6 +83,7 @@ class LoginAttemptServiceTest {
         verify(values).set("auth:lock:" + EMAIL, "1", Duration.ofMinutes(30));
         verify(redis).delete("auth:fail:" + EMAIL);
         verify(audit).record(eq(AuditAction.ACCOUNT_LOCKED), eq(5L), any());
+        verify(tokens).invalidate(dean, TokenPurpose.EMAIL_CHANGE);
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
         verify(events).publishEvent(event.capture());
         AccountLocked locked = (AccountLocked) event.getValue();
@@ -99,7 +102,7 @@ class LoginAttemptServiceTest {
         assertThat(service.recordFailure("ghost@chnu.edu.ua", "203.0.113.7")).isTrue();
 
         verify(values).set("auth:lock:ghost@chnu.edu.ua", "1", Duration.ofMinutes(30));
-        verifyNoInteractions(events, audit);
+        verifyNoInteractions(events, audit, tokens);
     }
 
     @Test

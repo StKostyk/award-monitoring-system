@@ -10,7 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
@@ -37,7 +37,8 @@ public class DelegationRecorder {
      * @param delegation the new delegation
      */
     public void created(RoleDelegation delegation) {
-        audit.record(AuditAction.DELEGATION_CREATED, AuditLog.AUTHORIZATION, delegation.getDelegate().getId(),
+        audit.record(AuditAction.DELEGATION_CREATED, AuditEntityConstants.AUTHORIZATION,
+            delegation.getDelegate().getId(),
             details(delegation, delegation.getDelegator()));
         User delegate = delegation.getDelegate();
         Organization organization = delegation.getOrganization();
@@ -54,7 +55,8 @@ public class DelegationRecorder {
      * @param delegation the delegation that has just been taken back
      */
     public void revoked(User actor, RoleDelegation delegation) {
-        audit.record(AuditAction.DELEGATION_REVOKED, AuditLog.AUTHORIZATION, delegation.getDelegate().getId(),
+        audit.record(AuditAction.DELEGATION_REVOKED, AuditEntityConstants.AUTHORIZATION,
+            delegation.getDelegate().getId(),
             details(delegation, actor));
         Organization organization = delegation.getOrganization();
         events.publishEvent(new DelegationRevoked(recipients(actor, delegation), delegation.getRoleType(),

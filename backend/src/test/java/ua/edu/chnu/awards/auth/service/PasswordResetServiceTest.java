@@ -45,7 +45,7 @@ class PasswordResetServiceTest {
     private final AuditService audit = mock(AuditService.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
-        Duration.ofMinutes(1),
+        Duration.ofHours(1), Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
         new AuthProperties.Jwk("", "", "", ""));
     private final User active = User.builder().id(7L).emailAddress(EMAIL).firstName("Олена")
@@ -56,7 +56,7 @@ class PasswordResetServiceTest {
     void setUp() {
         service = new PasswordResetService(userRepository, tokens, new PasswordPolicy(), passwordEncoder, events,
             revoker, throttle, properties, audit);
-        when(throttle.claim(any(), any())).thenReturn(true);
+        when(throttle.claimForTransaction(any(), any())).thenReturn(true);
         when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$12$new");
     }
 
@@ -67,7 +67,7 @@ class PasswordResetServiceTest {
 
         service.request(" Olena@chnu.edu.ua ");
 
-        verify(throttle).claim("auth:reset:" + EMAIL, Duration.ofMinutes(1));
+        verify(throttle).claimForTransaction("auth:reset:" + EMAIL, Duration.ofMinutes(1));
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
         verify(events).publishEvent(event.capture());
         PasswordResetRequested requested = (PasswordResetRequested) event.getValue();
@@ -92,7 +92,7 @@ class PasswordResetServiceTest {
 
     @Test
     void ac31_secondRequestWithinTheIntervalSendsNothing() {
-        when(throttle.claim("auth:reset:" + EMAIL, Duration.ofMinutes(1))).thenReturn(false);
+        when(throttle.claimForTransaction("auth:reset:" + EMAIL, Duration.ofMinutes(1))).thenReturn(false);
 
         service.request(EMAIL);
 

@@ -1,7 +1,7 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
 export const NAME_MAX_LENGTH = 100;
-/** Letters, apostrophes, hyphens and spaces, starting with a letter: the registration rule of the API. */
+/** Letters, apostrophes, hyphens and spaces, starting with a letter: the name rule of the API. */
 const NAME = /^\p{L}[\p{L}'’\- ]*$/u;
 
 /** The name rule of the API applied to the trimmed value, reporting the codes the API uses. */

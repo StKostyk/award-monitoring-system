@@ -13,10 +13,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Refuses access tokens issued up to the second of the user's last sign-out-everywhere (password reset, "this
- * was not me"); both instants have second precision, so a token minted in the same second is refused too.
- * The instant is kept in Redis by {@link AuthorizationRevoker} for the access-token lifetime; without Redis the
- * token is accepted and the outage logged.
+ * Refuses access tokens issued up to the user's last sign-out-everywhere (password reset, "this was not me",
+ * address change), compared in milliseconds through the {@code iat_ms} claim so a sign-in right after the
+ * revocation works. A token without that claim is compared by its {@code iat} second and refused when minted in
+ * the second of the revocation. The instant is kept in Redis by {@link AuthorizationRevoker} for the
+ * access-token lifetime; without Redis the token is accepted and the outage logged.
  */
 @RequiredArgsConstructor
 @Slf4j
@@ -35,12 +36,17 @@ public final class RevokedTokenValidator implements OAuth2TokenValidator<Jwt> {
         try {
             String notBefore = redis.opsForValue()
                 .get(AuthorizationRevoker.NOT_BEFORE_KEY_PREFIX + token.getSubject());
-            if (notBefore != null && issuedAt.getEpochSecond() <= Long.parseLong(notBefore)) {
+            if (notBefore != null && issuedMillis(token, issuedAt) <= Long.parseLong(notBefore)) {
                 return OAuth2TokenValidatorResult.failure(REVOKED);
             }
         } catch (DataAccessException e) {
             log.error("Redis unavailable; token revocation not checked: {}", e.getMessage());
         }
         return OAuth2TokenValidatorResult.success();
+    }
+
+    private static long issuedMillis(Jwt token, Instant issuedAt) {
+        String millis = token.getClaimAsString(TokenClaimsCustomizer.CLAIM_ISSUED_AT_MILLIS);
+        return millis == null ? issuedAt.toEpochMilli() : Long.parseLong(millis);
     }
 }

@@ -928,6 +928,10 @@ paths:
           description: |
             Not an institutional address (`urn:awards:problem:institutional-email-required`) or the current
             address (`validation-failed`, field `newEmail`, code `unchanged`)
+        '423':
+          description: |
+            The current address is locked after five failed sign-ins (`urn:awards:problem:account-locked`);
+            the password is not checked
         '429':
           description: A link was sent within the last minute (`urn:awards:problem:too-many-requests`)
 
@@ -1459,7 +1463,7 @@ components:
           type: string
           description: |
             RS256-signed JWT with `sub`, `email`, `name`, `roles`, `role_scopes` (`ROLE:orgId` per current
-            assignment), `permissions`, `org_id`, `org_type`
+            assignment), `permissions`, `org_id`, `org_type`, `iat_ms` (issue instant in epoch milliseconds, as a string)
         refresh_token:
           type: string
         id_token:
@@ -1740,7 +1744,12 @@ components:
 
     EmailChangeResponse:
       type: object
+      required: [userId, email]
       properties:
+        userId:
+          type: integer
+          format: int64
+          description: The account that moved; a browser signed in as another user keeps its session
         email:
           type: string
           format: email

@@ -57,7 +57,7 @@ class RegistrationServiceTest {
     private final AuditService audit = mock(AuditService.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
-        Duration.ofMinutes(1),
+        Duration.ofHours(1), Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
         new AuthProperties.Jwk("", "", "", ""));
     private final Organization department = Organization.builder().id(64L).orgType(OrganizationType.DEPARTMENT)
@@ -67,7 +67,8 @@ class RegistrationServiceTest {
     @BeforeEach
     void setUp() {
         service = new RegistrationService(userRepository, userRoleRepository, organizationRepository, tokens,
-            new PasswordPolicy(), passwordEncoder, events, throttle, properties, audit, new ManualConfirmation());
+            new PasswordPolicy(), passwordEncoder, events, throttle, new EmailAddressRules(properties), properties,
+            audit, new ManualConfirmation());
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
         when(organizationRepository.findById(64L)).thenReturn(Optional.of(department));
         when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
@@ -87,7 +88,7 @@ class RegistrationServiceTest {
         assertThat(response.email()).isEqualTo("new.user@chnu.edu.ua");
         ArgumentCaptor<User> user = ArgumentCaptor.forClass(User.class);
         verify(userRepository).saveAndFlush(user.capture());
-        verify(throttle).claim("auth:resend:new.user@chnu.edu.ua", Duration.ofMinutes(1));
+        verify(throttle).claimForTransaction("auth:resend:new.user@chnu.edu.ua", Duration.ofMinutes(1));
         assertThat(user.getValue().getPasswordHash()).isEqualTo("$2a$12$hash");
         assertThat(user.getValue().getOrganization()).isSameAs(department);
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
@@ -107,9 +108,10 @@ class RegistrationServiceTest {
     @Test
     void ac2_6_aProvenMembershipWouldGrantTheEmployeeRoleAtOnce() {
         RegistrationService proven = new RegistrationService(userRepository, userRoleRepository,
-            organizationRepository, tokens, new PasswordPolicy(), passwordEncoder, events, throttle, properties,
-            audit, (user, where) -> Optional.of(UserRole.builder().user(user).roleType(RoleType.EMPLOYEE)
-                .organization(where).validFrom(LocalDate.of(2026, 9, 21)).build()));
+            organizationRepository, tokens, new PasswordPolicy(), passwordEncoder, events, throttle,
+            new EmailAddressRules(properties), properties, audit, (user, where) -> Optional.of(UserRole.builder()
+                .user(user).roleType(RoleType.EMPLOYEE).organization(where).validFrom(LocalDate.of(2026, 9, 21))
+                .build()));
 
         proven.register(VALID);
 
@@ -280,7 +282,7 @@ class RegistrationServiceTest {
 
     @Test
     void ac26_resendIsThrottledPerAddressAndSilentForUnknownAddresses() {
-        when(throttle.claim("auth:resend:x@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true, false);
+        when(throttle.claimForTransaction("auth:resend:x@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true, false);
         User pending = User.builder().id(1L).emailAddress("x@chnu.edu.ua").firstName("A")
             .accountStatus(AccountStatus.PENDING).build();
         when(userRepository.findByEmailAddressIgnoreCase("x@chnu.edu.ua")).thenReturn(Optional.of(pending));
@@ -292,7 +294,7 @@ class RegistrationServiceTest {
             .isInstanceOfSatisfying(ApiProblemException.class,
                 e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
 
-        when(throttle.claim("auth:resend:ghost@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true);
+        when(throttle.claimForTransaction("auth:resend:ghost@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true);
         when(userRepository.findByEmailAddressIgnoreCase("ghost@chnu.edu.ua")).thenReturn(Optional.empty());
         service.resend("ghost@chnu.edu.ua");
         verify(events).publishEvent(any(VerificationRequested.class));

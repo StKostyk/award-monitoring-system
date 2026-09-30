@@ -10,12 +10,12 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { nameValidator } from '../../../shared/name-rules';
 import { PASSWORD_VALIDATORS } from '../password-rules';
 import { OrganizationSummary, RegistrationService } from '../registration.service';
 
 export const INSTITUTIONAL_DOMAIN = 'chnu.edu.ua';
 export const INSTITUTIONAL_EMAIL = new RegExp(`^[^@\\s]+@${INSTITUTIONAL_DOMAIN.replace(/\./g, '\\.')}$`, 'i');
-export const NAME = /^\p{L}[\p{L}'’\- ]*$/u;
 
 export interface DepartmentGroup {
   faculty: string;
@@ -53,8 +53,8 @@ export class RegisterComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.pattern(INSTITUTIONAL_EMAIL)]],
     password: ['', PASSWORD_VALIDATORS],
-    firstName: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(NAME)]],
-    lastName: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(NAME)]],
+    firstName: ['', nameValidator],
+    lastName: ['', nameValidator],
     organizationId: [null as number | null, Validators.required],
   });
 
@@ -79,7 +79,13 @@ export class RegisterComponent implements OnInit {
     this.error.set(null);
     const value = this.form.getRawValue();
     this.api
-      .register({ ...value, email: value.email.trim(), organizationId: value.organizationId as number })
+      .register({
+        ...value,
+        email: value.email.trim(),
+        firstName: value.firstName.trim(),
+        lastName: value.lastName.trim(),
+        organizationId: value.organizationId as number,
+      })
       .subscribe({
         next: (response) =>
           void this.router.navigate(['/registration-pending'], { queryParams: { email: response.email } }),

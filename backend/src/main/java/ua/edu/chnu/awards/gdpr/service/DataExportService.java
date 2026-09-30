@@ -8,10 +8,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.service.DeviceFingerprint;
 import ua.edu.chnu.awards.auth.service.RequestThrottle;
@@ -33,9 +32,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DataExportService {
 
-    /** Entity type of the audit rows about data-subject rights. */
-    public static final String AUDIT_ENTITY = "GDPR";
-    static final String THROTTLE_KEY_PREFIX = "gdpr:export:";
+    /** Redis key prefix of the one-export-a-minute marker, followed by the user id. */
+    public static final String THROTTLE_KEY_PREFIX = "gdpr:export:";
     static final Duration INTERVAL = Duration.ofMinutes(1);
     static final String FILE_PREFIX = "award-monitoring-export-";
 
@@ -57,30 +55,17 @@ public class DataExportService {
     @Transactional
     public DataExport export(long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        String key = THROTTLE_KEY_PREFIX + userId;
-        if (!throttle.claim(key, INTERVAL)) {
+        if (!throttle.claimForTransaction(THROTTLE_KEY_PREFIX + userId, INTERVAL)) {
             throw new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests",
                 "Your data was exported a moment ago; try again in a minute");
         }
-        releaseUnlessCommitted(key);
         PersonalDataFile file = assembler.assemble(user);
-        audit.record(AuditAction.DATA_EXPORT, AUDIT_ENTITY, userId, userId, file.sectionCounts());
+        audit.record(AuditAction.DATA_EXPORT, AuditEntityConstants.GDPR, userId, userId, file.sectionCounts());
         ClientRequest client = ClientRequest.current();
         events.publishEvent(new DataExported(user.getEmailAddress(), user.getFirstName(),
             file.exportMetadata().exportDate(), client.ip(),
             fingerprint.of(client.userAgent(), client.acceptLanguage()).browser()));
         LocalDate day = LocalDate.ofInstant(file.exportMetadata().exportDate(), clock.getZone());
         return new DataExport(FILE_PREFIX + day + ".json", file);
-    }
-
-    private void releaseUnlessCommitted(String key) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                if (status != STATUS_COMMITTED) {
-                    throttle.release(key);
-                }
-            }
-        });
     }
 }

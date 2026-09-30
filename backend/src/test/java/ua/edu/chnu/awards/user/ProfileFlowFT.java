@@ -9,12 +9,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,12 +20,10 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
+import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
 import ua.edu.chnu.awards.support.Mailpit;
-import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -38,16 +33,16 @@ class ProfileFlowFT extends AbstractFunctionalTest {
     private static final String MOVER = "ft.mover@chnu.edu.ua";
     private static final String MOVED = "ft.mover.new@chnu.edu.ua";
     private static final String GUESSER = "ft.guesser@chnu.edu.ua";
+    private static final String CONFIRM_SUBJECT = "Confirm your new address";
+    private static final String STUCK = "ft.stuck@chnu.edu.ua";
+    private static final String STUCK_TARGET = "ft.stuck.new@chnu.edu.ua";
+    private static final String TRAVELLER = "ft.traveller@chnu.edu.ua";
+    private static final String ARRIVED = "ft.traveller.new@chnu.edu.ua";
+    private static final List<String> ACCOUNTS = List.of(RENAMER, MOVER, GUESSER, STUCK, TRAVELLER);
     private static final int MAX_FAILURES = 5;
-
-    @LocalServerPort
-    private int port;
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -55,28 +50,17 @@ class ProfileFlowFT extends AbstractFunctionalTest {
     @Autowired
     private StringRedisTemplate redis;
 
-    @Value("${mailpit.api-url}")
-    private String mailpitApiUrl;
-
-    private Mailpit mailpit;
-
     @BeforeAll
     void createUsers() {
-        Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
-        List.of(RENAMER, MOVER, GUESSER).forEach(email -> userRepository.save(TestUsers.user(email, department)));
-    }
-
-    @BeforeEach
-    void setUp() {
-        RestAssured.port = port;
-        mailpit = new Mailpit(mailpitApiUrl);
+        ACCOUNTS.forEach(this::activeUser);
     }
 
     @AfterAll
     void deleteUsers() {
-        List.of(RENAMER, MOVER, MOVED, GUESSER).forEach(email -> userRepository.findByEmailAddressIgnoreCase(email)
-            .ifPresent(userRepository::delete));
-        redis.delete(redis.keys("auth:lock:ft.guesser*"));
+        List.of(RENAMER, MOVER, MOVED, GUESSER, STUCK, TRAVELLER, ARRIVED).forEach(email ->
+            userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
+        ACCOUNTS.forEach(email -> redis.delete(List.of(LoginAttemptService.LOCK_KEY_PREFIX + email,
+            LoginAttemptService.FAILURE_KEY_PREFIX + email)));
     }
 
     @Test
@@ -122,11 +106,12 @@ class ProfileFlowFT extends AbstractFunctionalTest {
         requestChange(accessToken, MOVED, DEMO_PASSWORD).then().statusCode(202);
         requestChange(accessToken, MOVED, DEMO_PASSWORD).then().statusCode(429);
 
-        String link = Mailpit.linkIn(mailpit.latestTextTo(MOVED, "Confirm your new address"));
+        String link = Mailpit.linkIn(mailpit.latestTextTo(MOVED, CONFIRM_SUBJECT));
         assertThat(link).startsWith("http://localhost:4200/confirm-email-change?token=");
-        String token = UriComponentsBuilder.fromUri(URI.create(link)).build().getQueryParams().getFirst("token");
+        String token = tokenIn(link);
 
-        confirm(token).then().statusCode(200).body("email", equalTo(MOVED));
+        confirm(token).then().statusCode(200).body("email", equalTo(MOVED))
+            .body("userId", equalTo(Integer.parseInt(String.valueOf(claims(accessToken).get("sub")))));
         confirm(token).then().statusCode(410).body("type", equalTo("urn:awards:problem:token-invalid"));
         assertThat(mailpit.latestTextTo(MOVER, "sign-in address was changed")).contains(MOVED);
 
@@ -153,6 +138,38 @@ class ProfileFlowFT extends AbstractFunctionalTest {
         assertThat(locked.submitLogin(GUESSER, DEMO_PASSWORD).getHeader("Location")).endsWith("?error=LOCKED");
     }
 
+    @Test
+    void edge_aLockFromTheSignInFormCancelsThePendingAddressChange() {
+        mailpit.clear();
+        requestChange(tokenOf(STUCK), STUCK_TARGET, DEMO_PASSWORD).then().statusCode(202);
+        String token = tokenIn(Mailpit.linkIn(mailpit.latestTextTo(STUCK_TARGET, CONFIRM_SUBJECT)));
+
+        for (int attempt = 1; attempt <= MAX_FAILURES; attempt++) {
+            AuthorizationCodeFlow guess = new AuthorizationCodeFlow();
+            guess.authorize();
+            guess.submitLogin(STUCK, "wrong-" + attempt);
+        }
+
+        confirm(token).then().statusCode(410).body("type", equalTo("urn:awards:problem:token-invalid"));
+        assertThat(userRepository.findByEmailAddressIgnoreCase(STUCK)).isPresent();
+        assertThat(userRepository.findByEmailAddressIgnoreCase(STUCK_TARGET)).isEmpty();
+    }
+
+    @Test
+    void edge_linksMailedToTheOldAddressStopWorkingAfterTheMove() {
+        mailpit.clear();
+        String accessToken = tokenOf(TRAVELLER);
+        String notMe = tokenIn(Mailpit.linkIn(mailpit.latestTextTo(TRAVELLER, "New sign-in")));
+        requestChange(accessToken, ARRIVED, DEMO_PASSWORD).then().statusCode(202);
+
+        confirm(tokenIn(Mailpit.linkIn(mailpit.latestTextTo(ARRIVED, CONFIRM_SUBJECT)))).then().statusCode(200);
+
+        RestAssured.given().contentType(ContentType.JSON).body(Map.of("token", notMe))
+            .post("/api/v1/auth/security/revoke")
+            .then().statusCode(410).body("type", equalTo("urn:awards:problem:token-invalid"));
+        as(tokenOf(ARRIVED)).get("/api/v1/users/me").then().statusCode(200).body("email", equalTo(ARRIVED));
+    }
+
     private static Response rename(String token, Map<String, Object> body) {
         return as(token).contentType(ContentType.JSON).body(body).patch("/api/v1/users/me");
     }
@@ -161,6 +178,10 @@ class ProfileFlowFT extends AbstractFunctionalTest {
         return as(token).contentType(ContentType.JSON)
             .body(Map.of("newEmail", newEmail, "currentPassword", password))
             .post("/api/v1/users/me/email-change");
+    }
+
+    private static String tokenIn(String link) {
+        return UriComponentsBuilder.fromUri(URI.create(link)).build().getQueryParams().getFirst("token");
     }
 
     private static Response confirm(String token) {

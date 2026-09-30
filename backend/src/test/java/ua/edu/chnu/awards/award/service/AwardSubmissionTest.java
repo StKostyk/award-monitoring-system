@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.DuplicateMatch;
@@ -86,7 +86,7 @@ class AwardSubmissionTest {
         assertThat(response.request().currentLevel()).isEqualTo(ApprovalLevel.FACULTY_SECRETARY);
         assertThat(response.request().submittedAt()).isEqualTo(NOW);
         verify(awards).saveAndFlush(draft);
-        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditLog.AWARDS, 21L, 5L,
+        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
             Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L));
     }
 
@@ -134,7 +134,7 @@ class AwardSubmissionTest {
         submission.submit(5L, new SubmitRequest(4L, true));
 
         assertThat(draft.getStatus()).isEqualTo(AwardStatus.PENDING);
-        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditLog.AWARDS, 21L, 5L,
+        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
             Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L,
                 "duplicateAcknowledged", true));
     }
