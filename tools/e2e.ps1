@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Starts the infrastructure containers and the backend with the local profile (request limit raised so the suite
-    is not rate limited) unless port 8080 is already in use,
+    is not rate limited) unless port 8080 is already in use (a port Docker still holds after `docker compose stop app` is waited for),
     runs `npx playwright test` in frontend/ (Playwright starts the dev server itself), then stops the backend it started.
 
 .EXAMPLE
@@ -22,6 +22,12 @@ if (docker ps --filter 'name=^award-backend$' --filter 'status=running' --format
     Write-Host 'Port 8080 is served by the award-backend container, not by this branch.'
     Write-Host 'Stop it first: docker compose stop app'
     exit 1
+}
+
+$released = (Get-Date).AddSeconds(30)
+while ((Get-Date) -lt $released -and (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue |
+        Where-Object { (Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).ProcessName -match '^(com\.docker|docker|wslrelay|vpnkit)' })) {
+    Start-Sleep -Seconds 2
 }
 
 if (-not (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue)) {
