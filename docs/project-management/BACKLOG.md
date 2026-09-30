@@ -19,9 +19,10 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.1.3 | Award category suggestion | 3 | ✅ Done | SCRUM-24 | [#77](https://github.com/StKostyk/award-monitoring-system/issues/77) |
 | 2.1.4 | Fixes from the Feature 2.1 validation | 5 | ✅ Done | SCRUM-28 | [#85](https://github.com/StKostyk/award-monitoring-system/issues/85) |
 | 1.3.1 | Profile information update | 5 | ✅ Done | SCRUM-15 | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
+| 1.3.3 | GDPR data portability (US-011, partial) | 5 | ✅ Done | SCRUM-17 | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
 
 Sprint Goal: an employee creates, checks and submits an award (Feature 2.1).  
-Completed Points: 27 (Feature 2.1 validated 2026-09-29; the author's run of PRD §9 pending)
+Completed Points: 37 (Feature 2.1 validated 2026-09-29, Feature 1.3 validated 2026-09-30; the author's runs of PRD §9 pending)
 
 ---
 
@@ -35,11 +36,6 @@ Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../featu
 | 2.2.1 | Award version recording | 5 | 2.2 | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
 | 2.2.2 | Version history view and audit export | 5 | 2.2 | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
 | 2.3.1 | Award status tracking (US-005) | 5 | 2.3 | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
-
-### Epic 1 — remaining (after Feature 2.1)
-| ID | Story | Points | Feature | Jira | Issue |
-|----|-------|--------|---------|------|-------|
-| 1.3.3 | GDPR data portability (US-011, partial) | 5 | 1.3 | SCRUM-17 | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
 
 ### Later epics
 | ID | Story | Points | Epic |
@@ -63,9 +59,9 @@ Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../featu
 |--------|---------|--------|
 | Sprint 1 | Setup (7 tasks) | 14 |
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
-| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4) | 27 |
+| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4), Feature 1.3 User Profile Management (1.3.1, 1.3.3) | 37 |
 
-Total Completed: 92 / 156 points (59%)
+Total Completed: 97 / 156 points (62%)
 
 ---
 

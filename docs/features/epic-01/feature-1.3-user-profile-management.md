@@ -3,7 +3,7 @@
 > **Epic**: 1 — User Management & Authentication (SCRUM-5)
 > **Sprint**: 3–4 (2026-09-29 → 2026-10-11)
 > **Points**: 10 (two stories; 1.3.2 notification preferences moved to Epic 7)
-> **Status**: Approved 2026-09-29
+> **Status**: Done 2026-09-30 (validated, §12; fix story for F-1…F-4 pending)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 1.3, US-011 (export part), PRIVACY_BY_DESIGN §3–§6, DATA_GOVERNANCE §2 and §4, COMPLIANCE_ASSESSMENT (rights of rectification and portability), AUTHENTICATION_AUTHORIZATION §6 and §9, DATA_DICTIONARY §1.1, §1.4, §4.1, §4.2, openapi.yml `/users/me`, Feature 1.1 PRD (verification, reset, sign-out everywhere), EPIC-01 tracker
 
@@ -180,6 +180,10 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 18a. Request a change, then reset the password from the warning email before opening the link → the link answers 410 and the address stays. (review finding, AC-1.4)
 19. Press Back after the confirm page and reload it → 410 page, the address unchanged a second time. (AC-1.5)
 20. Export in two tabs at once → one download, the other «Забагато запитів». (AC-3.4)
+21. Request a change as the mover, then type a wrong password five times on the login page for the current address, then open the link. Expected after the fix story: the change is refused and the account stays locked; today the account moves and the new address signs in at once (F-1).
+22. Sign in as the mover from a new browser so «Новий пристрій» reaches the current address, confirm an address change, then press «Це був не я» in that older email. Expected after the fix story: «Посилання недійсне»; today the moved account is signed out and its password scrambled (F-2).
+23. Sign in as `employee.fmi` in one browser and open another user's address-change link there. Expected: the change is confirmed; note that `employee.fmi` is signed out locally and «Увійти» signs them back in without a password (F-3).
+24. Kill the backend (or `docker compose stop postgres`) right after pressing «Надіслати посилання», start it again and repeat at once. Expected after the fix story: a new link; today «Забагато запитів» for a minute (F-4).
 
 ## 10. Risks
 
@@ -196,3 +200,70 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.1, 1.3, 1.5, 1.7, 3.5
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §1.4 and §4.1, PRIVACY_BY_DESIGN §6.2, DATA_GOVERNANCE §4 note, AUTH §9 row for the address change, `CHANGELOG.md`, tracker rows, `BACKLOG.md`
 - §9 walked through by the author after `/feature-validate`, including the detours
+
+## 12. Validation (2026-09-30, `develop` at 0d30db5)
+
+Gates on `develop`: `mvn verify` — 501 unit and slice tests, 144 integration and functional, 98.7 % lines (2142/2171), Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 248 Vitest; Playwright 37/37 after a wait for the organisation list in `role-assignment.spec` (it clicked the select before the options arrived and failed in 3 of 5 runs; 30/30 with the wait). `docker compose up -d --build app frontend` starts clean with a healthy backend; the four profile endpoints and `/users/me/export` of `/v3/api-docs` are in `openapi.yml`; every `*IT` applies the migrations, V022 included, to an empty database.
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 1.1 | `UserProfileServiceTest#ac11_theProfileNamesTheFacultyOfTheDepartment`, `UserControllerTest#ac13_meReturnsTheProfileOfTheTokenSubject`, `#ac2_6_meReportsAnUnconfirmedMembershipWithNoRoles`, `ProfileFlowFT#ac11_ac12_ac13_…`; `profile.component.spec` (ac11); E2E `profile.spec` (ac11…ac17) | pass |
+| 1.2 | `ProfileNameRulesTest#ac12_*` (5), `UserProfileServiceTest#ac12_*` (3), `UserProfileEndpointsTest#ac12_*` (3), `ProfileChangeIT#ac12_aChangeOfNothingWritesNoAuditRow`, `ProfileFlowFT#ac11_ac12_ac13_…`, `OpenApiContractTest#ac12_ac14_…` | pass |
+| 1.3 | `UserProfileServiceTest#ac12_ac13_storesTheNewNameAndAuditsOnlyTheChangedField`, `ProfileChangeIT#ac13_ac18_…`; `profile.component.spec` (ac13); E2E `profile.spec` (header follows) | pass |
+| 1.4 | `EmailChangeServiceTest#ac14_*` (6), `ProfileChangeIT#ac14_*` (2), `UserProfileEndpointsTest#ac14_*` (3), `AuthenticationMailsTest#ac14_*`, `ProfileFlowFT#ac14_ac15_ac16_…`, `#edge_fiveWrongPasswordsLockTheAccountAndEndItsSessions`; `email-change-dialog.component.spec` (2) | pass (F-4) |
+| 1.5 | `EmailChangeServiceTest#ac15_*` (2), `#edge_anAddressTaken*` (2), `ProfileChangeIT#ac15_ac16_…`, `AuthControllerTest#ac15_*` (2), `AuthenticationMailsTest#ac15_*`, `ProfileFlowFT#ac14_ac15_ac16_…`; `confirm-email-change.component.spec`; E2E `profile.spec` (ac14…ac17) | pass (F-1, F-2) |
+| 1.6 | `EmailChangeServiceTest#ac15_ac16_…`, `ProfileChangeIT#ac15_ac16_…`, `ProfileFlowFT#ac14_ac15_ac16_…` (old address refused, new one signs in) | pass |
+| 1.7 | `profile`, `email-change-dialog`, `confirm-email-change` component specs (200, 409, 410, no token); E2E `profile.spec` (all four, uk) | pass (F-3) |
+| 1.8 | `ProfileChangeIT#ac13_ac18_aNameChangeIsAuditedWithTheChangedFieldAndNoHashInTheTriggerRow` | pass |
+| 3.1 | `UserProfileEndpointsTest#ac31_*` (2), `DataExportServiceTest#ac31_ac34_…`, `DataExportFT#ac31_ac33_ac34_…`; E2E `profile.spec` (ac31…ac35) | pass |
+| 3.2 | `PersonalDataAssemblerTest#ac32_*` (5), `DataExportIT#ac32_ac33_…`, `OpenApiContractTest#ac32_exportSchemaListsTheSectionsOfTheFile` | pass |
+| 3.3 | `PersonalDataAssemblerTest#ac32_ac33_…`, `DataExportIT#ac32_ac33_theExportCarriesEverySectionAndNothingSecret`, `DataExportFT#ac31_ac33_ac34_…` (no hash or token in the body) | pass |
+| 3.4 | `DataExportServiceTest#ac34_*` (4), `DataExportIT#ac34_…`, `PrivacyMailsTest#ac34_…`, `UserProfileEndpointsTest#ac34_…`, `DataExportFT#ac31_ac33_ac34_…` (Mailpit notice, 429) | pass |
+| 3.5 | `profile.component.spec` (ac35, 3); E2E `profile.spec` (download once a minute) | pass |
+| 3.6 | `DataExportIT#ac36_twoHundredAwardsExportWithinTwoSeconds` | pass |
+
+### Edge cases (§5)
+
+| Edge case | Evidence | Result |
+|-----------|----------|--------|
+| Trimmed names, empty after trim, Latin transliteration | `ProfileNameRulesTest#ac12_*` | covered |
+| Concurrent writes of the names | `UserProfileServiceTest#edge_aConcurrentWriteIsRetriedOnce`, `#edge_aSecondConflictIsAnswered409` | covered |
+| Two requests with different targets | `ProfileChangeIT#ac14_aNewRequestCancelsTheOlderLink`, `EmailChangeServiceTest#ac14_aOneHourLinkGoesToTheNewAddressAndOlderLinksStop` | covered |
+| Confirmation from a browser with nobody signed in | `AuthControllerTest#ac15_theAddressChangeIsConfirmedWithoutAToken`; §9 step 15 | covered |
+| New address registered before the confirmation | `ProfileChangeIT#edge_anAddressRegisteredBeforeTheConfirmationKeepsTheAccountWhereItWas`, `EmailChangeServiceTest#edge_anAddressTaken*` | covered |
+| Lockout through the dialog; account no longer active | `EmailChangeServiceTest#edge_theFailureThatLocksTheAccountSignsItOutEverywhere`, `#edge_anAccountThatIsNoLongerActiveIsNotMoved`, `ProfileFlowFT#edge_fiveWrongPasswordsLockTheAccountAndEndItsSessions` | covered; lock from the sign-in form open (F-1) |
+| Password reset during a pending change | `ProfileChangeIT#edge_aPasswordResetCancelsAPendingAddressChange` | covered |
+| Sessions with the old principal name | `ProfileFlowFT#ac14_ac15_ac16_…` | covered |
+| Export of a user without roles or awards | `PersonalDataAssemblerTest#ac32_edge_aPersonWithoutAnythingGetsEmptySectionsNotMissingOnes` | covered |
+| Export through nginx as a Blob | E2E `profile.spec` (download through the dev-server proxy), `profile.component.spec` (attachment name); `http://localhost/api/v1/users/me/export` routed by nginx (401 problem without a token), no response header hidden | covered |
+| Mail down | Export notice after commit (`DataExportServiceTest#ac31_ac34_…`); a failed export gives its claim back (`#ac34_anExportThatDoesNotCommitGivesItsClaimBack`) | covered; address-change claim open (F-4) |
+
+### Security checklist
+
+| OWASP | Control | Where |
+|-------|---------|-------|
+| A01 Broken access control | Every `/users/me` operation acts on the token subject only; the export reads the caller's rows; the confirm endpoint is public and relies on a one-time token | `UserController`, `DataExportService`, `EmailChangeService#confirm` |
+| A02 Cryptographic failures | One-time tokens stored as hashes and redeemed once; no hashes, tokens or authorization records in the export; the trigger no longer copies `password_hash` (V022) | `OneTimeTokenService`, `PersonalDataAssembler`, V022 |
+| A03 Injection | Name rules of registration; unknown properties refused with 422; bound parameters in `PersonalDataQueries` | `ProfileNameRules`, `PersonalDataQueries` |
+| A04 Insecure design | Address change needs the current password and a link to the new mailbox; the older link is invalidated; confirmation ends every session; one request and one export per minute | `EmailChangeService`, `RequestThrottle` |
+| A07 Authentication failures | Wrong passwords in the dialog count towards the lockout of Feature 1.1; a password reset cancels a pending change; the old address is told of the request and of the move | `LoginAttemptService`, `AuthenticationMails` |
+| A09 Logging | `PROFILE_UPDATED` (changed fields only), `EMAIL_CHANGE_REQUESTED`, `EMAIL_CHANGED`, `DATA_EXPORT` with section counts, all with IP and correlation id | `AuditService` |
+
+### Findings
+
+Scenario review of the untested detours (§9 steps 21–24); none is covered by a test yet. Proposed for a fix story 1.3.4.
+
+| # | Finding | Proposed fix |
+|---|---------|--------------|
+| F-1 | Five wrong passwords on the login page lock the typed address only (`LoginAttemptService`); confirming a pending address change moves the account away from the lock, and the new address signs in at once with a fresh failure count | `confirm()` refuses while the current address is locked, and the lock that the login form sets also cancels a pending `EMAIL_CHANGE` token; FT `edge_aLockFromTheSignInFormCancelsThePendingAddressChange` |
+| F-2 | «Це був не я» links (`SECURITY_REVOKE`, 24 h) mailed to the old address still work after the move; whoever reads the old mailbox can sign the moved account out and scramble its password | `confirm()` also invalidates `SECURITY_REVOKE`; FT `edge_linksMailedToTheOldAddressStopWorkingAfterTheMove` |
+| F-3 | The confirm page always drops the local session, also when a different user is signed in in that browser; «Увійти» then signs that user back in silently | Drop the local session only when the confirmed address belongs to the signed-in user (`confirm` answers the account id); component spec |
+| F-4 | The address-change request claims the one-minute throttle before its writes; a request that does not commit leaves the user on 429 for a minute with no link sent. The export already gives its claim back | A shared `RequestThrottle.claimForTransaction` used by both services; unit test |
+
+Checked and covered: a missing, empty or garbage token on `/confirm-email-change` (410, and 400 shows the failure page), a used link, 409/422/429, old sessions ending, the old address refused at sign-in, the export of an unconfirmed user. The server-down and expired-token detours of the profile form are covered by `profile.component.spec` and `auth.service.spec` and by §9 steps 16–17.
+
+### Refactor sweep
+
+No defects. Worth a `refactor(user)` PR together with the fix story: audit entity types `USER` and `GDPR` as constants on `AuditLog` (today `EmailChangeService` and `PersonalDataAssembler` import them from services); `AuditService.recordChange` duplicates the private `write`; the name rule duplicated between `register.component.ts` and `profile/name-rules.ts`; the `email-taken` and `institutional-email-required` problems built in two services; the email-change link lifetime as an `AuthProperties` value like the other links; functional-test setup (port, Mailpit, active user) moved into `AbstractFunctionalTest`; Redis key prefixes shared with the tests; named addresses instead of `OTHERS.get(n)` in `ProfileChangeIT`.

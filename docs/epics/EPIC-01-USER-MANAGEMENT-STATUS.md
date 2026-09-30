@@ -11,7 +11,7 @@
 |---------|--------|---------|------|
 | 1.1 Core Authentication System | Done (validated; fixes from the manual run merged, author's retest pending) | 2026-09-21 | 2026-09-21 |
 | 1.2 Role-Based Access Control | Validated; fix story 1.2.4 merged, author's run of §9 pending | 2026-09-21 | |
-| 1.3 User Profile Management | PRD approved 2026-09-29 (feature-1.3-user-profile-management.md); 1.3.2 moved to Epic 7 | 2026-09-29 | |
+| 1.3 User Profile Management | Validated 2026-09-30 (PRD §12); 1.3.2 moved to Epic 7; author's run of §9 pending | 2026-09-29 | 2026-09-30 |
 
 ## Current focus
 
@@ -36,7 +36,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | Done |
 | 10 | 1.3.1 Profile information update | 1.3 | 5 | SCRUM-15 | #38 | yes | Done 2026-09-30 |
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Moved to Epic 7 |
-| 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | In Review |
+| 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Done 2026-09-30 |
 
 Total: 59 points, planned across sprints 2–4.
 
@@ -92,6 +92,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 - Validation of Feature 1.1 (2026-09-21, PRD §12): the author's manual run found six defects (blank page after a failed refresh, default 403 page after a restart, 404 after a direct sign-in, password reuse, 15-minute lag before other browsers were signed out, a second Redis on the developer machine); all fixed or explained in story 1.1.6. Refactor sweep items deferred: inject `Clock` in `LoginSuccessListener`, `TokenClaimsCustomizer`, `UserProfileService`, `RotatingRefreshTokenGenerator`; drop `OneTimeToken.markUsed` and narrow entity setters; `OrganizationRef.of(Organization)` factory; shared FT base class (port, Mailpit, `RestAssured.port`), `AuthApi` helper for the six auth POSTs, `TestUsers.active/pending` builders, composed `@WebMvcTest` annotation; `RegistrationFlowFT` order dependence on `ac21`; wall-clock sleep in `LoginProtectionFT` (mutable `Clock`); Angular `OnPush` on the auth components, shared Transloco/route test stubs, `LanguageService.localName`, shared `errors.network` key.
 
 - Validation of Feature 1.2 (2026-09-25, PRD §12): the detour review found nine defects (stale confirmation undoing a department correction, double revocation of a not-yet-started role, received delegations surviving a department move, deleted accounts readable by id, no reload after a conflict, sign-out on the first 401 without a refresh attempt, raw 429 key, non-numeric user id, unlocked delegation revocation) for story 1.2.4, and one decision (revocation while Redis is down: the ≤ 15-minute access-token window is accepted and documented in PRD §5 and AUTH §9, decided 2026-09-25). Refactor sweep items done after validation: `AuthMailer` split into `MailDelivery` (lock and retries), `AuthenticationMails` and `AuthorityChangeMails`; `TestUsers.person/organization` replace the per-class user and organisation builders of the 1.2 unit tests.
+- Validation of Feature 1.3 (2026-09-30, PRD §12): every AC passes; the detour review found four defects for a fix story 1.3.4 (a sign-in lock does not follow a confirmed address change, «Це був не я» links to the old address survive the move, the confirm page drops another signed-in user's local session, the address-change throttle is not given back on rollback). Refactor sweep items (audit entity constants on `AuditLog`, shared name rule and problem factories, `AbstractFunctionalTest` setup) go with that story. `role-assignment.spec` waits for the organisation list before choosing from it.
 
 ## Security review follow-ups
 
