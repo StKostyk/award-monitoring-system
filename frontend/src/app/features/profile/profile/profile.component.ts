@@ -8,7 +8,7 @@ import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { TranslocoPipe } from '@jsverse/transloco';
 
-import { fieldProblems, problemType } from '../../../core/api/problem';
+import { fieldProblems, problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { OrganizationRef, UserProfile } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -19,6 +19,23 @@ import { nameValidator } from '../name-rules';
 import { NameChange, ProfileService } from '../profile.service';
 
 type NameField = 'firstName' | 'lastName';
+
+const DEFAULT_EXPORT_NAME = 'award-monitoring-export.json';
+
+/** The attachment name of a Content-Disposition header, or a default. */
+export function fileName(disposition: string | null): string {
+  const match = /filename="?([^";]+)"?/.exec(disposition ?? '');
+  return match ? match[1] : DEFAULT_EXPORT_NAME;
+}
+
+function saveFile(blob: Blob, name: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 @Component({
   selector: 'app-profile',
@@ -54,6 +71,9 @@ export class ProfileComponent {
   readonly message = signal<string | null>(null);
   readonly problem = signal<string | null>(null);
   readonly sentTo = signal<string | null>(null);
+  readonly exporting = signal(false);
+  readonly exportMessage = signal<string | null>(null);
+  readonly exportProblem = signal<string | null>(null);
 
   readonly names = this.fb.nonNullable.group({
     firstName: ['', nameValidator],
@@ -127,6 +147,26 @@ export class ProfileComponent {
           this.sentTo.set(newEmail);
         }
       });
+  }
+
+  downloadData(): void {
+    if (this.exporting()) {
+      return;
+    }
+    this.exporting.set(true);
+    this.exportMessage.set(null);
+    this.exportProblem.set(null);
+    this.api.exportData().subscribe({
+      next: (response) => {
+        saveFile(response.body ?? new Blob(), fileName(response.headers.get('Content-Disposition')));
+        this.exportMessage.set('profile.downloaded');
+        this.exporting.set(false);
+      },
+      error: (err: unknown) => {
+        this.exportProblem.set(problemStatus(err) === 429 ? 'profile.errors.tooMany' : 'profile.errors.export');
+        this.exporting.set(false);
+      },
+    });
   }
 
   private show(profile: UserProfile): void {

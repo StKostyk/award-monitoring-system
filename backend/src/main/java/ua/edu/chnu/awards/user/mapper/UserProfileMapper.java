@@ -1,8 +1,6 @@
 package ua.edu.chnu.awards.user.mapper;
 
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
@@ -12,7 +10,6 @@ import ua.edu.chnu.awards.user.dto.UserDetailResponse;
 import ua.edu.chnu.awards.user.dto.UserProfileResponse;
 import ua.edu.chnu.awards.user.dto.UserSummaryResponse;
 import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 
@@ -21,9 +18,6 @@ import ua.edu.chnu.awards.user.entity.UserRole;
  */
 @Component
 public class UserProfileMapper {
-
-    private static final Set<OrganizationType> FACULTY_TYPES = EnumSet.of(OrganizationType.FACULTY,
-        OrganizationType.COLLEGE);
 
     /**
      * Builds the profile response.
@@ -49,11 +43,8 @@ public class UserProfileMapper {
     }
 
     private OrganizationRef facultyOf(Organization organization) {
-        Organization current = organization.getParent();
-        while (current != null && !FACULTY_TYPES.contains(current.getOrgType())) {
-            current = current.getParent();
-        }
-        return current == null ? null : toRef(current);
+        Organization faculty = organization.enclosingFaculty();
+        return faculty == null ? null : toRef(faculty);
     }
 
     /**

@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -25,6 +26,7 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.delegation.dto.DelegationResponse;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 
 class OpenApiContractTest {
@@ -66,6 +68,18 @@ class OpenApiContractTest {
         assertThat(((Map<String, Object>) confirm.get("properties")).keySet()).containsExactlyInAnyOrderElementsOf(
             Stream.of(EmailChangeConfirmRequest.class.getRecordComponents()).map(RecordComponent::getName)
                 .toList());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac32_exportSchemaListsTheSectionsOfTheFile() throws IOException {
+        Map<String, Object> export = (Map<String, Object>) schemas().get("PersonalDataExport");
+        List<String> sections = Stream.of(PersonalDataFile.class.getRecordComponents())
+            .map(component -> component.getName().replaceAll("([A-Z])", "_$1").toLowerCase(Locale.ROOT)).toList();
+
+        assertThat(((Map<String, Object>) export.get("properties")).keySet())
+            .containsExactlyInAnyOrderElementsOf(sections);
+        assertThat((List<String>) export.get("required")).containsExactlyInAnyOrderElementsOf(sections);
     }
 
     @Test

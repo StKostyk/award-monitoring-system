@@ -13,7 +13,7 @@ import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserProfile } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { ProfileComponent } from './profile.component';
+import { ProfileComponent, fileName } from './profile.component';
 
 const PROFILE: UserProfile = {
   id: 5,
@@ -154,5 +154,54 @@ describe('ProfileComponent', () => {
 
     expect(dialog.open.mock.calls[0][1]).toMatchObject({ data: { email: 'employee.fmi@chnu.edu.ua' } });
     expect(fixture.componentInstance.sentTo()).toBe('mover.new@chnu.edu.ua');
+  });
+
+  it('ac35 downloads the export under its attachment name and disables the button meanwhile', async () => {
+    const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:export');
+    const revokeUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const fixture = await setup();
+    const button = (): HTMLButtonElement =>
+      fixture.nativeElement.querySelector('[data-testid="profile-download"]');
+
+    button().click();
+    fixture.detectChanges();
+    expect(button().disabled).toBe(true);
+    const request = http.expectOne(`${environment.apiUrl}/users/me/export`);
+    expect(request.request.responseType).toBe('blob');
+    request.flush(new Blob(['{}']), {
+      headers: { 'Content-Disposition': 'attachment; filename="award-monitoring-export-2026-09-30.json"' },
+    });
+    fixture.detectChanges();
+
+    expect(createUrl).toHaveBeenCalled();
+    const link = click.mock.contexts[0] as HTMLAnchorElement;
+    expect(link.download).toBe('award-monitoring-export-2026-09-30.json');
+    expect(revokeUrl).toHaveBeenCalledWith('blob:export');
+    expect(button().disabled).toBe(false);
+    expect(fixture.componentInstance.exportMessage()).toBe('profile.downloaded');
+    vi.restoreAllMocks();
+  });
+
+  it('ac35 shows too many requests on 429 and a general failure otherwise', async () => {
+    const fixture = await setup();
+
+    fixture.componentInstance.downloadData();
+    http
+      .expectOne(`${environment.apiUrl}/users/me/export`)
+      .flush(new Blob(['{}']), { status: 429, statusText: 'Too Many Requests' });
+    expect(fixture.componentInstance.exportProblem()).toBe('profile.errors.tooMany');
+
+    fixture.componentInstance.downloadData();
+    http
+      .expectOne(`${environment.apiUrl}/users/me/export`)
+      .flush(new Blob(['{}']), { status: 500, statusText: 'Server Error' });
+    expect(fixture.componentInstance.exportProblem()).toBe('profile.errors.export');
+    expect(fixture.componentInstance.exporting()).toBe(false);
+  });
+
+  it('ac35 falls back to a default name without an attachment header', () => {
+    expect(fileName(null)).toBe('award-monitoring-export.json');
+    expect(fileName('attachment; filename=data.json')).toBe('data.json');
   });
 });

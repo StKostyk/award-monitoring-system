@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.LockModeType;
@@ -50,4 +51,13 @@ public interface AwardRepository extends JpaRepository<Award, Long>, JpaSpecific
     @Override
     @EntityGraph(attributePaths = {"owner", "organization", "category"})
     Page<Award> findAll(Specification<Award> specification, Pageable pageable);
+
+    /**
+     * Every award of an owner in every status, with organisation and category loaded.
+     *
+     * @param ownerId the owner
+     * @return awards, newest first
+     */
+    @EntityGraph(attributePaths = {"organization", "category"})
+    List<Award> findByOwnerIdOrderByCreatedAtDescIdDesc(Long ownerId);
 }

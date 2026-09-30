@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -10,7 +10,7 @@ export interface NameChange {
   lastName?: string;
 }
 
-/** The caller's own profile: names and the sign-in address. */
+/** The caller's own profile: names, the sign-in address and the data export. */
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
   private readonly http = inject(HttpClient);
@@ -22,6 +22,10 @@ export class ProfileService {
 
   requestEmailChange(newEmail: string, currentPassword: string): Observable<void> {
     return this.http.post<void>(`${this.base}/email-change`, { newEmail, currentPassword });
+  }
+
+  exportData(): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.base}/export`, { observe: 'response', responseType: 'blob' });
   }
 
   confirmEmailChange(token: string): Observable<{ email: string }> {

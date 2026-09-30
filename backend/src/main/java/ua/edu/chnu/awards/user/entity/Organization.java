@@ -71,4 +71,18 @@ public class Organization {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    /**
+     * The nearest faculty or college above this unit.
+     *
+     * @return the enclosing faculty, null when there is none
+     */
+    public Organization enclosingFaculty() {
+        Organization current = getParent();
+        while (current != null && current.getOrgType() != OrganizationType.FACULTY
+            && current.getOrgType() != OrganizationType.COLLEGE) {
+            current = current.getParent();
+        }
+        return current;
+    }
 }
