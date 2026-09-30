@@ -10,13 +10,13 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 2.1 Award Creation & Validation | Done (validated, PRD §12; fixes 2.1.4 merged; author's run of §9 pending) ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | 2026-09-29 |
-| 2.2 Award Version History & Audit Trail | Planned | | |
+| 2.2 Award Version History & Audit Trail | PRD approved ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | |
 | 2.3 Award Status Tracking | Planned | | |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
 
 ## Current focus
 
-Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Next: Epic 1 stories 1.3.1 and 1.3.3, then Feature 2.2.
+Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; next: 2.2.1 (SCRUM-25).
 
 ## Scope
 
@@ -60,6 +60,7 @@ Total: 37 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 st
 | 2026-09-29 | Drafts can be deleted from the form and the detail page («Видалити чернетку»); the award list says «Показано перші 100 з N» instead of paging | Deletion existed only in the API; one page of 100 covers a person's awards, the note makes the limit visible | Feature 2.1 validation, SCRUM-28 |
 | 2026-09-29 | Local form copies survive an expired session for the same user and are removed on sign-out and when another user signs in on the browser | AC-1.10 offers the copy back after an expired session; the shared-computer risk is closed at the next sign-in | Feature 2.1 PRD §10, SCRUM-28 |
 | 2026-09-29 | The unused GIN index on `award_categories.keywords` (V021) is kept for now | Matching runs in Java; the index costs little on a small reference table and serves a later SQL search | Feature 2.1 validation |
+| 2026-09-30 | Award versions are full snapshots in `award_versions`, written by the application in the transaction of the change; no Envers; trigger rows get the actor and correlation id per transaction; the per-award audit trail and CSV export are for `audit:read`, the system-wide search is Epic 6 | Business actions (submitted, later returned) need names Envers lacks; the history follows the award for erasure while `audit_logs` stays the immutable record | Feature 2.2 PRD D-1–D-6 |
 
 ## Documentation deviations to resolve
 
@@ -79,9 +80,9 @@ Each item is applied in the PR of the story that touches it, after approval.
 - Owner access uses `award:read:own` and `award:update:own`; scoped reads (`award:read:department|faculty|all`) reuse the organisation-subtree check of Feature 1.2.
 - `awards.version` is the optimistic-lock column; a stale update answers 409 like the role assignments.
 - `ck_awards_date` compares with `CURRENT_DATE` in the database session zone (UTC), so between 00:00 and 03:00 Kyiv time it refuses an award dated today that the application accepts; V020 recreates it as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`.
-- `trg_awards_audit` reads `app.current_user_id`, which the application never sets: trigger rows carry no actor. Part of the 2.2 design note.
+- `trg_awards_audit` reads `app.current_user_id`, which the application never sets: trigger rows carry no actor. Set per transaction in 2.2.1 (Feature 2.2 PRD D-3).
 - Known limits of the category suggestion (Feature 2.1 validation): a unit of another university with the same name as a ChNU unit ("Faculty of Law, …") matches the ChNU unit; the keywords, the organisation tree and the caller's history are read on every request, without a cache. Revisit if the pilot shows wrong chips or slow answers.
-- `award-form.component.ts` holds about 560 lines (form, date rules, suggestions, duplicate dialog, local copies). Split the suggestion chips and the duplicate handling into child components when Feature 2.2 adds the review view to it.
+- `award-form.component.ts` holds about 560 lines (form, date rules, suggestions, duplicate dialog, local copies). Split the suggestion chips and the duplicate handling into child components with the Epic 4 review view (Feature 2.2 puts the history on the detail page, not the form).
 
 ## Risks
 

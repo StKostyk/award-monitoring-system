@@ -37,7 +37,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 10 | 1.3.1 Profile information update | 1.3 | 5 | SCRUM-15 | #38 | yes | Done 2026-09-30 |
 | 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Moved to Epic 7 |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Done 2026-09-30 |
-| 13 | 1.3.4 Fixes from the Feature 1.3 validation | 1.3 | 3 | SCRUM-29 | #92 | no | In Review |
+| 13 | 1.3.4 Fixes from the Feature 1.3 validation | 1.3 | 3 | SCRUM-29 | #92 | no | Done 2026-09-30 |
 
 Total: 62 points, planned across sprints 2–4.
 
