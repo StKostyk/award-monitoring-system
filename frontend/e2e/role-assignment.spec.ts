@@ -59,8 +59,12 @@ test.describe('role assignment', () => {
     await page.getByTestId('assign-role-open').click();
     await page.getByTestId('assign-role').click();
     await page.getByRole('option', { name: 'Секретар факультету' }).click();
-    await page.getByTestId('assign-organization').click();
-    await page.getByRole('option', { name: 'Факультет математики' }).click();
+    const faculty = page.getByRole('option', { name: 'Факультет математики' });
+    await expect(async () => {
+      await page.getByTestId('assign-organization').click();
+      await expect(faculty).toBeVisible({ timeout: 2000 });
+    }).toPass();
+    await faculty.click();
     await page.getByTestId('assign-submit').click();
 
     await expect(page.getByTestId('detail-message')).toContainText('Роль призначено');
