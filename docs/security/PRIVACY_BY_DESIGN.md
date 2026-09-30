@@ -678,64 +678,67 @@ public class AnonymizationService {
 
 ### 6.2 Export Data Structure
 
+Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.0`). Property names are snake_case; every list section is present, possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file. Preferences join the file with Epic 7.
+
 ```json
 {
   "export_metadata": {
-    "export_date": "2025-12-16T10:30:00Z",
-    "user_id": "USR-12345",
+    "export_date": "2026-09-30T09:00:00Z",
+    "user_id": 5,
     "format_version": "1.0",
     "gdpr_article": "Article 20 - Right to Data Portability"
   },
   "personal_data": {
     "profile": {
-      "email": "user@example.com",
-      "first_name": "Ivan",
-      "last_name": "Petrenko",
-      "organization": "Faculty of Computer Science",
-      "registration_date": "2024-01-15"
-    },
-    "preferences": {
-      "notification_email": true,
-      "notification_sms": false,
-      "language": "uk"
+      "email": "employee.fmi@chnu.edu.ua",
+      "first_name": "Анастасія",
+      "last_name": "Петренко",
+      "department": { "id": 64, "name": "Department of Algebra and Informatics", "name_uk": "Кафедра алгебри та інформатики" },
+      "faculty": { "id": 9, "name": "Faculty of Mathematics and Informatics", "name_uk": "Факультет математики та інформатики" },
+      "account_status": "ACTIVE",
+      "created_at": "2026-09-01T08:00:00Z",
+      "last_login_at": "2026-09-30T08:55:00Z"
     }
   },
+  "roles": [
+    { "role": "EMPLOYEE", "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-01", "valid_to": null, "current": true }
+  ],
+  "delegations": [
+    { "direction": "RECEIVED", "other_party": "Петро Мартинюк", "role": "DEAN", "organization": { "id": 9, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-30", "valid_to": "2026-10-05", "state": "active", "reason": null,
+      "created_at": "2026-09-29T10:00:00Z", "revoked_at": null }
+  ],
   "awards": [
-    {
-      "award_id": "AWD-001",
-      "title": "Best Research Paper 2024",
-      "date": "2024-06-15",
-      "category": "Academic Achievement",
-      "status": "APPROVED",
-      "awarding_organization": "Ministry of Education"
-    }
+    { "award_id": 21, "title": "Letter of gratitude", "title_uk": "Подяка", "description": null, "description_uk": null,
+      "category": { "id": 13, "name": "Ministry", "name_uk": "Міністерство" }, "awarding_organization": "МОН України",
+      "award_date": "2025-05-01", "status": "DRAFT", "external_url": null, "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T09:00:00Z" }
   ],
   "documents": [
-    {
-      "document_id": "DOC-001",
-      "filename": "certificate.pdf",
-      "upload_date": "2024-06-16",
-      "download_url": "/api/export/documents/DOC-001"
-    }
+    { "document_id": 7, "award_id": 21, "file_name": "certificate.pdf", "file_type": "PDF", "mime_type": "application/pdf",
+      "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7" }
   ],
   "consent_history": [
-    {
-      "consent_type": "DATA_PROCESSING",
-      "granted_at": "2024-01-15T09:00:00Z",
-      "version": "1.0"
-    }
+    { "consent_type": "DATA_PROCESSING", "consent_version": "1.0", "granted": true, "granted_at": "2026-09-01T08:00:00Z",
+      "withdrawn_at": null, "ip_address": "10.0.0.7", "created_at": "2026-09-01T08:00:00Z" }
+  ],
+  "devices": [
+    { "browser": "Firefox", "operating_system": "Windows", "last_ip_address": "10.0.0.7",
+      "first_seen_at": "2026-09-01T08:01:00Z", "last_used_at": "2026-09-30T08:55:00Z" }
   ],
   "activity_log": [
-    {
-      "action": "LOGIN",
-      "timestamp": "2024-12-15T08:30:00Z",
-      "ip_address": "[REDACTED]"
-    }
+    { "action": "LOGIN_SUCCESS", "timestamp": "2026-09-30T08:55:00Z", "ip_address": "10.0.0.7" },
+    { "action": "ROLE_ASSIGNED", "timestamp": "2026-09-02T12:00:00Z", "ip_address": null }
   ]
 }
 ```
 
+The file never contains the password hash, one-time tokens or their hashes, authorization-server records, the audit triggers' row snapshots, device fingerprints, storage keys, or other people's data beyond the name of a delegation's other party.
+
 ### 6.3 Technical Implementation
+
+As built (Feature 1.3): the file is assembled synchronously from named columns (`PersonalDataAssembler`), returned as an attachment with `Cache-Control: no-store` and downloaded by the browser as a Blob, so the bearer token never appears in a URL. The stored temporary file and 24-hour download link of the sketch below are not used: one person's data is tens of kilobytes, and a bearer-less link would be one more secret to protect. Exports are limited to one per minute, audited as `DATA_EXPORT` (`entity_type` `GDPR`, section counts) and announced by email with time, IP and browser. CSV and PDF follow with the reporting engine (Epic 6).
 
 ```java
 // Data Portability Service
@@ -1032,7 +1035,7 @@ public class BreachNotificationService {
 | Access | Art. 15 | View My Data dashboard | ✅ Designed |
 | Rectification | Art. 16 | Edit profile, data correction request | ✅ Designed |
 | Erasure | Art. 17 | Account deletion, data anonymization | ✅ Designed |
-| Portability | Art. 20 | JSON/CSV/PDF export | ✅ Designed |
+| Portability | Art. 20 | JSON/CSV/PDF export | ✅ JSON implemented (Feature 1.3); CSV/PDF with Epic 6 |
 | Restriction | Art. 18 | Privacy settings, visibility controls | ✅ Designed |
 | Object | Art. 21 | Consent withdrawal, opt-out | ✅ Designed |
 

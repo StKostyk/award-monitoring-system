@@ -628,7 +628,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `DELEGATION_CREATED`, `DELEGATION_REVOKED` - approval authority lent and taken back (`entity_type` = `AUTHORIZATION`, `entity_id` = the delegate; `new_values` carries the actor, both parties, role, organization and period)
 - `PASSWORD_CHANGE` - Security
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
-- `DATA_EXPORT`, `DATA_DELETE` - GDPR rights
+- `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
+- `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 
 **Indexes**:

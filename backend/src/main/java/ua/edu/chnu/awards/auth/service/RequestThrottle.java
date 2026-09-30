@@ -35,4 +35,17 @@ public class RequestThrottle {
             return true;
         }
     }
+
+    /**
+     * Gives a claim back, for a request that did not complete.
+     *
+     * @param key the marker key
+     */
+    public void release(String key) {
+        try {
+            redis.delete(key);
+        } catch (DataAccessException e) {
+            log.error("Redis unavailable; claim {} not released: {}", key, e.getMessage());
+        }
+    }
 }

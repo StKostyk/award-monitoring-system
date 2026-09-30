@@ -477,6 +477,11 @@
     "addressTitle": "Sign-in address",
     "addressHint": "A new address has to be confirmed from its mailbox. Confirming ends every session.",
     "changeAddress": "Change address",
+    "dataTitle": "My data",
+    "dataHint": "A JSON file with everything the system keeps about you: profile, roles, delegations, awards including drafts, document details, consents, devices and the log of your actions with IP addresses. You will get an email about the download.",
+    "download": "Download my data",
+    "downloading": "Preparing the file…",
+    "downloaded": "File downloaded",
     "validation": {
       "required": "The field cannot be empty",
       "too-long": "At most 100 characters",
@@ -486,7 +491,9 @@
     "errors": {
       "load": "The profile could not be loaded. Try again later.",
       "network": "The server is unavailable. Try again later.",
-      "failed": "The changes could not be saved. Try again later."
+      "failed": "The changes could not be saved. Try again later.",
+      "tooMany": "Too many requests. Try again later.",
+      "export": "The file could not be prepared. Try again later."
     }
   },
   "emailChange": {

@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.user.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -10,8 +11,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,6 +29,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.gdpr.dto.DataExport;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.user.dto.OrganizationRef;
 import ua.edu.chnu.awards.user.dto.UserProfileResponse;
 import ua.edu.chnu.awards.user.dto.UserUpdateRequest;
@@ -99,6 +105,46 @@ class UserProfileEndpointsTest extends AbstractUserEndpointsTest {
                 .content("{\"newEmail\":\"mover.new@chnu.edu.ua\",\"currentPassword\":\"wrong\"}"))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.type").value("urn:awards:problem:password-mismatch"));
+    }
+
+    @Test
+    void ac31_theExportIsAnUncachedJsonAttachmentWithSnakeCaseSections() throws Exception {
+        PersonalDataFile file = new PersonalDataFile(new PersonalDataFile.Metadata(
+            Instant.parse("2026-09-30T09:00:00Z"), 5L, "1.0", "Article 20 - Right to Data Portability"),
+            new PersonalDataFile.PersonalData(new PersonalDataFile.Profile("employee.fmi@chnu.edu.ua", "Анастасія",
+                "Петренко", null, null, AccountStatus.ACTIVE, null, null)),
+            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+        when(dataExportService.export(5L))
+            .thenReturn(new DataExport("award-monitoring-export-2026-09-30.json", file));
+
+        mockMvc.perform(get("/api/v1/users/me/export").with(jwt().jwt(jwt -> jwt.subject("5"))))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(header().string("Content-Disposition",
+                "attachment; filename=\"award-monitoring-export-2026-09-30.json\""))
+            .andExpect(header().string("Cache-Control", containsString("no-store")))
+            .andExpect(jsonPath("$.export_metadata.format_version").value("1.0"))
+            .andExpect(jsonPath("$.export_metadata.export_date").value("2026-09-30T09:00:00Z"))
+            .andExpect(jsonPath("$.personal_data.profile.first_name").value("Анастасія"))
+            .andExpect(jsonPath("$.personal_data.profile.faculty").isEmpty())
+            .andExpect(jsonPath("$.consent_history").isArray())
+            .andExpect(jsonPath("$.activity_log").isArray());
+    }
+
+    @Test
+    void ac34_aRepeatedExportIsTooManyRequests() throws Exception {
+        when(dataExportService.export(5L)).thenThrow(new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS,
+            "too-many-requests", "Your data was exported a moment ago; try again in a minute"));
+
+        mockMvc.perform(get("/api/v1/users/me/export").with(jwt().jwt(jwt -> jwt.subject("5"))))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:too-many-requests"));
+    }
+
+    @Test
+    void ac31_theExportNeedsAToken() throws Exception {
+        mockMvc.perform(get("/api/v1/users/me/export")).andExpect(status().isUnauthorized());
+        verifyNoInteractions(dataExportService);
     }
 
     @Test

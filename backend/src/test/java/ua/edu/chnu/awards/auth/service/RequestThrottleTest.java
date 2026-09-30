@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
@@ -34,5 +35,15 @@ class RequestThrottleTest {
         when(redis.opsForValue()).thenThrow(new RedisConnectionFailureException("down"));
 
         assertThat(throttle.claim("auth:reset:a@chnu.edu.ua", MINUTE)).isTrue();
+    }
+
+    @Test
+    void aReleasedClaimIsDeletedAndARedisOutageIsOnlyLogged() {
+        throttle.release("gdpr:export:5");
+        verify(redis).delete("gdpr:export:5");
+
+        when(redis.delete("gdpr:export:6")).thenThrow(new RedisConnectionFailureException("down"));
+        throttle.release("gdpr:export:6");
+        verify(redis).delete("gdpr:export:6");
     }
 }

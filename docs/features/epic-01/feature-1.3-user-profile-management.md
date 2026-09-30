@@ -130,7 +130,7 @@ None.
 | D-6 | Profile changes are audited by the application (`PROFILE_UPDATED` with changed fields only) in addition to the trigger row | The trigger row has no actor (`app.current_user_id` is never set) and no IP; the application row does | DATA_GOVERNANCE §4 |
 | D-7 | Estimate of 1.3.1 raised from 3 to 5 points | Address change with confirmation, migration and two pages | This PRD |
 
-**Proposed deviations from the docs** (applied in the story that touches them, after approval): D-2 (roadmap tasks of 1.3.3), D-3 (PRIVACY_BY_DESIGN §6.2), D-5 (audit trigger), `UserUpdateRequest` without `notificationPreferences`.
+**Proposed deviations from the docs** (applied in the story that touches them, after approval): D-2 (roadmap tasks of 1.3.3), D-3 (PRIVACY_BY_DESIGN §6.2), D-5 (audit trigger), `UserUpdateRequest` without `notificationPreferences`. D-5 and the request change were applied in SCRUM-15; D-2 and D-3 in SCRUM-17 (PRIVACY_BY_DESIGN §6.2, §6.3, §9.2).
 
 ## 8. Test plan
 

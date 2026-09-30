@@ -130,4 +130,30 @@
       </div>
     </mat-card-content>
   </mat-card>
+
+  <mat-card class="profile__card" data-testid="profile-my-data">
+    <mat-card-header>
+      <mat-card-title>{{ 'profile.dataTitle' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="profile__hint">{{ 'profile.dataHint' | transloco }}</p>
+      @if (exportMessage(); as exportMessage) {
+        <p role="status" data-testid="profile-export-done">{{ exportMessage | transloco }}</p>
+      }
+      @if (exportProblem(); as exportProblem) {
+        <p class="profile__problem" role="alert" data-testid="profile-export-error">{{ exportProblem | transloco }}</p>
+      }
+      <div class="profile__actions">
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="exporting()"
+          (click)="downloadData()"
+          data-testid="profile-download"
+        >
+          {{ (exporting() ? 'profile.downloading' : 'profile.download') | transloco }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
 }

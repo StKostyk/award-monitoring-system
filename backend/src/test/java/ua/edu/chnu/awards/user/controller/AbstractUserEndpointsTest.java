@@ -28,6 +28,7 @@ import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.config.InfrastructureConfig;
 import ua.edu.chnu.awards.config.LoginSessionConfig;
 import ua.edu.chnu.awards.config.SecurityConfig;
+import ua.edu.chnu.awards.gdpr.service.DataExportService;
 import ua.edu.chnu.awards.user.service.RoleAssignmentService;
 import ua.edu.chnu.awards.user.service.UserDirectoryService;
 import ua.edu.chnu.awards.user.service.UserProfileService;
@@ -55,6 +56,9 @@ abstract class AbstractUserEndpointsTest {
 
     @MockitoBean
     protected EmailChangeService emailChangeService;
+
+    @MockitoBean
+    protected DataExportService dataExportService;
 
     @MockitoBean
     protected OrganizationTree tree;

@@ -931,6 +931,43 @@ paths:
         '429':
           description: A link was sent within the last minute (`urn:awards:problem:too-many-requests`)
 
+  /users/me/export:
+    get:
+      tags: [Users]
+      summary: Download my data (GDPR Article 20)
+      description: |
+        Everything the system holds about the caller as one JSON attachment, built synchronously
+        (PRIVACY_BY_DESIGN §6.2). Property names are snake_case; sections without entries are empty arrays.
+        Never contains the password hash, one-time tokens, authorization-server records, audit row snapshots or
+        other people's data beyond the name of a delegation's other party. IP addresses are the caller's own and
+        are included; activity rows anybody can cause against an account (failed sign-ins, reset requests,
+        lockouts) or another person caused (roles, delegations) carry `ip_address: null`. At most one export per
+        account per minute. `DATA_EXPORT` (`entity_type` `GDPR`) is audited with the section counts and a notice
+        with time, IP and browser is emailed to the account after commit.
+      security:
+        - bearerAuth: []
+      operationId: exportMyData
+      responses:
+        '200':
+          description: The export file
+          headers:
+            Content-Disposition:
+              description: '`attachment; filename="award-monitoring-export-<yyyy-MM-dd>.json"` (Kyiv date)'
+              schema:
+                type: string
+            Cache-Control:
+              description: '`no-store`'
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalDataExport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: An export was made within the last minute (`urn:awards:problem:too-many-requests`)
+
   /users:
     get:
       tags: [Users]
@@ -1632,6 +1669,65 @@ components:
           type: string
           format: password
           maxLength: 72
+
+    PersonalDataExport:
+      type: object
+      description: GDPR Article 20 export, format version 1.0; every list is present, possibly empty
+      required: [export_metadata, personal_data, roles, delegations, awards, documents, consent_history, devices,
+                 activity_log]
+      properties:
+        export_metadata:
+          type: object
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.0`), `gdpr_article`'
+        personal_data:
+          type: object
+          description: |
+            `profile`: `email`, `first_name`, `last_name`, `department` and `faculty` (`id`, `name`, `name_uk`),
+            `account_status`, `created_at`, `last_login_at`
+        roles:
+          type: array
+          description: '`role`, `organization`, `valid_from`, `valid_to`, `current`'
+          items:
+            type: object
+        delegations:
+          type: array
+          description: |
+            `direction` (`GIVEN`/`RECEIVED`), `other_party` (full name only), `role`, `organization`,
+            `valid_from`, `valid_to`, `state`, `reason` (given only), `created_at`, `revoked_at`
+          items:
+            type: object
+        awards:
+          type: array
+          description: |
+            Every own award in every status: `award_id`, `title`, `title_uk`, `description`, `description_uk`,
+            `category`, `awarding_organization`, `award_date`, `status`, `external_url`, `organization`,
+            `created_at`, `updated_at`
+          items:
+            type: object
+        documents:
+          type: array
+          description: |
+            Metadata of the documents of those awards: `document_id`, `award_id`, `file_name`, `file_type`,
+            `mime_type`, `file_size`, `uploaded_at`, `api_path`
+          items:
+            type: object
+        consent_history:
+          type: array
+          description: '`consent_type`, `consent_version`, `granted`, `granted_at`, `withdrawn_at`, `ip_address`, `created_at`'
+          items:
+            type: object
+        devices:
+          type: array
+          description: '`browser`, `operating_system`, `last_ip_address`, `first_seen_at`, `last_used_at`'
+          items:
+            type: object
+        activity_log:
+          type: array
+          description: |
+            The caller's authentication, authorization, profile and GDPR events, newest first: `action`,
+            `timestamp`, `ip_address`
+          items:
+            type: object
 
     EmailChangeConfirmRequest:
       type: object
