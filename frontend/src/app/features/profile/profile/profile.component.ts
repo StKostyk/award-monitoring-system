@@ -15,7 +15,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../admin/role-organizations';
 import { Delegation, DelegationsService } from '../../delegations/delegations.service';
 import { EmailChangeDialogComponent } from '../email-change-dialog/email-change-dialog.component';
-import { nameValidator } from '../name-rules';
+import { nameValidator } from '../../../shared/name-rules';
 import { NameChange, ProfileService } from '../profile.service';
 
 type NameField = 'firstName' | 'lastName';

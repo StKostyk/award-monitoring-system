@@ -31,7 +31,9 @@ export class ConfirmEmailChangeComponent {
       next: (response) => {
         this.email.set(response.email);
         this.state.set('changed');
-        this.auth.signedOutElsewhere();
+        if (this.auth.userId() === String(response.userId)) {
+          this.auth.signedOutElsewhere();
+        }
       },
       error: (err: unknown) => {
         const type = problemType(err);

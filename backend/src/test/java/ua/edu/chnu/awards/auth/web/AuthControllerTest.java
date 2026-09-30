@@ -22,6 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.dto.EmailChangeResponse;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
@@ -119,11 +120,12 @@ class AuthControllerTest {
 
     @Test
     void ac15_theAddressChangeIsConfirmedWithoutAToken() throws Exception {
-        when(emailChangeService.confirm("raw")).thenReturn("mover.new@chnu.edu.ua");
+        when(emailChangeService.confirm("raw")).thenReturn(new EmailChangeResponse(12L, "mover.new@chnu.edu.ua"));
 
         mockMvc.perform(post("/api/v1/auth/email-change/confirm").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"token\":\"raw\"}"))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.userId").value(12))
             .andExpect(jsonPath("$.email").value("mover.new@chnu.edu.ua"));
     }
 

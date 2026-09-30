@@ -17,6 +17,7 @@ import { ProfileService } from '../profile.service';
 
 const KNOWN_PROBLEMS = [
   'password-mismatch',
+  'account-locked',
   'institutional-email-required',
   'email-taken',
   'too-many-requests',

@@ -52,6 +52,7 @@ describe('EmailChangeDialogComponent', () => {
 
   it.each([
     [403, 'password-mismatch', 'emailChange.errors.password-mismatch'],
+    [423, 'account-locked', 'emailChange.errors.account-locked'],
     [409, 'email-taken', 'emailChange.errors.email-taken'],
     [422, 'institutional-email-required', 'emailChange.errors.institutional-email-required'],
     [422, 'validation-failed', 'emailChange.errors.unchanged'],

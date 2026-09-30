@@ -87,7 +87,7 @@ public class AuthorizationRevoker {
     private void markRevoked(Long userId) {
         try {
             redis.opsForValue().set(NOT_BEFORE_KEY_PREFIX + userId,
-                String.valueOf(clock.instant().getEpochSecond()),
+                String.valueOf(clock.millis()),
                 properties.client().accessTokenTtl().plus(CLOCK_SKEW));
         } catch (DataAccessException e) {
             log.error("Redis unavailable; access tokens of user {} stay valid until they expire: {}", userId,

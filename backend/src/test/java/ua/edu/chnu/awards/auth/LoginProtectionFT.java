@@ -25,6 +25,7 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
+import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
 import ua.edu.chnu.awards.support.Mailpit;
@@ -86,7 +87,8 @@ class LoginProtectionFT extends AbstractIntegrationTest {
 
     @AfterAll
     void deleteUsers() {
-        redis.delete(List.of("auth:lock:" + TARGET, "auth:fail:" + TARGET));
+        redis.delete(List.of(LoginAttemptService.LOCK_KEY_PREFIX + TARGET,
+            LoginAttemptService.FAILURE_KEY_PREFIX + TARGET));
         List.of(TARGET, ADMIN).forEach(email ->
             userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
     }
@@ -110,9 +112,9 @@ class LoginProtectionFT extends AbstractIntegrationTest {
             assertThat(login("ghost@chnu.edu.ua", "wrong-" + attempt))
                 .endsWith(attempt < MAX_FAILURES ? "/login?error=BAD_CREDENTIALS" : "/login?error=LOCKED");
         }
-        redis.delete("auth:lock:ghost@chnu.edu.ua");
+        redis.delete(LoginAttemptService.LOCK_KEY_PREFIX + "ghost@chnu.edu.ua");
 
-        Long ttl = redis.getExpire("auth:lock:" + TARGET);
+        Long ttl = redis.getExpire(LoginAttemptService.LOCK_KEY_PREFIX + TARGET);
         assertThat(ttl).isPositive().isLessThanOrEqualTo(Duration.ofMinutes(30).toSeconds());
 
         String mail = mailpit.latestTextTo(ADMIN);
@@ -131,7 +133,7 @@ class LoginProtectionFT extends AbstractIntegrationTest {
             assertThat(row.get("correlation_id")).isNotNull();
         });
 
-        redis.delete("auth:lock:" + TARGET);
+        redis.delete(LoginAttemptService.LOCK_KEY_PREFIX + TARGET);
         AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
         flow.exchange(flow.loginAndGetCode(TARGET, PASSWORD)).then().statusCode(200)
             .body("access_token", notNullValue());

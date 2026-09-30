@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.user.dto.UserProfileResponse;
@@ -32,8 +33,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserProfileService {
 
-    /** Entity type of the audit rows about a person's own account. */
-    public static final String AUDIT_ENTITY = "USER";
     private static final int WRITE_ATTEMPTS = 2;
 
     private final UserRepository userRepository;
@@ -94,7 +93,7 @@ public class UserProfileService {
             user.setFirstName(names.getOrDefault("first_name", user.getFirstName()));
             user.setLastName(names.getOrDefault("last_name", user.getLastName()));
             userRepository.saveAndFlush(user);
-            audit.recordChange(AuditAction.PROFILE_UPDATED, AUDIT_ENTITY, userId, userId, before, after);
+            audit.recordChange(AuditAction.PROFILE_UPDATED, AuditEntityConstants.USER, userId, userId, before, after);
         }
         return toProfile(user);
     }

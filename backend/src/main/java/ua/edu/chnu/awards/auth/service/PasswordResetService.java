@@ -49,7 +49,7 @@ public class PasswordResetService {
     @Transactional
     public void request(String email) {
         String normalized = EmailUtils.normalize(email);
-        if (!throttle.claim(REQUEST_KEY_PREFIX + normalized, properties.resendInterval())) {
+        if (!throttle.claimForTransaction(REQUEST_KEY_PREFIX + normalized, properties.resendInterval())) {
             return;
         }
         userRepository.findByEmailAddressIgnoreCase(normalized)

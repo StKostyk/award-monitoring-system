@@ -32,8 +32,11 @@ class ProfileChangeIT extends AbstractIntegrationTest {
 
     private static final String EMAIL = "it.profile@chnu.edu.ua";
     private static final String PASSWORD = "Passw0rd-demo";
-    private static final List<String> OTHERS = List.of("it.profile.a@chnu.edu.ua", "it.profile.b@chnu.edu.ua",
-        "it.profile.race@chnu.edu.ua", "it.profile.moved@chnu.edu.ua");
+    private static final String FIRST_TARGET = "it.profile.a@chnu.edu.ua";
+    private static final String SECOND_TARGET = "it.profile.b@chnu.edu.ua";
+    private static final String RACED = "it.profile.race@chnu.edu.ua";
+    private static final String MOVED = "it.profile.moved@chnu.edu.ua";
+    private static final List<String> OTHERS = List.of(FIRST_TARGET, SECOND_TARGET, RACED, MOVED);
 
     @Autowired
     private UserProfileService profileService;
@@ -66,7 +69,7 @@ class ProfileChangeIT extends AbstractIntegrationTest {
     void createUser() {
         department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         user = userRepository.save(TestUsers.user(EMAIL, department));
-        redis.delete("auth:email-change:" + user.getId());
+        redis.delete(EmailChangeService.REQUEST_KEY_PREFIX + user.getId());
     }
 
     @AfterEach
@@ -116,16 +119,16 @@ class ProfileChangeIT extends AbstractIntegrationTest {
 
     @Test
     void ac14_aNewRequestCancelsTheOlderLink() {
-        emailChangeService.request(user.getId(), OTHERS.get(0), PASSWORD);
-        redis.delete("auth:email-change:" + user.getId());
-        emailChangeService.request(user.getId(), OTHERS.get(1), PASSWORD);
+        emailChangeService.request(user.getId(), FIRST_TARGET, PASSWORD);
+        redis.delete(EmailChangeService.REQUEST_KEY_PREFIX + user.getId());
+        emailChangeService.request(user.getId(), SECOND_TARGET, PASSWORD);
 
         List<Map<String, Object>> rows = jdbc.queryForList("""
             select new_email_address, used_at is not null as used
             from one_time_tokens where user_id = ? and purpose = 'EMAIL_CHANGE' order by id
             """, user.getId());
-        assertThat(rows).extracting(row -> row.get("new_email_address")).containsExactly(OTHERS.get(0),
-            OTHERS.get(1));
+        assertThat(rows).extracting(row -> row.get("new_email_address")).containsExactly(FIRST_TARGET,
+            SECOND_TARGET);
         assertThat(rows).extracting(row -> row.get("used")).containsExactly(true, false);
         assertThat(jdbc.queryForObject("select count(*) from audit_logs where user_id = ? "
             + "and action_type = 'EMAIL_CHANGE_REQUESTED'", Long.class, user.getId())).isEqualTo(2);
@@ -146,21 +149,21 @@ class ProfileChangeIT extends AbstractIntegrationTest {
     @Test
     void ac15_ac16_theLinkMovesTheAccountAndCancelsItsResetLinks() {
         String reset = tokens.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofHours(1));
-        String raw = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), OTHERS.get(3));
+        String raw = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), MOVED);
 
-        assertThat(emailChangeService.confirm(raw)).isEqualTo(OTHERS.get(3));
+        assertThat(emailChangeService.confirm(raw).email()).isEqualTo(MOVED);
 
-        assertThat(userRepository.findById(user.getId()).orElseThrow().getEmailAddress()).isEqualTo(OTHERS.get(3));
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getEmailAddress()).isEqualTo(MOVED);
         assertThat(tokens.peek(reset, TokenPurpose.PASSWORD_RESET)).isEmpty();
         assertThat(jdbc.queryForMap("""
             select new_values->>'oldEmail' as old_email, new_values->>'newEmail' as new_email
             from audit_logs where user_id = ? and action_type = 'EMAIL_CHANGED'
-            """, user.getId())).containsEntry("old_email", EMAIL).containsEntry("new_email", OTHERS.get(3));
+            """, user.getId())).containsEntry("old_email", EMAIL).containsEntry("new_email", MOVED);
     }
 
     @Test
     void edge_aPasswordResetCancelsAPendingAddressChange() {
-        String change = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), OTHERS.get(3));
+        String change = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), MOVED);
         String reset = tokens.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofHours(1));
 
         passwordResetService.confirm(reset, "new-horse-battery-staple");
@@ -178,8 +181,8 @@ class ProfileChangeIT extends AbstractIntegrationTest {
 
     @Test
     void edge_anAddressRegisteredBeforeTheConfirmationKeepsTheAccountWhereItWas() {
-        String raw = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), OTHERS.get(2));
-        userRepository.save(TestUsers.user(OTHERS.get(2), department));
+        String raw = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), RACED);
+        userRepository.save(TestUsers.user(RACED, department));
 
         assertThatThrownBy(() -> emailChangeService.confirm(raw))
             .isInstanceOfSatisfying(ApiProblemException.class,

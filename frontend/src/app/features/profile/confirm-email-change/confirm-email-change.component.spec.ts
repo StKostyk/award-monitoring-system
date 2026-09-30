@@ -10,7 +10,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ConfirmEmailChangeComponent } from './confirm-email-change.component';
 
 describe('ConfirmEmailChangeComponent', () => {
-  const auth = { login: vi.fn(), signedOutElsewhere: vi.fn() };
+  const auth = { login: vi.fn(), signedOutElsewhere: vi.fn(), userId: vi.fn(() => '12' as string | null) };
   let http: HttpTestingController;
 
   async function setup(token: string | null) {
@@ -36,19 +36,33 @@ describe('ConfirmEmailChangeComponent', () => {
   afterEach(() => {
     http.verify();
     vi.clearAllMocks();
+    auth.userId.mockReturnValue('12');
   });
 
   it('ac15 confirms on load, drops the local session and offers to sign in', async () => {
     const fixture = await setup('raw');
     const request = http.expectOne(`${environment.apiUrl}/auth/email-change/confirm`);
     expect(request.request.body).toEqual({ token: 'raw' });
-    request.flush({ email: 'mover.new@chnu.edu.ua' });
+    request.flush({ userId: 12, email: 'mover.new@chnu.edu.ua' });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('changed');
     expect(auth.signedOutElsewhere).toHaveBeenCalled();
     (fixture.nativeElement.querySelector('[data-testid="confirm-email-sign-in"]') as HTMLButtonElement).click();
     expect(auth.login).toHaveBeenCalledWith('/profile');
+  });
+
+  it.each([
+    ['another user', '7'],
+    ['nobody', null],
+  ])('f3 keeps the local session when %s is signed in here', async (_who, signedIn) => {
+    auth.userId.mockReturnValue(signedIn);
+    const fixture = await setup('raw');
+    http.expectOne(`${environment.apiUrl}/auth/email-change/confirm`).flush({ userId: 12, email: 'mover.new@chnu.edu.ua' });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state()).toBe('changed');
+    expect(auth.signedOutElsewhere).not.toHaveBeenCalled();
   });
 
   it.each([

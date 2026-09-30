@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
+import ua.edu.chnu.awards.auth.security.RateLimitFilter;
+
 /**
  * Base class for tests that boot the full application against real containers.
  */
@@ -15,7 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
 
-    private static final String RATE_LIMIT_KEYS = "auth:rate:*";
+    private static final String RATE_LIMIT_KEYS = RateLimitFilter.KEY_PREFIX + "*";
 
     @Autowired
     private StringRedisTemplate rateLimitRedis;

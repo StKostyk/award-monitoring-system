@@ -22,7 +22,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 
 import lombok.RequiredArgsConstructor;
@@ -66,7 +66,8 @@ public class AccessDenials {
             missing(request).ifPresent(missing -> details.put("required", missing));
         });
         try {
-            audit.recordSeparately(AuditAction.ACCESS_DENIED, AuditLog.AUTHORIZATION, subjectOf(token), details);
+            audit.recordSeparately(AuditAction.ACCESS_DENIED, AuditEntityConstants.AUTHORIZATION, subjectOf(token),
+                details);
         } catch (DataAccessException e) {
             log.error("Access denial of user {} on {} not audited: {}", subjectOf(token), details.get("path"),
                 e.getMessage());

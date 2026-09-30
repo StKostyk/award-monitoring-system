@@ -3,7 +3,7 @@
 > **Epic**: 1 — User Management & Authentication (SCRUM-5)
 > **Sprint**: 3–4 (2026-09-29 → 2026-10-11)
 > **Points**: 10 (two stories; 1.3.2 notification preferences moved to Epic 7)
-> **Status**: Done 2026-09-30 (validated, §12; fix story for F-1…F-4 pending)
+> **Status**: Done 2026-09-30 (validated, §12; F-1…F-4 fixed in 1.3.4, SCRUM-29)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 1.3, US-011 (export part), PRIVACY_BY_DESIGN §3–§6, DATA_GOVERNANCE §2 and §4, COMPLIANCE_ASSESSMENT (rights of rectification and portability), AUTHENTICATION_AUTHORIZATION §6 and §9, DATA_DICTIONARY §1.1, §1.4, §4.1, §4.2, openapi.yml `/users/me`, Feature 1.1 PRD (verification, reset, sign-out everywhere), EPIC-01 tracker
 
@@ -180,10 +180,10 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 18a. Request a change, then reset the password from the warning email before opening the link → the link answers 410 and the address stays. (review finding, AC-1.4)
 19. Press Back after the confirm page and reload it → 410 page, the address unchanged a second time. (AC-1.5)
 20. Export in two tabs at once → one download, the other «Забагато запитів». (AC-3.4)
-21. Request a change as the mover, then type a wrong password five times on the login page for the current address, then open the link. Expected after the fix story: the change is refused and the account stays locked; today the account moves and the new address signs in at once (F-1).
-22. Sign in as the mover from a new browser so «Новий пристрій» reaches the current address, confirm an address change, then press «Це був не я» in that older email. Expected after the fix story: «Посилання недійсне»; today the moved account is signed out and its password scrambled (F-2).
-23. Sign in as `employee.fmi` in one browser and open another user's address-change link there. Expected: the change is confirmed; note that `employee.fmi` is signed out locally and «Увійти» signs them back in without a password (F-3).
-24. Kill the backend (or `docker compose stop postgres`) right after pressing «Надіслати посилання», start it again and repeat at once. Expected after the fix story: a new link; today «Забагато запитів» for a minute (F-4).
+21. Request a change as the mover, then type a wrong password five times on the login page for the current address, then open the link. Expected: «Посилання недійсне або прострочене», the account keeps its address and stays locked; the new address does not sign in. (F-1, SCRUM-29)
+22. Sign in as the mover from a new browser so «Новий пристрій» reaches the current address, confirm an address change, then press «Це був не я» in that older email. Expected: «Посилання недійсне»; the moved account still signs in with the new address. (F-2, SCRUM-29)
+23. Sign in as `employee.fmi` in one browser and open another user's address-change link there. Expected: the change is confirmed and `employee.fmi` stays signed in in that browser. (F-3, SCRUM-29)
+24. Send a link, then press «Надіслати посилання» again within a minute. Expected: «Забагато запитів» and no second email. A request that fails between the claim and the commit cannot be caused reliably by hand; that it gives its minute back is covered by `RequestThrottleTest`. (F-4, SCRUM-29)
 
 ## 10. Risks
 
@@ -253,17 +253,17 @@ Gates on `develop`: `mvn verify` — 501 unit and slice tests, 144 integration a
 
 ### Findings
 
-Scenario review of the untested detours (§9 steps 21–24); none is covered by a test yet. Proposed for a fix story 1.3.4.
+Scenario review of the untested detours (§9 steps 21–24). All four fixed in 1.3.4 (SCRUM-29, #92) with the tests named in the last column.
 
 | # | Finding | Proposed fix |
 |---|---------|--------------|
-| F-1 | Five wrong passwords on the login page lock the typed address only (`LoginAttemptService`); confirming a pending address change moves the account away from the lock, and the new address signs in at once with a fresh failure count | `confirm()` refuses while the current address is locked, and the lock that the login form sets also cancels a pending `EMAIL_CHANGE` token; FT `edge_aLockFromTheSignInFormCancelsThePendingAddressChange` |
-| F-2 | «Це був не я» links (`SECURITY_REVOKE`, 24 h) mailed to the old address still work after the move; whoever reads the old mailbox can sign the moved account out and scramble its password | `confirm()` also invalidates `SECURITY_REVOKE`; FT `edge_linksMailedToTheOldAddressStopWorkingAfterTheMove` |
-| F-3 | The confirm page always drops the local session, also when a different user is signed in in that browser; «Увійти» then signs that user back in silently | Drop the local session only when the confirmed address belongs to the signed-in user (`confirm` answers the account id); component spec |
-| F-4 | The address-change request claims the one-minute throttle before its writes; a request that does not commit leaves the user on 429 for a minute with no link sent. The export already gives its claim back | A shared `RequestThrottle.claimForTransaction` used by both services; unit test |
+| F-1 | Five wrong passwords on the login page lock the typed address only (`LoginAttemptService`); confirming a pending address change moves the account away from the lock, and the new address signs in at once with a fresh failure count | Fixed: the lock of an account cancels its pending `EMAIL_CHANGE` tokens (`LoginAttemptService`) and `confirm()` answers 410 while the current address is locked; `ProfileFlowFT#edge_aLockFromTheSignInFormCancelsThePendingAddressChange`, `EmailChangeServiceTest#edge_aLockedAddressIsNotMovedAndTheLinkIs410`, `LoginAttemptServiceTest#ac41_ac44_…` |
+| F-2 | «Це був не я» links (`SECURITY_REVOKE`, 24 h) mailed to the old address still work after the move; whoever reads the old mailbox can sign the moved account out and scramble its password | Fixed: `confirm()` also invalidates `SECURITY_REVOKE`; `ProfileFlowFT#edge_linksMailedToTheOldAddressStopWorkingAfterTheMove`, `EmailChangeServiceTest#edge_linksMailedToTheOldAddress…` |
+| F-3 | The confirm page always drops the local session, also when a different user is signed in in that browser; «Увійти» then signs that user back in silently | Fixed: `confirm` answers `userId`; the page drops the local session only for that account; `confirm-email-change.component.spec` (f3, 2) |
+| F-4 | The address-change request claims the one-minute throttle before its writes; a request that does not commit leaves the user on 429 for a minute with no link sent. The export already gives its claim back | Fixed: `RequestThrottle.claimForTransaction` gives the claim back on rollback, used by the address change, the export, registration resend and password reset; `RequestThrottleTest#ac14_ac34_*` (3) |
 
 Checked and covered: a missing, empty or garbage token on `/confirm-email-change` (410, and 400 shows the failure page), a used link, 409/422/429, old sessions ending, the old address refused at sign-in, the export of an unconfirmed user. The server-down and expired-token detours of the profile form are covered by `profile.component.spec` and `auth.service.spec` and by §9 steps 16–17.
 
 ### Refactor sweep
 
-No defects. Worth a `refactor(user)` PR together with the fix story: audit entity types `USER` and `GDPR` as constants on `AuditLog` (today `EmailChangeService` and `PersonalDataAssembler` import them from services); `AuditService.recordChange` duplicates the private `write`; the name rule duplicated between `register.component.ts` and `profile/name-rules.ts`; the `email-taken` and `institutional-email-required` problems built in two services; the email-change link lifetime as an `AuthProperties` value like the other links; functional-test setup (port, Mailpit, active user) moved into `AbstractFunctionalTest`; Redis key prefixes shared with the tests; named addresses instead of `OTHERS.get(n)` in `ProfileChangeIT`.
+No defects. Done in 1.3.4: audit entity types in `AuditEntityConstants` (PMD counts five public constants on the `AuditLog` entity as a data class, so all five moved); `AuditService.recordChange` duplicates the private `write`; the name rule duplicated between `register.component.ts` and `profile/name-rules.ts`; the `email-taken` and `institutional-email-required` problems built in two services; the email-change link lifetime as an `AuthProperties` value like the other links; functional-test setup (port, Mailpit, active user) moved into `AbstractFunctionalTest`; Redis key prefixes shared with the tests; named addresses instead of `OTHERS.get(n)` in `ProfileChangeIT`.

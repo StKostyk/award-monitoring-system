@@ -27,8 +27,10 @@
         <mat-form-field appearance="outline">
           <mat-label>{{ 'register.firstName' | transloco }}</mat-label>
           <input matInput formControlName="firstName" autocomplete="given-name" data-testid="first-name" />
-          @if (form.controls.firstName.hasError('pattern')) {
+          @if (form.controls.firstName.hasError('invalid')) {
             <mat-error>{{ 'register.validation.name' | transloco }}</mat-error>
+          } @else if (form.controls.firstName.hasError('too-long')) {
+            <mat-error>{{ 'register.validation.tooLong' | transloco }}</mat-error>
           } @else if (form.controls.firstName.invalid) {
             <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
           }
@@ -36,8 +38,10 @@
         <mat-form-field appearance="outline">
           <mat-label>{{ 'register.lastName' | transloco }}</mat-label>
           <input matInput formControlName="lastName" autocomplete="family-name" data-testid="last-name" />
-          @if (form.controls.lastName.hasError('pattern')) {
+          @if (form.controls.lastName.hasError('invalid')) {
             <mat-error>{{ 'register.validation.name' | transloco }}</mat-error>
+          } @else if (form.controls.lastName.hasError('too-long')) {
+            <mat-error>{{ 'register.validation.tooLong' | transloco }}</mat-error>
           } @else if (form.controls.lastName.invalid) {
             <mat-error>{{ 'register.validation.required' | transloco }}</mat-error>
           }

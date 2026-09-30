@@ -71,7 +71,7 @@ class TokenClaimsCustomizerTest {
         List<String> permissions = (List<String>) claims.get("permissions");
         assertThat(permissions).contains("award:approve:level2", "award:read:faculty", "user:read:scope",
             "user:manage:scope").doesNotContain("user:manage", "user:read:all");
-        assertThat(claims).containsEntry("token_use", "access");
+        assertThat(claims).containsEntry("token_use", "access").containsKey("iat_ms");
     }
 
     @Test
@@ -134,7 +134,7 @@ class TokenClaimsCustomizerTest {
         Map<String, Object> claims = context.getClaims().build().getClaims();
         assertThat(claims).containsEntry("roles", List.of()).containsEntry("role_scopes", List.of())
             .doesNotContainKey("permissions")
-            .doesNotContainKey("token_use");
+            .doesNotContainKey("token_use").doesNotContainKey("iat_ms");
     }
 
     @Test

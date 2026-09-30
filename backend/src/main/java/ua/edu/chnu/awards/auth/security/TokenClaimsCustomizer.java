@@ -47,6 +47,11 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
     public static final String CLAIM_ORG_ID = "org_id";
     public static final String CLAIM_ORG_TYPE = "org_type";
     public static final String CLAIM_TOKEN_USE = "token_use";
+    /**
+     * Issue instant of an access token in epoch milliseconds, as a string like the other scalar claims because
+     * the stored authorization accepts no other scalar type; {@code iat} has second precision only.
+     */
+    public static final String CLAIM_ISSUED_AT_MILLIS = "iat_ms";
     public static final String TOKEN_USE_ACCESS = "access";
 
     private final UserRepository userRepository;
@@ -100,6 +105,7 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             if (accessToken) {
                 claims.put(CLAIM_PERMISSIONS, new ArrayList<>(permissions(roles, borrowed)));
                 claims.put(CLAIM_TOKEN_USE, TOKEN_USE_ACCESS);
+                claims.put(CLAIM_ISSUED_AT_MILLIS, String.valueOf(clock.millis()));
             }
         });
     }

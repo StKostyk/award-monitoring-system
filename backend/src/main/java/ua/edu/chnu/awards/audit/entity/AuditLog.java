@@ -40,10 +40,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AuditLog {
 
-    public static final String AUTHENTICATION = "AUTHENTICATION";
-    public static final String AUTHORIZATION = "AUTHORIZATION";
-    public static final String AWARDS = "awards";
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "log_id")

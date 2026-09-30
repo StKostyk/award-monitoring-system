@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
@@ -34,7 +34,7 @@ public class RoleChangeRecorder {
      * @param assignment the new assignment
      */
     public void granted(User actor, UserRole assignment) {
-        audit.record(AuditAction.ROLE_ASSIGNED, AuditLog.AUTHORIZATION, assignment.getUser().getId(),
+        audit.record(AuditAction.ROLE_ASSIGNED, AuditEntityConstants.AUTHORIZATION, assignment.getUser().getId(),
             details(actor, assignment));
         User holder = assignment.getUser();
         Organization organization = assignment.getOrganization();
@@ -50,7 +50,7 @@ public class RoleChangeRecorder {
      * @param assignment the assignment that has just been ended
      */
     public void revoked(User actor, UserRole assignment) {
-        audit.record(AuditAction.ROLE_REVOKED, AuditLog.AUTHORIZATION, assignment.getUser().getId(),
+        audit.record(AuditAction.ROLE_REVOKED, AuditEntityConstants.AUTHORIZATION, assignment.getUser().getId(),
             details(actor, assignment));
         User holder = assignment.getUser();
         Organization organization = assignment.getOrganization();
@@ -66,7 +66,7 @@ public class RoleChangeRecorder {
      * @param assignment the assignment that has just been ended
      */
     public void superseded(User actor, UserRole assignment) {
-        audit.record(AuditAction.ROLE_REVOKED, AuditLog.AUTHORIZATION, assignment.getUser().getId(),
+        audit.record(AuditAction.ROLE_REVOKED, AuditEntityConstants.AUTHORIZATION, assignment.getUser().getId(),
             details(actor, assignment));
     }
 

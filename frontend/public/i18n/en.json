@@ -367,7 +367,8 @@
       "required": "Required",
       "institutionalEmail": "An address in the chnu.edu.ua domain is required",
       "password": "The password must be at least 10 characters and at most 72 bytes",
-      "name": "Letters, apostrophe, hyphen and space only"
+      "name": "Letters, apostrophe, hyphen and space only",
+      "tooLong": "At most 100 characters"
     },
     "errors": {
       "institutional-email-required": "Registration is possible only with a @chnu.edu.ua address. Ask your faculty secretary if you do not have one.",
@@ -510,6 +511,7 @@
     },
     "errors": {
       "password-mismatch": "Wrong password",
+      "account-locked": "The account is locked after failed sign-ins. Try again later.",
       "institutional-email-required": "An address in the chnu.edu.ua domain is required",
       "email-taken": "This address is already in use",
       "unchanged": "This is your current address",

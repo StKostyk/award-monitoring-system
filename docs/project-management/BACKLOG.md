@@ -20,6 +20,7 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.1.4 | Fixes from the Feature 2.1 validation | 5 | ✅ Done | SCRUM-28 | [#85](https://github.com/StKostyk/award-monitoring-system/issues/85) |
 | 1.3.1 | Profile information update | 5 | ✅ Done | SCRUM-15 | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
 | 1.3.3 | GDPR data portability (US-011, partial) | 5 | ✅ Done | SCRUM-17 | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
+| 1.3.4 | Fixes from the Feature 1.3 validation | 3 | 🔍 In Review | SCRUM-29 | [#92](https://github.com/StKostyk/award-monitoring-system/issues/92) |
 
 Sprint Goal: an employee creates, checks and submits an award (Feature 2.1).  
 Completed Points: 37 (Feature 2.1 validated 2026-09-29, Feature 1.3 validated 2026-09-30; the author's runs of PRD §9 pending)
@@ -69,5 +70,5 @@ Total Completed: 97 / 156 points (62%)
 
 | ID | Story | Reason | Issue |
 |----|-------|--------|-------|
-| 1.3.4 | MFA (TOTP, SMS, WebAuthn) | Not needed for the demo; design kept in the auth document | [#41](https://github.com/StKostyk/award-monitoring-system/issues/41) |
+| 1.3.5 | MFA (TOTP, SMS, WebAuthn) | Not needed for the demo; design kept in the auth document | [#41](https://github.com/StKostyk/award-monitoring-system/issues/41) |
 | — | HR validation endpoint | No HR system available; replaced by domain check and department selection at registration | [#47](https://github.com/StKostyk/award-monitoring-system/issues/47) |

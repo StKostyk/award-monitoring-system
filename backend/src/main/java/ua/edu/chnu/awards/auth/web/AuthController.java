@@ -68,7 +68,7 @@ public class AuthController {
 
     @PostMapping("/email-change/confirm")
     public EmailChangeResponse confirmEmailChange(@Valid @RequestBody EmailChangeConfirmRequest request) {
-        return new EmailChangeResponse(emailChangeService.confirm(request.token()));
+        return emailChangeService.confirm(request.token());
     }
 
     @PostMapping("/security/revoke")

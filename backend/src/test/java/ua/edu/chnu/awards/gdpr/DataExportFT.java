@@ -8,24 +8,18 @@ import static org.hamcrest.Matchers.hasSize;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
 
+import ua.edu.chnu.awards.gdpr.service.DataExportService;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardRows;
-import ua.edu.chnu.awards.support.Mailpit;
-import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -33,14 +27,8 @@ class DataExportFT extends AbstractFunctionalTest {
 
     private static final String EXPORTER = "ft.exporter@chnu.edu.ua";
 
-    @LocalServerPort
-    private int port;
-
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -48,33 +36,23 @@ class DataExportFT extends AbstractFunctionalTest {
     @Autowired
     private StringRedisTemplate redis;
 
-    @Value("${mailpit.api-url}")
-    private String mailpitApiUrl;
-
     private User exporter;
 
     @BeforeAll
     void createUser() {
-        exporter = userRepository.save(TestUsers.user(EXPORTER,
-            organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow()));
+        exporter = activeUser(EXPORTER);
         AwardRows.award(jdbc, exporter.getId()).title("Draft letter").insert();
-    }
-
-    @BeforeEach
-    void setUp() {
-        RestAssured.port = port;
     }
 
     @AfterAll
     void deleteUser() {
         jdbc.update("delete from awards where user_id = ?", exporter.getId());
         userRepository.deleteById(exporter.getId());
-        redis.delete("gdpr:export:" + exporter.getId());
+        redis.delete(DataExportService.THROTTLE_KEY_PREFIX + exporter.getId());
     }
 
     @Test
     void ac31_ac33_ac34_theOwnerDownloadsTheDataOnceAMinuteAndIsTold() {
-        Mailpit mailpit = new Mailpit(mailpitApiUrl);
         mailpit.clear();
         String token = tokenOf(EXPORTER);
 

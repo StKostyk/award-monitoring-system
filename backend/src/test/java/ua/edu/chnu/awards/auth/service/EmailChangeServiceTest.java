@@ -25,7 +25,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.dto.EmailChangeResponse;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
@@ -36,7 +38,6 @@ import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.service.UserProfileService;
 
 class EmailChangeServiceTest {
 
@@ -54,7 +55,7 @@ class EmailChangeServiceTest {
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
-        Duration.ofMinutes(1),
+        Duration.ofHours(1), Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
         new AuthProperties.Jwk("", "", "", ""));
     private final User user = User.builder().id(12L).emailAddress(OLD).firstName("Петро")
@@ -64,10 +65,10 @@ class EmailChangeServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmailChangeService(userRepository, tokens, passwordEncoder, attempts, revoker, throttle,
-            properties, audit, events);
+            new EmailAddressRules(properties), properties, audit, events);
         when(userRepository.findById(12L)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(PASSWORD, "$2a$12$hash")).thenReturn(true);
-        when(throttle.claim(anyString(), any())).thenReturn(true);
+        when(throttle.claimForTransaction(anyString(), any())).thenReturn(true);
         when(tokens.issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), NEW)).thenReturn("raw");
     }
 
@@ -78,8 +79,8 @@ class EmailChangeServiceTest {
         InOrder order = inOrder(tokens);
         order.verify(tokens).invalidate(user, TokenPurpose.EMAIL_CHANGE);
         order.verify(tokens).issue(user, TokenPurpose.EMAIL_CHANGE, Duration.ofHours(1), NEW);
-        verify(throttle).claim("auth:email-change:12", Duration.ofMinutes(1));
-        verify(audit).record(AuditAction.EMAIL_CHANGE_REQUESTED, UserProfileService.AUDIT_ENTITY, 12L, 12L,
+        verify(throttle).claimForTransaction("auth:email-change:12", Duration.ofMinutes(1));
+        verify(audit).record(AuditAction.EMAIL_CHANGE_REQUESTED, AuditEntityConstants.USER, 12L, 12L,
             Map.of("newEmail", NEW));
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
         verify(events).publishEvent(event.capture());
@@ -102,8 +103,17 @@ class EmailChangeServiceTest {
 
         assertProblem(() -> service.request(12L, NEW, "wrong"), 403, "password-mismatch");
 
-        verify(tokens).invalidate(user, TokenPurpose.EMAIL_CHANGE);
         verify(revoker).revokeAll(user);
+        verifyNoInteractions(events);
+    }
+
+    @Test
+    void edge_aLockedAddressCannotRequestAChangeNorGuessPasswords() {
+        when(attempts.isLocked(OLD)).thenReturn(true);
+
+        assertProblem(() -> service.request(12L, NEW, "wrong"), 423, "account-locked");
+        verify(attempts, never()).recordFailure(any(), any());
+        verifyNoInteractions(tokens, events, throttle);
     }
 
     @Test
@@ -129,7 +139,7 @@ class EmailChangeServiceTest {
 
     @Test
     void ac14_aSecondRequestWithinAMinuteIs429() {
-        when(throttle.claim("auth:email-change:12", Duration.ofMinutes(1))).thenReturn(false);
+        when(throttle.claimForTransaction("auth:email-change:12", Duration.ofMinutes(1))).thenReturn(false);
 
         assertProblem(() -> service.request(12L, NEW, PASSWORD), 429, "too-many-requests");
         verifyNoInteractions(tokens, events);
@@ -139,7 +149,7 @@ class EmailChangeServiceTest {
     void ac15_ac16_theLinkMovesTheAccountAndEndsEverySession() {
         when(tokens.redeem("raw", TokenPurpose.EMAIL_CHANGE)).thenReturn(Optional.of(token()));
 
-        assertThat(service.confirm("raw")).isEqualTo(NEW);
+        assertThat(service.confirm("raw")).isEqualTo(new EmailChangeResponse(12L, NEW));
 
         assertThat(user.getEmailAddress()).isEqualTo(NEW);
         InOrder order = inOrder(userRepository, revoker);
@@ -147,9 +157,28 @@ class EmailChangeServiceTest {
         order.verify(revoker).revokeAll(12L, OLD);
         verify(tokens).invalidate(user, TokenPurpose.EMAIL_CHANGE);
         verify(tokens).invalidate(user, TokenPurpose.PASSWORD_RESET);
-        verify(audit).record(AuditAction.EMAIL_CHANGED, UserProfileService.AUDIT_ENTITY, 12L, 12L,
+        verify(audit).record(AuditAction.EMAIL_CHANGED, AuditEntityConstants.USER, 12L, 12L,
             Map.of("oldEmail", OLD, "newEmail", NEW));
         verify(events).publishEvent(new EmailChanged(OLD, NEW, "Петро"));
+    }
+
+    @Test
+    void edge_linksMailedToTheOldAddressStopWorkingAfterTheMove() {
+        when(tokens.redeem("raw", TokenPurpose.EMAIL_CHANGE)).thenReturn(Optional.of(token()));
+
+        service.confirm("raw");
+
+        verify(tokens).invalidate(user, TokenPurpose.SECURITY_REVOKE);
+    }
+
+    @Test
+    void edge_aLockedAddressIsNotMovedAndTheLinkIs410() {
+        when(tokens.redeem("raw", TokenPurpose.EMAIL_CHANGE)).thenReturn(Optional.of(token()));
+        when(attempts.isLocked(OLD)).thenReturn(true);
+
+        assertProblem(() -> service.confirm("raw"), 410, "token-invalid");
+        assertThat(user.getEmailAddress()).isEqualTo(OLD);
+        verifyNoInteractions(revoker, events);
     }
 
     @Test

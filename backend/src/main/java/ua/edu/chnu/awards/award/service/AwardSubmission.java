@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.audit.entity.AuditLog;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.DuplicateMatch;
@@ -81,7 +81,7 @@ public class AwardSubmission {
         if (!matches.isEmpty()) {
             details.put("duplicateAcknowledged", true);
         }
-        audit.record(AuditAction.AWARD_SUBMITTED, AuditLog.AWARDS, award.getOwner().getId(), award.getId(),
+        audit.record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, award.getOwner().getId(), award.getId(),
             details);
         return mapper.toResponse(award, created);
     }

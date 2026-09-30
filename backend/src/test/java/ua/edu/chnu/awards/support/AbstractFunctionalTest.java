@@ -3,7 +3,10 @@ package ua.edu.chnu.awards.support;
 import java.time.LocalDate;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.web.server.LocalServerPort;
 
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
@@ -11,22 +14,56 @@ import io.restassured.specification.RequestSpecification;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
 /**
- * Base class for functional API tests: signs accounts in through the browser flow and calls the API as them.
+ * Base class for functional API tests: points REST-assured at the booted server, reads Mailpit, signs accounts
+ * in through the browser flow and calls the API as them.
  */
 public abstract class AbstractFunctionalTest extends AbstractIntegrationTest {
 
     /** Password of every account created with {@link TestUsers#user(String, Organization)}. */
     protected static final String DEMO_PASSWORD = "Passw0rd-demo";
 
+    /** Mail catcher of the test stack, ready in every test. */
+    protected Mailpit mailpit;
+
+    @LocalServerPort
+    private int port;
+
+    @Value("${mailpit.api-url}")
+    private String mailpitApiUrl;
+
     @Autowired
     private UserRepository accounts;
 
     @Autowired
     private UserRoleRepository roles;
+
+    @Autowired
+    private OrganizationRepository organizations;
+
+    /**
+     * Sends REST-assured to the port of the booted server and connects to Mailpit.
+     */
+    @BeforeEach
+    void pointAtTheServer() {
+        RestAssured.port = port;
+        mailpit = new Mailpit(mailpitApiUrl);
+    }
+
+    /**
+     * Creates an active account without roles in the department of {@link TestUsers#DAI_DEPARTMENT_ID}.
+     *
+     * @param email account email
+     * @return the stored account
+     */
+    protected User activeUser(String email) {
+        return accounts.save(TestUsers.user(email,
+            organizations.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow()));
+    }
 
     /**
      * Creates an account holding one role that became active yesterday.
