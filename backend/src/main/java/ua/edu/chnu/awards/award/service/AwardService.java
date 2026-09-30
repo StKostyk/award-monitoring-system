@@ -25,8 +25,6 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
-import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,13 +38,13 @@ public class AwardService {
 
     private final AwardRepository awards;
     private final AwardRequestRepository requests;
-    private final UserRepository users;
     private final AwardSpecifications specifications;
     private final AwardInputRules rules;
     private final AwardOwnership ownership;
     private final AwardWarnings warnings;
     private final AwardMapper mapper;
     private final AccessScope access;
+    private final AwardHistory history;
 
     /**
      * Creates a draft owned by the caller in the caller's department.
@@ -58,11 +56,11 @@ public class AwardService {
     public AwardResponse create(AwardForm form) {
         AwardForm clean = rules.normalize(form);
         Optional<AwardCategory> category = rules.check(clean, Optional.empty());
-        User owner = users.findById(access.callerId())
-            .orElseThrow(() -> new IllegalStateException("Caller has no account"));
-        Award award = Award.builder().owner(owner).organization(owner.getOrganization()).build();
+        Award award = ownership.newDraft();
         apply(award, clean, category);
-        return draftResponse(awards.saveAndFlush(award));
+        Award created = awards.saveAndFlush(award);
+        history.created(created);
+        return draftResponse(created);
     }
 
     /**
@@ -78,7 +76,9 @@ public class AwardService {
         AwardForm clean = rules.normalize(form);
         ownership.requireVersion(award, clean.version());
         apply(award, clean, rules.check(clean, Optional.ofNullable(award.getCategory())));
-        return draftResponse(awards.saveAndFlush(award));
+        Award saved = awards.saveAndFlush(award);
+        history.updated(saved);
+        return draftResponse(saved);
     }
 
     /**
@@ -101,9 +101,7 @@ public class AwardService {
     @Transactional(readOnly = true)
     public AwardResponse get(long id) {
         Award award = awards.findWithDetailsById(id).orElseThrow(() -> new AwardNotFoundException(id));
-        boolean visible = ownership.isOwn(award)
-            || !award.isDraft() && access.canReadAwards(award.getOrganization().getId());
-        if (!visible) {
+        if (!ownership.isReadable(award)) {
             throw new AwardNotFoundException(id);
         }
         return mapper.toResponse(award, requests.findByAwardId(id).orElse(null), warnings.of(award));

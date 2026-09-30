@@ -1213,6 +1213,7 @@ public class SessionManagementService {
 | `SESSION_TERMINATED` | Info | User ID, Session ID, Reason | No |
 | `PERMISSION_DENIED` | Warning | User ID, Resource, Action | Yes (if repeated) |
 | `PRIVILEGE_ESCALATION` | Critical | User ID, From Role, To Role | Always |
+| Row changes (`INSERT`/`UPDATE`/`DELETE`, table triggers) | Info | Actor = access token subject bound per read-write transaction (`app.current_user_id`), correlation id, old and new values; readable per award by `audit:read` (`GET /awards/{id}/audit-trail`, Feature 2.2) | No |
 
 ### 7.2 Audit Implementation
 

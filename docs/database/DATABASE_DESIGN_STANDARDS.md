@@ -352,39 +352,33 @@ CREATE TABLE entity_name (
 
 ### 3.2 Audit Trail Pattern
 
-For GDPR compliance and data lineage, critical entities have dedicated audit tables:
+Two tables record changes, each with its own purpose (Feature 2.2, D-2):
+
+1. **`audit_logs`, the compliance record.** One generic row trigger, `fn_audit_trigger()`, is attached to every audited table and writes each `INSERT`, `UPDATE` and `DELETE` with the old and new row, the changed columns and the record's own key as `entity_id`. The application writes its events (sign-in, role changes, submission) to the same table. The actor and the request correlation id come from the transaction settings `app.current_user_id` and `app.correlation_id`, which the transaction manager sets with `set_config(…, true)` for each read-write transaction of a signed-in request. The rows are immutable, partitioned by month and kept for seven years; a new audited table needs only its trigger and its key in the function.
 
 ```sql
--- Audit table pattern
-CREATE TABLE awards_audit (
-    audit_id BIGSERIAL PRIMARY KEY,
-    
-    -- Reference to original record
-    award_id BIGINT NOT NULL,
-    
-    -- Audit metadata
-    operation VARCHAR(10) NOT NULL,  -- INSERT, UPDATE, DELETE
-    operation_timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    operation_user_id BIGINT,
-    
-    -- Change tracking
-    old_values JSONB,
-    new_values JSONB,
-    changed_fields TEXT[],
-    
-    -- Context
-    ip_address INET,
-    user_agent VARCHAR(500),
-    correlation_id UUID,
-    
-    CONSTRAINT ck_awards_audit_operation CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE'))
-);
-
--- Index for querying audit history
-CREATE INDEX idx_awards_audit_award ON awards_audit(award_id);
-CREATE INDEX idx_awards_audit_timestamp ON awards_audit(operation_timestamp);
-CREATE INDEX idx_awards_audit_user ON awards_audit(operation_user_id);
+CREATE TRIGGER trg_awards_audit
+    AFTER INSERT OR UPDATE OR DELETE ON awards
+    FOR EACH ROW EXECUTE FUNCTION fn_audit_trigger();
 ```
+
+2. **Business version tables, for the history users see.** Where users need the history of a record in business terms, the application writes one row per saved state with the business action, the actor and a snapshot of the business fields, in the transaction of the change. The table follows the record's lifecycle (deleted and erased with it) and refuses updates. `award_versions` is the first:
+
+```sql
+CREATE TABLE award_versions (
+    version_id BIGSERIAL PRIMARY KEY,
+    award_id BIGINT NOT NULL REFERENCES awards(award_id) ON DELETE CASCADE,
+    version_number BIGINT NOT NULL,              -- awards.version after the change
+    action VARCHAR(20) NOT NULL,                 -- BASELINE, CREATED, UPDATED, SUBMITTED
+    actor_id BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
+    snapshot JSONB NOT NULL,
+    changed_fields TEXT[],
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uk_award_versions_number UNIQUE (award_id, version_number)
+);
+```
+
+Per-entity `*_audit` tables with `INSERT`/`UPDATE`/`DELETE` operations are not used: the generic trigger already covers that role for every table.
 
 ### 3.3 Hierarchical Data Pattern (Organizations)
 

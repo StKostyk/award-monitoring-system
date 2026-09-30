@@ -55,10 +55,10 @@ class AwardServiceTest {
     private final AwardSpecifications specifications = mock(AwardSpecifications.class);
     private final AwardInputRules rules = mock(AwardInputRules.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardOwnership ownership = new AwardOwnership(awards, access);
+    private final AwardOwnership ownership = new AwardOwnership(awards, users, access);
     private final AwardWarnings warnings = mock(AwardWarnings.class);
-    private final AwardService service = new AwardService(awards, requests, users, specifications, rules,
-        ownership, warnings, new AwardMapper(), access);
+    private final AwardService service = new AwardService(awards, requests, specifications, rules,
+        ownership, warnings, new AwardMapper(), access, mock(AwardHistory.class));
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 

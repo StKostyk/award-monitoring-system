@@ -55,8 +55,9 @@ class AwardSubmissionTest {
     private final AwardInputRules rules = mock(AwardInputRules.class);
     private final AuditService audit = mock(AuditService.class);
     private final DuplicateFinder duplicates = mock(DuplicateFinder.class);
+    private final AwardHistory history = mock(AwardHistory.class);
     private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules, duplicates,
-        new AwardMapper(), audit, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
+        new AwardMapper(), audit, history, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
     private final Organization oldDepartment = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final Organization newDepartment = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", newDepartment);
@@ -91,6 +92,14 @@ class AwardSubmissionTest {
     }
 
     @Test
+    void ac1_3_theSubmissionIsRecordedAsAVersionOfThePendingAward() {
+        submission.submit(5L, new SubmitRequest(4L, null));
+
+        verify(history).submitted(draft);
+        assertThat(draft.getStatus()).isEqualTo(AwardStatus.PENDING);
+    }
+
+    @Test
     void edge_theOrganisationIsRefreshedFromTheOwnersCurrentDepartment() {
         AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
 
@@ -107,6 +116,7 @@ class AwardSubmissionTest {
         assertThat(draft.getStatus()).isEqualTo(AwardStatus.DRAFT);
         verify(requests, never()).saveAndFlush(any());
         verify(audit, never()).record(any(), anyString(), anyLong(), anyLong(), anyMap());
+        verify(history, never()).submitted(any());
     }
 
     @Test

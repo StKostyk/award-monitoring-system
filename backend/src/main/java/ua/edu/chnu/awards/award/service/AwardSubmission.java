@@ -42,6 +42,7 @@ public class AwardSubmission {
     private final DuplicateFinder duplicates;
     private final AwardMapper mapper;
     private final AuditService audit;
+    private final AwardHistory history;
     private final Clock clock;
 
     /**
@@ -69,6 +70,7 @@ public class AwardSubmission {
         award.setStatus(AwardStatus.PENDING);
         award.setImpactScore(award.getCategory().getLevel().baseScore());
         awards.saveAndFlush(award);
+        history.submitted(award);
         AwardRequest created = requests.saveAndFlush(AwardRequest.builder()
             .award(award)
             .submitter(award.getOwner())

@@ -102,9 +102,10 @@ public class Award {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Builder.Default
     @Version
     @Column(name = "version", nullable = false)
-    private Long version;
+    private Long version = 1L;
 
     /**
      * Whether the owner may still change or delete the award.

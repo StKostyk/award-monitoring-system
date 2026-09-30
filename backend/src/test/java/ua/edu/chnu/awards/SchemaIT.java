@@ -2,14 +2,23 @@ package ua.edu.chnu.awards;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 
@@ -17,6 +26,9 @@ class SchemaIT extends AbstractIntegrationTest {
 
     @Autowired
     private DataSource dataSource;
+
+    @Autowired
+    private PostgreSQLContainer<?> postgres;
 
     private JdbcTemplate jdbc;
 
@@ -26,12 +38,50 @@ class SchemaIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void ac01_latestMigrationIsApplied() {
+    void ac01_latestMigrationIsApplied() throws IOException {
+        String latest = Arrays.stream(new PathMatchingResourcePatternResolver()
+                .getResources("classpath:db/migration/V*__*.sql"))
+            .map(Resource::getFilename)
+            .map(name -> name.substring(1, name.indexOf("__")))
+            .max(Comparator.naturalOrder())
+            .orElseThrow();
+
         String version = jdbc.queryForObject(
             "select version from flyway_schema_history where success and version is not null "
                 + "order by installed_rank desc limit 1", String.class);
 
-        assertThat(version).isEqualTo("022");
+        assertThat(version).isEqualTo(latest);
+    }
+
+    @Test
+    void ac1_7_awardsExistingBeforeV023GetOneBaselineVersionWithTheirState() {
+        String database = "v023_baseline_" + System.nanoTime();
+        jdbc.execute("create database " + database);
+        try {
+            String url = "jdbc:postgresql://" + postgres.getHost() + ":"
+                + postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT) + "/" + database;
+            DriverManagerDataSource target = new DriverManagerDataSource(url, postgres.getUsername(),
+                postgres.getPassword());
+            Flyway.configure().dataSource(target).locations("classpath:db/migration").target("022").load()
+                .migrate();
+            JdbcTemplate old = new JdbcTemplate(target);
+            Long owner = old.queryForObject("insert into users (email_address, first_name, last_name, password_hash, "
+                + "organization_id) values ('baseline@chnu.edu.ua', 'Base', 'Line', 'x', 64) returning user_id",
+                Long.class);
+            old.update("insert into awards (user_id, organization_id, title, award_date, version) "
+                + "values (?, 64, 'Letter', date '2025-05-01', 4)", owner);
+
+            Flyway.configure().dataSource(target).locations("classpath:db/migration").load().migrate();
+
+            Map<String, Object> baseline = old.queryForMap("select version_number, action, actor_id, "
+                + "snapshot->>'title' as title, snapshot->>'awardDate' as award_date, "
+                + "snapshot->>'status' as status from award_versions");
+            assertThat(baseline).containsEntry("version_number", 4L).containsEntry("action", "BASELINE")
+                .containsEntry("actor_id", null).containsEntry("title", "Letter")
+                .containsEntry("award_date", "2025-05-01").containsEntry("status", "DRAFT");
+        } finally {
+            jdbc.execute("drop database " + database + " with (force)");
+        }
     }
 
     @Test
