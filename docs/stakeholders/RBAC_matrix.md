@@ -101,7 +101,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Handle Data Requests | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
 | Process GDPR Requests | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
 
-³ `audit:read` (system administrator, GDPR officer): the `audit_logs` rows about one award, also of a deleted draft (Feature 2.2 D-5). The wider audit rows above describe the Epic 6 compliance dashboard.
+³ `audit:read` (system administrator, GDPR officer): the `audit_logs` rows about one award, also of a deleted draft (Feature 2.2 D-5), shown as the «Журнал аудиту» tab of the award page and downloadable as CSV (`GET /awards/{id}/audit-trail/export`, audited as `AUDIT_EXPORT`). The wider audit rows above describe the Epic 6 compliance dashboard.
 
 ## 4. Reporting & Analytics Permissions Matrix
 

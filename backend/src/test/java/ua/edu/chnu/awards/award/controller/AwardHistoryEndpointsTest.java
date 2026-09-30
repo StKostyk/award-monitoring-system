@@ -10,23 +10,29 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import ua.edu.chnu.awards.audit.dto.AuditTrailEntry;
+import ua.edu.chnu.awards.audit.dto.AuditTrailExport;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.award.dto.AwardVersionResponse;
 import ua.edu.chnu.awards.award.dto.FieldChange;
@@ -41,6 +47,7 @@ class AwardHistoryEndpointsTest extends AbstractAwardEndpointsTest {
 
     private static final String VERSIONS = "/api/v1/awards/5/versions";
     private static final String TRAIL = "/api/v1/awards/5/audit-trail";
+    private static final String EXPORT = TRAIL + "/export";
 
     @Test
     void ac1_8_versionsAnswerThePageWithSnapshotsAndChanges() throws Exception {
@@ -107,6 +114,47 @@ class AwardHistoryEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.detail").value("permission audit:read is required"));
         verify(auditTrail, never()).aboutAward(anyLong(), anyInt(), anyInt());
         verify(audit).recordSeparately(eq(AuditAction.ACCESS_DENIED), anyString(), eq(1L), anyMap());
+    }
+
+    @Test
+    void ac2_6_theExportDownloadsAsAnAttachmentThatIsNotCached() throws Exception {
+        when(auditTrail.exportAward(5L, 2L)).thenReturn(Optional.of(
+            new AuditTrailExport("award-5-audit-2026-09-30.csv", "﻿time;action\r\n", false)));
+
+        mockMvc.perform(get(EXPORT).with(auditor()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("text/csv;charset=UTF-8"))
+            .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"award-5-audit-2026-09-30.csv\""))
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+            .andExpect(header().doesNotExist(AwardHistoryController.TRUNCATED_HEADER))
+            .andExpect(content().bytes("﻿time;action\r\n".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    void ac2_7_aTruncatedExportSaysSoInAHeader() throws Exception {
+        when(auditTrail.exportAward(5L, 2L)).thenReturn(Optional.of(new AuditTrailExport("a.csv", "x", true)));
+
+        mockMvc.perform(get(EXPORT).with(auditor()))
+            .andExpect(status().isOk())
+            .andExpect(header().string(AwardHistoryController.TRUNCATED_HEADER, "true"));
+    }
+
+    @Test
+    void ac2_6_withoutAuditReadTheExportIsRefused() throws Exception {
+        mockMvc.perform(get(EXPORT).with(administrator()))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:access-denied"));
+        verify(auditTrail, never()).exportAward(anyLong(), anyLong());
+    }
+
+    @Test
+    void ac2_6_anExportOfAnAwardNobodyLoggedAnswers404() throws Exception {
+        when(auditTrail.exportAward(5L, 2L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get(EXPORT).with(auditor()))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.title").value("Not found"));
     }
 
     private static RequestPostProcessor auditor() {

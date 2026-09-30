@@ -21,7 +21,14 @@ export interface ConfirmDialogData {
 
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButton, TranslocoPipe],
+  imports: [
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatDialogClose,
+    MatButton,
+    TranslocoPipe,
+  ],
   template: `
     <h2 mat-dialog-title>{{ data.title | transloco }}</h2>
     <mat-dialog-content>

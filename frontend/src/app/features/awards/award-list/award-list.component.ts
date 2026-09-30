@@ -72,7 +72,9 @@ export class AwardListComponent implements OnInit {
   }
 
   filter(change: Partial<AwardFilters>): void {
-    this.store.dispatch(AwardsActions.filtersChanged({ filters: { ...this.filters(), ...change } }));
+    this.store.dispatch(
+      AwardsActions.filtersChanged({ filters: { ...this.filters(), ...change } }),
+    );
   }
 
   link(award: Award): (string | number)[] {

@@ -1,0 +1,55 @@
+@if (versions().length === 0 && !loading() && !failed()) {
+  <p class="award-history__empty">{{ 'awards.history.empty' | transloco }}</p>
+}
+<ol class="award-history" data-testid="award-history">
+  @for (version of versions(); track version.number) {
+    <li class="award-history__entry" data-testid="award-history-entry">
+      <div class="award-history__head">
+        <strong data-testid="award-history-action">{{
+          'awards.history.actions.' + version.action | transloco
+        }}</strong>
+        <span class="award-history__meta" data-testid="award-history-meta">
+          @if (version.actor) {
+            {{ version.actor.name }}
+          } @else if (version.action === 'BASELINE') {
+            {{ 'awards.history.system' | transloco }}
+          } @else {
+            {{ 'awards.history.unknownActor' | transloco }}
+          }
+          · <time [attr.datetime]="version.createdAt">{{ time(version) }}</time>
+        </span>
+      </div>
+      @if (version.changes.length) {
+        <ul class="award-history__changes">
+          @for (change of version.changes; track change.field) {
+            @let from = value(change.field, change.from);
+            @let to = value(change.field, change.to);
+            <li data-testid="award-history-change">
+              <span class="award-history__field">{{ label(change.field) | transloco }}:</span>
+              {{ from.key ? (from.key | transloco) : from.text }} →
+              {{ to.key ? (to.key | transloco) : to.text }}
+            </li>
+          }
+        </ul>
+      }
+      <button mat-button type="button" (click)="view(version)" data-testid="award-history-view">
+        {{ 'awards.history.view' | transloco }}
+      </button>
+    </li>
+  }
+</ol>
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+@if (failed()) {
+  <div class="award-history__problem" role="alert" data-testid="award-history-error">
+    <span>{{ 'awards.history.failed' | transloco }}</span>
+    <button mat-button type="button" (click)="load()" data-testid="award-history-retry">
+      {{ 'awards.history.retry' | transloco }}
+    </button>
+  </div>
+} @else if (hasMore() && !loading()) {
+  <button mat-stroked-button type="button" (click)="load()" data-testid="award-history-more">
+    {{ 'awards.history.more' | transloco }}
+  </button>
+}

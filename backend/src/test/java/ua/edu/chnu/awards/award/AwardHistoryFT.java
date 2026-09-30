@@ -6,7 +6,9 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -162,6 +164,28 @@ class AwardHistoryFT extends AbstractFunctionalTest {
             .body("content[0].entityId", equalTo((int) draft))
             .body("content[0].actorId", equalTo((int) employeeId));
         as(admin).get(AWARDS + "/999999999/audit-trail").then().statusCode(404);
+    }
+
+    @Test
+    void ac2_6_ac2_7_anAuditorExportsTheTrailAsCsvAndTheExportIsAudited() {
+        long id = submitted("=HYPERLINK(\"http://example.com\")");
+
+        Response export = as(tokenOf(ADMIN)).get(AWARDS + "/" + id + "/audit-trail/export");
+
+        export.then().statusCode(200)
+            .contentType("text/csv;charset=UTF-8")
+            .header("Content-Disposition", equalTo("attachment; filename=\"award-" + id + "-audit-"
+                + LocalDate.now(ZoneId.of("Europe/Kyiv")) + ".csv\""));
+        byte[] body = export.asByteArray();
+        assertThat(body).startsWith((byte) 0xEF, (byte) 0xBB, (byte) 0xBF);
+        String[] lines = new String(body, StandardCharsets.UTF_8).substring(1).split("\r\n");
+        assertThat(lines[0]).startsWith("time;actor_id;actor_email;action;");
+        assertThat(lines).anySatisfy(line -> assertThat(line).contains(";AWARD_SUBMITTED;awards;" + id + ";"));
+        assertThat(jdbc.queryForObject("select (new_values->>'rows')::int from audit_logs "
+            + "where action_type = 'AUDIT_EXPORT' and entity_id = ? and user_id = ?", Integer.class, id, adminId))
+            .isEqualTo(lines.length - 1);
+        as(tokenOf(DEAN)).get(AWARDS + "/" + id + "/audit-trail/export").then().statusCode(403)
+            .body("type", equalTo(PROBLEM + "access-denied"));
     }
 
     @Test

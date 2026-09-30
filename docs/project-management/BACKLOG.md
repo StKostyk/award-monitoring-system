@@ -21,9 +21,11 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 1.3.1 | Profile information update | 5 | ✅ Done | SCRUM-15 | [#38](https://github.com/StKostyk/award-monitoring-system/issues/38) |
 | 1.3.3 | GDPR data portability (US-011, partial) | 5 | ✅ Done | SCRUM-17 | [#40](https://github.com/StKostyk/award-monitoring-system/issues/40) |
 | 1.3.4 | Fixes from the Feature 1.3 validation | 3 | ✅ Done | SCRUM-29 | [#92](https://github.com/StKostyk/award-monitoring-system/issues/92) |
+| 2.2.1 | Award version recording | 5 | ✅ Done | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
+| 2.2.2 | Version history view and audit export | 5 | 🔍 In Review | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
 
 Sprint Goal: an employee creates, checks and submits an award (Feature 2.1).  
-Completed Points: 40 (Feature 2.1 validated 2026-09-29, Feature 1.3 validated 2026-09-30, fixes 1.3.4 merged; the author's runs of PRD §9 pending)
+Completed Points: 45 (Feature 2.1 validated 2026-09-29, Feature 1.3 validated 2026-09-30, fixes 1.3.4 and 2.2.1 merged; the author's runs of PRD §9 pending)
 
 ---
 
@@ -34,8 +36,6 @@ Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../featu
 
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
-| 2.2.1 | Award version recording | 5 | 2.2 | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
-| 2.2.2 | Version history view and audit export | 5 | 2.2 | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
 | 2.3.1 | Award status tracking (US-005) | 5 | 2.3 | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
 
 ### Later epics

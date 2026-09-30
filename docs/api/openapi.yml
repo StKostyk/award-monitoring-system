@@ -735,6 +735,48 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /awards/{id}/audit-trail/export:
+    get:
+      tags: [Awards]
+      summary: Audit trail of an award as CSV
+      description: >
+        The newest 10 000 rows of the audit trail as a UTF-8 file with a byte order mark, `;` as separator and
+        CRLF line ends. Columns: `time` (UTC, ISO-8601), `actor_id`, `actor_email`, `action`, `entity_type`,
+        `entity_id`, `changed_fields` (comma-separated), `old_values` and `new_values` (JSON, empty when absent),
+        `ip_address`, `correlation_id`. Cells starting with `=`, `+`, `-`, `@`, tab or carriage return are
+        prefixed with `'`. Every export is audited as `AUDIT_EXPORT` (`audit:read`; a refusal is audited as
+        `ACCESS_DENIED`).
+      security:
+        - bearerAuth: []
+      operationId: exportAwardAuditTrail
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: The file, as attachment `award-{id}-audit-{yyyy-MM-dd}.csv` (Kyiv date), not cached
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="award-42-audit-2026-09-30.csv"
+            X-Audit-Truncated:
+              description: Present with `true` when older rows were left out
+              schema:
+                type: string
+                enum: ['true']
+          content:
+            text/csv:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /awards/{id}/approve:
     post:
       tags: [Workflows]

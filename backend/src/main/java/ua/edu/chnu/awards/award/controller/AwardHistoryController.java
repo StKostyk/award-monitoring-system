@@ -1,7 +1,16 @@
 package ua.edu.chnu.awards.award.controller;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.data.domain.Page;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ua.edu.chnu.awards.audit.dto.AuditTrailEntry;
+import ua.edu.chnu.awards.audit.dto.AuditTrailExport;
 import ua.edu.chnu.awards.audit.service.AuditTrailService;
 import ua.edu.chnu.awards.award.dto.AwardVersionResponse;
 import ua.edu.chnu.awards.award.service.AwardHistory;
@@ -25,6 +35,11 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/awards/{id}")
 @RequiredArgsConstructor
 public class AwardHistoryController {
+
+    /** Response header present on an export that left out older rows. */
+    public static final String TRUNCATED_HEADER = "X-Audit-Truncated";
+
+    private static final MediaType CSV = new MediaType("text", "csv", StandardCharsets.UTF_8);
 
     private final AwardHistory history;
     private final AuditTrailService auditTrail;
@@ -65,5 +80,30 @@ public class AwardHistoryController {
             throw new AwardNotFoundException(id);
         }
         return PageResponse.of(trail);
+    }
+
+    /**
+     * Downloads the newest audit rows about an award as a CSV attachment; a file that leaves out older rows
+     * carries {@value #TRUNCATED_HEADER}.
+     *
+     * @param id  the award
+     * @param jwt the access token of the auditor
+     * @return the file
+     * @throws AwardNotFoundException when nothing about the award was logged
+     */
+    @GetMapping("/audit-trail/export")
+    @PreAuthorize("@access.require('audit:read')")
+    public ResponseEntity<String> exportAuditTrail(@PathVariable long id, @AuthenticationPrincipal Jwt jwt) {
+        AuditTrailExport export = auditTrail.exportAward(id, Long.parseLong(jwt.getSubject()))
+            .orElseThrow(() -> new AwardNotFoundException(id));
+        ResponseEntity.BodyBuilder response = ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment().filename(export.fileName()).build().toString())
+            .cacheControl(CacheControl.noStore())
+            .contentType(CSV);
+        if (export.truncated()) {
+            response.header(TRUNCATED_HEADER, "true");
+        }
+        return response.body(export.content());
     }
 }

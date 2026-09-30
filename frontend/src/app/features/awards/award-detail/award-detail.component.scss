@@ -47,6 +47,15 @@
   color: var(--mat-sys-error, #b3261e);
 }
 
+.award-detail__history {
+  margin-top: 32px;
+}
+
+.award-detail__subtitle {
+  font: var(--mat-sys-title-large);
+  margin: 0 0 12px;
+}
+
 .award-detail__problem {
   color: var(--mat-sys-error, #b3261e);
 }

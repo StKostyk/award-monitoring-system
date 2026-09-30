@@ -1,7 +1,9 @@
 <div class="awards__header">
   <h1 class="awards__title">{{ 'awards.title' | transloco }}</h1>
   @if (canCreate) {
-    <a mat-flat-button routerLink="/awards/new" data-testid="award-add">{{ 'awards.add' | transloco }}</a>
+    <a mat-flat-button routerLink="/awards/new" data-testid="award-add">{{
+      'awards.add' | transloco
+    }}</a>
   }
 </div>
 
@@ -84,7 +86,11 @@
           }
         </span>
       </a>
-      <mat-chip class="awards__chip" [class]="'awards__chip--' + award.status" data-testid="award-status">
+      <mat-chip
+        class="awards__chip"
+        [class]="'awards__chip--' + award.status"
+        data-testid="award-status"
+      >
         {{ 'awards.status.' + award.status | transloco }}
       </mat-chip>
     </li>

@@ -74,7 +74,48 @@
       "owner": "Recipient",
       "organization": "Department",
       "request": "Request",
-      "impactScore": "Impact score"
+      "impactScore": "Impact score",
+      "status": "Status",
+      "verificationBadge": "Verification badge"
+    },
+    "history": {
+      "title": "Change history",
+      "actions": {
+        "BASELINE": "Initial state",
+        "CREATED": "Created",
+        "UPDATED": "Changed",
+        "SUBMITTED": "Submitted"
+      },
+      "unknownActor": "Unknown user",
+      "system": "System",
+      "view": "View version",
+      "version": "Version {{number}}",
+      "close": "Close",
+      "more": "Show more",
+      "retry": "Try again",
+      "failed": "The change history could not be loaded.",
+      "empty": "The change history is empty.",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "audit": {
+      "tab": "Audit log",
+      "export": "Export CSV",
+      "failed": "The audit log could not be loaded.",
+      "exportFailed": "The audit log could not be exported.",
+      "truncated": "The file holds only the newest 10,000 entries.",
+      "empty": "Nothing about this award has been logged.",
+      "columns": {
+        "time": "Time",
+        "actor": "Who",
+        "action": "Action",
+        "entity": "Record",
+        "changedFields": "Changed fields",
+        "ipAddress": "IP address",
+        "correlationId": "Request id",
+        "oldValues": "Before",
+        "newValues": "After"
+      }
     },
     "hints": {
       "title": "A title in one language is enough"

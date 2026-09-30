@@ -1,5 +1,7 @@
 package ua.edu.chnu.awards.audit.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,4 +36,16 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
         countQuery = "select count(*) from audit_logs a where " + ABOUT_AWARD,
         nativeQuery = true)
     Page<AuditLog> findAboutAward(long awardId, Pageable pageable);
+
+    /**
+     * The newest rows about an award, as {@link #findAboutAward} selects them.
+     *
+     * @param awardId the award
+     * @param limit   the most rows to return
+     * @return the rows, newest first
+     */
+    @Query(value = "select a.* from audit_logs a where " + ABOUT_AWARD
+        + " order by a.created_at desc, a.log_id desc limit :limit",
+        nativeQuery = true)
+    List<AuditLog> findNewestAboutAward(long awardId, int limit);
 }

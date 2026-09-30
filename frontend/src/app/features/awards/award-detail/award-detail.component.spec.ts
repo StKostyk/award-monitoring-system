@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
@@ -19,20 +19,37 @@ const pending: Award = {
   titleUk: 'Грамота МОН',
   description: null,
   descriptionUk: 'За внесок у розвиток освіти',
-  category: { id: 13, name: 'Ministry Recognition', nameUk: 'Відзнака міністерства', level: 'NATIONAL' },
+  category: {
+    id: 13,
+    name: 'Ministry Recognition',
+    nameUk: 'Відзнака міністерства',
+    level: 'NATIONAL',
+  },
   awardingOrganization: 'МОН України',
   awardDate: '2025-05-01',
   externalUrl: 'https://mon.gov.ua',
   status: 'PENDING',
   impactScore: 80,
   owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
-  organization: { id: 64, name: 'Algebra', nameUk: 'Кафедра алгебри', code: 'DAI', type: 'DEPARTMENT' },
-  request: { status: 'SUBMITTED', currentLevel: 'FACULTY_SECRETARY', submittedAt: '2026-09-28T09:00:00Z' },
+  organization: {
+    id: 64,
+    name: 'Algebra',
+    nameUk: 'Кафедра алгебри',
+    code: 'DAI',
+    type: 'DEPARTMENT',
+  },
+  request: {
+    status: 'SUBMITTED',
+    currentLevel: 'FACULTY_SECRETARY',
+    submittedAt: '2026-09-28T09:00:00Z',
+  },
   warnings: [],
   createdAt: '2026-09-28T08:00:00Z',
   updatedAt: '2026-09-28T09:00:00Z',
   version: 3,
 };
+
+const noVersions = { content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 };
 
 const translations = {
   uk: {
@@ -47,7 +64,17 @@ const translations = {
 };
 
 describe('AwardDetailComponent', () => {
-  const service = { get: vi.fn(), remove: vi.fn() };
+  const service = {
+    get: vi.fn(),
+    remove: vi.fn(),
+    versions: vi.fn(),
+    categories: vi.fn(),
+    auditTrail: vi.fn(),
+  };
+  const granted = signal<string[]>([]);
+  const permissions = computed(() => ({
+    hasPermission: (permission: string) => granted().includes(permission),
+  }));
   const dialog = { open: vi.fn() };
   let navigate: MockInstance<Router['navigate']>;
 
@@ -62,10 +89,13 @@ describe('AwardDetailComponent', () => {
       ],
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id }) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ id }) } },
+        },
         { provide: AwardsService, useValue: service },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
-        { provide: AuthService, useValue: { userId: signal('21') } },
+        { provide: AuthService, useValue: { userId: signal('21'), permissions } },
         { provide: MatDialog, useValue: dialog },
       ],
     }).compileComponents();
@@ -79,6 +109,10 @@ describe('AwardDetailComponent', () => {
     service.get.mockReset();
     service.remove.mockReset();
     dialog.open.mockReset();
+    service.versions.mockReset().mockReturnValue(of(noVersions));
+    service.categories.mockReset().mockReturnValue(of([]));
+    service.auditTrail.mockReset().mockReturnValue(of(noVersions));
+    granted.set([]);
   });
 
   it('ac1_9_shows_a_submitted_award_read_only_with_its_request', async () => {
@@ -86,8 +120,12 @@ describe('AwardDetailComponent', () => {
     const fixture = await open(AwardDetailComponent, '5');
     const element: HTMLElement = fixture.nativeElement;
 
-    expect(element.querySelector('[data-testid="award-detail-title"]')?.textContent).toContain('Грамота МОН');
-    expect(element.querySelector('[data-testid="award-detail-status"]')?.textContent).toContain('На розгляді');
+    expect(element.querySelector('[data-testid="award-detail-title"]')?.textContent).toContain(
+      'Грамота МОН',
+    );
+    expect(element.querySelector('[data-testid="award-detail-status"]')?.textContent).toContain(
+      'На розгляді',
+    );
     expect(element.querySelector('[data-testid="award-detail-request"]')?.textContent).toContain(
       'секретар факультету',
     );
@@ -105,9 +143,9 @@ describe('AwardDetailComponent', () => {
     service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
     const fixture = await open(AwardDetailComponent, '999999');
 
-    expect(fixture.nativeElement.querySelector('[data-testid="award-not-found"]')?.textContent).toContain(
-      'Не знайдено',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="award-not-found"]')?.textContent,
+    ).toContain('Не знайдено');
   });
 
   it('ac1_8_a_malformed_id_is_not_found_without_a_request', async () => {
@@ -122,7 +160,9 @@ describe('AwardDetailComponent', () => {
     const fixture = await open(AwardSubmittedComponent, '5');
     const element: HTMLElement = fixture.nativeElement;
 
-    expect(element.querySelector('[data-testid="award-submitted-name"]')?.textContent).toContain('Грамота МОН');
+    expect(element.querySelector('[data-testid="award-submitted-name"]')?.textContent).toContain(
+      'Грамота МОН',
+    );
     expect(element.querySelector('[data-testid="award-submitted-text"]')?.textContent).toContain(
       'секретарю факультету',
     );
@@ -161,7 +201,9 @@ describe('AwardDetailComponent', () => {
     service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
     service.remove.mockReturnValue(of(undefined));
     const fixture = await open(AwardDetailComponent, '5');
-    const button = fixture.nativeElement.querySelector('[data-testid="award-remove"]') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="award-remove"]',
+    ) as HTMLButtonElement;
 
     dialog.open.mockReturnValue({ afterClosed: () => of(false) });
     button.click();
@@ -180,7 +222,11 @@ describe('AwardDetailComponent', () => {
     service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
     service.remove.mockReturnValue(
       throwError(
-        () => new HttpErrorResponse({ status: 409, error: { type: 'urn:awards:problem:award-not-editable' } }),
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: { type: 'urn:awards:problem:award-not-editable' },
+          }),
       ),
     );
     dialog.open.mockReturnValue({ afterClosed: () => of(true) });
@@ -190,6 +236,47 @@ describe('AwardDetailComponent', () => {
 
     expect(fixture.componentInstance.notice()).toBe('awards.problems.award-not-editable');
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('ac2_1_the_owner_sees_the_history_of_a_draft_without_an_audit_tab', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
+    const fixture = await open(AwardDetailComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-history-section"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-history-tabs"]')).toBeNull();
+    expect(service.versions).toHaveBeenCalledWith(5, 0, 20);
+  });
+
+  it('ac2_4_the_draft_of_somebody_else_requests_no_history', async () => {
+    service.get.mockReturnValue(
+      of({ ...pending, status: 'DRAFT', request: null, owner: { ...pending.owner, id: 22 } }),
+    );
+    const fixture = await open(AwardDetailComponent, '5');
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-history-section"]')).toBeNull();
+    expect(service.versions).not.toHaveBeenCalled();
+  });
+
+  it('ac2_4_a_reader_of_a_submitted_award_sees_its_history', async () => {
+    service.get.mockReturnValue(of({ ...pending, owner: { ...pending.owner, id: 22 } }));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="award-history-section"]'),
+    ).not.toBeNull();
+    expect(service.versions).toHaveBeenCalled();
+  });
+
+  it('ac2_5_an_auditor_gets_the_history_and_the_audit_log_as_tabs', async () => {
+    granted.set(['audit:read']);
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-history-tabs"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-audit-tab"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-history-section"]')).toBeNull();
   });
 
   it('f9_a_submitted_award_offers_no_deletion', async () => {

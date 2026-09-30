@@ -49,7 +49,13 @@ function award(overrides: Partial<Award> = {}): Award {
     status: 'DRAFT',
     impactScore: null,
     owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
-    organization: { id: 64, name: 'Algebra', nameUk: 'Кафедра алгебри', code: 'DAI', type: 'DEPARTMENT' },
+    organization: {
+      id: 64,
+      name: 'Algebra',
+      nameUk: 'Кафедра алгебри',
+      code: 'DAI',
+      type: 'DEPARTMENT',
+    },
     request: null,
     warnings: [],
     createdAt: '2026-09-28T08:00:00Z',
@@ -93,7 +99,10 @@ describe('AwardFormComponent', () => {
       ],
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } },
+        },
         { provide: AwardsService, useValue: service },
         { provide: MatDialog, useValue: dialog },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
@@ -148,7 +157,9 @@ describe('AwardFormComponent', () => {
 
     component.save();
 
-    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ titleUk: 'Грамота', title: null }));
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ titleUk: 'Грамота', title: null }),
+    );
     expect(location.replaceState).toHaveBeenCalledWith('/awards/5/edit');
     expect(component.message()).toBe('awards.messages.saved');
     expect(component.form.dirty).toBe(false);
@@ -193,10 +204,14 @@ describe('AwardFormComponent', () => {
 
   it('ac2_6_the_date_picker_allows_neither_future_dates_nor_dates_older_than_fifty_years', async () => {
     await open(null);
-    const input = fixture.nativeElement.querySelector('[data-testid="award-date"]') as HTMLInputElement;
+    const input = fixture.nativeElement.querySelector(
+      '[data-testid="award-date"]',
+    ) as HTMLInputElement;
 
     expect(input.max).toBe(component.today);
-    expect(input.min).toBe(`${Number(component.today.substring(0, 4)) - 50}${component.today.substring(4)}`);
+    expect(input.min).toBe(
+      `${Number(component.today.substring(0, 4)) - 50}${component.today.substring(4)}`,
+    );
   });
 
   it('ac2_3_a_recent_date_shows_the_hint_under_the_date', async () => {
@@ -213,24 +228,40 @@ describe('AwardFormComponent', () => {
   });
 
   it('ac2_4_a_saved_possible_duplicate_links_the_matching_award', async () => {
-    const match = { id: 9, title: null, titleUk: 'Грамота МОН', awardDate: '2025-05-01', status: 'PENDING' as const };
+    const match = {
+      id: 9,
+      title: null,
+      titleUk: 'Грамота МОН',
+      awardDate: '2025-05-01',
+      status: 'PENDING' as const,
+    };
     service.get.mockReturnValue(
       of(award({ warnings: [{ code: 'POSSIBLE_DUPLICATE', field: 'title', matches: [match] }] })),
     );
     await open('5');
 
-    const link = fixture.nativeElement.querySelector('[data-testid="award-duplicate-9"]') as HTMLAnchorElement;
+    const link = fixture.nativeElement.querySelector(
+      '[data-testid="award-duplicate-9"]',
+    ) as HTMLAnchorElement;
     expect(link.textContent).toContain('Грамота МОН');
     expect(link.getAttribute('href')).toBe('/awards/9');
 
     type('awardDate', '2024-01-01');
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="award-duplicate-warning"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="award-duplicate-warning"]'),
+    ).toBeNull();
   });
 
   it('ac2_5_a_possible_duplicate_is_submitted_after_the_owner_confirms_it', async () => {
-    const match = { id: 9, title: null, titleUk: 'Грамота МОН', awardDate: '2025-05-01', status: 'PENDING' };
+    const match = {
+      id: 9,
+      title: null,
+      titleUk: 'Грамота МОН',
+      awardDate: '2025-05-01',
+      status: 'PENDING',
+    };
     await open(null);
     service.create.mockReturnValue(of(award({ version: 2 })));
     service.submit
@@ -241,7 +272,10 @@ describe('AwardFormComponent', () => {
 
     component.submit();
 
-    expect(dialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ data: { matches: [match] } }));
+    expect(dialog.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ data: { matches: [match] } }),
+    );
     expect(service.submit).toHaveBeenLastCalledWith(5, 2, true);
     expect(router.navigate).toHaveBeenCalledWith(['/awards', 5, 'submitted'], { replaceUrl: true });
   });
@@ -270,10 +304,16 @@ describe('AwardFormComponent', () => {
     component.save();
     fixture.detectChanges();
 
-    expect(service.update).toHaveBeenCalledWith(5, expect.objectContaining({ titleUk: 'Моя версія' }), 1);
+    expect(service.update).toHaveBeenCalledWith(
+      5,
+      expect.objectContaining({ titleUk: 'Моя версія' }),
+      1,
+    );
     expect(component.stale()).toBe(true);
     expect(fixture.nativeElement.querySelector('[data-testid="award-reload"]')).not.toBeNull();
-    expect(copies.load('21', 'award-5')).toEqual(expect.objectContaining({ titleUk: 'Моя версія' }));
+    expect(copies.load('21', 'award-5')).toEqual(
+      expect.objectContaining({ titleUk: 'Моя версія' }),
+    );
 
     service.get.mockReturnValue(of(award({ titleUk: 'Інша версія', version: 2 })));
     component.reload();
@@ -293,7 +333,9 @@ describe('AwardFormComponent', () => {
 
     component.submit();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], { state: { problem: 'award-not-editable' } });
+    expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], {
+      state: { problem: 'award-not-editable' },
+    });
   });
 
   it('ac1_1_shows_the_field_errors_of_the_server', async () => {
@@ -351,7 +393,9 @@ describe('AwardFormComponent', () => {
 
     component.keepOnUnload(event);
 
-    expect(copies.load('21', 'award-new')).toEqual(expect.objectContaining({ titleUk: 'Половина' }));
+    expect(copies.load('21', 'award-new')).toEqual(
+      expect.objectContaining({ titleUk: 'Половина' }),
+    );
     expect(event.defaultPrevented).toBe(true);
   });
 
@@ -364,7 +408,9 @@ describe('AwardFormComponent', () => {
 
     component.keepOnUnload(event);
 
-    expect(copies.load('21', 'award-new')).toEqual(expect.objectContaining({ titleUk: 'Половина' }));
+    expect(copies.load('21', 'award-new')).toEqual(
+      expect.objectContaining({ titleUk: 'Половина' }),
+    );
     expect(event.defaultPrevented).toBe(false);
   });
 
@@ -406,12 +452,16 @@ describe('AwardFormComponent', () => {
     expect(component.editing()).toBe(false);
     expect(location.replaceState).toHaveBeenCalledWith('/awards/new');
     expect(copies.load('21', 'award-5')).toBeNull();
-    expect(copies.load('21', 'award-new')).toEqual(expect.objectContaining({ titleUk: 'Змінена грамота' }));
+    expect(copies.load('21', 'award-new')).toEqual(
+      expect.objectContaining({ titleUk: 'Змінена грамота' }),
+    );
 
     service.create.mockReturnValue(of(award({ id: 6, titleUk: 'Змінена грамота' })));
     component.save();
 
-    expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ titleUk: 'Змінена грамота' }));
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ titleUk: 'Змінена грамота' }),
+    );
     expect(location.replaceState).toHaveBeenCalledWith('/awards/6/edit');
   });
 
@@ -423,7 +473,9 @@ describe('AwardFormComponent', () => {
     service.remove.mockReturnValue(of(undefined));
 
     dialog.open.mockReturnValue({ afterClosed: () => of(false) });
-    (fixture.nativeElement.querySelector('[data-testid="award-remove"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="award-remove"]') as HTMLButtonElement
+    ).click();
     expect(service.remove).not.toHaveBeenCalled();
 
     dialog.open.mockReturnValue({ afterClosed: () => of(true) });
@@ -455,7 +507,10 @@ describe('AwardFormComponent', () => {
 
     component.remove();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/awards'], expect.objectContaining({ replaceUrl: true }));
+    expect(router.navigate).toHaveBeenCalledWith(
+      ['/awards'],
+      expect.objectContaining({ replaceUrl: true }),
+    );
   });
 
   it('f9_a_submitted_draft_is_not_deleted_and_opens_read_only', async () => {
@@ -466,7 +521,9 @@ describe('AwardFormComponent', () => {
 
     component.remove();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], { state: { problem: 'award-not-editable' } });
+    expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], {
+      state: { problem: 'award-not-editable' },
+    });
   });
 
   it('ac1_10_leaving_with_unsaved_values_asks_first', async () => {
@@ -528,7 +585,9 @@ describe('AwardFormComponent', () => {
     };
 
     function chips(): HTMLElement[] {
-      return Array.from(fixture.nativeElement.querySelectorAll('[data-testid^="category-suggestion-"]'));
+      return Array.from(
+        fixture.nativeElement.querySelectorAll('[data-testid^="category-suggestion-"]'),
+      );
     }
 
     async function openWithTimers(): Promise<void> {
@@ -586,7 +645,9 @@ describe('AwardFormComponent', () => {
     });
 
     it('ac3_4_no_chips_when_the_service_fails_and_later_input_still_asks', async () => {
-      service.suggestions.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500 })));
+      service.suggestions.mockReturnValueOnce(
+        throwError(() => new HttpErrorResponse({ status: 500 })),
+      );
       service.suggestions.mockReturnValueOnce(of([ministry]));
       await openWithTimers();
       type('titleUk', 'Грамота МОН');
@@ -608,7 +669,10 @@ describe('AwardFormComponent', () => {
       type('awardingOrganization', 'М'.repeat(255));
       vi.advanceTimersByTime(400);
 
-      const [title, organization] = service.suggestions.mock.calls[0] as unknown as [string, string];
+      const [title, organization] = service.suggestions.mock.calls[0] as unknown as [
+        string,
+        string,
+      ];
       expect(title.length).toBe(300);
       expect(organization.length).toBe(255);
     });

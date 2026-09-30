@@ -38,12 +38,33 @@ import { Award, AwardsService, awardTitle } from '../awards.service';
     }
   `,
   styles: `
-    .award-submitted { max-width: 560px; text-align: center; margin: 24px auto; }
-    .award-submitted__icon { font-size: 48px; width: 48px; height: 48px; color: var(--mat-sys-primary, #1b5e9e); }
-    .award-submitted__title { font: var(--mat-sys-headline-small); }
-    .award-submitted__name { font: var(--mat-sys-title-medium); overflow-wrap: anywhere; }
-    .award-submitted__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-    .award-submitted__problem { color: var(--mat-sys-error, #b3261e); }
+    .award-submitted {
+      max-width: 560px;
+      text-align: center;
+      margin: 24px auto;
+    }
+    .award-submitted__icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: var(--mat-sys-primary, #1b5e9e);
+    }
+    .award-submitted__title {
+      font: var(--mat-sys-headline-small);
+    }
+    .award-submitted__name {
+      font: var(--mat-sys-title-medium);
+      overflow-wrap: anywhere;
+    }
+    .award-submitted__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+    .award-submitted__problem {
+      color: var(--mat-sys-error, #b3261e);
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

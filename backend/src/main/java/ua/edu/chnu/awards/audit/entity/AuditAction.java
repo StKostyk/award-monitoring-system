@@ -22,5 +22,6 @@ public enum AuditAction {
     PROFILE_UPDATED,
     EMAIL_CHANGE_REQUESTED,
     EMAIL_CHANGED,
-    DATA_EXPORT
+    DATA_EXPORT,
+    AUDIT_EXPORT
 }
