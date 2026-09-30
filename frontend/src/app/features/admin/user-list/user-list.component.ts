@@ -23,7 +23,8 @@ import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/use
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AdminPaginatorIntl } from '../admin-paginator-intl';
 import { ConfirmMembershipDialogComponent } from '../confirm-membership-dialog/confirm-membership-dialog.component';
-import { ROLES, STATUSES, organizationName } from '../role-organizations';
+import { ROLES, STATUSES } from '../role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
 import { UserFilters, UserSummary } from '../users.service';

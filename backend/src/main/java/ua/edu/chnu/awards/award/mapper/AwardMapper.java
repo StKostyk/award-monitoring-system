@@ -14,7 +14,6 @@ import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.user.dto.OrganizationRef;
 import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.User;
 
 /**
  * Converts awards to API responses.
@@ -45,17 +44,13 @@ public class AwardMapper {
         return new AwardResponse(award.getId(), award.getTitle(), award.getTitleUk(), award.getDescription(),
             award.getDescriptionUk(), categoryRef(award.getCategory()), award.getAwardingOrganization(),
             award.getAwardDate(), award.getExternalUrl(), award.getStatus(), award.getImpactScore(),
-            ownerRef(award.getOwner()), organizationRef(award.getOrganization()), toSummary(request),
+            UserRef.of(award.getOwner()), organizationRef(award.getOrganization()), toSummary(request),
             List.copyOf(warnings), award.getCreatedAt(), award.getUpdatedAt(), award.getVersion());
     }
 
     private static CategoryRef categoryRef(AwardCategory category) {
         return category == null ? null
             : new CategoryRef(category.getId(), category.getName(), category.getNameUk(), category.getLevel());
-    }
-
-    private static UserRef ownerRef(User owner) {
-        return new UserRef(owner.getId(), owner.getFullName(), owner.getEmailAddress());
     }
 
     private static OrganizationRef organizationRef(Organization organization) {

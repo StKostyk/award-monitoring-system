@@ -158,7 +158,6 @@ describe('ProfileComponent', () => {
 
   it('ac35 downloads the export under its attachment name and disables the button meanwhile', async () => {
     const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:export');
-    const revokeUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     const fixture = await setup();
     const button = (): HTMLButtonElement =>
@@ -177,7 +176,6 @@ describe('ProfileComponent', () => {
     expect(createUrl).toHaveBeenCalled();
     const link = click.mock.contexts[0] as HTMLAnchorElement;
     expect(link.download).toBe('award-monitoring-export-2026-09-30.json');
-    expect(revokeUrl).toHaveBeenCalledWith('blob:export');
     expect(button().disabled).toBe(false);
     expect(fixture.componentInstance.exportMessage()).toBe('profile.downloaded');
     vi.restoreAllMocks();

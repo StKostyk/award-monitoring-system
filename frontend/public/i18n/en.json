@@ -93,7 +93,11 @@
       "close": "Close",
       "more": "Show more",
       "retry": "Try again",
-      "failed": "The change history could not be loaded.",
+      "problems": {
+        "failed": "The change history could not be loaded.",
+        "gone": "This award is no longer available to you.",
+        "denied": "You no longer have access to this history."
+      },
       "empty": "The change history is empty.",
       "yes": "Yes",
       "no": "No"
@@ -101,7 +105,11 @@
     "audit": {
       "tab": "Audit log",
       "export": "Export CSV",
-      "failed": "The audit log could not be loaded.",
+      "problems": {
+        "failed": "The audit log could not be loaded.",
+        "gone": "No audit log is available for this award.",
+        "denied": "You no longer have access to the audit log."
+      },
       "exportFailed": "The audit log could not be exported.",
       "truncated": "The file holds only the newest 10,000 entries.",
       "empty": "Nothing about this award has been logged.",

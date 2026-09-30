@@ -10,7 +10,10 @@ import {
   RoleAssignment,
   RoleType,
 } from '../../core/auth/user-profile';
-import { OrganizationSummary } from '../auth/registration.service';
+import {
+  OrganizationSummary,
+  OrganizationsService,
+} from '../../core/organizations/organizations.service';
 
 export interface UserSummary {
   id: number;
@@ -62,6 +65,7 @@ export interface RoleAssignmentRequest {
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   private readonly http = inject(HttpClient);
+  private readonly organizationList = inject(OrganizationsService);
   private readonly base = `${environment.apiUrl}/users`;
 
   list(query: UserQuery): Observable<UserPage> {
@@ -94,8 +98,6 @@ export class UsersService {
   }
 
   organizations(type: OrganizationType): Observable<OrganizationSummary[]> {
-    return this.http.get<OrganizationSummary[]>(`${environment.apiUrl}/organizations`, {
-      params: { type },
-    });
+    return this.organizationList.ofType(type);
   }
 }

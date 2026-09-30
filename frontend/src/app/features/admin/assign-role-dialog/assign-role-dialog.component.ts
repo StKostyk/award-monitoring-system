@@ -21,8 +21,9 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { grantableRoles } from '../../../core/auth/permissions';
 import { RoleAssignment, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { OrganizationSummary } from '../../auth/registration.service';
-import { organizationName, organizationTypesFor, today } from '../role-organizations';
+import { OrganizationSummary } from '../../../core/organizations/organizations.service';
+import { organizationTypesFor, today } from '../role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { UserSummary, UsersService } from '../users.service';
 

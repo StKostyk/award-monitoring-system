@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 
 import { environment } from '../../../../environments/environment';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { OrganizationSummary } from '../../auth/registration.service';
+import { OrganizationSummary } from '../../../core/organizations/organizations.service';
 import { UserSummary } from '../users.service';
 import { ConfirmMembershipDialogComponent } from './confirm-membership-dialog.component';
 

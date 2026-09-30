@@ -24,7 +24,6 @@ import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
 import ua.edu.chnu.awards.common.web.PageResponse;
-import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -152,10 +151,7 @@ public class AwardHistory {
     }
 
     private static AwardVersionResponse response(AwardVersion version, List<FieldChange> changes) {
-        User actor = version.getActor();
-        UserRef actorRef = actor == null ? null
-            : new UserRef(actor.getId(), actor.getFullName(), actor.getEmailAddress());
-        return new AwardVersionResponse(version.getNumber(), version.getAction(), actorRef, version.getCreatedAt(),
-            version.getSnapshot(), changes);
+        return new AwardVersionResponse(version.getNumber(), version.getAction(), UserRef.of(version.getActor()),
+            version.getCreatedAt(), version.getSnapshot(), changes);
     }
 }

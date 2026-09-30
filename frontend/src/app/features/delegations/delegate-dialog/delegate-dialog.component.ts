@@ -20,9 +20,10 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { delegatableOrganizations, delegatableRoles } from '../../../core/auth/permissions';
 import { RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { organizationName, organizationTypesFor, today } from '../../admin/role-organizations';
+import { organizationTypesFor, today } from '../../admin/role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 import { UserSummary, UsersService } from '../../admin/users.service';
-import { OrganizationSummary } from '../../auth/registration.service';
+import { OrganizationSummary } from '../../../core/organizations/organizations.service';
 import { Delegation, DelegationsService } from '../delegations.service';
 
 const DEBOUNCE = 300;
