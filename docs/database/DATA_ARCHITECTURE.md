@@ -677,6 +677,26 @@ VALUES ('Computer Science Department', 'Кафедра інформатики', 
 
 ---
 
+## Addendum 2026-10: As Built After Epic 2
+
+The model above is the December 2025 design. Epics 1 and 2 changed the following points; the schema of record is
+the Flyway migrations and [DATA_DICTIONARY.md](DATA_DICTIONARY.md).
+
+- **Award aggregate**: besides `documents`, an award owns its immutable version snapshots in `award_versions`
+  (V023, deleted with the award) and keeps the organisation of its submission in `awards.organization_id` (V020),
+  so scoped reads and routing do not follow a later transfer of the owner.
+- **Recognition levels**: nine values (`SPECIALITY`, `DEPARTMENT`, `COLLEGE`, `FACULTY`, `LOCAL`, `UNIVERSITY`,
+  `REGIONAL`, `NATIONAL`, `INTERNATIONAL`), each with a minimum approval level and an impact base score.
+- **Award categories**: carry `keywords` (V021) for category suggestion and are seeded by the repeatable
+  `R__seed_award_categories.sql` as an upsert; they are not edited through an admin UI yet.
+- **Request deadlines**: `award_requests` holds the deadline of the current level (V024).
+- **Identity**: role delegations live in `role_delegations` (V018), email links in `one_time_tokens`, the
+  authorization-server state in the `oauth2_*` tables (V014).
+- **Seed data**: there is no versioned admin seed (`V002` creates the organizations table). Development accounts
+  are loaded by `db/seed/local/R__seed_users_dev.sql`, which Flyway reads only in the `local` and `docker` profiles.
+
+---
+
 ## 8. Implementation Roadmap
 
 ### 8.1 Development Phase Data Architecture Tasks

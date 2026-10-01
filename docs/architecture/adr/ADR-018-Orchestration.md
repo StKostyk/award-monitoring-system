@@ -1,6 +1,6 @@
 # ADR-018: Container Orchestration Platform Selection
 
-**Status**: Accepted  
+**Status**: Accepted (implementation deferred, see Addendum 2026-10)  
 **Date**: 2025-08-21  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, DevOps Team, Operations Team
@@ -249,11 +249,21 @@ spec:
 
 ---
 
+## Addendum 2026-10: Implementation deferred
+
+The system runs on Docker Compose in Epics 1 and 2. No Helm chart exists; `infra/k8s/deployment.yml` is an
+illustrative manifest written before development and has not been deployed or tested. The deployment target for
+the thesis defense is chosen after Epic 2 is demoable; Kubernetes stays the reference option for a production
+pilot.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 
 ---
 

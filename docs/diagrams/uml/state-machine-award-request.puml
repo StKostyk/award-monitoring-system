@@ -13,18 +13,31 @@ skinparam state {
 
 title Award Request State Machine Diagram
 
+note as AsBuilt
+    <b>As built after Epic 2 (2026-10)</b>
+    Two status fields: the award (<i>AwardStatus</i>:
+    DRAFT, PENDING, APPROVED, REJECTED, ARCHIVED) and its
+    request (<i>RequestStatus</i>: SUBMITTED, IN_REVIEW, ESCALATED,
+    APPROVED, REJECTED, RETURNED, EXPIRED).
+    Implemented: DRAFT -> submit -> award PENDING with a new
+    request SUBMITTED at FACULTY_SECRETARY and a deadline (V024).
+    A draft is edited or deleted only by its owner.
+    The other transitions are the Epic 4 workflow design;
+    document and AI substates belong to Epic 3.
+end note
+
 [*] --> DRAFT <<draft>> : Employee creates award
 
 state DRAFT <<draft>> {
     [*] --> Editing
     Editing --> Editing : Save changes
-    Editing --> DocumentUploaded : Upload certificate
+    Editing --> DocumentUploaded : Upload certificate (Epic 3)
     DocumentUploaded --> AIProcessing : Trigger AI parsing
     AIProcessing --> MetadataExtracted : AI completes
     MetadataExtracted --> Editing : Employee reviews
 }
 
-DRAFT --> SUBMITTED <<pending>> : Employee submits\n[All required fields filled]
+DRAFT --> SUBMITTED <<pending>> : Owner submits\n[category, awarding organisation, date set;\npossible duplicate acknowledged]\n/ award PENDING, version SUBMITTED
 
 state SUBMITTED <<pending>> {
     [*] --> AwaitingReviewer
@@ -119,7 +132,7 @@ EXPIRED --> [*]
 ' Legend
 legend right
     |= State |= Description |
-    | DRAFT | Award being prepared |
+    | DRAFT | Award being prepared (award status) |
     | SUBMITTED | Awaiting first review |
     | IN_REVIEW | Currently under review |
     | ESCALATED | Forwarded to higher authority |

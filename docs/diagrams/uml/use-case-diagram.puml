@@ -77,7 +77,7 @@ rectangle "Award Monitoring & Tracking System" {
     
     ' Document Processing Use Cases
     package "Document Processing" {
-        usecase "Parse Document (AI)" as UC_PARSE
+        usecase "Parse Document (AI, Epic 3)" as UC_PARSE
         usecase "Verify Document" as UC_VERIFY
         usecase "Flag Parsing Errors" as UC_FLAG
     }
@@ -165,7 +165,7 @@ UC_REJECT ..> email : <<triggers>>
 
 ' Include relationships
 UC_SUBMIT ..> UC_UPLOAD : <<include>>
-UC_SUBMIT ..> UC_PARSE : <<include>>
+UC_PARSE ..> UC_SUBMIT : <<extend>>
 UC_REVIEW ..> UC_VERIFY : <<include>>
 
 ' Extend relationships

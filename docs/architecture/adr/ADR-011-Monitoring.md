@@ -121,11 +121,21 @@ management:
 
 ---
 
+## Addendum 2026-10: Log and trace stack
+
+Metrics follow the decision (Micrometer, Prometheus registry, Grafana). The optional monitoring stack
+(`infra/docker-compose.monitoring.yml`) also runs Elasticsearch, Logstash and Kibana as the log store and Jaeger
+for traces, fed by the OpenTelemetry OTLP exporter. The ELK alternative above was rejected as the metrics
+platform; it is used for logs only.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: log and trace stack | Documentation sync after Epic 2 |
 
 ---
 

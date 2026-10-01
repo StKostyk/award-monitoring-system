@@ -1,0 +1,43 @@
+@startuml C4_Container_As_Built
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Award Monitoring & Tracking System - Container Diagram, as built after Epic 2 (2026-10)
+
+LAYOUT_WITH_LEGEND()
+
+Person(employee, "Employee", "Submits and tracks own awards")
+Person(reviewer, "Approver", "Faculty Secretary, Dean, Rector's Secretary, Rector; reads awards in scope")
+Person(admin, "Oversight", "System Admin, GDPR Officer")
+
+System_Boundary(award_system, "Award Monitoring & Tracking System (docker-compose.yaml)") {
+
+    Container(frontend, "Frontend", "nginx, Angular 21, NgRx, Angular Material, Transloco", "Serves the single-page application (uk, en) and proxies /api, /oauth2, /connect, /.well-known, /login, /logout to the backend")
+
+    Container(backend, "Backend", "Spring Boot 3.5, Java 21", "Modular monolith: embedded Spring Authorization Server (OAuth 2.1 / OIDC, PKCE, RS256 JWKS), resource server /api/v1, users, roles, delegations, awards, categories, version history, status, GDPR export, audit")
+
+    ContainerDb(postgres, "PostgreSQL", "PostgreSQL 17, Flyway", "Users, organisations, roles, delegations, awards, requests, versions, audit logs (partitioned), authorization-server state")
+    ContainerDb(redis, "Redis", "Redis 7", "Security state: revoked-token instants, sign-in lockout and attempt counters, rate limits, rotated refresh-token markers")
+    ContainerDb(minio, "Object storage", "MinIO (S3 API)", "Provisioned for certificate files; used from Epic 3")
+}
+
+System_Ext(smtp, "Mail server", "Mailpit in development: verification, reset, security and role emails")
+
+Rel(employee, frontend, "Uses", "HTTPS")
+Rel(reviewer, frontend, "Uses", "HTTPS")
+Rel(admin, frontend, "Uses", "HTTPS")
+Rel(frontend, backend, "Proxies API and sign-in", "HTTP")
+Rel(backend, postgres, "Reads/writes", "JDBC")
+Rel(backend, redis, "Counters, denylist", "RESP")
+Rel(backend, smtp, "Sends email", "SMTP")
+Rel_D(backend, minio, "Stores files (Epic 3)", "S3")
+
+
+note as Planned
+  Target containers not deployed yet (ADR addenda 2026-10):
+  message broker (ADR-006, Epic 7), Elasticsearch search (ADR-007, Epic 5),
+  API gateway (ADR-008, replaced by nginx), Kubernetes and cloud (ADR-018/020),
+  document processor and AI service (Epic 3), notification service (Epic 7).
+  Target view: c4-container.puml
+end note
+
+@enduml

@@ -31,16 +31,19 @@ Base package `ua.edu.chnu.awards`. Code is organised by domain, each domain owni
 ua.edu.chnu.awards
 ├── AwardMonitoringSystemApplication      entry point
 ├── config/                                cross-cutting Spring configuration (security chains, authorization server, tokens, locale, metrics)
-├── common/web/                            Problem Details exception handling
+├── common/                                Problem Details exception handling, paging, correlation id (web/), mail delivery (mail/)
 ├── metrics/                               Micrometer business metrics
 ├── auth/                                  authorization server pieces: user lookup, status checks, claims, refresh-token guard, login page
-└── <domain>/                              user, award, document, workflow, notification, compliance
+├── authz/                                 organisation scopes, role levels, delegated scopes, access-denied auditing
+├── audit/                                 audit_logs writer and the per-award audit trail
+└── <domain>/                              user, delegation, award, gdpr (document, workflow, notification, compliance follow in later epics)
     ├── controller/                        REST endpoints (thin, validation and mapping only)
     ├── service/                           business logic, transactions
     ├── repository/                        Spring Data JPA
     ├── entity/                            JPA entities and enums
     ├── dto/                               request/response records
-    └── mapper/                            MapStruct mappers
+    ├── event/                             application events handled after commit (emails)
+    └── mapper/                            hand-written mapper components
 ```
 
 Conventions:

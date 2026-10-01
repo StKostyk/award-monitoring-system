@@ -2,207 +2,310 @@
 !theme plain
 skinparam linetype ortho
 
-title Award Monitoring & Tracking System - Entity Relationship Diagram
+title Award Monitoring & Tracking System - Entity Relationship Diagram (as built, V024)
 
-' User Domain
+' * mandatory (NOT NULL); all timestamps are TIMESTAMPTZ
+
+package "Identity" {
 entity "users" as users {
-    * user_id : BIGSERIAL <<PK>>
+    * user_id : BIGINT <<PK>>
     --
-    * email : VARCHAR(255) <<UK>>
+    * email_address : VARCHAR(255) <<UK lower>>
     * first_name : VARCHAR(100)
     * last_name : VARCHAR(100)
     * password_hash : VARCHAR(255)
-    * status : VARCHAR(20)
+    * account_status : VARCHAR(20)
     * organization_id : BIGINT <<FK>>
-    last_login_at : TIMESTAMP
-    * created_at : TIMESTAMP
-    * updated_at : TIMESTAMP
+    last_login_at : TIMESTAMPTZ
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
     * version : BIGINT
 }
 
-entity "user_roles" as user_roles {
-    * user_role_id : BIGSERIAL <<PK>>
-    --
-    * user_id : BIGINT <<FK>>
-    * role_type : VARCHAR(50)
-    * organization_id : BIGINT <<FK>>
-    valid_from : DATE
-    valid_to : DATE
-    * created_at : TIMESTAMP
-}
-
 entity "organizations" as organizations {
-    * org_id : BIGSERIAL <<PK>>
+    * org_id : BIGINT <<PK>>
     --
     * name : VARCHAR(255)
+    name_uk : VARCHAR(255)
+    code : VARCHAR(50)
     * org_type : VARCHAR(20)
     parent_org_id : BIGINT <<FK>>
-    * created_at : TIMESTAMP
+    hierarchy_path : LTREE
+    * depth : INTEGER
+    * is_active : BOOLEAN
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
 }
 
-' Award Domain
-entity "awards" as awards {
-    * award_id : BIGSERIAL <<PK>>
+entity "user_roles" as user_roles {
+    * user_role_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
-    * category_id : BIGINT <<FK>>
-    * title : VARCHAR(500)
+    * organization_id : BIGINT <<FK>>
+    * role_type : VARCHAR(30)
+    * valid_from : DATE
+    valid_to : DATE
+    * created_at : TIMESTAMPTZ
+    created_by : BIGINT <<FK>>
+}
+
+entity "role_delegations" as delegations {
+    * delegation_id : BIGINT <<PK>>
+    --
+    * delegator_id : BIGINT <<FK>>
+    * delegate_id : BIGINT <<FK>>
+    * organization_id : BIGINT <<FK>>
+    * role_type : VARCHAR(30)
+    reason : VARCHAR(500)
+    * valid_from : DATE
+    * valid_to : DATE
+    * created_at : TIMESTAMPTZ
+    revoked_at : TIMESTAMPTZ
+    revoked_by : BIGINT <<FK>>
+}
+
+entity "one_time_tokens" as tokens {
+    * id : BIGINT <<PK>>
+    --
+    * token_hash : VARCHAR(64) <<UK>>
+    * user_id : BIGINT <<FK>>
+    * purpose : VARCHAR(30)
+    new_email_address : VARCHAR(255)
+    * expires_at : TIMESTAMPTZ
+    used_at : TIMESTAMPTZ
+    * created_at : TIMESTAMPTZ
+}
+
+entity "user_devices" as devices {
+    * id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * fingerprint : VARCHAR(64)
+    browser : VARCHAR(100)
+    operating_system : VARCHAR(100)
+    last_ip_address : VARCHAR(45)
+    * first_seen_at : TIMESTAMPTZ
+    * last_used_at : TIMESTAMPTZ
+}
+}
+
+package "Award" {
+entity "awards" as awards {
+    * award_id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * organization_id : BIGINT <<FK>>
+    category_id : BIGINT <<FK>>
+    title : VARCHAR(500)
+    title_uk : VARCHAR(500)
     description : TEXT
-    * awarding_organization : VARCHAR(255)
-    * award_date : DATE
+    description_uk : TEXT
+    awarding_organization : VARCHAR(255)
+    award_date : DATE
+    external_url : VARCHAR(2048)
     * status : VARCHAR(20)
-    verification_badge : BOOLEAN
+    * verification_badge : BOOLEAN
     impact_score : INTEGER
-    * created_at : TIMESTAMP
-    * updated_at : TIMESTAMP
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
     * version : BIGINT
 }
 
 entity "award_categories" as categories {
-    * category_id : BIGSERIAL <<PK>>
+    * category_id : BIGINT <<PK>>
     --
-    * name : VARCHAR(100)
+    * name : VARCHAR(100) <<UK>>
+    name_uk : VARCHAR(100)
     description : TEXT
     * level : VARCHAR(20)
-    * created_at : TIMESTAMP
+    parent_category_id : BIGINT <<FK>>
+    * keywords : TEXT[]
+    * sort_order : INTEGER
+    * is_active : BOOLEAN
+    * is_system : BOOLEAN
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
+}
+
+entity "award_versions" as versions {
+    * version_id : BIGINT <<PK>>
+    --
+    * award_id : BIGINT <<FK>>
+    * version_number : BIGINT
+    * action : VARCHAR(20)
+    actor_id : BIGINT <<FK>>
+    * snapshot : JSONB
+    changed_fields : TEXT[]
+    * created_at : TIMESTAMPTZ
 }
 
 entity "documents" as documents {
-    * document_id : BIGSERIAL <<PK>>
+    * document_id : BIGINT <<PK>>
     --
-    * award_id : BIGINT <<FK>>
+    award_id : BIGINT <<FK>>
     request_id : BIGINT <<FK>>
-    * file_path : VARCHAR(500)
     * file_name : VARCHAR(255)
     * file_type : VARCHAR(50)
+    mime_type : VARCHAR(100)
     * file_size : BIGINT
-    storage_url : VARCHAR(1000)
+    * storage_bucket : VARCHAR(100)
+    * storage_key : VARCHAR(500)
+    storage_url : VARCHAR(2048)
+    checksum_sha256 : VARCHAR(64)
     parsed_metadata : JSONB
-    confidence_score : DECIMAL(5,2)
-    * status : VARCHAR(20)
-    * uploaded_at : TIMESTAMP
-    processed_at : TIMESTAMP
+    confidence_score : NUMERIC(5,4)
+    * processing_status : VARCHAR(20)
+    processed_at : TIMESTAMPTZ
+    * uploaded_at : TIMESTAMPTZ
+    * uploaded_by : BIGINT <<FK>>
+}
 }
 
-' Workflow Domain
+package "Workflow" {
 entity "award_requests" as requests {
-    * request_id : BIGSERIAL <<PK>>
+    * request_id : BIGINT <<PK>>
     --
     * award_id : BIGINT <<FK>> <<UK>>
     * submitter_id : BIGINT <<FK>>
-    * status : VARCHAR(20)
     current_reviewer_id : BIGINT <<FK>>
+    * status : VARCHAR(20)
     * current_level : VARCHAR(30)
-    * submitted_at : TIMESTAMP
-    deadline : TIMESTAMP
-    * created_at : TIMESTAMP
+    * submitted_at : TIMESTAMPTZ
+    deadline : TIMESTAMPTZ
+    completed_at : TIMESTAMPTZ
+    rejection_reason : TEXT
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
 }
 
 entity "review_decisions" as decisions {
-    * decision_id : BIGSERIAL <<PK>>
+    * decision_id : BIGINT <<PK>>
     --
     * request_id : BIGINT <<FK>>
     * reviewer_id : BIGINT <<FK>>
     * decision : VARCHAR(20)
     * level : VARCHAR(30)
     comments : TEXT
-    * decided_at : TIMESTAMP
+    * decided_at : TIMESTAMPTZ
+}
 }
 
-' Compliance Domain
+package "Compliance" {
 entity "audit_logs" as audit_logs {
-    * log_id : BIGSERIAL <<PK>>
+    * log_id : BIGINT <<PK>>
     --
-    user_id : BIGINT <<FK>>
+    user_id : BIGINT
     * action_type : VARCHAR(50)
     * entity_type : VARCHAR(50)
     entity_id : BIGINT
     old_values : JSONB
     new_values : JSONB
-    ip_address : VARCHAR(45)
+    changed_fields : TEXT[]
+    ip_address : INET
     user_agent : VARCHAR(500)
-    * created_at : TIMESTAMP
+    correlation_id : UUID
+    * created_at : TIMESTAMPTZ <<partition key>>
 }
 
 entity "consent_records" as consent_records {
-    * consent_id : BIGSERIAL <<PK>>
+    * consent_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
     * consent_type : VARCHAR(50)
-    * granted : BOOLEAN
-    granted_at : TIMESTAMP
-    withdrawn_at : TIMESTAMP
     * consent_version : VARCHAR(20)
-    * created_at : TIMESTAMP
+    * is_granted : BOOLEAN
+    granted_at : TIMESTAMPTZ
+    withdrawn_at : TIMESTAMPTZ
+    ip_address : INET
+    user_agent : VARCHAR(500)
+    * created_at : TIMESTAMPTZ
+}
 }
 
-' Notification Domain
+package "Notification" {
 entity "notifications" as notifications {
-    * notification_id : BIGSERIAL <<PK>>
+    * notification_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
     * type : VARCHAR(50)
     * title : VARCHAR(255)
     * message : TEXT
-    * read : BOOLEAN
+    * is_read : BOOLEAN
     * channel : VARCHAR(20)
-    * sent_at : TIMESTAMP
-    read_at : TIMESTAMP
+    reference_type : VARCHAR(50)
+    reference_id : BIGINT
+    * sent_at : TIMESTAMPTZ
+    read_at : TIMESTAMPTZ
+    expires_at : TIMESTAMPTZ
 }
 
 entity "notification_preferences" as notif_prefs {
-    * preference_id : BIGSERIAL <<PK>>
+    * preference_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
     * event_type : VARCHAR(50)
     * email_enabled : BOOLEAN
     * sms_enabled : BOOLEAN
+    * in_app_enabled : BOOLEAN
     * push_enabled : BOOLEAN
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
+}
 }
 
 ' Relationships
-users ||--o{ user_roles : "has"
 users }o--|| organizations : "belongs to"
-organizations ||--o{ organizations : "parent"
+organizations |o--o{ organizations : "parent"
+users ||--o{ user_roles : "holds"
+user_roles }o--|| organizations : "scoped to"
+users ||--o{ delegations : "delegates / receives"
+delegations }o--|| organizations : "scoped to"
+users ||--o{ tokens : "has"
+users ||--o{ devices : "signs in from"
 
 users ||--o{ awards : "owns"
-awards }o--|| categories : "categorized by"
-awards ||--o{ documents : "has"
+awards }o--|| organizations : "submitted in"
+awards }o--o| categories : "categorised by"
+categories |o--o{ categories : "parent"
+awards ||--o{ versions : "versioned by"
+users |o--o{ versions : "acts"
+awards |o--o{ documents : "has"
+users ||--o{ documents : "uploads"
 
-awards ||--|| requests : "initiated by"
+awards ||--o| requests : "submitted as"
+users ||--o{ requests : "submits"
+users |o--o{ requests : "reviews"
 requests ||--o{ decisions : "has"
-users ||--o{ decisions : "makes"
-users ||--o{ requests : "reviews"
+users ||--o{ decisions : "decides"
+requests |o--o{ documents : "has"
 
-users ||--o{ audit_logs : "performs"
-users ||--o{ consent_records : "has"
+users ||--o{ consent_records : "gives"
 users ||--o{ notifications : "receives"
-users ||--o{ notif_prefs : "has preferences"
+users ||--o{ notif_prefs : "sets"
 
-' Index annotations
-note right of users
-    Indexes:
-    - idx_users_email (email)
-    - idx_users_org (organization_id)
-    - idx_users_status (status)
+note bottom of audit_logs
+    Partitioned by month on created_at;
+    user_id has no foreign key, so rows
+    survive the deletion of the user.
+end note
+
+note bottom of versions
+    Unique (award_id, version_number);
+    rows are immutable and deleted
+    with the award (V023).
 end note
 
 note right of awards
-    Indexes:
-    - idx_awards_user (user_id)
-    - idx_awards_status (status)
-    - idx_awards_date (award_date)
-    - idx_awards_category (category_id)
+    title, category_id, awarding_organization
+    and award_date may be empty only
+    while status = DRAFT (V020).
+    Indexes: DATA_DICTIONARY.md 2.1
 end note
 
 note right of requests
-    Indexes:
-    - idx_requests_status (status)
-    - idx_requests_reviewer (current_reviewer_id)
-    - idx_requests_deadline (deadline)
+    deadline: end of the review period of
+    the current level (V024).
+    Indexes: DATA_DICTIONARY.md 3.1
 end note
 
 @enduml
-
-
-

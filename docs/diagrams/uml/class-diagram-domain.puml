@@ -3,57 +3,50 @@
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Award Monitoring & Tracking System - Domain Class Diagram
+title Award Monitoring & Tracking System - Domain Class Diagram (as built after Epic 2)
 
-' Base Entity
-abstract class BaseEntity {
-    -id: Long
-    -createdAt: Instant
-    -updatedAt: Instant
-    -version: Long
-    +getId(): Long
-    +getCreatedAt(): Instant
-    +getUpdatedAt(): Instant
-}
+' JPA entities of ua.edu.chnu.awards; classes marked <<planned>> exist as tables only
 
-' User and Organization Domain
-package "User Domain" <<Rectangle>> {
-    
-    class User extends BaseEntity {
-        -email: String
+package "user" <<Rectangle>> {
+
+    class User {
+        -id: Long
+        -emailAddress: String
         -firstName: String
         -lastName: String
         -passwordHash: String
-        -status: UserStatus
-        -organizationId: Long
+        -accountStatus: AccountStatus
+        -organization: Organization
         -lastLoginAt: Instant
-        +getFullName(): String
+        -createdAt: Instant
+        -updatedAt: Instant
+        -version: Long
         +isActive(): boolean
-        +hasRole(role: RoleType): boolean
-        +activate(): void
-        +deactivate(): void
-        +suspend(): void
     }
-    
-    enum UserStatus {
+
+    enum AccountStatus {
         PENDING
         ACTIVE
         INACTIVE
         SUSPENDED
         RETIRED
         MEMORIAL
+        DELETED
     }
-    
-    class UserRole extends BaseEntity {
-        -userId: Long
+
+    class UserRole {
+        -id: Long
+        -user: User
         -roleType: RoleType
-        -organizationId: Long
+        -organization: Organization
         -validFrom: LocalDate
         -validTo: LocalDate
-        +isValid(): boolean
-        +isExpired(): boolean
+        -createdAt: Instant
+        -createdBy: User
+        +isCurrentOn(day: LocalDate): boolean
+        +hasEndedBy(day: LocalDate): boolean
     }
-    
+
     enum RoleType {
         EMPLOYEE
         FACULTY_SECRETARY
@@ -63,44 +56,76 @@ package "User Domain" <<Rectangle>> {
         SYSTEM_ADMIN
         GDPR_OFFICER
     }
-    
-    class Organization extends BaseEntity {
+
+    class Organization {
+        -id: Long
         -name: String
+        -nameUk: String
+        -code: String
         -orgType: OrganizationType
-        -parentOrgId: Long
-        +getParent(): Organization
-        +getChildren(): List<Organization>
-        +getHierarchyPath(): String
+        -parent: Organization
+        -depth: int
+        -active: boolean
+        +enclosingFaculty(): Organization
     }
-    
+
     enum OrganizationType {
         UNIVERSITY
+        COLLEGE
         FACULTY
+        SPECIALITY
         DEPARTMENT
     }
 }
 
-' Award Domain
-package "Award Domain" <<Rectangle>> {
-    
-    class Award extends BaseEntity {
-        -userId: Long
-        -categoryId: Long
+package "delegation" <<Rectangle>> {
+
+    class RoleDelegation {
+        -id: Long
+        -delegator: User
+        -delegate: User
+        -roleType: RoleType
+        -organization: Organization
+        -validFrom: LocalDate
+        -validTo: LocalDate
+        -reason: String
+        -revokedAt: Instant
+        -revokedBy: User
+        +stateOn(day: LocalDate): DelegationState
+        +isCurrentOn(day: LocalDate): boolean
+    }
+
+    enum DelegationState {
+        ACTIVE
+        UPCOMING
+        EXPIRED
+        REVOKED
+    }
+}
+
+package "award" <<Rectangle>> {
+
+    class Award {
+        -id: Long
+        -owner: User
+        -organization: Organization
+        -category: AwardCategory
         -title: String
+        -titleUk: String
         -description: String
+        -descriptionUk: String
         -awardingOrganization: String
         -awardDate: LocalDate
         -status: AwardStatus
         -verificationBadge: boolean
         -impactScore: Integer
-        +submit(): void
-        +approve(): void
-        +reject(reason: String): void
-        +archive(): void
-        +isPublic(): boolean
-        +calculateImpactScore(): Integer
+        -externalUrl: String
+        -createdAt: Instant
+        -updatedAt: Instant
+        -version: Long
+        +isDraft(): boolean
     }
-    
+
     enum AwardStatus {
         DRAFT
         PENDING
@@ -108,70 +133,71 @@ package "Award Domain" <<Rectangle>> {
         REJECTED
         ARCHIVED
     }
-    
-    class AwardCategory extends BaseEntity {
+
+    class AwardCategory {
+        -id: Long
         -name: String
+        -nameUk: String
         -description: String
         -level: RecognitionLevel
-        +requiresEscalation(): boolean
-        +getRequiredApprovalLevel(): int
+        -parent: AwardCategory
+        -sortOrder: int
+        -active: boolean
+        -system: boolean
     }
-    
-    enum RecognitionLevel {
-        DEPARTMENT
-        FACULTY
-        UNIVERSITY
-        NATIONAL
-        INTERNATIONAL
-    }
-    
-    class Document extends BaseEntity {
-        -awardId: Long
-        -requestId: Long
-        -filePath: String
-        -fileName: String
-        -fileType: String
-        -fileSize: Long
-        -storageUrl: String
-        -parsedMetadata: JsonNode
-        -confidenceScore: Double
-        -status: DocumentStatus
-        -processedAt: Instant
-        +isHighConfidence(): boolean
-        +needsManualReview(): boolean
-        +getMetadataField(field: String): String
-    }
-    
-    enum DocumentStatus {
-        UPLOADING
-        UPLOADED
-        PROCESSING
-        PROCESSED
-        MANUAL_REVIEW
-        VERIFIED
-        ARCHIVED
-    }
-}
 
-' Workflow Domain
-package "Workflow Domain" <<Rectangle>> {
-    
-    class AwardRequest extends BaseEntity {
+    enum RecognitionLevel {
+        SPECIALITY (FACULTY_SECRETARY, 10)
+        DEPARTMENT (FACULTY_SECRETARY, 20)
+        COLLEGE (DEAN, 30)
+        FACULTY (DEAN, 40)
+        LOCAL (FACULTY_SECRETARY, 45)
+        UNIVERSITY (FACULTY_SECRETARY, 60)
+        REGIONAL (FACULTY_SECRETARY, 70)
+        NATIONAL (RECTOR_SECRETARY, 80)
+        INTERNATIONAL (RECTOR_SECRETARY, 100)
+        --
+        +minimumApproval(): ApprovalLevel
+        +baseScore(): int
+    }
+
+    class AwardVersion <<immutable>> {
+        -id: Long
         -awardId: Long
-        -submitterId: Long
+        -number: long
+        -action: VersionAction
+        -actor: User
+        -snapshot: AwardSnapshot
+        -changedFields: String[]
+        -createdAt: Instant
+    }
+
+    enum VersionAction {
+        BASELINE
+        CREATED
+        UPDATED
+        SUBMITTED
+    }
+
+    class AwardSnapshot <<record>> {
+        title, titleUk, description, descriptionUk
+        awardingOrganization, awardDate, categoryId
+        status, impactScore, verificationBadge
+        externalUrl, organizationId
+    }
+
+    class AwardRequest {
+        -id: Long
+        -award: Award
+        -submitter: User
         -status: RequestStatus
-        -currentReviewerId: Long
         -currentLevel: ApprovalLevel
         -submittedAt: Instant
         -deadline: Instant
-        +assignReviewer(reviewerId: Long): void
-        +escalate(level: ApprovalLevel): void
-        +approve(): void
-        +reject(reason: String): void
-        +returnForCorrections(notes: String): void
-        +isExpired(): boolean
+        -completedAt: Instant
+        -rejectionReason: String
     }
-    
+
     enum RequestStatus {
         SUBMITTED
         IN_REVIEW
@@ -181,27 +207,25 @@ package "Workflow Domain" <<Rectangle>> {
         RETURNED
         EXPIRED
     }
-    
+
     enum ApprovalLevel {
         FACULTY_SECRETARY
         DEAN
         RECTOR_SECRETARY
         RECTOR
     }
-    
-    class ReviewDecision extends BaseEntity {
+
+    class ReviewDecision <<immutable>> {
+        -id: Long
         -requestId: Long
-        -reviewerId: Long
-        -decision: DecisionType
+        -reviewer: User
+        -decision: ReviewDecisionType
         -level: ApprovalLevel
         -comments: String
         -decidedAt: Instant
-        +isApproval(): boolean
-        +isRejection(): boolean
-        +isEscalation(): boolean
     }
-    
-    enum DecisionType {
+
+    enum ReviewDecisionType {
         APPROVED
         REJECTED
         ESCALATED
@@ -209,119 +233,84 @@ package "Workflow Domain" <<Rectangle>> {
     }
 }
 
-' Compliance Domain
-package "Compliance Domain" <<Rectangle>> {
-    
-    class AuditLog extends BaseEntity {
+package "audit" <<Rectangle>> {
+
+    class AuditLog {
+        -id: Long
         -userId: Long
         -actionType: String
         -entityType: String
         -entityId: Long
-        -oldValues: JsonNode
-        -newValues: JsonNode
-        -ipAddress: String
+        -previous: Map
+        -details: Map
+        -ipAddress: InetAddress
         -userAgent: String
-        +getDiff(): JsonNode
-    }
-    
-    class ConsentRecord extends BaseEntity {
-        -userId: Long
-        -consentType: ConsentType
-        -granted: boolean
-        -grantedAt: Instant
-        -withdrawnAt: Instant
-        -consentVersion: String
-        +isActive(): boolean
-        +withdraw(): void
-    }
-    
-    enum ConsentType {
-        DATA_PROCESSING
-        PUBLIC_VISIBILITY
-        EMAIL_NOTIFICATIONS
-        SMS_NOTIFICATIONS
-        ANALYTICS
+        -correlationId: UUID
+        -createdAt: Instant
     }
 }
 
-' Notification Domain
-package "Notification Domain" <<Rectangle>> {
-    
-    class Notification extends BaseEntity {
+package "planned (tables only)" <<Rectangle>> {
+
+    class Document <<planned Epic 3>> {
+        -awardId: Long
+        -requestId: Long
+        -fileName: String
+        -fileType: String
+        -storageBucket: String
+        -storageKey: String
+        -parsedMetadata: JSON
+        -confidenceScore: BigDecimal
+        -processingStatus: String
+        -uploadedBy: Long
+    }
+
+    class ConsentRecord <<planned Epic 6>> {
         -userId: Long
-        -type: NotificationType
-        -title: String
-        -message: String
+        -consentType: String
+        -consentVersion: String
+        -granted: boolean
+    }
+
+    class Notification <<planned Epic 7>> {
+        -userId: Long
+        -type: String
+        -channel: String
         -read: boolean
-        -channel: NotificationChannel
-        -sentAt: Instant
-        -readAt: Instant
-        +markAsRead(): void
-        +isRead(): boolean
-    }
-    
-    enum NotificationType {
-        AWARD_SUBMITTED
-        AWARD_APPROVED
-        AWARD_REJECTED
-        AWARD_RETURNED
-        REVIEW_ASSIGNED
-        DEADLINE_REMINDER
-        SYSTEM_ALERT
-    }
-    
-    enum NotificationChannel {
-        EMAIL
-        SMS
-        IN_APP
-        PUSH
-    }
-    
-    class NotificationPreference extends BaseEntity {
-        -userId: Long
-        -eventType: NotificationType
-        -emailEnabled: boolean
-        -smsEnabled: boolean
-        -pushEnabled: boolean
-        +isEnabled(channel: NotificationChannel): boolean
     }
 }
 
 ' Relationships
-User "1" --> "*" UserRole : has
-User --> UserStatus : has
-UserRole --> RoleType : has
 User "*" --> "1" Organization : belongs to
-Organization --> OrganizationType : has
-Organization "1" --> "*" Organization : parent/children
+User --> AccountStatus
+User "1" <-- "*" UserRole : held by
+UserRole --> RoleType
+UserRole "*" --> "1" Organization : scoped to
+Organization "0..1" <-- "*" Organization : parent
+Organization --> OrganizationType
+RoleDelegation "*" --> "2" User : delegator, delegate
+RoleDelegation "*" --> "1" Organization : scoped to
+RoleDelegation --> DelegationState
 
-User "1" --> "*" Award : owns
-Award "*" --> "1" AwardCategory : categorized by
-Award --> AwardStatus : has
-AwardCategory --> RecognitionLevel : has
-
-Award "1" --> "*" Document : has
-Document --> DocumentStatus : has
-
-Award "1" --> "1" AwardRequest : initiated by
-AwardRequest --> RequestStatus : has
+Award "*" --> "1" User : owner
+Award "*" --> "1" Organization : submitted in
+Award "*" --> "0..1" AwardCategory : categorised by
+Award --> AwardStatus
+AwardCategory --> RecognitionLevel
+AwardCategory "0..1" <-- "*" AwardCategory : parent
+RecognitionLevel --> ApprovalLevel : minimum approval
+Award "1" <-- "*" AwardVersion : versions
+AwardVersion --> VersionAction
+AwardVersion *-- AwardSnapshot
+Award "1" <-- "0..1" AwardRequest : request
+AwardRequest --> RequestStatus
 AwardRequest --> ApprovalLevel : current level
-AwardRequest "1" --> "*" ReviewDecision : has decisions
-ReviewDecision --> DecisionType : has
-ReviewDecision --> ApprovalLevel : at level
-ReviewDecision "*" --> "1" User : made by
+AwardRequest "1" <-- "*" ReviewDecision : decisions
+ReviewDecision --> ReviewDecisionType
+ReviewDecision "*" --> "1" User : reviewer
 
-User "1" --> "*" AuditLog : performed
-User "1" --> "*" ConsentRecord : has consents
-ConsentRecord --> ConsentType : for
-
-User "1" --> "*" Notification : receives
-Notification --> NotificationType : of type
-Notification --> NotificationChannel : via
-User "1" --> "*" NotificationPreference : has preferences
-NotificationPreference --> NotificationType : for event
+Document ..> Award
+ConsentRecord ..> User
+Notification ..> User
 
 @enduml
-
-
-

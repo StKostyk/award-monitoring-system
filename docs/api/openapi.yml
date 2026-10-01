@@ -9,6 +9,10 @@ info:
     The application is its own OAuth 2.1 / OpenID Connect provider. Browser clients obtain tokens through the
     authorization code flow with PKCE and send `Authorization: Bearer <access token>` on every `/api` request.
     
+    ## Implementation status
+    Operations marked `x-status: planned` are contract drafts for later epics and have no implementation yet.
+    The HTML sign-in pages (`GET /login`, `GET /`) are served by the authorization server and are not API operations.
+
     ## Rate Limiting
     - Standard users: 1000 requests/hour
     - Admin users: 5000 requests/hour
@@ -628,7 +632,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AwardIdParam'
       requestBody:
-        required: true
+        required: false
+        description: Optional in the signature, but `version` is required; a missing body answers 422 on `version`.
         content:
           application/json:
             schema:
@@ -713,7 +718,7 @@ paths:
         - $ref: '#/components/parameters/PageParam'
         - name: size
           in: query
-          description: Page size
+          description: Page size; values outside 1..50 are clamped, not rejected
           schema:
             type: integer
             default: 20
@@ -812,7 +817,8 @@ paths:
   /awards/{id}/approve:
     post:
       tags: [Workflows]
-      summary: Approve award at current level
+      summary: Approve award at current level (planned, Epic 4)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: approveAward
@@ -838,7 +844,8 @@ paths:
   /awards/{id}/reject:
     post:
       tags: [Workflows]
-      summary: Reject award
+      summary: Reject award (planned, Epic 4)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: rejectAward
@@ -865,7 +872,8 @@ paths:
   /awards/{id}/return:
     post:
       tags: [Workflows]
-      summary: Return award for revision
+      summary: Return award for revision (planned, Epic 4)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: returnAward
@@ -889,7 +897,8 @@ paths:
   /awards/{id}/documents:
     get:
       tags: [Documents]
-      summary: List award documents
+      summary: List award documents (planned, Epic 3)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: listAwardDocuments
@@ -907,7 +916,8 @@ paths:
 
     post:
       tags: [Documents]
-      summary: Upload document
+      summary: Upload document (planned, Epic 3)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: uploadDocument
@@ -945,7 +955,8 @@ paths:
   /documents/{id}:
     get:
       tags: [Documents]
-      summary: Download document
+      summary: Download document (planned, Epic 3)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: downloadDocument
@@ -977,7 +988,8 @@ paths:
 
     delete:
       tags: [Documents]
-      summary: Delete document
+      summary: Delete document (planned, Epic 3)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: deleteDocument
@@ -1456,7 +1468,8 @@ paths:
   /reports/awards/summary:
     get:
       tags: [Reports]
-      summary: Awards summary statistics
+      summary: Awards summary statistics (planned, Epic 5)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: getAwardsSummary
@@ -1478,7 +1491,8 @@ paths:
   /reports/awards/export:
     get:
       tags: [Reports]
-      summary: Export awards data
+      summary: Export awards data (planned, Epic 5)
+      x-status: planned
       security:
         - bearerAuth: []
       operationId: exportAwards
@@ -1537,7 +1551,7 @@ components:
     PageParam:
       name: page
       in: query
-      description: Page number (0-based)
+      description: Page number (0-based); a negative value is read as 0
       schema:
         type: integer
         default: 0
@@ -1546,7 +1560,7 @@ components:
     SizeParam:
       name: size
       in: query
-      description: Page size
+      description: Page size; values outside 1..100 are clamped, not rejected
       schema:
         type: integer
         default: 20

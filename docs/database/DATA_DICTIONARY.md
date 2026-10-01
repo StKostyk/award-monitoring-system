@@ -3,9 +3,9 @@
 
 > **Phase 9 Deliverable**: Data Architecture & Database Design  
 > **Document Version**: 1.1  
-> **Last Updated**: September 2026  
+> **Last Updated**: October 2026  
 > **Author**: Stefan Kostyk  
-> **Total Entities**: 14  
+> **Total Entities**: 16, plus 3 authorization-server tables  
 > **Classification**: Internal
 
 ---
@@ -348,12 +348,19 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `idx_awards_category` - B-tree on `category_id`
 - `idx_awards_status` - B-tree on `status`
 - `idx_awards_date` - B-tree on `award_date DESC`
-- `idx_awards_status_pending` - Partial index where `status = 'PENDING'`
-- `ftidx_awards_title` - Full-text on `title` for search
+- `idx_awards_user_status` - B-tree on `(user_id, status)`
+- `idx_awards_category_date` - B-tree on `(category_id, award_date DESC)`
+- `idx_awards_category_status` - B-tree on `(category_id, status)` (V012)
+- `idx_awards_pending` - Partial B-tree on `(user_id, created_at DESC)` where `status = 'PENDING'`
+- `idx_awards_approved` - Partial B-tree on `award_date DESC` where `status = 'APPROVED'`
+- `ftidx_awards_title` - Full-text GIN on `to_tsvector('english', title)`
+- `ftidx_awards_title_uk` - Full-text GIN on `to_tsvector('simple', title_uk)`
+- `trgm_awards_title` - Trigram GIN on `title` (V012)
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
 - BELONGS TO `award_categories` (N:1) via `category_id`
+- BELONGS TO `organizations` (N:1) via `organization_id`, fixed at submission
 - HAS MANY `documents` (1:N)
 - HAS MANY `award_versions` (1:N), deleted with the award
 - HAS ONE `award_requests` (1:1)
@@ -410,6 +417,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `uk_award_categories_name` - Unique on `name`
 - `idx_award_categories_level` - B-tree on `level`
 - `idx_award_categories_parent` - B-tree on `parent_category_id`
+- `idx_award_categories_active` - Partial B-tree on `category_id` where `is_active`
+- `idx_award_categories_sort` - B-tree on `(sort_order, name)`
 - `idx_award_categories_keywords` - GIN on `keywords` (V021)
 
 **Relationships**:
@@ -426,7 +435,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 **Business Rules**:
 - Documents belong to either an award or a request (or both)
 - Maximum file size: 10MB per document
-- Allowed file types: PDF, JPG, PNG, WEBP
+- Allowed file types: PDF, JPG, JPEG, PNG, WEBP
 - AI parsing extracts metadata from scanned certificates
 - Confidence score below 0.7 triggers manual review
 - Files stored in object storage, only metadata in database
@@ -478,8 +487,13 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `pk_documents` - Primary key on `document_id`
 - `idx_documents_award` - B-tree on `award_id`
 - `idx_documents_request` - B-tree on `request_id`
+- `idx_documents_uploader` - B-tree on `uploaded_by`
 - `idx_documents_status` - B-tree on `processing_status`
+- `idx_documents_pending` - Partial B-tree on `uploaded_at` where `processing_status = 'PENDING'`
+- `idx_documents_uploaded` - B-tree on `uploaded_at DESC` (V012)
+- `idx_documents_type` - B-tree on `file_type` (V012)
 - `gin_documents_metadata` - GIN on `parsed_metadata`
+- `gin_documents_metadata_path` - GIN on `parsed_metadata jsonb_path_ops`
 
 **Relationships**:
 - BELONGS TO `awards` (N:1) via `award_id`
@@ -577,10 +591,15 @@ The minimum approval level is the lowest role that may give the final approval; 
 **Indexes**:
 - `pk_award_requests` - Primary key on `request_id`
 - `uk_award_requests_award` - Unique on `award_id`
-- `idx_award_requests_status` - B-tree on `status`
-- `idx_award_requests_reviewer` - B-tree on `current_reviewer_id`
-- `idx_award_requests_deadline` - B-tree on `deadline`
-- `idx_award_requests_active` - Partial index for active requests
+- `idx_requests_submitter` - B-tree on `submitter_id`
+- `idx_requests_reviewer` - B-tree on `current_reviewer_id`
+- `idx_requests_status` - B-tree on `status`
+- `idx_requests_level` - B-tree on `current_level`
+- `idx_requests_deadline` - Partial B-tree on `deadline` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`
+- `idx_requests_reviewer_pending` - Partial B-tree on `(current_reviewer_id, deadline)` where `status IN ('SUBMITTED', 'IN_REVIEW')`
+- `idx_requests_active` - Partial B-tree on `(current_reviewer_id, created_at DESC)` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`
+- `idx_requests_status_level` - B-tree on `(status, current_level)` (V012)
+- `idx_requests_submitted` - B-tree on `submitted_at DESC` (V012)
 
 **Relationships**:
 - BELONGS TO `awards` (1:1) via `award_id`
@@ -836,10 +855,10 @@ The minimum approval level is the lowest role that may give the final approval; 
 |------------|-------------------|
 | `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
 | `user_roles` | → users (N:1), → organizations (N:1) |
-| `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N) |
+| `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N) |
 | `one_time_tokens` | → users (N:1) |
 | `user_devices` | → users (N:1) |
-| `awards` | → users (N:1), → award_categories (N:1), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
+| `awards` | → users (N:1), → award_categories (N:1), → organizations (N:1), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
 | `award_versions` | → awards (N:1), → users (N:1, actor) |
 | `award_categories` | → award_categories (N:1, self), ← award_categories (1:N), ← awards (1:N) |
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
@@ -902,7 +921,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `awards` | `award_date` | Not after today in Europe/Kyiv and not more than 50 years back (exactly 50 accepted); required outside `DRAFT` |
 | `awards` | `impact_score` | Range 0-100 |
 | `documents` | `file_size` | Max 10,485,760 bytes (10MB) |
-| `documents` | `file_type` | One of: PDF, JPG, PNG, WEBP |
+| `documents` | `file_type` | One of: PDF, JPG, JPEG, PNG, WEBP |
 | `documents` | `confidence_score` | Range 0.0000-1.0000 |
 | `consent_records` | `consent_version` | Semver format (e.g., "1.0.0") |
 

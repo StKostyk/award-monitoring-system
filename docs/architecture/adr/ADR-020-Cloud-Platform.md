@@ -1,6 +1,6 @@
 # ADR-020: Cloud Platform Selection
 
-**Status**: Accepted  
+**Status**: Accepted (implementation deferred, see Addendum 2026-10)  
 **Date**: 2025-08-21  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, DevOps Team, Operations Team
@@ -215,11 +215,20 @@ resource "aws_rds_instance" "award_system_db" {
 
 ---
 
+## Addendum 2026-10: Implementation deferred
+
+No cloud resources are provisioned in Epics 1 and 2; everything runs locally on Docker Compose, with MinIO
+standing in for S3-compatible storage. The deployment target for the thesis defense is chosen after Epic 2 is
+demoable (see ADR-018 addendum).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 
 ---
 
