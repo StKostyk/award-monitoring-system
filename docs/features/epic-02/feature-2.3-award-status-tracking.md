@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3–4 (2026-10-01 → 2026-10-11)
 > **Points**: 5 (one story)
-> **Status**: Approved 2026-10-01
+> **Status**: Validated 2026-10-01 (§12, passed with notes; fixes in 2.3.2; the author's run of §9 pending)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 2.3, US-005, DATA_DICTIONARY §2.1, §3.1 and §3.2, state-machine-award-request.puml, bpmn-approval-workflow.puml, USER_RESEARCH §"user journeys" (approval targets), SUCCESS_METRICS (time to approval), AUTH §3.3, RBAC_matrix.md, ADR-006, ADR-015, openapi.yml `/awards`, EPIC-02 tracker (decision 2026-09-28 on polling)
 
@@ -190,9 +190,9 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 3. Submit a second award of level `NATIONAL`. Expected: path of three levels up to `RECTOR_SECRETARY`, estimate + 9 days. Submit one of level `DEPARTMENT`: one level, estimate = deadline date. (AC-1.3)
 4. Open `http://localhost:4200/awards/<id of step 2>`. Expected: «Статус розгляду» with «Подано» → «Секретар факультету» (current, «Очікується до <date>») → «Декан»; «Орієнтовне завершення: <date>». (AC-1.12)
 5. Open `http://localhost:4200/`. Expected: «Мої подання» with the three awards, level and date. Open `/awards`: the expected date under each «Подано» chip. (AC-1.17, 1.18, 1.11)
-6. psql: `update award_requests set submitted_at = now() - interval '5 days', deadline = now() - interval '2 days' where award_id = <id of step 2>;` Reload the award page. Expected: «Розгляд триває довше, ніж зазвичай (з <date 2 days ago>). Нова орієнтовна дата: <today + 6 days>»; the home card and the list show «Затримка». (AC-1.4, 1.9, 1.13)
+6. psql: `update award_requests set submitted_at = now() - interval '5 days', deadline = now() - interval '2 days' where award_id = <id of step 2>;` Reload the award page. Expected: «Розгляд триває довше, ніж зазвичай (з <date 2 days ago>). Нова орієнтовна дата: <today + 6 days>»; the current level «Секретар факультету» reads «Очікується до <today + 3 days>», never the past date; the home card and the list show «Затримка». (AC-1.4, 1.9, 1.13; F-4)
 7. As `admin` end the `FACULTY_SECRETARY` role of `secretary.fmi` (Feature 1.2 §9, «Завершити»). As `employee.fmi` reload the award of step 3 (`DEPARTMENT`, not overdue). Expected: «Зараз немає працівника на посаді «Секретар факультету» для вашого підрозділу…». Re-assign the role afterwards. (AC-1.9, 1.13)
-8. Keep the award of step 2 open as `employee.fmi`. psql: `insert into review_decisions (request_id, reviewer_id, decision, level, comments) values (<request id>, <secretary.fmi id>, 'RETURNED', 'FACULTY_SECRETARY', 'Додайте номер наказу'); update award_requests set status = 'RETURNED' where request_id = <request id>;` Wait up to 60 s. Expected: the panel updates, «Статус розгляду оновлено» is announced, «Повернуто на доопрацювання» with the secretary's name, the comment, and «Очікує ваших виправлень» instead of the estimate. (AC-1.5, 1.14, 1.15)
+8. Keep the award of step 2 open as `employee.fmi`. psql: `insert into review_decisions (request_id, reviewer_id, decision, level, comments) values (<request id>, <secretary.fmi id>, 'RETURNED', 'FACULTY_SECRETARY', 'Додайте номер наказу'); update award_requests set status = 'RETURNED' where request_id = <request id>;` Wait up to 60 s. Expected: the panel updates, «Статус розгляду оновлено» is announced, «Повернуто на доопрацювання» with the secretary's name, the comment, and «Очікує ваших виправлень» instead of the estimate. Open `/` and `/awards`: the award says «Очікує ваших виправлень» under its level. (AC-1.5, 1.14, 1.15, 1.17, 1.18; F-2)
 9. psql: insert an `APPROVED` decision at `FACULTY_SECRETARY` and one at `DEAN` for the award of step 3, set the request `APPROVED`, `completed_at = now()` and the award `APPROVED`. Reload. Expected: both levels done with dates, completion date shown, no estimate; network tab shows no further status requests. (AC-1.5, 1.14, 1.15)
 10. As `dean.fmi` open the award of step 2. Expected: the same panel with the decision and comment. (AC-1.8)
 11. Switch to English. Expected: «Review status», level names, delay texts, decisions and the home card in English. (AC-1.19)
@@ -203,11 +203,12 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 13. Swagger as `secretary.fpp` (faculty 10, created as in Feature 2.1 §9 preconditions) `GET /api/v1/awards/<id of step 2>/status` → 404; `GET /api/v1/awards/abc/status` → 400; `GET /api/v1/awards/999999/status` → 404. (AC-1.8)
 14. With the award page open, switch to another tab for 3 minutes, then back. Expected: no status requests while hidden; one request on return. (AC-1.15)
 15. Stop the backend with the award page open. Expected after the next interval: the error in the panel with «Спробувати ще раз», award fields still shown; start the backend, the next interval or «Спробувати ще раз» restores the panel. (AC-1.16)
-16. Open the award of step 2 as `dean.fmi`; in another browser as `admin` end the dean's role, wait one interval. Expected: «Ця нагорода вам більше не доступна» (or the login page, when the role change revoked the dean's tokens as in Feature 1.2), polling stops either way. Re-assign the role afterwards. (AC-1.15)
+16. Open the award of step 2 as `dean.fmi`; in another browser as `admin` end the dean's role, wait one interval. Expected: «Ця нагорода вам більше не доступна» with no path, decisions or comments left in the panel (or the login page, when the role change revoked the dean's tokens as in Feature 1.2), polling stops either way. Re-assign the role afterwards. (AC-1.15; F-3)
 17. Let the access token expire on the award page (15 minutes). Expected: the next poll refreshes the token silently and the panel stays; with the session ended in another browser → login page, no polling loop. (AC-1.15)
 18. Reload the award page right after step 8's change and press browser back and forward. Expected: the panel always shows the current status, never a cached older one. (AC-1.15)
 19. Change `app.workflow.review-period` to `P5D`, restart the backend, open the award of step 2 (before step 8). Expected: the stored deadline unchanged, the estimate of the later level moves by 2 days; a new submission gets a 5-day deadline. Restore `P3D`. (AC-1.1, 1.3)
 20. Sign in as `admin` (no `award:create`) and open `/`. Expected: no «Мої подання» card. (AC-1.17)
+21. psql: `update award_requests set submitted_at = '2026-10-22 21:30+00', deadline = null where award_id = <id of step 2, FACULTY>;` (a submission at 00:30 Kyiv time three days before the change to winter time; the deadline is computed from it). Reload the award page. Expected: «Секретар факультету» «Очікується до 26.10.2026», «Декан» and the estimate 29.10.2026 — the same clock time three days later, not a day early (the request is overdue after 26.10, then the dates move as in step 6). (§5 midnight case; F-1, F-6)
 
 ## 10. Risks
 
@@ -224,4 +225,76 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `./mvnw verify` green (unit, slice, IT, FT), JaCoCo ≥ 85 % lines, Checkstyle/PMD/SpotBugs clean
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.12–1.17
 - Docs in the same PR: `openapi.yml` (`/awards/{id}/status`, `AwardStatusView`, `AwardRequestSummary`), DATA_DICTIONARY §3.1 (`deadline` rule, review period) and §3.2 (read by the status view), state-machine note, RBAC_matrix.md rows, `CHANGELOG.md`, tracker rows (including row 8 of 2.2.3 → Done), `BACKLOG.md`
-- §9 walked through by the author after `/feature-validate`, including the detours
+- §9 walked through by the author after the validation, including the detours
+
+## 12. Validation (2026-10-01, `develop` at 7a69ae9, fixes and refactor sweep in 2.3.2)
+
+Gates on `develop`: `mvn verify` — 589 unit and slice tests, 180 integration and functional, 98.6 % lines, Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 308 Vitest; Playwright 42/42. `docker compose up -d --build` starts clean with a healthy backend; all ten award operations of `/v3/api-docs` are in `openapi.yml` (the spec's approve, reject, return and documents paths belong to Epics 3–4); every `*IT` applies the migrations, V024 included, to an empty database. On the development database 55 requests, none without a deadline; the only deadlines other than submission + 3 days are the three overdue fixtures of `e2e/award-status.spec.ts` (§9 step 1).
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 1.1 | `StatusEstimatorTest#ac1_1_*`, `AwardSubmissionTest#ac1_1_theRequestIsDueOneReviewPeriodAfterTheSubmission`, `WorkflowPropertiesTest#ac1_1_*`, `AwardStatusFT#ac1_1_ac1_3_ac1_6_…` | pass (F-1) |
+| 1.2 | `SchemaIT#ac1_2_requestsSubmittedBeforeV024AreDueThreeDaysAfterTheirSubmission` | pass |
+| 1.3 | `ApprovalPathTest#ac1_3_*`, `StatusEstimatorTest#ac1_3_*` (3), `AwardStatusFT#ac1_1_ac1_3_ac1_6_…` | pass (F-1) |
+| 1.4 | `StatusEstimatorTest#ac1_4_*` (2), `AwardStatusFT#ac1_4_ac1_9_anOverdueReviewIsExplainedAndANewEstimateGiven` | pass (F-4, F-6) |
+| 1.5 | `StatusEstimatorTest#ac1_5_*`, `AwardStatusServiceTest#ac1_5_*` (3), `AwardStatusFT#ac1_5_ac1_14_…` | pass |
+| 1.6 | `AwardStatusServiceTest#ac1_6_*` (2), `AwardStatusEndpointsTest#ac1_6_*`, `HistoryContractTest#ac1_6_ac1_11_*`, `AwardStatusIT#ac1_6_decisionsAreReadWithTheirReviewersInOneQueryOldestFirst`, `AwardStatusFT#ac1_1_ac1_3_ac1_6_…` | pass |
+| 1.7 | `AwardStatusServiceTest#ac1_7_aDraftHasNoRequest`, `AwardStatusEndpointsTest#ac1_7_*`, `AwardStatusFT#ac1_7_ac1_8_…`, `award-detail.component.spec#ac1_7_*` | pass |
+| 1.8 | `AwardStatusServiceTest#ac1_8_*`, `AwardStatusEndpointsTest#ac1_8_*`, `AwardStatusFT#ac1_7_ac1_8_draftsAndScopesFollowTheReadRuleOfTheAward` | pass |
+| 1.9 | `AwardStatusServiceTest#ac1_9_*` (2), `ReviewerAvailabilityTest#ac1_9_*` (3), `ReviewerAvailabilityIT#ac1_9_*` (7), `AwardStatusFT#ac1_4_ac1_9_…`, `#ac1_9_withoutAFacultySecretaryTheDelayNamesTheMissingReviewer` | pass |
+| 1.10 | `AwardStatusIT#ac1_10_ac1_11_theListAddsNoQueryPerRowForTheRequestFields`, `AwardStatusFT#ac1_10_theStatusAnswersWithinOneSecondAtThe95thPercentileAmong200Awards` | pass |
+| 1.11 | `HistoryContractTest#ac1_6_ac1_11_*`, `AwardStatusIT#ac1_10_ac1_11_…`, `AwardStatusFT#ac1_11_theListAndTheDetailCarryTheRequestTiming` | pass |
+| 1.12 | `award-status.component.spec#ac1_12_*`; E2E `award-status.spec` (`ac1_12 ac1_17 ac1_19`) | pass (F-4) |
+| 1.13 | `award-status.component.spec#ac1_13_*` (2); E2E `award-status.spec` (`ac1_13 ac1_18`) | pass |
+| 1.14 | `award-status.component.spec#ac1_14_*` (3), `AwardStatusFT#ac1_5_ac1_14_…`; E2E `award-status.spec` (`ac1_14 ac1_15`) | pass |
+| 1.15 | `award-status.component.spec#ac1_15_*` (4), `award-detail.component.spec#ac1_15_*`; E2E `award-status.spec` (`ac1_14 ac1_15`) | pass (F-3, F-5) |
+| 1.16 | `award-status.component.spec#ac1_16_a_failure_offers_a_retry_and_polling_goes_on` | pass |
+| 1.17 | `my-submissions.component.spec#ac1_17_*` (2), `home.component.spec#ac1_17_*` (2); E2E `award-status.spec` (`ac1_12 ac1_17 ac1_19`) | pass (F-2) |
+| 1.18 | `award-list.component.spec#ac1_18_*`; E2E `award-status.spec` (`ac1_13 ac1_18`) | pass (F-2) |
+| 1.19 | E2E `award-status.spec` (`ac1_12 ac1_17 ac1_19`, English) | pass |
+
+### Edge cases (§5)
+
+| Edge case | Evidence | Result |
+|-----------|----------|--------|
+| Category changed after a return | `ApprovalPathTest#ac1_3_*` ("higher of" the minimum and the current level) | covered |
+| Escalation above the minimum level | `ApprovalPathTest#ac1_3_*`; an `ESCALATED` decision counts as passing its level (`AwardStatusService.passedAt`), revisit with Epic 4 | covered |
+| A level decided twice | `AwardStatusServiceTest#ac1_6_passedLevelsAreDoneWithTheirLatestPassingDecision` | covered |
+| Submission just before midnight Kyiv time | `StatusEstimatorTest#edge_aSubmissionJustBeforeKyivMidnightIsDueOnTheKyivDateThreeDaysLater`; across a daylight-saving change: F-1 | open (F-1) |
+| Review period changed | `StatusEstimatorTest#edge_aChangedPeriodKeepsTheStoredDeadlineAndMovesLaterLevels`; a period that is not positive stops the start (`WorkflowPropertiesTest#edge_*`) | covered |
+| Reviewer erased later | `reviewer_id` is `RESTRICT`; waits for the Epic 6 erasure rules | by design |
+| Holder through a delegation | `ReviewerAvailabilityIT#ac1_9_aDelegateStandsInForASuspendedDelegator`, `#ac1_9_aDelegationOutlivingItsDelegatorsRoleGivesNoReviewer` | covered |
+| University-wide holder | `ReviewerAvailabilityIT#ac1_9_aUniversityWideHolderCoversEveryUnit` | covered |
+| Owner moves after submission | `AwardSubmissionTest#edge_theOrganisationIsRefreshedFromTheOwnersCurrentDepartment`; the award's organisation decides the scope | covered |
+| Two tabs polling | Read-only endpoint, no server state | by design |
+| Request deleted with its award | `award-status.component.spec#ac1_15_stops_when_the_award_is_no_longer_readable` | covered (F-3) |
+| Access token expires while polling | `unauthorized.interceptor.spec` (Feature 1.1); §9 step 17 | covered |
+| Clock skew | `overdue` and the estimate come from the server (`StatusEstimator` with the injected `Clock`) | by design |
+| A request without a stored deadline | `StatusEstimatorTest#edge_aRequestWithoutDeadlineCountsFromItsSubmission`; the response field: F-6 | open (F-6) |
+
+### Security checklist
+
+| OWASP | Control | Where |
+|-------|---------|-------|
+| A01 Broken access control | `@PreAuthorize` `award:read:own` on the status; the read rule of `GET /awards/{id}` (drafts for the owner only, others inside the organisation scope from the submission on); hidden or unknown awards answer 404 | `AwardController#status`, `AwardStatusService`, `AwardStatusFT#ac1_7_ac1_8_…` |
+| A02 Cryptographic failures | No new secrets or stored personal data; reviewer names and comments only to readers of the award (D-6) | `RBAC_matrix.md` |
+| A03 Injection | JPQL and Spring Data queries with bound parameters; the V024 back-fill has no input | `ReviewDecisionRepository`, `UserRoleRepository`, `RoleDelegationRepository`, V024 |
+| A04 Insecure design | `NO_REVIEWER` counts only holders and delegates who may sign in, never the award's owner; the review period must be positive | `ReviewerAvailability`, `WorkflowProperties` |
+| A07 Authentication failures | Unchanged tokens of Feature 1.1; polling goes through the silent refresh and stops on an ended session | Feature 1.1, `award-status.component` |
+
+### Findings
+
+Scenario review of the untested detours and the refactor sweep; F-1…F-6 fixed in 2.3.2 (SCRUM-31, #101).
+
+| # | Finding | Fix |
+|---|---------|-----|
+| F-1 | Deadlines and due dates add 72 hours, so a review period across a daylight-saving change ends on the wrong Kyiv date (a submission at 00:30 on 2026-10-23 shows 10-25 instead of 10-26) | Periods added as Kyiv calendar days; tests across both changes |
+| F-2 | A returned request shows only its level on the home card and in the award list; the owner learns that she has to act only on the award page | Both say «Очікує ваших виправлень» |
+| F-3 | After a 403 or 404 the panel keeps the old path, decisions and reviewer comments under «Ця нагорода вам більше не доступна» | The timeline is cleared |
+| F-4 | An overdue request shows its past deadline as the current level's «Очікується до» next to the new date of the delay notice | The current level shows the revised date |
+| F-5 | A change of the delay reason (`NO_REVIEWER` to `REVIEW_OVERDUE`) updates the panel without the announcement | The reason counts as a change |
+| F-6 | A request without a stored deadline answers `deadline: null` with `overdue: true` | The response carries the deadline the estimate uses |
+
+Refactor sweep, applied in 2.3.2: one set of level labels (`roles.*`, `awards.levels.*`) and one «Очікується до» key instead of the panel's copies; the panel maps 403 and 404 like the paged lists of 2.2 (`shared/paged-list.ts`); one pending check in the panel; `ApprovalLevel.role()` instead of `RoleType.valueOf(level.name())`; request and decision row builders next to `support/AwardRows` for the FT, IT and E2E fixtures. Left in the tracker's technical notes: a shared timing chip and a Kyiv date pipe for the list, the card and the panel; the latency FT of AC-1.10 as a timing assertion; the status panel reads the award id once, so a link from one award page to another would need an input change handler.

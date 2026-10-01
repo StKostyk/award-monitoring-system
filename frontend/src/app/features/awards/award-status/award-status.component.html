@@ -28,14 +28,12 @@
             [attr.data-state]="step.state"
             data-testid="award-status-step"
           >
-            <span class="award-status__level">{{
-              'awards.statusPanel.levels.' + step.level | transloco
-            }}</span>
+            <span class="award-status__level">{{ 'roles.' + step.level | transloco }}</span>
             @if (step.state === 'DONE' && step.completedAt) {
               <span class="award-status__when">{{ date(step.completedAt) }}</span>
             } @else if (step.state === 'CURRENT' && step.dueDate) {
               <span class="award-status__when" data-testid="award-status-due">{{
-                'awards.statusPanel.dueBy' | transloco: { date: date(step.dueDate) }
+                'awards.timing.expected' | transloco: { date: date(step.dueDate) }
               }}</span>
             } @else if (step.dueDate) {
               <span class="award-status__when">{{
@@ -51,8 +49,7 @@
           @if (delay.reason === 'NO_REVIEWER' && view.currentLevel) {
             {{
               'awards.statusPanel.noReviewer'
-                | transloco
-                  : { level: ('awards.statusPanel.levels.' + view.currentLevel | transloco) }
+                | transloco: { level: ('roles.' + view.currentLevel | transloco) }
             }}
           } @else if (delay.since && view.estimatedCompletion) {
             {{
@@ -93,8 +90,7 @@
                   'awards.statusPanel.decision.' + decision.decision | transloco
                 }}</strong>
                 <span class="award-status__meta">
-                  · {{ decision.reviewerName }} ·
-                  {{ 'awards.statusPanel.levels.' + decision.level | transloco }} ·
+                  · {{ decision.reviewerName }} · {{ 'roles.' + decision.level | transloco }} ·
                   <time [attr.datetime]="decision.decidedAt">{{ time(decision.decidedAt) }}</time>
                 </span>
               </div>

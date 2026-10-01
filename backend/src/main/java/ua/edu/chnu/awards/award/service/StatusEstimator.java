@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.award.service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.EnumMap;
@@ -41,10 +42,13 @@ public class StatusEstimator {
      * The deadline of a level whose review starts at the given time.
      *
      * @param start when the request reached the level
-     * @return the end of its review period
+     * @return the end of its review period: the whole days of the period as Kyiv calendar days, so a clock
+     *         change does not move the due date, then the rest of the period
      */
     public Instant deadline(Instant start) {
-        return start.plus(properties.reviewPeriod());
+        Duration period = properties.reviewPeriod();
+        long days = period.toDays();
+        return start.atZone(clock.getZone()).plusDays(days).plus(period.minusDays(days)).toInstant();
     }
 
     /**
@@ -78,7 +82,7 @@ public class StatusEstimator {
     public Timeline timeline(AwardRequest request, RecognitionLevel category) {
         List<ApprovalLevel> levels = approvalPath.levels(category, request.getCurrentLevel());
         if (!isActive(request)) {
-            return new Timeline(levels, Map.of(), null, null, false);
+            return new Timeline(levels, Map.of(), request.getDeadline(), null, false);
         }
         Instant deadline = request.getDeadline() == null ? deadline(request.getSubmittedAt())
             : request.getDeadline();
@@ -86,9 +90,9 @@ public class StatusEstimator {
         boolean overdue = now.isAfter(deadline);
         Instant end = overdue ? deadline(now) : deadline;
         Map<ApprovalLevel, LocalDate> due = new EnumMap<>(ApprovalLevel.class);
-        due.put(request.getCurrentLevel(), date(deadline));
+        due.put(request.getCurrentLevel(), date(end));
         for (ApprovalLevel level : levels.subList(levels.indexOf(request.getCurrentLevel()) + 1, levels.size())) {
-            end = end.plus(properties.reviewPeriod());
+            end = deadline(end);
             due.put(level, date(end));
         }
         return new Timeline(levels, due, deadline, date(end), overdue);
@@ -102,8 +106,9 @@ public class StatusEstimator {
      * The timing of a request.
      *
      * @param levels              the approval path, lowest first
-     * @param due                 Kyiv due date of the current level and every level after it
-     * @param deadline            deadline of the current level, null for a request no level is reviewing
+     * @param due                 Kyiv due date of the current level, revised when overdue, and every level after it
+     * @param deadline            deadline of the current level, derived from the submission when none is stored;
+     *                            the stored value for a request no level is reviewing
      * @param estimatedCompletion Kyiv date the last level is expected to finish, null for a request no level is
      *                            reviewing
      * @param overdue             whether the current level is past its deadline

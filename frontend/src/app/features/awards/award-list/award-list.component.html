@@ -95,7 +95,11 @@
           {{ 'awards.status.' + award.status | transloco }}
         </mat-chip>
         @if (award.request; as request) {
-          @if (request.estimatedCompletion) {
+          @if (request.status === 'RETURNED') {
+            <span class="awards__expected" data-testid="award-returned">{{
+              'awards.statusPanel.returned' | transloco
+            }}</span>
+          } @else if (request.estimatedCompletion) {
             <span class="awards__expected" data-testid="award-expected">{{
               'awards.timing.expected' | transloco: { date: date(request.estimatedCompletion) }
             }}</span>

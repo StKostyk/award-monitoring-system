@@ -70,6 +70,6 @@ public class AwardMapper {
         }
         StatusEstimator.Timeline timeline = estimator.timeline(award, request);
         return new RequestSummary(request.getStatus(), request.getCurrentLevel(), request.getSubmittedAt(),
-            request.getDeadline(), timeline.estimatedCompletion(), timeline.overdue());
+            timeline.deadline(), timeline.estimatedCompletion(), timeline.overdue());
     }
 }

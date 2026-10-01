@@ -50,9 +50,10 @@ describe('MySubmissionsComponent', () => {
             uk: {
               home: { submissions: { title: 'Мої подання', empty: 'Немає нагород на розгляді' } },
               awards: {
-                statusPanel: { levels: { DEAN: 'Декан' } },
+                statusPanel: { returned: 'Очікує ваших виправлень' },
                 timing: { expected: 'Очікується до {{date}}', delayed: 'Затримка' },
               },
+              roles: { DEAN: 'Декан' },
             },
           },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
@@ -89,6 +90,22 @@ describe('MySubmissionsComponent', () => {
     expect(items[0].querySelector('[data-testid="my-submission-delayed"]')).not.toBeNull();
     expect(items[1].querySelector('[data-testid="my-submission-delayed"]')).toBeNull();
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/awards/7');
+  });
+
+  it('ac1_17_a_returned_request_waits_for_the_owner_corrections', async () => {
+    const award = pending(8, false);
+    const returned = {
+      ...award,
+      request: { ...award.request!, status: 'RETURNED' as const, estimatedCompletion: null },
+    };
+    service.list.mockReturnValue(of({ content: [returned], totalElements: 1, totalPages: 1 }));
+    const element = await create();
+
+    expect(
+      element
+        .querySelector('[data-testid="my-submission-level"]')
+        ?.textContent?.replace(/\s+/g, ' '),
+    ).toBe(' Очікує ваших виправлень ');
   });
 
   it('ac1_17_without_pending_awards_offers_a_new_one', async () => {

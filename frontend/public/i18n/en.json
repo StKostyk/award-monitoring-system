@@ -205,13 +205,6 @@
     "statusPanel": {
       "title": "Review status",
       "submitted": "Submitted",
-      "levels": {
-        "FACULTY_SECRETARY": "Faculty secretary",
-        "DEAN": "Dean",
-        "RECTOR_SECRETARY": "Rector's secretary",
-        "RECTOR": "Rector"
-      },
-      "dueBy": "Expected by {{date}}",
       "upcomingBy": "by {{date}}",
       "estimate": "Expected completion: {{date}}",
       "overdue": "The review is taking longer than usual (since {{since}}). New expected date: {{date}}",
@@ -230,7 +223,8 @@
       "retry": "Try again",
       "problems": {
         "failed": "The review status could not be updated.",
-        "gone": "This award is no longer available to you"
+        "gone": "This award is no longer available to you.",
+        "denied": "You no longer have access to the review status of this award."
       }
     },
     "timing": {

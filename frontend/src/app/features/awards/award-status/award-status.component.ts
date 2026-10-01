@@ -1,4 +1,3 @@
-import { HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,7 +16,7 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Subscription } from 'rxjs';
 
-import { problemStatus } from '../../../core/api/problem';
+import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate, kyivDateTime } from '../../../shared/date-format';
 import { AwardStatusView, AwardsService, FINAL_REQUEST_STATUSES } from '../awards.service';
@@ -26,9 +25,6 @@ import { AwardStatusView, AwardsService, FINAL_REQUEST_STATUSES } from '../award
 export const STATUS_POLL_MS = new InjectionToken<number>('STATUS_POLL_MS', {
   factory: () => 60_000,
 });
-
-/** Why the status cannot be shown: a retry may help (`failed`) or cannot (`gone`). */
-export type StatusProblem = 'failed' | 'gone';
 
 /**
  * The review timeline of a submitted award, reloaded while the page is visible and the request is not final.
@@ -50,10 +46,12 @@ export class AwardStatusComponent implements OnInit, OnDestroy {
   readonly awardId = input.required<number>();
   /** Emits the new status whenever a reload finds the request changed. */
   readonly changed = output<AwardStatusView>();
+  /** Emits once when the award can no longer be read (403 or 404). */
+  readonly lost = output<void>();
 
   readonly view = signal<AwardStatusView | null>(null);
   readonly loading = signal(false);
-  readonly problem = signal<StatusProblem | null>(null);
+  readonly problem = signal<ReadProblem | null>(null);
   /** How many changes were announced; the live region text alternates so every change is read out. */
   readonly announcements = signal(0);
   readonly withoutRequest = computed(() => {
@@ -101,13 +99,14 @@ export class AwardStatusComponent implements OnInit, OnDestroy {
       },
       error: (error: unknown) => {
         this.loading.set(false);
-        const status = problemStatus(error);
-        if (status === HttpStatusCode.NotFound || status === HttpStatusCode.Forbidden) {
-          this.problem.set('gone');
-          this.stopped = true;
-        } else {
-          this.problem.set('failed');
+        const problem = readProblem(error);
+        this.problem.set(problem);
+        if (problem === 'failed') {
           this.schedule();
+        } else {
+          this.view.set(null);
+          this.stopped = true;
+          this.lost.emit();
         }
       },
     });
@@ -129,8 +128,7 @@ export class AwardStatusComponent implements OnInit, OnDestroy {
   }
 
   private pending(): boolean {
-    const status = this.view()?.requestStatus;
-    return this.view() === null || (!!status && !FINAL_REQUEST_STATUSES.includes(status));
+    return this.view() === null || this.pendingReview();
   }
 
   private cancel(): void {
@@ -152,6 +150,7 @@ function changed(before: AwardStatusView, after: AwardStatusView): boolean {
     before.requestStatus !== after.requestStatus ||
     before.currentLevel !== after.currentLevel ||
     before.decisions.length !== after.decisions.length ||
-    before.overdue !== after.overdue
+    before.overdue !== after.overdue ||
+    before.delay?.reason !== after.delay?.reason
   );
 }

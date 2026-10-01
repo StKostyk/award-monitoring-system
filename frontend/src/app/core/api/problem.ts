@@ -1,4 +1,7 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+
+/** Why a resource could not be read: a retry may help (`failed`) or cannot (`gone`, `denied`). */
+export type ReadProblem = 'failed' | 'gone' | 'denied';
 
 export interface ProblemDetail {
   type?: string;
@@ -36,6 +39,20 @@ export function problemType(error: unknown): string {
 /** HTTP status of an API error, or 0 when the request never reached the server. */
 export function problemStatus(error: unknown): number {
   return error instanceof HttpErrorResponse ? error.status : 0;
+}
+
+/**
+ * The problem a failed read reports: 403 `denied`, 404 `gone`, anything else `failed`.
+ *
+ * @param error the failure
+ * @returns the problem to show
+ */
+export function readProblem(error: unknown): ReadProblem {
+  const status = problemStatus(error);
+  if (status === HttpStatusCode.Forbidden) {
+    return 'denied';
+  }
+  return status === HttpStatusCode.NotFound ? 'gone' : 'failed';
 }
 
 /** The field errors of a 422 answer, empty when there are none. */

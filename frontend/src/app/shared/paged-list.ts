@@ -1,11 +1,10 @@
-import { HttpStatusCode } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { problemStatus } from '../core/api/problem';
+import { ReadProblem, readProblem } from '../core/api/problem';
 
 /** Why a page could not be shown: a retry may help (`failed`) or cannot (`gone`, `denied`). */
-export type PageProblem = 'failed' | 'gone' | 'denied';
+export type PageProblem = ReadProblem;
 
 /** The part of a page answer the list needs. */
 export interface PageOf<T> {
@@ -55,7 +54,7 @@ export class PagedList<T, K = unknown> {
       },
       error: (error: unknown) => {
         this.loading.set(false);
-        this.problem.set(this.problemOf(problemStatus(error)));
+        this.problem.set(this.problemOf(error));
       },
     });
   }
@@ -68,13 +67,10 @@ export class PagedList<T, K = unknown> {
     this.load();
   }
 
-  private problemOf(status: number): PageProblem | null {
-    if (status === HttpStatusCode.Forbidden) {
-      return 'denied';
-    }
-    if (status === HttpStatusCode.NotFound) {
-      return this.options.notFoundIsEmpty && this.loadedPages() === 0 ? null : 'gone';
-    }
-    return 'failed';
+  private problemOf(error: unknown): PageProblem | null {
+    const problem = readProblem(error);
+    return problem === 'gone' && this.options.notFoundIsEmpty && this.loadedPages() === 0
+      ? null
+      : problem;
   }
 }

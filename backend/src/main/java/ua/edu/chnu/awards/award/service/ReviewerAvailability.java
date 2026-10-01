@@ -49,7 +49,7 @@ public class ReviewerAvailability {
         if (scopes.isEmpty()) {
             scopes = Set.of(organizationId);
         }
-        RoleType role = RoleType.valueOf(level.name());
+        RoleType role = level.role();
         LocalDate today = LocalDate.now(clock);
         return roles.existsHolder(role, scopes, CAN_REVIEW, ownerId, today)
             || delegations.existsInEffect(role, scopes, CAN_REVIEW, ownerId, today);

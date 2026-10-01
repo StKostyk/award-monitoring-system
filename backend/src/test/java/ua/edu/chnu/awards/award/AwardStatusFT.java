@@ -28,6 +28,8 @@ import io.restassured.path.json.JsonPath;
 
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardRows;
+import ua.edu.chnu.awards.support.DecisionRows;
+import ua.edu.chnu.awards.support.RequestRows;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -128,9 +130,8 @@ class AwardStatusFT extends AbstractFunctionalTest {
     @Test
     void ac1_5_ac1_14_aReturnedRequestShowsTheCommentAndWaitsForItsOwner() {
         long id = submitted("Returned");
-        long request = requestOf(id);
-        jdbc.update("insert into review_decisions (request_id, reviewer_id, decision, level, comments) "
-            + "values (?, ?, 'RETURNED', 'FACULTY_SECRETARY', 'Додайте номер наказу')", request, secretaryId);
+        long request = RequestRows.idOf(jdbc, id);
+        DecisionRows.decision(jdbc, request, secretaryId).comments("Додайте номер наказу").insert();
         jdbc.update("update award_requests set status = 'RETURNED' where request_id = ?", request);
 
         as(employee).get(AWARDS + "/" + id + "/status").then().statusCode(200)
@@ -155,6 +156,20 @@ class AwardStatusFT extends AbstractFunctionalTest {
             .body("estimatedCompletion", equalTo(LocalDate.now(KYIV).plusDays(9).toString()));
         as(employee).get(AWARDS + "/" + id).then().statusCode(200)
             .body("request.overdue", equalTo(true));
+    }
+
+    @Test
+    void edge_aRequestWithoutStoredDeadlineAnswersTheDeadlineOfItsEstimate() {
+        long id = submitted("Undated");
+        jdbc.update("update award_requests set deadline = null, submitted_at = now() - interval '5 days' "
+            + "where award_id = ?", id);
+
+        as(employee).get(AWARDS + "/" + id + "/status").then().statusCode(200)
+            .body("overdue", equalTo(true))
+            .body("deadline", notNullValue());
+        as(employee).get(AWARDS + "/" + id).then().statusCode(200)
+            .body("request.overdue", equalTo(true))
+            .body("request.deadline", notNullValue());
     }
 
     @Test
@@ -186,8 +201,7 @@ class AwardStatusFT extends AbstractFunctionalTest {
         List<Long> ids = new ArrayList<>();
         for (int i = 0; i < 200; i++) {
             long id = AwardRows.award(jdbc, employeeId).title("Load " + i).status("PENDING").insert();
-            jdbc.update("insert into award_requests (award_id, submitter_id, current_level, deadline) "
-                + "values (?, ?, 'FACULTY_SECRETARY', now() + interval '3 days')", id, employeeId);
+            RequestRows.request(jdbc, id, employeeId).insert();
             ids.add(id);
         }
         List<Long> times = new ArrayList<>();
@@ -210,9 +224,5 @@ class AwardStatusFT extends AbstractFunctionalTest {
         as(employee).contentType(ContentType.JSON).body(Map.of("version", 1, "duplicateAcknowledged", true))
             .post(AWARDS + "/" + id + "/submit").then().statusCode(200);
         return id;
-    }
-
-    private long requestOf(long awardId) {
-        return jdbc.queryForObject("select request_id from award_requests where award_id = ?", Long.class, awardId);
     }
 }

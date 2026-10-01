@@ -69,8 +69,6 @@ const translations = {
       statusPanel: {
         title: 'Статус розгляду',
         submitted: 'Подано',
-        levels: { FACULTY_SECRETARY: 'Секретар факультету', DEAN: 'Декан' },
-        dueBy: 'Очікується до {{date}}',
         upcomingBy: 'до {{date}}',
         estimate: 'Орієнтовне завершення: {{date}}',
         overdue: 'Розгляд триває довше, ніж зазвичай (з {{since}}). Нова орієнтовна дата: {{date}}',
@@ -84,10 +82,13 @@ const translations = {
         retry: 'Спробувати ще раз',
         problems: {
           failed: 'Не вдалося оновити статус розгляду.',
-          gone: 'Ця нагорода вам більше не доступна',
+          gone: 'Ця нагорода вам більше не доступна.',
+          denied: 'Ви більше не маєте доступу до статусу розгляду цієї нагороди.',
         },
       },
+      timing: { expected: 'Очікується до {{date}}' },
     },
+    roles: { FACULTY_SECRETARY: 'Секретар факультету', DEAN: 'Декан' },
   },
 };
 
@@ -100,6 +101,8 @@ describe('AwardStatusComponent', () => {
   let visibility: DocumentVisibilityState;
   let fixture: ComponentFixture<AwardStatusComponent>;
   let changes: AwardStatusView[] = [];
+
+  let lost = 0;
 
   async function create(): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
@@ -119,6 +122,8 @@ describe('AwardStatusComponent', () => {
     fixture.componentRef.setInput('awardId', 5);
     changes = [];
     fixture.componentInstance.changed.subscribe((view) => changes.push(view));
+    lost = 0;
+    fixture.componentInstance.lost.subscribe(() => lost++);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -304,7 +309,7 @@ describe('AwardStatusComponent', () => {
   });
 
   it('ac1_15_stops_when_the_award_is_no_longer_readable', async () => {
-    service.status.mockReturnValue(of(submitted));
+    service.status.mockReturnValue(of(returned));
     const element = await create();
 
     service.status.mockReturnValue(throwError(() => failure(404)));
@@ -312,8 +317,47 @@ describe('AwardStatusComponent', () => {
     tick(300_000);
 
     expect(service.status).toHaveBeenCalledTimes(2);
-    expect(text(element, 'award-status-error')).toContain('Ця нагорода вам більше не доступна');
+    expect(text(element, 'award-status-error')).toContain('Ця нагорода вам більше не доступна.');
     expect(element.querySelector('[data-testid="award-status-retry"]')).toBeNull();
+    expect(element.querySelector('[data-testid="award-status-path"]')).toBeNull();
+    expect(element.querySelector('[data-testid="award-status-decisions"]')).toBeNull();
+    expect(element.hidden).toBe(false);
+    expect(lost).toBe(1);
+  });
+
+  it('ac1_15_a_revoked_access_clears_the_timeline_and_says_so', async () => {
+    service.status.mockReturnValue(of(returned));
+    const element = await create();
+
+    service.status.mockReturnValue(throwError(() => failure(403)));
+    tick();
+    tick(300_000);
+
+    expect(service.status).toHaveBeenCalledTimes(2);
+    expect(text(element, 'award-status-error')).toContain(
+      'Ви більше не маєте доступу до статусу розгляду цієї нагороди.',
+    );
+    expect(element.querySelector('[data-testid="award-status-comment"]')).toBeNull();
+    expect(element.hidden).toBe(false);
+  });
+
+  it('ac1_15_a_changed_delay_reason_is_announced', async () => {
+    service.status.mockReturnValue(
+      of({ ...submitted, overdue: true, delay: { reason: 'NO_REVIEWER', since: null } }),
+    );
+    const element = await create();
+
+    service.status.mockReturnValue(
+      of({
+        ...submitted,
+        overdue: true,
+        delay: { reason: 'REVIEW_OVERDUE', since: '2026-10-01T09:00:00Z' },
+      }),
+    );
+    tick();
+
+    expect(text(element, 'award-status-announcement')).toContain('Статус розгляду оновлено');
+    expect(changes).toHaveLength(1);
   });
 
   it('ac1_16_a_failure_offers_a_retry_and_polling_goes_on', async () => {

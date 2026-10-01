@@ -536,7 +536,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - One-to-one relationship with awards (each award has exactly one request)
 - Workflow levels: Faculty Secretary → Dean → Rector Secretary → Rector
 - Escalation based on award category recognition level
-- `deadline` is the end of the current level's review period: set at submission to `submitted_at` + `app.workflow.review-period` (3 calendar days by default) and reset at every level change by the Epic 4 workflow; requests submitted before V024 were back-filled with `submitted_at` + 3 days
+- `deadline` is the end of the current level's review period: set at submission to `submitted_at` + `app.workflow.review-period` (3 Kyiv calendar days by default, so a clock change does not move the due date) and reset at every level change by the Epic 4 workflow; requests submitted before V024 were back-filled with `submitted_at` + 3 days
 - Expected completion is computed on read, never stored: the deadline plus one review period for every level still ahead on the approval path (faculty secretary up to the higher of the category's minimum approval level and the current level); a level past its deadline gets a fresh period from now
 - A request past its deadline is marked overdue and explained; expiry (`EXPIRED`) and escalation of late requests belong to the Epic 4 workflow
 

@@ -63,7 +63,7 @@ public class AwardStatusService {
         StatusEstimator.Timeline timeline = estimator.timeline(award, request);
         List<ReviewDecision> made = decisions.findByRequestId(request.getId());
         return new AwardStatusView(award.getId(), award.getStatus(), request.getStatus(), request.getCurrentLevel(),
-            request.getSubmittedAt(), request.getDeadline(), timeline.estimatedCompletion(), timeline.overdue(),
+            request.getSubmittedAt(), timeline.deadline(), timeline.estimatedCompletion(), timeline.overdue(),
             request.getCompletedAt(), request.getRejectionReason(), delay(award, request, timeline),
             steps(request, timeline, made), made.stream().map(DecisionView::of).toList());
     }

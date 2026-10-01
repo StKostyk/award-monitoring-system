@@ -158,6 +158,25 @@ class AwardStatusServiceTest {
     }
 
     @Test
+    void ac1_4_anOverdueCurrentLevelIsDueOnTheRevisedDate() {
+        request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, NOW.minus(Duration.ofDays(1)));
+
+        AwardStatusView view = service.status(AWARD_ID);
+
+        assertThat(view.path().get(0).dueDate()).isEqualTo(LocalDate.of(2026, 10, 4));
+    }
+
+    @Test
+    void edge_aRequestWithoutStoredDeadlineAnswersTheDeadlineOfItsEstimate() {
+        request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, null);
+
+        AwardStatusView view = service.status(AWARD_ID);
+
+        assertThat(view.overdue()).isTrue();
+        assertThat(view.deadline()).isEqualTo(NOW.minus(Duration.ofDays(7)));
+    }
+
+    @Test
     void ac1_5_aReturnedRequestWaitsForItsOwnerWithoutDelay() {
         request(RequestStatus.RETURNED, ApprovalLevel.FACULTY_SECRETARY, NOW.minus(Duration.ofDays(1)));
 
