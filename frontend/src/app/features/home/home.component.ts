@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { canCreateAwards } from '../../core/auth/permissions';
 import { LanguageService } from '../../core/i18n/language.service';
 import { OrganizationRef } from '../../core/auth/user-profile';
+import { organizationName } from '../../shared/organization-name';
 import { MySubmissionsComponent } from './my-submissions.component';
 
 @Component({
@@ -30,8 +31,6 @@ export class HomeComponent {
   protected readonly canSubmit = computed(() => canCreateAwards(this.auth.permissions()));
 
   organizationName(organization: OrganizationRef): string {
-    return this.language.current() === 'uk' && organization.nameUk
-      ? organization.nameUk
-      : organization.name;
+    return organizationName(organization, this.language.current());
   }
 }

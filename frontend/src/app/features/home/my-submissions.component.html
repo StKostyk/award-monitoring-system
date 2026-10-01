@@ -16,25 +16,7 @@
                 title(award)
               }}</a>
               @if (award.request; as request) {
-                <span class="submissions__meta" data-testid="my-submission-level">
-                  @if (request.status === 'RETURNED') {
-                    {{ 'awards.statusPanel.returned' | transloco }}
-                  } @else {
-                    {{ 'roles.' + request.currentLevel | transloco }}
-                  }
-                  @if (request.status !== 'RETURNED' && request.estimatedCompletion) {
-                    ·
-                    {{
-                      'awards.timing.expected'
-                        | transloco: { date: date(request.estimatedCompletion) }
-                    }}
-                  }
-                </span>
-                @if (request.overdue) {
-                  <mat-chip class="submissions__delayed" data-testid="my-submission-delayed">{{
-                    'awards.timing.delayed' | transloco
-                  }}</mat-chip>
-                }
+                <app-request-timing [request]="request" [showLevel]="true" />
               }
             </li>
           }

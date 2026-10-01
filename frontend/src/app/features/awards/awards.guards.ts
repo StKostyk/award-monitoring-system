@@ -3,7 +3,7 @@ import { CanActivateFn, CanDeactivateFn, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { canCreateAwards, canReadOwnAwards } from '../../core/auth/permissions';
+import { canCreateAwards, canEditOwnAwards, canReadOwnAwards } from '../../core/auth/permissions';
 
 /** A page that may hold values nobody saved yet. */
 export interface LeavesUnsavedChanges {
@@ -18,11 +18,18 @@ export const ownAwardsGuard: CanActivateFn = () => {
   return canReadOwnAwards(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };
 
-/** Entering and editing awards needs `award:create`. */
+/** Entering a new award needs `award:create`. */
 export const awardEntryGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return canCreateAwards(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** Editing a draft needs `award:update:own`, the permission its save is checked against. */
+export const awardEditGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return canEditOwnAwards(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };
 
 /** Leaving a form with unsaved values asks first. */

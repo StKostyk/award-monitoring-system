@@ -1,30 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-import { signIn } from './helpers';
+import { kyivDay, pastDay, signIn, uniqueToken } from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
 
 type Page = import('@playwright/test').Page;
-
-function token(): string {
-  return Array.from(
-    { length: 12 },
-    () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)],
-  ).join('');
-}
-
-function pastDay(): string {
-  const date = new Date();
-  date.setDate(date.getDate() - 400 - Math.floor(Math.random() * 10000));
-  return date.toISOString().substring(0, 10);
-}
-
-function daysAgo(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return date.toISOString().substring(0, 10);
-}
 
 async function fillComplete(page: Page, title: string, date: string): Promise<void> {
   await page.getByTestId('award-title-uk').fill(title);
@@ -63,7 +44,7 @@ test.describe('award drafts and submission on a phone', () => {
   });
 
   test('ac1_1 ac1_5 ac1_9 a draft is saved, completed and submitted', async ({ page }) => {
-    const title = `Грамота МОН ${token()}`;
+    const title = `Грамота МОН ${uniqueToken()}`;
     await openAwards(page);
     await page.getByTestId('award-add').click();
     await expect(page).toHaveURL(/\/awards\/new$/);
@@ -129,7 +110,7 @@ test.describe('award drafts and submission on a phone', () => {
   test('ac1_10 f4 signing out removes the unsaved copy', async ({ page }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
-    await page.getByTestId('award-title-uk').fill(`Подяка декана ${token()}`);
+    await page.getByTestId('award-title-uk').fill(`Подяка декана ${uniqueToken()}`);
     await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
 
     await page.getByTestId('logout').click();
@@ -144,7 +125,7 @@ test.describe('award drafts and submission on a phone', () => {
   });
 
   test('f9 a draft is deleted from its form after confirmation', async ({ page }) => {
-    const title = `Чернетка на видалення ${token()}`;
+    const title = `Чернетка на видалення ${uniqueToken()}`;
     await openAwards(page);
     await page.getByTestId('award-add').click();
     await expect(page.getByTestId('award-remove')).toHaveCount(0);
@@ -169,7 +150,7 @@ test.describe('award drafts and submission on a phone', () => {
   test('f1 the confirmation page confirms only an own submitted award', async ({ page }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
-    await page.getByTestId('award-title-uk').fill(`Недопрацьована ${token()}`);
+    await page.getByTestId('award-title-uk').fill(`Недопрацьована ${uniqueToken()}`);
     await page.getByTestId('award-save').click();
     await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
     const id = /\/awards\/(\d+)\/edit$/.exec(page.url())?.[1];
@@ -196,7 +177,7 @@ test.describe('award drafts and submission on a phone', () => {
       `${Number(max.substring(0, 4)) - 50}${max.substring(4)}`,
     );
 
-    await date.fill(daysAgo(7));
+    await date.fill(kyivDay(-7));
     await expect(page.getByTestId('award-recent-date')).toContainText('за останні 30 днів');
     await date.fill(pastDay());
     await expect(page.getByTestId('award-recent-date')).toHaveCount(0);
@@ -256,7 +237,7 @@ test.describe('award drafts and submission on a phone', () => {
   test('ac2_4 ac2_5 ac2_6 a possible duplicate is submitted only after confirmation', async ({
     page,
   }) => {
-    const title = `Грамота МОН ${token()} ${token()}`;
+    const title = `Грамота МОН ${uniqueToken()} ${uniqueToken()}`;
     const date = pastDay();
     await openAwards(page);
     await page.getByTestId('award-add').click();

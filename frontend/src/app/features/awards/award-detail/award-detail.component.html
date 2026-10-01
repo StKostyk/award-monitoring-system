@@ -68,7 +68,7 @@
       <a mat-button routerLink="/awards" data-testid="award-back">{{
         'awards.back' | transloco
       }}</a>
-      @if (editable(award)) {
+      @if (ownDraft(award)) {
         <button
           mat-button
           type="button"
@@ -78,6 +78,8 @@
         >
           {{ 'awards.remove.action' | transloco }}
         </button>
+      }
+      @if (editable(award)) {
         <a mat-flat-button [routerLink]="['/awards', award.id, 'edit']" data-testid="award-edit">
           {{ 'awards.edit' | transloco }}
         </a>

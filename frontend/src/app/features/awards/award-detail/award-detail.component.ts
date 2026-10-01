@@ -18,12 +18,13 @@ import { filter, switchMap, tap } from 'rxjs';
 
 import { problemStatus, problemType, readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
+import { canEditOwnAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../../shared/organization-name';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { AwardStatusComponent } from '../award-status/award-status.component';
-import { Award, AwardsService, awardTitle, categoryName } from '../awards.service';
+import { Award, AwardsService, awardTitle, categoryName, isOwnAward } from '../awards.service';
 import { confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -126,11 +127,17 @@ export class AwardDetailComponent implements OnInit {
 
   /** Drafts are private to their owner; everybody else who may open the award sees it from the submission on. */
   showHistory(award: Award): boolean {
-    return award.status !== 'DRAFT' || String(award.owner.id) === this.auth.userId();
+    return award.status !== 'DRAFT' || isOwnAward(award, this.auth.userId());
   }
 
+  /** The caller's own draft, which the caller may delete. */
+  ownDraft(award: Award): boolean {
+    return award.status === 'DRAFT' && isOwnAward(award, this.auth.userId());
+  }
+
+  /** An own draft the caller may also change. */
   editable(award: Award): boolean {
-    return award.status === 'DRAFT' && String(award.owner.id) === this.auth.userId();
+    return this.ownDraft(award) && canEditOwnAwards(this.auth.permissions());
   }
 
   title(award: Award): string {

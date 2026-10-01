@@ -83,12 +83,10 @@ describe('MySubmissionsComponent', () => {
     expect(items.length).toBe(2);
     expect(items[0].textContent).toContain('Нагорода 7');
     expect(
-      items[0]
-        .querySelector('[data-testid="my-submission-level"]')
-        ?.textContent?.replace(/\s+/g, ' '),
+      items[0].querySelector('[data-testid="request-timing"]')?.textContent?.replace(/\s+/g, ' '),
     ).toContain('Декан · Очікується до 07.10.2026');
-    expect(items[0].querySelector('[data-testid="my-submission-delayed"]')).not.toBeNull();
-    expect(items[1].querySelector('[data-testid="my-submission-delayed"]')).toBeNull();
+    expect(items[0].querySelector('[data-testid="request-delayed"]')).not.toBeNull();
+    expect(items[1].querySelector('[data-testid="request-delayed"]')).toBeNull();
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/awards/7');
   });
 
@@ -101,11 +99,9 @@ describe('MySubmissionsComponent', () => {
     service.list.mockReturnValue(of({ content: [returned], totalElements: 1, totalPages: 1 }));
     const element = await create();
 
-    expect(
-      element
-        .querySelector('[data-testid="my-submission-level"]')
-        ?.textContent?.replace(/\s+/g, ' '),
-    ).toBe(' Очікує ваших виправлень ');
+    expect(element.querySelector('[data-testid="request-timing"]')?.textContent?.trim()).toBe(
+      'Очікує ваших виправлень',
+    );
   });
 
   it('ac1_17_without_pending_awards_offers_a_new_one', async () => {

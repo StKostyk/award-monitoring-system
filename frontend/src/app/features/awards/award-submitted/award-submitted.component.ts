@@ -5,9 +5,10 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
+import { readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { Award, AwardsService, awardTitle } from '../awards.service';
+import { Award, AwardsService, awardTitle, isOwnAward } from '../awards.service';
 
 /** Confirms the caller's own submitted award; any other award or id is not a submission to confirm. */
 @Component({
@@ -20,6 +21,11 @@ import { Award, AwardsService, awardTitle } from '../awards.service';
     @if (notFound()) {
       <p class="award-submitted__problem" role="alert" data-testid="award-not-found">
         {{ 'awards.notFound' | transloco }}
+      </p>
+    }
+    @if (failed()) {
+      <p class="award-submitted__problem" role="alert" data-testid="award-submitted-error">
+        {{ 'awards.problems.unknown' | transloco }}
       </p>
     }
     @if (award(); as award) {
@@ -78,6 +84,7 @@ export class AwardSubmittedComponent implements OnInit {
   readonly award = signal<Award | null>(null);
   readonly loading = signal(false);
   readonly notFound = signal(false);
+  readonly failed = signal(false);
 
   ngOnInit(): void {
     const param = this.route.snapshot.paramMap.get('id') ?? '';
@@ -88,9 +95,13 @@ export class AwardSubmittedComponent implements OnInit {
     this.loading.set(true);
     this.service.get(Number(param)).subscribe({
       next: (award) => this.show(award),
-      error: () => {
+      error: (error: unknown) => {
         this.loading.set(false);
-        this.notFound.set(true);
+        if (readProblem(error) === 'failed') {
+          this.failed.set(true);
+        } else {
+          this.notFound.set(true);
+        }
       },
     });
   }
@@ -101,7 +112,7 @@ export class AwardSubmittedComponent implements OnInit {
 
   private show(award: Award): void {
     this.loading.set(false);
-    if (String(award.owner.id) !== this.auth.userId()) {
+    if (!isOwnAward(award, this.auth.userId())) {
       void this.router.navigate(['/awards', award.id], { replaceUrl: true });
     } else if (award.status === 'DRAFT') {
       void this.router.navigate(['/awards', award.id, 'edit'], { replaceUrl: true });

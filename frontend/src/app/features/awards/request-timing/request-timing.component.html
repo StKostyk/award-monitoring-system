@@ -1,0 +1,22 @@
+@if (returned()) {
+  <span class="timing" data-testid="request-timing">{{
+    'awards.statusPanel.returned' | transloco
+  }}</span>
+} @else if (showLevel() || expected()) {
+  <span class="timing" data-testid="request-timing">
+    @if (showLevel()) {
+      {{ 'roles.' + request().currentLevel | transloco }}
+    }
+    @if (showLevel() && expected()) {
+      ·
+    }
+    @if (expected(); as date) {
+      {{ 'awards.timing.expected' | transloco: { date } }}
+    }
+  </span>
+}
+@if (request().overdue) {
+  <mat-chip class="timing__delayed" data-testid="request-delayed">{{
+    'awards.timing.delayed' | transloco
+  }}</mat-chip>
+}

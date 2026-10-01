@@ -13,7 +13,6 @@ import static org.hamcrest.Matchers.nullValue;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -33,6 +32,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
+import ua.edu.chnu.awards.support.AwardApi;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -363,10 +363,7 @@ class AwardFT extends AbstractFunctionalTest {
     }
 
     private long complete(String token, String title, LocalDate date) {
-        return as(token).contentType(ContentType.JSON).body(Map.of("titleUk", title,
-                "categoryId", MINISTRY_CATEGORY, "awardingOrganization", "МОН України",
-                "awardDate", date.toString()))
-            .post(AWARDS).then().statusCode(201).extract().jsonPath().getLong("id");
+        return AwardApi.complete(token, Map.of("titleUk", title, "awardDate", date.toString()));
     }
 
     private long submitted(String token, String title) {
@@ -374,17 +371,11 @@ class AwardFT extends AbstractFunctionalTest {
     }
 
     private long submitted(String token, String title, LocalDate date) {
-        long id = complete(token, title, date);
-        long version = as(token).get(AWARDS + "/" + id).jsonPath().getLong(VERSION);
-        submit(token, id, version, null).then().statusCode(200);
-        return id;
+        return AwardApi.submitted(token, Map.of("titleUk", title, "awardDate", date.toString()));
     }
 
     private Response submit(String token, long id, long version, Boolean acknowledgeDuplicate) {
-        Map<String, Object> body = new HashMap<>();
-        body.put(VERSION, version);
-        body.put("acknowledgeDuplicate", acknowledgeDuplicate);
-        return as(token).contentType(ContentType.JSON).body(body).post(AWARDS + "/" + id + "/submit");
+        return AwardApi.submit(token, id, version, acknowledgeDuplicate);
     }
 
     private Response dated(LocalDate date) {

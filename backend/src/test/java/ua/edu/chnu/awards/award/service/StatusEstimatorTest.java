@@ -18,6 +18,7 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.config.WorkflowProperties;
+import ua.edu.chnu.awards.support.TestWorkflow;
 
 class StatusEstimatorTest {
 
@@ -167,8 +168,7 @@ class StatusEstimatorTest {
     }
 
     private static StatusEstimator estimator(int days, Instant now) {
-        return new StatusEstimator(Clock.fixed(now, KYIV), new WorkflowProperties(Duration.ofDays(days)),
-            new ApprovalPath());
+        return TestWorkflow.estimator(Clock.fixed(now, KYIV), Duration.ofDays(days));
     }
 
     private static Instant days(int days) {

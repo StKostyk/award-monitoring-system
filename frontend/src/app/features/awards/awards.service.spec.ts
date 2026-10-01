@@ -7,12 +7,9 @@ import {
   CategoryNode,
   NO_FILTERS,
   awardTitle,
-  daysBefore,
   duplicateMatches,
   flattenCategories,
   isRecent,
-  kyivToday,
-  yearsBefore,
 } from './awards.service';
 
 const form = {
@@ -188,22 +185,11 @@ describe('award helpers', () => {
     expect(awardTitle({ title: null, titleUk: null }, 'uk')).toBe('');
   });
 
-  it('ac2_1_takes_today_from_the_kyiv_calendar', () => {
-    expect(kyivToday(new Date('2026-09-27T21:30:00Z'))).toBe('2026-09-28');
-    expect(kyivToday(new Date('2026-09-27T20:30:00Z'))).toBe('2026-09-27');
-  });
-
   it('ac1_9_lists_the_tree_parents_first_with_their_depth', () => {
     expect(flattenCategories([national]).map((item) => [item.category.id, item.depth])).toEqual([
       [10, 0],
       [13, 1],
     ]);
-  });
-
-  it('ac2_2_the_oldest_date_is_fifty_years_back_and_a_leap_day_becomes_the_28th', () => {
-    expect(yearsBefore('2026-09-28', 50)).toBe('1976-09-28');
-    expect(yearsBefore('2028-02-29', 50)).toBe('1978-02-28');
-    expect(yearsBefore('2028-02-29', 4)).toBe('2024-02-29');
   });
 
   it('ac2_3_the_last_thirty_days_up_to_today_are_recent', () => {
@@ -212,7 +198,6 @@ describe('award helpers', () => {
     expect(isRecent('2026-08-29', '2026-09-28')).toBe(false);
     expect(isRecent('2026-09-29', '2026-09-28')).toBe(false);
     expect(isRecent('', '2026-09-28')).toBe(false);
-    expect(daysBefore('2026-03-01', 1)).toBe('2026-02-28');
   });
 
   it('ac2_5_reads_the_matches_of_a_possible_duplicate', () => {

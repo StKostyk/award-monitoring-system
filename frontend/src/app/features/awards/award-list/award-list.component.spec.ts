@@ -152,10 +152,9 @@ describe('AwardListComponent', () => {
     fixture.detectChanges();
     const item = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="award-item"]');
 
-    expect(item?.querySelector('[data-testid="award-returned"]')?.textContent).toContain(
-      'Очікує ваших виправлень',
-    );
-    expect(item?.querySelector('[data-testid="award-expected"]')).toBeNull();
+    const timing = item?.querySelector('[data-testid="request-timing"]')?.textContent;
+    expect(timing).toContain('Очікує ваших виправлень');
+    expect(timing).not.toContain('Очікується до');
   });
 
   it('ac1_18_submitted_awards_show_the_expected_date_and_a_delay_chip', async () => {
@@ -188,14 +187,14 @@ describe('AwardListComponent', () => {
       '[data-testid="award-item"]',
     );
 
-    expect(items[0].querySelector('[data-testid="award-expected"]')?.textContent).toContain(
+    expect(items[0].querySelector('[data-testid="request-timing"]')?.textContent).toContain(
       'Очікується до 07.10.2026',
     );
-    expect(items[0].querySelector('[data-testid="award-delayed"]')).toBeNull();
-    expect(items[1].querySelector('[data-testid="award-delayed"]')?.textContent).toContain(
+    expect(items[0].querySelector('[data-testid="request-delayed"]')).toBeNull();
+    expect(items[1].querySelector('[data-testid="request-delayed"]')?.textContent).toContain(
       'Затримка',
     );
-    expect(items[2].querySelector('[data-testid="award-expected"]')).toBeNull();
+    expect(items[2].querySelector('[data-testid="request-timing"]')).toBeNull();
   });
 
   it('ac1_9_shows_the_empty_list_and_asks_for_the_first_award', async () => {

@@ -100,10 +100,7 @@ public class AwardService {
      */
     @Transactional(readOnly = true)
     public AwardResponse get(long id) {
-        Award award = awards.findWithDetailsById(id).orElseThrow(() -> new AwardNotFoundException(id));
-        if (!ownership.isReadable(award)) {
-            throw new AwardNotFoundException(id);
-        }
+        Award award = ownership.readableWithDetails(id);
         return mapper.toResponse(award, requests.findByAwardId(id).orElse(null), warnings.of(award));
     }
 

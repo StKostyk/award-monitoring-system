@@ -21,7 +21,6 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardSnapshot;
 import ua.edu.chnu.awards.award.entity.AwardVersion;
 import ua.edu.chnu.awards.award.entity.VersionAction;
-import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
 import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.user.repository.UserRepository;
@@ -41,7 +40,6 @@ public class AwardHistory {
     public static final int MAX_SIZE = 50;
 
     private final AwardVersionRepository versions;
-    private final AwardRepository awards;
     private final UserRepository users;
     private final AwardOwnership ownership;
     private final AccessScope access;
@@ -105,8 +103,7 @@ public class AwardHistory {
      */
     @Transactional(readOnly = true)
     public Page<AwardVersionResponse> versions(long id, int page, int size) {
-        Award award = awards.findById(id).filter(ownership::isReadable)
-            .orElseThrow(() -> new AwardNotFoundException(id));
+        Award award = ownership.readable(id);
         long first = firstVisible(award);
         PageRequest pageable = PageResponse.request(page, Math.min(size, MAX_SIZE),
             Sort.by(Sort.Order.desc("number")));

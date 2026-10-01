@@ -99,3 +99,31 @@ export function sql(statement: string): string {
     { encoding: 'utf-8' },
   ).trim();
 }
+
+/** Twelve random lower-case letters, to tell the records of one test run apart. */
+export function uniqueToken(): string {
+  return Array.from(
+    { length: 12 },
+    () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)],
+  ).join('');
+}
+
+/** The Kyiv calendar day the given number of days from today, as `YYYY-MM-DD`. */
+export function kyivDay(offset = 0): string {
+  const [year, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv' })
+    .format(new Date())
+    .split('-')
+    .map(Number);
+  return new Date(Date.UTC(year, month - 1, day + offset)).toISOString().substring(0, 10);
+}
+
+/** A random award date more than a year back, so that duplicate checks of parallel tests do not meet. */
+export function pastDay(): string {
+  return kyivDay(-400 - Math.floor(Math.random() * 10000));
+}
+
+/** A `YYYY-MM-DD` day as the Ukrainian interface shows it. */
+export function shownDay(isoDay: string): string {
+  const [year, month, day] = isoDay.split('-');
+  return `${day}.${month}.${year}`;
+}

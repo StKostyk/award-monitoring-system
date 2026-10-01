@@ -16,7 +16,10 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class AwardOwnershipTest {
@@ -46,6 +49,25 @@ class AwardOwnershipTest {
 
         assertThatThrownBy(() -> ownership.lockedDraft(5L)).isInstanceOf(AwardNotFoundException.class);
         assertThatThrownBy(() -> ownership.lockedDraft(6L)).isInstanceOf(AwardNotFoundException.class);
+    }
+
+    @Test
+    void ac1_8_onlyReadableAwardsAreFound() {
+        Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
+        Award ownDraft = TestAwards.award(TestUsers.person(OWNER_ID, "owner@chnu.edu.ua"), department).build();
+        Award foreignDraft = TestAwards.award(TestUsers.person(99L, "other@chnu.edu.ua"), department).id(6L).build();
+        Award foreignPending = TestAwards.award(TestUsers.person(99L, "other@chnu.edu.ua"), department).id(7L)
+            .status(AwardStatus.PENDING).build();
+        when(awards.findWithDetailsById(5L)).thenReturn(Optional.of(ownDraft));
+        when(awards.findById(6L)).thenReturn(Optional.of(foreignDraft));
+        when(awards.findById(7L)).thenReturn(Optional.of(foreignPending));
+        when(access.canReadAwards(64L)).thenReturn(true);
+
+        assertThat(ownership.readableWithDetails(5L)).isSameAs(ownDraft);
+        assertThat(ownership.readable(7L)).isSameAs(foreignPending);
+        assertThatThrownBy(() -> ownership.readable(6L)).isInstanceOf(AwardNotFoundException.class);
+        assertThatThrownBy(() -> ownership.readable(8L)).isInstanceOf(AwardNotFoundException.class);
+        assertThatThrownBy(() -> ownership.readableWithDetails(8L)).isInstanceOf(AwardNotFoundException.class);
     }
 
     @Test

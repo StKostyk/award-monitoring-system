@@ -1,23 +1,10 @@
 import { Page, expect, test } from '@playwright/test';
 
-import { signIn, sql } from './helpers';
+import { kyivDay, pastDay, shownDay, signIn, sql, uniqueToken } from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
 const secretary = 'secretary.fmi@chnu.edu.ua';
-
-function token(): string {
-  return Array.from(
-    { length: 12 },
-    () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)],
-  ).join('');
-}
-
-function pastDay(): string {
-  const date = new Date();
-  date.setDate(date.getDate() - 400 - Math.floor(Math.random() * 10000));
-  return date.toISOString().substring(0, 10);
-}
 
 async function submitted(page: Page, title: string): Promise<string> {
   await page.getByTestId('nav-awards').click();
@@ -33,16 +20,6 @@ async function submitted(page: Page, title: string): Promise<string> {
   await page.getByTestId('award-submit').click();
   await expect(page.getByTestId('award-submitted-name')).toContainText(title);
   return id;
-}
-
-function kyivDayIn(days: number): string {
-  const [day, month, year] = new Date()
-    .toLocaleDateString('uk-UA', { timeZone: 'Europe/Kyiv' })
-    .split('.')
-    .map(Number);
-  return new Date(Date.UTC(year, month - 1, day + days)).toLocaleDateString('uk-UA', {
-    timeZone: 'UTC',
-  });
 }
 
 async function openAward(page: Page, id: string): Promise<void> {
@@ -63,7 +40,7 @@ test.describe('award status tracking', () => {
   test('ac1_12 ac1_17 ac1_19 a submitted award shows its path, estimate and home card', async ({
     page,
   }) => {
-    const title = `Грамота МОН ${token()}`;
+    const title = `Грамота МОН ${uniqueToken()}`;
     const id = await submitted(page, title);
 
     await openAward(page, id);
@@ -94,7 +71,7 @@ test.describe('award status tracking', () => {
   test('ac1_13 ac1_18 an overdue review is explained on the page, the list and the card', async ({
     page,
   }) => {
-    const title = `Подяка ${token()}`;
+    const title = `Подяка ${uniqueToken()}`;
     const id = await submitted(page, title);
     sql(`update award_requests set deadline = now() - interval '2 days' where award_id = ${id}`);
 
@@ -103,19 +80,19 @@ test.describe('award status tracking', () => {
       /Розгляд триває довше, ніж зазвичай \(з \d{2}\.\d{2}\.\d{4}\)\. Нова орієнтовна дата: /,
     );
     await expect(page.getByTestId('award-status-due')).toHaveText(
-      new RegExp(`Очікується до (${kyivDayIn(3)}|${kyivDayIn(4)})`),
+      new RegExp(`Очікується до (${shownDay(kyivDay(3))}|${shownDay(kyivDay(4))})`),
     );
 
     await page.getByTestId('nav-awards').click();
     const row = page.getByTestId('award-item').filter({ hasText: title });
-    await expect(row.getByTestId('award-delayed')).toContainText('Затримка');
-    await expect(row.getByTestId('award-expected')).toContainText(/Очікується до/);
+    await expect(row.getByTestId('request-delayed')).toContainText('Затримка');
+    await expect(row.getByTestId('request-timing')).toContainText(/Очікується до/);
   });
 
   test('ac1_14 ac1_15 a decision made while the page is open appears within the interval', async ({
     page,
   }) => {
-    const title = `Диплом ${token()}`;
+    const title = `Диплом ${uniqueToken()}`;
     const id = await submitted(page, title);
     await page.clock.install();
     await openAward(page, id);
@@ -151,7 +128,7 @@ test.describe('award status tracking', () => {
     );
     await page.getByTestId('nav-awards').click();
     await expect(
-      page.getByTestId('award-item').filter({ hasText: title }).getByTestId('award-returned'),
+      page.getByTestId('award-item').filter({ hasText: title }).getByTestId('request-timing'),
     ).toContainText('Очікує ваших виправлень');
   });
 });
