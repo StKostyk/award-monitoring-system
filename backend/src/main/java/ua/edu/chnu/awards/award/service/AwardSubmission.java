@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.award.service;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,9 @@ import ua.edu.chnu.awards.common.web.ApiProblemException;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Turns a complete draft into a pending award with its approval request at the faculty secretary. The draft
- * row is locked for the whole step, so a repeated submission waits and then finds the award no longer a draft.
+ * Turns a complete draft into a pending award with its approval request at the faculty secretary, due by the
+ * end of one review period. The draft row is locked for the whole step, so a repeated submission waits and then
+ * finds the award no longer a draft.
  */
 @Service
 @RequiredArgsConstructor
@@ -43,6 +45,7 @@ public class AwardSubmission {
     private final AwardMapper mapper;
     private final AuditService audit;
     private final AwardHistory history;
+    private final StatusEstimator estimator;
     private final Clock clock;
 
     /**
@@ -71,12 +74,14 @@ public class AwardSubmission {
         award.setImpactScore(award.getCategory().getLevel().baseScore());
         awards.saveAndFlush(award);
         history.submitted(award);
+        Instant now = clock.instant();
         AwardRequest created = requests.saveAndFlush(AwardRequest.builder()
             .award(award)
             .submitter(award.getOwner())
             .status(RequestStatus.SUBMITTED)
             .currentLevel(ApprovalLevel.FACULTY_SECRETARY)
-            .submittedAt(clock.instant())
+            .submittedAt(now)
+            .deadline(estimator.deadline(now))
             .build());
         Map<String, Object> details = new HashMap<>(Map.of("requestId", created.getId(),
             "level", created.getCurrentLevel().name(), "organizationId", award.getOrganization().getId()));

@@ -1,0 +1,49 @@
+<mat-card class="submissions" data-testid="my-submissions">
+  <mat-card-header>
+    <mat-card-title>{{ 'home.submissions.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (failed()) {
+      <p class="submissions__problem" role="alert" data-testid="my-submissions-error">
+        {{ 'home.submissions.failed' | transloco }}
+      </p>
+    } @else if (awards(); as awards) {
+      @if (awards.length) {
+        <ul class="submissions__list">
+          @for (award of awards; track award.id) {
+            <li class="submissions__item" data-testid="my-submission">
+              <a class="submissions__link" [routerLink]="['/awards', award.id]">{{
+                title(award)
+              }}</a>
+              @if (award.request; as request) {
+                <span class="submissions__meta" data-testid="my-submission-level">
+                  {{ 'awards.statusPanel.levels.' + request.currentLevel | transloco }}
+                  @if (request.estimatedCompletion) {
+                    ·
+                    {{
+                      'awards.timing.expected'
+                        | transloco: { date: date(request.estimatedCompletion) }
+                    }}
+                  }
+                </span>
+                @if (request.overdue) {
+                  <mat-chip class="submissions__delayed" data-testid="my-submission-delayed">{{
+                    'awards.timing.delayed' | transloco
+                  }}</mat-chip>
+                }
+              }
+            </li>
+          }
+        </ul>
+        <a mat-button routerLink="/awards">{{ 'home.submissions.all' | transloco }}</a>
+      } @else {
+        <p class="submissions__empty" data-testid="my-submissions-empty">
+          {{ 'home.submissions.empty' | transloco }}
+        </p>
+        <a mat-button routerLink="/awards/new" data-testid="my-submissions-create">{{
+          'home.submissions.create' | transloco
+        }}</a>
+      }
+    }
+  </mat-card-content>
+</mat-card>

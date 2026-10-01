@@ -536,8 +536,9 @@ The minimum approval level is the lowest role that may give the final approval; 
 - One-to-one relationship with awards (each award has exactly one request)
 - Workflow levels: Faculty Secretary → Dean → Rector Secretary → Rector
 - Escalation based on award category recognition level
-- Deadlines calculated based on SLA requirements
-- Request expiration if not processed within deadline
+- `deadline` is the end of the current level's review period: set at submission to `submitted_at` + `app.workflow.review-period` (3 calendar days by default) and reset at every level change by the Epic 4 workflow; requests submitted before V024 were back-filled with `submitted_at` + 3 days
+- Expected completion is computed on read, never stored: the deadline plus one review period for every level still ahead on the approval path (faculty secretary up to the higher of the category's minimum approval level and the current level); a level past its deadline gets a fresh period from now
+- A request past its deadline is marked overdue and explained; expiry (`EXPIRED`) and escalation of late requests belong to the Epic 4 workflow
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -548,7 +549,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `current_reviewer_id` | `BIGINT` | YES | - | FK→users | Currently assigned reviewer |
 | `current_level` | `VARCHAR(30)` | NO | - | CK | Current approval level |
 | `submitted_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Submission timestamp |
-| `deadline` | `TIMESTAMPTZ` | YES | - | - | Processing deadline |
+| `deadline` | `TIMESTAMPTZ` | YES | - | - | End of the current level's review period (set at submission since V024) |
 | `completed_at` | `TIMESTAMPTZ` | YES | - | - | Final decision timestamp |
 | `rejection_reason` | `TEXT` | YES | - | - | Reason if rejected |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
@@ -600,6 +601,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - Decisions are immutable once recorded
 - Comments required for rejections and returns
 - Timestamp records exact decision moment
+- Read by the status timeline (`GET /awards/{id}/status`), oldest first with the reviewer's name, for everybody who may read the award; written only by the Epic 4 review workflow
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|

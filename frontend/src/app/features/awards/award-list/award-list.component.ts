@@ -13,6 +13,7 @@ import { Store } from '@ngrx/store';
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { kyivDate } from '../../../shared/date-format';
 import {
   AWARD_STATUSES,
   Award,
@@ -87,6 +88,10 @@ export class AwardListComponent implements OnInit {
 
   category(award: Award): string {
     return award.category ? categoryName(award.category, this.language.current()) : '';
+  }
+
+  date(value: string): string {
+    return kyivDate(value, this.language.current());
   }
 
   optionName(category: CategoryNode): string {

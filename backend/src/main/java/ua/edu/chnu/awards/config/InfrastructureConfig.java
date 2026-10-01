@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.ZoneId;
 
 import org.springframework.boot.autoconfigure.data.redis.LettuceClientConfigurationBuilderCustomizer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -13,10 +14,12 @@ import io.lettuce.core.ClientOptions;
 import io.lettuce.core.TimeoutOptions;
 
 /**
- * Shared clock (injectable for tests), asynchronous execution for listeners and Redis client behaviour.
+ * Shared clock (injectable for tests), workflow timing, asynchronous execution for listeners and Redis client
+ * behaviour.
  */
 @Configuration
 @EnableAsync
+@EnableConfigurationProperties(WorkflowProperties.class)
 @EnableScheduling
 public class InfrastructureConfig {
 

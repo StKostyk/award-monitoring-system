@@ -27,6 +27,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.award.dto.AwardForm;
@@ -35,10 +36,12 @@ import ua.edu.chnu.awards.award.dto.DuplicateMatch;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
+import ua.edu.chnu.awards.award.service.AwardStatusService;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
 
 @WebMvcTest(AwardController.class)
+@MockitoBean(types = AwardStatusService.class)
 class AwardEndpointsTest extends AbstractAwardEndpointsTest {
 
     private static final String AWARDS = "/api/v1/awards";

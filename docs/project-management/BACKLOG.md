@@ -23,17 +23,17 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 1.3.4 | Fixes from the Feature 1.3 validation | 3 | ✅ Done | SCRUM-29 | [#92](https://github.com/StKostyk/award-monitoring-system/issues/92) |
 | 2.2.1 | Award version recording | 5 | ✅ Done | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
 | 2.2.2 | Version history view and audit export | 5 | ✅ Done | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
-| 2.2.3 | Fixes from the Feature 2.2 validation | 3 | 🔍 In Review | SCRUM-30 | [#97](https://github.com/StKostyk/award-monitoring-system/issues/97) |
+| 2.2.3 | Fixes from the Feature 2.2 validation | 3 | ✅ Done | SCRUM-30 | [#97](https://github.com/StKostyk/award-monitoring-system/issues/97) |
 
 Sprint Goal: an employee creates, checks and submits an award (Feature 2.1).  
-Completed Points: 50 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30; fixes 2.2.3 in review; the author's runs of PRD §9 pending)
+Completed Points: 53 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30, fixes 2.2.3 merged 2026-10-01; the author's runs of PRD §9 pending)
 
 ---
 
 ## Backlog (Prioritized)
 
 ### Epic 2 — remaining (Jira epic SCRUM-20)
-Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md). Feature 2.2 done (Sprint 3): [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md).
+Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md). Feature 2.2 done (Sprint 3): [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md). Feature 2.3 approved 2026-10-01, 2.3.1 in review: [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md).
 
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
@@ -61,9 +61,9 @@ Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../featu
 |--------|---------|--------|
 | Sprint 1 | Setup (7 tasks) | 14 |
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
-| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1, 2.2.2) | 50 |
+| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3) | 53 |
 
-Total Completed: 110 / 162 points (68%)
+Total Completed: 113 / 162 points (70%)
 
 ---
 

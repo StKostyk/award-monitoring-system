@@ -1,0 +1,41 @@
+.submissions {
+  max-width: 720px;
+  margin-top: 16px;
+}
+
+.submissions__list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.submissions__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+}
+
+.submissions__link {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.submissions__meta {
+  color: var(--mat-sys-on-surface-variant, #444746);
+  font: var(--mat-sys-body-small);
+}
+
+.submissions__delayed {
+  --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container, #ffdbcb);
+}
+
+.submissions__empty {
+  margin: 0 0 8px;
+}
+
+.submissions__problem {
+  color: var(--mat-sys-error, #b3261e);
+}

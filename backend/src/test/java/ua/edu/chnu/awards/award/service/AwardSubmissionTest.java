@@ -41,6 +41,7 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.support.TestWorkflow;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
@@ -56,8 +57,10 @@ class AwardSubmissionTest {
     private final AuditService audit = mock(AuditService.class);
     private final DuplicateFinder duplicates = mock(DuplicateFinder.class);
     private final AwardHistory history = mock(AwardHistory.class);
+    private final Clock clock = Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"));
+    private final StatusEstimator estimator = TestWorkflow.estimator(clock);
     private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules, duplicates,
-        new AwardMapper(), audit, history, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
+        new AwardMapper(estimator), audit, history, estimator, clock);
     private final Organization oldDepartment = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final Organization newDepartment = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", newDepartment);
@@ -89,6 +92,16 @@ class AwardSubmissionTest {
         verify(awards).saveAndFlush(draft);
         verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
             Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L));
+    }
+
+    @Test
+    void ac1_1_theRequestIsDueOneReviewPeriodAfterTheSubmission() {
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().deadline()).isEqualTo(NOW.plus(TestWorkflow.REVIEW_PERIOD));
+        assertThat(response.request().estimatedCompletion())
+            .isEqualTo(LocalDate.ofInstant(NOW, ZoneId.of("Europe/Kyiv")).plusDays(9));
+        assertThat(response.request().overdue()).isFalse();
     }
 
     @Test

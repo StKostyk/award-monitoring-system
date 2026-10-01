@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +39,7 @@ import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.support.TestWorkflow;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
@@ -58,7 +60,7 @@ class AwardServiceTest {
     private final AwardOwnership ownership = new AwardOwnership(awards, users, access);
     private final AwardWarnings warnings = mock(AwardWarnings.class);
     private final AwardService service = new AwardService(awards, requests, specifications, rules,
-        ownership, warnings, new AwardMapper(), access, mock(AwardHistory.class));
+        ownership, warnings, new AwardMapper(TestWorkflow.estimator()), access, mock(AwardHistory.class));
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 
@@ -180,7 +182,8 @@ class AwardServiceTest {
 
     private static AwardRequest request(Award award) {
         return AwardRequest.builder().id(40L).award(award).submitter(award.getOwner())
-            .status(RequestStatus.SUBMITTED).currentLevel(ApprovalLevel.FACULTY_SECRETARY).build();
+            .status(RequestStatus.SUBMITTED).currentLevel(ApprovalLevel.FACULTY_SECRETARY)
+            .submittedAt(Instant.parse("2026-09-28T09:00:00Z")).build();
     }
 
     private static AwardForm form(Long version) {

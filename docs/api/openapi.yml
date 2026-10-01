@@ -663,6 +663,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
+  /awards/{id}/status:
+    get:
+      tags: [Awards]
+      summary: Review status of an award
+      description: >
+        The review timeline of an award: the approval path with the state and due date of every level, the
+        deadline of the current level, the expected completion (a Kyiv date, null for a returned or final
+        request), whether the review is overdue and why it is delayed, and the reviewer decisions oldest first
+        with their comments. Readable by the owner (any status) and by readers whose scope covers the award's
+        organisation (submitted awards only), as `GET /awards/{id}`; a draft answers without a request. Other
+        drafts, awards out of scope and unknown ids answer 404. Clients poll it at most once a minute.
+      security:
+        - bearerAuth: []
+      operationId: getAwardStatus
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: The review timeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AwardStatusView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /awards/{id}/versions:
     get:
       tags: [Awards]
@@ -2157,6 +2189,114 @@ components:
         currentLevel:
           $ref: '#/components/schemas/ApprovalLevel'
         submittedAt:
+          type: string
+          format: date-time
+        deadline:
+          type: [string, 'null']
+          format: date-time
+          description: End of the current level's review period
+        estimatedCompletion:
+          type: [string, 'null']
+          format: date
+          description: >
+            Kyiv date the last level of the approval path is expected to finish; null for a returned or final
+            request
+        overdue:
+          type: boolean
+          description: Whether the current level is past its deadline
+
+    AwardStatusView:
+      type: object
+      description: The review timeline of an award; request fields are null for an award without a request
+      properties:
+        awardId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/AwardStatus'
+        requestStatus:
+          oneOf:
+            - $ref: '#/components/schemas/RequestStatus'
+            - type: 'null'
+        currentLevel:
+          oneOf:
+            - $ref: '#/components/schemas/ApprovalLevel'
+            - type: 'null'
+        submittedAt:
+          type: [string, 'null']
+          format: date-time
+        deadline:
+          type: [string, 'null']
+          format: date-time
+        estimatedCompletion:
+          type: [string, 'null']
+          format: date
+        overdue:
+          type: boolean
+        completedAt:
+          type: [string, 'null']
+          format: date-time
+        rejectionReason:
+          type: [string, 'null']
+        delay:
+          type: [object, 'null']
+          description: >
+            Why the request is late: `NO_REVIEWER` when nobody currently holds the level's role in a scope
+            covering the award's organisation (takes precedence), `REVIEW_OVERDUE` with the missed deadline
+          properties:
+            reason:
+              type: string
+              enum: [NO_REVIEWER, REVIEW_OVERDUE]
+            since:
+              type: [string, 'null']
+              format: date-time
+        path:
+          type: array
+          description: Approval levels from the faculty secretary up, lowest first
+          items:
+            $ref: '#/components/schemas/PathStep'
+        decisions:
+          type: array
+          description: Reviewer decisions, oldest first
+          items:
+            $ref: '#/components/schemas/ReviewDecisionView'
+
+    PathStep:
+      type: object
+      properties:
+        level:
+          $ref: '#/components/schemas/ApprovalLevel'
+        state:
+          type: string
+          enum: [DONE, CURRENT, UPCOMING]
+        dueDate:
+          type: [string, 'null']
+          format: date
+          description: Kyiv date the level is expected to finish; null for a done level or an inactive request
+        completedAt:
+          type: [string, 'null']
+          format: date-time
+          description: When the level approved or passed the request on
+
+    ReviewDecisionView:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED, ESCALATED, RETURNED]
+        level:
+          $ref: '#/components/schemas/ApprovalLevel'
+        reviewerId:
+          type: integer
+          format: int64
+        reviewerName:
+          type: string
+        comments:
+          type: [string, 'null']
+        decidedAt:
           type: string
           format: date-time
 

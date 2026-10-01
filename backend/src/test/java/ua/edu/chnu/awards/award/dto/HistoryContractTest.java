@@ -43,6 +43,25 @@ class HistoryContractTest {
             names(AuditTrailEntry.class.getRecordComponents()));
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac1_6_ac1_11_statusSchemasMatchTheView() throws IOException {
+        Map<String, Object> schemas = schemas();
+
+        assertThat(properties(schemas, "AwardStatusView")).containsExactlyInAnyOrderElementsOf(
+            names(AwardStatusView.class.getRecordComponents()));
+        assertThat(properties(schemas, "PathStep")).containsExactlyInAnyOrderElementsOf(
+            names(PathStep.class.getRecordComponents()));
+        assertThat(properties(schemas, "ReviewDecisionView")).containsExactlyInAnyOrderElementsOf(
+            names(DecisionView.class.getRecordComponents()));
+        assertThat(properties(schemas, "AwardRequestSummary")).containsExactlyInAnyOrderElementsOf(
+            names(RequestSummary.class.getRecordComponents()));
+        Map<String, Object> delay = (Map<String, Object>) ((Map<String, Object>) node(schemas, "AwardStatusView")
+            .get("properties")).get("delay");
+        assertThat(((Map<String, Object>) delay.get("properties")).keySet()).containsExactlyInAnyOrderElementsOf(
+            names(StatusDelay.class.getRecordComponents()));
+    }
+
     private static List<String> names(RecordComponent... components) {
         return Stream.of(components).map(RecordComponent::getName).toList();
     }

@@ -28,6 +28,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | View All University Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View Own Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View Award Change History² | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
+| View Award Review Status and Reviewer Comments⁴ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
 | Manage Personal Profile | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Manage Department Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage Faculty Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -36,6 +37,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 ¹ Approvers receive awards too and submit their own like every employee (`award:create`, `award:update:own`; decision of 2026-09-28, Feature 2.1). A request always starts at the faculty secretary; that nobody reviews their own award is enforced in Epic 4. System administrators and GDPR officers read awards for oversight and never submit.
 
 ² The owner sees every saved version of their award; anyone who may read a submitted award (scope over its organisation, or `award:read:all`) sees its versions from the submission on (Feature 2.2, `GET /awards/{id}/versions`).
+
+⁴ The review timeline of an award (approval path, deadlines, expected completion, delay reason) and the reviewer decisions with the reviewer's name and comment are shown to everybody who may read the award, by the same rule as footnote ² (Feature 2.3 D-6, `GET /awards/{id}/status`). Reviewers act in their official role; the owner needs the comment to correct the award.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

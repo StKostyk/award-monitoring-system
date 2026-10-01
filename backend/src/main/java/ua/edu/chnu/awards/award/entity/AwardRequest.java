@@ -68,6 +68,12 @@ public class AwardRequest {
     @Column(name = "deadline")
     private Instant deadline;
 
+    @Column(name = "completed_at")
+    private Instant completedAt;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

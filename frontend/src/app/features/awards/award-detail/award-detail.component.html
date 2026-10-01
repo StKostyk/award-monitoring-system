@@ -84,6 +84,9 @@
       }
     </div>
   </article>
+  @if (award.status !== 'DRAFT') {
+    <app-award-status [awardId]="award.id" (changed)="refresh(award.id)" />
+  }
   @if (showHistory(award)) {
     @if (canAudit()) {
       <mat-tab-group class="award-detail__history" data-testid="award-history-tabs">

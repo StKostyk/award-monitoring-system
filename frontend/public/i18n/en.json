@@ -15,6 +15,13 @@
       "title": "Department membership not confirmed",
       "text": "Your department membership is not confirmed yet: {{organization}}.",
       "hint": "Ask your faculty secretary or the head of your department. Once it is confirmed, the roles reach your session after the next sign-in."
+    },
+    "submissions": {
+      "title": "My submissions",
+      "empty": "No awards under review",
+      "create": "New award",
+      "all": "All awards",
+      "failed": "Your submissions could not be loaded."
     }
   },
   "roles": {
@@ -194,6 +201,41 @@
       "access-denied": "You are not allowed to enter awards.",
       "network": "The server is not reachable. Your values are kept; please try again.",
       "unknown": "Something went wrong. Please try again."
+    },
+    "statusPanel": {
+      "title": "Review status",
+      "submitted": "Submitted",
+      "levels": {
+        "FACULTY_SECRETARY": "Faculty secretary",
+        "DEAN": "Dean",
+        "RECTOR_SECRETARY": "Rector's secretary",
+        "RECTOR": "Rector"
+      },
+      "dueBy": "Expected by {{date}}",
+      "upcomingBy": "by {{date}}",
+      "estimate": "Expected completion: {{date}}",
+      "overdue": "The review is taking longer than usual (since {{since}}). New expected date: {{date}}",
+      "noReviewer": "Nobody currently holds the post of «{{level}}» for your unit. Please contact the dean's office",
+      "returned": "Waiting for your corrections",
+      "completed": "Review completed: {{date}}",
+      "rejectionReason": "Reason for rejection: {{reason}}",
+      "decisions": "Reviewer decisions",
+      "decision": {
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "RETURNED": "Returned for revision",
+        "ESCALATED": "Passed to a higher level"
+      },
+      "updated": "Review status updated",
+      "retry": "Try again",
+      "problems": {
+        "failed": "The review status could not be updated.",
+        "gone": "This award is no longer available to you"
+      }
+    },
+    "timing": {
+      "expected": "Expected by {{date}}",
+      "delayed": "Delayed"
     }
   },
   "categories": {

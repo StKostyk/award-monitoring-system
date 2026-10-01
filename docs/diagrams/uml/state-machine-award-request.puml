@@ -108,6 +108,10 @@ state EXPIRED
 note right of EXPIRED
     Auto-expired requests require
     manual intervention or new submission
+    Epic 4 target: until the workflow engine
+    ships, a request past its deadline is only
+    marked overdue and its delay explained
+    (Feature 2.3 D-5)
 end note
 
 EXPIRED --> [*]
