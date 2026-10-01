@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Documentation reconciled with the code after Epic 2: ADR addenda for the deferred stack (Kafka, Elasticsearch, gateway, Kubernetes, cloud) and the embedded authorization server, as-built ERD, domain class, package, container, submission sequence and data-flow diagrams, planned operations marked in `openapi.yml`, Postman collection on the OAuth 2.0 PKCE flow, RBAC award read rows
+- Ukrainian copies of the thesis-cited documents (`docs/ua`) brought up to date with Epics 1 and 2: ADR addenda, data dictionary, database standards, architecture and migration strategy, authentication and privacy design, RBAC matrix, project plan, data governance and the as-built diagrams
 - The audit trigger no longer copies `password_hash` into the snapshots of `users` rows (V022); rows written earlier are unchanged
 - `openapi.yml` marks optional values with OpenAPI 3.1 type arrays (`type: [string, 'null']`) instead of the 3.0 `nullable` keyword, which 3.1 validators reject
 - Self-registration no longer grants the `EMPLOYEE` role: an institutional address proves employment, not membership of a department, so the first role is the confirmation by somebody who may manage it (`membershipConfirmed` on `GET /users/me`, banner on the home page). Registering an address whose `PENDING` account has an expired verification link replaces that account instead of answering 409

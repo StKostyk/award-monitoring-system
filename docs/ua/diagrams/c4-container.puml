@@ -1,7 +1,9 @@
 @startuml C4_Container_UA
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Контейнерів (C4 Рівень 2)
+title Система Моніторингу та Відстеження Нагород - Діаграма Контейнерів (C4 Рівень 2, цільова архітектура)
+
+' Цільова архітектура (проєкт 2025 року). Реалізація після епіку 2: c4-container-as-built.puml; відкладені частини перелічено в доповненнях до ADR від 2026-10.
 
 LAYOUT_WITH_LEGEND()
 

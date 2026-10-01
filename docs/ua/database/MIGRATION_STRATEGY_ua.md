@@ -88,11 +88,27 @@ src/main/resources/
         ├── V011__create_notifications_tables.sql
         ├── V012__create_indexes.sql
         ├── V013__create_audit_triggers.sql
+        ├── V014__create_auth_tables.sql
+        ├── V015__users_email_unique_lower.sql
+        ├── V016__audit_logs_partitions_2027.sql
+        ├── V017__user_roles_current_unique.sql
+        ├── V018__create_role_delegations_table.sql
+        ├── V019__role_delegations_no_overlap.sql
+        ├── V020__award_drafts.sql
+        ├── V021__award_category_keywords.sql
+        ├── V022__email_change_tokens.sql
+        ├── V023__award_versions.sql
+        ├── V024__award_request_deadlines.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql
         └── R__seed_award_categories.sql
+    └── seed/
+        └── local/
+            └── R__seed_users_dev.sql
 ```
+
+`db/migration` містить схему й довідкові дані та виконується в кожному середовищі. `db/seed/local` містить демонстраційні облікові записи й додається до `spring.flyway.locations` лише профілями `local` і `docker`; виробничий профіль його не бачить. Повторювані скрипти виконуються в алфавітному порядку опису, тож початкові дані, що залежать від інших, називають так, щоб вони сортувалися після них.
 
 ### 1.3 Конвенція Нумерації Версій
 
@@ -404,6 +420,9 @@ $$ LANGUAGE plpgsql;
 -- Архівувати старі партиції (перемістити до схеми архіву або видалити)
 -- DROP TABLE audit_logs_2018_01;  -- Після експорту даних в холодне сховище
 ```
+
+Партиції до 2027-12 включно створює V016 (`fn_create_audit_partition()` покриває наступний місяць, коли його заплановано). Flyway виконує кожну міграцію з `SET TIME ZONE 'UTC'` (`spring.flyway.init-sql`), а V016 записує межі з явним зсувом (`'2026-07-01 00:00:00+00'`): інакше сесія JDBC працює в часовому поясі застосунку, і дата без зсуву змістила б межу та перекрила сусідню партицію.
+Якщо партиція за замовчуванням уже містить рядки місяця, що додається, міграція від'єднує її, створює місяці та нову партицію за замовчуванням, повторно вставляє рядки й видаляє стару (правило батьківської таблиці, що забороняє видалення, не діє для від'єднаної таблиці).
 
 ### 3.4 Процедури Видалення Даних GDPR
 
