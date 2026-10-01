@@ -21,11 +21,23 @@
       {{ 'delegations.actingFor' | transloco: { name: delegator } }}
     </span>
   }
-  <button mat-button type="button" class="shell__lang" (click)="language.toggle()" data-testid="language-toggle">
+  <button
+    mat-button
+    type="button"
+    class="shell__lang"
+    (click)="language.toggle()"
+    data-testid="language-toggle"
+  >
     {{ 'app.language' | transloco }}
   </button>
   @if (auth.isAuthenticated()) {
-    <button mat-button type="button" class="shell__user" [matMenuTriggerFor]="userMenu" data-testid="user-menu">
+    <button
+      mat-button
+      type="button"
+      class="shell__user"
+      [matMenuTriggerFor]="userMenu"
+      data-testid="user-menu"
+    >
       <span data-testid="user-name">{{ auth.fullName() }}</span>
     </button>
     <mat-menu #userMenu="matMenu">
@@ -34,7 +46,13 @@
         <span>{{ 'profile.menu' | transloco }}</span>
       </a>
     </mat-menu>
-    <button mat-icon-button type="button" (click)="logout()" [attr.aria-label]="'app.logout' | transloco" data-testid="logout">
+    <button
+      mat-icon-button
+      type="button"
+      (click)="logout()"
+      [attr.aria-label]="'app.logout' | transloco"
+      data-testid="logout"
+    >
       <mat-icon>logout</mat-icon>
     </button>
   }

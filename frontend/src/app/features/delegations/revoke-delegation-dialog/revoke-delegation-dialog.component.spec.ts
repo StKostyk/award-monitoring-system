@@ -69,7 +69,9 @@ describe('RevokeDelegationDialogComponent', () => {
   });
 
   it('ac3_4_names_the_role_the_organisation_and_the_delegate', () => {
-    const text = fixture.nativeElement.querySelector('[data-testid="revoke-delegation-text"]').textContent;
+    const text = fixture.nativeElement.querySelector(
+      '[data-testid="revoke-delegation-text"]',
+    ).textContent;
 
     expect(text).toContain('Декан');
     expect(text).toContain('Факультет математики');

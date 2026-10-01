@@ -1,7 +1,10 @@
 <h2 mat-dialog-title>{{ 'admin.revoke.title' | transloco }}</h2>
 <mat-dialog-content>
   <p data-testid="revoke-text">
-    {{ 'admin.revoke.text' | transloco: { role: roleName(), organization: organization(), name: data.name } }}
+    {{
+      'admin.revoke.text'
+        | transloco: { role: roleName(), organization: organization(), name: data.name }
+    }}
   </p>
   <p>{{ 'admin.revoke.warning' | transloco }}</p>
 </mat-dialog-content>

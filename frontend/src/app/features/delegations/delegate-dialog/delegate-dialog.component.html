@@ -52,7 +52,13 @@
 
       <mat-form-field appearance="outline" class="delegations__field">
         <mat-label>{{ 'delegations.create.validFrom' | transloco }}</mat-label>
-        <input matInput type="date" formControlName="validFrom" [min]="minimumDate" data-testid="delegate-valid-from" />
+        <input
+          matInput
+          type="date"
+          formControlName="validFrom"
+          [min]="minimumDate"
+          data-testid="delegate-valid-from"
+        />
         @if (form.controls.validFrom.hasError('past')) {
           <mat-error>{{ 'delegations.create.validation.past' | transloco }}</mat-error>
         }
@@ -60,7 +66,13 @@
 
       <mat-form-field appearance="outline" class="delegations__field">
         <mat-label>{{ 'delegations.create.validTo' | transloco }}</mat-label>
-        <input matInput type="date" formControlName="validTo" [min]="minimumDate" data-testid="delegate-valid-to" />
+        <input
+          matInput
+          type="date"
+          formControlName="validTo"
+          [min]="minimumDate"
+          data-testid="delegate-valid-to"
+        />
         <mat-hint>{{ 'delegations.create.periodHint' | transloco }}</mat-hint>
         @if (form.controls.validTo.hasError('required')) {
           <mat-error>{{ 'delegations.create.validation.required' | transloco }}</mat-error>
@@ -91,7 +103,9 @@
     }
 
     @if (error(); as error) {
-      <p class="delegations__problem" role="alert" data-testid="delegate-error">{{ error | transloco }}</p>
+      <p class="delegations__problem" role="alert" data-testid="delegate-error">
+        {{ error | transloco }}
+      </p>
     }
   </form>
 </mat-dialog-content>

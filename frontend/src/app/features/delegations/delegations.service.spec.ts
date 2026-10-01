@@ -10,7 +10,9 @@ describe('DelegationsService', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(DelegationsService);
     http = TestBed.inject(HttpTestingController);
   });
@@ -25,7 +27,9 @@ describe('DelegationsService', () => {
     bare.flush({ given: [], received: [] });
 
     service.list('active', 42).subscribe();
-    const filtered = http.expectOne((request) => request.url === `${environment.apiUrl}/delegations`);
+    const filtered = http.expectOne(
+      (request) => request.url === `${environment.apiUrl}/delegations`,
+    );
 
     expect(filtered.request.params.get('state')).toBe('active');
     expect(filtered.request.params.get('delegatorId')).toBe('42');

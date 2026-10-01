@@ -47,7 +47,9 @@ describe('adminUsersFeature', () => {
     expect(filtered.page).toBe(0);
     expect(filtered.size).toBe(50);
     expect(filtered.loading).toBe(true);
-    expect(adminUsersFeature.selectQuery.projector(filtered.filters, filtered.page, filtered.size)).toEqual({
+    expect(
+      adminUsersFeature.selectQuery.projector(filtered.filters, filtered.page, filtered.size),
+    ).toEqual({
       q: 'нова',
       role: 'EMPLOYEE',
       status: null,
@@ -91,7 +93,12 @@ describe('adminUsersFeature', () => {
   });
 
   it('ac2_10_marks_an_unknown_user_as_not_found', () => {
-    const detail: UserDetail = { ...newcomer, createdAt: '2026-09-01T00:00:00Z', lastLoginAt: null, roleHistory: [] };
+    const detail: UserDetail = {
+      ...newcomer,
+      createdAt: '2026-09-01T00:00:00Z',
+      lastLoginAt: null,
+      roleHistory: [],
+    };
     const loaded = reducer(initialState, AdminUsersActions.userLoaded({ user: detail }));
 
     expect(loaded.selected).toEqual(detail);

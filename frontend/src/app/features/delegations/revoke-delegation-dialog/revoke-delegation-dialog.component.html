@@ -9,10 +9,20 @@
   <p>{{ 'delegations.revoke.warning' | transloco }}</p>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button type="button" [mat-dialog-close]="false" data-testid="revoke-delegation-cancel">
+  <button
+    mat-button
+    type="button"
+    [mat-dialog-close]="false"
+    data-testid="revoke-delegation-cancel"
+  >
     {{ 'delegations.revoke.cancel' | transloco }}
   </button>
-  <button mat-flat-button type="button" [mat-dialog-close]="true" data-testid="revoke-delegation-confirm">
+  <button
+    mat-flat-button
+    type="button"
+    [mat-dialog-close]="true"
+    data-testid="revoke-delegation-confirm"
+  >
     {{ 'delegations.revoke.confirm' | transloco }}
   </button>
 </mat-dialog-actions>

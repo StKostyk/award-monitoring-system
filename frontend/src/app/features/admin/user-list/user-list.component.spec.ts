@@ -39,7 +39,9 @@ const employee: UserSummary = {
   lastName: 'Працівник',
   organization: department,
   status: 'ACTIVE',
-  roles: [{ id: 3, role: 'EMPLOYEE', organization: department, validFrom: '2026-09-01', validTo: null }],
+  roles: [
+    { id: 3, role: 'EMPLOYEE', organization: department, validFrom: '2026-09-01', validTo: null },
+  ],
   membershipConfirmed: true,
 };
 
@@ -116,9 +118,9 @@ describe('UserListComponent', () => {
     );
     expect(rows[1].querySelector('[data-testid="unconfirmed-badge"]')).toBeNull();
     expect(rows[1].textContent).toContain('Працівник');
-    expect(
-      rows[0].querySelector('[data-testid="user-link"]')?.getAttribute('href'),
-    ).toBe('/admin/users/7');
+    expect(rows[0].querySelector('[data-testid="user-link"]')?.getAttribute('href')).toBe(
+      '/admin/users/7',
+    );
   });
 
   it('ac2_10_ignores_a_free_text_filter_shorter_than_two_characters', () => {
@@ -180,11 +182,13 @@ describe('UserListComponent', () => {
   });
 
   it('ac2_10_shows_the_empty_state_when_nothing_matches', () => {
-    store.dispatch(AdminUsersActions.usersLoaded({ page: { ...page, content: [], totalElements: 0 } }));
+    store.dispatch(
+      AdminUsersActions.usersLoaded({ page: { ...page, content: [], totalElements: 0 } }),
+    );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="users-empty"]').textContent).toContain(
-      'Користувачів не знайдено',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="users-empty"]').textContent,
+    ).toContain('Користувачів не знайдено');
   });
 });

@@ -52,7 +52,10 @@ describe('delegationsFeature', () => {
   it('ac3_5_empties_the_lists_when_the_request_fails', () => {
     const loaded = reducer(initialState, DelegationsActions.delegationsLoaded({ list }));
 
-    const failed = reducer(loaded, DelegationsActions.delegationsLoadFailed({ problem: 'network' }));
+    const failed = reducer(
+      loaded,
+      DelegationsActions.delegationsLoadFailed({ problem: 'network' }),
+    );
 
     expect(failed.given).toEqual([]);
     expect(failed.received).toEqual([]);

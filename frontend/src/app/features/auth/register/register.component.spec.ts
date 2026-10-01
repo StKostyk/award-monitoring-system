@@ -18,7 +18,13 @@ const departments: OrganizationSummary[] = [
     nameUk: 'Кафедра алгебри',
     code: 'DAI',
     type: 'DEPARTMENT',
-    parent: { id: 9, name: 'Faculty of Mathematics', nameUk: 'Факультет математики', code: 'FMI', type: 'FACULTY' },
+    parent: {
+      id: 9,
+      name: 'Faculty of Mathematics',
+      nameUk: 'Факультет математики',
+      code: 'FMI',
+      type: 'FACULTY',
+    },
   },
   {
     id: 20,
@@ -26,7 +32,13 @@ const departments: OrganizationSummary[] = [
     nameUk: 'Кафедра біохімії',
     code: 'DBBT',
     type: 'DEPARTMENT',
-    parent: { id: 2, name: 'Institute of Biology', nameUk: 'Інститут біології', code: 'IBCB', type: 'FACULTY' },
+    parent: {
+      id: 2,
+      name: 'Institute of Biology',
+      nameUk: 'Інститут біології',
+      code: 'IBCB',
+      type: 'FACULTY',
+    },
   },
 ];
 
@@ -75,7 +87,13 @@ describe('RegisterComponent', () => {
 
   it('ac28 validates the institutional address and password length before calling the server', () => {
     const form = fixture.componentInstance.form;
-    form.setValue({ email: 'x@gmail.com', password: 'short', firstName: 'A', lastName: 'B', organizationId: 64 });
+    form.setValue({
+      email: 'x@gmail.com',
+      password: 'short',
+      firstName: 'A',
+      lastName: 'B',
+      organizationId: 64,
+    });
 
     fixture.componentInstance.submit();
 
@@ -115,7 +133,10 @@ describe('RegisterComponent', () => {
       lastName: 'Нова',
       organizationId: 64,
     });
-    request.flush({ email: 'new.user@chnu.edu.ua', status: 'PENDING' }, { status: 201, statusText: 'Created' });
+    request.flush(
+      { email: 'new.user@chnu.edu.ua', status: 'PENDING' },
+      { status: 201, statusText: 'Created' },
+    );
 
     expect(navigate).toHaveBeenCalledWith(['/registration-pending'], {
       queryParams: { email: 'new.user@chnu.edu.ua' },
@@ -134,11 +155,16 @@ describe('RegisterComponent', () => {
     fixture.componentInstance.submit();
     http
       .expectOne(`${environment.apiUrl}/auth/register`)
-      .flush({ type: 'urn:awards:problem:email-taken', status: 409 }, { status: 409, statusText: 'Conflict' });
+      .flush(
+        { type: 'urn:awards:problem:email-taken', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
     fixture.detectChanges();
 
     expect(fixture.componentInstance.error()).toBe('register.errors.email-taken');
-    expect(fixture.nativeElement.querySelector('[data-testid="register-error"]').textContent).toContain('Адреса зайнята');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="register-error"]').textContent,
+    ).toContain('Адреса зайнята');
     expect(fixture.componentInstance.submitting()).toBe(false);
   });
 });

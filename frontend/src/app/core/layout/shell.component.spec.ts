@@ -25,7 +25,12 @@ function delegation(state: 'active' | 'revoked') {
       type: 'FACULTY' as const,
     },
     delegator: dean,
-    delegate: { id: 3, firstName: 'Аліна', lastName: 'Секретар', email: 'secretary.fmi@chnu.edu.ua' },
+    delegate: {
+      id: 3,
+      firstName: 'Аліна',
+      lastName: 'Секретар',
+      email: 'secretary.fmi@chnu.edu.ua',
+    },
     validFrom: '2026-09-24',
     validTo: '2026-10-08',
     reason: null,
@@ -87,7 +92,9 @@ describe('ShellComponent', () => {
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
 
-    expect(element.querySelector('[data-testid="user-name"]')?.textContent).toContain('Martyn Martyniuk');
+    expect(element.querySelector('[data-testid="user-name"]')?.textContent).toContain(
+      'Martyn Martyniuk',
+    );
     (element.querySelector('[data-testid="logout"]') as HTMLButtonElement).click();
 
     expect(auth.logout).toHaveBeenCalled();
@@ -97,7 +104,9 @@ describe('ShellComponent', () => {
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('[data-testid="language-toggle"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="language-toggle"]') as HTMLButtonElement
+    ).click();
 
     expect(language.toggle).toHaveBeenCalled();
   });
@@ -130,9 +139,9 @@ describe('ShellComponent', () => {
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="nav-awards"]').getAttribute('href')).toBe(
-      '/awards',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="nav-awards"]').getAttribute('href'),
+    ).toBe('/awards');
   });
 
   it('ac3_6_shows_the_delegations_entry_only_to_a_holder_of_an_approval_role', () => {
@@ -155,7 +164,9 @@ describe('ShellComponent', () => {
   it('ac3_6_names_the_delegator_while_a_received_delegation_is_active', () => {
     auth.isAuthenticated.set(true);
     auth.permissions.set(
-      readPermissions(tokenWith({ role_scopes: ['FACULTY_SECRETARY:9', 'DEAN:9'], delegations: ['DEAN:9:2'] })),
+      readPermissions(
+        tokenWith({ role_scopes: ['FACULTY_SECRETARY:9', 'DEAN:9'], delegations: ['DEAN:9:2'] }),
+      ),
     );
     delegations.list.mockReturnValue(of({ given: [], received: [delegation('active')] }));
     const fixture = TestBed.createComponent(ShellComponent);

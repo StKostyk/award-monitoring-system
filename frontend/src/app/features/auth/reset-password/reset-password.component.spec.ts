@@ -20,7 +20,11 @@ describe('ResetPasswordComponent', () => {
         ResetPasswordComponent,
         NoopAnimationsModule,
         TranslocoTestingModule.forRoot({
-          langs: { uk: { reset: { done: 'Пароль змінено', errors: { 'password-too-common': 'Надто простий' } } } },
+          langs: {
+            uk: {
+              reset: { done: 'Пароль змінено', errors: { 'password-too-common': 'Надто простий' } },
+            },
+          },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
         }),
       ],
@@ -29,7 +33,10 @@ describe('ResetPasswordComponent', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: AuthService, useValue: auth },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } },
+        },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -51,7 +58,9 @@ describe('ResetPasswordComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('done');
-    (fixture.nativeElement.querySelector('[data-testid="reset-sign-in"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="reset-sign-in"]') as HTMLButtonElement
+    ).click();
     expect(auth.login).toHaveBeenCalledWith('/');
   });
 
@@ -62,11 +71,16 @@ describe('ResetPasswordComponent', () => {
     fixture.componentInstance.submit();
     http
       .expectOne(`${environment.apiUrl}/auth/password-reset/confirm`)
-      .flush({ type: 'urn:awards:problem:password-too-common' }, { status: 422, statusText: 'Unprocessable' });
+      .flush(
+        { type: 'urn:awards:problem:password-too-common' },
+        { status: 422, statusText: 'Unprocessable' },
+      );
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('form');
-    expect(fixture.nativeElement.querySelector('[data-testid="reset-error"]').textContent).toContain('простий');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="reset-error"]').textContent,
+    ).toContain('простий');
   });
 
   it('ac32 treats an expired link as invalid and links to a new request', async () => {

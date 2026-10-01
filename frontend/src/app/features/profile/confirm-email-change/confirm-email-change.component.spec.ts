@@ -10,21 +10,31 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ConfirmEmailChangeComponent } from './confirm-email-change.component';
 
 describe('ConfirmEmailChangeComponent', () => {
-  const auth = { login: vi.fn(), signedOutElsewhere: vi.fn(), userId: vi.fn(() => '12' as string | null) };
+  const auth = {
+    login: vi.fn(),
+    signedOutElsewhere: vi.fn(),
+    userId: vi.fn(() => '12' as string | null),
+  };
   let http: HttpTestingController;
 
   async function setup(token: string | null) {
     await TestBed.configureTestingModule({
       imports: [
         ConfirmEmailChangeComponent,
-        TranslocoTestingModule.forRoot({ langs: { uk: {} }, translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' } }),
+        TranslocoTestingModule.forRoot({
+          langs: { uk: {} },
+          translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
+        }),
       ],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: AuthService, useValue: auth },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } },
+        },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -48,7 +58,11 @@ describe('ConfirmEmailChangeComponent', () => {
 
     expect(fixture.componentInstance.state()).toBe('changed');
     expect(auth.signedOutElsewhere).toHaveBeenCalled();
-    (fixture.nativeElement.querySelector('[data-testid="confirm-email-sign-in"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector(
+        '[data-testid="confirm-email-sign-in"]',
+      ) as HTMLButtonElement
+    ).click();
     expect(auth.login).toHaveBeenCalledWith('/profile');
   });
 
@@ -58,7 +72,9 @@ describe('ConfirmEmailChangeComponent', () => {
   ])('f3 keeps the local session when %s is signed in here', async (_who, signedIn) => {
     auth.userId.mockReturnValue(signedIn);
     const fixture = await setup('raw');
-    http.expectOne(`${environment.apiUrl}/auth/email-change/confirm`).flush({ userId: 12, email: 'mover.new@chnu.edu.ua' });
+    http
+      .expectOne(`${environment.apiUrl}/auth/email-change/confirm`)
+      .flush({ userId: 12, email: 'mover.new@chnu.edu.ua' });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('changed');

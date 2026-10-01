@@ -9,7 +9,9 @@ const dean = 'dean.fmi@chnu.edu.ua';
 const employee = 'employee.fmi@chnu.edu.ua';
 
 test.describe('role assignment', () => {
-  test('ac26 a newcomer keeps the membership banner and cannot open the directory', async ({ page }) => {
+  test('ac26 a newcomer keeps the membership banner and cannot open the directory', async ({
+    page,
+  }) => {
     const email = `newcomer.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, password);
 
@@ -93,7 +95,9 @@ test.describe('role assignment', () => {
     await expect(page.getByTestId('role-history')).toContainText('Секретар факультету');
   });
 
-  test('ac210 an unknown user ends on the not-found state without an error loop', async ({ page }) => {
+  test('ac210 an unknown user ends on the not-found state without an error loop', async ({
+    page,
+  }) => {
     const calls: string[] = [];
     page.on('request', (request) => {
       if (request.url().includes('/api/v1/users/999999')) {
@@ -124,7 +128,9 @@ test.describe('role assignment', () => {
     expect(calls).toHaveLength(0);
   });
 
-  test('ac210 the directory is closed to an employee and reads in English too', async ({ page }) => {
+  test('ac210 the directory is closed to an employee and reads in English too', async ({
+    page,
+  }) => {
     await signIn(page, employee, demo);
 
     await expect(page.getByTestId('nav-users')).toHaveCount(0);

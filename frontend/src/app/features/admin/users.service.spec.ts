@@ -10,7 +10,9 @@ describe('UsersService', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(UsersService);
     http = TestBed.inject(HttpTestingController);
   });
@@ -42,7 +44,9 @@ describe('UsersService', () => {
     service.get(7).subscribe();
     http.expectOne(`${environment.apiUrl}/users/7`).flush({});
 
-    service.assignRole(7, { role: 'EMPLOYEE', organizationId: 64, updateOrganization: true }).subscribe();
+    service
+      .assignRole(7, { role: 'EMPLOYEE', organizationId: 64, updateOrganization: true })
+      .subscribe();
     const assign = http.expectOne(`${environment.apiUrl}/users/7/roles`);
 
     expect(assign.request.method).toBe('POST');

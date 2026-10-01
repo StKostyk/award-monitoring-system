@@ -7,7 +7,9 @@ import { countMessages, linkFor, registerAndVerify, signIn } from './helpers';
 const PASSWORD = 'correct-horse-battery';
 
 test.describe('profile', () => {
-  test('ac11 ac12 ac13 ac17 shows the profile and renames the owner with the header following', async ({ page }) => {
+  test('ac11 ac12 ac13 ac17 shows the profile and renames the owner with the header following', async ({
+    page,
+  }) => {
     const email = `e2e.rename.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
@@ -34,7 +36,9 @@ test.describe('profile', () => {
     await expect(page.getByTestId('profile-save')).toBeDisabled();
   });
 
-  test('ac14 ac15 ac16 ac17 moves the account to a confirmed address and signs it out', async ({ page }) => {
+  test('ac14 ac15 ac16 ac17 moves the account to a confirmed address and signs it out', async ({
+    page,
+  }) => {
     const stamp = Date.now();
     const email = `e2e.mover.${stamp}@chnu.edu.ua`;
     const moved = `e2e.moved.${stamp}@chnu.edu.ua`;
@@ -67,7 +71,10 @@ test.describe('profile', () => {
     await expect(page.getByTestId('profile-email')).toHaveText(moved);
   });
 
-  test('ac17 f3 a link opened where another user is signed in keeps that session', async ({ page, browser }) => {
+  test('ac17 f3 a link opened where another user is signed in keeps that session', async ({
+    page,
+    browser,
+  }) => {
     const stamp = Date.now();
     const mover = `e2e.lender.${stamp}@chnu.edu.ua`;
     const moved = `e2e.lent.${stamp}@chnu.edu.ua`;
@@ -106,7 +113,9 @@ test.describe('profile', () => {
     await expect(page.getByTestId('profile-email')).toHaveText(email);
   });
 
-  test('ac31 ac33 ac34 ac35 downloads my data once a minute and announces it by email', async ({ page }) => {
+  test('ac31 ac33 ac34 ac35 downloads my data once a minute and announces it by email', async ({
+    page,
+  }) => {
     const email = `e2e.export.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
@@ -117,17 +126,24 @@ test.describe('profile', () => {
     const downloading = page.waitForEvent('download');
     await page.getByTestId('profile-download').click();
     const download = await downloading;
-    expect(download.suggestedFilename()).toMatch(/^award-monitoring-export-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(download.suggestedFilename()).toMatch(
+      /^award-monitoring-export-\d{4}-\d{2}-\d{2}\.json$/,
+    );
     const path = await download.path();
     const body = readFileSync(path, 'utf-8');
-    const file = JSON.parse(body) as { personal_data: { profile: { email: string } }; roles: unknown[] };
+    const file = JSON.parse(body) as {
+      personal_data: { profile: { email: string } };
+      roles: unknown[];
+    };
     expect(file.personal_data.profile.email).toBe(email);
     expect(file.roles).toEqual([]);
     expect(body).not.toMatch(/password|\$2a\$|token/);
     await expect(page.getByTestId('profile-export-done')).toBeVisible();
 
     await page.getByTestId('profile-download').click();
-    await expect(page.getByTestId('profile-export-error')).toHaveText('Забагато запитів. Спробуйте пізніше.');
+    await expect(page.getByTestId('profile-export-error')).toHaveText(
+      'Забагато запитів. Спробуйте пізніше.',
+    );
     await expect.poll(() => countMessages(email, 'Your data was exported')).toBe(1);
   });
 });

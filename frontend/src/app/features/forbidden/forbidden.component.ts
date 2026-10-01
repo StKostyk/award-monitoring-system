@@ -6,7 +6,15 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-forbidden',
-  imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatButton, RouterLink, TranslocoPipe],
+  imports: [
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardContent,
+    MatButton,
+    RouterLink,
+    TranslocoPipe,
+  ],
   templateUrl: './forbidden.component.html',
   styles: '.forbidden__card { max-width: 560px; }',
 })

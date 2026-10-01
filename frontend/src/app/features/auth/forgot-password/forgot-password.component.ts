@@ -32,7 +32,10 @@ export class ForgotPasswordComponent {
   private readonly api = inject(RegistrationService);
   private readonly auth = inject(AuthService);
 
-  readonly email = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] });
+  readonly email = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.email],
+  });
   readonly sent = signal(false);
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);

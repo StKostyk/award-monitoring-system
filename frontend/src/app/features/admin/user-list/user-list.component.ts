@@ -133,7 +133,9 @@ export class UserListComponent implements OnInit {
       .afterClosed()
       .subscribe((organizationId?: number) => {
         if (organizationId) {
-          this.store.dispatch(AdminUsersActions.membershipConfirmed({ id: user.id, organizationId }));
+          this.store.dispatch(
+            AdminUsersActions.membershipConfirmed({ id: user.id, organizationId }),
+          );
         }
       });
   }

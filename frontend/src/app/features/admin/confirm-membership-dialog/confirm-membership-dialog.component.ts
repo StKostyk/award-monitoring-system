@@ -47,7 +47,9 @@ export class ConfirmMembershipDialogComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.api.organizations('DEPARTMENT').subscribe((departments) => this.departments.set(departments));
+    this.api
+      .organizations('DEPARTMENT')
+      .subscribe((departments) => this.departments.set(departments));
   }
 
   name(organization: { name: string; nameUk: string | null }): string {

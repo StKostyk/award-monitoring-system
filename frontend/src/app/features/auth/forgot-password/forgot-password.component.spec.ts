@@ -21,11 +21,20 @@ describe('ForgotPasswordComponent', () => {
         ForgotPasswordComponent,
         NoopAnimationsModule,
         TranslocoTestingModule.forRoot({
-          langs: { uk: { forgot: { sent: 'Надіслано на {{email}}', errors: { network: 'Немає звʼязку' } } } },
+          langs: {
+            uk: {
+              forgot: { sent: 'Надіслано на {{email}}', errors: { network: 'Немає звʼязку' } },
+            },
+          },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
         }),
       ],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: AuthService, useValue: auth }],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: AuthService, useValue: auth },
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(ForgotPasswordComponent);
@@ -43,8 +52,12 @@ describe('ForgotPasswordComponent', () => {
     request.flush(null, { status: 202, statusText: 'Accepted' });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="forgot-sent"]').textContent).toContain('Olena@chnu.edu.ua');
-    (fixture.nativeElement.querySelector('[data-testid="forgot-sign-in"]') as HTMLButtonElement).click();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="forgot-sent"]').textContent,
+    ).toContain('Olena@chnu.edu.ua');
+    (
+      fixture.nativeElement.querySelector('[data-testid="forgot-sign-in"]') as HTMLButtonElement
+    ).click();
     expect(auth.login).toHaveBeenCalledWith('/');
   });
 
@@ -56,7 +69,9 @@ describe('ForgotPasswordComponent', () => {
     form.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);
-    http.expectOne(`${environment.apiUrl}/auth/password-reset/request`).flush(null, { status: 202, statusText: 'Accepted' });
+    http
+      .expectOne(`${environment.apiUrl}/auth/password-reset/request`)
+      .flush(null, { status: 202, statusText: 'Accepted' });
     expect(fixture.componentInstance.sent()).toBe(true);
   });
 
@@ -67,10 +82,14 @@ describe('ForgotPasswordComponent', () => {
 
     fixture.componentInstance.email.setValue('olena@chnu.edu.ua');
     fixture.componentInstance.submit();
-    http.expectOne(`${environment.apiUrl}/auth/password-reset/request`).error(new ProgressEvent('error'), { status: 0 });
+    http
+      .expectOne(`${environment.apiUrl}/auth/password-reset/request`)
+      .error(new ProgressEvent('error'), { status: 0 });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.sent()).toBe(false);
-    expect(fixture.nativeElement.querySelector('[data-testid="forgot-error"]').textContent).toContain('звʼязку');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="forgot-error"]').textContent,
+    ).toContain('звʼязку');
   });
 });

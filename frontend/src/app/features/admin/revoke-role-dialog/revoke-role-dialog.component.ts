@@ -20,7 +20,14 @@ export interface RevokeRoleData {
 
 @Component({
   selector: 'app-revoke-role-dialog',
-  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButton, TranslocoPipe],
+  imports: [
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatDialogClose,
+    MatButton,
+    TranslocoPipe,
+  ],
   templateUrl: './revoke-role-dialog.component.html',
 })
 export class RevokeRoleDialogComponent {

@@ -61,7 +61,9 @@ export class ShellComponent {
       next: (list) =>
         this.actingFor.set(
           list.received
-            .map((delegation) => `${delegation.delegator.firstName} ${delegation.delegator.lastName}`)
+            .map(
+              (delegation) => `${delegation.delegator.firstName} ${delegation.delegator.lastName}`,
+            )
             .join(', '),
         ),
       error: () => this.actingFor.set(''),

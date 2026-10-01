@@ -13,7 +13,13 @@
       <p role="status" data-testid="pending-notice">{{ notice | transloco }}</p>
     }
     <div class="auth-actions">
-      <button mat-stroked-button type="button" (click)="resend()" [disabled]="sending()" data-testid="resend">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="resend()"
+        [disabled]="sending()"
+        data-testid="resend"
+      >
         {{ 'pending.resend' | transloco }}
       </button>
       <button mat-flat-button type="button" (click)="signIn()" data-testid="pending-sign-in">

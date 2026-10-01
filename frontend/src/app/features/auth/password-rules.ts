@@ -10,4 +10,8 @@ export function maxUtf8Bytes(max: number): ValidatorFn {
 }
 
 /** The client-side mirror of the server password policy (length only; the common-password list stays on the server). */
-export const PASSWORD_VALIDATORS = [Validators.required, Validators.minLength(PASSWORD_MIN), maxUtf8Bytes(PASSWORD_MAX_BYTES)];
+export const PASSWORD_VALIDATORS = [
+  Validators.required,
+  Validators.minLength(PASSWORD_MIN),
+  maxUtf8Bytes(PASSWORD_MAX_BYTES),
+];

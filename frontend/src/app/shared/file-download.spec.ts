@@ -21,11 +21,11 @@ describe('file download', () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:file');
     const revoke = vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
     let attached = false;
-    const click = vi
-      .spyOn(HTMLAnchorElement.prototype, 'click')
-      .mockImplementation(function (this: HTMLAnchorElement) {
-        attached = this.isConnected;
-      });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      attached = this.isConnected;
+    });
 
     saveFile(new Blob(['x']), 'x.csv');
 

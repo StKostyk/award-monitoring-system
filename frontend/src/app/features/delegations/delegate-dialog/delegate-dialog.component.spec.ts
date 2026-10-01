@@ -121,9 +121,9 @@ describe('DelegateDialogComponent', () => {
   it('ac3_6_tells_a_caller_without_an_approval_role_that_nothing_can_be_delegated', async () => {
     const { fixture } = await build({ role_scopes: ['EMPLOYEE:64'] });
 
-    expect(fixture.nativeElement.querySelector('[data-testid="delegate-no-roles"]').textContent).toContain(
-      'Ви не маєте власної ролі',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="delegate-no-roles"]').textContent,
+    ).toContain('Ви не маєте власної ролі');
     expect(fixture.nativeElement.querySelector('[data-testid="delegate-submit"]')).toBeNull();
   });
 
@@ -140,7 +140,9 @@ describe('DelegateDialogComponent', () => {
     requests[0].flush([faculty, { ...faculty, id: 10, nameUk: 'Інший факультет' }]);
     requests[1].flush([]);
 
-    expect(fixture.componentInstance.organizations().map((organization) => organization.id)).toEqual([9]);
+    expect(
+      fixture.componentInstance.organizations().map((organization) => organization.id),
+    ).toEqual([9]);
     expect(fixture.componentInstance.form.controls.organizationId.value).toBe(9);
   });
 
@@ -216,9 +218,9 @@ describe('DelegateDialogComponent', () => {
       );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="delegate-error"]').textContent).toContain(
-      'Ви вже делегували цю роль',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="delegate-error"]').textContent,
+    ).toContain('Ви вже делегували цю роль');
     expect(close).not.toHaveBeenCalled();
   });
 
@@ -236,7 +238,15 @@ describe('DelegateDialogComponent', () => {
 
     expect(request.request.params.get('q')).toBe('сек');
     expect(request.request.params.get('status')).toBe('ACTIVE');
-    request.flush({ content: [secretary], totalElements: 1, totalPages: 1, size: 10, number: 0, first: true, last: true });
+    request.flush({
+      content: [secretary],
+      totalElements: 1,
+      totalPages: 1,
+      size: 10,
+      number: 0,
+      first: true,
+      last: true,
+    });
 
     expect(fixture.componentInstance.candidates()).toEqual([secretary]);
     expect(fixture.componentInstance.display(secretary)).toContain('Секретар Аліна');
