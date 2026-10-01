@@ -49,7 +49,7 @@ SELECT
 FROM awards a
 JOIN users u ON a.user_id = u.user_id
 JOIN award_categories c ON a.category_id = c.category_id
-JOIN organizations o ON u.organization_id = o.org_id
+JOIN organizations o ON a.organization_id = o.org_id
 WHERE a.status = 'APPROVED'
   AND u.account_status = 'ACTIVE';
 
@@ -98,7 +98,7 @@ JOIN awards a ON r.award_id = a.award_id
 JOIN users sub ON r.submitter_id = sub.user_id
 LEFT JOIN users rev ON r.current_reviewer_id = rev.user_id
 JOIN award_categories c ON a.category_id = c.category_id
-JOIN organizations o ON sub.organization_id = o.org_id
+JOIN organizations o ON a.organization_id = o.org_id
 WHERE r.status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED');
 
 COMMENT ON VIEW vw_pending_requests IS 'Pending workflow requests with deadline status, award, submitter, and reviewer details';
@@ -135,7 +135,8 @@ COMMENT ON VIEW vw_user_current_roles IS 'Currently active role assignments for 
 -- ============================================================================
 -- VIEW: vw_award_statistics
 -- ============================================================================
--- Aggregated award statistics by organization
+-- Aggregated award statistics by organization; an award counts for the
+-- organization it was submitted from, wherever its owner works today
 -- ============================================================================
 
 CREATE VIEW vw_award_statistics AS
@@ -151,8 +152,7 @@ SELECT
     AVG(a.impact_score) FILTER (WHERE a.status = 'APPROVED') AS avg_impact_score,
     MAX(a.award_date) FILTER (WHERE a.status = 'APPROVED') AS latest_award_date
 FROM organizations o
-LEFT JOIN users u ON u.organization_id = o.org_id AND u.account_status = 'ACTIVE'
-LEFT JOIN awards a ON a.user_id = u.user_id
+LEFT JOIN awards a ON a.organization_id = o.org_id
 WHERE o.is_active = TRUE
 GROUP BY o.org_id, o.name, o.org_type;
 

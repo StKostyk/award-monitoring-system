@@ -8,7 +8,9 @@
 -- ============================================================================
 -- Calculates impact score for an award based on category level
 -- Score range: 0-100
--- Base scores: SPECIALITY=10, DEPARTMENT=20, COLLEGE=40, FACULTY=50, UNIVERSITY=60, LOCAL=70, REGIONAL=80, NATIONAL=90, INTERNATIONAL=100
+-- Base scores match RecognitionLevel in the application:
+-- SPECIALITY=10, DEPARTMENT=20, COLLEGE=30, FACULTY=40, LOCAL=45, UNIVERSITY=60, REGIONAL=70, NATIONAL=80,
+-- INTERNATIONAL=100
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION fn_calculate_impact_score(p_category_id BIGINT)
@@ -30,12 +32,12 @@ BEGIN
     v_base_score := CASE v_level
         WHEN 'SPECIALITY' THEN 10
         WHEN 'DEPARTMENT' THEN 20
-        WHEN 'COLLEGE' THEN 40
-        WHEN 'FACULTY' THEN 50
+        WHEN 'COLLEGE' THEN 30
+        WHEN 'FACULTY' THEN 40
+        WHEN 'LOCAL' THEN 45
         WHEN 'UNIVERSITY' THEN 60
-        WHEN 'LOCAL' THEN 70
-        WHEN 'REGIONAL' THEN 80
-        WHEN 'NATIONAL' THEN 90
+        WHEN 'REGIONAL' THEN 70
+        WHEN 'NATIONAL' THEN 80
         WHEN 'INTERNATIONAL' THEN 100
         ELSE 0
     END;
@@ -138,7 +140,12 @@ COMMENT ON FUNCTION fn_get_user_permissions(BIGINT) IS 'Returns array of permiss
 -- ============================================================================
 -- FUNCTION: fn_can_user_approve_award
 -- ============================================================================
--- Checks if a user can approve an award at a specific level
+-- Checks if a user can decide an open request at its current level, by the
+-- rules of ReviewerAvailability: the role of the level is held or delegated
+-- (delegation in effect, delegator still holding the role) in the award's
+-- organization or one above it, the user can sign in and does not own the
+-- award. The award keeps the organization of its submission. Days are Kyiv
+-- calendar days, as in the application.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION fn_can_user_approve_award(
@@ -147,44 +154,61 @@ CREATE OR REPLACE FUNCTION fn_can_user_approve_award(
 )
 RETURNS BOOLEAN AS $$
 DECLARE
+    v_today DATE := (now() AT TIME ZONE 'Europe/Kyiv')::date;
     v_award_org_id BIGINT;
+    v_owner_id BIGINT;
     v_request_level VARCHAR(30);
-    v_has_role BOOLEAN;
 BEGIN
-    -- Get award's organization and request level
-    SELECT u.organization_id, ar.current_level
-    INTO v_award_org_id, v_request_level
+    SELECT a.organization_id, a.user_id, ar.current_level
+    INTO v_award_org_id, v_owner_id, v_request_level
     FROM awards a
-    JOIN users u ON a.user_id = u.user_id
-    LEFT JOIN award_requests ar ON a.award_id = ar.award_id
-    WHERE a.award_id = p_award_id;
+    JOIN award_requests ar ON a.award_id = ar.award_id
+    WHERE a.award_id = p_award_id
+      AND ar.status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED');
 
-    IF v_request_level IS NULL THEN
+    IF v_request_level IS NULL OR v_owner_id = p_user_id OR NOT EXISTS (
+        SELECT 1 FROM users
+        WHERE user_id = p_user_id
+          AND account_status IN ('ACTIVE', 'RETIRED')
+    ) THEN
         RETURN FALSE;
     END IF;
 
-    -- Check if user has appropriate role for the level
-    SELECT EXISTS (
+    RETURN EXISTS (
+        WITH RECURSIVE scopes AS (
+            SELECT org_id, parent_org_id FROM organizations WHERE org_id = v_award_org_id
+            UNION
+            SELECT o.org_id, o.parent_org_id
+            FROM organizations o
+            JOIN scopes s ON o.org_id = s.parent_org_id
+        )
         SELECT 1 FROM user_roles ur
-        JOIN organizations o ON ur.organization_id = o.org_id
         WHERE ur.user_id = p_user_id
-          AND (ur.valid_to IS NULL OR ur.valid_to >= CURRENT_DATE)
-          AND ur.valid_from <= CURRENT_DATE
           AND ur.role_type = v_request_level
-          -- Role org must be same or parent of award org
-          AND (ur.organization_id = v_award_org_id OR
-               EXISTS (
-                   SELECT 1 FROM organizations ao
-                   WHERE ao.org_id = v_award_org_id
-                     AND ao.hierarchy_path <@ (SELECT hierarchy_path FROM organizations WHERE org_id = ur.organization_id)
-               ))
-    ) INTO v_has_role;
-
-    RETURN v_has_role;
+          AND ur.organization_id IN (SELECT org_id FROM scopes)
+          AND ur.valid_from <= v_today
+          AND (ur.valid_to IS NULL OR ur.valid_to >= v_today)
+        UNION ALL
+        SELECT 1 FROM role_delegations d
+        WHERE d.delegate_id = p_user_id
+          AND d.role_type = v_request_level
+          AND d.organization_id IN (SELECT org_id FROM scopes)
+          AND d.revoked_at IS NULL
+          AND d.valid_from <= v_today
+          AND d.valid_to >= v_today
+          AND EXISTS (
+              SELECT 1 FROM user_roles r
+              WHERE r.user_id = d.delegator_id
+                AND r.role_type = d.role_type
+                AND r.organization_id = d.organization_id
+                AND r.valid_from <= v_today
+                AND (r.valid_to IS NULL OR r.valid_to >= v_today)
+          )
+    );
 END;
 $$ LANGUAGE plpgsql STABLE;
 
-COMMENT ON FUNCTION fn_can_user_approve_award(BIGINT, BIGINT) IS 'Checks if user can approve award at current workflow level';
+COMMENT ON FUNCTION fn_can_user_approve_award(BIGINT, BIGINT) IS 'Checks if user may decide the open request of an award at its current level (held or delegated role, award organization or above)';
 
 -- ============================================================================
 -- FUNCTION: fn_get_next_approval_level
