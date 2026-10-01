@@ -120,6 +120,8 @@ springdoc:
 # Authorization server
 # =============================================================================
 app:
+  workflow:
+    review-period: ${APP_REVIEW_PERIOD:3d}
   mail:
     from: ${APP_MAIL_FROM:awards@chnu.edu.ua}
   auth:

@@ -58,6 +58,7 @@ const translations = {
   uk: {
     awards: {
       title: 'Мої нагороди',
+      timing: { expected: 'Очікується до {{date}}', delayed: 'Затримка' },
       add: 'Додати нагороду',
       empty: 'Нагород ще немає.',
       more: 'Показано {{shown}} з {{total}}',
@@ -124,6 +125,46 @@ describe('AwardListComponent', () => {
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/awards/5/edit');
     expect(items[1].querySelector('a')?.getAttribute('href')).toBe('/awards/6');
     expect(element.querySelector('[data-testid="award-add"]')).not.toBeNull();
+  });
+
+  it('ac1_18_submitted_awards_show_the_expected_date_and_a_delay_chip', async () => {
+    await create();
+    const request = {
+      status: 'SUBMITTED' as const,
+      currentLevel: 'FACULTY_SECRETARY' as const,
+      submittedAt: '2026-09-28T09:00:00Z',
+      deadline: '2026-10-01T09:00:00Z',
+      estimatedCompletion: '2026-10-07',
+      overdue: false,
+    };
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: {
+          content: [
+            award({ id: 6, status: 'PENDING', request }),
+            award({ id: 7, status: 'PENDING', request: { ...request, overdue: true } }),
+            award(),
+          ],
+          totalElements: 3,
+          totalPages: 1,
+          size: 100,
+          number: 0,
+        },
+      }),
+    );
+    fixture.detectChanges();
+    const items = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="award-item"]',
+    );
+
+    expect(items[0].querySelector('[data-testid="award-expected"]')?.textContent).toContain(
+      'Очікується до 07.10.2026',
+    );
+    expect(items[0].querySelector('[data-testid="award-delayed"]')).toBeNull();
+    expect(items[1].querySelector('[data-testid="award-delayed"]')?.textContent).toContain(
+      'Затримка',
+    );
+    expect(items[2].querySelector('[data-testid="award-expected"]')).toBeNull();
   });
 
   it('ac1_9_shows_the_empty_list_and_asks_for_the_first_award', async () => {

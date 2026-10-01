@@ -1,0 +1,119 @@
+:host {
+  display: block;
+  margin-top: 32px;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+.award-status__title {
+  font: var(--mat-sys-title-large);
+  margin: 0 0 12px;
+}
+
+.award-status__subtitle {
+  font: var(--mat-sys-title-medium);
+  margin: 16px 0 8px;
+}
+
+.award-status__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.award-status__path {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.award-status__step {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.award-status__step--DONE {
+  border-color: var(--mat-sys-primary, #0b57d0);
+  color: var(--mat-sys-on-surface, #1f1f1f);
+}
+
+.award-status__step--CURRENT {
+  border-width: 2px;
+  border-color: var(--mat-sys-primary, #0b57d0);
+  background: var(--mat-sys-primary-container, #d3e3fd);
+  color: var(--mat-sys-on-primary-container, #041e49);
+  font-weight: 500;
+}
+
+.award-status__step--STOPPED {
+  border-color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-on-surface, #1f1f1f);
+}
+
+.award-status__level {
+  font-weight: 500;
+}
+
+.award-status__when,
+.award-status__meta {
+  font: var(--mat-sys-body-small);
+}
+
+.award-status__meta {
+  color: var(--mat-sys-on-surface-variant, #444746);
+}
+
+.award-status__summary {
+  margin: 12px 0 0;
+}
+
+.award-status__delay {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--mat-sys-tertiary-container, #ffdbcb);
+  color: var(--mat-sys-on-tertiary-container, #341100);
+}
+
+.award-status__decisions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.award-status__decision {
+  border-left: 2px solid var(--mat-sys-outline-variant, #c4c7c5);
+  padding: 4px 0 8px 16px;
+}
+
+.award-status__decision + .award-status__decision {
+  margin-top: 8px;
+}
+
+.award-status__comment {
+  margin: 4px 0 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.award-status__problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--mat-sys-error, #b3261e);
+}

@@ -22,6 +22,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../../shared/organization-name';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
+import { AwardStatusComponent } from '../award-status/award-status.component';
 import { Award, AwardsService, awardTitle, categoryName } from '../awards.service';
 import { confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
 
@@ -38,6 +39,7 @@ import { confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
     MatTabContent,
     AwardHistoryComponent,
     AwardAuditTrailComponent,
+    AwardStatusComponent,
     TranslocoPipe,
   ],
   templateUrl: './award-detail.component.html',
@@ -104,6 +106,14 @@ export class AwardDetailComponent implements OnInit {
           }
         },
       });
+  }
+
+  /** Reloads the award after its review status changed, keeping what is shown when the reload fails. */
+  refresh(id: number): void {
+    this.service.get(id).subscribe({
+      next: (award) => this.award.set(award),
+      error: () => undefined,
+    });
   }
 
   /** Drafts are private to their owner; everybody else who may open the award sees it from the submission on. */

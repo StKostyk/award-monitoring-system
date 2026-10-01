@@ -1,10 +1,14 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { UserProfile } from '../../core/auth/user-profile';
 import { LanguageService } from '../../core/i18n/language.service';
+import { AwardsService } from '../awards/awards.service';
 import { HomeComponent } from './home.component';
 
 const profile: UserProfile = {
@@ -55,11 +59,22 @@ const newcomer: UserProfile = {
 };
 
 describe('HomeComponent', () => {
-  const auth = { profile: signal<UserProfile | null>(profile) };
+  const granted = signal<string[]>([]);
+  const auth = {
+    profile: signal<UserProfile | null>(profile),
+    permissions: computed(() => ({
+      hasPermission: (permission: string) => granted().includes(permission),
+    })),
+  };
+  const awards = { list: vi.fn() };
   let lang = 'uk';
   const language = { current: () => lang };
 
   beforeEach(async () => {
+    granted.set([]);
+    awards.list
+      .mockReset()
+      .mockReturnValue(of({ content: [], totalElements: 0, totalPages: 0, size: 5, number: 0 }));
     await TestBed.configureTestingModule({
       imports: [
         HomeComponent,
@@ -85,8 +100,10 @@ describe('HomeComponent', () => {
         }),
       ],
       providers: [
+        provideRouter([]),
         { provide: AuthService, useValue: auth },
         { provide: LanguageService, useValue: language },
+        { provide: AwardsService, useValue: awards },
       ],
     }).compileComponents();
   });
@@ -138,5 +155,24 @@ describe('HomeComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="profile-card"]')).toBeNull();
+  });
+
+  it('ac1_17_shows_my_submissions_to_those_who_create_awards', () => {
+    granted.set(['award:create']);
+    auth.profile.set(profile);
+    const fixture = TestBed.createComponent(HomeComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="my-submissions"]')).not.toBeNull();
+    expect(awards.list).toHaveBeenCalledWith(expect.objectContaining({ status: 'PENDING' }), 0, 5);
+  });
+
+  it('ac1_17_hides_my_submissions_without_award_create', () => {
+    auth.profile.set(profile);
+    const fixture = TestBed.createComponent(HomeComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="my-submissions"]')).toBeNull();
+    expect(awards.list).not.toHaveBeenCalled();
   });
 });

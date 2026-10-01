@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.authz;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -85,6 +86,22 @@ public class OrganizationTree {
                 current.id());
         }
         return false;
+    }
+
+    /**
+     * Ids of an organisation and every organisation above it: the scopes that cover it.
+     *
+     * @param organizationId the organisation
+     * @return the ids, the organisation first; empty for an unknown organisation
+     */
+    public Set<Long> ancestors(long organizationId) {
+        Map<Long, Node> snapshot = nodes.get();
+        Set<Long> result = new LinkedHashSet<>();
+        Node current = snapshot.get(organizationId);
+        while (current != null && result.add(current.id())) {
+            current = current.parentId() == null ? null : snapshot.get(current.parentId());
+        }
+        return result;
     }
 
     /**

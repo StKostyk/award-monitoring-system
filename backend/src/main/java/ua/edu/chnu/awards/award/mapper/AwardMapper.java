@@ -12,14 +12,20 @@ import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.award.service.StatusEstimator;
 import ua.edu.chnu.awards.user.dto.OrganizationRef;
 import ua.edu.chnu.awards.user.entity.Organization;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Converts awards to API responses.
  */
 @Component
+@RequiredArgsConstructor
 public class AwardMapper {
+
+    private final StatusEstimator estimator;
 
     /**
      * Builds the response of an award without warnings.
@@ -44,7 +50,7 @@ public class AwardMapper {
         return new AwardResponse(award.getId(), award.getTitle(), award.getTitleUk(), award.getDescription(),
             award.getDescriptionUk(), categoryRef(award.getCategory()), award.getAwardingOrganization(),
             award.getAwardDate(), award.getExternalUrl(), award.getStatus(), award.getImpactScore(),
-            UserRef.of(award.getOwner()), organizationRef(award.getOrganization()), toSummary(request),
+            UserRef.of(award.getOwner()), organizationRef(award.getOrganization()), toSummary(award, request),
             List.copyOf(warnings), award.getCreatedAt(), award.getUpdatedAt(), award.getVersion());
     }
 
@@ -58,8 +64,12 @@ public class AwardMapper {
             organization.getCode(), organization.getOrgType());
     }
 
-    private static RequestSummary toSummary(AwardRequest request) {
-        return request == null ? null
-            : new RequestSummary(request.getStatus(), request.getCurrentLevel(), request.getSubmittedAt());
+    private RequestSummary toSummary(Award award, AwardRequest request) {
+        if (request == null) {
+            return null;
+        }
+        StatusEstimator.Timeline timeline = estimator.timeline(award, request);
+        return new RequestSummary(request.getStatus(), request.getCurrentLevel(), request.getSubmittedAt(),
+            request.getDeadline(), timeline.estimatedCompletion(), timeline.overdue());
     }
 }

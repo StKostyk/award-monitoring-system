@@ -9,7 +9,7 @@ import { MockInstance, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { Award, AwardsService } from '../awards.service';
+import { Award, AwardStatusView, AwardsService } from '../awards.service';
 import { AwardSubmittedComponent } from '../award-submitted/award-submitted.component';
 import { AwardDetailComponent } from './award-detail.component';
 
@@ -42,11 +42,30 @@ const pending: Award = {
     status: 'SUBMITTED',
     currentLevel: 'FACULTY_SECRETARY',
     submittedAt: '2026-09-28T09:00:00Z',
+    deadline: '2026-10-01T09:00:00Z',
+    estimatedCompletion: '2026-10-07',
+    overdue: false,
   },
   warnings: [],
   createdAt: '2026-09-28T08:00:00Z',
   updatedAt: '2026-09-28T09:00:00Z',
   version: 3,
+};
+
+const withoutRequest: AwardStatusView = {
+  awardId: 5,
+  status: 'PENDING',
+  requestStatus: null,
+  currentLevel: null,
+  submittedAt: null,
+  deadline: null,
+  estimatedCompletion: null,
+  overdue: false,
+  completedAt: null,
+  rejectionReason: null,
+  delay: null,
+  path: [],
+  decisions: [],
 };
 
 const noVersions = { content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 };
@@ -70,6 +89,7 @@ describe('AwardDetailComponent', () => {
     versions: vi.fn(),
     categories: vi.fn(),
     auditTrail: vi.fn(),
+    status: vi.fn(),
   };
   const granted = signal<string[]>([]);
   const permissions = computed(() => ({
@@ -112,6 +132,7 @@ describe('AwardDetailComponent', () => {
     service.versions.mockReset().mockReturnValue(of(noVersions));
     service.categories.mockReset().mockReturnValue(of([]));
     service.auditTrail.mockReset().mockReturnValue(of(noVersions));
+    service.status.mockReset().mockReturnValue(of(withoutRequest));
     granted.set([]);
   });
 
@@ -130,6 +151,28 @@ describe('AwardDetailComponent', () => {
       'секретар факультету',
     );
     expect(element.querySelector('[data-testid="award-edit"]')).toBeNull();
+    expect(element.querySelector('[data-testid="award-status-panel"]')).not.toBeNull();
+    expect(service.status).toHaveBeenCalledWith(5);
+  });
+
+  it('ac1_15_a_changed_review_status_reloads_the_award', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+    service.get.mockReturnValue(of({ ...pending, status: 'APPROVED' }));
+
+    fixture.componentInstance.refresh(5);
+    fixture.detectChanges();
+
+    expect(service.get).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.award()?.status).toBe('APPROVED');
+  });
+
+  it('ac1_7_a_draft_shows_no_status_panel', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-status-panel"]')).toBeNull();
+    expect(service.status).not.toHaveBeenCalled();
   });
 
   it('ac1_9_offers_editing_of_an_own_draft', async () => {

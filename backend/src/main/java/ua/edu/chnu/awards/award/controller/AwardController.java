@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.AwardStatusView;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.service.AwardService;
+import ua.edu.chnu.awards.award.service.AwardStatusService;
 import ua.edu.chnu.awards.award.service.AwardSubmission;
 import ua.edu.chnu.awards.common.web.PageResponse;
 
@@ -44,6 +46,7 @@ public class AwardController {
 
     private final AwardService awardService;
     private final AwardSubmission submission;
+    private final AwardStatusService statusService;
 
     /**
      * The caller's own awards, newest first.
@@ -93,6 +96,18 @@ public class AwardController {
     @PreAuthorize(CAN_READ_OWN)
     public AwardResponse get(@PathVariable long id) {
         return awardService.get(id);
+    }
+
+    /**
+     * The review timeline of an award: the caller's own, or a submitted award inside the caller's reading scope.
+     *
+     * @param id the award
+     * @return the timeline; without a request for a draft
+     */
+    @GetMapping("/{id}/status")
+    @PreAuthorize(CAN_READ_OWN)
+    public AwardStatusView status(@PathVariable long id) {
+        return statusService.status(id);
     }
 
     /**

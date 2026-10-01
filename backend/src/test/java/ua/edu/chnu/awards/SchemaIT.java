@@ -85,6 +85,36 @@ class SchemaIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac1_2_requestsSubmittedBeforeV024AreDueThreeDaysAfterTheirSubmission() {
+        String database = "v024_deadline_" + System.nanoTime();
+        jdbc.execute("create database " + database);
+        try {
+            String url = "jdbc:postgresql://" + postgres.getHost() + ":"
+                + postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT) + "/" + database;
+            DriverManagerDataSource target = new DriverManagerDataSource(url, postgres.getUsername(),
+                postgres.getPassword());
+            Flyway.configure().dataSource(target).locations("classpath:db/migration").target("023").load()
+                .migrate();
+            JdbcTemplate old = new JdbcTemplate(target);
+            Long owner = old.queryForObject("insert into users (email_address, first_name, last_name, password_hash, "
+                + "organization_id) values ('deadline@chnu.edu.ua', 'Dead', 'Line', 'x', 64) returning user_id",
+                Long.class);
+            Long award = old.queryForObject("insert into awards (user_id, organization_id, title, status, "
+                + "category_id, awarding_organization, award_date) values (?, 64, 'Letter', 'PENDING', 13, 'МОН', "
+                + "date '2025-05-01') returning award_id", Long.class, owner);
+            old.update("insert into award_requests (award_id, submitter_id, current_level, submitted_at) "
+                + "values (?, ?, 'FACULTY_SECRETARY', timestamptz '2026-09-28 23:30:00+03')", award, owner);
+
+            Flyway.configure().dataSource(target).locations("classpath:db/migration").load().migrate();
+
+            assertThat(old.queryForObject("select deadline = timestamptz '2026-10-01 23:30:00+03' "
+                + "from award_requests", Boolean.class)).isTrue();
+        } finally {
+            jdbc.execute("drop database " + database + " with (force)");
+        }
+    }
+
+    @Test
     void ac02_authTablesExist() {
         List<String> tables = jdbc.queryForList(
             "select table_name from information_schema.tables where table_schema = 'public' "

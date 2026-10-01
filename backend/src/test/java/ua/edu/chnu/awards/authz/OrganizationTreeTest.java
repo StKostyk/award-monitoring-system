@@ -50,6 +50,13 @@ class OrganizationTreeTest {
     }
 
     @Test
+    void ac1_9_ancestorsListTheOrganisationAndEveryScopeAboveIt() {
+        assertThat(tree.ancestors(64L)).containsExactly(64L, 9L, 1L);
+        assertThat(tree.ancestors(1L)).containsExactly(1L);
+        assertThat(tree.ancestors(999L)).isEmpty();
+    }
+
+    @Test
     void ac12_nodesExposeTypeAndActivity() {
         assertThat(tree.node(64L)).hasValueSatisfying(node -> {
             assertThat(node.type()).isEqualTo(OrganizationType.DEPARTMENT);

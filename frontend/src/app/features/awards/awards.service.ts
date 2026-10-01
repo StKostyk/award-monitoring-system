@@ -61,10 +61,59 @@ export interface CategorySuggestion extends CategoryRef {
 /** Title and organisation shorter than this are not used for suggestions. */
 export const SUGGESTION_MIN_LENGTH = 3;
 
+export type ApprovalLevel = 'FACULTY_SECRETARY' | 'DEAN' | 'RECTOR_SECRETARY' | 'RECTOR';
+
 export interface AwardRequestSummary {
   status: RequestStatus;
-  currentLevel: string;
+  currentLevel: ApprovalLevel;
   submittedAt: string;
+  deadline: string | null;
+  /** Kyiv date `YYYY-MM-DD` the last level is expected to finish; null while no level is reviewing. */
+  estimatedCompletion: string | null;
+  overdue: boolean;
+}
+
+/** Request statuses after which nothing changes any more. */
+export const FINAL_REQUEST_STATUSES: RequestStatus[] = ['APPROVED', 'REJECTED', 'EXPIRED'];
+
+export type StepState = 'DONE' | 'CURRENT' | 'UPCOMING';
+export type ReviewDecisionType = 'APPROVED' | 'REJECTED' | 'ESCALATED' | 'RETURNED';
+export type DelayReason = 'NO_REVIEWER' | 'REVIEW_OVERDUE';
+
+/** One level of the approval path. */
+export interface PathStep {
+  level: ApprovalLevel;
+  state: StepState;
+  dueDate: string | null;
+  completedAt: string | null;
+}
+
+/** A reviewer decision with its comment. */
+export interface ReviewDecision {
+  id: number;
+  decision: ReviewDecisionType;
+  level: ApprovalLevel;
+  reviewerId: number;
+  reviewerName: string;
+  comments: string | null;
+  decidedAt: string;
+}
+
+/** The review timeline of an award; request fields are null for an award without a request. */
+export interface AwardStatusView {
+  awardId: number;
+  status: AwardStatus;
+  requestStatus: RequestStatus | null;
+  currentLevel: ApprovalLevel | null;
+  submittedAt: string | null;
+  deadline: string | null;
+  estimatedCompletion: string | null;
+  overdue: boolean;
+  completedAt: string | null;
+  rejectionReason: string | null;
+  delay: { reason: DelayReason; since: string | null } | null;
+  path: PathStep[];
+  decisions: ReviewDecision[];
 }
 
 /** An own award that looks like the one being entered. */
@@ -251,6 +300,11 @@ export class AwardsService {
 
   submit(id: number, version: number, acknowledgeDuplicate = false): Observable<Award> {
     return this.http.post<Award>(`${this.base}/${id}/submit`, { version, acknowledgeDuplicate });
+  }
+
+  /** The review timeline of an award. */
+  status(id: number): Observable<AwardStatusView> {
+    return this.http.get<AwardStatusView>(`${this.base}/${id}/status`);
   }
 
   /** Saved versions of an award, newest first. */

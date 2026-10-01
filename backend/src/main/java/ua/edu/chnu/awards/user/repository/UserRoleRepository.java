@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.UserRole;
 
@@ -124,4 +125,28 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
           and (r.validTo is null or r.validTo >= :day)
         """)
     List<String> findCurrentEmailsByRole(@Param("role") RoleType role, @Param("day") LocalDate day);
+
+    /**
+     * Whether anyone other than the given user, with an account in one of the given states, holds a role on the
+     * given day in one of the given organisations.
+     *
+     * @param role            the role
+     * @param organizationIds organisations whose holders count
+     * @param statuses        account states whose holders count
+     * @param excludedUserId  the user who does not count, such as the owner of the award under review
+     * @param day             the day the assignment must be valid on
+     * @return true when at least one assignment matches
+     */
+    @Query("""
+        select count(r) > 0 from UserRole r
+        where r.roleType = :role
+          and r.organization.id in :organizationIds
+          and r.user.accountStatus in :statuses
+          and r.user.id <> :excludedUserId
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    boolean existsHolder(@Param("role") RoleType role, @Param("organizationIds") Collection<Long> organizationIds,
+                         @Param("statuses") Collection<AccountStatus> statuses,
+                         @Param("excludedUserId") long excludedUserId, @Param("day") LocalDate day);
 }

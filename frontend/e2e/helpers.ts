@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
@@ -73,4 +75,27 @@ export async function signIn(page: Page, email: string, password: string): Promi
   await page.fill('#username', email);
   await page.fill('#password', password);
   await page.click('button[type="submit"]');
+}
+
+/**
+ * Runs one statement on the development database inside the `award-postgres` container and answers its output
+ * without headers; for fixtures the user interface cannot create, such as reviewer decisions before Epic 4.
+ */
+export function sql(statement: string): string {
+  return execFileSync(
+    'docker',
+    [
+      'exec',
+      '-i',
+      'award-postgres',
+      'psql',
+      '-U',
+      'postgres',
+      '-d',
+      'award_monitoring',
+      '-tAc',
+      statement,
+    ],
+    { encoding: 'utf-8' },
+  ).trim();
 }
