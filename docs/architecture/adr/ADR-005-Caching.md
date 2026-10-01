@@ -1,6 +1,6 @@
 # ADR-005: Caching Solution Selection
 
-**Status**: Accepted  
+**Status**: Accepted (scope narrowed, see Addendum 2026-10)  
 **Date**: 2025-08-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team, Operations Team
@@ -116,11 +116,24 @@ spring:
 
 ---
 
+## Addendum 2026-10: Redis scope as built
+
+Redis 7 is part of the stack, but in Epics 1 and 2 it holds security state only: revoked access tokens,
+sign-in lockout and attempt counters, and rate-limit counters (`RevokedTokenValidator`, `LoginAttemptService`,
+`RateLimitFilter`). The Spring Cache abstraction is not enabled and no award or user data is cached in Redis.
+
+The award category catalogue, the only read-heavy reference data so far, is cached by the browser through HTTP
+caching (`Cache-Control: max-age=3600` and an `ETag` on `GET /award-categories`). Application-level caching is
+reconsidered when the Epic 5 dashboards produce measurable read load.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: redis scope as built | Documentation sync after Epic 2 |
 
 ---
 

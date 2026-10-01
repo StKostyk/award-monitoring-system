@@ -1,6 +1,6 @@
 # Award Monitoring & Tracking System
 
-[![Project Status](https://img.shields.io/badge/Status-Pre--Development-yellow)](./Enterprise_Pre-Development_Roadmap.md)
+[![Project Status](https://img.shields.io/badge/Status-Development-green)](./docs/project-management/BACKLOG.md)
 [![Documentation](https://img.shields.io/badge/Documentation-Complete-blue)](./docs/)
 [![Enterprise Standard](https://img.shields.io/badge/Enterprise-Ready-gold)](./docs/business/PROJECT_CHARTER.md)
 
@@ -20,16 +20,16 @@ The Award Monitoring & Tracking System transforms manual award management into a
 
 ## 🏗️ **Technology Stack**
 
-- **Backend**: Java 21, Spring Boot 3.5+, PostgreSQL 17, Redis, Kafka
-- **Frontend**: Angular 20, TypeScript, Material-UI
-- **Infrastructure**: Docker, Kubernetes, GitHub Actions
+- **Backend**: Java 21, Spring Boot 3.5, Spring Security with Spring Authorization Server, PostgreSQL 17, Redis 7, Flyway
+- **Frontend**: Angular 21, TypeScript, Angular Material, NgRx, Transloco (uk, en)
+- **Infrastructure**: Docker Compose (PostgreSQL, Redis, Mailpit, MinIO), GitHub Actions; Kafka, Elasticsearch and Kubernetes are deferred (see the ADR addenda)
 - **Quality**: JUnit 5, TestContainers, SonarQube (85% coverage target)
 
 ## 📊 **Project Status**
 
 **Current Phase**: Development  
-**Progress**: Sprint 1 (Setup) - ✅ Complete  
-**Next Phase**: Sprint 2 (User management and authentication)
+**Progress**: Epic 1 (users and authentication) and Epic 2 (award lifecycle) delivered, Sprint 3  
+**Next Phase**: Epic 3 (document upload)
 
 | **Phase** | **Status** | **Key Deliverables** | **Completion** |
 |-----------|------------|---------------------|----------------|
@@ -58,7 +58,8 @@ The Award Monitoring & Tracking System transforms manual award management into a
 | Sprint | Status | Highlights |
 |--------|--------|------------|
 | Sprint 1 | ✅ | Dev environment, CI/CD |
-| Sprint 2 | 🔄 | Authentication (OAuth2/JWT) |
+| Sprint 2 | ✅ | Authentication on Spring Authorization Server, RBAC and delegation |
+| Sprint 3 | ✅ | Award drafts, validation, categories, version history, status tracking; profile and GDPR export |
 
 ## 📁 **Project Structure**
 
@@ -383,9 +384,8 @@ This project follows an enterprise-grade pre-development methodology. See the [r
 - [📦 Release Management](./docs/deployment/RELEASE_MANAGEMENT.md) - Release types, versioning, approval workflows
 - [🔄 Environment Promotion](./docs/deployment/ENVIRONMENT_PROMOTION.md) - Environment pipeline and promotion gates
 - [🚀 Deployment Strategies](./docs/deployment/DEPLOYMENT_STRATEGIES.md) - Blue-Green, Canary, Rolling patterns (Phase 14)
-- **Kubernetes Manifests** (`infra/k8s/`)
+- **Kubernetes Manifests** (`infra/k8s/`, illustrative, not deployed; ADR-018 addendum)
   - [deployment.yml](./infra/k8s/deployment.yml) - Backend/frontend deployments, services, ingress, HPA
-  - [secrets.yml](./infra/k8s/secrets.yml) - Secret templates (database, JWT, API keys)
 - **Dockerfiles**
   - [backend/Dockerfile](./backend/Dockerfile) - Multi-stage Java 21 build with layered JARs
   - [frontend/Dockerfile](./frontend/Dockerfile) - Multi-stage Angular build with nginx

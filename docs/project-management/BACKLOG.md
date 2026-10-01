@@ -1,8 +1,8 @@
 # Product Backlog
 ## Award Monitoring & Tracking System
 
-> **Last Updated**: September 2026  
-> **Total Story Points**: 156  
+> **Last Updated**: October 2026  
+> **Story Points**: 120 delivered, 49 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
 > **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20
 
@@ -25,20 +25,21 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.2.2 | Version history view and audit export | 5 | ✅ Done | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
 | 2.2.3 | Fixes from the Feature 2.2 validation | 3 | ✅ Done | SCRUM-30 | [#97](https://github.com/StKostyk/award-monitoring-system/issues/97) |
 | 2.3.1 | Award status tracking (US-005) | 5 | ✅ Done | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
+| 2.3.2 | Fixes from the Feature 2.3 validation | 2 | ✅ Done | SCRUM-31 | [#101](https://github.com/StKostyk/award-monitoring-system/issues/101) |
 
-Sprint Goal: an employee creates, checks and submits an award (Feature 2.1).  
-Completed Points: 58 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30, fixes 2.2.3 merged and Feature 2.3 validated 2026-10-01; the author's runs of PRD §9 pending)
+Sprint Goal: an employee creates, checks, submits and tracks an award (Features 2.1–2.3).  
+Completed Points: 60 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30, fixes 2.2.3 merged, Feature 2.3 validated and fixes 2.3.2 merged 2026-10-01; the author's runs of PRD §9 pending)
 
 ---
 
 ## Backlog (Prioritized)
 
 ### Epic 2 — remaining (Jira epic SCRUM-20)
-Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md). Feature 2.2 done (Sprint 3): [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md). Feature 2.3 validated 2026-10-01, fixes in 2.3.2: [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md).
+Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The documentation sync of 2026-10-01 found database views and functions that disagree with the award model:
 
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
-| 2.3.2 | Fixes from the Feature 2.3 validation | 2 | 2.3 | SCRUM-31 | [#101](https://github.com/StKostyk/award-monitoring-system/issues/101) |
+| 2.1.5 | Database views and functions follow the award model | 2 | 2.1 | SCRUM-32 | [#103](https://github.com/StKostyk/award-monitoring-system/issues/103) |
 
 ### Later epics
 | ID | Story | Points | Epic |
@@ -62,9 +63,9 @@ Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../featu
 |--------|---------|--------|
 | Sprint 1 | Setup (7 tasks) | 14 |
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
-| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3) | 53 |
+| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2) | 60 |
 
-Total Completed: 113 / 162 points (70%)
+Total Completed: 120 points (Epics 1 and 2 except the stories moved to later epics)
 
 ---
 

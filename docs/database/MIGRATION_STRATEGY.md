@@ -91,6 +91,14 @@ src/main/resources/
         ├── V014__create_auth_tables.sql
         ├── V015__users_email_unique_lower.sql
         ├── V016__audit_logs_partitions_2027.sql
+        ├── V017__user_roles_current_unique.sql
+        ├── V018__create_role_delegations_table.sql
+        ├── V019__role_delegations_no_overlap.sql
+        ├── V020__award_drafts.sql
+        ├── V021__award_category_keywords.sql
+        ├── V022__email_change_tokens.sql
+        ├── V023__award_versions.sql
+        ├── V024__award_request_deadlines.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql

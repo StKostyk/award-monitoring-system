@@ -1,6 +1,6 @@
 # ADR-008: API Gateway Selection
 
-**Status**: Accepted  
+**Status**: Accepted (not implemented, replaced by a reverse proxy, see Addendum 2026-10)  
 **Date**: 2025-08-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team, Operations Team
@@ -120,11 +120,25 @@ spring:
 
 ---
 
+## Addendum 2026-10: Reverse proxy instead of a gateway
+
+No API gateway is deployed. The system is one backend application, so routing, service discovery and
+aggregation have nothing to coordinate. The nginx server in the frontend container serves the Angular bundle and
+proxies `/api`, `/oauth2`, `/connect`, `/.well-known`, `/login` and `/logout` to the backend
+(`frontend/nginx.conf`).
+
+The gateway concerns are covered inside the application: rate limiting by `RateLimitFilter` with counters in
+Redis, authentication by the resource server (ADR-009), correlation ids by `CorrelationIdFilter`. A gateway is
+reconsidered only if the backend is split into services.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: reverse proxy instead of a gateway | Documentation sync after Epic 2 |
 
 ---
 

@@ -260,6 +260,24 @@ Before each milestone:
 
 ---
 
+## Addendum 2026-10: Re-baseline After Epic 2
+
+The plan above is the December 2025 baseline. Development since September 2026 runs differently:
+
+- **Cadence**: 1-week calendar sprints instead of 2-week sprints; Sprint 3 ran 2026-09-28 – 2026-10-04.
+- **Actual velocity**: Sprint 1 14 points (setup), Sprint 2 46 points, Sprint 3 60 points; 120 points delivered.
+- **Delivered scope**: Epic 1 (authentication on the embedded Spring Authorization Server, RBAC with organisation
+  scopes and delegation, profile, GDPR data export) and Epic 2 (award drafts, validation, categories, version
+  history, status tracking). MFA (1.3.5) is in the icebox; notification preferences (1.3.2) move to Epic 7;
+  award correction (2.4.1) and GDPR deletion (2.4.2) move to Epics 4 and 6.
+- **Epic order**: 1 → 2 → 3 (upload; OCR later) → 4 → 7 → 6 → 5 → 8, each epic a vertical slice (API and UI).
+- **Deferred infrastructure**: Kafka, Elasticsearch, API gateway, Kubernetes and the cloud platform (ADR addenda
+  of 2026-10); the deployment target for the defense is chosen after Epic 2.
+
+Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](../epics/).
+
+---
+
 ## Summary
 
 | **Attribute** | **Value** |

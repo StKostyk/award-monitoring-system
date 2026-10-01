@@ -1,6 +1,6 @@
 # ADR-007: Search Engine Selection
 
-**Status**: Accepted  
+**Status**: Accepted (implementation deferred to Epic 5, see Addendum 2026-10)  
 **Date**: 2025-02-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team
@@ -122,11 +122,23 @@ The Award Monitoring & Tracking System requires advanced search capabilities for
 
 ---
 
+## Addendum 2026-10: Implementation deferred
+
+Elasticsearch is not used by the application in Epics 1 and 2. Award lists, filters and the duplicate
+check run on PostgreSQL (JPA specifications; `pg_trgm` similarity for possible duplicates); category suggestion matches
+the `award_categories.keywords` arrays.
+
+Elasticsearch appears only in the optional monitoring stack (`infra/docker-compose.monitoring.yml`) as the log
+store (see ADR-011 addendum). Full-text award search is decided at the Epic 5 kickoff.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 
 ---
 

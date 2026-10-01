@@ -2,15 +2,65 @@
   "info": {
     "_postman_id": "award-monitoring-api-v1",
     "name": "Award Monitoring & Tracking System API",
-    "description": "API collection for testing Award Monitoring System endpoints.\n\n## Setup\n1. Import this collection into Postman\n2. Create an environment with variables:\n   - `baseUrl`: API base URL (e.g., http://localhost:8080/api/v1)\n   - `accessToken`: Auto-populated after login\n   - `refreshToken`: Auto-populated after login\n\n## Authentication Flow\n1. Run \"Login\" request first\n2. Tokens are automatically saved to environment\n3. All subsequent requests use the access token",
+    "description": "Requests for the implemented endpoints of the Award Monitoring System (Epics 1 and 2). The contract is docs/api/openapi.yml; planned endpoints (approval, documents, reports) are not included.\n\n## Authentication\nThe application is its own OAuth 2.1 provider. The collection uses Postman's OAuth 2.0 helper with the authorization code flow and PKCE for the public client `award-web`:\n1. Open the collection, tab Authorization, and click *Get New Access Token*.\n2. Sign in with a seed account (for example `employee.fmi@chnu.edu.ua`) in the Postman window.\n3. Click *Use Token*. Access tokens live 15 minutes; request a new one when it expires.\n\nThe callback URL `http://localhost:4200/callback` is a registered redirect URI; Postman captures the redirect, so the frontend does not need to run. Leave *Authorize using browser* off.\n\n## Variables\n`baseUrl` (backend, default http://localhost:8080/api/v1), `authBase` (http://localhost:8080), `awardId`, `awardVersion` (saved from award responses), `categoryId`, `userId`, `delegationId`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
-    "type": "bearer",
-    "bearer": [
+    "type": "oauth2",
+    "oauth2": [
       {
-        "key": "token",
-        "value": "{{accessToken}}",
+        "key": "grant_type",
+        "value": "authorization_code_with_pkce",
+        "type": "string"
+      },
+      {
+        "key": "authUrl",
+        "value": "{{authBase}}/oauth2/authorize",
+        "type": "string"
+      },
+      {
+        "key": "accessTokenUrl",
+        "value": "{{authBase}}/oauth2/token",
+        "type": "string"
+      },
+      {
+        "key": "clientId",
+        "value": "award-web",
+        "type": "string"
+      },
+      {
+        "key": "redirect_uri",
+        "value": "http://localhost:4200/callback",
+        "type": "string"
+      },
+      {
+        "key": "scope",
+        "value": "openid profile",
+        "type": "string"
+      },
+      {
+        "key": "challengeAlgorithm",
+        "value": "S256",
+        "type": "string"
+      },
+      {
+        "key": "client_authentication",
+        "value": "body",
+        "type": "string"
+      },
+      {
+        "key": "useBrowser",
+        "value": false,
+        "type": "boolean"
+      },
+      {
+        "key": "addTokenTo",
+        "value": "header",
+        "type": "string"
+      },
+      {
+        "key": "tokenName",
+        "value": "award-web",
         "type": "string"
       }
     ]
@@ -19,181 +69,39 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "authBase",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "awardId",
+      "value": ""
+    },
+    {
+      "key": "awardVersion",
+      "value": "1"
+    },
+    {
+      "key": "categoryId",
+      "value": "1"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "delegationId",
+      "value": ""
     }
   ],
   "item": [
     {
       "name": "Authentication",
+      "description": "Public account endpoints. Sign-in itself is the OAuth 2.0 flow of the collection.",
       "item": [
         {
-          "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('accessToken', jsonData.accessToken);",
-                  "    pm.environment.set('refreshToken', jsonData.refreshToken);",
-                  "    pm.test('Login successful', function() {",
-                  "        pm.expect(jsonData.accessToken).to.be.a('string');",
-                  "    });",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"email\": \"test@university.edu.ua\",\n    \"password\": \"password123\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Authenticate user and receive JWT tokens"
-          }
-        },
-        {
-          "name": "Refresh Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('accessToken', jsonData.accessToken);",
-                  "    pm.environment.set('refreshToken', jsonData.refreshToken);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/refresh",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh"]
-            }
-          }
-        },
-        {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Awards",
-      "item": [
-        {
-          "name": "List Awards",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Response is paginated', function() {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('content');",
-                  "    pm.expect(jsonData).to.have.property('totalElements');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/awards?page=0&size=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "20"
-                },
-                {
-                  "key": "status",
-                  "value": "APPROVED",
-                  "disabled": true
-                },
-                {
-                  "key": "sort",
-                  "value": "createdAt,desc",
-                  "disabled": true
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Create Award",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('awardId', jsonData.id);",
-                  "    pm.test('Award created', function() {",
-                  "        pm.expect(jsonData.id).to.be.a('string');",
-                  "        pm.expect(jsonData.status).to.equal('DRAFT');",
-                  "    });",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Register",
           "request": {
             "method": "POST",
             "header": [
@@ -202,272 +110,303 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"title\": \"Best Research Paper Award 2025\",\n    \"description\": \"Recognition for outstanding research contribution in computer science\",\n    \"categoryId\": \"{{categoryId}}\",\n    \"awardDate\": \"2025-01-15\",\n    \"issuingOrganization\": \"International Conference on AI\"\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/awards",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards"]
-            }
-          }
-        },
-        {
-          "name": "Get Award by ID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('Award has required fields', function() {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('id');",
-                  "    pm.expect(jsonData).to.have.property('title');",
-                  "    pm.expect(jsonData).to.have.property('status');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}"]
-            }
-          }
-        },
-        {
-          "name": "Update Award",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"title\": \"Best Research Paper Award 2025 (Updated)\",\n    \"description\": \"Updated description for the award\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}"]
-            }
-          }
-        },
-        {
-          "name": "Delete Award",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Workflow",
-      "item": [
-        {
-          "name": "Submit Award for Approval",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}/submit",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}", "submit"]
-            }
-          }
-        },
-        {
-          "name": "Approve Award",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"comment\": \"Approved - meets all requirements\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}/approve",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}", "approve"]
-            }
-          }
-        },
-        {
-          "name": "Reject Award",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"reason\": \"Insufficient documentation provided\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}/reject",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}", "reject"]
-            }
-          }
-        },
-        {
-          "name": "Return Award for Revision",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"reason\": \"Please provide additional supporting documents\",\n    \"requiredChanges\": [\n        \"Add official certificate scan\",\n        \"Include event program\"\n    ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}/return",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}", "return"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Documents",
-      "item": [
-        {
-          "name": "List Award Documents",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}/documents",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}", "documents"]
-            }
-          }
-        },
-        {
-          "name": "Upload Document",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": ""
-                },
-                {
-                  "key": "type",
-                  "value": "CERTIFICATE",
-                  "type": "text"
-                },
-                {
-                  "key": "description",
-                  "value": "Official certificate scan",
-                  "type": "text"
-                }
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
               ]
             },
-            "url": {
-              "raw": "{{baseUrl}}/awards/{{awardId}}/documents",
-              "host": ["{{baseUrl}}"],
-              "path": ["awards", "{{awardId}}", "documents"]
+            "description": "Self-registration with an institutional address; sends a verification link.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new.person@chnu.edu.ua\",\n  \"password\": \"a-long-passphrase\",\n  \"firstName\": \"Олена\",\n  \"lastName\": \"Коваль\",\n  \"organizationId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
             }
           }
         },
         {
-          "name": "Download Document",
+          "name": "Verify email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Token from the verification email plus the registration password.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<token from the email>\",\n  \"password\": \"a-long-passphrase\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Resend verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "resend-verification"
+              ]
+            },
+            "description": "Answers 202 for every address.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new.person@chnu.edu.ua\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Request password reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset",
+                "request"
+              ]
+            },
+            "description": "Answers 202 for every address.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employee.fmi@chnu.edu.ua\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Confirm password reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/password-reset/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password-reset",
+                "confirm"
+              ]
+            },
+            "description": "Signs the account out everywhere.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<token from the email>\",\n  \"password\": \"another-long-passphrase\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Confirm email change",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/email-change/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "email-change",
+                "confirm"
+              ]
+            },
+            "description": "Token from the link sent to the new address.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<token from the email>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Revoke after new device (not me)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/security/revoke",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "security",
+                "revoke"
+              ]
+            },
+            "description": "Token from the new-device email; signs the account out everywhere and replaces the password.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<token from the email>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "List organisations",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/documents/{{documentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["documents", "{{documentId}}"]
-            }
-          }
-        },
-        {
-          "name": "Delete Document",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/documents/{{documentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["documents", "{{documentId}}"]
+              "raw": "{{baseUrl}}/organizations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organizations"
+              ]
+            },
+            "description": "Public: faculties and departments for registration.",
+            "auth": {
+              "type": "noauth"
             }
           }
         }
       ]
     },
     {
-      "name": "Users",
+      "name": "Profile",
+      "description": "The signed-in user.",
       "item": [
         {
-          "name": "Get Current User",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test('User has required fields', function() {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('id');",
-                  "    pm.expect(jsonData).to.have.property('email');",
-                  "    pm.expect(jsonData).to.have.property('role');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Get my profile",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/users/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Profile, roles, delegations and membership confirmation."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const me = pm.response.json();",
+                  "pm.collectionVariables.set('userId', me.id);"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Update Current User",
+          "name": "Update my profile",
           "request": {
             "method": "PATCH",
             "header": [
@@ -476,127 +415,721 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"firstName\": \"Ivan\",\n    \"lastName\": \"Petrenko\",\n    \"notificationPreferences\": {\n        \"emailEnabled\": true,\n        \"browserEnabled\": false\n    }\n}"
-            },
             "url": {
               "raw": "{{baseUrl}}/users/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Name fields only.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Олена\",\n  \"lastName\": \"Коваль\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         },
         {
-          "name": "List Users (Admin)",
+          "name": "Request email change",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/email-change",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "email-change"
+              ]
+            },
+            "description": "Needs the current password.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newEmail\": \"olena.koval@chnu.edu.ua\",\n  \"currentPassword\": \"a-long-passphrase\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Export my data",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users?page=0&size=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "20"
-                },
-                {
-                  "key": "role",
-                  "value": "EMPLOYEE",
-                  "disabled": true
-                }
+              "raw": "{{baseUrl}}/users/me/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "export"
               ]
-            }
+            },
+            "description": "GDPR data portability (JSON)."
           }
         }
       ]
     },
     {
-      "name": "Reports",
+      "name": "Directory and roles",
+      "description": "Needs user:read:scope / user:manage:scope or user:manage.",
       "item": [
         {
-          "name": "Awards Summary",
+          "name": "List users",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reports/awards/summary?period=month",
-              "host": ["{{baseUrl}}"],
-              "path": ["reports", "awards", "summary"],
+              "raw": "{{baseUrl}}/users?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
               "query": [
                 {
-                  "key": "period",
-                  "value": "month"
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                },
+                {
+                  "key": "q",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "organization",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "",
+                  "disabled": true
                 }
               ]
+            },
+            "description": "Directory limited to the caller's scopes."
+          }
+        },
+        {
+          "name": "Get user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "404 outside the caller's scope."
+          }
+        },
+        {
+          "name": "Assign role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "roles"
+              ]
+            },
+            "description": "Role below the caller's own, inside its subtree.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"FACULTY_SECRETARY\",\n  \"organizationId\": 2,\n  \"validFrom\": \"2026-10-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         },
         {
-          "name": "Export Awards (CSV)",
+          "name": "Revoke role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/roles/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "roles",
+                "1"
+              ]
+            },
+            "description": "Ends the assignment yesterday and signs the holder out."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delegations",
+      "description": "Lending an approval role for at most 90 days.",
+      "item": [
+        {
+          "name": "List delegations",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reports/awards/export?format=csv",
-              "host": ["{{baseUrl}}"],
-              "path": ["reports", "awards", "export"],
+              "raw": "{{baseUrl}}/delegations?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "delegations"
+              ],
               "query": [
                 {
-                  "key": "format",
-                  "value": "csv"
+                  "key": "state",
+                  "value": "ACTIVE",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Given and received delegations."
+          }
+        },
+        {
+          "name": "Create delegation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/delegations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "delegations"
+              ]
+            },
+            "description": "Approval roles only.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delegateId\": 5,\n  \"role\": \"DEAN\",\n  \"organizationId\": 2,\n  \"validFrom\": \"2026-10-05\",\n  \"validTo\": \"2026-10-19\",\n  \"reason\": \"Conference trip\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('delegationId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revoke delegation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/delegations/{{delegationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "delegations",
+                "{{delegationId}}"
+              ]
+            },
+            "description": "404 for anybody who may not revoke it."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Award category catalogue.",
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/award-categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "award-categories"
+              ]
+            },
+            "description": "Cached for an hour; ETag supported."
+          }
+        },
+        {
+          "name": "Suggest categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/award-categories/suggestions?title=Best paper award&organization=IEEE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "award-categories",
+                "suggestions"
+              ],
+              "query": [
+                {
+                  "key": "title",
+                  "value": "Best paper award",
+                  "disabled": false
+                },
+                {
+                  "key": "organization",
+                  "value": "IEEE",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Ranked by keyword match."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Awards",
+      "description": "Own drafts and awards in scope (award:create, award:update:own, award:read:*).",
+      "item": [
+        {
+          "name": "List awards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                },
+                {
+                  "key": "status",
+                  "value": "DRAFT",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true
                 },
                 {
                   "key": "dateFrom",
-                  "value": "2025-01-01",
+                  "value": "",
                   "disabled": true
                 },
                 {
                   "key": "dateTo",
-                  "value": "2025-12-31",
+                  "value": "",
                   "disabled": true
                 }
               ]
+            },
+            "description": "Own awards and awards in scope, newest first."
+          }
+        },
+        {
+          "name": "Create draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards"
+              ]
+            },
+            "description": "Only a title is needed for a draft.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Best Paper Award\",\n  \"titleUk\": \"Найкраща стаття\",\n  \"description\": \"Best paper of the conference track\",\n  \"categoryId\": {{categoryId}},\n  \"awardingOrganization\": \"IEEE\",\n  \"awardDate\": \"2026-06-15\",\n  \"externalUrl\": \"https://example.org/awards/2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const award = pm.response.json();",
+                  "    pm.collectionVariables.set('awardId', award.id);",
+                  "    pm.collectionVariables.set('awardVersion', award.version);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get award",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}"
+              ]
+            },
+            "description": "404 when the award is not readable."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const award = pm.response.json();",
+                  "    pm.collectionVariables.set('awardId', award.id);",
+                  "    pm.collectionVariables.set('awardVersion', award.version);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update draft",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}"
+              ]
+            },
+            "description": "Full replacement; `version` is the one last read (409 award-stale otherwise).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Best Paper Award\",\n  \"titleUk\": \"Найкраща стаття\",\n  \"description\": \"Best paper of the conference track\",\n  \"categoryId\": {{categoryId}},\n  \"awardingOrganization\": \"IEEE\",\n  \"awardDate\": \"2026-06-15\",\n  \"externalUrl\": \"https://example.org/awards/2026\",\n  \"version\": {{awardVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const award = pm.response.json();",
+                  "    pm.collectionVariables.set('awardId', award.id);",
+                  "    pm.collectionVariables.set('awardVersion', award.version);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "submit"
+              ]
+            },
+            "description": "409 award-possible-duplicate lists similar awards; repeat with acknowledgeDuplicate true.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": {{awardVersion}},\n  \"acknowledgeDuplicate\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const award = pm.response.json();",
+                  "    pm.collectionVariables.set('awardId', award.id);",
+                  "    pm.collectionVariables.set('awardVersion', award.version);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Award status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "status"
+              ]
+            },
+            "description": "Approval path, deadline, expected completion, decisions."
+          }
+        },
+        {
+          "name": "Delete draft",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}"
+              ]
+            },
+            "description": "Own drafts only."
+          }
+        }
+      ]
+    },
+    {
+      "name": "History and audit",
+      "description": "Version history (award:read:own) and audit trail (audit:read).",
+      "item": [
+        {
+          "name": "List versions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/versions?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "versions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Size clamped to 1..50."
+          }
+        },
+        {
+          "name": "Audit trail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/audit-trail?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "audit-trail"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "System administrator, GDPR officer."
+          }
+        },
+        {
+          "name": "Export audit trail (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/audit-trail/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "audit-trail",
+                "export"
+              ]
+            },
+            "description": "Audited as AUDIT_EXPORT."
           }
         }
       ]
     },
     {
       "name": "Health",
+      "description": "",
       "item": [
         {
-          "name": "Health Check",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Service is healthy', function() {",
-                  "    pm.response.to.have.status(200);",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.status).to.equal('UP');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Health check",
           "request": {
+            "method": "GET",
+            "header": [],
             "auth": {
               "type": "noauth"
             },
-            "method": "GET",
-            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/actuator/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["actuator", "health"]
+              "raw": "{{authBase}}/actuator/health",
+              "host": [
+                "{{authBase}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
             }
           }
         }
@@ -604,4 +1137,3 @@
     }
   ]
 }
-

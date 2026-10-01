@@ -7,9 +7,9 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 | Role | Description | Scope | Reporting Structure |
 |------|-------------|-------|-------------------|
-| **Employee** | End-user submitting award requests | Personal awards management, view all university awards | Reports to Faculty Secretary or Dean |
-| **Faculty Secretary** | Faculty award reviewer and approver | Faculty-level awards management, view all university awards | Reports to Dean |
-| **Dean** | Faculty-level leadership and oversight | Faculty-level awards management, policy decisions, view all university awards | Reports to Rector |
+| **Employee** | End-user submitting award requests | Personal awards management | Reports to Faculty Secretary or Dean |
+| **Faculty Secretary** | Faculty award reviewer and approver | Department-level awards management | Reports to Dean |
+| **Dean** | Faculty-level leadership and oversight | Faculty-level awards management, policy decisions | Reports to Rector |
 | **Rector's Secretary** | Executive administrative support | University-wide coordination | Reports to Rector |
 | **Rector** | Executive authority and final approver | University-wide strategic decisions | Top-level authority |
 | **System Ops** | Technical operations and maintenance | System infrastructure | Reports to IT Director |
@@ -25,8 +25,9 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Submit Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Edit Own Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Upload Scanned Document | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View All University Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View Own Awards | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Submitted Awards of Others⁵ | ❌ | Department | Faculty | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
+| View Approved University Awards (public pages, planned after Epic 4) | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Own Awards⁵ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View Award Change History² | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
 | View Award Review Status and Reviewer Comments⁴ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
 | Manage Personal Profile | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
@@ -39,6 +40,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 ² The owner sees every saved version of their award; anyone who may read a submitted award (scope over its organisation, or `award:read:all`) sees its versions from the submission on (Feature 2.2, `GET /awards/{id}/versions`).
 
 ⁴ The review timeline of an award (approval path, deadlines, expected completion, delay reason) and the reviewer decisions with the reviewer's name and comment are shown to everybody who may read the award, by the same rule as footnote ² (Feature 2.3 D-6, `GET /awards/{id}/status`). Reviewers act in their official role; the owner needs the comment to correct the award.
+
+⁵ As built in Epic 2 (`RolePermissions`, `AwardOwnership.isReadable`): the owner always reads their award, drafts included. Anyone else reads only submitted awards whose organisation is covered by a role granting `award:read:department` (faculty secretary), `award:read:faculty` (dean) or `award:read:all` (rector's secretary, rector, system administrator, GDPR officer), held or delegated; any other award answers 404. `award:read:own` is held by every role and gates the read endpoints; system administrators and GDPR officers own no awards. The original "every employee sees all university awards" row is kept as the public award pages, planned once approved awards exist (proposed in the Epic 2 documentation sync, 2026-10-01).
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

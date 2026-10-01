@@ -164,11 +164,21 @@ The Award Monitoring & Tracking System requires a robust, enterprise-grade backe
 
 ---
 
+## Addendum 2026-10: Spring Cloud not used
+
+The backend ships as one Spring Boot 3.5 application (a modular monolith packaged by domain under
+`ua.edu.chnu.awards`). No Spring Cloud module is used: there is no service discovery, configuration server or
+gateway to coordinate, because there is one deployable unit (see ADR-008 addendum). Authentication is provided
+by Spring Security with the embedded Spring Authorization Server (see ADR-009 addendum).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: spring cloud not used | Documentation sync after Epic 2 |
 
 ---
 

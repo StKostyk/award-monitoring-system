@@ -1,6 +1,6 @@
 # ADR-006: Message Queue Selection
 
-**Status**: Accepted  
+**Status**: Accepted (implementation deferred to Epic 7, see Addendum 2026-10)  
 **Date**: 2025-08-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team, Operations Team
@@ -110,11 +110,25 @@ The Award Monitoring & Tracking System requires a message queue for event-driven
 
 ---
 
+## Addendum 2026-10: Implementation deferred
+
+No message broker is deployed in Epics 1 and 2. Audit rows and award version snapshots are written
+synchronously in the same transaction as the change they describe, so the history can never disagree with the
+data. Emails that follow a change (verification, role and delegation changes, new device, data export) are
+sent after the commit through in-process Spring application events (the `event` packages); in-app notifications
+do not exist yet.
+
+The choice between Apache Kafka and in-process Spring application events is made at the Epic 7 (notifications)
+kickoff, when the first asynchronous consumer appears. The decision above remains the reference option.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 
 ---
 

@@ -1,252 +1,166 @@
 @startuml Package_Diagram
 !theme plain
 skinparam package {
-    BackgroundColor<<api>> LightBlue
     BackgroundColor<<domain>> LightGreen
-    BackgroundColor<<infra>> LightYellow
+    BackgroundColor<<security>> LightBlue
+    BackgroundColor<<shared>> LightYellow
     BackgroundColor<<config>> LightGray
 }
 
-title Award Monitoring & Tracking System - Package Diagram (Java Backend)
+title Award Monitoring & Tracking System - Package Diagram (Java backend, as built after Epic 2)
 
-package "com.university.awards" {
-    
-    ' API Layer
-    package "api" <<api>> {
-        package "controller" {
-            class AwardController
+' Package by domain: each domain has controller, dto, entity, event, mapper, repository, service as needed
+
+package "ua.edu.chnu.awards" {
+
+    package "auth" <<security>> {
+        package "web" as auth_web {
+            class AuthController
+            class LoginController
+        }
+        package "security" as auth_security {
+            class RateLimitFilter
+            class JwtAuthorityConverter
+            class RefreshTokenReuseGuard
+            class LoginAttemptService
+        }
+        package "service" as auth_service {
+            class RegistrationService
+            class PasswordResetService
+            class EmailChangeService
+            class DeviceService
+        }
+        package "entity" as auth_entity {
+            class OneTimeToken
+            class UserDevice
+        }
+    }
+
+    package "authz" <<security>> {
+        class AccessScope
+        class OrganizationTree
+        class RoleScope
+        class DelegatedScope
+        class AccessDenials
+    }
+
+    package "user" <<domain>> {
+        package "controller" as user_controller {
             class UserController
-            class WorkflowController
-            class AnalyticsController
-            class ComplianceController
-            class DocumentController
+            class UserProfileController
+            class OrganizationController
         }
-        
-        package "dto" {
-            package "request" {
-                class AwardCreateRequest
-                class AwardUpdateRequest
-                class UserRegisterRequest
-                class ReviewDecisionRequest
-            }
-            package "response" {
-                class AwardResponse
-                class UserResponse
-                class WorkflowResponse
-                class PageResponse
-            }
+        package "service" as user_service {
+            class UserDirectoryService
+            class UserProfileService
+            class RoleAssignmentService
+            class OrganizationService
         }
-        
-        package "mapper" {
-            interface AwardMapper
-            interface UserMapper
-            interface WorkflowMapper
-        }
-        
-        package "exception" {
-            class GlobalExceptionHandler
-            class ApiError
+        package "entity" as user_entity {
+            class User
+            class UserRole
+            class Organization
         }
     }
-    
-    ' Domain Layer
-    package "domain" <<domain>> {
-        package "award" {
-            package "entity" {
-                class Award
-                class AwardCategory
-                class Document
-            }
-            package "repository" {
-                interface AwardRepository
-                interface CategoryRepository
-                interface DocumentRepository
-            }
-            package "service" {
-                interface AwardService
-                class AwardServiceImpl
-                class AwardValidator
-            }
+
+    package "delegation" <<domain>> {
+        class DelegationController
+        class DelegationService
+        class RoleDelegation
+    }
+
+    package "award" <<domain>> {
+        package "controller" as award_controller {
+            class AwardController
+            class AwardCategoryController
+            class AwardHistoryController
         }
-        
-        package "user" {
-            package "entity" as user_entity {
-                class User
-                class UserRole
-                class Organization
-            }
-            package "repository" as user_repo {
-                interface UserRepository
-                interface RoleRepository
-                interface OrganizationRepository
-            }
-            package "service" as user_service {
-                interface UserService
-                class UserServiceImpl
-            }
+        package "service" as award_service {
+            class AwardService
+            class AwardSubmission
+            class AwardOwnership
+            class AwardInputRules
+            class DuplicateFinder
+            class CategorySuggester
+            class AwardHistory
+            class AwardStatusService
+            class StatusEstimator
         }
-        
-        package "workflow" {
-            package "entity" as wf_entity {
-                class AwardRequest
-                class ReviewDecision
-            }
-            package "repository" as wf_repo {
-                interface RequestRepository
-                interface DecisionRepository
-            }
-            package "service" as wf_service {
-                interface WorkflowEngine
-                class WorkflowEngineImpl
-                interface ApprovalService
-                class ApprovalServiceImpl
-            }
-            package "state" {
-                interface StateMachine
-                class RequestStateMachine
-            }
+        package "entity" as award_entity {
+            class Award
+            class AwardCategory
+            class AwardRequest
+            class ReviewDecision
+            class AwardVersion
         }
-        
-        package "compliance" {
-            package "entity" as comp_entity {
-                class AuditLog
-                class ConsentRecord
-            }
-            package "repository" as comp_repo {
-                interface AuditRepository
-                interface ConsentRepository
-            }
-            package "service" as comp_service {
-                interface AuditService
-                class AuditServiceImpl
-                interface ConsentService
-                class ConsentServiceImpl
-            }
+        package "repository" as award_repository {
+            class AwardRepository
+            class AwardSpecifications
+            class CategorySuggestionQueries
         }
-        
-        package "notification" {
-            package "entity" as notif_entity {
-                class Notification
-                class NotificationPreference
-            }
-            package "service" as notif_service {
-                interface NotificationService
-                class NotificationServiceImpl
-            }
-        }
-        
-        package "analytics" {
-            package "service" as analytics_service {
-                interface ReportService
-                class ReportServiceImpl
-                interface DashboardService
-                class DashboardServiceImpl
-            }
+        package "mapper" as award_mapper {
+            class AwardMapper
         }
     }
-    
-    ' Infrastructure Layer
-    package "infrastructure" <<infra>> {
-        package "persistence" {
-            class JpaConfig
-            class AuditingConfig
+
+    package "gdpr" <<domain>> {
+        class DataExportService
+        class PersonalDataAssembler
+    }
+
+    package "audit" <<shared>> {
+        class AuditService
+        class AuditTrailService
+        class AuditLog
+    }
+
+    package "common" <<shared>> {
+        package "web" as common_web {
+            class ApiExceptionHandler
+            class ApiProblemException
+            class CorrelationIdFilter
+            class PageResponse
         }
-        
-        package "messaging" {
-            class KafkaConfig
-            class EventPublisher
-            class EventConsumer
-        }
-        
-        package "cache" {
-            class RedisConfig
-            class CacheManager
-        }
-        
-        package "search" {
-            class ElasticsearchConfig
-            class SearchClient
-        }
-        
-        package "storage" {
-            class StorageConfig
-            class FileStorageClient
-        }
-        
-        package "external" {
-            class LdapClient
-            class AiServiceClient
-            class EmailClient
-            class SmsClient
+        package "mail" as common_mail {
+            class MailDelivery
         }
     }
-    
-    ' Configuration Layer
+
+    package "metrics" <<shared>> {
+        class BusinessMetricsService
+    }
+
     package "config" <<config>> {
         class SecurityConfig
-        class WebConfig
-        class SwaggerConfig
-        class AsyncConfig
-        class I18nConfig
-    }
-    
-    ' Event Layer
-    package "event" {
-        package "domain" as event_domain {
-            abstract class DomainEvent
-            class AwardCreatedEvent
-            class AwardSubmittedEvent
-            class AwardApprovedEvent
-            class DocumentUploadedEvent
-        }
-        package "handler" {
-            class AwardEventHandler
-            class DocumentEventHandler
-            class NotificationEventHandler
-        }
-    }
-    
-    ' Shared/Common
-    package "common" {
-        package "util" {
-            class DateUtils
-            class ValidationUtils
-            class SecurityUtils
-        }
-        package "constant" {
-            class AppConstants
-            class ErrorCodes
-        }
-        package "annotation" {
-            annotation Audited
-            annotation RateLimit
-        }
+        class AuthorizationServerConfig
+        class LoginSessionConfig
+        class TokenConfig
+        class OpenApiConfig
     }
 }
 
-' Dependencies
-controller ..> service : uses
-controller ..> mapper : uses
-controller ..> request : receives
-controller ..> response : returns
+' Dependencies between top-level packages
+award ..> user : owner, organisation
+award ..> authz : readable scope
+award ..> audit : AWARD_* rows
+delegation ..> user
+delegation ..> authz
+user ..> authz
+user ..> audit
+auth ..> user
+auth ..> audit
+gdpr ..> user
+gdpr ..> award
+config ..> auth
+config ..> authz
+award ..> common
+user ..> common
 
-service ..> repository : uses
-service ..> entity : manages
-service ..> EventPublisher : publishes
-
-repository ..> entity : persists
-mapper ..> entity : maps from
-mapper ..> response : maps to
-
-WorkflowEngineImpl ..> StateMachine : uses
-AwardServiceImpl ..> WorkflowEngine : delegates
-
-event_handler ..> service : calls
-EventConsumer ..> event_handler : delegates
-
-infrastructure ..> config : configured by
+note bottom of award
+    Mappers are hand-written @Component classes;
+    no MapStruct. Planned domains: document (Epic 3),
+    workflow (Epic 4), analytics (Epic 5),
+    compliance (Epic 6), notification (Epic 7).
+end note
 
 @enduml
-
-
-

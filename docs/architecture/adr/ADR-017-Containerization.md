@@ -237,11 +237,21 @@ docker-compose down
 
 ---
 
+## Addendum 2026-10: Compose services as built
+
+The development Compose file (`docker-compose.yaml`) runs `postgres`, `redis`, `mailpit` (local mail
+catcher), `minio` (S3-compatible object storage), `app` (backend) and `frontend` (nginx with the Angular bundle).
+The Kafka and Elasticsearch services in the example above are target-state; they are added only when ADR-006 and
+ADR-007 are implemented.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-01 | Stefan Kostyk | Addendum: compose services as built | Documentation sync after Epic 2 |
 
 ---
 
