@@ -20,6 +20,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.dto.AwardStatusView;
 import ua.edu.chnu.awards.award.dto.DelayReason;
 import ua.edu.chnu.awards.award.dto.PathStep;
@@ -36,11 +37,13 @@ import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
+import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class AwardStatusServiceTest {
 
@@ -51,9 +54,10 @@ class AwardStatusServiceTest {
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
-    private final AwardOwnership ownership = mock(AwardOwnership.class);
+    private final AccessScope access = mock(AccessScope.class);
+    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserRepository.class), access);
     private final ReviewerAvailability reviewers = mock(ReviewerAvailability.class);
-    private final AwardStatusService service = new AwardStatusService(awards, requests, decisions, ownership,
+    private final AwardStatusService service = new AwardStatusService(requests, decisions, ownership,
         TestWorkflow.estimator(Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"))), reviewers);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
@@ -63,10 +67,10 @@ class AwardStatusServiceTest {
 
     @BeforeEach
     void setUp() {
-        award = Award.builder().id(AWARD_ID).owner(owner).organization(department).status(AwardStatus.PENDING)
+        award = TestAwards.award(owner, department).status(AwardStatus.PENDING)
             .category(AwardCategory.builder().id(13L).level(RecognitionLevel.NATIONAL).build()).build();
         when(awards.findById(AWARD_ID)).thenReturn(Optional.of(award));
-        when(ownership.isReadable(award)).thenReturn(true);
+        when(access.callerId()).thenReturn(owner.getId());
         when(reviewers.hasReviewer(any(), anyLong(), anyLong())).thenReturn(true);
         when(decisions.findByRequestId(REQUEST_ID)).thenReturn(List.of());
     }
@@ -208,22 +212,21 @@ class AwardStatusServiceTest {
 
     @Test
     void ac1_8_anAwardTheCallerMayNotReadIsNotFound() {
-        when(ownership.isReadable(award)).thenReturn(false);
+        when(access.callerId()).thenReturn(99L);
 
         assertThatThrownBy(() -> service.status(AWARD_ID)).isInstanceOf(AwardNotFoundException.class);
         assertThatThrownBy(() -> service.status(99L)).isInstanceOf(AwardNotFoundException.class);
     }
 
     private AwardRequest request(RequestStatus status, ApprovalLevel level, Instant deadline) {
-        AwardRequest request = AwardRequest.builder().id(REQUEST_ID).award(award).submitter(owner).status(status)
-            .currentLevel(level).submittedAt(NOW.minus(Duration.ofDays(10))).deadline(deadline).build();
+        AwardRequest request = TestAwards.request(award).status(status).currentLevel(level)
+            .submittedAt(NOW.minus(Duration.ofDays(10))).deadline(deadline).build();
         when(requests.findByAwardId(AWARD_ID)).thenReturn(Optional.of(request));
         return request;
     }
 
     private static ReviewDecision decision(long id, ReviewDecisionType type, ApprovalLevel level, User reviewer,
                                            String day) {
-        return ReviewDecision.builder().id(id).requestId(REQUEST_ID).decision(type).level(level).reviewer(reviewer)
-            .comments("comment " + id).decidedAt(Instant.parse(day + "T10:00:00Z")).build();
+        return TestAwards.decision(id, type, level, reviewer, Instant.parse(day + "T10:00:00Z"));
     }
 }

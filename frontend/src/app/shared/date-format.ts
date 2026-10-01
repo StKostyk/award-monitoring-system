@@ -23,3 +23,30 @@ export function kyivDate(value: string, language: string): string {
     day: '2-digit',
   }).format(new Date(instant));
 }
+
+/** Today in Kyiv as `YYYY-MM-DD`, the day the server compares award dates with. */
+export function kyivToday(now = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Kyiv',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
+
+/** The same day the given number of years earlier; 29 February becomes 28 February in a common year. */
+export function yearsBefore(date: string, years: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(year - years, month, 0)).getUTCDate();
+  return isoDate(Date.UTC(year - years, month - 1, Math.min(day, lastDay)));
+}
+
+/** The day the given number of days earlier. */
+export function daysBefore(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return isoDate(Date.UTC(year, month - 1, day - days));
+}
+
+function isoDate(time: number): string {
+  return new Date(time).toISOString().substring(0, 10);
+}

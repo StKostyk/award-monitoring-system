@@ -72,15 +72,6 @@
   flex-shrink: 0;
 }
 
-.awards__expected {
-  color: var(--mat-sys-on-surface-variant, #444746);
-  font: var(--mat-sys-body-small);
-}
-
-.awards__chip--delayed {
-  --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container, #ffdbcb);
-}
-
 .awards__empty {
   padding: 24px;
   text-align: center;

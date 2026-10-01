@@ -6,7 +6,7 @@ import { AwardDetailComponent } from './award-detail/award-detail.component';
 import { AwardFormComponent } from './award-form/award-form.component';
 import { AwardListComponent } from './award-list/award-list.component';
 import { AwardSubmittedComponent } from './award-submitted/award-submitted.component';
-import { awardEntryGuard, unsavedChangesGuard } from './awards.guards';
+import { awardEditGuard, awardEntryGuard, unsavedChangesGuard } from './awards.guards';
 import { AwardsEffects } from './store/awards.effects';
 import { awardsFeature } from './store/awards.feature';
 
@@ -25,7 +25,7 @@ export const AWARD_ROUTES: Routes = [
       {
         path: ':id/edit',
         component: AwardFormComponent,
-        canActivate: [awardEntryGuard],
+        canActivate: [awardEditGuard],
         canDeactivate: [unsavedChangesGuard],
       },
       { path: ':id/submitted', component: AwardSubmittedComponent },

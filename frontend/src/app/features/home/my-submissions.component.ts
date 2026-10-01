@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { MatAnchor } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
-import { MatChip } from '@angular/material/chips';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { LanguageService } from '../../core/i18n/language.service';
-import { kyivDate } from '../../shared/date-format';
 import { Award, AwardsService, NO_FILTERS, awardTitle } from '../awards/awards.service';
+import { RequestTimingComponent } from '../awards/request-timing/request-timing.component';
 
 /** How many pending awards the card lists. */
 export const SUBMISSIONS_SHOWN = 5;
@@ -20,7 +19,7 @@ export const SUBMISSIONS_SHOWN = 5;
     MatCardHeader,
     MatCardTitle,
     MatCardContent,
-    MatChip,
+    RequestTimingComponent,
     MatAnchor,
     RouterLink,
     TranslocoPipe,
@@ -45,9 +44,5 @@ export class MySubmissionsComponent implements OnInit {
 
   title(award: Award): string {
     return awardTitle(award, this.language.current());
-  }
-
-  date(value: string): string {
-    return kyivDate(value, this.language.current());
   }
 }

@@ -34,6 +34,10 @@ public final class TestWorkflow {
      * @return the estimator
      */
     public static StatusEstimator estimator(Clock clock) {
-        return new StatusEstimator(clock, new WorkflowProperties(REVIEW_PERIOD), new ApprovalPath());
+        return estimator(clock, REVIEW_PERIOD);
+    }
+
+    public static StatusEstimator estimator(Clock clock, Duration reviewPeriod) {
+        return new StatusEstimator(clock, new WorkflowProperties(reviewPeriod), new ApprovalPath());
     }
 }

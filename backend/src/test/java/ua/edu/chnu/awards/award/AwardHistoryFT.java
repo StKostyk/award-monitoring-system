@@ -26,6 +26,7 @@ import io.restassured.response.Response;
 
 import ua.edu.chnu.awards.common.web.CorrelationIdFilter;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
+import ua.edu.chnu.awards.support.AwardApi;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -93,16 +94,17 @@ class AwardHistoryFT extends AbstractFunctionalTest {
         long id = as(employee).header(CorrelationIdFilter.HEADER, correlation).contentType(ContentType.JSON)
             .body(Map.of("title", "Letter")).post(AWARDS).then().statusCode(201)
             .body(VERSION, equalTo(1)).extract().jsonPath().getLong("id");
+        String yearAgo = LocalDate.now(AwardApi.KYIV).minusYears(1).toString();
         Map<String, Object> complete = Map.of("title", "Diploma", "categoryId", MINISTRY_CATEGORY,
-            "awardingOrganization", "МОН", "awardDate", LocalDate.now().minusYears(1).toString(), VERSION, 1);
+            "awardingOrganization", "МОН", "awardDate", yearAgo, VERSION, 1);
         as(employee).contentType(ContentType.JSON).body(complete).put(AWARDS + "/" + id).then().statusCode(200)
             .body(VERSION, equalTo(2));
         as(employee).contentType(ContentType.JSON).body(Map.of("title", "Diploma", "categoryId", MINISTRY_CATEGORY,
-                "awardingOrganization", "МОН", "awardDate", LocalDate.now().minusYears(1).toString(), VERSION, 2))
+                "awardingOrganization", "МОН", "awardDate", yearAgo, VERSION, 2))
             .put(AWARDS + "/" + id).then().statusCode(200).body(VERSION, equalTo(2));
         as(employee).contentType(ContentType.JSON).body(complete).put(AWARDS + "/" + id).then().statusCode(409)
             .body("type", equalTo(PROBLEM + "award-stale"));
-        submit(id, 2);
+        AwardApi.submit(employee, id, 2, true).then().statusCode(200);
 
         Response versions = as(employee).get(AWARDS + "/" + id + "/versions");
 
@@ -200,16 +202,6 @@ class AwardHistoryFT extends AbstractFunctionalTest {
     }
 
     private long submitted(String title) {
-        long id = as(employee).contentType(ContentType.JSON).body(Map.of("title", title,
-                "categoryId", MINISTRY_CATEGORY, "awardingOrganization", "МОН",
-                "awardDate", LocalDate.now().minusYears(1).toString()))
-            .post(AWARDS).then().statusCode(201).extract().jsonPath().getLong("id");
-        submit(id, 1);
-        return id;
-    }
-
-    private void submit(long id, long version) {
-        as(employee).contentType(ContentType.JSON).body(Map.of(VERSION, version, "duplicateAcknowledged", true))
-            .post(AWARDS + "/" + id + "/submit").then().statusCode(200);
+        return AwardApi.submitted(employee, Map.of("title", title));
     }
 }

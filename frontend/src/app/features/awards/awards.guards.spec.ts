@@ -10,7 +10,12 @@ import {
 
 import { AuthService } from '../../core/auth/auth.service';
 import { NO_PERMISSIONS, readPermissions } from '../../core/auth/permissions';
-import { awardEntryGuard, ownAwardsGuard, unsavedChangesGuard } from './awards.guards';
+import {
+  awardEditGuard,
+  awardEntryGuard,
+  ownAwardsGuard,
+  unsavedChangesGuard,
+} from './awards.guards';
 
 function tokenWith(claims: Record<string, unknown>): string {
   return `header.${btoa(JSON.stringify(claims))}.signature`;
@@ -41,6 +46,15 @@ describe('award guards', () => {
     );
 
     expect(TestBed.runInInjectionContext(() => awardEntryGuard(route, state))).toBe(true);
+  });
+
+  it('ac1_3_opens_the_edit_form_only_with_award_update_own', () => {
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:create'] })));
+    const refused = TestBed.runInInjectionContext(() => awardEditGuard(route, state)) as UrlTree;
+    expect(TestBed.inject(Router).serializeUrl(refused)).toBe('/forbidden');
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:update:own'] })));
+    expect(TestBed.runInInjectionContext(() => awardEditGuard(route, state))).toBe(true);
   });
 
   it('ac1_9_refuses_own_awards_without_any_award_permission', () => {

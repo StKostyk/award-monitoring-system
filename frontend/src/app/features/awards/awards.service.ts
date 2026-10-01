@@ -5,6 +5,8 @@ import { Observable, catchError, forkJoin, map, shareReplay, throwError } from '
 import { environment } from '../../../environments/environment';
 import { OrganizationRef, OrganizationType } from '../../core/auth/user-profile';
 import { OrganizationsService } from '../../core/organizations/organizations.service';
+import { daysBefore } from '../../shared/date-format';
+import { organizationName } from '../../shared/organization-name';
 
 /** An organisation name in both languages. */
 export interface OrganizationName {
@@ -358,6 +360,11 @@ export class AwardsService {
   }
 }
 
+/** Whether the signed-in user owns the award. */
+export function isOwnAward(award: Pick<Award, 'owner'>, userId: string | null): boolean {
+  return userId !== null && String(award.owner.id) === userId;
+}
+
 /** Title in the interface language, falling back to the other one. */
 export function awardTitle(award: Pick<Award, 'title' | 'titleUk'>, language: string): string {
   return (
@@ -367,39 +374,12 @@ export function awardTitle(award: Pick<Award, 'title' | 'titleUk'>, language: st
 
 /** Category name in the interface language. */
 export function categoryName(category: CategoryRef, language: string): string {
-  return language === 'en' ? category.name : (category.nameUk ?? category.name);
-}
-
-/** Today in Kyiv as `YYYY-MM-DD`, the day the server compares award dates with. */
-export function kyivToday(now = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Kyiv',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-}
-
-/** The same day the given number of years earlier; 29 February becomes 28 February in a common year. */
-export function yearsBefore(date: string, years: number): string {
-  const [year, month, day] = date.split('-').map(Number);
-  const lastDay = new Date(Date.UTC(year - years, month, 0)).getUTCDate();
-  return isoDate(Date.UTC(year - years, month - 1, Math.min(day, lastDay)));
-}
-
-/** The day the given number of days earlier. */
-export function daysBefore(date: string, days: number): string {
-  const [year, month, day] = date.split('-').map(Number);
-  return isoDate(Date.UTC(year, month - 1, day - days));
+  return organizationName(category, language);
 }
 
 /** Whether a `YYYY-MM-DD` date lies within the last 30 days: today and the 29 days before it. */
 export function isRecent(date: string | null | undefined, today: string): boolean {
   return !!date && date <= today && date > daysBefore(today, RECENT_DAYS);
-}
-
-function isoDate(time: number): string {
-  return new Date(time).toISOString().substring(0, 10);
 }
 
 /** Every category of the tree with its depth, parents before their children. */

@@ -60,6 +60,29 @@ public class AwardOwnership {
     }
 
     /**
+     * An award the caller may read; an unreadable one is reported as missing, so its existence is not revealed.
+     *
+     * @param id the award
+     * @return the award
+     * @throws AwardNotFoundException when it does not exist or is not readable by the caller
+     */
+    public Award readable(long id) {
+        return awards.findById(id).filter(this::isReadable).orElseThrow(() -> new AwardNotFoundException(id));
+    }
+
+    /**
+     * Same as {@link #readable(long)}, with the owner, organisation and category loaded.
+     *
+     * @param id the award
+     * @return the award
+     * @throws AwardNotFoundException when it does not exist or is not readable by the caller
+     */
+    public Award readableWithDetails(long id) {
+        return awards.findWithDetailsById(id).filter(this::isReadable)
+            .orElseThrow(() -> new AwardNotFoundException(id));
+    }
+
+    /**
      * The caller's draft, locked for the rest of the transaction so that saves and submissions of one award run
      * one after the other.
      *

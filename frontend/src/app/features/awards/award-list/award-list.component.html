@@ -95,20 +95,7 @@
           {{ 'awards.status.' + award.status | transloco }}
         </mat-chip>
         @if (award.request; as request) {
-          @if (request.status === 'RETURNED') {
-            <span class="awards__expected" data-testid="award-returned">{{
-              'awards.statusPanel.returned' | transloco
-            }}</span>
-          } @else if (request.estimatedCompletion) {
-            <span class="awards__expected" data-testid="award-expected">{{
-              'awards.timing.expected' | transloco: { date: date(request.estimatedCompletion) }
-            }}</span>
-          }
-          @if (request.overdue) {
-            <mat-chip class="awards__chip awards__chip--delayed" data-testid="award-delayed">{{
-              'awards.timing.delayed' | transloco
-            }}</mat-chip>
-          }
+          <app-request-timing [request]="request" />
         }
       </span>
     </li>

@@ -40,6 +40,7 @@ import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
 import ua.edu.chnu.awards.user.entity.Organization;
@@ -70,8 +71,8 @@ class AwardSubmissionTest {
     void setUp() {
         AwardCategory category = AwardCategory.builder().id(13L).name("Ministry")
             .level(RecognitionLevel.NATIONAL).active(true).build();
-        draft = Award.builder().id(5L).owner(owner).organization(oldDepartment).category(category)
-            .title("Letter").awardingOrganization("MON").awardDate(LocalDate.of(2025, 5, 1)).version(4L).build();
+        draft = TestAwards.award(owner, oldDepartment).category(category).awardingOrganization("MON")
+            .awardDate(LocalDate.of(2025, 5, 1)).build();
         when(ownership.lockedDraft(5L)).thenReturn(draft);
         when(requests.saveAndFlush(any(AwardRequest.class))).thenAnswer(invocation -> {
             AwardRequest request = invocation.getArgument(0);

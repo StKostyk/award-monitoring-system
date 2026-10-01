@@ -30,7 +30,6 @@ import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.AwardWarning;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
-import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
@@ -38,6 +37,7 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
+import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
 import ua.edu.chnu.awards.user.entity.Organization;
@@ -123,7 +123,7 @@ class AwardServiceTest {
     void ac1_8_aSubmittedAwardIsReadInsideTheScopeOnly() {
         Award pending = award(OWNER_ID, AwardStatus.PENDING);
         when(awards.findWithDetailsById(5L)).thenReturn(Optional.of(pending));
-        when(requests.findByAwardId(5L)).thenReturn(Optional.of(request(pending)));
+        when(requests.findByAwardId(5L)).thenReturn(Optional.of(TestAwards.request(pending).build()));
         when(access.callerId()).thenReturn(7L);
 
         when(access.canReadAwards(64L)).thenReturn(true);
@@ -138,7 +138,7 @@ class AwardServiceTest {
     void edge_aRequestWithoutStoredDeadlineCarriesTheDeadlineOfItsEstimate() {
         Award pending = award(OWNER_ID, AwardStatus.PENDING);
         when(awards.findWithDetailsById(5L)).thenReturn(Optional.of(pending));
-        when(requests.findByAwardId(5L)).thenReturn(Optional.of(request(pending)));
+        when(requests.findByAwardId(5L)).thenReturn(Optional.of(TestAwards.request(pending).build()));
         when(access.callerId()).thenReturn(OWNER_ID);
 
         assertThat(service.get(5L).request().deadline()).isEqualTo(Instant.parse("2026-10-01T09:00:00Z"));
@@ -155,7 +155,7 @@ class AwardServiceTest {
         when(specifications.ownedBy(OWNER_ID, query)).thenReturn(own);
         when(awards.findAll(any(Specification.class), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of(pending, draft)));
-        when(requests.findByAwardIdIn(List.of(6L, 5L))).thenReturn(List.of(request(pending)));
+        when(requests.findByAwardIdIn(List.of(6L, 5L))).thenReturn(List.of(TestAwards.request(pending).build()));
         when(warnings.forDrafts(List.of(pending, draft))).thenReturn(Map.of(5L, List.of(RECENT)));
 
         Page<AwardResponse> page = service.listOwn(query, -1, 500);
@@ -186,14 +186,7 @@ class AwardServiceTest {
 
     private Award award(long ownerId, AwardStatus status) {
         User awardOwner = ownerId == OWNER_ID ? owner : TestUsers.person(ownerId, "other@chnu.edu.ua", department);
-        return Award.builder().id(5L).owner(awardOwner).organization(department).title("Letter").status(status)
-            .version(4L).build();
-    }
-
-    private static AwardRequest request(Award award) {
-        return AwardRequest.builder().id(40L).award(award).submitter(award.getOwner())
-            .status(RequestStatus.SUBMITTED).currentLevel(ApprovalLevel.FACULTY_SECRETARY)
-            .submittedAt(Instant.parse("2026-09-28T09:00:00Z")).build();
+        return TestAwards.award(awardOwner, department).status(status).build();
     }
 
     private static AwardForm form(Long version) {

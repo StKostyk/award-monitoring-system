@@ -42,6 +42,7 @@ import { fieldProblems, problemStatus, problemType } from '../../../core/api/pro
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
+import { kyivToday, yearsBefore } from '../../../shared/date-format';
 import { LeavesUnsavedChanges } from '../awards.guards';
 import {
   Award,
@@ -58,8 +59,6 @@ import {
   duplicateMatches,
   flattenCategories,
   isRecent,
-  kyivToday,
-  yearsBefore,
 } from '../awards.service';
 import { ConfirmDialogComponent, confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
 import { DuplicateDialogComponent } from '../duplicate-dialog/duplicate-dialog.component';
@@ -121,8 +120,6 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private version = 0;
   private leaving = false;
 
-  readonly today = kyivToday();
-  readonly oldest = yearsBefore(this.today, MAX_AGE_YEARS);
   readonly recentDate = signal(false);
   readonly limits = {
     title: TITLE_LIMIT,
@@ -167,6 +164,16 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     },
     { validators: titleInOneLanguage },
   );
+
+  /** Today on the Kyiv calendar, read at every check so that a form left open past midnight stays right. */
+  get today(): string {
+    return kyivToday();
+  }
+
+  /** The oldest award date accepted. */
+  get oldest(): string {
+    return yearsBefore(this.today, MAX_AGE_YEARS);
+  }
 
   constructor() {
     this.form.valueChanges

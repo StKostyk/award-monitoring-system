@@ -31,6 +31,7 @@ import ua.edu.chnu.awards.award.entity.AwardVersion;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
+import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
@@ -48,7 +49,7 @@ class AwardHistoryTest {
     private final AwardRepository awards = mock(AwardRepository.class);
     private final UserRepository users = mock(UserRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardHistory history = new AwardHistory(versions, awards, users,
+    private final AwardHistory history = new AwardHistory(versions, users,
         new AwardOwnership(awards, users, access), access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
@@ -232,8 +233,7 @@ class AwardHistoryTest {
     }
 
     private Award award(AwardStatus status, long version) {
-        return Award.builder().id(AWARD_ID).owner(owner).organization(department).title("Letter").status(status)
-            .version(version).build();
+        return TestAwards.award(owner, department).status(status).version(version).build();
     }
 
     private AwardVersion version(long number, VersionAction action, AwardSnapshot snapshot) {

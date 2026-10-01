@@ -198,10 +198,18 @@ describe('AwardDetailComponent', () => {
   });
 
   it('ac1_9_offers_editing_of_an_own_draft', async () => {
+    granted.set(['award:update:own']);
     service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
     const fixture = await open(AwardDetailComponent, '5');
 
     expect(fixture.nativeElement.querySelector('[data-testid="award-edit"]')).not.toBeNull();
+  });
+
+  it('ac1_9_offers_no_editing_without_award_update_own', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-edit"]')).toBeNull();
   });
 
   it('ac1_8_an_unknown_award_is_not_found', async () => {
@@ -260,6 +268,15 @@ describe('AwardDetailComponent', () => {
     const malformed = await open(AwardSubmittedComponent, 'abc');
     expect(malformed.nativeElement.querySelector('[data-testid="award-not-found"]')).not.toBeNull();
     expect(service.get).not.toHaveBeenCalled();
+  });
+
+  it('edge_a_server_failure_on_the_confirmation_is_no_not_found', async () => {
+    service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+    const fixture = await open(AwardSubmittedComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-submitted-error"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-not-found"]')).toBeNull();
   });
 
   it('f9_an_own_draft_is_deleted_after_confirmation', async () => {

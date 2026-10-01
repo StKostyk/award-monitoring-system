@@ -69,6 +69,11 @@ export function canCreateAwards(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('award:create');
 }
 
+/** Whether the caller may change their own drafts. */
+export function canEditOwnAwards(permissions: TokenPermissions): boolean {
+  return permissions.hasPermission('award:update:own');
+}
+
 /** Whether the caller may open their own awards. */
 export function canReadOwnAwards(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('award:read:own');

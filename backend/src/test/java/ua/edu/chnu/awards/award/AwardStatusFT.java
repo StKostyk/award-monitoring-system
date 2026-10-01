@@ -27,6 +27,7 @@ import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
+import ua.edu.chnu.awards.support.AwardApi;
 import ua.edu.chnu.awards.support.AwardRows;
 import ua.edu.chnu.awards.support.DecisionRows;
 import ua.edu.chnu.awards.support.RequestRows;
@@ -47,7 +48,6 @@ class AwardStatusFT extends AbstractFunctionalTest {
     private static final String AWARDS = "/api/v1/awards";
     private static final ZoneId KYIV = ZoneId.of("Europe/Kyiv");
     private static final long OTHER_FACULTY_ID = 10L;
-    private static final long MINISTRY_CATEGORY = 13L;
 
     @Autowired
     private UserRepository userRepository;
@@ -217,12 +217,6 @@ class AwardStatusFT extends AbstractFunctionalTest {
     }
 
     private long submitted(String title) {
-        long id = as(employee).contentType(ContentType.JSON).body(Map.of("title", title,
-                "categoryId", MINISTRY_CATEGORY, "awardingOrganization", "МОН",
-                "awardDate", LocalDate.now().minusYears(1).toString()))
-            .post(AWARDS).then().statusCode(201).extract().jsonPath().getLong("id");
-        as(employee).contentType(ContentType.JSON).body(Map.of("version", 1, "duplicateAcknowledged", true))
-            .post(AWARDS + "/" + id + "/submit").then().statusCode(200);
-        return id;
+        return AwardApi.submitted(employee, Map.of("title", title));
     }
 }

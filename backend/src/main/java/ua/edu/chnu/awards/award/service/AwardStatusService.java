@@ -21,7 +21,6 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.entity.ReviewDecision;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
-import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 
@@ -38,7 +37,6 @@ public class AwardStatusService {
     private static final Set<ReviewDecisionType> PASSED =
         EnumSet.of(ReviewDecisionType.APPROVED, ReviewDecisionType.ESCALATED);
 
-    private final AwardRepository awards;
     private final AwardRequestRepository requests;
     private final ReviewDecisionRepository decisions;
     private final AwardOwnership ownership;
@@ -54,8 +52,7 @@ public class AwardStatusService {
      */
     @Transactional(readOnly = true)
     public AwardStatusView status(long id) {
-        Award award = awards.findById(id).filter(ownership::isReadable)
-            .orElseThrow(() -> new AwardNotFoundException(id));
+        Award award = ownership.readable(id);
         AwardRequest request = award.isDraft() ? null : requests.findByAwardId(id).orElse(null);
         if (request == null) {
             return AwardStatusView.withoutRequest(award.getId(), award.getStatus());

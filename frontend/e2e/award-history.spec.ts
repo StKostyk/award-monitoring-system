@@ -1,24 +1,11 @@
 import { Browser, Page, expect, test } from '@playwright/test';
 
-import { signIn } from './helpers';
+import { pastDay, signIn, uniqueToken } from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
 const dean = 'dean.fmi@chnu.edu.ua';
 const admin = 'admin@chnu.edu.ua';
-
-function token(): string {
-  return Array.from(
-    { length: 12 },
-    () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)],
-  ).join('');
-}
-
-function pastDay(): string {
-  const date = new Date();
-  date.setDate(date.getDate() - 400 - Math.floor(Math.random() * 10000));
-  return date.toISOString().substring(0, 10);
-}
 
 async function signedIn(browser: Browser, email: string): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
@@ -46,8 +33,8 @@ test.describe('award history and audit log', () => {
   test('ac2_1 to ac2_8 the owner, a dean and an auditor each see their part', async ({
     browser,
   }) => {
-    const first = `Лист ${token()}`;
-    const second = `Грамота МОН ${token()}`;
+    const first = `Лист ${uniqueToken()}`;
+    const second = `Грамота МОН ${uniqueToken()}`;
     const owner = await signedIn(browser, employee);
     await owner.getByTestId('nav-awards').click();
     await owner.getByTestId('award-add').click();
