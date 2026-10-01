@@ -26,6 +26,7 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.2.3 | Fixes from the Feature 2.2 validation | 3 | ✅ Done | SCRUM-30 | [#97](https://github.com/StKostyk/award-monitoring-system/issues/97) |
 | 2.3.1 | Award status tracking (US-005) | 5 | ✅ Done | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
 | 2.3.2 | Fixes from the Feature 2.3 validation | 2 | ✅ Done | SCRUM-31 | [#101](https://github.com/StKostyk/award-monitoring-system/issues/101) |
+| 2.1.5 | Database views and functions follow the award model | 2 | 🔍 In Review | SCRUM-32 | [#103](https://github.com/StKostyk/award-monitoring-system/issues/103) |
 
 Sprint Goal: an employee creates, checks, submits and tracks an award (Features 2.1–2.3).  
 Completed Points: 60 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30, fixes 2.2.3 merged, Feature 2.3 validated and fixes 2.3.2 merged 2026-10-01; the author's runs of PRD §9 pending)
@@ -35,11 +36,7 @@ Completed Points: 60 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 val
 ## Backlog (Prioritized)
 
 ### Epic 2 — remaining (Jira epic SCRUM-20)
-Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The documentation sync of 2026-10-01 found database views and functions that disagree with the award model:
-
-| ID | Story | Points | Feature | Jira | Issue |
-|----|-------|--------|---------|------|-------|
-| 2.1.5 | Database views and functions follow the award model | 2 | 2.1 | SCRUM-32 | [#103](https://github.com/StKostyk/award-monitoring-system/issues/103) |
+Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) are fixed in 2.1.5 (Sprint 3).
 
 ### Later epics
 | ID | Story | Points | Epic |
