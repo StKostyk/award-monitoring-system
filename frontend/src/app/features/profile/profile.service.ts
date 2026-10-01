@@ -35,6 +35,8 @@ export class ProfileService {
   }
 
   confirmEmailChange(token: string): Observable<EmailChangeResult> {
-    return this.http.post<EmailChangeResult>(`${environment.apiUrl}/auth/email-change/confirm`, { token });
+    return this.http.post<EmailChangeResult>(`${environment.apiUrl}/auth/email-change/confirm`, {
+      token,
+    });
   }
 }

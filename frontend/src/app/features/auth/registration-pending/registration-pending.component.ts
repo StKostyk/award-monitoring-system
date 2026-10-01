@@ -32,10 +32,13 @@ export class RegistrationPendingComponent {
   private readonly api = inject(RegistrationService);
   private readonly auth = inject(AuthService);
 
-  readonly email = new FormControl(inject(ActivatedRoute).snapshot.queryParamMap.get('email') ?? '', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.email],
-  });
+  readonly email = new FormControl(
+    inject(ActivatedRoute).snapshot.queryParamMap.get('email') ?? '',
+    {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    },
+  );
   readonly notice = signal<string | null>(null);
   readonly sending = signal(false);
 

@@ -16,7 +16,10 @@ import { OrganizationSummary } from '../../../core/organizations/organizations.s
 import { RegistrationService } from '../registration.service';
 
 export const INSTITUTIONAL_DOMAIN = 'chnu.edu.ua';
-export const INSTITUTIONAL_EMAIL = new RegExp(`^[^@\\s]+@${INSTITUTIONAL_DOMAIN.replace(/\./g, '\\.')}$`, 'i');
+export const INSTITUTIONAL_EMAIL = new RegExp(
+  `^[^@\\s]+@${INSTITUTIONAL_DOMAIN.replace(/\./g, '\\.')}$`,
+  'i',
+);
 
 export interface DepartmentGroup {
   faculty: string;
@@ -64,11 +67,15 @@ export class RegisterComponent implements OnInit {
   readonly submitting = signal(false);
 
   ngOnInit(): void {
-    this.api.departments().subscribe((departments) => this.groups.set(this.groupByFaculty(departments)));
+    this.api
+      .departments()
+      .subscribe((departments) => this.groups.set(this.groupByFaculty(departments)));
   }
 
   name(organization: { name: string; nameUk: string | null }): string {
-    return this.language.current() === 'uk' && organization.nameUk ? organization.nameUk : organization.name;
+    return this.language.current() === 'uk' && organization.nameUk
+      ? organization.nameUk
+      : organization.name;
   }
 
   submit(): void {
@@ -89,7 +96,9 @@ export class RegisterComponent implements OnInit {
       })
       .subscribe({
         next: (response) =>
-          void this.router.navigate(['/registration-pending'], { queryParams: { email: response.email } }),
+          void this.router.navigate(['/registration-pending'], {
+            queryParams: { email: response.email },
+          }),
         error: (err) => {
           this.error.set(`register.errors.${problemType(err)}`);
           this.submitting.set(false);

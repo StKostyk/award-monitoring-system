@@ -1,6 +1,11 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, provideRouter } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  Router,
+  RouterStateSnapshot,
+  provideRouter,
+} from '@angular/router';
 import { vi } from 'vitest';
 
 import { authGuard, delegationGuard, userDirectoryGuard } from './auth.guard';
@@ -30,7 +35,9 @@ describe('authGuard', () => {
   it('ac11 sends an anonymous user to the authorization server with the requested url', () => {
     auth.isAuthenticated.set(false);
 
-    const result = TestBed.runInInjectionContext(() => authGuard({} as ActivatedRouteSnapshot, state));
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, state),
+    );
 
     expect(result).toBe(false);
     expect(auth.login).toHaveBeenCalledWith('/awards');
@@ -39,7 +46,9 @@ describe('authGuard', () => {
   it('lets an authenticated user through', () => {
     auth.isAuthenticated.set(true);
 
-    const result = TestBed.runInInjectionContext(() => authGuard({} as ActivatedRouteSnapshot, state));
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, state),
+    );
 
     expect(result).toBe(true);
     expect(auth.login).not.toHaveBeenCalled();

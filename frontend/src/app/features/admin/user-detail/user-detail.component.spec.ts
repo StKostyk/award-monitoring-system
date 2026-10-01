@@ -41,7 +41,9 @@ const user: UserDetail = {
   lastName: 'Працівник',
   organization: department,
   status: 'ACTIVE',
-  roles: [{ id: 3, role: 'EMPLOYEE', organization: department, validFrom: '2026-09-01', validTo: null }],
+  roles: [
+    { id: 3, role: 'EMPLOYEE', organization: department, validFrom: '2026-09-01', validTo: null },
+  ],
   membershipConfirmed: true,
   createdAt: '2026-09-01T00:00:00Z',
   lastLoginAt: null,
@@ -85,7 +87,10 @@ const translations = {
         notFound: 'Користувача не знайдено',
         notFoundHint: 'Такого користувача немає.',
       },
-      problems: { 'role-last-own': 'Не можна відкликати власну останню роль', network: 'Сервер недоступний' },
+      problems: {
+        'role-last-own': 'Не можна відкликати власну останню роль',
+        network: 'Сервер недоступний',
+      },
     },
   },
 };
@@ -123,7 +128,10 @@ describe('UserDetailComponent', () => {
           provide: AuthService,
           useValue: { permissions: signal(readPermissions(token({ role_scopes: ['DEAN:9'] }))) },
         },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: '7' }) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ id: '7' }) } },
+        },
       ],
     }).compileComponents();
     store = TestBed.inject(Store);
@@ -159,9 +167,9 @@ describe('UserDetailComponent', () => {
     store.dispatch(AdminUsersActions.userLoadFailed({ problem: 'unknown', notFound: true }));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="detail-not-found"]').textContent).toContain(
-      'Користувача не знайдено',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="detail-not-found"]').textContent,
+    ).toContain('Користувача не знайдено');
     expect(fixture.nativeElement.querySelector('[data-testid="detail-profile"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="detail-error"]')).toBeNull();
   });
@@ -175,9 +183,9 @@ describe('UserDetailComponent', () => {
     fixture.nativeElement.querySelector('[data-testid="assign-role-open"]').click();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="detail-message"]').textContent).toContain(
-      'Роль призначено.',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="detail-message"]').textContent,
+    ).toContain('Роль призначено.');
     expect(
       fixture.nativeElement.querySelector('[data-testid="detail-session-hint"]').textContent,
     ).toContain('після наступного оновлення токена або входу');
@@ -202,9 +210,9 @@ describe('UserDetailComponent', () => {
     fixture.detectChanges();
 
     expect(api.revokeRole).toHaveBeenCalledWith(7, 3);
-    expect(fixture.nativeElement.querySelector('[data-testid="detail-message"]').textContent).toContain(
-      'Роль відкликано.',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="detail-message"]').textContent,
+    ).toContain('Роль відкликано.');
   });
 
   it('ac2_10_renders_a_refused_revocation_inline', () => {
@@ -214,7 +222,10 @@ describe('UserDetailComponent', () => {
     api.revokeRole.mockReturnValue(
       throwError(
         () =>
-          new HttpErrorResponse({ error: { type: 'urn:awards:problem:role-last-own' }, status: 403 }),
+          new HttpErrorResponse({
+            error: { type: 'urn:awards:problem:role-last-own' },
+            status: 403,
+          }),
       ),
     );
 

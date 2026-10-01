@@ -5,10 +5,14 @@ import { linkFor, signIn } from './helpers';
 const password = 'correct-horse-battery';
 
 test.describe('registration', () => {
-  test('ac21 ac25 ac28 registers, verifies the address from the email and signs in', async ({ page }) => {
+  test('ac21 ac25 ac28 registers, verifies the address from the email and signs in', async ({
+    page,
+  }) => {
     const email = `e2e.${Date.now()}@chnu.edu.ua`;
 
-    const departments = page.waitForResponse((response) => response.url().includes('/api/v1/organizations'));
+    const departments = page.waitForResponse((response) =>
+      response.url().includes('/api/v1/organizations'),
+    );
     await page.goto('/register');
     await departments;
     await page.getByTestId('email').fill(email);

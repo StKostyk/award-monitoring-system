@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 
 import { countMessages, linkFor, registerAndVerify, signIn } from './helpers';
 
-const firefoxOnMac = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:130.0) Gecko/20100101 Firefox/130.0';
+const firefoxOnMac =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:130.0) Gecko/20100101 Firefox/130.0';
 
 test.describe('new device notification', () => {
   test('ac51 ac52 ac53 ac54 announces an unknown browser once and the not-me link ends every session', async ({

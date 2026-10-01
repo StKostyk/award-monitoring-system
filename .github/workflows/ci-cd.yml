@@ -101,6 +101,9 @@ jobs:
         run: npm run lint
         continue-on-error: true  # Don't fail build on lint warnings
 
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Run unit tests
         # Angular tests need headless mode in CI
         run: npm run test:ci

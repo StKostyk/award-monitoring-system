@@ -8,7 +8,10 @@ const employee = 'employee.fmi@chnu.edu.ua';
 type Page = import('@playwright/test').Page;
 
 function token(): string {
-  return Array.from({ length: 12 }, () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]).join('');
+  return Array.from(
+    { length: 12 },
+    () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)],
+  ).join('');
 }
 
 function pastDay(): string {
@@ -32,14 +35,17 @@ async function fillComplete(page: Page, title: string, date: string): Promise<vo
 
 async function openAwards(page: Page): Promise<void> {
   const loaded = page.waitForResponse(
-    (response) => response.request().method() === 'GET' && /\/api\/v1\/awards\?/.test(response.url()),
+    (response) =>
+      response.request().method() === 'GET' && /\/api\/v1\/awards\?/.test(response.url()),
   );
   await page.getByTestId('nav-awards').click();
   await loaded;
 }
 
 function storedCopies(page: Page): Promise<number> {
-  return page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('awards.form-copy.')).length);
+  return page.evaluate(
+    () => Object.keys(localStorage).filter((key) => key.startsWith('awards.form-copy.')).length,
+  );
 }
 
 async function chooseCategory(page: Page, id: number): Promise<void> {
@@ -61,7 +67,9 @@ test.describe('award drafts and submission on a phone', () => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
     await expect(page).toHaveURL(/\/awards\/new$/);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360,
+    );
 
     await page.getByTestId('award-title-uk').fill(title);
     await page.getByTestId('award-save').click();
@@ -175,13 +183,18 @@ test.describe('award drafts and submission on a phone', () => {
     await expect(page.getByTestId('award-submitted')).toHaveCount(0);
   });
 
-  test('ac2_3 ac2_6 the date picker is limited and a recent date is pointed out', async ({ page }) => {
+  test('ac2_3 ac2_6 the date picker is limited and a recent date is pointed out', async ({
+    page,
+  }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
     const date = page.getByTestId('award-date');
     const max = (await date.getAttribute('max')) ?? '';
     expect(max).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    await expect(date).toHaveAttribute('min', `${Number(max.substring(0, 4)) - 50}${max.substring(4)}`);
+    await expect(date).toHaveAttribute(
+      'min',
+      `${Number(max.substring(0, 4)) - 50}${max.substring(4)}`,
+    );
 
     await date.fill(daysAgo(7));
     await expect(page.getByTestId('award-recent-date')).toContainText('за останні 30 днів');
@@ -189,24 +202,32 @@ test.describe('award drafts and submission on a phone', () => {
     await expect(page.getByTestId('award-recent-date')).toHaveCount(0);
   });
 
-  test('ac3_4 suggested categories appear as chips and never replace a chosen category', async ({ page }) => {
+  test('ac3_4 suggested categories appear as chips and never replace a chosen category', async ({
+    page,
+  }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
     const chips = page.locator('[data-testid^="category-suggestion-"]');
 
     await page.getByTestId('award-title').fill('Best paper award');
-    await page.getByTestId('award-organization').fill('IEEE International Conference on Software Engineering');
+    await page
+      .getByTestId('award-organization')
+      .fill('IEEE International Conference on Software Engineering');
     await expect(chips.first()).toContainText('Міжнародний');
     expect(await chips.count()).toBeLessThanOrEqual(3);
     await chips.first().click();
-    await expect(page.getByTestId('award-category')).toContainText('Найкраща стаття міжнародної конференції');
+    await expect(page.getByTestId('award-category')).toContainText(
+      'Найкраща стаття міжнародної конференції',
+    );
     await expect(chips).toHaveCount(0);
 
     await page.getByTestId('award-title').fill('');
     await chooseCategory(page, 13);
     await page.getByTestId('award-title-uk').fill('Подяка');
     await page.getByTestId('award-organization').fill('Факультет математики та інформатики ЧНУ');
-    await page.waitForResponse((response) => response.url().includes('/award-categories/suggestions'));
+    await page.waitForResponse((response) =>
+      response.url().includes('/award-categories/suggestions'),
+    );
     await expect(page.getByTestId('award-category')).toContainText('Відзнака міністерства');
     await expect(chips).toHaveCount(0);
 
@@ -222,7 +243,9 @@ test.describe('award drafts and submission on a phone', () => {
     );
     await openAwards(page);
     await page.getByTestId('award-add').click();
-    const failed = page.waitForResponse((response) => response.url().includes('/award-categories/suggestions'));
+    const failed = page.waitForResponse((response) =>
+      response.url().includes('/award-categories/suggestions'),
+    );
     await page.getByTestId('award-title').fill('Best paper award');
     await failed;
 
@@ -230,7 +253,9 @@ test.describe('award drafts and submission on a phone', () => {
     await expect(page.getByTestId('award-title')).toHaveValue('Best paper award');
   });
 
-  test('ac2_4 ac2_5 ac2_6 a possible duplicate is submitted only after confirmation', async ({ page }) => {
+  test('ac2_4 ac2_5 ac2_6 a possible duplicate is submitted only after confirmation', async ({
+    page,
+  }) => {
     const title = `Грамота МОН ${token()} ${token()}`;
     const date = pastDay();
     await openAwards(page);

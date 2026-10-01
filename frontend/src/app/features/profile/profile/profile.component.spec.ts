@@ -24,13 +24,31 @@ const PROFILE: UserProfile = {
     {
       id: 1,
       role: 'EMPLOYEE',
-      organization: { id: 64, name: 'DAI', nameUk: 'Кафедра алгебри та інформатики', code: 'DAI', type: 'DEPARTMENT' },
+      organization: {
+        id: 64,
+        name: 'DAI',
+        nameUk: 'Кафедра алгебри та інформатики',
+        code: 'DAI',
+        type: 'DEPARTMENT',
+      },
       validFrom: '2026-09-01',
       validTo: null,
     },
   ],
-  organization: { id: 64, name: 'DAI', nameUk: 'Кафедра алгебри та інформатики', code: 'DAI', type: 'DEPARTMENT' },
-  faculty: { id: 9, name: 'FMI', nameUk: 'Факультет математики та інформатики', code: 'FMI', type: 'FACULTY' },
+  organization: {
+    id: 64,
+    name: 'DAI',
+    nameUk: 'Кафедра алгебри та інформатики',
+    code: 'DAI',
+    type: 'DEPARTMENT',
+  },
+  faculty: {
+    id: 9,
+    name: 'FMI',
+    nameUk: 'Факультет математики та інформатики',
+    code: 'FMI',
+    type: 'FACULTY',
+  },
   status: 'ACTIVE',
   createdAt: '2026-09-01T08:00:00Z',
   lastLoginAt: '2026-09-29T08:00:00Z',
@@ -51,7 +69,9 @@ describe('ProfileComponent', () => {
         ProfileComponent,
         NoopAnimationsModule,
         TranslocoTestingModule.forRoot({
-          langs: { uk: { profile: { saved: 'Збережено', membershipConfirmed: 'Членство підтверджено' } } },
+          langs: {
+            uk: { profile: { saved: 'Збережено', membershipConfirmed: 'Членство підтверджено' } },
+          },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
         }),
       ],
@@ -66,7 +86,9 @@ describe('ProfileComponent', () => {
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(ProfileComponent);
-    http.expectOne(`${environment.apiUrl}/delegations?state=active`).flush({ given: [], received: [] });
+    http
+      .expectOne(`${environment.apiUrl}/delegations?state=active`)
+      .flush({ given: [], received: [] });
     await fixture.whenStable();
     fixture.detectChanges();
     return fixture;
@@ -93,7 +115,8 @@ describe('ProfileComponent', () => {
 
   it('ac17 keeps save disabled while the names are pristine or invalid', async () => {
     const fixture = await setup();
-    const save = () => fixture.nativeElement.querySelector('[data-testid="profile-save"]') as HTMLButtonElement;
+    const save = () =>
+      fixture.nativeElement.querySelector('[data-testid="profile-save"]') as HTMLButtonElement;
     expect(save().disabled).toBe(true);
 
     fixture.componentInstance.names.controls.lastName.setValue('Петренко1');
@@ -134,14 +157,19 @@ describe('ProfileComponent', () => {
 
     fixture.componentInstance.save();
     http.expectOne(`${environment.apiUrl}/users/me`).flush(
-      { type: 'urn:awards:problem:validation-failed', errors: [{ field: 'firstName', code: 'too-long', message: '' }] },
+      {
+        type: 'urn:awards:problem:validation-failed',
+        errors: [{ field: 'firstName', code: 'too-long', message: '' }],
+      },
       { status: 422, statusText: 'Unprocessable Entity' },
     );
     expect(fixture.componentInstance.firstError('firstName')).toBe('too-long');
 
     fixture.componentInstance.names.controls.firstName.setValue('Олена');
     fixture.componentInstance.save();
-    http.expectOne(`${environment.apiUrl}/users/me`).flush(null, { status: 0, statusText: 'Unknown Error' });
+    http
+      .expectOne(`${environment.apiUrl}/users/me`)
+      .flush(null, { status: 0, statusText: 'Unknown Error' });
     expect(fixture.componentInstance.problem()).toBe('profile.errors.network');
     expect(fixture.componentInstance.names.controls.firstName.value).toBe('Олена');
   });
@@ -152,13 +180,17 @@ describe('ProfileComponent', () => {
 
     fixture.componentInstance.changeAddress();
 
-    expect(dialog.open.mock.calls[0][1]).toMatchObject({ data: { email: 'employee.fmi@chnu.edu.ua' } });
+    expect(dialog.open.mock.calls[0][1]).toMatchObject({
+      data: { email: 'employee.fmi@chnu.edu.ua' },
+    });
     expect(fixture.componentInstance.sentTo()).toBe('mover.new@chnu.edu.ua');
   });
 
   it('ac35 downloads the export under its attachment name and disables the button meanwhile', async () => {
     const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:export');
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
     const fixture = await setup();
     const button = (): HTMLButtonElement =>
       fixture.nativeElement.querySelector('[data-testid="profile-download"]');
@@ -169,7 +201,9 @@ describe('ProfileComponent', () => {
     const request = http.expectOne(`${environment.apiUrl}/users/me/export`);
     expect(request.request.responseType).toBe('blob');
     request.flush(new Blob(['{}']), {
-      headers: { 'Content-Disposition': 'attachment; filename="award-monitoring-export-2026-09-30.json"' },
+      headers: {
+        'Content-Disposition': 'attachment; filename="award-monitoring-export-2026-09-30.json"',
+      },
     });
     fixture.detectChanges();
 

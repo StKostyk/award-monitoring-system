@@ -18,7 +18,10 @@ describe('EmailChangeDialogComponent', () => {
       imports: [
         EmailChangeDialogComponent,
         NoopAnimationsModule,
-        TranslocoTestingModule.forRoot({ langs: { uk: {} }, translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' } }),
+        TranslocoTestingModule.forRoot({
+          langs: { uk: {} },
+          translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
+        }),
       ],
       providers: [
         provideHttpClient(),
@@ -44,7 +47,10 @@ describe('EmailChangeDialogComponent', () => {
 
     dialog.submit();
     const request = http.expectOne(`${environment.apiUrl}/users/me/email-change`);
-    expect(request.request.body).toEqual({ newEmail: 'mover.new@chnu.edu.ua', currentPassword: 'Passw0rd-demo' });
+    expect(request.request.body).toEqual({
+      newEmail: 'mover.new@chnu.edu.ua',
+      currentPassword: 'Passw0rd-demo',
+    });
     request.flush(null, { status: 202, statusText: 'Accepted' });
 
     expect(dialogRef.close).toHaveBeenCalledWith('mover.new@chnu.edu.ua');
@@ -58,19 +64,22 @@ describe('EmailChangeDialogComponent', () => {
     [422, 'validation-failed', 'emailChange.errors.unchanged'],
     [429, 'too-many-requests', 'emailChange.errors.too-many-requests'],
     [500, 'something-else', 'emailChange.errors.failed'],
-  ])('ac14 answers %s %s with its message and clears the password', async (status, type, message) => {
-    const dialog = await setup();
-    dialog.form.setValue({ newEmail: 'mover.new@chnu.edu.ua', currentPassword: 'wrong' });
+  ])(
+    'ac14 answers %s %s with its message and clears the password',
+    async (status, type, message) => {
+      const dialog = await setup();
+      dialog.form.setValue({ newEmail: 'mover.new@chnu.edu.ua', currentPassword: 'wrong' });
 
-    dialog.submit();
-    http
-      .expectOne(`${environment.apiUrl}/users/me/email-change`)
-      .flush({ type: `urn:awards:problem:${type}` }, { status, statusText: 'Refused' });
+      dialog.submit();
+      http
+        .expectOne(`${environment.apiUrl}/users/me/email-change`)
+        .flush({ type: `urn:awards:problem:${type}` }, { status, statusText: 'Refused' });
 
-    expect(dialog.error()).toBe(message);
-    expect(dialog.form.controls.currentPassword.value).toBe('');
-    expect(dialogRef.close).not.toHaveBeenCalled();
-  });
+      expect(dialog.error()).toBe(message);
+      expect(dialog.form.controls.currentPassword.value).toBe('');
+      expect(dialogRef.close).not.toHaveBeenCalled();
+    },
+  );
 
   it('ac14 refuses the current address and an incomplete form without a request', async () => {
     const dialog = await setup();

@@ -93,6 +93,8 @@ if (-not $SkipFrontend) {
     Push-Location (Join-Path $root 'frontend')
     & npm run lint *> $log
     $lintOk = $LASTEXITCODE -eq 0
+    & npm run format:check *>> $log
+    $lintOk = $lintOk -and $LASTEXITCODE -eq 0
     & npm run test:ci *> (Join-Path $logDir 'gate-frontend.log')
     $testOk = $LASTEXITCODE -eq 0
     Pop-Location

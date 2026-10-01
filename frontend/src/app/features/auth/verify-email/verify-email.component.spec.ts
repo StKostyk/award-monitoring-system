@@ -37,7 +37,10 @@ describe('VerifyEmailComponent', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: AuthService, useValue: auth },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } },
+        },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -60,8 +63,12 @@ describe('VerifyEmailComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('verified');
-    expect(fixture.nativeElement.querySelector('[data-testid="verify-success"]').textContent).toContain('x@chnu.edu.ua');
-    (fixture.nativeElement.querySelector('[data-testid="verify-sign-in"]') as HTMLButtonElement).click();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="verify-success"]').textContent,
+    ).toContain('x@chnu.edu.ua');
+    (
+      fixture.nativeElement.querySelector('[data-testid="verify-sign-in"]') as HTMLButtonElement
+    ).click();
     expect(auth.login).toHaveBeenCalledWith('/');
   });
 
@@ -72,11 +79,16 @@ describe('VerifyEmailComponent', () => {
     fixture.componentInstance.submit();
     http
       .expectOne(`${environment.apiUrl}/auth/verify-email`)
-      .flush({ type: 'urn:awards:problem:password-mismatch' }, { status: 403, statusText: 'Forbidden' });
+      .flush(
+        { type: 'urn:awards:problem:password-mismatch' },
+        { status: 403, statusText: 'Forbidden' },
+      );
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('form');
-    expect(fixture.nativeElement.querySelector('[data-testid="verify-error"]').textContent).toContain('не збігається');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="verify-error"]').textContent,
+    ).toContain('не збігається');
   });
 
   it('ac26 explains an expired or used link and offers to resend', async () => {
@@ -86,7 +98,10 @@ describe('VerifyEmailComponent', () => {
     fixture.componentInstance.submit();
     http
       .expectOne(`${environment.apiUrl}/auth/verify-email`)
-      .flush({ type: 'urn:awards:problem:token-invalid', status: 410 }, { status: 410, statusText: 'Gone' });
+      .flush(
+        { type: 'urn:awards:problem:token-invalid', status: 410 },
+        { status: 410, statusText: 'Gone' },
+      );
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state()).toBe('invalid');

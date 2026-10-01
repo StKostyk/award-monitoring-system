@@ -32,7 +32,13 @@
 
       <mat-form-field appearance="outline" class="admin__field">
         <mat-label>{{ 'admin.assign.validFrom' | transloco }}</mat-label>
-        <input matInput type="date" formControlName="validFrom" [min]="minimumDate" data-testid="assign-valid-from" />
+        <input
+          matInput
+          type="date"
+          formControlName="validFrom"
+          [min]="minimumDate"
+          data-testid="assign-valid-from"
+        />
         @if (form.controls.validFrom.hasError('past')) {
           <mat-error>{{ 'admin.assign.validation.past' | transloco }}</mat-error>
         }

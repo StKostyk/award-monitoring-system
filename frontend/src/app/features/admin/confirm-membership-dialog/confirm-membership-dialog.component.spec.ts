@@ -22,7 +22,14 @@ const department = {
 
 const departments: OrganizationSummary[] = [
   { ...department, parent: null },
-  { id: 20, name: 'Department of Biochemistry', nameUk: 'Кафедра біохімії', code: 'DBBT', type: 'DEPARTMENT', parent: null },
+  {
+    id: 20,
+    name: 'Department of Biochemistry',
+    nameUk: 'Кафедра біохімії',
+    code: 'DBBT',
+    type: 'DEPARTMENT',
+    parent: null,
+  },
 ];
 
 const user: UserSummary = {

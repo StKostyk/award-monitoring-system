@@ -7,10 +7,18 @@
       @case ('confirm') {
         <p class="auth-card__hint">{{ 'notMe.text' | transloco }}</p>
         @if (error(); as error) {
-          <p class="auth-form__error" role="alert" data-testid="not-me-error">{{ error | transloco }}</p>
+          <p class="auth-form__error" role="alert" data-testid="not-me-error">
+            {{ error | transloco }}
+          </p>
         }
         <div class="auth-actions">
-          <button mat-flat-button type="button" (click)="confirm()" [disabled]="submitting()" data-testid="not-me-confirm">
+          <button
+            mat-flat-button
+            type="button"
+            (click)="confirm()"
+            [disabled]="submitting()"
+            data-testid="not-me-confirm"
+          >
             {{ 'notMe.confirm' | transloco }}
           </button>
         </div>

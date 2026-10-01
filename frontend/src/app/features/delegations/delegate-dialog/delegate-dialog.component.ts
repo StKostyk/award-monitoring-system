@@ -52,9 +52,17 @@ const REASON_LIMIT = 500;
   templateUrl: './delegate-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .delegations__form { display: flex; flex-direction: column; }
-    .delegations__field { width: 100%; }
-    .delegations__problem { color: var(--mat-sys-error, #b3261e); margin: 0; }
+    .delegations__form {
+      display: flex;
+      flex-direction: column;
+    }
+    .delegations__field {
+      width: 100%;
+    }
+    .delegations__problem {
+      color: var(--mat-sys-error, #b3261e);
+      margin: 0;
+    }
   `,
 })
 export class DelegateDialogComponent {
@@ -109,13 +117,21 @@ export class DelegateDialogComponent {
   }
 
   display(user: UserSummary | string | null): string {
-    return user && typeof user !== 'string' ? `${user.lastName} ${user.firstName} (${user.email})` : '';
+    return user && typeof user !== 'string'
+      ? `${user.lastName} ${user.firstName} (${user.email})`
+      : '';
   }
 
   submit(): void {
     const value = this.form.getRawValue();
     const delegate = typeof value.delegate === 'string' ? null : value.delegate;
-    if (this.form.invalid || this.submitting() || !value.role || !value.organizationId || !delegate) {
+    if (
+      this.form.invalid ||
+      this.submitting() ||
+      !value.role ||
+      !value.organizationId ||
+      !delegate
+    ) {
       this.form.markAllAsTouched();
       return;
     }

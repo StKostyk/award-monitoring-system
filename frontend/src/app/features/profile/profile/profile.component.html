@@ -21,7 +21,12 @@
         }
         <dt>{{ 'profile.membership' | transloco }}</dt>
         <dd data-testid="profile-membership">
-          {{ (profile.membershipConfirmed ? 'profile.membershipConfirmed' : 'profile.membershipPending') | transloco }}
+          {{
+            (profile.membershipConfirmed
+              ? 'profile.membershipConfirmed'
+              : 'profile.membershipPending'
+            ) | transloco
+          }}
         </dd>
         <dt>{{ 'profile.created' | transloco }}</dt>
         <dd>{{ profile.createdAt | date: 'dd.MM.yyyy' }}</dd>
@@ -37,7 +42,9 @@
 
       <h3 class="profile__subtitle">{{ 'profile.roles' | transloco }}</h3>
       @if (profile.roles.length === 0) {
-        <p class="profile__hint" data-testid="profile-no-roles">{{ 'profile.noRoles' | transloco }}</p>
+        <p class="profile__hint" data-testid="profile-no-roles">
+          {{ 'profile.noRoles' | transloco }}
+        </p>
       }
       <ul class="profile__list">
         @for (role of profile.roles; track role.id) {
@@ -58,10 +65,18 @@
         <ul class="profile__list">
           @for (delegation of received(); track delegation.id) {
             <li data-testid="profile-delegation">
-              <strong>{{ 'roles.' + delegation.role | transloco }}</strong> · {{ name(delegation.organization) }}
+              <strong>{{ 'roles.' + delegation.role | transloco }}</strong> ·
+              {{ name(delegation.organization) }}
               <span class="profile__hint">
-                {{ 'profile.delegatedBy' | transloco: { name: delegation.delegator.firstName + ' ' + delegation.delegator.lastName } }},
-                {{ delegation.validFrom | date: 'dd.MM.yyyy' }} — {{ delegation.validTo | date: 'dd.MM.yyyy' }}
+                {{
+                  'profile.delegatedBy'
+                    | transloco
+                      : {
+                          name:
+                            delegation.delegator.firstName + ' ' + delegation.delegator.lastName,
+                        }
+                }}, {{ delegation.validFrom | date: 'dd.MM.yyyy' }} —
+                {{ delegation.validTo | date: 'dd.MM.yyyy' }}
               </span>
             </li>
           }
@@ -75,10 +90,20 @@
       <mat-card-title>{{ 'profile.namesTitle' | transloco }}</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <form [formGroup]="names" (submit)="$event.preventDefault(); save()" class="profile__form" novalidate>
+      <form
+        [formGroup]="names"
+        (submit)="$event.preventDefault(); save()"
+        class="profile__form"
+        novalidate
+      >
         <mat-form-field appearance="outline">
           <mat-label>{{ 'profile.firstName' | transloco }}</mat-label>
-          <input matInput formControlName="firstName" autocomplete="given-name" data-testid="profile-first-name" />
+          <input
+            matInput
+            formControlName="firstName"
+            autocomplete="given-name"
+            data-testid="profile-first-name"
+          />
           @if (firstError('firstName'); as error) {
             <mat-error data-testid="profile-first-name-error">
               {{ 'profile.validation.' + error | transloco }}
@@ -87,7 +112,12 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'profile.lastName' | transloco }}</mat-label>
-          <input matInput formControlName="lastName" autocomplete="family-name" data-testid="profile-last-name" />
+          <input
+            matInput
+            formControlName="lastName"
+            autocomplete="family-name"
+            data-testid="profile-last-name"
+          />
           @if (firstError('lastName'); as error) {
             <mat-error data-testid="profile-last-name-error">
               {{ 'profile.validation.' + error | transloco }}
@@ -98,7 +128,9 @@
           <p role="status" data-testid="profile-saved">{{ message | transloco }}</p>
         }
         @if (problem(); as problem) {
-          <p class="profile__problem" role="alert" data-testid="profile-error">{{ problem | transloco }}</p>
+          <p class="profile__problem" role="alert" data-testid="profile-error">
+            {{ problem | transloco }}
+          </p>
         }
         <div class="profile__actions">
           <button
@@ -121,10 +153,17 @@
     <mat-card-content>
       <p class="profile__hint">{{ 'profile.addressHint' | transloco }}</p>
       @if (sentTo(); as sentTo) {
-        <p role="status" data-testid="profile-link-sent">{{ 'emailChange.sent' | transloco: { email: sentTo } }}</p>
+        <p role="status" data-testid="profile-link-sent">
+          {{ 'emailChange.sent' | transloco: { email: sentTo } }}
+        </p>
       }
       <div class="profile__actions">
-        <button mat-stroked-button type="button" (click)="changeAddress()" data-testid="profile-change-address">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="changeAddress()"
+          data-testid="profile-change-address"
+        >
           {{ 'profile.changeAddress' | transloco }}
         </button>
       </div>
@@ -141,7 +180,9 @@
         <p role="status" data-testid="profile-export-done">{{ exportMessage | transloco }}</p>
       }
       @if (exportProblem(); as exportProblem) {
-        <p class="profile__problem" role="alert" data-testid="profile-export-error">{{ exportProblem | transloco }}</p>
+        <p class="profile__problem" role="alert" data-testid="profile-export-error">
+          {{ exportProblem | transloco }}
+        </p>
       }
       <div class="profile__actions">
         <button

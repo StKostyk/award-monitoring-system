@@ -9,7 +9,15 @@ import { OrganizationRef } from '../../core/auth/user-profile';
 
 @Component({
   selector: 'app-home',
-  imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatChipSet, MatChip, TranslocoPipe],
+  imports: [
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardContent,
+    MatChipSet,
+    MatChip,
+    TranslocoPipe,
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -18,6 +26,8 @@ export class HomeComponent {
   private readonly language = inject(LanguageService);
 
   organizationName(organization: OrganizationRef): string {
-    return this.language.current() === 'uk' && organization.nameUk ? organization.nameUk : organization.name;
+    return this.language.current() === 'uk' && organization.nameUk
+      ? organization.nameUk
+      : organization.name;
   }
 }

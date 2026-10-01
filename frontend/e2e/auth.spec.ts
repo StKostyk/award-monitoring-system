@@ -2,10 +2,16 @@ import { expect, test } from '@playwright/test';
 
 import { signIn } from './helpers';
 
-const employee = { email: 'employee.fmi@chnu.edu.ua', password: 'Passw0rd-demo', name: 'Анастасія Працівник' };
+const employee = {
+  email: 'employee.fmi@chnu.edu.ua',
+  password: 'Passw0rd-demo',
+  name: 'Анастасія Працівник',
+};
 
 test.describe('authentication', () => {
-  test('ac11 ac12 ac18 signs in through the authorization server and out again', async ({ page }) => {
+  test('ac11 ac12 ac18 signs in through the authorization server and out again', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     await expect(page).toHaveURL(/localhost:8080\/login/);
@@ -24,7 +30,10 @@ test.describe('authentication', () => {
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
   });
 
-  test('ac61 an expired session ends at the login page, not on a blank screen', async ({ page, context }) => {
+  test('ac61 an expired session ends at the login page, not on a blank screen', async ({
+    page,
+    context,
+  }) => {
     await signIn(page, employee.email, employee.password);
     await expect(page.getByTestId('user-name')).toHaveText(employee.name);
 
@@ -40,7 +49,10 @@ test.describe('authentication', () => {
     await expect(page.locator('h1')).toHaveText('Вхід');
   });
 
-  test('ac61 ac65 a refresh token revoked elsewhere sends the open tab to the login page', async ({ page, context }) => {
+  test('ac61 ac65 a refresh token revoked elsewhere sends the open tab to the login page', async ({
+    page,
+    context,
+  }) => {
     await signIn(page, employee.email, employee.password);
     await expect(page.getByTestId('user-name')).toHaveText(employee.name);
 
@@ -77,7 +89,9 @@ test.describe('authentication', () => {
     await expect(page.locator('.alert')).toContainText('не підтверджено');
   });
 
-  test('ac17 the login page switches to English and the app follows the toggle', async ({ page }) => {
+  test('ac17 the login page switches to English and the app follows the toggle', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.click('.card__lang');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');

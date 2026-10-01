@@ -48,7 +48,12 @@ const given: Delegation = {
   revokedAt: null,
 };
 
-const received: Delegation = { ...given, id: 2, state: 'revoked', revokedAt: '2026-09-26T08:00:00Z' };
+const received: Delegation = {
+  ...given,
+  id: 2,
+  state: 'revoked',
+  revokedAt: '2026-09-26T08:00:00Z',
+};
 
 const translations = {
   uk: {
@@ -69,7 +74,12 @@ const translations = {
         state: 'Стан',
         actions: 'Дії',
       },
-      states: { active: 'Активне', upcoming: 'Заплановане', expired: 'Завершене', revoked: 'Відкликано' },
+      states: {
+        active: 'Активне',
+        upcoming: 'Заплановане',
+        expired: 'Завершене',
+        revoked: 'Відкликано',
+      },
       messages: { created: 'Повноваження делеговано.', revoked: 'Делегування відкликано.' },
       create: { title: 'Делегувати повноваження' },
       revoke: { action: 'Відкликати' },
@@ -118,7 +128,9 @@ describe('DelegationListComponent', () => {
   });
 
   it('ac3_6_splits_the_delegations_into_given_and_received_with_the_state_chip_of_the_server', () => {
-    store.dispatch(DelegationsActions.delegationsLoaded({ list: { given: [given], received: [received] } }));
+    store.dispatch(
+      DelegationsActions.delegationsLoaded({ list: { given: [given], received: [received] } }),
+    );
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
     const givenRow = element.querySelector('[data-testid="given-table"] tbody tr');
@@ -128,7 +140,9 @@ describe('DelegationListComponent', () => {
     expect(givenRow?.textContent).toContain('Факультет математики');
     expect(givenRow?.textContent).toContain('Секретар Аліна');
     expect(givenRow?.textContent).toContain('2026-09-24 — 2026-10-08');
-    expect(givenRow?.querySelector('[data-testid="given-state"]')?.textContent).toContain('Активне');
+    expect(givenRow?.querySelector('[data-testid="given-state"]')?.textContent).toContain(
+      'Активне',
+    );
     expect(receivedRow?.textContent).toContain('Мартинюк Мартин');
     expect(receivedRow?.querySelector('[data-testid="received-state"]')?.textContent).toContain(
       'Відкликано',
@@ -148,7 +162,9 @@ describe('DelegationListComponent', () => {
   });
 
   it('ac3_4_asks_for_a_confirmation_before_revoking', () => {
-    store.dispatch(DelegationsActions.delegationsLoaded({ list: { given: [given], received: [] } }));
+    store.dispatch(
+      DelegationsActions.delegationsLoaded({ list: { given: [given], received: [] } }),
+    );
     fixture.detectChanges();
     const dispatch = vi.spyOn(store, 'dispatch');
     dialog.open.mockReturnValue({ afterClosed: () => of(false) });
@@ -171,9 +187,9 @@ describe('DelegationListComponent', () => {
     fixture.detectChanges();
 
     expect(dispatch).toHaveBeenCalledWith(DelegationsActions.created({ delegation: given }));
-    expect(fixture.nativeElement.querySelector('[data-testid="delegations-message"]').textContent).toContain(
-      'Повноваження делеговано.',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="delegations-message"]').textContent,
+    ).toContain('Повноваження делеговано.');
   });
 
   it('ac3_4_renders_a_refused_revocation_inline_on_its_row', () => {
@@ -198,11 +214,11 @@ describe('DelegationListComponent', () => {
     store.dispatch(DelegationsActions.delegationsLoaded({ list: { given: [], received: [] } }));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="given-empty"]').textContent).toContain(
-      'Ви ще нікому не передавали повноважень',
-    );
-    expect(fixture.nativeElement.querySelector('[data-testid="received-empty"]').textContent).toContain(
-      'Вам ще не передавали повноважень',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="given-empty"]').textContent,
+    ).toContain('Ви ще нікому не передавали повноважень');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="received-empty"]').textContent,
+    ).toContain('Вам ще не передавали повноважень');
   });
 });

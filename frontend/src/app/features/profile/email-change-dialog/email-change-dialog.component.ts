@@ -41,15 +41,23 @@ const KNOWN_PROBLEMS = [
   ],
   templateUrl: './email-change-dialog.component.html',
   styles: `
-    .email-change__form { display: flex; flex-direction: column; min-width: 280px; }
-    .email-change__problem { color: var(--mat-sys-error, #b3261e); margin: 0; }
+    .email-change__form {
+      display: flex;
+      flex-direction: column;
+      min-width: 280px;
+    }
+    .email-change__problem {
+      color: var(--mat-sys-error, #b3261e);
+      margin: 0;
+    }
   `,
 })
 export class EmailChangeDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ProfileService);
 
-  protected readonly dialog = inject<MatDialogRef<EmailChangeDialogComponent, string>>(MatDialogRef);
+  protected readonly dialog =
+    inject<MatDialogRef<EmailChangeDialogComponent, string>>(MatDialogRef);
   readonly current = inject<{ email: string }>(MAT_DIALOG_DATA).email;
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);

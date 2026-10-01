@@ -8,9 +8,16 @@
         <p role="status" data-testid="confirm-email-pending">{{ 'app.loading' | transloco }}</p>
       }
       @case ('changed') {
-        <p role="status" data-testid="confirm-email-changed">{{ 'emailChange.changed' | transloco: { email: email() } }}</p>
+        <p role="status" data-testid="confirm-email-changed">
+          {{ 'emailChange.changed' | transloco: { email: email() } }}
+        </p>
         <div class="auth-actions">
-          <button mat-flat-button type="button" (click)="signIn()" data-testid="confirm-email-sign-in">
+          <button
+            mat-flat-button
+            type="button"
+            (click)="signIn()"
+            data-testid="confirm-email-sign-in"
+          >
             {{ 'emailChange.signIn' | transloco }}
           </button>
         </div>
@@ -19,10 +26,14 @@
         <p role="alert" data-testid="confirm-email-taken">{{ 'emailChange.taken' | transloco }}</p>
       }
       @case ('invalid') {
-        <p role="alert" data-testid="confirm-email-invalid">{{ 'emailChange.invalid' | transloco }}</p>
+        <p role="alert" data-testid="confirm-email-invalid">
+          {{ 'emailChange.invalid' | transloco }}
+        </p>
       }
       @case ('failed') {
-        <p role="alert" data-testid="confirm-email-failed">{{ 'emailChange.failed' | transloco }}</p>
+        <p role="alert" data-testid="confirm-email-failed">
+          {{ 'emailChange.failed' | transloco }}
+        </p>
       }
     }
   </mat-card-content>

@@ -31,7 +31,14 @@ export class DelegationListComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
 
-  protected readonly givenColumns = ['role', 'organization', 'person', 'period', 'state', 'actions'];
+  protected readonly givenColumns = [
+    'role',
+    'organization',
+    'person',
+    'period',
+    'state',
+    'actions',
+  ];
   protected readonly receivedColumns = ['role', 'organization', 'person', 'period', 'state'];
   protected readonly canDelegate = canDelegate(this.auth.permissions());
 
@@ -71,7 +78,9 @@ export class DelegationListComponent implements OnInit {
 
   problemFor(delegation: Delegation): string | null {
     const problem = this.revokeProblem();
-    return problem && problem.id === delegation.id ? `delegations.problems.${problem.problem}` : null;
+    return problem && problem.id === delegation.id
+      ? `delegations.problems.${problem.problem}`
+      : null;
   }
 
   person(user: UserBrief): string {
