@@ -3,7 +3,11 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AccountStatus, OrganizationRef, OrganizationType } from '../../core/auth/user-profile';
+import { AccountStatus } from '../../core/auth/user-profile';
+import {
+  OrganizationSummary,
+  OrganizationsService,
+} from '../../core/organizations/organizations.service';
 
 export interface RegisterRequest {
   email: string;
@@ -18,24 +22,14 @@ export interface RegistrationResponse {
   status: AccountStatus;
 }
 
-export interface OrganizationSummary {
-  id: number;
-  name: string;
-  nameUk: string | null;
-  code: string | null;
-  type: OrganizationType;
-  parent: OrganizationRef | null;
-}
-
 @Injectable({ providedIn: 'root' })
 export class RegistrationService {
   private readonly http = inject(HttpClient);
+  private readonly organizations = inject(OrganizationsService);
   private readonly base = `${environment.apiUrl}/auth`;
 
   departments(): Observable<OrganizationSummary[]> {
-    return this.http.get<OrganizationSummary[]>(`${environment.apiUrl}/organizations`, {
-      params: { type: 'DEPARTMENT' },
-    });
+    return this.organizations.ofType('DEPARTMENT');
   }
 
   register(request: RegisterRequest): Observable<RegistrationResponse> {

@@ -12,7 +12,8 @@ import { problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { nameValidator } from '../../../shared/name-rules';
 import { PASSWORD_VALIDATORS } from '../password-rules';
-import { OrganizationSummary, RegistrationService } from '../registration.service';
+import { OrganizationSummary } from '../../../core/organizations/organizations.service';
+import { RegistrationService } from '../registration.service';
 
 export const INSTITUTIONAL_DOMAIN = 'chnu.edu.ua';
 export const INSTITUTIONAL_EMAIL = new RegExp(`^[^@\\s]+@${INSTITUTIONAL_DOMAIN.replace(/\./g, '\\.')}$`, 'i');

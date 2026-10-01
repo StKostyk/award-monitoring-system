@@ -4,6 +4,7 @@ import { Observable, catchError, forkJoin, map, shareReplay, throwError } from '
 
 import { environment } from '../../../environments/environment';
 import { OrganizationRef, OrganizationType } from '../../core/auth/user-profile';
+import { OrganizationsService } from '../../core/organizations/organizations.service';
 
 /** An organisation name in both languages. */
 export interface OrganizationName {
@@ -219,8 +220,8 @@ export const TRUNCATED_HEADER = 'X-Audit-Truncated';
 export class AwardsService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/awards`;
+  private readonly organizationList = inject(OrganizationsService);
   private catalogue$?: Observable<CategoryNode[]>;
-  private organizations$?: Observable<Map<number, OrganizationName>>;
 
   list(filters: AwardFilters, page = 0, size = 20): Observable<AwardPage> {
     let params = new HttpParams().set('page', page).set('size', size);
@@ -274,21 +275,9 @@ export class AwardsService {
 
   /** Active departments, faculties and colleges by id, fetched once while the app is open. */
   organizations(): Observable<Map<number, OrganizationName>> {
-    this.organizations$ ??= forkJoin(
-      ORGANIZATION_TYPES.map((type) =>
-        this.http.get<OrganizationName[]>(`${environment.apiUrl}/organizations`, {
-          params: { type },
-        }),
-      ),
-    ).pipe(
+    return forkJoin(ORGANIZATION_TYPES.map((type) => this.organizationList.ofType(type))).pipe(
       map((lists) => new Map(lists.flat().map((organization) => [organization.id, organization]))),
-      catchError((error: unknown) => {
-        this.organizations$ = undefined;
-        return throwError(() => error);
-      }),
-      shareReplay({ bufferSize: 1, refCount: false }),
     );
-    return this.organizations$;
   }
 
   /** Up to three categories for the title and awarding organisation typed so far. */

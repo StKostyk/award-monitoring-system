@@ -1,13 +1,5 @@
 import { HttpStatusCode } from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  computed,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import {
   MatAccordion,
@@ -21,8 +13,9 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemStatus } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { kyivDateTime } from '../../../shared/date-format';
 import { attachmentName, saveFile } from '../../../shared/file-download';
-import { kyivDateTime } from '../award-history/version-values';
+import { PagedList } from '../../../shared/paged-list';
 import { AuditTrailEntry, AwardsService, TRUNCATED_HEADER } from '../awards.service';
 
 const PAGE_SIZE = 20;
@@ -49,37 +42,24 @@ export class AwardAuditTrailComponent implements OnInit {
 
   readonly awardId = input.required<number>();
 
-  readonly rows = signal<AuditTrailEntry[]>([]);
-  readonly loading = signal(false);
-  readonly failed = signal(false);
-  readonly notice = signal<string | null>(null);
-  private readonly loadedPages = signal(0);
-  private readonly totalPages = signal(0);
+  private readonly list = new PagedList<AuditTrailEntry, number>({
+    fetch: (page) => this.service.auditTrail(this.awardId(), page, PAGE_SIZE),
+    key: (row) => row.id,
+    notFoundIsEmpty: true,
+  });
 
-  readonly hasMore = computed(() => this.loadedPages() < this.totalPages());
+  readonly rows = this.list.items;
+  readonly loading = this.list.loading;
+  readonly problem = this.list.problem;
+  readonly hasMore = this.list.hasMore;
+  readonly notice = signal<string | null>(null);
 
   ngOnInit(): void {
     this.load();
   }
 
   load(): void {
-    this.loading.set(true);
-    this.failed.set(false);
-    this.service.auditTrail(this.awardId(), this.loadedPages(), PAGE_SIZE).subscribe({
-      next: (page) => {
-        this.rows.update((shown) => [
-          ...shown,
-          ...page.content.filter((row) => !shown.some((known) => known.id === row.id)),
-        ]);
-        this.loadedPages.update((pages) => pages + 1);
-        this.totalPages.set(page.totalPages);
-        this.loading.set(false);
-      },
-      error: (error: unknown) => {
-        this.loading.set(false);
-        this.failed.set(problemStatus(error) !== HttpStatusCode.NotFound);
-      },
-    });
+    this.list.load();
   }
 
   exportCsv(): void {
@@ -94,8 +74,14 @@ export class AwardAuditTrailComponent implements OnInit {
         if (response.headers.get(TRUNCATED_HEADER) === 'true') {
           this.notice.set('awards.audit.truncated');
         }
+        this.list.reload();
       },
-      error: () => this.notice.set('awards.audit.exportFailed'),
+      error: (error: unknown) =>
+        this.notice.set(
+          problemStatus(error) === HttpStatusCode.Forbidden
+            ? 'awards.audit.problems.denied'
+            : 'awards.audit.exportFailed',
+        ),
     });
   }
 

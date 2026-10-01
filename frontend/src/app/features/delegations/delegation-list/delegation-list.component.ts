@@ -11,7 +11,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { canDelegate } from '../../../core/auth/permissions';
 import { OrganizationRef } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { organizationName } from '../../admin/role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 import { Delegation, UserBrief } from '../delegations.service';
 import { DelegateDialogComponent } from '../delegate-dialog/delegate-dialog.component';
 import { RevokeDelegationDialogComponent } from '../revoke-delegation-dialog/revoke-delegation-dialog.component';

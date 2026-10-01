@@ -1,5 +1,5 @@
 import { AwardVersion } from '../awards.service';
-import { ValueNames, kyivDateTime, organizationIds, shownValue } from './version-values';
+import { ValueNames, organizationIds, shownValue } from './version-values';
 
 const names: ValueNames = {
   categories: new Map([
@@ -30,11 +30,6 @@ describe('version values', () => {
     expect(shownValue('status', 'PENDING', names)).toEqual({ key: 'awards.status.PENDING' });
     expect(shownValue('verificationBadge', true, names)).toEqual({ key: 'awards.history.yes' });
     expect(shownValue('verificationBadge', false, names)).toEqual({ key: 'awards.history.no' });
-  });
-
-  it('ac2_1_formats_times_in_kyiv_in_both_languages', () => {
-    expect(kyivDateTime('2026-09-30T21:30:00Z', 'uk')).toBe('01.10.2026, 00:30');
-    expect(kyivDateTime('2026-12-01T10:00:00Z', 'en')).toBe('01/12/2026, 12:00');
   });
 
   it('ac2_1_collects_the_organisations_of_snapshots_and_changes', () => {

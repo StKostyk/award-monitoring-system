@@ -10,13 +10,13 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 2.1 Award Creation & Validation | Done (validated, PRD §12; fixes 2.1.4 merged; author's run of §9 pending) ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | 2026-09-29 |
-| 2.2 Award Version History & Audit Trail | PRD approved ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | |
+| 2.2 Award Version History & Audit Trail | Done (validated, PRD §12; fixes 2.2.3 in review; author's run of §9 pending) ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | 2026-09-30 |
 | 2.3 Award Status Tracking | Planned | | |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
 
 ## Current focus
 
-Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) in review 2026-09-30.
+Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) done 2026-09-30 (#96); validated 2026-09-30 (PRD §12, passed with notes F-1…F-4), fixes and refactor sweep in 2.2.3 (SCRUM-30).
 
 ## Scope
 
@@ -38,10 +38,11 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 4 | 2.1.3 Award category suggestion | 2.1 | 3 | SCRUM-24 | #77 | no | Done |
 | 5 | 2.1.4 Fixes from the Feature 2.1 validation | 2.1 | 5 | SCRUM-28 | #85 | no | Done |
 | 6 | 2.2.1 Award version recording | 2.2 | 5 | SCRUM-25 | #78 | no | Done |
-| 7 | 2.2.2 Version history view and audit export | 2.2 | 5 | SCRUM-26 | #79 | yes | In Review |
-| 8 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | yes | Ready |
+| 7 | 2.2.2 Version history view and audit export | 2.2 | 5 | SCRUM-26 | #79 | yes | Done |
+| 8 | 2.2.3 Fixes from the Feature 2.2 validation | 2.2 | 3 | SCRUM-30 | #97 | no | In Review |
+| 9 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | yes | Ready |
 
-Total: 37 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
+Total: 40 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 
 ## Decisions
 
@@ -61,6 +62,7 @@ Total: 37 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 st
 | 2026-09-29 | Local form copies survive an expired session for the same user and are removed on sign-out and when another user signs in on the browser | AC-1.10 offers the copy back after an expired session; the shared-computer risk is closed at the next sign-in | Feature 2.1 PRD §10, SCRUM-28 |
 | 2026-09-29 | The unused GIN index on `award_categories.keywords` (V021) is kept for now | Matching runs in Java; the index costs little on a small reference table and serves a later SQL search | Feature 2.1 validation |
 | 2026-09-30 | Award versions are full snapshots in `award_versions`, written by the application in the transaction of the change; no Envers; trigger rows get the actor and correlation id per transaction; the per-award audit trail and CSV export are for `audit:read`, the system-wide search is Epic 6 | Business actions (submitted, later returned) need names Envers lacks; the history follows the award for erasure while `audit_logs` stays the immutable record | Feature 2.2 PRD D-1–D-6 |
+| 2026-09-30 | History and audit lists offer «Спробувати ще раз» only when a retry can help; a 404 or 403 on a later page says the award or the access is gone, and an export reloads the audit list from its first page | A retry of a refused page loops; the export's own `AUDIT_EXPORT` row shifted the next page | Feature 2.2 validation, SCRUM-30 |
 
 ## Documentation deviations to resolve
 
@@ -82,6 +84,8 @@ Each item is applied in the PR of the story that touches it, after approval.
 - `ck_awards_date` compares with `CURRENT_DATE` in the database session zone (UTC), so between 00:00 and 03:00 Kyiv time it refuses an award dated today that the application accepts; V020 recreates it as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`.
 - Trigger rows carry the actor and correlation id since 2.2.1: `AuditingTransactionManager` binds `app.current_user_id`/`app.correlation_id` for read-write transactions of token-authenticated requests (Feature 2.2 PRD D-3). Sign-in, registration and password reset run without a token and stay without an actor.
 - Known limits of the category suggestion (Feature 2.1 validation): a unit of another university with the same name as a ChNU unit ("Faculty of Law, …") matches the ChNU unit; the keywords, the organisation tree and the caller's history are read on every request, without a cache. Revisit if the pilot shows wrong chips or slow answers.
+- Feature 2.2 refactor sweep, left for later: organisation names of units deactivated since a version show as `#id` (the versions answer carries ids only and `GET /organizations` lists active units; resolving names on the server changes the API, decide in a design note); `AwardHistory` reads each version's actor lazily (check the query count on a 50-row page before batching like `AuditTrailService`); `e2e/award-history.spec.ts` drives the owner, the dean and the auditor in one test.
+- The audit trail of a deleted draft, of another person's draft or of an award outside the auditor's read scope is reachable through `GET /awards/{id}/audit-trail` only: the award page answers «Не знайдено» before the tab exists. The system-wide audit search is Epic 6.
 - `award-form.component.ts` holds about 560 lines (form, date rules, suggestions, duplicate dialog, local copies). Split the suggestion chips and the duplicate handling into child components with the Epic 4 review view (Feature 2.2 puts the history on the detail page, not the form).
 
 ## Risks

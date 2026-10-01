@@ -8,7 +8,7 @@
     }}</span>
   }
 </div>
-@if (rows().length === 0 && !loading() && !failed()) {
+@if (rows().length === 0 && !loading() && !problem()) {
   <p data-testid="audit-empty">{{ 'awards.audit.empty' | transloco }}</p>
 }
 <mat-accordion multi data-testid="audit-trail">
@@ -52,12 +52,14 @@
 @if (loading()) {
   <mat-progress-bar mode="indeterminate" />
 }
-@if (failed()) {
+@if (problem(); as problem) {
   <div class="audit-trail__problem" role="alert" data-testid="audit-error">
-    <span>{{ 'awards.audit.failed' | transloco }}</span>
-    <button mat-button type="button" (click)="load()" data-testid="audit-retry">
-      {{ 'awards.history.retry' | transloco }}
-    </button>
+    <span>{{ 'awards.audit.problems.' + problem | transloco }}</span>
+    @if (problem === 'failed') {
+      <button mat-button type="button" (click)="load()" data-testid="audit-retry">
+        {{ 'awards.history.retry' | transloco }}
+      </button>
+    }
   </div>
 } @else if (hasMore() && !loading()) {
   <button

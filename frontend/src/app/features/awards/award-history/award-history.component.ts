@@ -1,18 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  computed,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../core/i18n/language.service';
+import { kyivDateTime } from '../../../shared/date-format';
+import { PagedList } from '../../../shared/paged-list';
 import {
   Award,
   AwardVersion,
@@ -27,7 +21,6 @@ import {
   FIELD_LABELS,
   ShownValue,
   ValueNames,
-  kyivDateTime,
   organizationIds,
   shownValue,
 } from './version-values';
@@ -48,15 +41,18 @@ export class AwardHistoryComponent implements OnInit {
 
   readonly award = input.required<Award>();
 
-  readonly versions = signal<AwardVersion[]>([]);
-  readonly loading = signal(false);
-  readonly failed = signal(false);
-  private readonly loadedPages = signal(0);
-  private readonly totalPages = signal(0);
+  private readonly list = new PagedList<AwardVersion, number>({
+    fetch: (page) => this.service.versions(this.award().id, page, PAGE_SIZE),
+    key: (version) => version.number,
+    loaded: (versions) => this.resolveOrganizations(versions),
+  });
   private readonly categories = signal(new Map<number, CategoryRef>());
   private readonly organizations = signal(new Map<number, OrganizationName>());
 
-  readonly hasMore = computed(() => this.loadedPages() < this.totalPages());
+  readonly versions = this.list.items;
+  readonly loading = this.list.loading;
+  readonly problem = this.list.problem;
+  readonly hasMore = this.list.hasMore;
 
   ngOnInit(): void {
     const organization = this.award().organization;
@@ -72,26 +68,7 @@ export class AwardHistoryComponent implements OnInit {
   }
 
   load(): void {
-    this.loading.set(true);
-    this.failed.set(false);
-    this.service.versions(this.award().id, this.loadedPages(), PAGE_SIZE).subscribe({
-      next: (page) => {
-        this.versions.update((shown) => [
-          ...shown,
-          ...page.content.filter(
-            (version) => !shown.some((known) => known.number === version.number),
-          ),
-        ]);
-        this.loadedPages.update((pages) => pages + 1);
-        this.totalPages.set(page.totalPages);
-        this.loading.set(false);
-        this.resolveOrganizations(page.content);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.failed.set(true);
-      },
-    });
+    this.list.load();
   }
 
   view(version: AwardVersion): void {

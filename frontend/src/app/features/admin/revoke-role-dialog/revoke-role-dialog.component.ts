@@ -11,7 +11,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { RoleAssignment } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { organizationName } from '../role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 
 export interface RevokeRoleData {
   assignment: RoleAssignment;

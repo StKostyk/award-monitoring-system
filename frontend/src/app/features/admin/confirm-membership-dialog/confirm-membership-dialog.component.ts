@@ -13,8 +13,8 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../core/i18n/language.service';
-import { OrganizationSummary } from '../../auth/registration.service';
-import { organizationName } from '../role-organizations';
+import { OrganizationSummary } from '../../../core/organizations/organizations.service';
+import { organizationName } from '../../../shared/organization-name';
 import { UserSummary, UsersService } from '../users.service';
 
 @Component({

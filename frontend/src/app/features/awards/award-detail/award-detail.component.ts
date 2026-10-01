@@ -19,7 +19,7 @@ import { filter, switchMap, tap } from 'rxjs';
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { organizationName } from '../../admin/role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { Award, AwardsService, awardTitle, categoryName } from '../awards.service';

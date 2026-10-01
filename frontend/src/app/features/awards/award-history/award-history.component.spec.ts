@@ -76,7 +76,11 @@ const translations = {
         actions: { CREATED: 'Створено', UPDATED: 'Змінено', BASELINE: 'Початковий стан' },
         unknownActor: 'Невідомий користувач',
         system: 'Система',
-        failed: 'Не вдалося',
+        problems: {
+          failed: 'Не вдалося',
+          gone: 'Більше не доступна',
+          denied: 'Немає доступу',
+        },
       },
     },
   },
@@ -187,6 +191,27 @@ describe('AwardHistoryComponent', () => {
     expect(service.versions).toHaveBeenLastCalledWith(5, 1, 20);
     expect(fixture.componentInstance.versions().map((shown) => shown.number)).toEqual([22, 21, 1]);
     expect(fixture.nativeElement.querySelector('[data-testid="award-history-more"]')).toBeNull();
+  });
+
+  it.each([
+    [404, 'Більше не доступна'],
+    [403, 'Немає доступу'],
+  ])('f1_f2_a_%i_on_the_next_page_offers_no_retry', async (status, message) => {
+    service.versions
+      .mockReturnValueOnce(of(page([version(22)], 2)))
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status })));
+    const fixture = await render();
+    const element: HTMLElement = fixture.nativeElement;
+
+    (element.querySelector('[data-testid="award-history-more"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('[data-testid="award-history-error"]')?.textContent).toContain(
+      message,
+    );
+    expect(element.querySelector('[data-testid="award-history-retry"]')).toBeNull();
+    expect(element.querySelector('[data-testid="award-history-more"]')).toBeNull();
+    expect(texts(fixture, 'award-history-action')).toEqual(['Створено']);
   });
 
   it('ac2_3_shows_a_failed_load_with_a_retry', async () => {

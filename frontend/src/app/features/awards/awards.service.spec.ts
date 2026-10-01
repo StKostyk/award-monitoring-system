@@ -137,13 +137,8 @@ describe('AwardsService', () => {
     expect(disposition).toBe('attachment; filename="a.csv"');
   });
 
-  it('ac2_1_fetches_organisation_names_once_and_again_after_a_failure', () => {
+  it('ac2_1_merges_the_organisation_names_of_every_award_type_once', () => {
     const received: string[][] = [];
-    service.organizations().subscribe({ error: () => undefined });
-    http
-      .match((r) => r.url.endsWith('/organizations'))[0]
-      .flush(null, { status: 500, statusText: 'x' });
-
     service
       .organizations()
       .subscribe((names) => received.push([...names.values()].map((name) => name.name)));

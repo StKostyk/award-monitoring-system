@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 
 import { environment } from '../../../../environments/environment';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { OrganizationSummary } from '../registration.service';
+import { OrganizationSummary } from '../../../core/organizations/organizations.service';
 import { RegisterComponent } from './register.component';
 
 const departments: OrganizationSummary[] = [

@@ -1,4 +1,4 @@
-@if (versions().length === 0 && !loading() && !failed()) {
+@if (versions().length === 0 && !loading() && !problem()) {
   <p class="award-history__empty">{{ 'awards.history.empty' | transloco }}</p>
 }
 <ol class="award-history" data-testid="award-history">
@@ -41,12 +41,14 @@
 @if (loading()) {
   <mat-progress-bar mode="indeterminate" />
 }
-@if (failed()) {
+@if (problem(); as problem) {
   <div class="award-history__problem" role="alert" data-testid="award-history-error">
-    <span>{{ 'awards.history.failed' | transloco }}</span>
-    <button mat-button type="button" (click)="load()" data-testid="award-history-retry">
-      {{ 'awards.history.retry' | transloco }}
-    </button>
+    <span>{{ 'awards.history.problems.' + problem | transloco }}</span>
+    @if (problem === 'failed') {
+      <button mat-button type="button" (click)="load()" data-testid="award-history-retry">
+        {{ 'awards.history.retry' | transloco }}
+      </button>
+    }
   </div>
 } @else if (hasMore() && !loading()) {
   <button mat-stroked-button type="button" (click)="load()" data-testid="award-history-more">

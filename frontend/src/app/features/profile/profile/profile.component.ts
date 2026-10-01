@@ -12,7 +12,7 @@ import { fieldProblems, problemStatus, problemType } from '../../../core/api/pro
 import { AuthService } from '../../../core/auth/auth.service';
 import { OrganizationRef, UserProfile } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { organizationName } from '../../admin/role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 import { Delegation, DelegationsService } from '../../delegations/delegations.service';
 import { EmailChangeDialogComponent } from '../email-change-dialog/email-change-dialog.component';
 import { attachmentName, saveFile } from '../../../shared/file-download';

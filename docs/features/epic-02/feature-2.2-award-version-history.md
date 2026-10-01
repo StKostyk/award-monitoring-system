@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3–4 (2026-09-30 → 2026-10-11)
 > **Points**: 10 (two stories)
-> **Status**: Approved 2026-09-30
+> **Status**: Done 2026-09-30 (validated, §12; the author's run of §9 pending)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 2.2, DATA_GOVERNANCE §2 and §4, PRIVACY_IMPACT §4, DATABASE_DESIGN_STANDARDS §3.2, DATA_DICTIONARY §2.1 and §4.1, AUTH §3.3 and §7, RBAC_matrix.md, ADR-004, ADR-009, ADR-014, openapi.yml `/awards`, EPIC-02 tracker (decision 2026-09-28 on version-history storage, technical notes)
 
@@ -191,6 +191,10 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 21. As `admin`, press «Експорт CSV» twice quickly. Expected: two files, two `AUDIT_EXPORT` rows; no error. (AC-2.6)
 22. As `employee.fmi` open `http://localhost:8080/api/v1/awards/<id>/audit-trail/export` directly with the token in Swagger → 403 `access-denied`. (AC-1.11)
 23. Save a draft 25 times (Swagger loop or the form), open the page. Expected: 20 entries and «Показати ще»; after it, 26 entries and no button. (AC-2.3)
+24. Open the draft of step 23 at `/awards/<id>` in two tabs as `employee.fmi`; delete it in the second («Видалити чернетку»), then press «Показати ще» in the first. Expected: «Ця нагорода вам більше не доступна» inside the section, no «Спробувати ще раз», the rest of the page unchanged. (F-1)
+25. As `admin` on the «Журнал аудиту» tab of the award of step 5, press «Експорт CSV». Expected: the list reloads with the new `AUDIT_EXPORT` row on top; «Показати ще», where offered, shows no row twice. (F-3)
+26. Repeat step 14 in Firefox. Expected: the file is saved and opens with its rows. (F-4)
+27. Open `/awards/<id of the draft deleted in step 10>` as `admin`. Expected: «Не знайдено» and no tab; Swagger `GET /api/v1/awards/<id>/audit-trail` as `admin` → 200 with the `DELETE` row. The trail of a deleted award is read through the API until the audit search of Epic 6. (AC-1.10)
 
 ## 10. Risks
 
@@ -207,3 +211,73 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-2.1–2.6
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §2 (`award_versions`) and §4.1 (`AUDIT_EXPORT`, trigger actor and `DELETE` key), DATABASE_DESIGN_STANDARDS §3.2, AUTH §7 row, RBAC_matrix.md (history and audit trail rows), `CHANGELOG.md`, tracker rows, `BACKLOG.md`
 - §9 walked through by the author after `/feature-validate`, including the detours
+
+## 12. Validation (2026-09-30, `develop` at 01dbc90, fixes and refactor sweep in 2.2.3)
+
+Gates on `develop`: `mvn verify` — 544 unit and slice tests, 163 integration and functional, 98.5 % lines, Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 279 Vitest; Playwright 39/39. After 2.2.3 (SCRUM-30, #97): 544 unit and slice, 163 integration and functional, 98.5 % lines, static analysis 0, 288 Vitest, Playwright 39/39. `docker compose up -d --build` starts clean with a healthy backend; all eleven award endpoints of `/v3/api-docs` are in `openapi.yml` (the spec's approve, reject, return, documents and report paths belong to Epics 3–5); every `*IT` applies the migrations, V023 included, to an empty database. On the development database every `BASELINE` version has no actor and the award's `version`, and every `awards`/`award_requests` trigger row written since 2.2.1 has `user_id` and `correlation_id` (§9 steps 1 and 6).
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 1.1 | `AwardHistoryTest#ac1_1_theFirstVersionHasTheCallerAsActorAndNoChangedFields`, `AwardVersionsIT#ac1_1_to_ac1_4_…`, `AwardHistoryFT#ac1_1_to_ac1_3_ac1_8_…` | pass |
+| 1.2 | `AwardHistoryTest#ac1_2_*` (3), `AwardVersionsIT#ac1_1_to_ac1_4_…`, `AwardHistoryFT#ac1_1_to_ac1_3_ac1_8_…` | pass |
+| 1.3 | `AwardHistoryTest#ac1_3_aSubmissionRecordsThePendingStateWithScoreAndOrganisation`, `AwardSubmissionTest`, `AwardHistoryFT#ac1_1_to_ac1_3_ac1_8_…` | pass |
+| 1.4 | `AwardVersionsIT#ac1_1_to_ac1_4_everySaveThatChangesTheDraftIsOneVersionAndFailedSavesAreNone` | pass |
+| 1.5 | `AwardVersionsIT#ac1_5_deletingADraftDeletesItsVersionsAndLogsTheDeleteUnderTheAward`, `AwardHistoryFT#ac1_10_ac1_11_…` | pass |
+| 1.6 | `AuditContextBinderTest#ac1_6_*` (3), `AuditContextIT#ac1_6_*` (5, incl. `REQUIRES_NEW` and read-only), `AwardVersionsIT#ac1_6_triggerRowsOfTheSaveNameTheCallerAndTheRequest`, `AwardHistoryFT#ac1_6_aRoleAssignmentNamesTheAdministratorInTheTriggerRow` | pass |
+| 1.7 | `SchemaIT#ac1_7_awardsExistingBeforeV023GetOneBaselineVersionWithTheirState` | pass |
+| 1.8 | `AwardHistoryTest#ac1_8_*` (3), `AwardHistoryEndpointsTest#ac1_8_*`, `HistoryContractTest#ac1_8_*`, `AwardHistoryFT#ac1_1_to_ac1_3_ac1_8_…` | pass |
+| 1.9 | `AwardHistoryTest#ac1_9_*` (3), `AwardHistoryEndpointsTest#ac1_9_*`, `AwardHistoryFT#ac1_9_readersInScopeSeeTheAwardFromItsSubmissionAndOthersNothing` | pass |
+| 1.10 | `AwardHistoryEndpointsTest#ac1_10_*` (2), `HistoryContractTest#ac1_10_*`, `AwardVersionsIT#ac1_10_…`, `AwardHistoryFT#ac1_10_ac1_11_…` | pass (UI: F-5) |
+| 1.11 | `AwardHistoryEndpointsTest#ac1_11_withoutAuditReadTheTrailIsRefusedAndAudited`, `AwardHistoryFT#ac1_10_ac1_11_…` | pass |
+| 2.1 | `award-history.component.spec` (`ac2_1_*`, 4), `version-values.spec`, `date-format.spec`, `award-detail.component.spec#ac2_1_*`; E2E `award-history.spec` | pass |
+| 2.2 | `award-history.component.spec#ac2_2_*`, `award-version-dialog.component.spec`; E2E `award-history.spec` | pass |
+| 2.3 | `award-history.component.spec#ac2_3_*` (2), `#f1_f2_*` (2), `award-audit-trail.component.spec#ac2_3_*`, `#f1_*`, `#f3_*` (2) | pass (F-1, F-3) |
+| 2.4 | `award-detail.component.spec#ac2_4_*` (2), `AwardHistoryFT#ac1_9_…`; E2E `award-history.spec` (dean) | pass |
+| 2.5 | `award-audit-trail.component.spec#ac2_5_*` (3), `#f2_*` (2), `award-detail.component.spec#ac2_5_*`; E2E `award-history.spec` (auditor) | pass (F-2) |
+| 2.6 | `AuditTrailCsvTest#ac2_6_*`, `AuditTrailServiceTest#ac2_6_*` (2), `AwardHistoryEndpointsTest#ac2_6_*` (3), `AwardHistoryFT#ac2_6_ac2_7_…`, `award-audit-trail.component.spec#ac2_6_*` (2), `file-download.spec`; E2E `award-history.spec` (download) | pass (F-4) |
+| 2.7 | `AuditTrailCsvTest#ac2_7_*` (3), `AuditTrailServiceTest#ac2_7_*`, `AwardHistoryEndpointsTest#ac2_7_*`, `award-audit-trail.component.spec#ac2_7_*` | pass |
+| 2.8 | `version-values.spec#ac2_8_*`; E2E `award-history.spec` (English) | pass |
+
+### Edge cases (§5)
+
+| Edge case | Evidence | Result |
+|-----------|----------|--------|
+| Two saves in parallel | Row lock of `lockedDraft`, `AwardVersionsIT#edge_versionsAreUniquePerNumberAndCannotBeChanged` | covered |
+| Double submit | `AwardFT#ac1_6_twoSubmissionsAtOnceCreateOneRequest` (2.1); one `SUBMITTED` version per submission in `AwardHistoryFT` | covered |
+| Whitespace-only save | `AwardHistoryTest#ac1_2_aSaveThatDidNotMoveTheVersionRecordsNothing` with the `AwardInputRules` normalisation | covered |
+| Category renamed or deactivated | Snapshots keep ids; names from the catalogue (`award-history.component.spec#ac2_1_*`) | covered |
+| Actor erased later | `AwardVersionsIT#edge_erasingTheActorClearsItOnTheVersion`, `award-history.component.spec#ac2_1_names_a_missing_actor_and_the_system_baseline` | covered |
+| Owner moves after submission | The snapshot keeps `organizationId`; access as in 2.1 (`AwardSubmissionTest#edge_*`) | covered |
+| Delegate reviewer | Reads through the `award:read:*` scope like the role (`AccessScope`, Feature 1.2 tests) | by design |
+| Audit trail of a draft | `AwardHistoryFT#ac1_10_ac1_11_…` (draft trail as the administrator) | covered |
+| Rows written before 2.2.1 | `AwardVersionsIT#ac1_10_aDeleteRowWrittenBeforeV023BelongsToTheDeletedAwardNotToTheOwnersIdNamesake` | covered |
+| Export while rows are written | One read-only transaction in `AuditTrailService.exportAward` | by design |
+| Personal data in audit values | `audit:read` only, the export is audited (`AwardHistoryFT#ac2_6_ac2_7_…`) | covered |
+| Non-numeric or unknown id | `AwardHistoryEndpointsTest#ac1_9_versionsOfAHiddenOrUnknownAwardAnswer404AndABadIdAnswers400`, `#ac2_6_anExportOfAnAwardNobodyLoggedAnswers404` | covered |
+
+### Security checklist
+
+| OWASP | Control | Where |
+|-------|---------|-------|
+| A01 Broken access control | `@PreAuthorize` `award:read:own` on the versions, drafts for the owner only and non-owners from the submission on inside the organisation scope; `audit:read` on the trail and the export; hidden or unknown awards answer 404; refusals audited as `ACCESS_DENIED` | `AwardHistoryController`, `AwardHistory`, `AwardOwnership` |
+| A02 Cryptographic failures | No new secrets; the export is sent with `Cache-Control: no-store` | `AwardHistoryEndpointsTest#ac2_6_theExportDownloadsAsAnAttachmentThatIsNotCached` |
+| A03 Injection | Bound parameters in the native audit query and in `set_config`; CSV cells starting with `=`, `+`, `-`, `@`, tab or CR prefixed with `'`, commas inside JSON cells escaped | `AuditLogRepository`, `AuditContextBinder`, `AuditTrailCsv` |
+| A04 Insecure design | Versions immutable (`BEFORE UPDATE` trigger) and unique per number; the actor setting is transaction-local and never reaches the next pooled transaction | V023, `AuditContextIT#ac1_6_changesWithoutASignedInCallerKeepTheActorEmptyAndNothingLeaksFromAnEarlierTransaction` |
+| A07 Authentication failures | Unchanged tokens of Feature 1.1; pages and downloads go through the silent refresh | Feature 1.1 |
+| A09 Logging | Trigger rows name the actor and the correlation id; `AUDIT_EXPORT` with the row count | `AuditingTransactionManager`, `AuditTrailService` |
+
+### Findings
+
+Scenario review of the untested detours (F-1…F-5) and the refactor sweep; F-1…F-4 fixed in 2.2.3 (SCRUM-30, #97), F-5 recorded.
+
+| # | Finding | Fix |
+|---|---------|-----|
+| F-1 | A 404 on a later page (the draft deleted in another tab, the reader's scope gone) showed «Не вдалося…» with a retry that could never succeed; the audit tab swallowed it and kept «Показати ще» | «Ця нагорода вам більше не доступна» without a retry; the list ends |
+| F-2 | A 403 in the audit tab or on the export (the auditor role taken back while the page is open) read as a failure worth retrying | «Ви більше не маєте доступу…» without a retry; the export says the same |
+| F-3 | An export writes an `AUDIT_EXPORT` row about the award: the open list did not show it and its next page repeated a row (dropped by the dedupe, untested) | The audit list reloads from its first page after an export; overlapping pages tested for both lists |
+| F-4 | The download clicked a link that was never attached and revoked its URL at once, which cancels the download in some Firefox and Safari versions | The link is attached for the click and the URL released after 30 s; §9 step 26 in Firefox |
+| F-5 | The audit trail of a deleted draft, of another person's draft or of an award outside the auditor's read scope is reachable through the API only: the award page answers «Не знайдено» before the tab exists | Kept: API only until the audit search of Epic 6; §9 step 27, tracker note |
+
+Refactor sweep, applied in 2.2.3: one paged-list helper for the history and the audit tab (`shared/paged-list.ts`), one cached organisations service behind the awards, users and registration services (`core/organizations/`), `organizationName` and `kyivDateTime` moved to `shared/`, `UserRef.of` instead of two copies. Left in the tracker's technical notes: names of deactivated units shown as `#id`, lazy actor reads in `AwardHistory`, one E2E test for three roles.

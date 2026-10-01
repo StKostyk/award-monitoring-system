@@ -10,7 +10,7 @@ import {
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../core/i18n/language.service';
-import { organizationName } from '../../admin/role-organizations';
+import { organizationName } from '../../../shared/organization-name';
 import { Delegation } from '../delegations.service';
 
 @Component({

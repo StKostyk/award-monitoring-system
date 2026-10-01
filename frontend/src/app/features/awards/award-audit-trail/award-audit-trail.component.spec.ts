@@ -38,7 +38,16 @@ describe('AwardAuditTrailComponent', () => {
         AwardAuditTrailComponent,
         NoopAnimationsModule,
         TranslocoTestingModule.forRoot({
-          langs: { uk: { awards: { audit: { empty: 'Записів немає', failed: 'Не вдалося' } } } },
+          langs: {
+            uk: {
+              awards: {
+                audit: {
+                  empty: 'Записів немає',
+                  problems: { failed: 'Не вдалося', gone: 'Недоступний', denied: 'Немає доступу' },
+                },
+              },
+            },
+          },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
         }),
       ],
@@ -113,6 +122,74 @@ describe('AwardAuditTrailComponent', () => {
 
     expect(element.querySelectorAll('[data-testid="audit-row"]')).toHaveLength(1);
     expect(element.querySelector('[data-testid="audit-more"]')).not.toBeNull();
+  });
+
+  it('f2_an_auditor_who_lost_the_role_is_told_so_without_a_retry', async () => {
+    service.auditTrail.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+    const fixture = await render();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="audit-error"]')?.textContent).toContain(
+      'Немає доступу',
+    );
+    expect(element.querySelector('[data-testid="audit-retry"]')).toBeNull();
+    expect(element.querySelector('[data-testid="audit-empty"]')).toBeNull();
+  });
+
+  it('f1_a_404_on_a_later_page_ends_the_list', async () => {
+    service.auditTrail
+      .mockReturnValueOnce(of(page([submitted], 2)))
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 404 })));
+    const fixture = await render();
+    const element: HTMLElement = fixture.nativeElement;
+
+    (element.querySelector('[data-testid="audit-more"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('[data-testid="audit-more"]')).toBeNull();
+    expect(element.querySelector('[data-testid="audit-retry"]')).toBeNull();
+    expect(element.querySelectorAll('[data-testid="audit-row"]')).toHaveLength(1);
+  });
+
+  it('f3_a_row_pushed_onto_the_next_page_is_shown_once', async () => {
+    service.auditTrail
+      .mockReturnValueOnce(of(page([{ ...submitted, id: 91 }, submitted], 2)))
+      .mockReturnValueOnce(of(page([submitted, { ...submitted, id: 89 }], 2)));
+    const fixture = await render();
+
+    (
+      fixture.nativeElement.querySelector('[data-testid="audit-more"]') as HTMLButtonElement
+    ).click();
+
+    expect(fixture.componentInstance.rows().map((row) => row.id)).toEqual([91, 90, 89]);
+  });
+
+  it('f3_an_export_reloads_the_list_from_the_first_page_with_its_own_row', async () => {
+    const exported = { ...submitted, id: 95, action: 'AUDIT_EXPORT' };
+    service.auditTrail
+      .mockReturnValueOnce(of(page([submitted], 2)))
+      .mockReturnValueOnce(of(page([exported, submitted], 2)));
+    service.exportAuditTrail.mockReturnValue(of(new HttpResponse({ body: new Blob(['csv']) })));
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:audit');
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockReturnValue(undefined);
+    const fixture = await render();
+
+    fixture.componentInstance.exportCsv();
+
+    expect(service.auditTrail).toHaveBeenLastCalledWith(5, 0, 20);
+    expect(fixture.componentInstance.rows().map((row) => row.id)).toEqual([95, 90]);
+  });
+
+  it('f2_an_export_refused_for_access_says_so', async () => {
+    service.auditTrail.mockReturnValue(of(page([submitted])));
+    service.exportAuditTrail.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 403 })),
+    );
+    const fixture = await render();
+
+    fixture.componentInstance.exportCsv();
+
+    expect(fixture.componentInstance.notice()).toBe('awards.audit.problems.denied');
   });
 
   it('ac2_6_downloads_the_file_under_its_attachment_name', async () => {
