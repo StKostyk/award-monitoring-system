@@ -24,20 +24,21 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.2.1 | Award version recording | 5 | ✅ Done | SCRUM-25 | [#78](https://github.com/StKostyk/award-monitoring-system/issues/78) |
 | 2.2.2 | Version history view and audit export | 5 | ✅ Done | SCRUM-26 | [#79](https://github.com/StKostyk/award-monitoring-system/issues/79) |
 | 2.2.3 | Fixes from the Feature 2.2 validation | 3 | ✅ Done | SCRUM-30 | [#97](https://github.com/StKostyk/award-monitoring-system/issues/97) |
+| 2.3.1 | Award status tracking (US-005) | 5 | ✅ Done | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
 
 Sprint Goal: an employee creates, checks and submits an award (Feature 2.1).  
-Completed Points: 53 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30, fixes 2.2.3 merged 2026-10-01; the author's runs of PRD §9 pending)
+Completed Points: 58 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30, fixes 2.2.3 merged and Feature 2.3 validated 2026-10-01; the author's runs of PRD §9 pending)
 
 ---
 
 ## Backlog (Prioritized)
 
 ### Epic 2 — remaining (Jira epic SCRUM-20)
-Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md). Feature 2.2 done (Sprint 3): [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md). Feature 2.3 approved 2026-10-01, 2.3.1 in review: [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md).
+Feature 2.1 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md). Feature 2.2 done (Sprint 3): [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md). Feature 2.3 validated 2026-10-01, fixes in 2.3.2: [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md).
 
 | ID | Story | Points | Feature | Jira | Issue |
 |----|-------|--------|---------|------|-------|
-| 2.3.1 | Award status tracking (US-005) | 5 | 2.3 | SCRUM-27 | [#80](https://github.com/StKostyk/award-monitoring-system/issues/80) |
+| 2.3.2 | Fixes from the Feature 2.3 validation | 2 | 2.3 | SCRUM-31 | [#101](https://github.com/StKostyk/award-monitoring-system/issues/101) |
 
 ### Later epics
 | ID | Story | Points | Epic |
