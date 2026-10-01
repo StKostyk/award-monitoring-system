@@ -17,8 +17,12 @@
               }}</a>
               @if (award.request; as request) {
                 <span class="submissions__meta" data-testid="my-submission-level">
-                  {{ 'awards.statusPanel.levels.' + request.currentLevel | transloco }}
-                  @if (request.estimatedCompletion) {
+                  @if (request.status === 'RETURNED') {
+                    {{ 'awards.statusPanel.returned' | transloco }}
+                  } @else {
+                    {{ 'roles.' + request.currentLevel | transloco }}
+                  }
+                  @if (request.status !== 'RETURNED' && request.estimatedCompletion) {
                     ·
                     {{
                       'awards.timing.expected'

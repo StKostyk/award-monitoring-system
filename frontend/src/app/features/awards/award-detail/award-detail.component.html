@@ -85,7 +85,11 @@
     </div>
   </article>
   @if (award.status !== 'DRAFT') {
-    <app-award-status [awardId]="award.id" (changed)="refresh(award.id)" />
+    <app-award-status
+      [awardId]="award.id"
+      (changed)="refresh(award.id)"
+      (lost)="refresh(award.id)"
+    />
   }
   @if (showHistory(award)) {
     @if (canAudit()) {

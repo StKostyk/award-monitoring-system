@@ -59,6 +59,7 @@ const translations = {
     awards: {
       title: 'Мої нагороди',
       timing: { expected: 'Очікується до {{date}}', delayed: 'Затримка' },
+      statusPanel: { returned: 'Очікує ваших виправлень' },
       add: 'Додати нагороду',
       empty: 'Нагород ще немає.',
       more: 'Показано {{shown}} з {{total}}',
@@ -125,6 +126,36 @@ describe('AwardListComponent', () => {
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/awards/5/edit');
     expect(items[1].querySelector('a')?.getAttribute('href')).toBe('/awards/6');
     expect(element.querySelector('[data-testid="award-add"]')).not.toBeNull();
+  });
+
+  it('ac1_18_a_returned_request_waits_for_the_owner_corrections', async () => {
+    await create();
+    const request = {
+      status: 'RETURNED' as const,
+      currentLevel: 'FACULTY_SECRETARY' as const,
+      submittedAt: '2026-09-28T09:00:00Z',
+      deadline: '2026-10-01T09:00:00Z',
+      estimatedCompletion: null,
+      overdue: false,
+    };
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: {
+          content: [award({ id: 6, status: 'PENDING', request })],
+          totalElements: 1,
+          totalPages: 1,
+          size: 100,
+          number: 0,
+        },
+      }),
+    );
+    fixture.detectChanges();
+    const item = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="award-item"]');
+
+    expect(item?.querySelector('[data-testid="award-returned"]')?.textContent).toContain(
+      'Очікує ваших виправлень',
+    );
+    expect(item?.querySelector('[data-testid="award-expected"]')).toBeNull();
   });
 
   it('ac1_18_submitted_awards_show_the_expected_date_and_a_delay_chip', async () => {

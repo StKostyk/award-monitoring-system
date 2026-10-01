@@ -135,6 +135,16 @@ class AwardServiceTest {
     }
 
     @Test
+    void edge_aRequestWithoutStoredDeadlineCarriesTheDeadlineOfItsEstimate() {
+        Award pending = award(OWNER_ID, AwardStatus.PENDING);
+        when(awards.findWithDetailsById(5L)).thenReturn(Optional.of(pending));
+        when(requests.findByAwardId(5L)).thenReturn(Optional.of(request(pending)));
+        when(access.callerId()).thenReturn(OWNER_ID);
+
+        assertThat(service.get(5L).request().deadline()).isEqualTo(Instant.parse("2026-10-01T09:00:00Z"));
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void ac1_7_theOwnListIsNewestFirstWithRequestsAndCappedAt100() {
         Award draft = award(OWNER_ID, AwardStatus.DRAFT);

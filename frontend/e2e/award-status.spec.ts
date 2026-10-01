@@ -35,6 +35,16 @@ async function submitted(page: Page, title: string): Promise<string> {
   return id;
 }
 
+function kyivDayIn(days: number): string {
+  const [day, month, year] = new Date()
+    .toLocaleDateString('uk-UA', { timeZone: 'Europe/Kyiv' })
+    .split('.')
+    .map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toLocaleDateString('uk-UA', {
+    timeZone: 'UTC',
+  });
+}
+
 async function openAward(page: Page, id: string): Promise<void> {
   const status = page.waitForResponse((response) =>
     response.url().endsWith(`/awards/${id}/status`),
@@ -92,6 +102,9 @@ test.describe('award status tracking', () => {
     await expect(page.getByTestId('award-status-delay')).toContainText(
       /Розгляд триває довше, ніж зазвичай \(з \d{2}\.\d{2}\.\d{4}\)\. Нова орієнтовна дата: /,
     );
+    await expect(page.getByTestId('award-status-due')).toHaveText(
+      new RegExp(`Очікується до (${kyivDayIn(3)}|${kyivDayIn(4)})`),
+    );
 
     await page.getByTestId('nav-awards').click();
     const row = page.getByTestId('award-item').filter({ hasText: title });
@@ -102,7 +115,8 @@ test.describe('award status tracking', () => {
   test('ac1_14 ac1_15 a decision made while the page is open appears within the interval', async ({
     page,
   }) => {
-    const id = await submitted(page, `Диплом ${token()}`);
+    const title = `Диплом ${token()}`;
+    const id = await submitted(page, title);
     await page.clock.install();
     await openAward(page, id);
     await expect(page.getByTestId('award-status-estimate')).toBeVisible();
@@ -130,5 +144,14 @@ test.describe('award status tracking', () => {
     await expect(decision).toContainText('Повернуто на доопрацювання');
     await expect(decision).toContainText('Секретар факультету');
     await expect(page.getByTestId('award-status-comment')).toContainText('Додайте номер наказу');
+
+    await page.goto('/');
+    await expect(page.getByTestId('my-submission').filter({ hasText: title })).toContainText(
+      'Очікує ваших виправлень',
+    );
+    await page.getByTestId('nav-awards').click();
+    await expect(
+      page.getByTestId('award-item').filter({ hasText: title }).getByTestId('award-returned'),
+    ).toContainText('Очікує ваших виправлень');
   });
 });

@@ -2194,7 +2194,11 @@ components:
         deadline:
           type: [string, 'null']
           format: date-time
-          description: End of the current level's review period
+          description: >
+            End of the current level's review period, whole days counted on the Kyiv calendar. While a level is
+            reviewing, derived from the submission when none is stored; for a returned or final request the stored
+            value, possibly null. Stays the missed deadline of an overdue level (the revised due date is in
+            `AwardStatusView.path`)
         estimatedCompletion:
           type: [string, 'null']
           format: date
@@ -2228,6 +2232,7 @@ components:
         deadline:
           type: [string, 'null']
           format: date-time
+          description: As `AwardRequestSummary.deadline`
         estimatedCompletion:
           type: [string, 'null']
           format: date

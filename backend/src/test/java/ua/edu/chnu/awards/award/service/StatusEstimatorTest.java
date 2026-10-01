@@ -70,8 +70,9 @@ class StatusEstimatorTest {
         assertThat(timeline.overdue()).isTrue();
         assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 7))
             .isAfterOrEqualTo(LocalDate.of(2026, 10, 2));
-        assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 9, 29))
+        assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 4))
             .containsEntry(ApprovalLevel.DEAN, LocalDate.of(2026, 10, 7));
+        assertThat(timeline.deadline()).isEqualTo(days(-2));
     }
 
     @Test
@@ -118,8 +119,55 @@ class StatusEstimatorTest {
         assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 8));
     }
 
+    @Test
+    void edge_aPeriodAcrossTheAutumnClockChangeEndsOnTheThirdKyivDay() {
+        Instant deadline = estimator.deadline(Instant.parse("2026-10-22T21:30:00Z"));
+
+        assertThat(deadline).isEqualTo(Instant.parse("2026-10-25T22:30:00Z"));
+        assertThat(LocalDate.ofInstant(deadline, KYIV)).isEqualTo(LocalDate.of(2026, 10, 26));
+    }
+
+    @Test
+    void edge_aPeriodAcrossTheSpringClockChangeEndsOnTheThirdKyivDay() {
+        Instant deadline = estimator.deadline(Instant.parse("2027-03-26T21:30:00Z"));
+
+        assertThat(deadline).isEqualTo(Instant.parse("2027-03-29T20:30:00Z"));
+        assertThat(LocalDate.ofInstant(deadline, KYIV)).isEqualTo(LocalDate.of(2027, 3, 29));
+    }
+
+    @Test
+    void edge_aLaterLevelAcrossTheClockChangeIsDueOnTheThirdKyivDay() {
+        AwardRequest request = request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY,
+            Instant.parse("2026-10-22T21:30:00Z"));
+
+        StatusEstimator.Timeline timeline = estimator(3, Instant.parse("2026-10-21T09:00:00Z"))
+            .timeline(request, RecognitionLevel.FACULTY);
+
+        assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 23))
+            .containsEntry(ApprovalLevel.DEAN, LocalDate.of(2026, 10, 26));
+    }
+
+    @Test
+    void edge_aPeriodWithHoursAddsThemAfterTheDays() {
+        StatusEstimator hours = new StatusEstimator(Clock.fixed(NOW, KYIV),
+            new WorkflowProperties(Duration.ofHours(36)), new ApprovalPath());
+
+        assertThat(hours.deadline(Instant.parse("2026-10-24T09:00:00Z")))
+            .isEqualTo(Instant.parse("2026-10-25T22:00:00Z"));
+    }
+
+    @Test
+    void edge_aReturnedRequestKeepsItsStoredDeadline() {
+        assertThat(estimator.timeline(request(RequestStatus.RETURNED, ApprovalLevel.DEAN, days(-1)),
+            RecognitionLevel.FACULTY).deadline()).isEqualTo(days(-1));
+    }
+
     private static StatusEstimator estimator(int days) {
-        return new StatusEstimator(Clock.fixed(NOW, KYIV), new WorkflowProperties(Duration.ofDays(days)),
+        return estimator(days, NOW);
+    }
+
+    private static StatusEstimator estimator(int days, Instant now) {
+        return new StatusEstimator(Clock.fixed(now, KYIV), new WorkflowProperties(Duration.ofDays(days)),
             new ApprovalPath());
     }
 

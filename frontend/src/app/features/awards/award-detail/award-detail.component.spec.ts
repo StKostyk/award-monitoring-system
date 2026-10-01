@@ -167,6 +167,28 @@ describe('AwardDetailComponent', () => {
     expect(fixture.componentInstance.award()?.status).toBe('APPROVED');
   });
 
+  it('ac1_15_an_award_no_longer_readable_is_replaced_by_the_not_found_notice', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+    service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    fixture.componentInstance.refresh(5);
+
+    expect(fixture.componentInstance.award()).toBeNull();
+    expect(fixture.componentInstance.notFound()).toBe(true);
+  });
+
+  it('ac1_15_a_failed_reload_keeps_the_award', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+    service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+
+    fixture.componentInstance.refresh(5);
+
+    expect(fixture.componentInstance.award()).not.toBeNull();
+    expect(fixture.componentInstance.notFound()).toBe(false);
+  });
+
   it('ac1_7_a_draft_shows_no_status_panel', async () => {
     service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
     const fixture = await open(AwardDetailComponent, '5');

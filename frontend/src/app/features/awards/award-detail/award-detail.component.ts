@@ -16,7 +16,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, switchMap, tap } from 'rxjs';
 
-import { problemStatus, problemType } from '../../../core/api/problem';
+import { problemStatus, problemType, readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../../shared/organization-name';
@@ -108,11 +108,19 @@ export class AwardDetailComponent implements OnInit {
       });
   }
 
-  /** Reloads the award after its review status changed, keeping what is shown when the reload fails. */
+  /**
+   * Reloads the award after its review status changed or was lost; an award no longer readable is replaced by
+   * the not-found notice, any other failure keeps what is shown.
+   */
   refresh(id: number): void {
     this.service.get(id).subscribe({
       next: (award) => this.award.set(award),
-      error: () => undefined,
+      error: (error: unknown) => {
+        if (readProblem(error) !== 'failed') {
+          this.award.set(null);
+          this.notFound.set(true);
+        }
+      },
     });
   }
 

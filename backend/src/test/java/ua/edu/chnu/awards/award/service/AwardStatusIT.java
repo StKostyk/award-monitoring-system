@@ -2,7 +2,6 @@ package ua.edu.chnu.awards.award.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -28,6 +27,8 @@ import ua.edu.chnu.awards.award.dto.DecisionView;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
+import ua.edu.chnu.awards.support.DecisionRows;
+import ua.edu.chnu.awards.support.RequestRows;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
@@ -88,7 +89,7 @@ class AwardStatusIT extends AbstractIntegrationTest {
     void ac1_6_decisionsAreReadWithTheirReviewersInOneQueryOldestFirst() {
         final long quiet = submitted("Quiet");
         long reviewed = submitted("Reviewed");
-        long request = requestOf(reviewed);
+        long request = RequestRows.idOf(jdbc, reviewed);
         Instant start = Instant.now().minus(3, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
         decide(request, secretary, "RETURNED", "FACULTY_SECRETARY", "Додайте номер наказу", start);
         decide(request, secretary, "APPROVED", "FACULTY_SECRETARY", null, start.plus(1, ChronoUnit.DAYS));
@@ -135,19 +136,12 @@ class AwardStatusIT extends AbstractIntegrationTest {
 
     private long submitted(String title) {
         long id = AwardRows.award(jdbc, owner.getId()).title(title).status("PENDING").insert();
-        Instant now = Instant.now();
-        jdbc.update("insert into award_requests (award_id, submitter_id, status, current_level, submitted_at, "
-            + "deadline) values (?, ?, 'SUBMITTED', 'FACULTY_SECRETARY', ?, ?)", id, owner.getId(),
-            Timestamp.from(now), Timestamp.from(now.plus(3, ChronoUnit.DAYS)));
+        RequestRows.request(jdbc, id, owner.getId()).insert();
         return id;
     }
 
-    private long requestOf(long awardId) {
-        return jdbc.queryForObject("select request_id from award_requests where award_id = ?", Long.class, awardId);
-    }
-
     private void decide(long request, User reviewer, String decision, String level, String comments, Instant at) {
-        jdbc.update("insert into review_decisions (request_id, reviewer_id, decision, level, comments, decided_at) "
-            + "values (?, ?, ?, ?, ?, ?)", request, reviewer.getId(), decision, level, comments, Timestamp.from(at));
+        DecisionRows.decision(jdbc, request, reviewer.getId()).type(decision).level(level).comments(comments)
+            .decidedAt(at).insert();
     }
 }
