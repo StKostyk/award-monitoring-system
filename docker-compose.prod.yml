@@ -1,0 +1,102 @@
+# =============================================================================
+# Award Monitoring System - production override (single host, see ADR-021)
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod up -d
+# =============================================================================
+
+services:
+  postgres:
+    ports: !reset []
+
+  redis:
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    ports: !reset []
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  # Only for a rehearsal on a workstation: --profile local-mail, SMTP_HOST=mailpit, SMTP_STARTTLS_REQUIRED=false
+  mailpit:
+    profiles: ["local-mail"]
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+
+  minio:
+    ports: !reset []
+
+  app:
+    image: ${BACKEND_IMAGE:-award-backend:prod}
+    ports: !reset []
+    environment: !override
+      - SPRING_PROFILES_ACTIVE=production
+      - ENVIRONMENT=production
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-award_monitoring}
+      - DATABASE_USERNAME=${POSTGRES_USER:?set POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SPRING_MAIL_HOST=${SMTP_HOST:?set SMTP_HOST}
+      - SPRING_MAIL_PORT=${SMTP_PORT:-587}
+      - SPRING_MAIL_USERNAME=${SMTP_USERNAME:?set SMTP_USERNAME}
+      - SPRING_MAIL_PASSWORD=${SMTP_PASSWORD:?set SMTP_PASSWORD}
+      - SMTP_STARTTLS_REQUIRED=${SMTP_STARTTLS_REQUIRED:-true}
+      - APP_MAIL_FROM=${MAIL_FROM:?set MAIL_FROM}
+      - STORAGE_S3_ENDPOINT=http://minio:9000
+      - STORAGE_S3_ACCESS_KEY=${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      - STORAGE_S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      - AUTH_ISSUER=https://${SITE_ADDRESS:?set SITE_ADDRESS}
+      - AUTH_FRONTEND_URL=https://${SITE_ADDRESS}
+      - AUTH_ALLOWED_ORIGINS=https://${SITE_ADDRESS}
+      - AUTH_REDIRECT_URIS=https://${SITE_ADDRESS}/callback
+      - AUTH_POST_LOGOUT_REDIRECT_URIS=https://${SITE_ADDRESS}
+      - AUTH_ALLOWED_EMAIL_DOMAINS=${ALLOWED_EMAIL_DOMAINS:-chnu.edu.ua}
+      - AUTH_JWK_KEY_ID=${JWK_KEY_ID:?set JWK_KEY_ID}
+      - AUTH_JWK_PRIVATE_KEY=${JWK_PRIVATE_KEY:?set JWK_PRIVATE_KEY}
+      - AUTH_JWK_PUBLIC_KEY=${JWK_PUBLIC_KEY:?set JWK_PUBLIC_KEY}
+      - SPRING_FLYWAY_LOCATIONS=${FLYWAY_LOCATIONS:-classpath:db/migration}
+      - DEMO_PASSWORD_HASH=${DEMO_PASSWORD_HASH:-}
+      - OTEL_SDK_DISABLED=true
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-award-frontend:prod}
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: award-caddy
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - award-network
+
+volumes:
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  award-network:
+    ipam:
+      config: !override
+        - subnet: 172.26.0.0/16

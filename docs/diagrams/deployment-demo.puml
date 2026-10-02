@@ -1,0 +1,61 @@
+@startuml Deployment_Demo
+' =============================================================================
+' Demo deployment for the thesis defense (ADR-021)
+' Award Monitoring & Tracking System
+' =============================================================================
+
+!theme plain
+
+skinparam node {
+    BackgroundColor<<cloud>> LightBlue
+    BackgroundColor<<container>> LightGreen
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> Pink
+    BackgroundColor<<security>> LightCoral
+}
+
+title Demo environment - Deployment Diagram (single host, Docker Compose)
+
+cloud "Internet" as internet {
+    actor "Users" as users
+}
+
+node "EU virtual server (Ubuntu LTS, Docker Engine)" <<cloud>> as host {
+    component [Caddy\nTLS, Let's Encrypt\n:80 :443] <<security>> as caddy
+
+    node "Compose network (no published ports)" <<container>> as net {
+        component [frontend\nnginx + Angular] as frontend
+        component [app\nSpring Boot, profile production\nauthorization server + API] as app
+        database "PostgreSQL 17" <<database>> as postgres
+        database "Redis 7\n(password)" <<database>> as redis
+        database "MinIO" <<database>> as minio
+    }
+
+    storage "Docker volumes" as volumes
+}
+
+node "External services" <<external>> as external {
+    component [Brevo SMTP relay] as smtp
+    component [GitHub Container Registry] as ghcr
+    component [Backup target] as backup
+}
+
+users --> caddy : HTTPS (443)
+caddy --> frontend : HTTP (80)
+frontend --> app : /api, /oauth2, /login (8080)
+app --> postgres : JDBC (5432)
+app --> redis : RESP (6379)
+app --> minio : S3 API (9000)
+app --> smtp : SMTP + STARTTLS (587)
+postgres --> volumes
+minio --> volumes
+host ..> ghcr : docker compose pull
+host ..> backup : nightly pg_dump, MinIO mirror
+
+note right of net
+    Secrets from .env.prod on the server only.
+    Demo accounts (@demo.example) only when
+    DEMO_PASSWORD_HASH is set.
+end note
+
+@enduml

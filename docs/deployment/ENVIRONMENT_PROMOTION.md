@@ -105,6 +105,16 @@ This document defines the environment promotion flow and gates for deploying cha
 
 ---
 
+## Addendum 2026-10-02: Environments in practice
+
+The five-stage pipeline above is the target for a production rollout. For the thesis there are two
+environments: **local** (Docker Compose on the developer workstation, `local`/`docker` profiles, where every
+gate and end-to-end test runs) and **demo** (one server, `production` profile, ADR-021). A change reaches demo
+only after it is merged and its gates passed; rollback is redeploying the previous image tag. See
+[DEMO_DEPLOYMENT.md](DEMO_DEPLOYMENT.md).
+
+---
+
 **Version**: 1.0  
 **Last Updated**: January 2026  
 **Author**: Stefan Kostyk

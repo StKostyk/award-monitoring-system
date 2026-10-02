@@ -1,6 +1,6 @@
 # ADR-020: Cloud Platform Selection
 
-**Status**: Accepted (implementation deferred, see Addendum 2026-10)  
+**Status**: Superseded for the thesis defense by ADR-021; kept as the production reference  
 **Date**: 2025-08-21  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, DevOps Team, Operations Team
@@ -223,12 +223,22 @@ demoable (see ADR-018 addendum).
 
 ---
 
+## Addendum 2026-10-02: Superseded for the defense
+
+The defense deployment uses one virtual server at an EU hosting provider (ADR-021) instead of AWS managed
+services: the managed stack (EKS, RDS, ElastiCache, OpenSearch, NAT) would cost an order of magnitude more for a
+system with no production users yet. Data stays in the EU, which keeps the GDPR position unchanged. AWS or Azure
+stays the reference option for a production rollout.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
+| 2026-10-02 | Stefan Kostyk | Addendum: superseded for the defense by ADR-021 | Deployment target decision |
 
 ---
 
