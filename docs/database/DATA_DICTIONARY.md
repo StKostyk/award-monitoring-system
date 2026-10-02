@@ -693,7 +693,6 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
 - `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
 - `DATA_DELETE` - GDPR rights
-- `AUDIT_EXPORT` - an oversight role downloaded an award's audit trail (`entity_type` = `awards`, `entity_id` = the award, row count in `new_values`; written from 2.2.2)
 - `APPROVAL`, `REJECTION` - Workflow decisions
 
 **Indexes**:
@@ -940,7 +939,7 @@ Defined in the repeatable migrations `R__create_views.sql` and `R__create_functi
 
 ---
 
-*Document Version: 1.0*  
+*Document Version: 1.1*  
 *Classification: Internal*  
 *Phase: 9 - Data Architecture & Database Design*  
 *Author: Stefan Kostyk*

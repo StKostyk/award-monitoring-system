@@ -678,64 +678,67 @@ public class AnonymizationService {
 
 ### 6.2 Структура Даних Експорту
 
+Для JSON реалізовано через `GET /api/v1/users/me/export` (функція 1.3, версія формату `1.0`). Назви властивостей — у snake_case; кожен розділ-список присутній, можливо порожній. IP-адреси є власними ідентифікаторами особи (ст. 15 і 20) і експортуються без приховування; журнал активності зберігає адресу лише для дій, які особа виконує сама (вхід, вихід, підтвердження адреси, скидання пароля, відкликання «це був не я», зміни профілю й адреси, відхилені запити, експорти); події, які будь-хто може спричинити щодо облікового запису (невдалі входи, запити на скидання, блокування), і події, спричинені іншою особою (ролі, делегування), мають `null`, тож адреса стороннього чи адміністратора до файлу не потрапляє. Налаштування додаються до файлу з епіком 7.
+
 ```json
 {
   "export_metadata": {
-    "export_date": "2025-12-16T10:30:00Z",
-    "user_id": "USR-12345",
+    "export_date": "2026-09-30T09:00:00Z",
+    "user_id": 5,
     "format_version": "1.0",
-    "gdpr_article": "Стаття 20 - Право на Портативність Даних"
+    "gdpr_article": "Article 20 - Right to Data Portability"
   },
   "personal_data": {
     "profile": {
-      "email": "user@example.com",
-      "first_name": "Іван",
+      "email": "employee.fmi@chnu.edu.ua",
+      "first_name": "Анастасія",
       "last_name": "Петренко",
-      "organization": "Факультет Комп'ютерних Наук",
-      "registration_date": "2024-01-15"
-    },
-    "preferences": {
-      "notification_email": true,
-      "notification_sms": false,
-      "language": "uk"
+      "department": { "id": 64, "name": "Department of Algebra and Informatics", "name_uk": "Кафедра алгебри та інформатики" },
+      "faculty": { "id": 9, "name": "Faculty of Mathematics and Informatics", "name_uk": "Факультет математики та інформатики" },
+      "account_status": "ACTIVE",
+      "created_at": "2026-09-01T08:00:00Z",
+      "last_login_at": "2026-09-30T08:55:00Z"
     }
   },
+  "roles": [
+    { "role": "EMPLOYEE", "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-01", "valid_to": null, "current": true }
+  ],
+  "delegations": [
+    { "direction": "RECEIVED", "other_party": "Петро Мартинюк", "role": "DEAN", "organization": { "id": 9, "name": "…", "name_uk": "…" },
+      "valid_from": "2026-09-30", "valid_to": "2026-10-05", "state": "active", "reason": null,
+      "created_at": "2026-09-29T10:00:00Z", "revoked_at": null }
+  ],
   "awards": [
-    {
-      "award_id": "AWD-001",
-      "title": "Найкраща Дослідницька Робота 2024",
-      "date": "2024-06-15",
-      "category": "Академічні Досягнення",
-      "status": "ЗАТВЕРДЖЕНО",
-      "awarding_organization": "Міністерство Освіти"
-    }
+    { "award_id": 21, "title": "Letter of gratitude", "title_uk": "Подяка", "description": null, "description_uk": null,
+      "category": { "id": 13, "name": "Ministry", "name_uk": "Міністерство" }, "awarding_organization": "МОН України",
+      "award_date": "2025-05-01", "status": "DRAFT", "external_url": null, "organization": { "id": 64, "name": "…", "name_uk": "…" },
+      "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T09:00:00Z" }
   ],
   "documents": [
-    {
-      "document_id": "DOC-001",
-      "filename": "certificate.pdf",
-      "upload_date": "2024-06-16",
-      "download_url": "/api/export/documents/DOC-001"
-    }
+    { "document_id": 7, "award_id": 21, "file_name": "certificate.pdf", "file_type": "PDF", "mime_type": "application/pdf",
+      "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7" }
   ],
   "consent_history": [
-    {
-      "consent_type": "DATA_PROCESSING",
-      "granted_at": "2024-01-15T09:00:00Z",
-      "version": "1.0"
-    }
+    { "consent_type": "DATA_PROCESSING", "consent_version": "1.0", "granted": true, "granted_at": "2026-09-01T08:00:00Z",
+      "withdrawn_at": null, "ip_address": "10.0.0.7", "created_at": "2026-09-01T08:00:00Z" }
+  ],
+  "devices": [
+    { "browser": "Firefox", "operating_system": "Windows", "last_ip_address": "10.0.0.7",
+      "first_seen_at": "2026-09-01T08:01:00Z", "last_used_at": "2026-09-30T08:55:00Z" }
   ],
   "activity_log": [
-    {
-      "action": "LOGIN",
-      "timestamp": "2024-12-15T08:30:00Z",
-      "ip_address": "[ПРИХОВАНА]"
-    }
+    { "action": "LOGIN_SUCCESS", "timestamp": "2026-09-30T08:55:00Z", "ip_address": "10.0.0.7" },
+    { "action": "ROLE_ASSIGNED", "timestamp": "2026-09-02T12:00:00Z", "ip_address": null }
   ]
 }
 ```
 
+Файл ніколи не містить хешу пароля, одноразових токенів чи їхніх хешів, записів сервера авторизації, знімків рядків тригерів аудиту, відбитків пристроїв, ключів сховища або даних інших людей, окрім імені другої сторони делегування.
+
 ### 6.3 Технічне Впровадження
+
+У реалізації (функція 1.3) файл збирається синхронно з іменованих стовпців (`PersonalDataAssembler`), повертається як вкладення з `Cache-Control: no-store` і завантажується браузером як Blob, тож bearer-токен ніколи не з'являється в URL. Тимчасовий файл у сховищі та 24-годинне посилання для завантаження з ескізу нижче не використовуються: дані однієї особи займають десятки кілобайтів, а посилання без bearer-токена було б ще одним секретом для захисту. Експорт обмежено одним на хвилину, він фіксується в аудиті як `DATA_EXPORT` (`entity_type` `GDPR`, кількості записів у розділах) і супроводжується листом із часом, IP та браузером. CSV і PDF з'являться разом із механізмом звітів (епік 6).
 
 ```java
 // Сервіс Портативності Даних
@@ -1032,7 +1035,7 @@ public class BreachNotificationService {
 | Доступ | Ст. 15 | Дашборд Переглянути Мої Дані | ✅ Спроектовано |
 | Виправлення | Ст. 16 | Редагування профілю, запит виправлення даних | ✅ Спроектовано |
 | Видалення | Ст. 17 | Видалення акаунту, анонімізація даних | ✅ Спроектовано |
-| Портативність | Ст. 20 | Експорт JSON/CSV/PDF | ✅ Спроектовано |
+| Портативність | Ст. 20 | Експорт JSON/CSV/PDF | ✅ JSON реалізовано (функція 1.3); CSV/PDF з епіком 6 |
 | Обмеження | Ст. 18 | Налаштування конфіденційності, контролі видимості | ✅ Спроектовано |
 | Заперечення | Ст. 21 | Відкликання згоди, відмова | ✅ Спроектовано |
 

@@ -13,18 +13,31 @@ skinparam state {
 
 title Діаграма Скінченного Автомата Запиту на Нагороду
 
+note as AsBuilt
+    <b>Реалізація після епіку 2 (2026-10)</b>
+    Два поля статусу: нагорода (<i>AwardStatus</i>:
+    DRAFT, PENDING, APPROVED, REJECTED, ARCHIVED) і її
+    запит (<i>RequestStatus</i>: SUBMITTED, IN_REVIEW, ESCALATED,
+    APPROVED, REJECTED, RETURNED, EXPIRED).
+    Реалізовано: DRAFT -> подання -> нагорода PENDING з новим
+    запитом SUBMITTED на рівні FACULTY_SECRETARY і строком (V024).
+    Чернетку редагує чи видаляє лише її власник.
+    Інші переходи — проєкт робочого процесу епіку 4;
+    підстани документів і ШІ належать до епіку 3.
+end note
+
 [*] --> DRAFT <<draft>> : Працівник створює нагороду
 
 state DRAFT <<draft>> {
     [*] --> Editing
     Editing --> Editing : Зберегти зміни
-    Editing --> DocumentUploaded : Завантажити сертифікат
+    Editing --> DocumentUploaded : Завантажити сертифікат (епік 3)
     DocumentUploaded --> AIProcessing : Запустити ШІ-парсинг
     AIProcessing --> MetadataExtracted : ШІ завершено
     MetadataExtracted --> Editing : Працівник перевіряє
 }
 
-DRAFT --> SUBMITTED <<pending>> : Працівник подає\n[Всі обов'язкові поля заповнені]
+DRAFT --> SUBMITTED <<pending>> : Власник подає\n[категорію, організацію, що нагороджує, і дату задано;\nможливий дублікат підтверджено]\n/ нагорода PENDING, версія SUBMITTED
 
 state SUBMITTED <<pending>> {
     [*] --> AwaitingReviewer
@@ -108,6 +121,10 @@ state EXPIRED
 note right of EXPIRED
     Прострочені запити вимагають
     ручного втручання або нового подання
+    Ціль епіку 4: доки механізм робочих
+    процесів не реалізовано, прострочений запит
+    лише позначається, а затримка пояснюється
+    (функція 2.3 D-5)
 end note
 
 EXPIRED --> [*]
@@ -115,7 +132,7 @@ EXPIRED --> [*]
 ' Легенда
 legend right
     |= Стан |= Опис |
-    | DRAFT | Нагорода готується |
+    | DRAFT | Нагорода готується (статус нагороди) |
     | SUBMITTED | Очікує першого рецензування |
     | IN_REVIEW | Зараз на рецензуванні |
     | ESCALATED | Передано вищим повноваженням |

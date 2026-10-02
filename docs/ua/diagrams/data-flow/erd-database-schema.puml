@@ -2,206 +2,326 @@
 !theme plain
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок
+title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок (реалізація, V024)
 
-' Домен Користувачів
-entity "users\n(користувачі)" as users {
-    * user_id : BIGSERIAL <<PK>>
+' * обов'язкове (NOT NULL); усі мітки часу — TIMESTAMPTZ
+
+package "Ідентичність" {
+entity "users
+(користувачі)" as users {
+    * user_id : BIGINT <<PK>>
     --
-    * email : VARCHAR(255) <<UK>>
+    * email_address : VARCHAR(255) <<UK lower>>
     * first_name : VARCHAR(100)
     * last_name : VARCHAR(100)
     * password_hash : VARCHAR(255)
-    * status : VARCHAR(20)
+    * account_status : VARCHAR(20)
     * organization_id : BIGINT <<FK>>
-    last_login_at : TIMESTAMP
-    * created_at : TIMESTAMP
-    * updated_at : TIMESTAMP
+    last_login_at : TIMESTAMPTZ
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
     * version : BIGINT
 }
 
-entity "user_roles\n(ролі_користувачів)" as user_roles {
-    * user_role_id : BIGSERIAL <<PK>>
-    --
-    * user_id : BIGINT <<FK>>
-    * role_type : VARCHAR(50)
-    * organization_id : BIGINT <<FK>>
-    valid_from : DATE
-    valid_to : DATE
-    * created_at : TIMESTAMP
-}
-
-entity "organizations\n(організації)" as organizations {
-    * org_id : BIGSERIAL <<PK>>
+entity "organizations
+(підрозділи)" as organizations {
+    * org_id : BIGINT <<PK>>
     --
     * name : VARCHAR(255)
+    name_uk : VARCHAR(255)
+    code : VARCHAR(50)
     * org_type : VARCHAR(20)
     parent_org_id : BIGINT <<FK>>
-    * created_at : TIMESTAMP
+    hierarchy_path : LTREE
+    * depth : INTEGER
+    * is_active : BOOLEAN
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
 }
 
-' Домен Нагород
-entity "awards\n(нагороди)" as awards {
-    * award_id : BIGSERIAL <<PK>>
+entity "user_roles
+(ролі користувачів)" as user_roles {
+    * user_role_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
-    * category_id : BIGINT <<FK>>
-    * title : VARCHAR(500)
+    * organization_id : BIGINT <<FK>>
+    * role_type : VARCHAR(30)
+    * valid_from : DATE
+    valid_to : DATE
+    * created_at : TIMESTAMPTZ
+    created_by : BIGINT <<FK>>
+}
+
+entity "role_delegations
+(делегування ролей)" as delegations {
+    * delegation_id : BIGINT <<PK>>
+    --
+    * delegator_id : BIGINT <<FK>>
+    * delegate_id : BIGINT <<FK>>
+    * organization_id : BIGINT <<FK>>
+    * role_type : VARCHAR(30)
+    reason : VARCHAR(500)
+    * valid_from : DATE
+    * valid_to : DATE
+    * created_at : TIMESTAMPTZ
+    revoked_at : TIMESTAMPTZ
+    revoked_by : BIGINT <<FK>>
+}
+
+entity "one_time_tokens
+(одноразові токени)" as tokens {
+    * id : BIGINT <<PK>>
+    --
+    * token_hash : VARCHAR(64) <<UK>>
+    * user_id : BIGINT <<FK>>
+    * purpose : VARCHAR(30)
+    new_email_address : VARCHAR(255)
+    * expires_at : TIMESTAMPTZ
+    used_at : TIMESTAMPTZ
+    * created_at : TIMESTAMPTZ
+}
+
+entity "user_devices
+(пристрої користувачів)" as devices {
+    * id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * fingerprint : VARCHAR(64)
+    browser : VARCHAR(100)
+    operating_system : VARCHAR(100)
+    last_ip_address : VARCHAR(45)
+    * first_seen_at : TIMESTAMPTZ
+    * last_used_at : TIMESTAMPTZ
+}
+}
+
+package "Нагороди" {
+entity "awards
+(нагороди)" as awards {
+    * award_id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * organization_id : BIGINT <<FK>>
+    category_id : BIGINT <<FK>>
+    title : VARCHAR(500)
+    title_uk : VARCHAR(500)
     description : TEXT
-    * awarding_organization : VARCHAR(255)
-    * award_date : DATE
+    description_uk : TEXT
+    awarding_organization : VARCHAR(255)
+    award_date : DATE
+    external_url : VARCHAR(2048)
     * status : VARCHAR(20)
-    verification_badge : BOOLEAN
+    * verification_badge : BOOLEAN
     impact_score : INTEGER
-    * created_at : TIMESTAMP
-    * updated_at : TIMESTAMP
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
     * version : BIGINT
 }
 
-entity "award_categories\n(категорії_нагород)" as categories {
-    * category_id : BIGSERIAL <<PK>>
+entity "award_categories
+(категорії нагород)" as categories {
+    * category_id : BIGINT <<PK>>
     --
-    * name : VARCHAR(100)
+    * name : VARCHAR(100) <<UK>>
+    name_uk : VARCHAR(100)
     description : TEXT
     * level : VARCHAR(20)
-    * created_at : TIMESTAMP
+    parent_category_id : BIGINT <<FK>>
+    * keywords : TEXT[]
+    * sort_order : INTEGER
+    * is_active : BOOLEAN
+    * is_system : BOOLEAN
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
 }
 
-entity "documents\n(документи)" as documents {
-    * document_id : BIGSERIAL <<PK>>
+entity "award_versions
+(версії нагород)" as versions {
+    * version_id : BIGINT <<PK>>
     --
     * award_id : BIGINT <<FK>>
-    request_id : BIGINT <<FK>>
-    * file_path : VARCHAR(500)
-    * file_name : VARCHAR(255)
-    * file_type : VARCHAR(50)
-    * file_size : BIGINT
-    storage_url : VARCHAR(1000)
-    parsed_metadata : JSONB
-    confidence_score : DECIMAL(5,2)
-    * status : VARCHAR(20)
-    * uploaded_at : TIMESTAMP
-    processed_at : TIMESTAMP
+    * version_number : BIGINT
+    * action : VARCHAR(20)
+    actor_id : BIGINT <<FK>>
+    * snapshot : JSONB
+    changed_fields : TEXT[]
+    * created_at : TIMESTAMPTZ
 }
 
-' Домен Робочих Процесів
-entity "award_requests\n(запити_нагород)" as requests {
-    * request_id : BIGSERIAL <<PK>>
+entity "documents
+(документи)" as documents {
+    * document_id : BIGINT <<PK>>
+    --
+    award_id : BIGINT <<FK>>
+    request_id : BIGINT <<FK>>
+    * file_name : VARCHAR(255)
+    * file_type : VARCHAR(50)
+    mime_type : VARCHAR(100)
+    * file_size : BIGINT
+    * storage_bucket : VARCHAR(100)
+    * storage_key : VARCHAR(500)
+    storage_url : VARCHAR(2048)
+    checksum_sha256 : VARCHAR(64)
+    parsed_metadata : JSONB
+    confidence_score : NUMERIC(5,4)
+    * processing_status : VARCHAR(20)
+    processed_at : TIMESTAMPTZ
+    * uploaded_at : TIMESTAMPTZ
+    * uploaded_by : BIGINT <<FK>>
+}
+}
+
+package "Робочий процес" {
+entity "award_requests
+(запити на нагороди)" as requests {
+    * request_id : BIGINT <<PK>>
     --
     * award_id : BIGINT <<FK>> <<UK>>
     * submitter_id : BIGINT <<FK>>
-    * status : VARCHAR(20)
     current_reviewer_id : BIGINT <<FK>>
+    * status : VARCHAR(20)
     * current_level : VARCHAR(30)
-    * submitted_at : TIMESTAMP
-    deadline : TIMESTAMP
-    * created_at : TIMESTAMP
+    * submitted_at : TIMESTAMPTZ
+    deadline : TIMESTAMPTZ
+    completed_at : TIMESTAMPTZ
+    rejection_reason : TEXT
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
 }
 
-entity "review_decisions\n(рішення_рецензування)" as decisions {
-    * decision_id : BIGSERIAL <<PK>>
+entity "review_decisions
+(рішення рецензентів)" as decisions {
+    * decision_id : BIGINT <<PK>>
     --
     * request_id : BIGINT <<FK>>
     * reviewer_id : BIGINT <<FK>>
     * decision : VARCHAR(20)
     * level : VARCHAR(30)
     comments : TEXT
-    * decided_at : TIMESTAMP
+    * decided_at : TIMESTAMPTZ
+}
 }
 
-' Домен Відповідності
-entity "audit_logs\n(журнали_аудиту)" as audit_logs {
-    * log_id : BIGSERIAL <<PK>>
+package "Відповідність" {
+entity "audit_logs
+(журнали аудиту)" as audit_logs {
+    * log_id : BIGINT <<PK>>
     --
-    user_id : BIGINT <<FK>>
+    user_id : BIGINT
     * action_type : VARCHAR(50)
     * entity_type : VARCHAR(50)
     entity_id : BIGINT
     old_values : JSONB
     new_values : JSONB
-    ip_address : VARCHAR(45)
+    changed_fields : TEXT[]
+    ip_address : INET
     user_agent : VARCHAR(500)
-    * created_at : TIMESTAMP
+    correlation_id : UUID
+    * created_at : TIMESTAMPTZ <<partition key>>
 }
 
-entity "consent_records\n(записи_згод)" as consent_records {
-    * consent_id : BIGSERIAL <<PK>>
+entity "consent_records
+(записи згоди)" as consent_records {
+    * consent_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
     * consent_type : VARCHAR(50)
-    * granted : BOOLEAN
-    granted_at : TIMESTAMP
-    withdrawn_at : TIMESTAMP
     * consent_version : VARCHAR(20)
-    * created_at : TIMESTAMP
+    * is_granted : BOOLEAN
+    granted_at : TIMESTAMPTZ
+    withdrawn_at : TIMESTAMPTZ
+    ip_address : INET
+    user_agent : VARCHAR(500)
+    * created_at : TIMESTAMPTZ
+}
 }
 
-' Домен Сповіщень
-entity "notifications\n(сповіщення)" as notifications {
-    * notification_id : BIGSERIAL <<PK>>
+package "Сповіщення" {
+entity "notifications
+(сповіщення)" as notifications {
+    * notification_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
     * type : VARCHAR(50)
     * title : VARCHAR(255)
     * message : TEXT
-    * read : BOOLEAN
+    * is_read : BOOLEAN
     * channel : VARCHAR(20)
-    * sent_at : TIMESTAMP
-    read_at : TIMESTAMP
+    reference_type : VARCHAR(50)
+    reference_id : BIGINT
+    * sent_at : TIMESTAMPTZ
+    read_at : TIMESTAMPTZ
+    expires_at : TIMESTAMPTZ
 }
 
-entity "notification_preferences\n(налаштування_сповіщень)" as notif_prefs {
-    * preference_id : BIGSERIAL <<PK>>
+entity "notification_preferences
+(налаштування сповіщень)" as notif_prefs {
+    * preference_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
     * event_type : VARCHAR(50)
     * email_enabled : BOOLEAN
     * sms_enabled : BOOLEAN
+    * in_app_enabled : BOOLEAN
     * push_enabled : BOOLEAN
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
+}
 }
 
 ' Зв'язки
-users ||--o{ user_roles : "має"
 users }o--|| organizations : "належить до"
-organizations ||--o{ organizations : "батьківська"
+organizations |o--o{ organizations : "батьківська"
+users ||--o{ user_roles : "має роль"
+user_roles }o--|| organizations : "в області"
+users ||--o{ delegations : "делегує / отримує"
+delegations }o--|| organizations : "в області"
+users ||--o{ tokens : "має"
+users ||--o{ devices : "входить з"
 
 users ||--o{ awards : "володіє"
-awards }o--|| categories : "категоризована"
-awards ||--o{ documents : "має"
+awards }o--|| organizations : "подано в"
+awards }o--o| categories : "категоризована"
+categories |o--o{ categories : "батьківська"
+awards ||--o{ versions : "версії"
+users |o--o{ versions : "виконує"
+awards |o--o{ documents : "має"
+users ||--o{ documents : "завантажує"
 
-awards ||--|| requests : "ініційована"
+awards ||--o| requests : "подана як"
+users ||--o{ requests : "подає"
+users |o--o{ requests : "рецензує"
 requests ||--o{ decisions : "має"
 users ||--o{ decisions : "приймає"
-users ||--o{ requests : "рецензує"
+requests |o--o{ documents : "має"
 
-users ||--o{ audit_logs : "виконує"
-users ||--o{ consent_records : "має"
+users ||--o{ consent_records : "надає"
 users ||--o{ notifications : "отримує"
-users ||--o{ notif_prefs : "має налаштування"
+users ||--o{ notif_prefs : "налаштовує"
 
-' Анотації Індексів
-note right of users
-    Індекси:
-    - idx_users_email (email)
-    - idx_users_org (organization_id)
-    - idx_users_status (status)
+note bottom of audit_logs
+    Партиції за місяцями за created_at;
+    user_id не має зовнішнього ключа, тож рядки
+    переживають видалення користувача.
+end note
+
+note bottom of versions
+    Унікальні (award_id, version_number);
+    рядки незмінні й видаляються
+    разом із нагородою (V023).
 end note
 
 note right of awards
-    Індекси:
-    - idx_awards_user (user_id)
-    - idx_awards_status (status)
-    - idx_awards_date (award_date)
-    - idx_awards_category (category_id)
+    title, category_id, awarding_organization
+    і award_date можуть бути порожніми лише
+    поки status = DRAFT (V020).
+    Індекси: DATA_DICTIONARY_ua.md 2.1
 end note
 
 note right of requests
-    Індекси:
-    - idx_requests_status (status)
-    - idx_requests_reviewer (current_reviewer_id)
-    - idx_requests_deadline (deadline)
+    deadline: кінець періоду розгляду
+    на поточному рівні (V024).
+    Індекси: DATA_DICTIONARY_ua.md 3.1
 end note
 
 @enduml
-
-

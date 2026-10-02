@@ -2,107 +2,88 @@
 !theme plain
 skinparam sequenceMessageAlign center
 
-title Діаграма Послідовності Подання Нагороди
+title Діаграма Послідовності Подання Нагороди (реалізація після епіку 2)
 
-actor "Працівник" as employee
-participant "Веб-Додаток" as webapp
-participant "API Шлюз" as gateway
-participant "Сервіс\nАутентифікації" as auth
-participant "Основний API" as core
-participant "Обробник\nДокументів" as doc
-participant "ШІ-Сервіс" as ai
+actor "Власник\n(award:create)" as owner
+participant "Застосунок Angular" as webapp
+participant "nginx" as proxy
+participant "AwardController" as ctrl
+participant "AwardService /\nAwardSubmission" as svc
+participant "AwardInputRules /\nDuplicateFinder" as rules
+participant "AwardHistory" as history
+participant "AuditService" as audit
 database "PostgreSQL" as db
-queue "Kafka" as kafka
-database "Файлове\nСховище" as storage
 
-== Аутентифікація ==
-employee -> webapp: Доступ до подання нагороди
-webapp -> gateway: GET /api/awards/new
-gateway -> auth: Валідувати JWT токен
-auth --> gateway: Токен валідний + контекст користувача
-gateway --> webapp: Дозволити доступ
+note over webapp, ctrl
+    Кожен виклик несе bearer-токен доступу (код авторизації + PKCE);
+    сервер ресурсів перевіряє його, а @access.require — дозвіл.
+end note
 
-== Створення Чернетки Нагороди ==
-employee -> webapp: Заповнити форму нагороди
-webapp -> gateway: POST /api/awards
-gateway -> core: Створити чернетку нагороди
-core -> core: Валідувати вхідні дані
-core -> db: INSERT INTO awards (status='DRAFT')
-db --> core: ID Нагороди
-core -> kafka: publish(award.created)
-core --> gateway: 201 Created + ID Нагороди
-gateway --> webapp: Чернетку нагороди створено
-webapp --> employee: Показати форму чернетки
+== Створення та редагування чернетки ==
+owner -> webapp: Заповнити форму нагороди
+webapp -> proxy: POST /api/v1/awards
+proxy -> ctrl: переслати
+ctrl -> svc: create(form)
+svc -> rules: правила полів (дати, URL, активна категорія)
+svc -> db: INSERT awards (статус DRAFT, підрозділ власника)
+svc -> history: created(award)
+history -> db: INSERT award_versions (CREATED, знімок)
+svc --> webapp: 201 AwardResponse (id, version)
 
-== Завантаження Документа ==
-employee -> webapp: Завантажити сертифікат (фото/скан)
-webapp -> gateway: POST /api/awards/{id}/documents
-gateway -> core: Завантажити документ
-core -> doc: Обробити завантаження документа
-doc -> storage: Зберегти файл
-storage --> doc: URL файлу
-doc -> db: INSERT INTO documents (status='UPLOADED')
-db --> doc: ID Документа
-doc -> kafka: publish(document.uploaded)
-doc --> core: Метадані документа
-core --> gateway: 201 Created
-gateway --> webapp: Завантаження успішне
-
-== ШІ-Обробка Документа (Асинхронна) ==
-kafka -> doc: consume(document.uploaded)
-doc -> ai: POST /parse (URL документа)
-ai -> ai: OCR + NLP обробка
-ai --> doc: Розпізнані метадані + оцінки впевненості
-doc -> db: UPDATE documents SET parsed_metadata, confidence_score
-doc -> kafka: publish(document.processed)
-
-alt Впевненість >= 80%
-    doc -> core: Автозаповнити дані форми
-    core -> db: UPDATE awards SET metadata
-else Впевненість < 80%
-    doc -> db: UPDATE documents SET status='MANUAL_REVIEW'
-    doc -> kafka: publish(notification.required)
+opt Підказка категорії під час введення
+    webapp -> proxy: GET /api/v1/award-categories/suggestions?title=...
+    proxy -> ctrl: переслати
+    ctrl --> webapp: 200 впорядковані категорії (збіг ключових слів)
 end
 
-== Завершення Форми ==
-employee -> webapp: Переглянути/редагувати вилучені дані
-webapp -> gateway: PUT /api/awards/{id}
-gateway -> core: Оновити нагороду
-core -> core: Валідувати оновлені дані
-core -> db: UPDATE awards
-db --> core: Оновлено
-core --> gateway: 200 OK
-gateway --> webapp: Нагороду оновлено
+owner -> webapp: Редагувати чернетку
+webapp -> proxy: PUT /api/v1/awards/{id} (форма + version)
+proxy -> ctrl: переслати
+ctrl -> svc: update(id, form)
+svc -> db: UPDATE awards (оптимістичне блокування за version)
+svc -> history: updated(award)
+history -> db: INSERT award_versions (UPDATED, змінені поля)
+svc --> webapp: 200 AwardResponse
 
-== Подання Нагороди ==
-employee -> webapp: Клацнути "Подати Нагороду"
-webapp -> gateway: POST /api/awards/{id}/submit
-gateway -> core: Подати нагороду
+== Подання ==
+owner -> webapp: Подати
+webapp -> proxy: POST /api/v1/awards/{id}/submit {version, acknowledgeDuplicate}
+proxy -> ctrl: переслати
+ctrl -> svc: submit(id, request)
+svc -> db: SELECT ... FOR UPDATE (власна чернетка)
+alt не власна чернетка
+    svc --> webapp: 404 (чужа) / 409 award-not-editable (уже подана)
+else застаріла версія
+    svc --> webapp: 409 award-stale {currentVersion}
+end
+svc -> rules: checkComplete (категорія, організація, що нагороджує, дата нагороди)
+alt неповна
+    svc --> webapp: 422 validation-failed
+end
+svc -> rules: збіги дублікатів (та сама дата, подібність назви >= 0.6)
+alt є збіги, не підтверджено
+    svc --> webapp: 409 award-possible-duplicate {matches}
+    webapp --> owner: Показати схожі нагороди, попросити підтвердження
+end
+svc -> db: UPDATE awards SET status PENDING, impact_score = базовий бал рівня,\norganization = кафедра власника
+svc -> history: submitted(award)
+history -> db: INSERT award_versions (SUBMITTED)
+svc -> db: INSERT award_requests (SUBMITTED, FACULTY_SECRETARY,\nстрок від StatusEstimator)
+svc -> audit: AWARD_SUBMITTED {requestId, level, organizationId, duplicateAcknowledged?}
+audit -> db: INSERT audit_logs
+svc --> webapp: 200 AwardResponse із запитом
+webapp --> owner: «Подано на розгляд»
 
-core -> core: Фінальна валідація
-alt Валідація не пройшла
-    core --> gateway: 400 Bad Request + помилки
-    gateway --> webapp: Показати помилки валідації
-    webapp --> employee: Виправте помилки та спробуйте знову
-else Валідація пройшла
-    core -> db: UPDATE awards SET status='PENDING'
-    core -> db: INSERT INTO award_requests
-    core -> core: Визначити першого рецензента\n(Секретар Факультету)
-    core -> db: UPDATE award_requests SET current_reviewer
-    core -> kafka: publish(award.submitted)
-    core --> gateway: 200 OK + ID Запиту
-    gateway --> webapp: Подання успішне
-    webapp --> employee: "Нагороду подано на рецензування"
+== Відстеження статусу ==
+loop кожні 60 с, поки сторінка нагороди відкрита, а запит не остаточний
+    webapp -> proxy: GET /api/v1/awards/{id}/status
+    proxy -> ctrl: переслати
+    ctrl --> webapp: 200 шлях затвердження, строк, очікуване завершення, рішення
 end
 
-== Сповіщення (Асинхронне) ==
-kafka -> "Сервіс\nСповіщень" as notif: consume(award.submitted)
-notif -> notif: Підготувати сповіщення
-notif -> "Поштовий\nСервер" as smtp: Надіслати email рецензенту
-smtp --> notif: Надіслано
-notif -> db: INSERT INTO notifications
-notif -> notif: Надіслати in-app сповіщення
+note over owner, db
+    Заплановано: завантаження сертифіката та OCR (епік 3), рішення рецензентів (епік 4),
+    сповіщення рецензентам (епік 7).
+end note
 
 @enduml
-
-
