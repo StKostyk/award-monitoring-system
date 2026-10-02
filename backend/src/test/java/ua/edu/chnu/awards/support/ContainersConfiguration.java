@@ -5,6 +5,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -17,6 +18,12 @@ public class ContainersConfiguration {
     private static final int REDIS_PORT = 6379;
     private static final int SMTP_PORT = 1025;
     private static final int MAILPIT_HTTP_PORT = 8025;
+
+    /** MinIO image of the Compose files (the official images are no longer published). */
+    public static final String MINIO_IMAGE = "cgr.dev/chainguard/minio:latest";
+
+    /** Static KMS key of the test MinIO (not a secret: test containers only). */
+    public static final String MINIO_KMS_KEY = "award-test-key:NRZ8tsvRYlQLw2e/3c3qy9IwuhHw6f8IhiOTZ40C4dM=";
 
     @Bean
     @ServiceConnection
@@ -44,6 +51,22 @@ public class ContainersConfiguration {
             registry.add("spring.mail.port", () -> mailpitContainer.getMappedPort(SMTP_PORT));
             registry.add("mailpit.api-url", () -> "http://" + mailpitContainer.getHost() + ":"
                 + mailpitContainer.getMappedPort(MAILPIT_HTTP_PORT));
+        };
+    }
+
+    @Bean
+    MinIOContainer minioContainer() {
+        return new MinIOContainer(DockerImageName.parse(MINIO_IMAGE).asCompatibleSubstituteFor("minio/minio"))
+            .withEnv("MINIO_KMS_SECRET_KEY", MINIO_KMS_KEY)
+            .withCreateContainerCmdModifier(command -> command.withUser("0"));
+    }
+
+    @Bean
+    DynamicPropertyRegistrar storageProperties(MinIOContainer minioContainer) {
+        return registry -> {
+            registry.add("app.documents.storage.endpoint", minioContainer::getS3URL);
+            registry.add("app.documents.storage.access-key", minioContainer::getUserName);
+            registry.add("app.documents.storage.secret-key", minioContainer::getPassword);
         };
     }
 }

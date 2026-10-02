@@ -897,8 +897,11 @@ paths:
   /awards/{id}/documents:
     get:
       tags: [Documents]
-      summary: List award documents (planned, Epic 3)
-      x-status: planned
+      summary: List the documents of an award
+      description: >
+        The documents of an award the caller may read (the owner in any status; a holder of an `award:read:*`
+        scope covering the award's organisation once it is submitted), oldest first. Anyone else, or an unknown
+        award, gets 404 (`award:read:own`).
       security:
         - bearerAuth: []
       operationId: listAwardDocuments
@@ -913,11 +916,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
     post:
       tags: [Documents]
-      summary: Upload document (planned, Epic 3)
-      x-status: planned
+      summary: Attach a file to an own draft
+      description: >
+        Stores the file in the private document bucket under `awards/<awardId>/<random UUID>`, encrypted at rest,
+        and its metadata in `documents` (`processing_status` `PENDING`). The format is taken from the leading
+        bytes of the content (PDF, JPEG, PNG, WEBP), never from the name or the part's `Content-Type`; the file
+        name keeps its last path segment without control characters, gets the extension of its content when it
+        has none or an unknown one, and is shortened to 255 characters. At most 10 MB per file and 10 documents
+        per award, one copy of a file per award. The draft row is locked, so uploads, deletions and the
+        submission of one award run one after the other (`award:update:own`).
       security:
         - bearerAuth: []
       operationId: uploadDocument
@@ -934,7 +950,7 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: Document file (PDF, JPG, PNG)
+                  description: PDF, JPEG, PNG or WEBP, at most 10 485 760 bytes
                 type:
                   $ref: '#/components/schemas/DocumentType'
                 description:
@@ -942,31 +958,69 @@ paths:
                   maxLength: 500
       responses:
         '201':
-          description: Document uploaded
+          description: Document stored
+          headers:
+            Location:
+              description: Download path of the document (`/api/v1/documents/{id}`)
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Document'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: >
+            `urn:awards:problem:empty-file`, `unsupported-type` (content is not PDF, JPEG, PNG or WEBP),
+            `content-mismatch` (the extension names another supported format), `missing-parameter` (`file` or
+            `type`), `invalid-parameter` (unknown `type`, description over 500 characters, non-numeric id)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >
+            `urn:awards:problem:award-not-editable` (the award was submitted), `document-limit` (10 documents,
+            with `limit`), `duplicate-document` (the same file is attached, with `documentId`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
         '413':
-          description: File too large (max 10MB)
+          description: >
+            `urn:awards:problem:file-too-large`: the file is over 10 MB or the request over the 11 MB multipart
+            limit; nothing is stored
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '503':
+          description: "`urn:awards:problem:storage-unavailable`: the object storage did not answer; no row is written"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   /documents/{id}:
     get:
       tags: [Documents]
-      summary: Download document (planned, Epic 3)
-      x-status: planned
+      summary: Download a document
+      description: >
+        Streams the content of a document of an award the caller may read (same rule as the list) and records a
+        `DOCUMENT_DOWNLOAD` audit row. The response is an attachment that is neither rendered inline nor cached:
+        `Content-Disposition: attachment; filename*=UTF-8''<encoded name>`, `X-Content-Type-Options: nosniff`,
+        `Cache-Control: private, no-store`, `Content-Security-Policy: sandbox`. There is no pre-signed storage
+        URL (`award:read:own`).
       security:
         - bearerAuth: []
       operationId: downloadDocument
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/DocumentIdParam'
       responses:
         '200':
           description: Document file
@@ -983,28 +1037,61 @@ paths:
               schema:
                 type: string
                 format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: >
+            `urn:awards:problem:document-not-found` (unknown, or its award is not readable by the caller) or
+            `document-content-missing` (the row exists, its object is gone; logged as an error)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '503':
+          description: "`urn:awards:problem:storage-unavailable`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
     delete:
       tags: [Documents]
-      summary: Delete document (planned, Epic 3)
-      x-status: planned
+      summary: Remove a document from an own draft
+      description: >
+        Deletes the row; its object is removed after the commit (a failed removal is left to the daily sweep of
+        orphaned objects). Documents of a submitted award are kept (`award:update:own`).
       security:
         - bearerAuth: []
       operationId: deleteDocument
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/DocumentIdParam'
       responses:
         '204':
           description: Document deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: "`urn:awards:problem:document-not-found`: unknown, or its award is not the caller's"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: "`urn:awards:problem:award-not-editable`: the award was submitted"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   # ============== Users ==============
   /users/me:
@@ -1581,6 +1668,17 @@ components:
       description: >
         Award identifier; a value that is not a 64-bit integer answers 400 `urn:awards:problem:invalid-parameter`
         naming the parameter
+      schema:
+        type: integer
+        format: int64
+
+    DocumentIdParam:
+      name: id
+      in: path
+      required: true
+      description: >
+        Document identifier; a value that is not a 64-bit integer answers 400
+        `urn:awards:problem:invalid-parameter` naming the parameter
       schema:
         type: integer
         format: int64
@@ -2643,9 +2741,9 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
-        filename:
+          type: integer
+          format: int64
+        fileName:
           type: string
         type:
           $ref: '#/components/schemas/DocumentType'
@@ -2681,26 +2779,32 @@ components:
     # Document
     Document:
       type: object
+      required: [id, awardId, fileName, type, mimeType, size, uploadedAt, uploadedBy]
       properties:
         id:
+          type: integer
+          format: int64
+        awardId:
+          type: integer
+          format: int64
+        fileName:
           type: string
-          format: uuid
-        filename:
-          type: string
-        originalFilename:
-          type: string
+          maxLength: 255
+          description: The uploaded name, cleaned; the extension matches the content
         type:
           $ref: '#/components/schemas/DocumentType'
         mimeType:
           type: string
+          enum: [application/pdf, image/jpeg, image/png, image/webp]
+          description: Found in the content, not taken from the request
         size:
           type: integer
           format: int64
+          maximum: 10485760
         description:
           type: string
-        status:
-          type: string
-          enum: [PENDING, VERIFIED, REJECTED]
+          maxLength: 500
+          nullable: true
         uploadedAt:
           type: string
           format: date-time

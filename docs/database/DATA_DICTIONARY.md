@@ -430,35 +430,39 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 ### 2.3 Entity: `documents`
 
-**Description**: File metadata for supporting documents attached to awards. Actual files stored in object storage (S3/Azure Blob). Includes AI-parsed metadata results.
+**Description**: File metadata for documents attached to awards (Feature 3.1). The content is kept in the private S3 bucket `award-documents` (MinIO, ADR-021), encrypted at rest by the storage; only metadata is in the database. Columns for AI-parsed results are reserved for the deferred OCR features (3.2, 3.3).
 
 **Business Rules**:
-- Documents belong to either an award or a request (or both)
-- Maximum file size: 10MB per document
-- Allowed file types: PDF, JPG, JPEG, PNG, WEBP
-- AI parsing extracts metadata from scanned certificates
-- Confidence score below 0.7 triggers manual review
-- Files stored in object storage, only metadata in database
+- Documents belong to an award; `request_id` is reserved for documents added during a resubmission (Epic 4)
+- Upload and deletion only on the owner's `DRAFT`; documents of a submitted award are frozen (Feature 3.1 D-5)
+- Maximum file size: 10MB per document; at most 10 documents per award; one copy of a file per award (`uq_documents_award_checksum`)
+- Allowed formats: PDF, JPEG (`.jpg`, `.jpeg`), PNG, WEBP, decided from the leading bytes of the content; `file_type` and `mime_type` come from the content, never from the request
+- Object key `awards/<award_id>/<random UUID>`: no file name or personal data in the key (Feature 3.1 D-1)
+- The object is written before the row and removed when the transaction rolls back; objects of deleted rows are removed after the commit; a daily sweep removes objects older than 24 h that no row refers to
+- Readers of a document are the readers of its award; every download writes a `DOCUMENT_DOWNLOAD` row to `audit_logs`
+- AI parsing (deferred) extracts metadata from scanned certificates; a confidence score below 0.7 triggers manual review
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `document_id` | `BIGSERIAL` | NO | Auto | PK | Unique document identifier |
 | `award_id` | `BIGINT` | YES | - | FK→awards | Associated award |
 | `request_id` | `BIGINT` | YES | - | FK→award_requests | Associated request |
-| `file_name` | `VARCHAR(255)` | NO | - | - | Original file name |
-| `file_type` | `VARCHAR(50)` | NO | - | CK | File extension |
-| `mime_type` | `VARCHAR(100)` | YES | - | - | MIME content type |
+| `file_name` | `VARCHAR(255)` | NO | - | - | Uploaded name: last path segment, control characters removed, extension of the content, max 255 characters |
+| `file_type` | `VARCHAR(50)` | NO | - | CK | Format found in the content: `PDF`, `JPEG`, `PNG`, `WEBP` (`JPG` allowed by the check, not written) |
+| `mime_type` | `VARCHAR(100)` | YES | - | - | Media type of the format; the download is served with it |
 | `file_size` | `BIGINT` | NO | - | CK: ≤10485760 | File size in bytes |
 | `storage_bucket` | `VARCHAR(100)` | NO | - | - | Object storage bucket name |
-| `storage_key` | `VARCHAR(500)` | NO | - | - | Object storage key/path |
-| `storage_url` | `VARCHAR(2048)` | YES | - | - | Pre-signed access URL |
-| `checksum_sha256` | `VARCHAR(64)` | YES | - | - | File integrity checksum |
+| `storage_key` | `VARCHAR(500)` | NO | - | - | Object key `awards/<award_id>/<random UUID>` |
+| `storage_url` | `VARCHAR(2048)` | YES | - | - | Unused: downloads go through `GET /api/v1/documents/{id}`, no pre-signed URLs |
+| `checksum_sha256` | `VARCHAR(64)` | YES | - | UQ with `award_id` | SHA-256 of the content, hex; one copy of a file per award |
 | `parsed_metadata` | `JSONB` | YES | - | - | AI-extracted metadata |
 | `confidence_score` | `NUMERIC(5,4)` | YES | - | CK: 0-1 | AI confidence (0.0000-1.0000) |
-| `processing_status` | `VARCHAR(20)` | NO | `'PENDING'` | CK | AI processing state |
+| `processing_status` | `VARCHAR(20)` | NO | `'PENDING'` | CK | AI processing state; stays `PENDING` until OCR is delivered |
 | `processed_at` | `TIMESTAMPTZ` | YES | - | - | AI processing completion time |
 | `uploaded_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Upload timestamp |
 | `uploaded_by` | `BIGINT` | NO | - | FK→users | Uploader user ID |
+| `document_type` | `VARCHAR(30)` | NO | `'SUPPORTING_DOCUMENT'` | CK | Chosen by the uploader: `CERTIFICATE`, `DIPLOMA`, `SUPPORTING_DOCUMENT`, `PHOTO` (V025) |
+| `description` | `VARCHAR(500)` | YES | - | - | Optional note of the uploader (V025) |
 
 **Processing Status Values** (`processing_status`):
 | Value | Description | Next States |
@@ -494,6 +498,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `idx_documents_type` - B-tree on `file_type` (V012)
 - `gin_documents_metadata` - GIN on `parsed_metadata`
 - `gin_documents_metadata_path` - GIN on `parsed_metadata jsonb_path_ops`
+- `uq_documents_award_checksum` - Unique B-tree on `(award_id, checksum_sha256)` (V025)
 
 **Relationships**:
 - BELONGS TO `awards` (N:1) via `award_id`
@@ -692,6 +697,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
 - `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
 - `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
+- `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
 - `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 
@@ -921,6 +927,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `awards` | `impact_score` | Range 0-100 |
 | `documents` | `file_size` | Max 10,485,760 bytes (10MB) |
 | `documents` | `file_type` | One of: PDF, JPG, JPEG, PNG, WEBP |
+| `documents` | `document_type` | One of: CERTIFICATE, DIPLOMA, SUPPORTING_DOCUMENT, PHOTO (`ck_documents_document_type`, V025) |
+| `documents` | `award_id`, `checksum_sha256` | Unique together (`uq_documents_award_checksum`, V025) |
 | `documents` | `confidence_score` | Range 0.0000-1.0000 |
 | `consent_records` | `consent_version` | Semver format (e.g., "1.0.0") |
 

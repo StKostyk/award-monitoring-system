@@ -1,0 +1,71 @@
+package ua.edu.chnu.awards.document.repository;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import ua.edu.chnu.awards.document.entity.Document;
+
+/**
+ * Documents of awards.
+ */
+public interface DocumentRepository extends JpaRepository<Document, Long> {
+
+    /**
+     * The documents of an award, oldest first, with their uploaders.
+     *
+     * @param awardId the award
+     * @return the documents
+     */
+    @EntityGraph(attributePaths = "uploadedBy")
+    List<Document> findByAwardIdOrderByUploadedAtAscIdAsc(long awardId);
+
+    /**
+     * How many documents an award has.
+     *
+     * @param awardId the award
+     * @return the count
+     */
+    long countByAwardId(long awardId);
+
+    /**
+     * A document of the award with the same content.
+     *
+     * @param awardId  the award
+     * @param checksum SHA-256 of the content, hex
+     * @return the document, if any
+     */
+    Optional<Document> findFirstByAwardIdAndChecksum(long awardId, String checksum);
+
+    /**
+     * A document with its award, the award's owner and organisation, ready for the read rule.
+     *
+     * @param id the document
+     * @return the document, if it exists
+     */
+    @EntityGraph(attributePaths = {"award", "award.owner", "award.organization"})
+    Optional<Document> findWithAwardById(long id);
+
+    /**
+     * Object keys of the documents of an award.
+     *
+     * @param awardId the award
+     * @return the keys
+     */
+    @Query("select d.storageKey from Document d where d.award.id = :awardId")
+    List<String> storageKeysOfAward(@Param("awardId") long awardId);
+
+    /**
+     * Which of the given object keys belong to a document.
+     *
+     * @param keys object keys
+     * @return the keys that have a row
+     */
+    @Query("select d.storageKey from Document d where d.storageKey in :keys")
+    List<String> existingKeys(@Param("keys") Collection<String> keys);
+}

@@ -57,13 +57,17 @@ services:
       - award-network
 
   # S3-compatible object storage
+  # MinIO publishes no images any more; Chainguard builds it from source (runs as root to own the volume)
   minio:
-    image: quay.io/minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: award-minio
+    user: "0"
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      # Static key for server-side encryption of document objects (development value, replaced in production)
+      MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY:-award-dev-key:ct453U+yYUITNHjFCyAsKcuwHfMlvMbhfQmA0MroSL4=}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -75,6 +79,26 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - award-network
+
+  # One-shot: the backend's own MinIO account, limited to the award-documents bucket
+  minio-init:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: award-minio-init
+    user: "0"
+    entrypoint: ["/bin/sh", "/init/minio-init.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_APP_USER: ${MINIO_APP_USER:-award-app}
+      MINIO_APP_PASSWORD: ${MINIO_APP_PASSWORD:-award-app-dev-password}
+    volumes:
+      - ./infra/minio:/init:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
     networks:
       - award-network
 
@@ -101,8 +125,8 @@ services:
       - SPRING_MAIL_HOST=mailpit
       - SPRING_MAIL_PORT=1025
       - STORAGE_S3_ENDPOINT=http://minio:9000
-      - STORAGE_S3_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - STORAGE_S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - STORAGE_S3_ACCESS_KEY=${MINIO_APP_USER:-award-app}
+      - STORAGE_S3_SECRET_KEY=${MINIO_APP_PASSWORD:-award-app-dev-password}
       # Authorization server as seen from the browser (nginx proxies it on port 80)
       - AUTH_ISSUER=http://localhost
       - AUTH_FRONTEND_URL=http://localhost
@@ -118,8 +142,8 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health/liveness"]
       interval: 30s

@@ -149,6 +149,7 @@ shortly before the defense or when a pilot user appears.
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2026-10-02 | Stefan Kostyk | Initial version | Deployment target decision after Epic 2 |
+| 2026-10-02 | Stefan Kostyk | MinIO image `cgr.dev/chainguard/minio` (runs as root), server-side encryption with a static key (`MINIO_KMS_SECRET_KEY`) | MinIO no longer publishes images on Docker Hub or quay.io; Feature 3.1 D-8 |
 
 ---
 
