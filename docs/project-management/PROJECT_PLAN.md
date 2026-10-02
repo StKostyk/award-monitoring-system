@@ -272,7 +272,7 @@ The plan above is the December 2025 baseline. Development since September 2026 r
   award correction (2.4.1) and GDPR deletion (2.4.2) move to Epics 4 and 6.
 - **Epic order**: 1 → 2 → 3 (upload; OCR later) → 4 → 7 → 6 → 5 → 8, each epic a vertical slice (API and UI).
 - **Deferred infrastructure**: Kafka, Elasticsearch, API gateway, Kubernetes and the cloud platform (ADR addenda
-  of 2026-10); the deployment target for the defense is chosen after Epic 2.
+  of 2026-10); the defense runs on one EU server with Docker Compose (ADR-021, 2026-10-02), rented shortly before the defense.
 
 Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](../epics/).
 

@@ -1,6 +1,6 @@
 # ADR-018: Container Orchestration Platform Selection
 
-**Status**: Accepted (implementation deferred, see Addendum 2026-10)  
+**Status**: Superseded for the thesis defense by ADR-021; kept as the production reference  
 **Date**: 2025-08-21  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, DevOps Team, Operations Team
@@ -258,12 +258,22 @@ pilot.
 
 ---
 
+## Addendum 2026-10-02: Superseded for the defense
+
+The defense deployment runs on one host with Docker Compose (ADR-021). A managed Kubernetes cluster costs more
+per month than the whole single-host setup and adds a second deployment model next to the one the tests run
+against. Kubernetes stays the reference option for a university-wide rollout with several replicas;
+`infra/k8s/deployment.yml` remains illustrative.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
+| 2026-10-02 | Stefan Kostyk | Addendum: superseded for the defense by ADR-021 | Deployment target decision |
 
 ---
 

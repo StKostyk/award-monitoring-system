@@ -1,0 +1,61 @@
+@startuml Deployment_Demo_UA
+' =============================================================================
+' Демонстраційне розгортання для захисту дипломної роботи (ADR-021)
+' Система Моніторингу та Відстеження Нагород
+' =============================================================================
+
+!theme plain
+
+skinparam node {
+    BackgroundColor<<cloud>> LightBlue
+    BackgroundColor<<container>> LightGreen
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> Pink
+    BackgroundColor<<security>> LightCoral
+}
+
+title Демонстраційне середовище - Діаграма розгортання (один сервер, Docker Compose)
+
+cloud "Інтернет" as internet {
+    actor "Користувачі" as users
+}
+
+node "Віртуальний сервер у ЄС (Ubuntu LTS, Docker Engine)" <<cloud>> as host {
+    component [Caddy\nTLS, Let's Encrypt\n:80 :443] <<security>> as caddy
+
+    node "Мережа Compose (без опублікованих портів)" <<container>> as net {
+        component [frontend\nnginx + Angular] as frontend
+        component [app\nSpring Boot, профіль production\nсервер авторизації + API] as app
+        database "PostgreSQL 17" <<database>> as postgres
+        database "Redis 7\n(пароль)" <<database>> as redis
+        database "MinIO" <<database>> as minio
+    }
+
+    storage "Томи Docker" as volumes
+}
+
+node "Зовнішні сервіси" <<external>> as external {
+    component [SMTP-ретранслятор Brevo] as smtp
+    component [GitHub Container Registry] as ghcr
+    component [Сховище резервних копій] as backup
+}
+
+users --> caddy : HTTPS (443)
+caddy --> frontend : HTTP (80)
+frontend --> app : /api, /oauth2, /login (8080)
+app --> postgres : JDBC (5432)
+app --> redis : RESP (6379)
+app --> minio : S3 API (9000)
+app --> smtp : SMTP + STARTTLS (587)
+postgres --> volumes
+minio --> volumes
+host ..> ghcr : docker compose pull
+host ..> backup : щоночі pg_dump, дзеркало MinIO
+
+note right of net
+    Секрети — лише з .env.prod на сервері.
+    Демонстраційні облікові записи (@demo.example)
+    створюються лише із заданим DEMO_PASSWORD_HASH.
+end note
+
+@enduml

@@ -1,0 +1,7 @@
+# TLS termination for the single-host deployment (ADR-021).
+# SITE_ADDRESS: a domain, <ip>.sslip.io, or localhost (Caddy's own local CA) for a run on a workstation.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy frontend:80
+}
