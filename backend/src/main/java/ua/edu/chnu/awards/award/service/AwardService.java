@@ -25,6 +25,7 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
+import ua.edu.chnu.awards.document.service.DocumentService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +46,7 @@ public class AwardService {
     private final AwardMapper mapper;
     private final AccessScope access;
     private final AwardHistory history;
+    private final DocumentService documents;
 
     /**
      * Creates a draft owned by the caller in the caller's department.
@@ -82,13 +84,15 @@ public class AwardService {
     }
 
     /**
-     * Deletes the caller's draft.
+     * Deletes the caller's draft; the objects of its documents are removed after the commit.
      *
      * @param id the draft
      */
     @Transactional
     public void delete(long id) {
-        awards.delete(ownership.lockedDraft(id));
+        Award draft = ownership.lockedDraft(id);
+        documents.releaseObjectsOf(id);
+        awards.delete(draft);
     }
 
     /**

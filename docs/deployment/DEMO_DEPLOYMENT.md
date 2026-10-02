@@ -15,6 +15,8 @@ Copy `.env.prod.example` to `.env.prod` (ignored by git) and fill it in.
 | `SITE_ADDRESS` | Domain, `<server-ip>.sslip.io`, or `localhost` for a rehearsal |
 | `BACKEND_IMAGE`, `FRONTEND_IMAGE` | GHCR image references on the server; `award-backend:prod` / `award-frontend:prod` when built locally |
 | `POSTGRES_*`, `REDIS_PASSWORD`, `MINIO_ROOT_*` | Generated random values (`openssl rand -base64 24`) |
+| `MINIO_APP_USER`, `MINIO_APP_PASSWORD` | The backend's MinIO account, created by the one-shot `minio-init` service with rights on the objects of `award-documents` only (no bucket settings, policies or admin); the root account stays with MinIO |
+| `MINIO_KMS_SECRET_KEY` | Encryption key of the document objects, see below |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Brevo SMTP relay: `smtp-relay.brevo.com`, `587`, the SMTP login and key from the Brevo account |
 | `MAIL_FROM` | A sender verified in Brevo |
 | `ALLOWED_EMAIL_DOMAINS` | Domains accepted at registration (default `chnu.edu.ua`) |
@@ -31,6 +33,21 @@ grep -v -- ----- jwk.pub.pem | tr -d '\n'    # JWK_PUBLIC_KEY
 ```
 
 Changing the key signs every user out; keep it for the life of the environment.
+
+**Document encryption key.** MinIO encrypts every document object with one static key (SSE-S3). The value is a
+name and 32 random bytes in base64:
+
+```bash
+echo "award-key:$(openssl rand -base64 32)"
+```
+
+Losing or changing the key makes every stored document unreadable: keep a copy with the backups, never in the
+repository. The MinIO image is `cgr.dev/chainguard/minio` (MinIO publishes no images of its own any more); it runs
+as root so that it owns its volume.
+
+**Upload limits.** nginx accepts request bodies up to 11 MB on the API paths and Spring up to 10 MB per file and
+11 MB per request; Caddy sets no body limit. A larger upload is answered by nginx with the same
+`urn:awards:problem:file-too-large` problem details as the application.
 
 **Demo accounts.** `db/seed/demo` creates `admin`, `rector`, `dean.fmi`, `secretary.fmi` and `employee.fmi`
 at `@demo.example` (a reserved domain, so no mail reaches a real mailbox) with one shared password. Set
@@ -73,7 +90,8 @@ Afterwards: `$P down -v` (removes only the rehearsal volumes), then `docker comp
 3. Copy `docker-compose.yaml`, `docker-compose.prod.yml`, `infra/caddy/Caddyfile` and `.env.prod`.
 4. `docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod up -d --wait`.
 5. Run the manual verification below against the public address.
-6. Schedule the nightly `pg_dump` and MinIO mirror to a target outside the server; restore once to test it.
+6. Schedule the nightly `pg_dump` and MinIO mirror to a target outside the server, with a copy of
+   `MINIO_KMS_SECRET_KEY` stored apart from them; restore once to test it.
 
 ---
 

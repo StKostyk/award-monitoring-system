@@ -44,7 +44,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
-| 3.1.1 | Document storage and upload API | 8 | 4 | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
+| 3.1.1 | Document storage and upload API (🔍 In Review) | 8 | 4 | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
 | 3.1.2 | Certificate upload in the award form and award page | 5 | 4 | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
 | 3.1.3 | Malware scanning of uploads | 3 | 4 | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
 

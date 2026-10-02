@@ -11,13 +11,13 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 3.0 Production configuration (deployment preparation) | Done (3.0.1) | 2026-10-02 | 2026-10-02 |
-| 3.1 Document Upload & Storage | PRD approved ([feature-3.1](../features/epic-03/feature-3.1-document-upload-storage.md)) | 2026-10-02 | |
+| 3.1 Document Upload & Storage | In progress ([feature-3.1](../features/epic-03/feature-3.1-document-upload-storage.md)) | 2026-10-02 | |
 | 3.2 OCR & Intelligent Parsing | Deferred (see decisions) | | |
 | 3.3 Confidence Scoring & Manual Review | Deferred (see decisions) | | |
 
 ## Current focus
 
-Epic kickoff 2026-10-02. Story 3.0.1 (production configuration, ADR-021) is done. Feature 3.1 PRD approved 2026-10-02 (16 points, stories 3.1.1–3.1.3); 3.1.1, the storage backend and the document API, is in progress.
+Epic kickoff 2026-10-02. Story 3.0.1 (production configuration, ADR-021) is done. Feature 3.1 PRD approved 2026-10-02 (16 points, stories 3.1.1–3.1.3); 3.1.1, the storage backend and the document API, is in review; 3.1.2 and 3.1.3 follow.
 
 ## Scope
 
@@ -32,7 +32,7 @@ Out of scope here: attaching documents to a returned request during resubmission
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 3.0.1 Production configuration and local production run | 3.0 | 3 | SCRUM-33 | #109 | no | Done |
-| 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | In progress |
+| 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | In review |
 | 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | To do |
 | 4 | 3.1.3 Malware scanning of uploads | 3.1 | 3 | SCRUM-37 | #113 | no | To do |
 
@@ -46,18 +46,22 @@ Total: 19 points, sprints 3–4. A fixes story follows the Feature 3.1 validatio
 | 2026-10-02 | Story 3.0.1 (production configuration) belongs to this epic as Feature 3.0 | Deployment preparation was started after Epic 2; it has no feature of its own | ADR-021 |
 | 2026-10-02 | Feature 3.1: private bucket keyed `awards/<awardId>/<UUID>`, downloads only through the API (audited, award read rule), type from file content, upload and deletion on the owner's draft only, 10 MB per file and 10 files per award, MinIO server-side encryption, ClamAV scanning that fails closed, the form saves a draft before the first upload | Evidence follows the award's access rule; no personal data in object keys; US-003 phone flow and its DoD security review | Feature 3.1 PRD D-1–D-11 |
 | 2026-10-02 | `V006` `documents` is the base; new columns (document type, description) land in a new migration | Versioned migrations are immutable once merged | MIGRATION_STRATEGY |
+| 2026-10-02 | MinIO image `cgr.dev/chainguard/minio:latest` (runs as root) in Compose and the tests | MinIO publishes no images on Docker Hub or quay.io any more; Chainguard builds the same server from source, with the same environment variables (proposed in the 3.1.1 PR, user to confirm) | ADR-021 revision |
+| 2026-10-02 | Encryption at rest: the application sets SSE-S3 as the bucket default and requests it on every upload; MinIO holds the static key `MINIO_KMS_SECRET_KEY` | Does not depend on MinIO's auto-encryption setting; an upload fails instead of being stored unencrypted when the key is missing | PRD D-8, AC-1.12 |
+| 2026-10-02 | The backend uses its own MinIO account (`minio-init`: bucket created with SSE-S3, policy on its objects only); the root account is never given to the backend | Security review of 3.1.1: a compromised backend could otherwise open the bucket or turn off encryption | DEMO_DEPLOYMENT |
+| 2026-10-02 | Problem types are slugs as in Epic 2 (`file-too-large`, `unsupported-type`, `content-mismatch`, `empty-file`, `document-limit`, `duplicate-document`, `storage-unavailable`, `document-not-found`, `document-content-missing`, `missing-parameter`); the PRD's upper-case codes name the same types | One convention for `urn:awards:problem:*` | 3.1.1 |
 
 ## Documentation deviations to resolve
 
 Each item is settled in the Feature 3.1 PRD (§7, deviations 1–8) and applied in the PR of the story that touches it.
 
-1. `openapi.yml` document ids are UUIDs; `documents.document_id` is `BIGSERIAL` and the GDPR export already links `/api/v1/documents/{id}` with a number. Align the API to `int64`, as was done for awards in 2.1.0.
-2. `openapi.yml` `Document` has `type` (`CERTIFICATE`, `DIPLOMA`, `SUPPORTING_DOCUMENT`, `PHOTO`), `description` and `status` (`PENDING`, `VERIFIED`, `REJECTED`); `documents` has no type or description column and its `processing_status` has six other values.
-3. Allowed formats: the dictionary and `ck_documents_file_type` allow PDF, JPG, JPEG, PNG, WEBP; `openapi.yml` and the document state machine name PDF, JPG, PNG; the download response lists no `image/webp`.
-4. The roadmap cites `THREAT_MODEL.md T-12` for virus scanning; the threat model has no T-numbered threats and no upload threat. A file-upload scenario (STRIDE: tampering, DoS, malicious content) is added to the threat model with 3.1.1.
-5. The document state machine uses `UPLOADING`, `UPLOADED`, `PROCESSED` and an 80 % threshold; the dictionary uses `processing_status` values and 0.7. Upload uses the dictionary values; the diagram is redrawn when OCR is planned.
-6. `documents.storage_url` holds a pre-signed URL; downloads go through the API so every read is authorised and audited, and the column stays empty.
-7. The roadmap cites ADR-020 for the storage backend; ADR-021 supersedes it for the defense (MinIO in Compose).
+1. `openapi.yml` document ids are UUIDs; `documents.document_id` is `BIGSERIAL` and the GDPR export already links `/api/v1/documents/{id}` with a number. Align the API to `int64`, as was done for awards in 2.1.0. Applied in 3.1.1.
+2. `openapi.yml` `Document` has `type` (`CERTIFICATE`, `DIPLOMA`, `SUPPORTING_DOCUMENT`, `PHOTO`), `description` and `status` (`PENDING`, `VERIFIED`, `REJECTED`); `documents` has no type or description column and its `processing_status` has six other values. Applied in 3.1.1.
+3. Allowed formats: the dictionary and `ck_documents_file_type` allow PDF, JPG, JPEG, PNG, WEBP; `openapi.yml` and the document state machine name PDF, JPG, PNG; the download response lists no `image/webp`. Applied in 3.1.1.
+4. The roadmap cites `THREAT_MODEL.md T-12` for virus scanning; the threat model has no T-numbered threats and no upload threat. A file-upload scenario (STRIDE: tampering, DoS, malicious content) is added to the threat model with 3.1.1. Applied in 3.1.1.
+5. The document state machine uses `UPLOADING`, `UPLOADED`, `PROCESSED` and an 80 % threshold; the dictionary uses `processing_status` values and 0.7. Upload uses the dictionary values; the diagram is redrawn when OCR is planned. Applied in 3.1.1.
+6. `documents.storage_url` holds a pre-signed URL; downloads go through the API so every read is authorised and audited, and the column stays empty. Applied in 3.1.1.
+7. The roadmap cites ADR-020 for the storage backend; ADR-021 supersedes it for the defense (MinIO in Compose). Applied in 3.1.1.
 
 ## Technical notes
 

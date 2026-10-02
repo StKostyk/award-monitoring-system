@@ -18,7 +18,7 @@ title Document Processing State Machine Diagram
 state UPLOADING <<uploading>> {
     [*] --> Validating
     Validating --> FileTypeCheck : Check file type
-    FileTypeCheck --> FileSizeCheck : Type OK (PDF, JPG, PNG)
+    FileTypeCheck --> FileSizeCheck : Type OK (PDF, JPEG, PNG, WEBP)
     FileSizeCheck --> Uploading : Size OK (< 10MB)
     Uploading --> [*] : Upload complete
     
@@ -48,6 +48,16 @@ state UPLOADED <<uploaded>> {
 note right of UPLOADED
     File stored in temporary
     location pending AI processing
+    --
+    As built (Feature 3.1): UPLOADED is a
+    documents row with processing_status
+    PENDING; the object is kept in the
+    private bucket awards/<award>/<UUID>.
+    Size, type (from the content) and limits
+    are checked before anything is stored.
+    The states after UPLOADED and the 80 %
+    threshold (0.7 in the data dictionary)
+    are settled when OCR is planned.
 end note
 
 UPLOADED --> PROCESSING <<processing>> : AI processing starts

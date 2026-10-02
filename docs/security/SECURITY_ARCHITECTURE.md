@@ -224,6 +224,8 @@ tls_configuration:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+The hierarchy above is the target design. The single-host demo (ADR-021) has no KMS or HSM: document objects are encrypted by MinIO server-side encryption (SSE-S3) with one static key from `MINIO_KMS_SECRET_KEY`, set as the bucket default and requested on every upload; there is no per-file key and no rotation. The key is kept with the backups, since losing it makes every stored document unreadable (Feature 3.1 D-8).
+
 ### 2.4 Application Security
 
 | **Category** | **Controls** | **Implementation** | **Validation** |

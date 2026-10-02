@@ -37,6 +37,7 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
+import ua.edu.chnu.awards.document.service.DocumentService;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
@@ -59,8 +60,9 @@ class AwardServiceTest {
     private final AccessScope access = mock(AccessScope.class);
     private final AwardOwnership ownership = new AwardOwnership(awards, users, access);
     private final AwardWarnings warnings = mock(AwardWarnings.class);
+    private final DocumentService documents = mock(DocumentService.class);
     private final AwardService service = new AwardService(awards, requests, specifications, rules,
-        ownership, warnings, new AwardMapper(TestWorkflow.estimator()), access, mock(AwardHistory.class));
+        ownership, warnings, new AwardMapper(TestWorkflow.estimator()), access, mock(AwardHistory.class), documents);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 
@@ -99,12 +101,13 @@ class AwardServiceTest {
     }
 
     @Test
-    void ac1_4_deletingRemovesTheDraft() {
+    void ac1_4_deletingRemovesTheDraftAndReleasesItsDocumentObjects() {
         Award draft = award(OWNER_ID, AwardStatus.DRAFT);
         when(awards.findForUpdate(5L)).thenReturn(Optional.of(draft));
 
         service.delete(5L);
 
+        verify(documents).releaseObjectsOf(5L);
         verify(awards).delete(draft);
     }
 

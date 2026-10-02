@@ -12,6 +12,8 @@ public final class AuditEntityConstants {
     public static final String AUTHORIZATION = "AUTHORIZATION";
     /** Award records. */
     public static final String AWARDS = "awards";
+    /** Documents attached to awards. */
+    public static final String DOCUMENTS = "documents";
     /** Data-subject rights such as the data export. */
     public static final String GDPR = "GDPR";
     /** A person's own account: names and sign-in address. */

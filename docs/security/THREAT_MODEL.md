@@ -181,6 +181,23 @@ This document presents a comprehensive threat model for the Award Monitoring & T
 | **DoS** | D-DB-02 | Resource-intensive queries | Query injection | Performance degradation |
 | **Elevation** | E-DB-01 | Privilege escalation | SQL injection | Full database access |
 
+#### 2.2.5 Document Upload (Feature 3.1)
+
+Award evidence uploaded by employees (certificates, diplomas, photos) and kept in a private S3 bucket (MinIO on the Compose network, ADR-021). The roadmap's earlier reference to a "T-12" for virus scanning points here.
+
+| **Threat Category** | **Threat ID** | **Threat Description** | **Attack Vector** | **Impact** | **Control** |
+|---------------------|---------------|------------------------|-------------------|------------|-------------|
+| **Spoofing** | S-DOC-01 | Spoofed file type | Executable or HTML renamed `.pdf`, forged part `Content-Type` | Stored XSS, malware delivered to reviewers | Type from the leading bytes only (PDF, JPEG, PNG, WEBP); an extension of another supported type is refused (`content-mismatch`); stored `mime_type` from the content |
+| **Tampering** | T-DOC-01 | Path traversal in the file name | `..\..\x.pdf`, control or bidi characters | Overwrite of other objects, misleading names | Object key `awards/<award>/<random UUID>` never uses the name; the name is reduced to its last segment without control and format characters, max 255 |
+| **Tampering** | T-DOC-02 | Evidence replaced after submission | Upload or delete on a submitted award | Reviewer judges other evidence than was submitted | Upload and delete only on the owner's draft, under the award row lock that the submission also takes |
+| **Repudiation** | R-DOC-01 | Denied access to personal documents | No record of who read a scan | GDPR accountability gap | `DOCUMENT_DOWNLOAD` audit row per download; trigger rows name the uploader and the deleting user |
+| **Info Disclosure** | I-DOC-01 | Enumeration of document ids | Sequential `GET /documents/{id}` | Disclosure of other people's scans | Award read rule on every download; unreadable and unknown ids both answer 404 |
+| **Info Disclosure** | I-DOC-02 | Storage exposure | Public bucket policy, a pre-signed URL leaked in logs or history, stolen disk or backup | Mass disclosure of scans | Private bucket without policy, the backend's MinIO account limited to the objects of that bucket (`minio-init`), no published MinIO port in production, no pre-signed URLs (downloads stream through the API), server-side encryption with a key from the environment |
+| **Info Disclosure** | I-DOC-03 | Active content rendered in the app's origin | PDF with JavaScript, SVG, HTML opened inline | XSS with the user's session | Served as `attachment` with `nosniff`, `Content-Security-Policy: sandbox`, `Cache-Control: private, no-store`; SVG and HTML are not accepted |
+| **DoS** | D-DOC-01 | Oversized or many uploads | 1 GB bodies, thousands of files | Disk and memory exhaustion | 10 MB per file and 11 MB per request in nginx and Spring, 10 documents per award, one copy of a file per award |
+| **DoS** | D-DOC-02 | Orphaned objects | Failures between storage and database | Storage growth | Object written before the row and removed on rollback; removal after commit on deletion; daily sweep of objects older than 24 h without a row |
+| **Elevation** | E-DOC-01 | Malicious content | Infected PDF or image | Malware on reviewers' machines | ClamAV scan before anything is stored, failing closed (3.1.3) |
+
 ---
 
 ## 3. Detailed Threat Scenarios
