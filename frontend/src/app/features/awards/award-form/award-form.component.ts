@@ -36,6 +36,7 @@ import {
   of,
   switchMap,
   tap,
+  throwError,
 } from 'rxjs';
 
 import { fieldProblems, problemStatus, problemType } from '../../../core/api/problem';
@@ -43,6 +44,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { kyivToday, yearsBefore } from '../../../shared/date-format';
+import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import { LeavesUnsavedChanges } from '../awards.guards';
 import {
   Award,
@@ -99,6 +101,7 @@ type FieldName = keyof AwardForm;
     MatProgressBar,
     RouterLink,
     TranslocoPipe,
+    AwardDocumentsComponent,
   ],
   templateUrl: './award-form.component.html',
   styleUrl: './award-form.component.scss',
@@ -138,6 +141,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly restoreOffer = signal<AwardForm | null>(null);
   readonly suggestions = signal<CategorySuggestion[]>([]);
   readonly categoryChosen = signal(false);
+  readonly documentCount = signal(0);
   readonly editing = computed(() => this.current() !== null);
   readonly duplicates = computed(
     () =>
@@ -288,6 +292,23 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     });
   }
 
+  /** Saves a new award before its first file is uploaded, exactly as «Зберегти чернетку» does. */
+  readonly prepareUpload = (): Observable<number> => {
+    this.clearServerErrors();
+    if (this.saving() || this.form.invalid) {
+      this.form.markAllAsTouched();
+      return throwError(() => new Error('The draft cannot be saved'));
+    }
+    this.start();
+    return this.store().pipe(
+      tap({
+        next: (award) => this.finish(award, 'awards.messages.saved'),
+        error: (error: unknown) => this.failed(error),
+      }),
+      map((award) => award.id),
+    );
+  };
+
   submit(): void {
     if (this.saving()) {
       return;
@@ -300,6 +321,26 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       this.problem.set(missing.length ? 'awards.problems.award-incomplete' : null);
       return;
     }
+    if (this.documentCount() > 0) {
+      this.send();
+      return;
+    }
+    this.dialog
+      .open(ConfirmDialogComponent, {
+        data: {
+          title: 'awards.submitWithout.title',
+          text: 'awards.submitWithout.text',
+          confirm: 'awards.submitWithout.confirm',
+          cancel: 'awards.submitWithout.cancel',
+        },
+        width: '420px',
+      })
+      .afterClosed()
+      .pipe(filter((confirmed?: boolean) => confirmed === true))
+      .subscribe(() => this.send());
+  }
+
+  private send(): void {
     this.start();
     this.store()
       .pipe(switchMap((award) => this.service.submit(award.id, award.version)))

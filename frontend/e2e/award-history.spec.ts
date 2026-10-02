@@ -1,6 +1,6 @@
 import { Browser, Page, expect, test } from '@playwright/test';
 
-import { pastDay, signIn, uniqueToken } from './helpers';
+import { pastDay, signIn, submitWithoutDocuments, uniqueToken } from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
@@ -52,7 +52,7 @@ test.describe('award history and audit log', () => {
     await owner.getByTestId('category-option-13').click();
     await owner.getByTestId('award-organization').fill('Міністерство освіти і науки України');
     await owner.getByTestId('award-date').fill(pastDay());
-    await owner.getByTestId('award-submit').click();
+    await submitWithoutDocuments(owner);
     await expect(owner.getByTestId('award-submitted-name')).toContainText(second);
 
     await open(owner, id);

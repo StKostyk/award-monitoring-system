@@ -17,7 +17,7 @@
 
 ## Current focus
 
-Epic kickoff 2026-10-02. Story 3.0.1 (production configuration, ADR-021) is done. Feature 3.1 PRD approved 2026-10-02 (16 points, stories 3.1.1–3.1.3); 3.1.1, the storage backend and the document API, is in review; 3.1.2 and 3.1.3 follow.
+Epic kickoff 2026-10-02. Story 3.0.1 (production configuration, ADR-021) is done. Feature 3.1 PRD approved 2026-10-02 (16 points, stories 3.1.1–3.1.3); 3.1.1 (storage backend and document API) is done; 3.1.2 (upload in the form and the award page) is in review; 3.1.3 follows.
 
 ## Scope
 
@@ -32,8 +32,8 @@ Out of scope here: attaching documents to a returned request during resubmission
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 3.0.1 Production configuration and local production run | 3.0 | 3 | SCRUM-33 | #109 | no | Done |
-| 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | In review |
-| 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | To do |
+| 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | Done |
+| 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | In review |
 | 4 | 3.1.3 Malware scanning of uploads | 3.1 | 3 | SCRUM-37 | #113 | no | To do |
 
 Total: 19 points, sprints 3–4. A fixes story follows the Feature 3.1 validation if it finds anything.
@@ -50,6 +50,9 @@ Total: 19 points, sprints 3–4. A fixes story follows the Feature 3.1 validatio
 | 2026-10-02 | Encryption at rest: the application sets SSE-S3 as the bucket default and requests it on every upload; MinIO holds the static key `MINIO_KMS_SECRET_KEY` | Does not depend on MinIO's auto-encryption setting; an upload fails instead of being stored unencrypted when the key is missing | PRD D-8, AC-1.12 |
 | 2026-10-02 | The backend uses its own MinIO account (`minio-init`: bucket created with SSE-S3, policy on its objects only); the root account is never given to the backend | Security review of 3.1.1: a compromised backend could otherwise open the bucket or turn off encryption | DEMO_DEPLOYMENT |
 | 2026-10-02 | Problem types are slugs as in Epic 2 (`file-too-large`, `unsupported-type`, `content-mismatch`, `empty-file`, `document-limit`, `duplicate-document`, `storage-unavailable`, `document-not-found`, `document-content-missing`, `missing-parameter`); the PRD's upper-case codes name the same types | One convention for `urn:awards:problem:*` | 3.1.1 |
+| 2026-10-02 | The award form had no submit confirmation; AC-2.8 adds one that opens only for an award without documents | A dialog on every submission would add a click to the common case with a certificate | 3.1.2 |
+| 2026-10-02 | The frontend CSP allows `blob:` images (`img-src 'self' data: blob:`) | The image preview shows the downloaded file from an object URL; scripts stay `'self'` only | 3.1.2 |
+| 2026-10-02 | `tools/e2e.ps1` runs the frontend nginx configuration in a throwaway container (port 4280) in front of the local backend | AC-1.16: the 9.5 MB upload and the 413 answer are tested through nginx, not only through the dev server proxy | 3.1.2 |
 
 ## Documentation deviations to resolve
 

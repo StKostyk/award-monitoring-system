@@ -86,6 +86,7 @@
       }
     </div>
   </article>
+  <app-award-documents [awardId]="award.id" [removable]="editable(award)" />
   @if (award.status !== 'DRAFT') {
     <app-award-status
       [awardId]="award.id"

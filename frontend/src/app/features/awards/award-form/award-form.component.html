@@ -220,7 +220,13 @@
       }
     </mat-form-field>
 
-    <p class="award-form__photo">{{ 'awards.form.photoLater' | transloco }}</p>
+    <app-award-documents
+      [awardId]="current()?.id ?? null"
+      [uploads]="true"
+      [removable]="true"
+      [prepare]="prepareUpload"
+      (countChange)="documentCount.set($event)"
+    />
 
     <div class="award-form__actions">
       @if (editing()) {

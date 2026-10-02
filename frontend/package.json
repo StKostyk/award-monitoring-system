@@ -53,6 +53,7 @@
     "@angular/build": "^21.0.4",
     "@angular/cli": "^21.0.4",
     "@angular/compiler-cli": "^21.0.0",
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.39.0",
     "@ngrx/eslint-plugin": "^21.0.1",
     "@playwright/test": "^1.63.0",

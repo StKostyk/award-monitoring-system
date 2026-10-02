@@ -141,8 +141,62 @@
       "noCategory": "Not chosen",
       "saveDraft": "Save draft",
       "submit": "Submit",
-      "reload": "Load the current version",
-      "photoLater": "A photo of the certificate can be added soon."
+      "reload": "Load the current version"
+    },
+    "documents": {
+      "title": "Documents",
+      "drop": "Drag files here or choose a file",
+      "camera": "Take a photo",
+      "type": "Document type",
+      "hint": "PDF, JPG, PNG or WEBP, up to 10 MB, at most 10 files",
+      "types": {
+        "CERTIFICATE": "Certificate",
+        "DIPLOMA": "Diploma",
+        "SUPPORTING_DOCUMENT": "Supporting document",
+        "PHOTO": "Photo"
+      },
+      "none": "No documents attached",
+      "waiting": "Waiting",
+      "uploading": "Uploading {{name}}",
+      "uploaded": "Uploaded: {{name}}",
+      "kilobytes": "{{size}} KB",
+      "megabytes": "{{size}} MB",
+      "preview": "Preview",
+      "previewOf": "Preview {{name}}",
+      "download": "Download",
+      "downloadOf": "Download {{name}}",
+      "removeOf": "Delete {{name}}",
+      "close": "Close",
+      "retry": "Try again",
+      "dismiss": "Dismiss",
+      "remove": {
+        "action": "Delete",
+        "title": "Delete the document?",
+        "text": "Delete the document “{{name}}”?",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      },
+      "problems": {
+        "empty-file": "The file is empty",
+        "file-too-large": "The file is larger than 10 MB",
+        "unsupported-type": "Unsupported file format",
+        "content-mismatch": "The file content does not match its extension",
+        "duplicate-document": "This file has already been added",
+        "document-limit": "The limit of 10 files has been reached",
+        "malware-detected": "The file contains malicious code and was not uploaded",
+        "award-not-editable": "The award has been submitted; its documents can no longer be changed",
+        "not-saved": "The draft was not saved. Correct the form and try again",
+        "failed": "The file could not be uploaded",
+        "gone": "The document is no longer available",
+        "list-failed": "The documents could not be loaded",
+        "download-failed": "The document could not be loaded"
+      }
+    },
+    "submitWithout": {
+      "title": "Submit the award?",
+      "text": "You have not attached any document. The reviewer may ask for a copy of the award.",
+      "confirm": "Submit",
+      "cancel": "Cancel"
     },
     "restore": {
       "question": "Restore unsaved changes?",

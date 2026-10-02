@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { kyivDay, pastDay, signIn, uniqueToken } from './helpers';
+import { kyivDay, pastDay, signIn, submitWithoutDocuments, uniqueToken } from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
@@ -69,7 +69,7 @@ test.describe('award drafts and submission on a phone', () => {
     await chooseCategory(page, 13);
     await page.getByTestId('award-organization').fill('Міністерство освіти і науки України');
     await page.getByTestId('award-date').fill(pastDay());
-    await page.getByTestId('award-submit').click();
+    await submitWithoutDocuments(page);
 
     await expect(page.getByTestId('award-submitted-text')).toContainText(
       'Подано на розгляд секретарю факультету',
@@ -242,20 +242,20 @@ test.describe('award drafts and submission on a phone', () => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
     await fillComplete(page, title, date);
-    await page.getByTestId('award-submit').click();
+    await submitWithoutDocuments(page);
     await expect(page.getByTestId('award-submitted-name')).toContainText(title);
 
     await openAwards(page);
     await page.getByTestId('award-add').click();
     await fillComplete(page, `${title} України`, date);
-    await page.getByTestId('award-submit').click();
+    await submitWithoutDocuments(page);
     await expect(page.getByRole('dialog')).toContainText('Можливо, цю нагороду вже внесено');
     await expect(page.getByRole('dialog').getByRole('link', { name: title })).toBeVisible();
     await page.getByTestId('duplicate-cancel').click();
     await expect(page.getByTestId('award-form-message')).toContainText('Чернетку збережено');
     await expect(page.getByTestId('award-duplicate-warning')).toContainText(title);
 
-    await page.getByTestId('award-submit').click();
+    await submitWithoutDocuments(page);
     await page.getByTestId('duplicate-confirm').click();
     await expect(page.getByTestId('award-submitted-name')).toContainText(`${title} України`);
   });

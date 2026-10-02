@@ -1,6 +1,14 @@
 import { Page, expect, test } from '@playwright/test';
 
-import { kyivDay, pastDay, shownDay, signIn, sql, uniqueToken } from './helpers';
+import {
+  kyivDay,
+  pastDay,
+  shownDay,
+  signIn,
+  sql,
+  submitWithoutDocuments,
+  uniqueToken,
+} from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
@@ -17,7 +25,7 @@ async function submitted(page: Page, title: string): Promise<string> {
   await page.getByTestId('category-option-13').click();
   await page.getByTestId('award-organization').fill('Міністерство освіти і науки України');
   await page.getByTestId('award-date').fill(pastDay());
-  await page.getByTestId('award-submit').click();
+  await submitWithoutDocuments(page);
   await expect(page.getByTestId('award-submitted-name')).toContainText(title);
   return id;
 }

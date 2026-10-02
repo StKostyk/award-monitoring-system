@@ -2,7 +2,7 @@
 ## Award Monitoring & Tracking System
 
 > **Last Updated**: October 2026  
-> **Story Points**: 125 delivered, 65 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
+> **Story Points**: 133 delivered, 57 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
 > **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34
 
@@ -44,8 +44,8 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
-| 3.1.1 | Document storage and upload API (🔍 In Review) | 8 | 4 | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
-| 3.1.2 | Certificate upload in the award form and award page | 5 | 4 | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
+| 3.1.1 | Document storage and upload API | 8 | ✅ Done | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
+| 3.1.2 | Certificate upload in the award form and award page (🔍 In Review) | 5 | 4 | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
 | 3.1.3 | Malware scanning of uploads | 3 | 4 | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
 
 ### Later epics
