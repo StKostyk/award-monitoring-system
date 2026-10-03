@@ -17,7 +17,7 @@ Where things live and the conventions that keep them there. Updated whenever the
 | `docs/` | Planning and design documentation (English); `docs/ua/` Ukrainian copies of thesis-cited documents |
 | `infra/` | Prometheus, Grafana, Alertmanager, Logstash, Kubernetes manifests |
 | `tools/quality/` | Checkstyle, PMD and SpotBugs configuration shared by Maven and CI |
-| `tools/verify-all.ps1` | Runs all quality gates and writes `build/gate-summary.txt`; `-E2E` adds the browser suite |
+| `tools/gate.ps1` | Static checks first, then the backend build (when `backend/` changed since `develop`, or `-Full`) and the frontend lint and unit tests; writes `build/gate-summary.txt`; `-StaticOnly` stops after the static checks |
 | `tools/dev-up.ps1` | Starts containers, backend (local profile) and frontend for manual testing |
 | `tools/e2e.ps1` | Boots the backend if needed and runs the Playwright suite |
 | `tools/tracker-sync.ps1` | Moves a story in Jira and GitHub together |

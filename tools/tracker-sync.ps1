@@ -63,13 +63,19 @@ function Jira-Headers {
     return @{ Authorization = "Basic $pair"; 'Content-Type' = 'application/json'; Accept = 'application/json' }
 }
 
-function Jira-Get([string]$path) { Invoke-RestMethod -Uri "$base$path" -Headers (Jira-Headers) -Method Get }
-function Jira-Post([string]$path, $body) {
-    Invoke-RestMethod -Uri "$base$path" -Headers (Jira-Headers) -Method Post -Body ($body | ConvertTo-Json -Depth 12)
+function Jira-Call([string]$method, [string]$path, $body) {
+    $request = @{ Uri = "$base$path"; Headers = (Jira-Headers); Method = $method }
+    if ($null -ne $body) { $request.Body = $body | ConvertTo-Json -Depth 12 }
+    try {
+        Invoke-RestMethod @request
+    } catch [System.Net.Http.HttpRequestException] {
+        Start-Sleep -Seconds 3
+        Invoke-RestMethod @request
+    }
 }
-function Jira-Put([string]$path, $body) {
-    Invoke-RestMethod -Uri "$base$path" -Headers (Jira-Headers) -Method Put -Body ($body | ConvertTo-Json -Depth 12)
-}
+function Jira-Get([string]$path) { Jira-Call 'Get' $path $null }
+function Jira-Post([string]$path, $body) { Jira-Call 'Post' $path $body }
+function Jira-Put([string]$path, $body) { Jira-Call 'Put' $path $body }
 
 function Adf([string]$text) {
     return @{ type = 'doc'; version = 1; content = @(@{ type = 'paragraph'; content = @(@{ type = 'text'; text = $text }) }) }
