@@ -1,0 +1,209 @@
+<section class="documents" data-testid="award-documents" aria-labelledby="documents-title">
+  <h2 id="documents-title" class="documents__title">{{ 'awards.documents.title' | transloco }}</h2>
+
+  @if (uploads()) {
+    <div
+      class="documents__drop"
+      [class.documents__drop--active]="dragging()"
+      role="button"
+      tabindex="0"
+      [attr.aria-describedby]="'documents-hint'"
+      (click)="picker.click()"
+      (keydown.enter)="pick(picker, $event)"
+      (keydown.space)="pick(picker, $event)"
+      (dragover)="dragOver($event)"
+      (dragleave)="dragging.set(false)"
+      (drop)="dropped($event)"
+      data-testid="documents-drop"
+    >
+      {{ 'awards.documents.drop' | transloco }}
+    </div>
+    <input
+      #picker
+      type="file"
+      multiple
+      hidden
+      [accept]="accept"
+      (change)="picked(picker)"
+      data-testid="documents-input"
+    />
+    <input
+      #camera
+      type="file"
+      accept="image/*"
+      capture="environment"
+      hidden
+      (change)="picked(camera)"
+      data-testid="documents-camera-input"
+    />
+    <div class="documents__controls">
+      <mat-form-field class="documents__type" subscriptSizing="dynamic">
+        <mat-label>{{ 'awards.documents.type' | transloco }}</mat-label>
+        <mat-select
+          [value]="nextType()"
+          (selectionChange)="chooseType($event.value)"
+          data-testid="documents-type"
+        >
+          <mat-select-trigger>{{
+            'awards.documents.types.' + nextType() | transloco
+          }}</mat-select-trigger>
+          @for (type of types; track type) {
+            <mat-option [value]="type" [attr.data-testid]="'documents-type-' + type">{{
+              'awards.documents.types.' + type | transloco
+            }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @if (touch) {
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="camera.click()"
+          data-testid="documents-camera"
+        >
+          {{ 'awards.documents.camera' | transloco }}
+        </button>
+      }
+    </div>
+    <p id="documents-hint" class="documents__hint">{{ 'awards.documents.hint' | transloco }}</p>
+  }
+
+  <p class="documents__live" aria-live="polite" data-testid="documents-announcement">
+    {{ announcement() }}
+  </p>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+  @if (notice(); as notice) {
+    <p class="documents__problem" role="alert" data-testid="documents-notice">
+      {{ notice | transloco }}
+    </p>
+  }
+
+  @if (queue().length) {
+    <ul class="documents__list" data-testid="documents-queue">
+      @for (item of queue(); track item.key) {
+        <li class="documents__row" [attr.data-testid]="'documents-queued-' + item.file.name">
+          <span class="documents__name">{{ item.file.name }}</span>
+          <span class="documents__meta">{{
+            'awards.documents.types.' + item.type | transloco
+          }}</span>
+          @switch (item.state) {
+            @case ('uploading') {
+              <mat-progress-bar
+                class="documents__progress"
+                [mode]="item.progress ? 'determinate' : 'indeterminate'"
+                [value]="item.progress"
+                [attr.aria-label]="
+                  'awards.documents.uploading' | transloco: { name: item.file.name }
+                "
+                data-testid="documents-progress"
+              />
+            }
+            @case ('waiting') {
+              <span class="documents__meta">{{ 'awards.documents.waiting' | transloco }}</span>
+            }
+            @default {
+              <span class="documents__problem" role="alert" data-testid="documents-queued-problem">
+                {{ item.problem ?? '' | transloco }}
+              </span>
+              <span class="documents__actions">
+                @if (item.state === 'failed') {
+                  <button
+                    mat-button
+                    type="button"
+                    (click)="retry(item)"
+                    data-testid="documents-retry"
+                  >
+                    {{ 'awards.documents.retry' | transloco }}
+                  </button>
+                }
+                <button
+                  mat-button
+                  type="button"
+                  (click)="dismiss(item)"
+                  data-testid="documents-dismiss"
+                >
+                  {{ 'awards.documents.dismiss' | transloco }}
+                </button>
+              </span>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (documents().length) {
+    <ul class="documents__list" data-testid="documents-list">
+      @for (document of documents(); track document.id) {
+        <li class="documents__row" [attr.data-testid]="'document-' + document.id">
+          @if (isImage(document)) {
+            <button
+              type="button"
+              class="documents__name documents__link"
+              (click)="preview(document)"
+              data-testid="document-name"
+            >
+              {{ document.fileName }}
+            </button>
+          } @else {
+            <span class="documents__name" data-testid="document-name">{{ document.fileName }}</span>
+          }
+          <span class="documents__meta" data-testid="document-type">{{
+            'awards.documents.types.' + document.type | transloco
+          }}</span>
+          <span class="documents__meta" data-testid="document-size">
+            {{ sizeUnit(document.size) | transloco: { size: sizeValue(document.size) } }}
+          </span>
+          <span class="documents__meta" data-testid="document-date">{{ date(document) }}</span>
+          <span class="documents__actions">
+            @if (isImage(document)) {
+              <button
+                mat-button
+                type="button"
+                (click)="preview(document)"
+                [attr.aria-label]="
+                  'awards.documents.previewOf' | transloco: { name: document.fileName }
+                "
+                data-testid="document-preview"
+              >
+                {{ 'awards.documents.preview' | transloco }}
+              </button>
+            }
+            <button
+              mat-button
+              type="button"
+              (click)="download(document)"
+              [attr.aria-label]="
+                'awards.documents.downloadOf' | transloco: { name: document.fileName }
+              "
+              data-testid="document-download"
+            >
+              {{ 'awards.documents.download' | transloco }}
+            </button>
+            @if (removable()) {
+              <button
+                mat-button
+                type="button"
+                class="documents__remove"
+                (click)="remove(document)"
+                [attr.aria-label]="
+                  'awards.documents.removeOf' | transloco: { name: document.fileName }
+                "
+                data-testid="document-remove"
+              >
+                {{ 'awards.documents.remove.action' | transloco }}
+              </button>
+            }
+          </span>
+        </li>
+      }
+    </ul>
+  } @else if (empty() && !loading()) {
+    <p class="documents__empty" data-testid="documents-empty">
+      {{ 'awards.documents.none' | transloco }}
+    </p>
+  }
+</section>

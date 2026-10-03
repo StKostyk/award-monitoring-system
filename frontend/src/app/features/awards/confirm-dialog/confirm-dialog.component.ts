@@ -17,6 +17,8 @@ export interface ConfirmDialogData {
   text: string;
   confirm: string;
   cancel: string;
+  /** Values for the placeholders of the text. */
+  params?: Record<string, string>;
 }
 
 @Component({
@@ -32,7 +34,7 @@ export interface ConfirmDialogData {
   template: `
     <h2 mat-dialog-title>{{ data.title | transloco }}</h2>
     <mat-dialog-content>
-      <p>{{ data.text | transloco }}</p>
+      <p>{{ data.text | transloco: data.params }}</p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button type="button" [mat-dialog-close]="false" data-testid="confirm-cancel">

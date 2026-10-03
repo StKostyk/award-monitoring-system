@@ -68,6 +68,13 @@ export async function registerAndVerify(
   await expect(page.getByTestId('verify-success')).toContainText(email);
 }
 
+/** Submits the award form and accepts the notice that the award has no documents. */
+export async function submitWithoutDocuments(page: Page): Promise<void> {
+  await page.getByTestId('award-submit').click();
+  await expect(page.getByRole('dialog')).toContainText('Ви не додали жодного документа');
+  await page.getByTestId('confirm-accept').click();
+}
+
 /** Submits the login form of the authorization server starting from the app root. */
 export async function signIn(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/');

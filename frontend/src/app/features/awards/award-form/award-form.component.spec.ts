@@ -12,6 +12,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
+import { DocumentsService } from '../award-documents/documents.service';
 import { Award, AwardsService, CategoryNode, CategorySuggestion } from '../awards.service';
 import { AwardFormComponent } from './award-form.component';
 
@@ -85,6 +86,12 @@ describe('AwardFormComponent', () => {
     suggestions: vi.fn((): Observable<CategorySuggestion[]> => of([])),
   };
   const dialog = { open: vi.fn() };
+  const documents = {
+    list: vi.fn(() => of([])),
+    upload: vi.fn(),
+    download: vi.fn(),
+    remove: vi.fn(),
+  };
   const auth = { userId: signal<string | null>('21'), isAuthenticated: signal(true) };
 
   async function open(id: string | null): Promise<void> {
@@ -107,6 +114,7 @@ describe('AwardFormComponent', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: auth },
+        { provide: DocumentsService, useValue: documents },
       ],
     }).compileComponents();
     router = TestBed.inject(Router);
@@ -117,6 +125,7 @@ describe('AwardFormComponent', () => {
     fixture = TestBed.createComponent(AwardFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    component.documentCount.set(1);
   }
 
   function type(field: string, value: string | number): void {
@@ -688,6 +697,94 @@ describe('AwardFormComponent', () => {
 
       expect(service.suggestions).toHaveBeenCalledTimes(1);
       expect(chips()).toHaveLength(0);
+    });
+  });
+
+  describe('documents', () => {
+    it('ac2_1_form_has_the_documents_section_in_place_of_the_photo_note', async () => {
+      await open(null);
+
+      expect(fixture.nativeElement.querySelector('[data-testid="award-documents"]')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="documents-drop"]')).not.toBeNull();
+    });
+
+    it('ac2_2_first_file_of_a_new_award_saves_the_draft_first', async () => {
+      await open(null);
+      service.create.mockReturnValue(of(award({ id: 42, version: 1 })));
+      type('titleUk', 'Грамота');
+
+      let saved: number | undefined;
+      component.prepareUpload().subscribe((id) => (saved = id));
+
+      expect(service.create).toHaveBeenCalledTimes(1);
+      expect(saved).toBe(42);
+      expect(location.replaceState).toHaveBeenCalledWith('/awards/42/edit');
+      expect(component.message()).toBe('awards.messages.saved');
+      expect(component.form.pristine).toBe(true);
+    });
+
+    it('ac2_2_invalid_form_is_not_saved_and_the_upload_waits', async () => {
+      await open(null);
+
+      let failed = false;
+      component.prepareUpload().subscribe({ error: () => (failed = true) });
+
+      expect(failed).toBe(true);
+      expect(service.create).not.toHaveBeenCalled();
+      expect(component.form.hasError('titleRequired')).toBe(true);
+    });
+
+    it('ac2_2_save_error_is_shown_like_a_save_of_the_button', async () => {
+      await open(null);
+      service.create.mockReturnValue(throwError(() => problem('validation-failed', 422)));
+      type('titleUk', 'Грамота');
+
+      let failed = false;
+      component.prepareUpload().subscribe({ error: () => (failed = true) });
+
+      expect(failed).toBe(true);
+      expect(component.saving()).toBe(false);
+      expect(component.problem()).toBe('awards.problems.validation-failed');
+    });
+
+    it('ac2_8_submitting_without_documents_asks_with_the_notice', async () => {
+      await open(null);
+      component.documentCount.set(0);
+      service.create.mockReturnValue(of(award({ version: 2 })));
+      service.submit.mockReturnValue(of(award({ status: 'PENDING', version: 3 })));
+      dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+      fillComplete();
+
+      component.submit();
+
+      expect(dialog.open.mock.calls[0][1].data).toMatchObject({
+        text: 'awards.submitWithout.text',
+      });
+      expect(service.submit).toHaveBeenCalledWith(5, 2);
+    });
+
+    it('ac2_8_cancelling_the_notice_sends_nothing', async () => {
+      await open(null);
+      component.documentCount.set(0);
+      dialog.open.mockReturnValue({ afterClosed: () => of(false) });
+      fillComplete();
+
+      component.submit();
+
+      expect(service.create).not.toHaveBeenCalled();
+      expect(component.saving()).toBe(false);
+    });
+
+    it('ac2_8_submitting_with_documents_asks_nothing', async () => {
+      await open(null);
+      service.create.mockReturnValue(of(award({ version: 2 })));
+      service.submit.mockReturnValue(of(award({ status: 'PENDING', version: 3 })));
+      fillComplete();
+
+      component.submit();
+
+      expect(dialog.open).not.toHaveBeenCalled();
+      expect(service.submit).toHaveBeenCalledTimes(1);
     });
   });
 });

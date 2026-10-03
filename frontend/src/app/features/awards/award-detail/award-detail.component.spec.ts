@@ -9,6 +9,7 @@ import { MockInstance, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { AwardDocument, DocumentsService } from '../award-documents/documents.service';
 import { Award, AwardStatusView, AwardsService } from '../awards.service';
 import { AwardSubmittedComponent } from '../award-submitted/award-submitted.component';
 import { AwardDetailComponent } from './award-detail.component';
@@ -68,6 +69,18 @@ const withoutRequest: AwardStatusView = {
   decisions: [],
 };
 
+const documentRow: AwardDocument = {
+  id: 3,
+  awardId: 5,
+  fileName: 'диплом.pdf',
+  type: 'CERTIFICATE',
+  mimeType: 'application/pdf',
+  size: 1024,
+  description: null,
+  uploadedAt: '2026-10-01T08:00:00Z',
+  uploadedBy: { id: 21, name: 'Анастасія Коваль' },
+};
+
 const noVersions = { content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 };
 
 const translations = {
@@ -96,6 +109,7 @@ describe('AwardDetailComponent', () => {
     hasPermission: (permission: string) => granted().includes(permission),
   }));
   const dialog = { open: vi.fn() };
+  const documents = { list: vi.fn(() => of<AwardDocument[]>([])) };
   let navigate: MockInstance<Router['navigate']>;
 
   async function open<T>(component: new () => T, id: string): Promise<ComponentFixture<T>> {
@@ -117,6 +131,7 @@ describe('AwardDetailComponent', () => {
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { userId: signal('21'), permissions } },
         { provide: MatDialog, useValue: dialog },
+        { provide: DocumentsService, useValue: documents },
       ],
     }).compileComponents();
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -134,6 +149,7 @@ describe('AwardDetailComponent', () => {
     service.auditTrail.mockReset().mockReturnValue(of(noVersions));
     service.status.mockReset().mockReturnValue(of(withoutRequest));
     granted.set([]);
+    documents.list.mockReset().mockReturnValue(of([]));
   });
 
   it('ac1_9_shows_a_submitted_award_read_only_with_its_request', async () => {
@@ -366,5 +382,26 @@ describe('AwardDetailComponent', () => {
     const fixture = await open(AwardDetailComponent, '5');
 
     expect(fixture.nativeElement.querySelector('[data-testid="award-remove"]')).toBeNull();
+  });
+
+  it('ac2_7_a_submitted_award_lists_its_documents_without_deletion', async () => {
+    documents.list.mockReturnValue(of([documentRow]));
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(documents.list).toHaveBeenCalledWith(5);
+    expect(element.querySelector('[data-testid="document-download"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="document-remove"]')).toBeNull();
+    expect(element.querySelector('[data-testid="documents-drop"]')).toBeNull();
+  });
+
+  it('ac2_7_the_owner_may_delete_documents_of_a_draft', async () => {
+    granted.set(['award:update:own']);
+    documents.list.mockReturnValue(of([documentRow]));
+    service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    expect(fixture.nativeElement.querySelector('[data-testid="document-remove"]')).not.toBeNull();
   });
 });

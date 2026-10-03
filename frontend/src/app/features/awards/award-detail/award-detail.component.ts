@@ -22,6 +22,7 @@ import { canEditOwnAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../../shared/organization-name';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
+import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { AwardStatusComponent } from '../award-status/award-status.component';
 import { Award, AwardsService, awardTitle, categoryName, isOwnAward } from '../awards.service';
@@ -41,6 +42,7 @@ import { confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
     AwardHistoryComponent,
     AwardAuditTrailComponent,
     AwardStatusComponent,
+    AwardDocumentsComponent,
     TranslocoPipe,
   ],
   templateUrl: './award-detail.component.html',
