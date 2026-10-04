@@ -8,14 +8,14 @@
 }
 
 .auth-card__hint {
-  color: var(--mat-sys-on-surface-variant, #5f6368);
+  color: var(--mat-sys-on-surface-variant);
   margin-top: 0;
 }
 
 .auth-card__footer {
   margin: 16px 0 0;
   text-align: center;
-  color: var(--mat-sys-on-surface-variant, #5f6368);
+  color: var(--mat-sys-on-surface-variant);
 
   a {
     margin-left: 4px;
@@ -45,7 +45,7 @@
 }
 
 .auth-form__error {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
   margin: 0 0 8px;
 }
 

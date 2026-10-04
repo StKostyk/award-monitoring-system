@@ -24,7 +24,6 @@ RUN npm ci --legacy-peer-deps --prefer-offline --no-audit
 COPY . .
 RUN npx ng build \
     --configuration=production \
-    --optimization=true \
     --aot=true \
     --source-map=false
 

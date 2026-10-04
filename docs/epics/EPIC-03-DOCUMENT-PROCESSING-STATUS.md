@@ -10,7 +10,7 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 3.0 Production configuration (deployment preparation) | Done (3.0.1) | 2026-10-02 | 2026-10-02 |
+| 3.0 Production configuration (deployment preparation) | In progress (3.0.1 done, 3.0.2) | 2026-10-02 | |
 | 3.1 Document Upload & Storage | In progress ([feature-3.1](../features/epic-03/feature-3.1-document-upload-storage.md)) | 2026-10-02 | |
 | 3.2 OCR & Intelligent Parsing | Deferred (see decisions) | | |
 | 3.3 Confidence Scoring & Manual Review | Deferred (see decisions) | | |
@@ -33,10 +33,11 @@ Out of scope here: attaching documents to a returned request during resubmission
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 3.0.1 Production configuration and local production run | 3.0 | 3 | SCRUM-33 | #109 | no | Done |
 | 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | Done |
-| 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | In review |
+| 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | Done |
 | 4 | 3.1.3 Malware scanning of uploads | 3.1 | 3 | SCRUM-37 | #113 | no | To do |
+| 5 | 3.0.2 Brand theming, dark mode and side-nav shell | 3.0 | 5 | SCRUM-39 | #121 | no | In review |
 
-Total: 19 points, sprints 3–4. A fixes story follows the Feature 3.1 validation if it finds anything.
+Total: 24 points, sprints 3–4. A fixes story follows the Feature 3.1 validation if it finds anything.
 
 ## Decisions
 
@@ -53,6 +54,7 @@ Total: 19 points, sprints 3–4. A fixes story follows the Feature 3.1 validatio
 | 2026-10-02 | The award form had no submit confirmation; AC-2.8 adds one that opens only for an award without documents | A dialog on every submission would add a click to the common case with a certificate | 3.1.2 |
 | 2026-10-02 | The frontend CSP allows `blob:` images (`img-src 'self' data: blob:`) | The image preview shows the downloaded file from an object URL; scripts stay `'self'` only | 3.1.2 |
 | 2026-10-02 | `tools/e2e.ps1` runs the frontend nginx configuration in a throwaway container (port 4280) in front of the local backend | AC-1.16: the 9.5 MB upload and the 413 answer are tested through nginx, not only through the dev server proxy | 3.1.2 |
+| 2026-10-04 | Story 3.0.2 (brand theming, dark mode, side menu) joins Feature 3.0: a deployment chooses its university brand with `brand.json`; precompiled Material 3 themes per brand, one responsive shell, self-hosted fonts | Review of 2026-10-04: the default Material look did not fit the university; one image must serve more universities later | ADR-016 addendum, UI_GUIDELINES |
 
 ## Documentation deviations to resolve
 

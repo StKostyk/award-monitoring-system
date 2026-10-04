@@ -30,11 +30,26 @@
               }
             ],
             "styles": [
+              "node_modules/@fontsource/nunito/400.css",
+              "node_modules/@fontsource/nunito/700.css",
+              "node_modules/@fontsource/nunito/800.css",
+              "node_modules/@fontsource/ibm-plex-sans/400.css",
+              "node_modules/@fontsource/ibm-plex-sans/500.css",
+              "node_modules/@fontsource/ibm-plex-sans/600.css",
+              "node_modules/@fontsource/material-icons/400.css",
               "src/styles.scss"
             ]
           },
           "configurations": {
             "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
               "budgets": [
                 {
                   "type": "initial",

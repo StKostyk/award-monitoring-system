@@ -10,7 +10,7 @@
   margin: 0;
 
   dt {
-    color: var(--mat-sys-on-surface-variant, #5f6368);
+    color: var(--mat-sys-on-surface-variant);
   }
 
   dd {
@@ -30,7 +30,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
 .admin__role--ended {
@@ -39,7 +39,7 @@
 }
 
 .admin__validity {
-  color: var(--mat-sys-on-surface-variant, #5f6368);
+  color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
 }
 
@@ -49,15 +49,15 @@
 }
 
 .admin__problem {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 .admin__message {
-  color: var(--mat-sys-on-surface, #1b1b1b);
+  color: var(--mat-sys-on-surface);
 }
 
 .admin__hint {
   display: block;
-  color: var(--mat-sys-on-surface-variant, #5f6368);
+  color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
 }

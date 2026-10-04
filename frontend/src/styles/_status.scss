@@ -1,0 +1,12 @@
+@mixin tokens() {
+  --app-status-draft: light-dark(#e6e9ee, #3a4048);
+  --app-on-status-draft: light-dark(#3d4652, #dde2e8);
+  --app-status-pending: light-dark(#ffe7b0, #5a4300);
+  --app-on-status-pending: light-dark(#5a3e00, #ffe08f);
+  --app-status-approved: light-dark(#cdefd9, #0f4d2c);
+  --app-on-status-approved: light-dark(#0b4f2a, #a6e8bf);
+  --app-status-rejected: light-dark(#ffdad5, #6b1d16);
+  --app-on-status-rejected: light-dark(#7a1a12, #ffc9c2);
+  --app-status-archived: transparent;
+  --app-on-status-archived: light-dark(#55606c, #aeb7c0);
+}

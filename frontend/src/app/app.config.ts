@@ -17,6 +17,8 @@ import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { unauthorizedInterceptor } from './core/api/unauthorized.interceptor';
 import { AuthService } from './core/auth/auth.service';
+import { BrandService } from './core/brand/brand.service';
+import { ColorSchemeService } from './core/brand/color-scheme.service';
 import { provideIsoDateAdapter } from './core/i18n/iso-date-adapter';
 import { LanguageService } from './core/i18n/language.service';
 import { TranslocoHttpLoader } from './core/i18n/transloco.loader';
@@ -40,8 +42,9 @@ export const appConfig: ApplicationConfig = {
       loader: TranslocoHttpLoader,
     }),
     provideAppInitializer(() => {
+      inject(ColorSchemeService).init();
       inject(LanguageService).init();
-      return inject(AuthService).init();
+      return Promise.all([inject(BrandService).init(), inject(AuthService).init()]);
     }),
     provideIsoDateAdapter(),
     provideStore(),

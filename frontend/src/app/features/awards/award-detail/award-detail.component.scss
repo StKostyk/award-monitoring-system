@@ -25,7 +25,7 @@
 }
 
 .award-detail__fields dt {
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .award-detail__fields dd {
@@ -44,7 +44,7 @@
 }
 
 .award-detail__remove {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 .award-detail__history {
@@ -57,7 +57,7 @@
 }
 
 .award-detail__problem {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 @media (max-width: 480px) {

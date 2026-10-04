@@ -1,7 +1,16 @@
 {
   "app": {
-    "title": "ChNU Awards",
     "language": "UK",
+    "languageLabel": "Перейти на українську",
+    "menu": "Menu",
+    "navigation": "Main navigation",
+    "home": "Home",
+    "scheme": {
+      "title": "Theme",
+      "system": "Same as device",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "logout": "Sign out",
     "loading": "Loading…",
     "datePlaceholder": "dd/mm/yyyy",

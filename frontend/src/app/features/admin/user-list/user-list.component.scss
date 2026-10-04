@@ -32,12 +32,12 @@
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.75rem;
-  background: var(--mat-sys-tertiary-container, #dbe2f9);
-  color: var(--mat-sys-on-tertiary-container, #101c2b);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
 }
 
 .admin__problem {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 .admin__empty {

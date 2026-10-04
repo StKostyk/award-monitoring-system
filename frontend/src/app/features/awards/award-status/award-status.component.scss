@@ -41,26 +41,26 @@
   min-width: 140px;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
-  color: var(--mat-sys-on-surface-variant, #444746);
+  border: 1px solid var(--mat-sys-outline-variant);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .award-status__step--DONE {
-  border-color: var(--mat-sys-primary, #0b57d0);
-  color: var(--mat-sys-on-surface, #1f1f1f);
+  border-color: var(--mat-sys-primary);
+  color: var(--mat-sys-on-surface);
 }
 
 .award-status__step--CURRENT {
   border-width: 2px;
-  border-color: var(--mat-sys-primary, #0b57d0);
-  background: var(--mat-sys-primary-container, #d3e3fd);
-  color: var(--mat-sys-on-primary-container, #041e49);
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
   font-weight: 500;
 }
 
 .award-status__step--STOPPED {
-  border-color: var(--mat-sys-error, #b3261e);
-  color: var(--mat-sys-on-surface, #1f1f1f);
+  border-color: var(--mat-sys-error);
+  color: var(--mat-sys-on-surface);
 }
 
 .award-status__level {
@@ -73,7 +73,7 @@
 }
 
 .award-status__meta {
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .award-status__summary {
@@ -84,8 +84,8 @@
   margin: 12px 0 0;
   padding: 8px 12px;
   border-radius: 8px;
-  background: var(--mat-sys-tertiary-container, #ffdbcb);
-  color: var(--mat-sys-on-tertiary-container, #341100);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
 }
 
 .award-status__decisions {
@@ -95,7 +95,7 @@
 }
 
 .award-status__decision {
-  border-left: 2px solid var(--mat-sys-outline-variant, #c4c7c5);
+  border-left: 2px solid var(--mat-sys-outline-variant);
   padding: 4px 0 8px 16px;
 }
 
@@ -115,5 +115,5 @@
   align-items: center;
   gap: 8px;
   margin-top: 12px;
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }

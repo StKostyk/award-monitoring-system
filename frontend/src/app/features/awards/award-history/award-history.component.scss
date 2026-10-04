@@ -9,7 +9,7 @@
 }
 
 .award-history__entry {
-  border-left: 2px solid var(--mat-sys-outline-variant, #c4c7c5);
+  border-left: 2px solid var(--mat-sys-outline-variant);
   padding: 4px 0 8px 16px;
 }
 
@@ -26,7 +26,7 @@
 
 .award-history__meta,
 .award-history__field {
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .award-history__changes {
@@ -40,5 +40,5 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
