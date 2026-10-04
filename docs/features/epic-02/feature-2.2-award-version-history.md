@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3–4 (2026-09-30 → 2026-10-11)
 > **Points**: 10 (two stories)
-> **Status**: Done 2026-09-30 (validated, §12; the author's run of §9 pending)
+> **Status**: Done 2026-09-30 (validated, §12; the manual run of §9 pending)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 2.2, DATA_GOVERNANCE §2 and §4, PRIVACY_IMPACT §4, DATABASE_DESIGN_STANDARDS §3.2, DATA_DICTIONARY §2.1 and §4.1, AUTH §3.3 and §7, RBAC_matrix.md, ADR-004, ADR-009, ADR-014, openapi.yml `/awards`, EPIC-02 tracker (decision 2026-09-28 on version-history storage, technical notes)
 
@@ -210,7 +210,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `./mvnw verify` green (unit, slice, IT, FT), JaCoCo ≥ 85 % lines, Checkstyle/PMD/SpotBugs clean
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-2.1–2.6
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §2 (`award_versions`) and §4.1 (`AUDIT_EXPORT`, trigger actor and `DELETE` key), DATABASE_DESIGN_STANDARDS §3.2, AUTH §7 row, RBAC_matrix.md (history and audit trail rows), `CHANGELOG.md`, tracker rows, `BACKLOG.md`
-- §9 walked through by the author after `/feature-validate`, including the detours
+- §9 manual verification run in the browser, including the detours
 
 ## 12. Validation (2026-09-30, `develop` at 01dbc90, fixes and refactor sweep in 2.2.3)
 

@@ -10,14 +10,14 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 2.1 Award Creation & Validation | Done (validated, PRD §12; fixes 2.1.4 merged; author's run of §9 pending) ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | 2026-09-29 |
-| 2.2 Award Version History & Audit Trail | Done (validated, PRD §12; fixes 2.2.3 merged; author's run of §9 pending) ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | 2026-09-30 |
-| 2.3 Award Status Tracking | Done (validated, PRD §12; fixes 2.3.2 merged; author's run of §9 pending) ([feature-2.3](../features/epic-02/feature-2.3-award-status-tracking.md)) | 2026-10-01 | 2026-10-01 |
+| 2.1 Award Creation & Validation | Done (validated, PRD §12; fixes 2.1.4 merged; manual run of §9 pending) ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | 2026-09-29 |
+| 2.2 Award Version History & Audit Trail | Done (validated, PRD §12; fixes 2.2.3 merged; manual run of §9 pending) ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | 2026-09-30 |
+| 2.3 Award Status Tracking | Done (validated, PRD §12; fixes 2.3.2 merged; manual run of §9 pending) ([feature-2.3](../features/epic-02/feature-2.3-award-status-tracking.md)) | 2026-10-01 | 2026-10-01 |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
 
 ## Current focus
 
-Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the author's run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) done 2026-09-30 (#96); validated 2026-09-30 (PRD §12, passed with notes F-1…F-4), fixes and refactor sweep in 2.2.3 (SCRUM-30), merged 2026-10-01 (#98). Feature 2.3 PRD approved 2026-10-01; 2.3.1 (SCRUM-27) done 2026-10-01 (#100); validated 2026-10-01 (PRD §12, passed with notes F-1…F-6), fixes and refactor sweep in 2.3.2 (SCRUM-31), merged 2026-10-01 (#102). Epic documentation sync 2026-10-01: docs reconciled with the code; three unused database objects disagree with the award model and are fixed in 2.1.5 (SCRUM-32), merged 2026-10-01 (#106). Epic 2 done 2026-10-01; the author's runs of PRD §9 for Features 2.1–2.3 are pending.
+Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the manual run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) done 2026-09-30 (#96); validated 2026-09-30 (PRD §12, passed with notes F-1…F-4), fixes and refactor sweep in 2.2.3 (SCRUM-30), merged 2026-10-01 (#98). Feature 2.3 PRD approved 2026-10-01; 2.3.1 (SCRUM-27) done 2026-10-01 (#100); validated 2026-10-01 (PRD §12, passed with notes F-1…F-6), fixes and refactor sweep in 2.3.2 (SCRUM-31), merged 2026-10-01 (#102). Epic documentation sync 2026-10-01: docs reconciled with the code; three unused database objects disagree with the award model and are fixed in 2.1.5 (SCRUM-32), merged 2026-10-01 (#106). Epic 2 done 2026-10-01; the manual runs of PRD §9 for Features 2.1–2.3 are pending.
 
 ## Scope
 
@@ -44,7 +44,7 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 9 | 2.3.1 Award status tracking (US-005) | 2.3 | 5 | SCRUM-27 | #80 | no | Done |
 | 10 | 2.3.2 Fixes from the Feature 2.3 validation | 2.3 | 2 | SCRUM-31 | #101 | no | Done |
 | 11 | 2.1.5 Database views and functions follow the award model | 2.1 | 2 | SCRUM-32 | #103 | no | Done |
-| 12 | 2.1.6 Fixes from the author's manual run of Feature 2.1 | 2.1 | 2 | SCRUM-38 | #117 | no | In Review |
+| 12 | 2.1.6 Fixes from the manual run of Feature 2.1 | 2.1 | 2 | SCRUM-38 | #117 | no | Done |
 
 Total: 46 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 

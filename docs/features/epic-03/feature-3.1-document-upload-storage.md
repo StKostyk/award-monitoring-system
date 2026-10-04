@@ -265,4 +265,4 @@ Preconditions: `docker compose up -d postgres redis mailpit minio` (plus `clamav
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.16, 2.1–2.11, 3.4
 - Docs in the same PR as the story: `openapi.yml` (document paths and schemas), DATA_DICTIONARY §2.3, V025, THREAT_MODEL, SECURITY_ARCHITECTURE note, RBAC_matrix.md rows, state-machine note, DEMO_DEPLOYMENT (MinIO KMS key, ClamAV), `.env.prod.example`, `CHANGELOG.md`, EPIC-03 tracker, `BACKLOG.md`
 - Security review of each story's diff (upload handling, US-003 DoD)
-- §9 walked through by the author after the validation, including the detours
+- §9 manual verification run in the browser after the validation, including the detours

@@ -110,7 +110,7 @@ None of the stories is marked parallel: the frontend work in each is small and c
 
 ### 1.1.6 Fixes from the manual run (SCRUM-18)
 
-Defects found by the author's run of §9 (findings F-5 to F-9 in §12) and one hardening decision taken with them.
+Defects found by the manual run of §9 (findings F-5 to F-9 in §12) and one hardening decision taken with them.
 
 - **AC-6.1** Given the refresh token is refused (`invalid_grant`/401) or the session ends, then the SPA drops its tokens and, on a guarded page, starts the sign-in flow (login page, or silent re-login while the authorization-server session lives) instead of rendering an empty shell; a transient refresh failure (network, 5xx, 429) keeps the session; a reload with an expired access token never fails the application start (a 401 on `/users/me` means "not signed in"); a 401 from the API while signed in triggers the same sign-in.
 - **AC-6.2** Given a `POST /login` with a missing or stale CSRF token, then the browser returns to `/login?error=EXPIRED` with a translated message; a 403 or a server error on the authorization server shows a branded page with a link to the app instead of the default error page.
@@ -390,4 +390,4 @@ Known accepted gaps are the tracker's "Security review follow-ups" 1, 3, 5–8 (
 | F-10 | Step 24: `redis-cli DEL` through the container had no effect because a `redis-server` inside WSL was answering `localhost:6379` for the dev backend | Environment, not code; WSL server disabled; dev script warns (AC-6.6) |
 | F-4 | Refactor sweep (21 items): duplicated SHA-256 helper, link building, redeem-or-410, password check, email normalisation; narrative comment in `CorrelationIdFilter`; Angular token-link lifecycle copied in three components; e2e helpers duplicated | Worth-it items in the `refactor(auth)` PR; the rest listed in the tracker's technical notes |
 
-Verdict: **PASSED WITH NOTES** — pending the author's run of §9 in the browser.
+Verdict: **PASSED WITH NOTES** — pending the manual run of §9 in the browser.

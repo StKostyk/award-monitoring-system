@@ -199,7 +199,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `./mvnw verify` green (unit, slice, IT, FT), JaCoCo ≥ 85 % lines, Checkstyle/PMD/SpotBugs clean
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.1, 1.3, 1.5, 1.7, 3.5
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §1.4 and §4.1, PRIVACY_BY_DESIGN §6.2, DATA_GOVERNANCE §4 note, AUTH §9 row for the address change, `CHANGELOG.md`, tracker rows, `BACKLOG.md`
-- §9 walked through by the author after `/feature-validate`, including the detours
+- §9 manual verification run in the browser, including the detours
 
 ## 12. Validation (2026-09-30, `develop` at 0d30db5)
 
