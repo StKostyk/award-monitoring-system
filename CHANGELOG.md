@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- `tools/e2e.ps1 -Grep <pattern>` runs only matching Playwright tests; a running `award-backend` container is paused for the run instead of blocking it. `tools/reset-db.ps1` restarts a running `award-backend` so the rebuilt database gets its migrations at once
 - Documentation reconciled with the code after Epic 2: ADR addenda for the deferred stack (Kafka, Elasticsearch, gateway, Kubernetes, cloud) and the embedded authorization server, as-built ERD, domain class, package, container, submission sequence and data-flow diagrams, planned operations marked in `openapi.yml`, Postman collection on the OAuth 2.0 PKCE flow, RBAC award read rows
 - Ukrainian copies of the thesis-cited documents (`docs/ua`) brought up to date with Epics 1 and 2: ADR addenda, data dictionary, database standards, architecture and migration strategy, authentication and privacy design, RBAC matrix, project plan, data governance and the as-built diagrams
 - The audit trigger no longer copies `password_hash` into the snapshots of `users` rows (V022); rows written earlier are unchanged

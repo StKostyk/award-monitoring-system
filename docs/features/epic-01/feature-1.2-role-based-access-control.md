@@ -229,7 +229,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Level order is a judgement call the university has not confirmed (does the rector's secretary outrank a dean for user management?) | Wrong person can assign roles | The order is one enum; the PRD and AUTH §9 state it; it is read at `/thesis-sync` with the user |
+| Level order is a judgement call the university has not confirmed (does the rector's secretary outrank a dean for user management?) | Wrong person can assign roles | The order is one enum; the PRD and AUTH §9 state it; it is read at the end-of-epic documentation sync with the user |
 | A stale in-memory tree after an organisation change on another instance | Wrong scope for up to five minutes | Timer refresh; single instance for the thesis; Redis pub/sub is the multi-instance answer (deployment story) |
 | Token growth with many roles or delegations | Header size | A user has at most a handful of roles; delegations are bounded by the 90-day rule and one-per-role |
 | Membership confirmation adds a manual step before anyone can submit an award | Onboarding friction at the pilot | Secretaries see unconfirmed users first; email to the secretary on every new registration is a Feature 1.3 preference |

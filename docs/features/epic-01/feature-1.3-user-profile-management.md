@@ -191,7 +191,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 |------|--------|------------|
 | A hijacked session changes the address and locks the owner out | Account takeover | Current password required (D-1), notice to the old address, lockout counts wrong passwords, administrator can restore the address |
 | Export leaks internal data (hashes, tokens, others' data) | GDPR breach | Explicit section assembler instead of dumping tables; FT asserts the absence of hashes and tokens (AC-3.3) |
-| Historical `password_hash` values stay in old audit rows | Hashes kept for seven years | D-5 stops new ones; purging old rows needs a decision on audit immutability — raised at `/thesis-sync` |
+| Historical `password_hash` values stay in old audit rows | Hashes kept for seven years | D-5 stops new ones; purging old rows needs a decision on audit immutability — raised at the end-of-epic documentation sync |
 | Export grows with Epic 3 documents and Epic 4 decisions | Slow download | Metadata only, no binaries; 2-second target tested with 200 awards (AC-3.6) |
 
 ## 11. Definition of Done

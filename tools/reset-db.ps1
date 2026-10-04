@@ -7,7 +7,7 @@
     migration to an empty database and the repeatable seeds come back. Use it when a migration that has not been
     merged yet is edited after it already ran locally (Flyway then refuses to start on the checksum), or when the
     local data has drifted. Everything typed into the local database by hand is lost; nothing outside the
-    development stack is touched.
+    development stack is touched. A running award-backend container is restarted so it applies the migrations.
 
 .EXAMPLE
     .\tools\reset-db.ps1
@@ -51,4 +51,19 @@ if (-not $ready) {
     Write-Host 'Postgres did not become ready; check `docker compose logs postgres`.'
     exit 1
 }
-Write-Host 'Development database rebuilt; the next backend start applies every migration.'
+
+if (docker ps --filter 'name=^award-backend$' --filter 'status=running' --format '{{.Names}}') {
+    docker restart award-backend | Out-Null
+    $deadline = (Get-Date).AddMinutes(3)
+    do {
+        Start-Sleep -Seconds 3
+        try { $health = (Invoke-RestMethod -Uri 'http://localhost:8080/actuator/health' -TimeoutSec 3).status } catch { $health = 'starting' }
+    } while ($health -ne 'UP' -and (Get-Date) -lt $deadline)
+    if ($health -ne 'UP') {
+        Write-Host 'Database rebuilt, but the award-backend container is not healthy; check `docker logs award-backend`.'
+        exit 1
+    }
+    Write-Host 'Development database rebuilt; the award-backend container restarted and applied every migration.'
+} else {
+    Write-Host 'Development database rebuilt; the next backend start applies every migration.'
+}
