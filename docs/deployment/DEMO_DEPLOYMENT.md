@@ -20,6 +20,7 @@ Copy `.env.prod.example` to `.env.prod` (ignored by git) and fill it in.
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Brevo SMTP relay: `smtp-relay.brevo.com`, `587`, the SMTP login and key from the Brevo account |
 | `MAIL_FROM` | A sender verified in Brevo |
 | `ALLOWED_EMAIL_DOMAINS` | Domains accepted at registration (default `chnu.edu.ua`) |
+| `APP_BRAND` | Brand of the sign-in and error pages (`chnu` default, `neutral`); keep it equal to the `id` in the frontend's `brand.json` |
 | `JWK_KEY_ID`, `JWK_PRIVATE_KEY`, `JWK_PUBLIC_KEY` | Token signing key, see below |
 | `FLYWAY_LOCATIONS`, `DEMO_PASSWORD_HASH` | Demo accounts, see below |
 
@@ -72,7 +73,8 @@ the `frontend` service:
 ```
 
 The `id` must name a theme compiled into the image (`chnu`, `neutral`); anything else falls back to the neutral
-theme. Format and rules: [UI guidelines](../frontend/UI_GUIDELINES.md) §1.
+theme. The sign-in and error pages come from the backend and take their brand from `APP_BRAND` (same ids, logo
+built into the backend image). Format and rules: [UI guidelines](../frontend/UI_GUIDELINES.md) §1 and §7.
 
 ---
 

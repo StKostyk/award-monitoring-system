@@ -10,7 +10,7 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 3.0 Production configuration (deployment preparation) | In progress (3.0.1 done, 3.0.2) | 2026-10-02 | |
+| 3.0 Production configuration (deployment preparation) | In progress (3.0.1, 3.0.2 done; 3.0.3, 3.0.4) | 2026-10-02 | |
 | 3.1 Document Upload & Storage | In progress ([feature-3.1](../features/epic-03/feature-3.1-document-upload-storage.md)) | 2026-10-02 | |
 | 3.2 OCR & Intelligent Parsing | Deferred (see decisions) | | |
 | 3.3 Confidence Scoring & Manual Review | Deferred (see decisions) | | |
@@ -35,9 +35,11 @@ Out of scope here: attaching documents to a returned request during resubmission
 | 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | Done |
 | 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | Done |
 | 4 | 3.1.3 Malware scanning of uploads | 3.1 | 3 | SCRUM-37 | #113 | no | To do |
-| 5 | 3.0.2 Brand theming, dark mode and side-nav shell | 3.0 | 5 | SCRUM-39 | #121 | no | In review |
+| 5 | 3.0.2 Brand theming, dark mode and side-nav shell | 3.0 | 5 | SCRUM-39 | #121 | no | Done |
+| 6 | 3.0.3 Login and error pages in the university brand | 3.0 | 3 | SCRUM-40 | #123 | no | In progress |
+| 7 | 3.0.4 Blocking lint and Playwright in CI | 3.0 | 3 | SCRUM-41 | #124 | no | In progress |
 
-Total: 24 points, sprints 3–4. A fixes story follows the Feature 3.1 validation if it finds anything.
+Total: 30 points, sprints 3–4. A fixes story follows the Feature 3.1 validation if it finds anything.
 
 ## Decisions
 
