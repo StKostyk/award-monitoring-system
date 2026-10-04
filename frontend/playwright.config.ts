@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 60_000,
   fullyParallel: false,
   retries: process.env['CI'] ? 1 : 0,
-  reporter: process.env['CI'] ? 'github' : 'list',
+  reporter: process.env['CI'] ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: 'http://localhost:4200',
     locale: 'uk-UA',
