@@ -122,6 +122,7 @@ describe('AwardListComponent', () => {
 
     expect(items.length).toBe(2);
     expect(items[0].textContent).toContain('Відзнака міністерства');
+    expect(items[0].textContent).toContain('01.05.2025');
     expect(items[0].querySelector('[data-testid="award-status"]')?.textContent).toContain(
       'Чернетка',
     );

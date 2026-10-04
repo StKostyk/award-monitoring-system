@@ -20,6 +20,7 @@ import { problemStatus, problemType, readProblem } from '../../../core/api/probl
 import { AuthService } from '../../../core/auth/auth.service';
 import { canEditOwnAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { kyivDate } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
@@ -140,6 +141,10 @@ export class AwardDetailComponent implements OnInit {
   /** An own draft the caller may also change. */
   editable(award: Award): boolean {
     return this.ownDraft(award) && canEditOwnAwards(this.auth.permissions());
+  }
+
+  day(value: string): string {
+    return kyivDate(value, this.language.current());
   }
 
   title(award: Award): string {
