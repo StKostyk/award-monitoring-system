@@ -34,19 +34,39 @@
         <mat-label>{{ 'admin.assign.validFrom' | transloco }}</mat-label>
         <input
           matInput
-          type="date"
+          [matDatepicker]="validFromPicker"
           formControlName="validFrom"
           [min]="minimumDate"
+          [placeholder]="'app.datePlaceholder' | transloco"
           data-testid="assign-valid-from"
         />
-        @if (form.controls.validFrom.hasError('past')) {
+        <mat-datepicker-toggle matIconSuffix [for]="validFromPicker" />
+        <mat-datepicker #validFromPicker />
+        @if (form.controls.validFrom.hasError('matDatepickerParse')) {
+          <mat-error>{{ 'app.dateInvalid' | transloco }}</mat-error>
+        }
+        @if (
+          form.controls.validFrom.hasError('past') ||
+          form.controls.validFrom.hasError('matDatepickerMin')
+        ) {
           <mat-error>{{ 'admin.assign.validation.past' | transloco }}</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="admin__field">
         <mat-label>{{ 'admin.assign.validTo' | transloco }}</mat-label>
-        <input matInput type="date" formControlName="validTo" data-testid="assign-valid-to" />
+        <input
+          matInput
+          [matDatepicker]="validToPicker"
+          formControlName="validTo"
+          [placeholder]="'app.datePlaceholder' | transloco"
+          data-testid="assign-valid-to"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="validToPicker" />
+        <mat-datepicker #validToPicker />
+        @if (form.controls.validTo.hasError('matDatepickerParse')) {
+          <mat-error>{{ 'app.dateInvalid' | transloco }}</mat-error>
+        }
         @if (form.controls.validTo.hasError('order')) {
           <mat-error>{{ 'admin.assign.validation.order' | transloco }}</mat-error>
         }

@@ -18,8 +18,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
+import {
+  MatDatepicker,
+  MatDatepickerInput,
+  MatDatepickerToggle,
+} from '@angular/material/datepicker';
 import { MatDialog } from '@angular/material/dialog';
-import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
+import { MatError, MatFormField, MatHint, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
@@ -95,6 +100,10 @@ type FieldName = keyof AwardForm;
     MatHint,
     MatError,
     MatInput,
+    MatDatepicker,
+    MatDatepickerInput,
+    MatDatepickerToggle,
+    MatSuffix,
     MatSelect,
     MatOption,
     MatButton,
@@ -380,6 +389,15 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     }
     if (errors['maxlength']) {
       return 'awards.errors.too-long';
+    }
+    if (errors['matDatepickerParse']) {
+      return 'app.dateInvalid';
+    }
+    if (errors['matDatepickerMax']) {
+      return 'awards.errors.future';
+    }
+    if (errors['matDatepickerMin']) {
+      return 'awards.errors.too-old';
     }
     return errors['pattern'] ? 'awards.errors.invalid' : null;
   }

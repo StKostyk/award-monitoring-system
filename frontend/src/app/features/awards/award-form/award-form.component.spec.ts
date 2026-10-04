@@ -10,6 +10,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { DocumentsService } from '../award-documents/documents.service';
@@ -105,6 +106,7 @@ describe('AwardFormComponent', () => {
         }),
       ],
       providers: [
+        provideIsoDateAdapter(),
         provideRouter([]),
         {
           provide: ActivatedRoute,

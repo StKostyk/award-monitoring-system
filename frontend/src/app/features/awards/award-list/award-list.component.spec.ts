@@ -9,6 +9,7 @@ import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
+import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { Award, AwardsService } from '../awards.service';
 import { AwardsActions } from '../store/awards.actions';
@@ -87,6 +88,7 @@ describe('AwardListComponent', () => {
         }),
       ],
       providers: [
+        provideIsoDateAdapter(),
         provideRouter([]),
         provideStore(),
         provideState(awardsFeature),
@@ -120,6 +122,7 @@ describe('AwardListComponent', () => {
 
     expect(items.length).toBe(2);
     expect(items[0].textContent).toContain('Відзнака міністерства');
+    expect(items[0].textContent).toContain('01.05.2025');
     expect(items[0].querySelector('[data-testid="award-status"]')?.textContent).toContain(
       'Чернетка',
     );

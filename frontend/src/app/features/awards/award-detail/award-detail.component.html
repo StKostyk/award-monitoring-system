@@ -35,7 +35,7 @@
       <dt>{{ 'awards.fields.awardingOrganization' | transloco }}</dt>
       <dd>{{ award.awardingOrganization || '—' }}</dd>
       <dt>{{ 'awards.fields.awardDate' | transloco }}</dt>
-      <dd>{{ award.awardDate || '—' }}</dd>
+      <dd>{{ award.awardDate ? day(award.awardDate) : '—' }}</dd>
       @if (award.descriptionUk || award.description) {
         <dt>{{ 'awards.fields.descriptionUk' | transloco }}</dt>
         <dd class="award-detail__text">{{ award.descriptionUk || award.description }}</dd>

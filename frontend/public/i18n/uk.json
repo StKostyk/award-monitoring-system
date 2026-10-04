@@ -3,7 +3,9 @@
     "title": "Облік нагород ЧНУ",
     "language": "EN",
     "logout": "Вийти",
-    "loading": "Завантаження…"
+    "loading": "Завантаження…",
+    "datePlaceholder": "дд.мм.рррр",
+    "dateInvalid": "Введіть дату у форматі дд.мм.рррр"
   },
   "home": {
     "greeting": "Вітаємо, {{name}}",

@@ -326,6 +326,15 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
     }
 
     @Test
+    void edge_theSwaggerTokenRequestPassesTheCorsPreflight() {
+        RestAssured.given().header("Origin", "http://localhost:4200")
+            .header("Access-Control-Request-Method", "POST")
+            .header("Access-Control-Request-Headers", "x-requested-with")
+            .when().options("/oauth2/token")
+            .then().statusCode(200).header("Access-Control-Allow-Origin", "http://localhost:4200");
+    }
+
+    @Test
     void ac62_ac63_directLoginLandsOnTheAppAndAStaleFormReturnsToTheLoginPage() {
         AuthorizationCodeFlow direct = new AuthorizationCodeFlow();
         assertThat(direct.submitLogin(DEAN, PASSWORD).getHeader("Location")).isEqualTo("http://localhost:4200");

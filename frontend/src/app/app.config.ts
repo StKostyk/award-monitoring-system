@@ -17,6 +17,7 @@ import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { unauthorizedInterceptor } from './core/api/unauthorized.interceptor';
 import { AuthService } from './core/auth/auth.service';
+import { provideIsoDateAdapter } from './core/i18n/iso-date-adapter';
 import { LanguageService } from './core/i18n/language.service';
 import { TranslocoHttpLoader } from './core/i18n/transloco.loader';
 
@@ -42,6 +43,7 @@ export const appConfig: ApplicationConfig = {
       inject(LanguageService).init();
       return inject(AuthService).init();
     }),
+    provideIsoDateAdapter(),
     provideStore(),
     provideEffects(),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),

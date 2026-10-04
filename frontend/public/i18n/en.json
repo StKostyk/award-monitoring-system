@@ -3,7 +3,9 @@
     "title": "ChNU Awards",
     "language": "UK",
     "logout": "Sign out",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "datePlaceholder": "dd/mm/yyyy",
+    "dateInvalid": "Enter the date as dd/mm/yyyy"
   },
   "home": {
     "greeting": "Welcome, {{name}}",
