@@ -280,7 +280,7 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root â
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Authorization-server login page styling drifts from the Angular Material look | Demo polish | One shared colour palette and font; screenshot compared at `/feature-validate` |
+| Authorization-server login page styling drifts from the Angular Material look | Demo polish | One shared colour palette and font; screenshot compared at the feature validation |
 | Refresh token in browser memory is lost on reload | User re-logs in after a hard refresh | Silent re-authorization via `/oauth2/authorize?prompt=none` using the server session cookie |
 | Functional test of the full code flow is brittle (CSRF, redirects) | Flaky CI | REST-assured with a cookie filter and explicit redirect handling; one helper reused by later FTs |
 | Rate limiting on a single IP hurts local demos behind NAT | Demo lock-outs | Limits configurable per profile; higher in `local` |

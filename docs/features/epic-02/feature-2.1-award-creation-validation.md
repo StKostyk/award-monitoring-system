@@ -242,7 +242,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Level order, approval minimums and base scores (D-3) are not confirmed by the university | Wrong routing and scores once Epic 4 uses them | One enum and one dictionary table; read with the user at `/thesis-sync` |
+| Level order, approval minimums and base scores (D-3) are not confirmed by the university | Wrong routing and scores once Epic 4 uses them | One enum and one dictionary table; read with the user at the end-of-epic documentation sync |
 | US-003 "under 5 minutes" is judged on manual entry only | The persona test is weaker without the photo | Stated in the tracker (risk 2); the form is timed in §9 step 6 on a phone viewport |
 | Suggestion quality on real titles is lower than on the fixture | Users ignore the chips | Suggestions never overwrite a choice; the fixture grows with real titles from the pilot |
 | `trg_awards_audit` rows carry no actor until Feature 2.2 | Audit trail incomplete for Epic 2 changes | `AWARD_SUBMITTED` rows carry the actor; the actor for trigger rows is part of the 2.2 design note |
