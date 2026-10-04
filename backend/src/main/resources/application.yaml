@@ -127,6 +127,9 @@ springdoc:
 # Authorization server
 # =============================================================================
 app:
+  brand:
+    # university brand of the sign-in and error pages; the same ids as the frontend's brand/brand.json
+    id: ${APP_BRAND:chnu}
   workflow:
     review-period: ${APP_REVIEW_PERIOD:3d}
   documents:

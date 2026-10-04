@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="#{error.generic.title}">Something went wrong</title>
-    <link rel="stylesheet" th:href="@{/css/login.css}">
+<head th:replace="~{fragments/brand :: head(#{error.generic.title})}">
+    <title>Something went wrong</title>
 </head>
 <body>
-<main class="card">
-    <header class="card__header">
-        <span class="card__brand">ChNU Awards</span>
-    </header>
-    <h1 th:text="#{error.generic.title}">Something went wrong</h1>
-    <p class="alert" role="alert" th:text="#{error.generic.text(${status})}">The request could not be completed.</p>
-    <p><a th:href="@{/}" th:text="#{error.generic.link}">Go to the application</a></p>
-</main>
+<aside th:replace="~{fragments/brand :: panel}"></aside>
+<div class="page">
+    <main class="card">
+        <h1 th:text="#{error.generic.title}">Something went wrong</h1>
+        <p class="alert" role="alert" th:text="#{error.generic.text(${status})}">The request could not be completed.</p>
+        <p class="card__link"><a th:href="@{/}" th:text="#{error.generic.link}">Go to the application</a></p>
+    </main>
+</div>
 </body>
 </html>

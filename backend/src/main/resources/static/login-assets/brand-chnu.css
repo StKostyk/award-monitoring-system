@@ -1,0 +1,23 @@
+:root {
+    --lp-font: "Nunito", "Segoe UI", Helvetica, Arial, sans-serif;
+    --lp-heading-weight: 800;
+    --lp-strong-weight: 700;
+    --lp-radius: 12px;
+    --lp-bg: light-dark(#f9f8ff, #1f1f1f);
+    --lp-card: light-dark(#ffffff, #282b2f);
+    --lp-text: light-dark(#1a1b21, #e3e2e9);
+    --lp-muted: light-dark(#44464f, #c5c6d0);
+    --lp-outline: light-dark(#757780, #8f909a);
+    --lp-divider: light-dark(#dfe9eb, #3a4248);
+    --lp-primary: light-dark(#0047ab, #b1c5ff);
+    --lp-primary-hover: light-dark(#003687, #dae2ff);
+    --lp-on-primary: light-dark(#ffffff, #002c70);
+    --lp-panel: light-dark(#003278, #15191f);
+    --lp-on-panel: light-dark(#ffffff, #e3e8f2);
+    --lp-accent: light-dark(#00bbff, #4fd0ff);
+    --lp-on-accent: #00243a;
+    --lp-error: light-dark(#ba1a1a, #ffdad6);
+    --lp-error-bg: light-dark(#ffdad6, #93000a);
+    --lp-notice: light-dark(#001946, #dae2ff);
+    --lp-notice-bg: light-dark(#dae2ff, #00419e);
+}

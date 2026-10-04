@@ -1,0 +1,342 @@
+@font-face {
+    font-family: "Nunito";
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/nunito-cyrillic-400-normal.woff2") format("woff2");
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/nunito-latin-400-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-weight: 700;
+    font-display: swap;
+    src: url("fonts/nunito-cyrillic-700-normal.woff2") format("woff2");
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-weight: 700;
+    font-display: swap;
+    src: url("fonts/nunito-latin-700-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-weight: 800;
+    font-display: swap;
+    src: url("fonts/nunito-cyrillic-800-normal.woff2") format("woff2");
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-weight: 800;
+    font-display: swap;
+    src: url("fonts/nunito-latin-800-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/ibm-plex-sans-cyrillic-400-normal.woff2") format("woff2");
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/ibm-plex-sans-latin-400-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 500;
+    font-display: swap;
+    src: url("fonts/ibm-plex-sans-cyrillic-500-normal.woff2") format("woff2");
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 500;
+    font-display: swap;
+    src: url("fonts/ibm-plex-sans-latin-500-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 600;
+    font-display: swap;
+    src: url("fonts/ibm-plex-sans-cyrillic-600-normal.woff2") format("woff2");
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 600;
+    font-display: swap;
+    src: url("fonts/ibm-plex-sans-latin-600-normal.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+    color-scheme: light dark;
+}
+
+:root[data-color-scheme="light"] {
+    color-scheme: light;
+}
+
+:root[data-color-scheme="dark"] {
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(280px, 2fr) 3fr;
+    background: var(--lp-bg);
+    color: var(--lp-text);
+    font-family: var(--lp-font);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 40px;
+    background: var(--lp-panel);
+    color: var(--lp-on-panel);
+}
+
+.brand__logo {
+    width: 56px;
+    height: 56px;
+}
+
+.brand__name {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: var(--lp-heading-weight);
+    line-height: 1.2;
+}
+
+.brand__organization {
+    margin: 0;
+    max-width: 28ch;
+    opacity: 0.85;
+}
+
+.page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+}
+
+.card {
+    width: min(420px, 100%);
+    padding: 32px;
+    background: var(--lp-card);
+    border: 1px solid var(--lp-divider);
+    border-radius: var(--lp-radius);
+}
+
+.card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.card__lang {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    margin-right: -12px;
+    border-radius: 999px;
+    color: var(--lp-primary);
+    font-weight: var(--lp-strong-weight);
+    text-decoration: none;
+}
+
+.card__lang:hover {
+    background: color-mix(in srgb, var(--lp-primary) 10%, transparent);
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: var(--lp-heading-weight);
+    line-height: 1.25;
+}
+
+form {
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+label {
+    margin-top: 12px;
+    font-size: 0.875rem;
+    font-weight: var(--lp-strong-weight);
+    color: var(--lp-muted);
+}
+
+input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    font: inherit;
+    color: var(--lp-text);
+    background: var(--lp-card);
+    border: 1px solid var(--lp-outline);
+    border-radius: 6px;
+}
+
+input:focus-visible {
+    outline: 2px solid var(--lp-primary);
+    outline-offset: 0;
+    border-color: var(--lp-primary);
+}
+
+button {
+    min-height: 48px;
+    margin-top: 20px;
+    padding: 12px 20px;
+    font: inherit;
+    font-weight: var(--lp-strong-weight);
+    color: var(--lp-on-primary);
+    background: var(--lp-primary);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--lp-primary-hover);
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid var(--lp-primary);
+    outline-offset: 2px;
+}
+
+a {
+    color: var(--lp-primary);
+    font-weight: var(--lp-strong-weight);
+}
+
+.alert,
+.notice {
+    margin: 16px 0 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.alert {
+    background: var(--lp-error-bg);
+    color: var(--lp-error);
+}
+
+.notice {
+    background: var(--lp-notice-bg);
+    color: var(--lp-notice);
+}
+
+.card__link,
+.card__footer {
+    margin: 16px 0 0;
+    font-size: 0.95rem;
+}
+
+.card__link {
+    text-align: right;
+}
+
+.card__link a,
+.card__footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+}
+
+.card__footer {
+    padding-top: 12px;
+    border-top: 1px solid var(--lp-divider);
+    text-align: center;
+    color: var(--lp-muted);
+}
+
+.card__footer a {
+    margin-left: 4px;
+}
+
+@media (max-width: 760px) {
+    body {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+    }
+
+    .brand {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .brand__logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .brand__name {
+        font-size: 1.1rem;
+    }
+
+    .brand__organization {
+        display: none;
+    }
+
+    .page {
+        align-items: flex-start;
+        padding: 24px 16px;
+    }
+
+    .card {
+        padding: 24px 20px;
+    }
+}

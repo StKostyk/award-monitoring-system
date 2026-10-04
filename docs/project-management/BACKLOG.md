@@ -48,7 +48,9 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | 3.1.1 | Document storage and upload API | 8 | ✅ Done | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
 | 3.1.2 | Certificate upload in the award form and award page | 5 | ✅ Done | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
 | 3.1.3 | Malware scanning of uploads | 3 | 4 | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
-| 3.0.2 | Brand theming, dark mode and side-nav shell (🔍 In Review) | 5 | 4 | SCRUM-39 | [#121](https://github.com/StKostyk/award-monitoring-system/issues/121) |
+| 3.0.2 | Brand theming, dark mode and side-nav shell | 5 | ✅ Done | SCRUM-39 | [#121](https://github.com/StKostyk/award-monitoring-system/issues/121) |
+| 3.0.3 | Login and error pages in the university brand | 3 | 4 | SCRUM-40 | [#123](https://github.com/StKostyk/award-monitoring-system/issues/123) |
+| 3.0.4 | Blocking lint and Playwright in CI | 3 | 4 | SCRUM-41 | [#124](https://github.com/StKostyk/award-monitoring-system/issues/124) |
 
 ### Later epics
 | ID | Story | Points | Epic |

@@ -130,6 +130,7 @@ services:
       # Authorization server as seen from the browser (nginx proxies it on port 80)
       - AUTH_ISSUER=http://localhost
       - AUTH_FRONTEND_URL=http://localhost
+      - APP_BRAND=${APP_BRAND:-chnu}
       - AUTH_ALLOWED_ORIGINS=http://localhost,http://localhost:4200,http://localhost:8080
       - AUTH_REDIRECT_URIS=http://localhost/callback,http://localhost:4200/callback,http://localhost:8080/swagger-ui/oauth2-redirect.html
       - AUTH_POST_LOGOUT_REDIRECT_URIS=http://localhost,http://localhost:4200

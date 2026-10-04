@@ -54,9 +54,20 @@ Material component colours are changed with the component's `*-overrides` mixin 
 - Nunito, IBM Plex Sans and Material Icons are served by the app (`@fontsource`, `angular.json` styles); no third-party font requests (CSP `font-src 'self' data:`).
 - Icons are `<mat-icon>` ligatures; icon-only buttons need an `aria-label`.
 
-## 7. Checks
+## 7. Sign-in and error pages
+
+The authorization server renders the sign-in, error and 429 pages itself (Thymeleaf, `backend/src/main/resources/templates`), so they carry their own copy of the brand:
+
+- `APP_BRAND` (`app.brand.id`, default `chnu`) picks the brand; the ids are those of `brand.json`, and an unknown id gives the neutral brand. The browser application and the backend are configured separately, so a deployment sets both.
+- `static/login-assets/brand-<id>.css` holds the brand tokens (`--lp-*`, `light-dark()` values mirroring the Material theme), `login.css` the layout and the self-hosted fonts, `<id>/logo.svg` the logo; product name and organisation are the message keys `brand.<id>.name` and `brand.<id>.organization`.
+- Layout: brand panel (logo, name, organisation) beside the form from 760 px, a strip above it on phones; controls at least 44 px high.
+- The scheme follows the device; on the application's own origin (production, the container stack) `scheme.js` also applies the scheme chosen in the app. No inline script or style, nothing from another host.
+- A new brand adds `brand-<id>.css`, the logo folder and the message keys next to its Angular theme.
+
+## 8. Checks
 
 - `e2e/theme.spec.ts`: brand class and title, fallback to neutral, scheme switch, phone drawer, axe (WCAG 2.1 AA, serious and critical) on home, award list and award form for each brand in light and dark.
+- `e2e/login.spec.ts`: sign-in page brand, fonts without other hosts, 360 px layout, target sizes and axe in light and dark, also with an error shown.
 - `/ui-check` screenshots at 360 and 1280 px, light and dark, Ukrainian and English for every changed screen.
 
 ## Manual verification
@@ -68,3 +79,7 @@ Material component colours are changed with the component's `*-overrides` mixin 
 5. Open «Мої нагороди». Expected: status chips coloured by status (grey draft, amber pending, green approved, red rejected, outlined archived) in both schemes.
 6. In the developer tools, Network tab, reload. Expected: no request to `fonts.googleapis.com` or `fonts.gstatic.com`.
 7. Replace the brand: `docker compose exec frontend sh -c "echo '{\"id\":\"neutral\",\"name\":{\"uk\":\"Облік нагород\",\"en\":\"Award Registry\"},\"organization\":{\"uk\":\"Університет\",\"en\":\"University\"},\"logo\":\"brand/neutral/logo.svg\"}' > /usr/share/nginx/html/brand/brand.json"` and reload. Expected: green neutral theme in IBM Plex Sans with the neutral logo. Restore with `docker compose up -d --build --force-recreate frontend`.
+8. Sign out and open `http://localhost`. Expected: the sign-in page has the navy brand panel with the logo, «Облік нагород ЧНУ» and the university name beside the form (a strip above it below 760 px), Nunito text, a cobalt «Увійти» button; «English» switches the page and the brand name to English.
+9. In the app choose «Темна», sign out. Expected: the sign-in page is dark as well (`#1F1F1F`); with «Як на пристрої» it follows the system setting.
+10. Enter a wrong password. Expected: the error appears in a red box inside the card, readable in both schemes; at 360 px nothing scrolls sideways.
+11. Set `APP_BRAND=neutral` (for example `APP_BRAND=neutral docker compose up -d app`) and reload the sign-in page. Expected: green neutral panel, IBM Plex Sans, «Облік нагород» and «Університет». Restore with `docker compose up -d app`.

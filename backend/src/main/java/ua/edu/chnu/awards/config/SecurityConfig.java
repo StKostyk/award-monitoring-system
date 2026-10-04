@@ -89,7 +89,7 @@ public class SecurityConfig {
                 .sessionRegistry(sessionRegistry)
                 .expiredSessionStrategy(new RetryRequestSessionExpiredStrategy()))
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/", "/login", "/error", "/css/**", "/img/**").permitAll()
+                .requestMatchers("/", "/login", "/error", "/login-assets/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated())
