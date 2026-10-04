@@ -8,22 +8,29 @@
     runs `npx playwright test` in frontend/ (Playwright starts the dev server itself), then stops the backend it started.
     The frontend nginx configuration also runs in a throwaway container on port 4280 in front of the local backend
     (`E2E_NGINX_URL`), so that the upload limits are tested through it.
+    A running award-backend container is stopped for the run and started again afterwards.
+
+.PARAMETER Grep
+    Runs only the tests whose title or file matches the pattern (Playwright --grep).
 
 .EXAMPLE
     .\tools\e2e.ps1
+    .\tools\e2e.ps1 -Grep 'award history'
 #>
 [CmdletBinding()]
-param()
+param(
+    [string]$Grep
+)
 
 $root = Split-Path -Parent $PSScriptRoot
 $started = $null
 
 docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio | Out-Null
 
-if (docker ps --filter 'name=^award-backend$' --filter 'status=running' --format '{{.Names}}') {
-    Write-Host 'Port 8080 is served by the award-backend container, not by this branch.'
-    Write-Host 'Stop it first: docker compose stop app'
-    exit 1
+$container = [bool](docker ps --filter 'name=^award-backend$' --filter 'status=running' --format '{{.Names}}')
+if ($container) {
+    Write-Host 'Stopping the award-backend container for the run; it is started again afterwards.'
+    docker stop award-backend | Out-Null
 }
 
 $nginx = 'award-e2e-nginx'
@@ -54,13 +61,15 @@ if (-not (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction Silent
     } while ($health -ne 'UP' -and (Get-Date) -lt $deadline)
     if ($health -ne 'UP') {
         docker rm -f $nginx 2>$null | Out-Null
+        if ($container) { docker start award-backend | Out-Null }
         Write-Host "Backend did not start; see $log"
         exit 1
     }
 }
 
 Push-Location (Join-Path $root 'frontend')
-& npx playwright test
+$arguments = if ($Grep) { @('--grep', $Grep) } else { @() }
+& npx playwright test @arguments
 $exit = $LASTEXITCODE
 Pop-Location
 
@@ -70,5 +79,6 @@ if ($started) {
     Stop-Process -Id $started.Id -Force -ErrorAction SilentlyContinue
 }
 docker rm -f $nginx 2>$null | Out-Null
+if ($container) { docker start award-backend | Out-Null }
 
 exit $exit
