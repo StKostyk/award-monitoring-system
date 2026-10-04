@@ -11,6 +11,7 @@ import { vi } from 'vitest';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
+import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { UserSummary } from '../users.service';
@@ -86,6 +87,7 @@ async function build(scopes: string[]): Promise<{
       }),
     ],
     providers: [
+      provideIsoDateAdapter(),
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: MAT_DIALOG_DATA, useValue: user },
@@ -148,7 +150,7 @@ describe('AssignRoleDialogComponent', () => {
 
     fixture.componentInstance.submit();
 
-    expect(form.controls.validFrom.hasError('past')).toBe(true);
+    expect(form.controls.validFrom.hasError('matDatepickerMin')).toBe(true);
     http.expectNone(`${environment.apiUrl}/users/7/roles`);
   });
 

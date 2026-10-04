@@ -10,6 +10,7 @@ import { vi } from 'vitest';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
+import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { today } from '../../admin/role-organizations';
 import { UserSummary } from '../../admin/users.service';
@@ -94,6 +95,7 @@ async function build(claims: Record<string, unknown>): Promise<{
       }),
     ],
     providers: [
+      provideIsoDateAdapter(),
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: MatDialogRef, useValue: { close } },
@@ -159,7 +161,7 @@ describe('DelegateDialogComponent', () => {
 
     fixture.componentInstance.submit();
 
-    expect(form.controls.validFrom.hasError('past')).toBe(true);
+    expect(form.controls.validFrom.hasError('matDatepickerMin')).toBe(true);
 
     form.patchValue({ validFrom: today(), validTo: days(today(), 91) });
     fixture.componentInstance.submit();
@@ -169,7 +171,7 @@ describe('DelegateDialogComponent', () => {
     form.patchValue({ validTo: days(today(), -1) });
     fixture.componentInstance.submit();
 
-    expect(form.controls.validTo.hasError('order')).toBe(true);
+    expect(form.controls.validTo.hasError('matDatepickerMin')).toBe(true);
     http.expectNone(`${environment.apiUrl}/delegations`);
   });
 

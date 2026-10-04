@@ -162,12 +162,15 @@
       <mat-label>{{ 'awards.fields.awardDate' | transloco }}</mat-label>
       <input
         matInput
-        type="date"
+        [matDatepicker]="awardDatePicker"
         formControlName="awardDate"
         [min]="oldest"
         [max]="today"
+        [placeholder]="'app.datePlaceholder' | transloco"
         data-testid="award-date"
       />
+      <mat-datepicker-toggle matIconSuffix [for]="awardDatePicker" />
+      <mat-datepicker #awardDatePicker />
       @if (recentDate()) {
         <mat-hint data-testid="award-recent-date">{{
           'awards.warnings.RECENT_DATE' | transloco

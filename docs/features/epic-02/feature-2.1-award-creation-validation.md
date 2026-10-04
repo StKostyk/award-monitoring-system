@@ -211,7 +211,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 
 ### After 2.1.2 (SCRUM-23)
 
-13. In the form open the date picker. Expected: tomorrow and dates older than 50 years are disabled. In Swagger save a draft with tomorrow's date → 422 on `awardDate`; with the date exactly 50 years ago → 201; 50 years and one day → 422. (AC-2.1, 2.2, 2.6)
+13. In the form open the date picker. Expected: the field reads `дд.мм.рррр` (`dd/mm/yyyy` in English), the calendar starts on Monday, tomorrow and dates older than 50 years are disabled; typing `31.02.2025` shows «Введіть дату у форматі дд.мм.рррр» (2.1.6). In Swagger save a draft with tomorrow's date → 422 on `awardDate`; with the date exactly 50 years ago → 201; 50 years and one day → 422. (AC-2.1, 2.2, 2.6)
 14. Save a draft dated a week ago. Expected: the hint under the date field about the last 30 days; the award saves and submits without extra steps. (AC-2.3)
 15. Create a draft «Грамота Міністерства освіти і науки України» with the same date as the award of step 6 and «Подати». Expected: the duplicate dialog with a link to the first award; «Скасувати» leaves it a draft; «Це інша нагорода — подати» submits; psql shows `duplicateAcknowledged` in the `AWARD_SUBMITTED` row. Swagger submit without `acknowledgeDuplicate` → 409 `award-possible-duplicate`. (AC-2.4, 2.5, 2.6)
 16. As `secretary.fmi` create the same title and date. Expected: no duplicate warning (another owner). (AC-2.4)

@@ -2,7 +2,13 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatChip } from '@angular/material/chips';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { DateAdapter } from '@angular/material/core';
+import {
+  MatDatepicker,
+  MatDatepickerInput,
+  MatDatepickerToggle,
+} from '@angular/material/datepicker';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
@@ -38,6 +44,10 @@ import { awardsFeature } from '../store/awards.feature';
     MatFormField,
     MatLabel,
     MatInput,
+    MatDatepicker,
+    MatDatepickerInput,
+    MatDatepickerToggle,
+    MatSuffix,
     MatSelect,
     MatOption,
     MatProgressBar,
@@ -52,6 +62,7 @@ export class AwardListComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly service = inject(AwardsService);
   private readonly language = inject(LanguageService);
+  private readonly dates = inject<DateAdapter<string>>(DateAdapter);
 
   protected readonly statuses = AWARD_STATUSES;
   protected readonly canCreate = canCreateAwards(this.auth.permissions());
@@ -77,6 +88,10 @@ export class AwardListComponent implements OnInit {
     this.store.dispatch(
       AwardsActions.filtersChanged({ filters: { ...this.filters(), ...change } }),
     );
+  }
+
+  validDate(value: string | null): string | null {
+    return value !== null && this.dates.isValid(value) ? value : null;
   }
 
   link(award: Award): (string | number)[] {

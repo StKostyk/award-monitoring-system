@@ -40,21 +40,27 @@
     <mat-label>{{ 'awards.filters.dateFrom' | transloco }}</mat-label>
     <input
       matInput
-      type="date"
+      [matDatepicker]="dateFromPicker"
       [ngModel]="filters().dateFrom"
-      (change)="filter({ dateFrom: $any($event.target).value || null })"
+      (dateChange)="filter({ dateFrom: validDate($event.value) })"
+      [placeholder]="'app.datePlaceholder' | transloco"
       data-testid="filter-date-from"
     />
+    <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker" />
+    <mat-datepicker #dateFromPicker />
   </mat-form-field>
   <mat-form-field class="awards__filter" subscriptSizing="dynamic">
     <mat-label>{{ 'awards.filters.dateTo' | transloco }}</mat-label>
     <input
       matInput
-      type="date"
+      [matDatepicker]="dateToPicker"
       [ngModel]="filters().dateTo"
-      (change)="filter({ dateTo: $any($event.target).value || null })"
+      (dateChange)="filter({ dateTo: validDate($event.value) })"
+      [placeholder]="'app.datePlaceholder' | transloco"
       data-testid="filter-date-to"
     />
+    <mat-datepicker-toggle matIconSuffix [for]="dateToPicker" />
+    <mat-datepicker #dateToPicker />
   </mat-form-field>
 </div>
 

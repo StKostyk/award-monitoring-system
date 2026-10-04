@@ -54,12 +54,21 @@
         <mat-label>{{ 'delegations.create.validFrom' | transloco }}</mat-label>
         <input
           matInput
-          type="date"
+          [matDatepicker]="validFromPicker"
           formControlName="validFrom"
           [min]="minimumDate"
+          [placeholder]="'app.datePlaceholder' | transloco"
           data-testid="delegate-valid-from"
         />
-        @if (form.controls.validFrom.hasError('past')) {
+        <mat-datepicker-toggle matIconSuffix [for]="validFromPicker" />
+        <mat-datepicker #validFromPicker />
+        @if (form.controls.validFrom.hasError('matDatepickerParse')) {
+          <mat-error>{{ 'app.dateInvalid' | transloco }}</mat-error>
+        }
+        @if (
+          form.controls.validFrom.hasError('past') ||
+          form.controls.validFrom.hasError('matDatepickerMin')
+        ) {
           <mat-error>{{ 'delegations.create.validation.past' | transloco }}</mat-error>
         }
       </mat-form-field>
@@ -68,16 +77,25 @@
         <mat-label>{{ 'delegations.create.validTo' | transloco }}</mat-label>
         <input
           matInput
-          type="date"
+          [matDatepicker]="validToPicker"
           formControlName="validTo"
           [min]="minimumDate"
+          [placeholder]="'app.datePlaceholder' | transloco"
           data-testid="delegate-valid-to"
         />
+        <mat-datepicker-toggle matIconSuffix [for]="validToPicker" />
+        <mat-datepicker #validToPicker />
+        @if (form.controls.validTo.hasError('matDatepickerParse')) {
+          <mat-error>{{ 'app.dateInvalid' | transloco }}</mat-error>
+        }
         <mat-hint>{{ 'delegations.create.periodHint' | transloco }}</mat-hint>
         @if (form.controls.validTo.hasError('required')) {
           <mat-error>{{ 'delegations.create.validation.required' | transloco }}</mat-error>
         }
-        @if (form.controls.validTo.hasError('order')) {
+        @if (
+          form.controls.validTo.hasError('order') ||
+          form.controls.validTo.hasError('matDatepickerMin')
+        ) {
           <mat-error>{{ 'delegations.create.validation.order' | transloco }}</mat-error>
         }
         @if (form.controls.validTo.hasError('range')) {

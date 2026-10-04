@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI backend job runs a single `mvn verify`; static analysis is a blocking step
 
 ### Fixed
+- Dates are shown and typed day first in the UI language (`дд.мм.рррр`, `dd/mm/yyyy`) with a calendar picker instead of the browser's own date field; form values stay ISO dates and unreadable input is explained
+- Swagger UI authorization: the token request's CORS preflight with `X-Requested-With` is accepted
 - Database views and functions follow the award model: `vw_active_awards`, `vw_pending_requests` and `vw_award_statistics` take the organisation from `awards.organization_id` (the department of the submission) instead of the owner's current one; `fn_calculate_impact_score` uses the application's base scores; `fn_can_user_approve_award` reads the award organisation, accepts a delegation in effect, and refuses the owner, users who cannot sign in and requests that are no longer open
 - Award screens after the Epic 2 refactor sweep: the submission confirmation shows a server failure as an error instead of «Не знайдено»; the award form's date limits follow the Kyiv day when the form stays open past midnight; the edit page is guarded by `award:update:own`, the permission its save needs
 - Award status after the Feature 2.3 validation: review periods count Kyiv calendar days, so a period across a clock change ends on the right date; an overdue current level shows its revised due date; a request without a stored deadline answers the deadline its estimate uses; a returned request says «Очікує ваших виправлень» on the home card and in the award list; after a 403 or 404 the panel clears the timeline and names the reason; a changed delay reason is announced
