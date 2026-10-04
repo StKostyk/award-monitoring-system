@@ -89,8 +89,11 @@ test.describe('award history and audit log', () => {
     await trail;
     await expect(auditor.getByTestId('audit-action').first()).toBeVisible();
     await expect(auditor.getByTestId('audit-action')).toContainText(['AWARD_SUBMITTED']);
-    await auditor.getByTestId('audit-row').filter({ hasText: 'AWARD_SUBMITTED' }).click();
-    await expect(auditor.getByTestId('audit-new').first()).toBeVisible();
+    const submitted = auditor.getByTestId('audit-row').filter({ hasText: 'AWARD_SUBMITTED' });
+    const header = submitted.locator('mat-expansion-panel-header');
+    await header.click();
+    await expect(header).toHaveAttribute('aria-expanded', 'true');
+    await expect(submitted.getByTestId('audit-new')).toBeVisible();
     const download = auditor.waitForEvent('download');
     await auditor.getByTestId('audit-export').click();
     expect((await download).suggestedFilename()).toMatch(
