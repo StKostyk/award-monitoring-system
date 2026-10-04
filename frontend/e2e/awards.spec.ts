@@ -19,8 +19,22 @@ async function openAwards(page: Page): Promise<void> {
     (response) =>
       response.request().method() === 'GET' && /\/api\/v1\/awards\?/.test(response.url()),
   );
-  await page.getByTestId('nav-awards').click();
+  await clickMyAwards(page);
   await loaded;
+}
+
+/** Clicks «Мої нагороди» in the side menu, opening the drawer first on a phone. */
+async function clickMyAwards(page: Page): Promise<void> {
+  const link = page.getByTestId('nav-awards');
+  await page
+    .locator('mat-sidenav')
+    .evaluate((drawer) =>
+      Promise.all(drawer.getAnimations().map((animation) => animation.finished)),
+    );
+  if (!(await link.isVisible())) {
+    await page.getByTestId('nav-toggle').click();
+  }
+  await link.click();
 }
 
 function storedCopies(page: Page): Promise<number> {
@@ -40,7 +54,7 @@ test.describe('award drafts and submission on a phone', () => {
   test.beforeEach(async ({ page }) => {
     page.on('dialog', (dialog) => void dialog.accept());
     await signIn(page, employee, demo);
-    await expect(page.getByTestId('nav-awards')).toBeVisible();
+    await expect(page.getByTestId('nav-toggle')).toBeVisible();
   });
 
   test('ac1_1 ac1_5 ac1_9 a draft is saved, completed and submitted', async ({ page }) => {
@@ -94,13 +108,13 @@ test.describe('award drafts and submission on a phone', () => {
     await page.getByTestId('restore-accept').click();
     await expect(page.getByTestId('award-title-uk')).toHaveValue(title);
 
-    await page.getByTestId('nav-awards').click();
+    await clickMyAwards(page);
     await page.getByTestId('confirm-cancel').click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page).toHaveURL(/\/awards\/new$/);
     await expect(page.getByTestId('award-title-uk')).toHaveValue(title);
 
-    await page.getByTestId('nav-awards').click();
+    await clickMyAwards(page);
     await page.getByTestId('confirm-accept').click();
     await expect(page).toHaveURL(/\/awards$/);
     await page.getByTestId('award-add').click();
@@ -116,7 +130,7 @@ test.describe('award drafts and submission on a phone', () => {
     await page.getByTestId('logout').click();
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
     await signIn(page, employee, demo);
-    await expect(page.getByTestId('nav-awards')).toBeVisible();
+    await expect(page.getByTestId('nav-toggle')).toBeVisible();
     await page.goto('/awards/new');
 
     await expect(page.getByTestId('award-title-uk')).toBeVisible();

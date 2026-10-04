@@ -3,11 +3,11 @@
 }
 
 .timing {
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-small);
 }
 
 .timing__delayed {
   flex-shrink: 0;
-  --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container, #ffdbcb);
+  --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container);
 }

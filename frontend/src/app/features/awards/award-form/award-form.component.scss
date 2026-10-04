@@ -27,7 +27,7 @@
   padding: 12px 16px;
   margin-bottom: 16px;
   border-radius: 8px;
-  background: var(--mat-sys-secondary-container, #d3e3fd);
+  background: var(--mat-sys-secondary-container);
 }
 
 .award-form__restore-actions {
@@ -36,18 +36,18 @@
 }
 
 .award-form__message {
-  color: var(--mat-sys-primary, #1b5e9e);
+  color: var(--mat-sys-primary);
 }
 
 .award-form__problem {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 .award-form__warning {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
   overflow-wrap: anywhere;
 }
 
@@ -65,7 +65,7 @@
 
 .award-form__suggestions-label {
   width: 100%;
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .award-form__suggestion {
@@ -83,7 +83,7 @@
 
 .award-form__suggestion-reasons {
   font: var(--mat-sys-label-small);
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .award-form__actions {
@@ -98,7 +98,7 @@
 }
 
 .award-form__actions .award-form__remove {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 ::ng-deep .award-form__child {

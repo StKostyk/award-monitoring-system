@@ -10,7 +10,7 @@
   margin: 0 0 16px;
 
   dt {
-    color: var(--mat-sys-on-surface-variant, #5f6368);
+    color: var(--mat-sys-on-surface-variant);
   }
 
   dd {
@@ -34,7 +34,7 @@
 
 .profile__hint {
   display: block;
-  color: var(--mat-sys-on-surface-variant, #5f6368);
+  color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
 }
 
@@ -50,5 +50,5 @@
 }
 
 .profile__problem {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }

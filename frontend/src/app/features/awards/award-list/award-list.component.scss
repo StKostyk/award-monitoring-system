@@ -1,3 +1,5 @@
+@use 'sass:string';
+
 .awards__header {
   display: flex;
   flex-wrap: wrap;
@@ -35,7 +37,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
 .awards__link {
@@ -56,12 +58,28 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-medium);
 }
 
 .awards__chip {
   flex-shrink: 0;
+  --mat-chip-outline-width: 0;
+  --mat-chip-label-text-weight: 700;
+}
+
+@each $status in (DRAFT, PENDING, APPROVED, REJECTED, ARCHIVED) {
+  $name: string.to-lower-case($status);
+
+  .awards__chip--#{$status} {
+    --mat-chip-elevated-container-color: var(--app-status-#{$name});
+    --mat-chip-label-text-color: var(--app-on-status-#{$name});
+  }
+}
+
+.awards__chip--ARCHIVED {
+  --mat-chip-outline-width: 1px;
+  --mat-chip-outline-color: var(--mat-sys-outline);
 }
 
 .awards__state {
@@ -78,12 +96,12 @@
 }
 
 .awards__problem {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 .awards__notice,
 .awards__more {
-  color: var(--mat-sys-on-surface-variant, #44474e);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 ::ng-deep .awards__child {

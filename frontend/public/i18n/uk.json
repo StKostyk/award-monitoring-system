@@ -1,7 +1,16 @@
 {
   "app": {
-    "title": "Облік нагород ЧНУ",
     "language": "EN",
+    "languageLabel": "Switch to English",
+    "menu": "Меню",
+    "navigation": "Основна навігація",
+    "home": "Головна",
+    "scheme": {
+      "title": "Тема",
+      "system": "Як на пристрої",
+      "light": "Світла",
+      "dark": "Темна"
+    },
     "logout": "Вийти",
     "loading": "Завантаження…",
     "datePlaceholder": "дд.мм.рррр",

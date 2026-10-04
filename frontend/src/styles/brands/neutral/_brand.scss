@@ -1,0 +1,46 @@
+@use '@angular/material' as mat;
+@use './theme-colors' as colors;
+
+@mixin theme() {
+  @include mat.theme(
+    (
+      color: (
+        primary: colors.$primary-palette,
+        tertiary: colors.$tertiary-palette,
+      ),
+      typography: (
+        plain-family: (
+          'IBM Plex Sans',
+          'Segoe UI',
+          sans-serif,
+        ),
+        brand-family: (
+          'IBM Plex Sans',
+          'Segoe UI',
+          sans-serif,
+        ),
+        bold-weight: 600,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(#2d6a4f, #8fd5b0),
+      surface: light-dark(#f6f7f5, #181c1a),
+      surface-container-lowest: light-dark(#ffffff, #141816),
+      surface-container-low: light-dark(#ffffff, #222724),
+      surface-container: light-dark(#eaefeb, #262b28),
+      outline-variant: light-dark(#dce3de, #39423d),
+    )
+  );
+
+  --app-nav-container: light-dark(#1e3d30, #121614);
+  --app-nav-on-container: light-dark(#ffffff, #e1e4e1);
+  --app-nav-active: light-dark(rgb(224 165 38 / 26%), rgb(242 190 78 / 18%));
+  --app-brand-accent: light-dark(#e0a526, #f2be4e);
+  --app-on-brand-accent: #2a1c00;
+  --app-card-radius: 6px;
+}

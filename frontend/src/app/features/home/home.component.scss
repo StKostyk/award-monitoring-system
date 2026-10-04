@@ -4,9 +4,9 @@
 
 .home__banner {
   margin-bottom: 16px;
-  border-left: 4px solid var(--mat-sys-tertiary, #3f5f90);
-  background: var(--mat-sys-tertiary-container, #dbe2f9);
-  color: var(--mat-sys-on-tertiary-container, #101c2b);
+  border-left: 4px solid var(--mat-sys-tertiary);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
 }
 
 .home__banner-text {
@@ -20,15 +20,32 @@
 
 .home__facts {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 8px 24px;
   margin: 0;
 
   dt {
-    color: var(--mat-sys-on-surface-variant, #5f6368);
+    color: var(--mat-sys-on-surface-variant);
   }
 
   dd {
     margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  mat-chip {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .home__facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+
+    dd + dt {
+      margin-top: 10px;
+    }
   }
 }

@@ -1,0 +1,48 @@
+@use '@angular/material' as mat;
+@use './theme-colors' as colors;
+
+@mixin theme() {
+  @include mat.theme(
+    (
+      color: (
+        primary: colors.$primary-palette,
+        tertiary: colors.$tertiary-palette,
+      ),
+      typography: (
+        plain-family: (
+          'Nunito',
+          'Segoe UI',
+          sans-serif,
+        ),
+        brand-family: (
+          'Nunito',
+          'Segoe UI',
+          sans-serif,
+        ),
+        bold-weight: 800,
+        medium-weight: 700,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+  @include mat.theme-overrides(
+    (
+      primary: light-dark(#0047ab, #b1c5ff),
+      surface: light-dark(#f9f8ff, #1f1f1f),
+      surface-container-lowest: light-dark(#ffffff, #1a1a1a),
+      surface-container-low: light-dark(#ffffff, #282b2f),
+      surface-container: light-dark(#e7f4f6, #2c3034),
+      surface-container-high: light-dark(#dfeef1, #32373b),
+      surface-container-highest: light-dark(#d6e7ea, #3a3f44),
+      outline-variant: light-dark(#dfe9eb, #3a4248),
+    )
+  );
+
+  --app-nav-container: light-dark(#003278, #15191f);
+  --app-nav-on-container: light-dark(#ffffff, #e3e8f2);
+  --app-nav-active: light-dark(rgb(0 187 255 / 24%), rgb(79 208 255 / 18%));
+  --app-brand-accent: light-dark(#00bbff, #4fd0ff);
+  --app-on-brand-accent: #00243a;
+  --app-card-radius: 12px;
+}

@@ -9,17 +9,17 @@
 
 .documents__drop {
   padding: 24px 16px;
-  border: 2px dashed var(--mat-sys-outline, #747775);
+  border: 2px dashed var(--mat-sys-outline);
   border-radius: 8px;
   text-align: center;
   cursor: pointer;
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .documents__drop:focus-visible,
 .documents__drop--active {
-  border-color: var(--mat-sys-primary, #1b5e9e);
-  background: var(--mat-sys-secondary-container, #d3e3fd);
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-secondary-container);
   outline: none;
 }
 
@@ -39,7 +39,7 @@
 .documents__live,
 .documents__empty,
 .documents__meta {
-  color: var(--mat-sys-on-surface-variant, #444746);
+  color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-small);
 }
 
@@ -48,7 +48,7 @@
 }
 
 .documents__problem {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }
 
 .documents__list {
@@ -63,7 +63,7 @@
   align-items: center;
   gap: 4px 12px;
   padding: 8px 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
 .documents__name {
@@ -77,7 +77,7 @@
   background: none;
   font: inherit;
   text-align: left;
-  color: var(--mat-sys-primary, #1b5e9e);
+  color: var(--mat-sys-primary);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -93,5 +93,5 @@
 }
 
 .documents__remove {
-  color: var(--mat-sys-error, #b3261e);
+  color: var(--mat-sys-error);
 }

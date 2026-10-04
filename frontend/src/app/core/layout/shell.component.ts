@@ -1,15 +1,24 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@angular/material/list';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatToolbar } from '@angular/material/toolbar';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { map } from 'rxjs';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
 import { AuthService } from '../auth/auth.service';
 import { canDelegate, canReadDirectory, canReadOwnAwards } from '../auth/permissions';
+import { BrandService } from '../brand/brand.service';
+import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-scheme.service';
 import { LanguageService } from '../i18n/language.service';
+
+export const WIDE_LAYOUT = '(min-width: 960px)';
 
 @Component({
   selector: 'app-shell',
@@ -18,10 +27,18 @@ import { LanguageService } from '../i18n/language.service';
     MatButton,
     MatIconButton,
     MatIcon,
+    MatListItem,
+    MatListItemIcon,
+    MatListItemTitle,
     MatMenu,
     MatMenuItem,
     MatMenuTrigger,
+    MatNavList,
+    MatSidenav,
+    MatSidenavContainer,
+    MatSidenavContent,
     RouterLink,
+    RouterLinkActive,
     RouterOutlet,
     TranslocoPipe,
   ],
@@ -30,9 +47,25 @@ import { LanguageService } from '../i18n/language.service';
 })
 export class ShellComponent {
   private readonly delegations = inject(DelegationsService);
+  private readonly drawer = viewChild<MatSidenav>('drawer');
 
   protected readonly auth = inject(AuthService);
   protected readonly language = inject(LanguageService);
+  protected readonly brands = inject(BrandService);
+  protected readonly colorScheme = inject(ColorSchemeService);
+  protected readonly brand = this.brands.brand;
+  protected readonly schemes = COLOR_SCHEMES;
+  protected readonly schemeIcons: Record<ColorScheme, string> = {
+    system: 'brightness_auto',
+    light: 'light_mode',
+    dark: 'dark_mode',
+  };
+  protected readonly wide = toSignal(
+    inject(BreakpointObserver)
+      .observe(WIDE_LAYOUT)
+      .pipe(map((state) => state.matches)),
+    { initialValue: true },
+  );
   protected readonly canOpenAwards = computed(
     () => this.auth.isAuthenticated() && canReadOwnAwards(this.auth.permissions()),
   );
@@ -50,6 +83,12 @@ export class ShellComponent {
 
   logout(): void {
     void this.auth.logout();
+  }
+
+  protected closeDrawer(): void {
+    if (!this.wide()) {
+      void this.drawer()?.close();
+    }
   }
 
   private readActingFor(): void {
