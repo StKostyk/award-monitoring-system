@@ -3,7 +3,7 @@
 > **Epic**: 1 — User Management & Authentication (SCRUM-5)
 > **Sprint**: 2–3 (2026-09-21 → 2026-10-04)
 > **Points**: 18 (three stories)
-> **Status**: Validated 2026-09-25 (§12) with findings F-1…F-10, fix story 1.2.4 (SCRUM-19) in progress, then the author's run of §9
+> **Status**: Validated 2026-09-25 (§12) with findings F-1…F-10, fix story 1.2.4 (SCRUM-19) in progress, then the manual run of §9
 > **Author**: Stefan Kostyk
 > **Governing docs**: ADR-009, AUTHENTICATION_AUTHORIZATION.md §3–§4 and §9, RBAC_matrix.md §2, DATA_DICTIONARY §1.2–§1.3, use-case-diagram.puml, openapi.yml, US-002, EPIC-01 tracker (deviations 5–7, follow-up 7)
 
@@ -240,7 +240,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `./mvnw verify` green (unit, slice, IT, FT), JaCoCo ≥ 85 % lines, Checkstyle/PMD/SpotBugs clean
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.5–1.7, 2.6–2.10, 3.6
 - Docs in the same PRs: `openapi.yml`, DATA_DICTIONARY §1.2 and new §1.7, ADR-009 role and permission list, AUTH §3.3 and §9, `CHANGELOG.md`, tracker rows, `BACKLOG.md`
-- §9 walked through by the author after `/feature-validate`, including the detours
+- §9 manual verification run in the browser, including the detours
 
 ## 12. Validation (2026-09-25, `develop` at b1accd5)
 
@@ -324,4 +324,4 @@ Scenario review of the detour checklist (direct URLs, restart mid-flow, token ex
 | F-10 | With Redis down, a revoked role stays usable until the access token expires (≤ 15 min); §5 and AC-2.4 say "at once" | Accepted and documented in §5 and AUTH §9 (1.2.4, AC-4.10) |
 | F-11 | Refactor sweep (11 items): scope visibility check written three times, `activeOrganization` and `user:manage` constant duplicated, name helpers copied between recorders, `UserDirectoryService.detail` re-implements `UserRole.isCurrentOn`, FT helpers and unit fixtures copied across three classes, organisation-name wrapper in nine Angular components, `delegations` importing from `admin`, `OnPush` missing on admin components, `AuthMailer` serving three domains | Worth-it items in a `refactor(authz)` PR after 1.2.4; `AuthMailer` split listed in the tracker's technical notes |
 
-Verdict: **PASSED WITH NOTES**: every AC has passing evidence, and nine defects need fixing in 1.2.4. The author's run of §9 comes after 1.2.4 is merged.
+Verdict: **PASSED WITH NOTES**: every AC has passing evidence, and nine defects need fixing in 1.2.4. The manual run of §9 comes after 1.2.4 is merged.

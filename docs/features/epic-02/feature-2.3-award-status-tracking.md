@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3–4 (2026-10-01 → 2026-10-11)
 > **Points**: 5 (one story)
-> **Status**: Validated 2026-10-01 (§12, passed with notes; fixes in 2.3.2; the author's run of §9 pending)
+> **Status**: Validated 2026-10-01 (§12, passed with notes; fixes in 2.3.2; the manual run of §9 pending)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 2.3, US-005, DATA_DICTIONARY §2.1, §3.1 and §3.2, state-machine-award-request.puml, bpmn-approval-workflow.puml, USER_RESEARCH §"user journeys" (approval targets), SUCCESS_METRICS (time to approval), AUTH §3.3, RBAC_matrix.md, ADR-006, ADR-015, openapi.yml `/awards`, EPIC-02 tracker (decision 2026-09-28 on polling)
 
@@ -225,7 +225,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 - `./mvnw verify` green (unit, slice, IT, FT), JaCoCo ≥ 85 % lines, Checkstyle/PMD/SpotBugs clean
 - `npm run lint`, `npm run test:ci`, Playwright scenarios for AC-1.12–1.17
 - Docs in the same PR: `openapi.yml` (`/awards/{id}/status`, `AwardStatusView`, `AwardRequestSummary`), DATA_DICTIONARY §3.1 (`deadline` rule, review period) and §3.2 (read by the status view), state-machine note, RBAC_matrix.md rows, `CHANGELOG.md`, tracker rows (including row 8 of 2.2.3 → Done), `BACKLOG.md`
-- §9 walked through by the author after the validation, including the detours
+- §9 manual verification run in the browser after the validation, including the detours
 
 ## 12. Validation (2026-10-01, `develop` at 7a69ae9, fixes and refactor sweep in 2.3.2)
 
