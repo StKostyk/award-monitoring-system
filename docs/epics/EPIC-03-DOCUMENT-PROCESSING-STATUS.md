@@ -35,7 +35,7 @@ Out of scope here: attaching documents to a returned request during resubmission
 | 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | Done |
 | 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | Done |
 | 4 | 3.1.3 Malware scanning of uploads | 3.1 | 3 | SCRUM-37 | #113 | no | To do |
-| 5 | 3.0.2 Brand theming, dark mode and side-nav shell | 3.0 | 5 | SCRUM-39 | #121 | no | In progress |
+| 5 | 3.0.2 Brand theming, dark mode and side-nav shell | 3.0 | 5 | SCRUM-39 | #121 | no | In review |
 
 Total: 24 points, sprints 3–4. A fixes story follows the Feature 3.1 validation if it finds anything.
 
