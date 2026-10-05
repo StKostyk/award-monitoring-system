@@ -34,10 +34,11 @@ Out of scope here: attaching documents to a returned request during resubmission
 | 1 | 3.0.1 Production configuration and local production run | 3.0 | 3 | SCRUM-33 | #109 | no | Done |
 | 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | Done |
 | 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | Done |
-| 4 | 3.1.3 Malware scanning of uploads and per-user upload limits | 3.1 | 3 | SCRUM-37 | #113 | no | In Review |
+| 4 | 3.1.3 Malware scanning of uploads and per-user upload limits | 3.1 | 3 | SCRUM-37 | #113 | no | Done |
 | 5 | 3.0.2 Brand theming, dark mode and side-nav shell | 3.0 | 5 | SCRUM-39 | #121 | no | Done |
 | 6 | 3.0.3 Login and error pages in the university brand | 3.0 | 3 | SCRUM-40 | #123 | no | Done |
 | 7 | 3.0.4 Blocking lint and Playwright in CI | 3.0 | 3 | SCRUM-41 | #124 | no | Done |
+| 8 | 3.1.4 CI fixes after SCRUM-37 | 3.1 | 1 | SCRUM-44 | #133 | no | In Review |
 
 Total: 30 points, sprints 3–4. A fixes story follows the Feature 3.1 validation if it finds anything.
 

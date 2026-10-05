@@ -49,10 +49,11 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 |----|-------|--------|--------|------|-------|
 | 3.1.1 | Document storage and upload API | 8 | ✅ Done | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
 | 3.1.2 | Certificate upload in the award form and award page | 5 | ✅ Done | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
-| 3.1.3 | Malware scanning of uploads and per-user upload limits | 3 | In Review (Sprint 4) | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
+| 3.1.3 | Malware scanning of uploads and per-user upload limits | 3 | ✅ Done (Sprint 4) | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
 | 3.0.2 | Brand theming, dark mode and side-nav shell | 5 | ✅ Done | SCRUM-39 | [#121](https://github.com/StKostyk/award-monitoring-system/issues/121) |
 | 3.0.3 | Login and error pages in the university brand | 3 | ✅ Done | SCRUM-40 | [#123](https://github.com/StKostyk/award-monitoring-system/issues/123) |
 | 3.0.4 | Blocking lint and Playwright in CI | 3 | ✅ Done | SCRUM-41 | [#124](https://github.com/StKostyk/award-monitoring-system/issues/124) |
+| 3.1.4 | CI fixes after SCRUM-37 | 1 | In Review (Sprint 4) | SCRUM-44 | [#133](https://github.com/StKostyk/award-monitoring-system/issues/133) |
 
 ### Later epics
 | ID | Story | Points | Epic |
@@ -78,7 +79,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 159 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, 3.1.1 and 3.1.2); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8)
+Total Completed: 162 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, 3.1.1–3.1.3); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3)
 
 ---
 

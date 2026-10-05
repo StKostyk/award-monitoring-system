@@ -250,7 +250,9 @@ test.describe('award documents', () => {
     }
   });
 
-  test('ac3_1 ac3_4 a file with malware is refused and nothing is attached', async ({ browser }) => {
+  test('ac3_1 ac3_4 a file with malware is refused and nothing is attached', async ({
+    browser,
+  }) => {
     const page = await signedIn(browser, employee);
     await newAward(page, `Грамота з вірусом ${uniqueToken()}`);
 

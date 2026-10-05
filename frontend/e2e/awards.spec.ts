@@ -111,6 +111,7 @@ test.describe('award drafts and submission on a phone', () => {
     await clickMyAwards(page);
     await page.getByTestId('confirm-cancel').click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page).toHaveURL(/\/awards\/new$/);
     await expect(page.getByTestId('award-title-uk')).toHaveValue(title);
 
@@ -150,6 +151,7 @@ test.describe('award drafts and submission on a phone', () => {
 
     await page.getByTestId('award-remove').click();
     await page.getByTestId('confirm-cancel').click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page).toHaveURL(/\/edit$/);
     await page.getByTestId('award-remove').click();
     await page.getByTestId('confirm-accept').click();
