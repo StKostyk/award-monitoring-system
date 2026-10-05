@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend runs client-side only; SSR scaffold removed (ADR-013 addendum)
 - Docker Compose adds Mailpit (SMTP) and MinIO (S3) for local development
 - CI backend job runs a single `mvn verify`; static analysis is a blocking step
+- README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
 - Documents after the Feature 3.1 validation: an upload to a draft deleted in another window clears the documents section, turns the form into a new draft and saves it again on «Спробувати ще раз» instead of retrying a missing award; an upload to a draft submitted elsewhere opens the award page; a file added while «Зберегти чернетку» is still saving waits for that save; downloads through the frontend nginx keep the backend's `sandbox` policy without a second site policy; storage-down behaviour (upload and download 503, deletion leaving the object for the sweep) is tested. Refactored: one Redis fixed-window counter for the sign-in and upload limits, one confirmation dialog helper, shared document test fixtures and E2E helpers, award permission expressions in one place
