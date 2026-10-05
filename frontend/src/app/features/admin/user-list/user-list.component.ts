@@ -21,10 +21,10 @@ import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 
 import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { AdminPaginatorIntl } from '../admin-paginator-intl';
 import { ConfirmMembershipDialogComponent } from '../confirm-membership-dialog/confirm-membership-dialog.component';
 import { ROLES, STATUSES } from '../role-organizations';
 import { organizationName } from '../../../shared/organization-name';
+import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
 import { UserFilters, UserSummary } from '../users.service';
@@ -57,7 +57,7 @@ const MINIMUM_QUERY = 2;
     RouterLink,
     TranslocoPipe,
   ],
-  providers: [{ provide: MatPaginatorIntl, useClass: AdminPaginatorIntl }],
+  providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.scss',
 })

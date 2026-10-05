@@ -50,6 +50,7 @@ import ua.edu.chnu.awards.user.entity.User;
 class AwardSubmissionTest {
 
     private static final Instant NOW = Instant.parse("2026-09-28T09:00:00Z");
+    private static final Instant THREE_WORKING_DAYS_LATER = Instant.parse("2026-10-01T09:00:00Z");
 
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
@@ -99,9 +100,9 @@ class AwardSubmissionTest {
     void ac1_1_theRequestIsDueOneReviewPeriodAfterTheSubmission() {
         AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
 
-        assertThat(response.request().deadline()).isEqualTo(NOW.plus(TestWorkflow.REVIEW_PERIOD));
+        assertThat(response.request().deadline()).isEqualTo(THREE_WORKING_DAYS_LATER);
         assertThat(response.request().estimatedCompletion())
-            .isEqualTo(LocalDate.ofInstant(NOW, ZoneId.of("Europe/Kyiv")).plusDays(9));
+            .isEqualTo(LocalDate.of(2026, 10, 9));
         assertThat(response.request().overdue()).isFalse();
     }
 

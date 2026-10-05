@@ -31,6 +31,7 @@ class DevSeedIT {
     private static final Map<String, RoleType> EXPECTED_ROLES = Map.of(
         "admin@chnu.edu.ua", RoleType.SYSTEM_ADMIN,
         "rector@chnu.edu.ua", RoleType.RECTOR,
+        "gdpr@chnu.edu.ua", RoleType.GDPR_OFFICER,
         "dean.fmi@chnu.edu.ua", RoleType.DEAN,
         "secretary.fmi@chnu.edu.ua", RoleType.FACULTY_SECRETARY,
         "employee.fmi@chnu.edu.ua", RoleType.EMPLOYEE,

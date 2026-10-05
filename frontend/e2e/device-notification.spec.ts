@@ -33,9 +33,9 @@ test.describe('new device notification', () => {
     const link = await linkFor(email, 'security/not-me', 2);
 
     await page.goto(link);
-    await expect(page.locator('mat-card-title')).toHaveText('Це був ваш вхід?');
+    await expect(page.locator('mat-card-title')).toHaveText('Це були ви?');
     await page.getByTestId('language-toggle').click();
-    await expect(page.locator('mat-card-title')).toHaveText('Was this sign-in yours?');
+    await expect(page.locator('mat-card-title')).toHaveText('Was this you?');
     await page.getByTestId('not-me-confirm').click();
     await expect(page.getByTestId('not-me-done')).toContainText('1 hour');
 

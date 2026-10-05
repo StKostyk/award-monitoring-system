@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
 import ua.edu.chnu.awards.auth.event.EmailChanged;
+import ua.edu.chnu.awards.auth.event.EmailRestored;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
@@ -68,12 +69,23 @@ class AuthenticationMailsTest {
     }
 
     @Test
-    void ac15_tellsTheOldAddressWhereTheAccountWent() {
-        mails.onEmailChanged(new EmailChanged("mover@chnu.edu.ua", "mover.new@chnu.edu.ua", "Петро"));
+    void ac5_tellsTheOldAddressWhereTheAccountWentWithALinkToMoveItBack() {
+        mails.onEmailChanged(new EmailChanged("mover@chnu.edu.ua", "mover.new@chnu.edu.ua", "Петро",
+            "http://localhost:4200/security/not-me?token=back"));
 
         verify(delivery).send(eq("mover@chnu.edu.ua"), subject.capture(), text.capture());
         assertThat(subject.getValue()).contains("Адресу для входу змінено").contains("sign-in address was changed");
-        assertThat(text.getValue()).contains("mover.new@chnu.edu.ua").contains("адміністратор")
+        assertThat(text.getValue()).contains("mover.new@chnu.edu.ua").contains("Це був не я")
+            .contains("This was not me").contains("/security/not-me?token=back").contains("24");
+    }
+
+    @Test
+    void ac5_tellsTheReplacedAddressThatTheAccountMovedBack() {
+        mails.onEmailRestored(new EmailRestored("mover.new@chnu.edu.ua", "mover@chnu.edu.ua", "Петро"));
+
+        verify(delivery).send(eq("mover.new@chnu.edu.ua"), subject.capture(), text.capture());
+        assertThat(subject.getValue()).contains("Адресу для входу повернуто").contains("moved back");
+        assertThat(text.getValue()).contains("mover@chnu.edu.ua").contains("Це був не я")
             .contains("administrator");
     }
 

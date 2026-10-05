@@ -29,6 +29,7 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.1.5 | Database views and functions follow the award model | 2 | ✅ Done | SCRUM-32 | [#103](https://github.com/StKostyk/award-monitoring-system/issues/103) |
 | 2.1.6 | Fixes from the manual run of Feature 2.1 | 2 | ✅ Done | SCRUM-38 | [#117](https://github.com/StKostyk/award-monitoring-system/issues/117) |
 | 2.1.7 | Fixes from the manual runs of Features 2.1 and 2.2 | 3 | ✅ Done (Sprint 4) | SCRUM-42 | [#127](https://github.com/StKostyk/award-monitoring-system/issues/127) |
+| 2.1.8 | Review decisions: approval levels, working-day review period, role assignment, GDPR and audit fixes | 8 | In Review (Sprint 4) | SCRUM-43 | [#130](https://github.com/StKostyk/award-monitoring-system/issues/130) |
 | 3.0.1 | Production configuration and local production run | 3 | ✅ Done | SCRUM-33 | [#109](https://github.com/StKostyk/award-monitoring-system/issues/109) |
 
 Sprint Goal: an employee creates, checks, submits and tracks an award (Features 2.1–2.3).  

@@ -57,6 +57,16 @@ class OneTimeTokenServiceTest {
     }
 
     @Test
+    void ac5_unboundTokensCanBeCancelledOrBoundToAnAddressWithoutTouchingBoundOnes() {
+        User user = User.builder().id(1L).build();
+        when(repository.cancelUnusedWithoutAddress(1L, TokenPurpose.SECURITY_REVOKE, NOW)).thenReturn(1);
+        when(repository.bindAddress(1L, TokenPurpose.SECURITY_REVOKE, "old@chnu.edu.ua", NOW)).thenReturn(2);
+
+        assertThat(service.invalidateUnbound(user, TokenPurpose.SECURITY_REVOKE)).isEqualTo(1);
+        assertThat(service.bindAddress(user, TokenPurpose.SECURITY_REVOKE, "old@chnu.edu.ua")).isEqualTo(2);
+    }
+
+    @Test
     void ac25_ac32_ownerLookupsAnswerGoneForUnusableTokens() {
         User user = User.builder().id(1L).build();
         OneTimeToken token = OneTimeToken.builder().user(user).expiresAt(NOW.plusSeconds(60)).build();

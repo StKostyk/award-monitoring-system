@@ -253,7 +253,9 @@ class AwardFT extends AbstractFunctionalTest {
 
         as(dean).get(AWARDS + "/" + submitted).then().statusCode(200).body("owner.email", equalTo(EMPLOYEE));
         as(tokenOf(OUTSIDER)).get(AWARDS + "/" + submitted).then().statusCode(404);
-        as(tokenOf(ADMIN)).get(AWARDS + "/" + submitted).then().statusCode(200);
+        as(tokenOf(ADMIN)).get(AWARDS + "/" + submitted).then().statusCode(404);
+        as(tokenOf(ADMIN)).get(AWARDS + "/" + submitted + "/status").then().statusCode(404);
+        as(tokenOf(ADMIN)).get(AWARDS + "/" + submitted + "/versions").then().statusCode(404);
         as(dean).get(AWARDS + "/" + draft).then().statusCode(404);
         as(employee).get(AWARDS + "/" + draft).then().statusCode(200).body("status", equalTo("DRAFT"));
         as(dean).get(AWARDS + "/999999999").then().statusCode(404);

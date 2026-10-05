@@ -678,14 +678,14 @@ public class AnonymizationService {
 
 ### 6.2 Export Data Structure
 
-Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.0`). Property names are snake_case; every list section is present, possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file. Preferences join the file with Epic 7.
+Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.1` since 2.1.8 (SCRUM-43): `award_versions` added). Property names are snake_case; every list section is present, possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file. Preferences join the file with Epic 7.
 
 ```json
 {
   "export_metadata": {
     "export_date": "2026-09-30T09:00:00Z",
     "user_id": 5,
-    "format_version": "1.0",
+    "format_version": "1.1",
     "gdpr_article": "Article 20 - Right to Data Portability"
   },
   "personal_data": {
@@ -715,6 +715,12 @@ Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format versi
       "award_date": "2025-05-01", "status": "DRAFT", "external_url": null, "organization": { "id": 64, "name": "…", "name_uk": "…" },
       "created_at": "2026-09-20T09:00:00Z", "updated_at": "2026-09-20T09:00:00Z" }
   ],
+  "award_versions": [
+    { "award_id": 21, "version": 1, "action": "CREATED", "changed_fields": [], "created_at": "2026-09-20T09:00:00Z",
+      "snapshot": { "title": "Letter of gratitude", "title_uk": "Подяка", "description": null, "description_uk": null,
+        "awarding_organization": "МОН України", "award_date": "2025-05-01", "category_id": 13, "status": "DRAFT",
+        "impact_score": null, "external_url": null, "organization_id": 64 } }
+  ],
   "documents": [
     { "document_id": 7, "award_id": 21, "file_name": "certificate.pdf", "file_type": "PDF", "mime_type": "application/pdf",
       "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7" }
@@ -734,7 +740,7 @@ Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format versi
 }
 ```
 
-The file never contains the password hash, one-time tokens or their hashes, authorization-server records, the audit triggers' row snapshots, device fingerprints, storage keys, or other people's data beyond the name of a delegation's other party.
+Award versions leave out who saved them, since a later reviewer is another person. The file never contains the password hash, one-time tokens or their hashes, authorization-server records, the audit triggers' row snapshots, device fingerprints, storage keys, or other people's data beyond the name of a delegation's other party.
 
 ### 6.3 Technical Implementation
 

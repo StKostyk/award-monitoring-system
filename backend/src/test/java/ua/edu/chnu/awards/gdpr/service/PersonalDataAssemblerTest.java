@@ -20,8 +20,12 @@ import ua.edu.chnu.awards.auth.entity.UserDevice;
 import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
+import ua.edu.chnu.awards.award.entity.AwardSnapshot;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVersion;
+import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
@@ -45,10 +49,11 @@ class PersonalDataAssemblerTest {
     private final UserRoleRepository roles = mock(UserRoleRepository.class);
     private final RoleDelegationRepository delegations = mock(RoleDelegationRepository.class);
     private final AwardRepository awards = mock(AwardRepository.class);
+    private final AwardVersionRepository versions = mock(AwardVersionRepository.class);
     private final UserDeviceRepository devices = mock(UserDeviceRepository.class);
     private final PersonalDataQueries queries = mock(PersonalDataQueries.class);
-    private final PersonalDataAssembler assembler = new PersonalDataAssembler(roles, delegations, awards, devices,
-        queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
+    private final PersonalDataAssembler assembler = new PersonalDataAssembler(roles, delegations, awards, versions,
+        devices, queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
     private Organization faculty;
     private Organization department;
@@ -67,7 +72,7 @@ class PersonalDataAssemblerTest {
     void ac32_theMetadataAndProfileDescribeThePersonWithDepartmentAndFaculty() {
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.0",
+        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.1",
             "Article 20 - Right to Data Portability"));
         PersonalDataFile.Profile profile = file.personalData().profile();
         assertThat(profile.email()).isEqualTo("employee.fmi@chnu.edu.ua");
@@ -89,8 +94,10 @@ class PersonalDataAssemblerTest {
         assertThat(file.consentHistory()).isEmpty();
         assertThat(file.devices()).isEmpty();
         assertThat(file.activityLog()).isEmpty();
-        assertThat(file.sectionCounts()).containsOnlyKeys("roles", "delegations", "awards", "documents",
-            "consent_history", "devices", "activity_log").allSatisfy((key, count) -> assertThat(count).isEqualTo(0));
+        assertThat(file.awardVersions()).isEmpty();
+        assertThat(file.sectionCounts()).containsOnlyKeys("roles", "delegations", "awards", "award_versions",
+            "documents", "consent_history", "devices", "activity_log")
+            .allSatisfy((key, count) -> assertThat(count).isEqualTo(0));
     }
 
     @Test
@@ -152,6 +159,30 @@ class PersonalDataAssemblerTest {
             "USER", "GDPR");
         assertThat(PersonalDataAssembler.SELF_ACTIONS).contains("LOGIN_SUCCESS", "PROFILE_UPDATED")
             .doesNotContain("LOGIN_FAILED", "ACCOUNT_LOCKED", "PASSWORD_RESET_REQUESTED", "ROLE_ASSIGNED");
+    }
+
+    @Test
+    void ac7_everyVersionOfTheOwnAwardsIsExportedWithoutItsActor() {
+        User secretary = TestUsers.person(30L, "secretary@chnu.edu.ua", department);
+        AwardSnapshot first = new AwardSnapshot("Letter", null, null, null, null, null, null, AwardStatus.DRAFT, null,
+            false, null, 64L);
+        AwardSnapshot second = new AwardSnapshot("Letter", "Лист", null, null, "МОН", LocalDate.of(2025, 5, 1),
+            13L, AwardStatus.PENDING, 80, false, null, 64L);
+        when(versions.findOfOwner(5L)).thenReturn(List.of(
+            AwardVersion.builder().awardId(21L).number(1).action(VersionAction.CREATED).actor(user).snapshot(first)
+                .createdAt(NOW).build(),
+            AwardVersion.builder().awardId(21L).number(2).action(VersionAction.SUBMITTED).actor(secretary)
+                .snapshot(second).changedFields(new String[] {"titleUk", "status"}).createdAt(NOW).build()));
+
+        PersonalDataFile file = assembler.assemble(user);
+
+        assertThat(file.awardVersions()).extracting(PersonalDataFile.AwardVersionEntry::version)
+            .containsExactly(1L, 2L);
+        assertThat(file.awardVersions().get(0).changedFields()).isEmpty();
+        assertThat(file.awardVersions().get(1).changedFields()).containsExactly("titleUk", "status");
+        assertThat(file.awardVersions().get(1).snapshot().impactScore()).isEqualTo(80);
+        assertThat(file.awardVersions().toString()).doesNotContain("secretary@chnu.edu.ua", "Мартинюк");
+        assertThat(file.sectionCounts()).containsEntry("award_versions", 2);
     }
 
     private RoleDelegation delegation(User delegator, User delegate, String reason) {

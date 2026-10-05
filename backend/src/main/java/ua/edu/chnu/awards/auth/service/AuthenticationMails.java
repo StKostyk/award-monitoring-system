@@ -12,6 +12,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import ua.edu.chnu.awards.auth.event.AccountLocked;
 import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
 import ua.edu.chnu.awards.auth.event.EmailChanged;
+import ua.edu.chnu.awards.auth.event.EmailRestored;
 import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
@@ -77,6 +78,18 @@ public class AuthenticationMails {
     public void onEmailChanged(EmailChanged event) {
         delivery.send(event.oldEmail(), "Адресу для входу змінено / Your sign-in address was changed",
             emailChangedBody(event));
+    }
+
+    /**
+     * Tells the address an account left that a "this was not me" link moved the account back.
+     *
+     * @param event the committed restore
+     */
+    @Async
+    @TransactionalEventListener
+    public void onEmailRestored(EmailRestored event) {
+        delivery.send(event.replacedEmail(), "Адресу для входу повернуто / Sign-in address moved back",
+            emailRestoredBody(event));
     }
 
     /**
@@ -165,13 +178,31 @@ public class AuthenticationMails {
     static String emailChangedBody(EmailChanged event) {
         return helloUk(event.firstName())
             + "Адресу для входу до вашого облікового запису в системі обліку нагород ЧНУ змінено на "
-            + event.newEmail() + ". Цю адресу більше не використовують для входу.\n"
-            + "Якщо ви цього не робили, негайно зверніться до адміністратора системи.\n\n"
+            + event.newEmail() + ". Цю адресу більше не використовують для входу.\n\n"
+            + "Якщо це були не ви, натисніть «Це був не я» протягом 24 годин: обліковий запис повернеться на цю "
+            + "адресу, усі сеанси буде завершено, а посилання для нового пароля надійде сюди:\n"
+            + event.revokeLink() + "\n\n"
             + SEPARATOR
             + helloEn(event.firstName())
             + "The sign-in address of your ChNU award monitoring account was changed to " + event.newEmail()
-            + ". This address is no longer used to sign in.\n"
-            + "If this was not you, contact the system administrator at once.\n";
+            + ". This address is no longer used to sign in.\n\n"
+            + "If this was not you, use \"This was not me\" within 24 hours: the account moves back to this "
+            + "address, every session ends and a link for a new password comes here:\n"
+            + event.revokeLink() + "\n";
+    }
+
+    static String emailRestoredBody(EmailRestored event) {
+        return helloUk(event.firstName())
+            + "Власник облікового запису в системі обліку нагород ЧНУ натиснув «Це був не я» в листі на попередню "
+            + "адресу, тож для входу знову використовують " + event.restoredEmail()
+            + ". Цю адресу більше не використовують для входу; усі сеанси завершено.\n"
+            + "Якщо адресу змінювали ви, зверніться до адміністратора системи.\n\n"
+            + SEPARATOR
+            + helloEn(event.firstName())
+            + "The owner of a ChNU award monitoring account used \"This was not me\" in a message to the previous "
+            + "address, so the account signs in with " + event.restoredEmail()
+            + " again. This address is no longer used to sign in; every session has ended.\n"
+            + "If you changed the address yourself, contact the system administrator.\n";
     }
 
     static String deviceBody(NewDeviceSignedIn event) {

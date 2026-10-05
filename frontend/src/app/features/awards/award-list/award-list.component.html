@@ -112,8 +112,13 @@
   }
 </ul>
 
-@if (total() > awards().length) {
-  <p class="awards__more" data-testid="awards-more">
-    {{ 'awards.more' | transloco: { shown: awards().length, total: total() } }}
-  </p>
+@if (total() > 0) {
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="pageSizes"
+    (page)="page($event)"
+    data-testid="awards-paginator"
+  />
 }

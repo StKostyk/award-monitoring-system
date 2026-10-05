@@ -31,9 +31,9 @@ public class RolePermissions {
 
     private static final Map<String, Set<RoleType>> HOLDERS = Map.ofEntries(
         entry("award:read:own", EnumSet.allOf(RoleType.class)),
-        entry("award:read:department", union(APPROVERS, OVERSIGHT)),
-        entry("award:read:faculty", union(EnumSet.of(DEAN, RECTOR_SECRETARY, RECTOR), OVERSIGHT)),
-        entry("award:read:all", union(EnumSet.of(RECTOR_SECRETARY, RECTOR), OVERSIGHT)),
+        entry("award:read:department", union(APPROVERS, EnumSet.of(GDPR_OFFICER))),
+        entry("award:read:faculty", EnumSet.of(DEAN, RECTOR_SECRETARY, RECTOR, GDPR_OFFICER)),
+        entry("award:read:all", EnumSet.of(RECTOR_SECRETARY, RECTOR, GDPR_OFFICER)),
         entry("award:create", union(EnumSet.of(EMPLOYEE), APPROVERS)),
         entry("award:update:own", union(EnumSet.of(EMPLOYEE), APPROVERS)),
         entry("award:approve:level1", APPROVERS),

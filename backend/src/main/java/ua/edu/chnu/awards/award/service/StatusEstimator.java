@@ -1,9 +1,11 @@
 package ua.edu.chnu.awards.award.service;
 
 import java.time.Clock;
-import java.time.Duration;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -22,10 +24,10 @@ import ua.edu.chnu.awards.config.WorkflowProperties;
 import lombok.RequiredArgsConstructor;
 
 /**
- * The timing of an approval request: each level has the configured review period, a request is overdue once
- * the deadline of its current level has passed, and the expected completion counts one period for every level
- * still ahead. A late level is given a fresh period from now, so the estimate moves with the delay. Dates are
- * days of the Kyiv calendar.
+ * The timing of an approval request: each level has the configured number of working days, a request is
+ * overdue once the deadline of its current level has passed, and the expected completion counts one period for
+ * every level still ahead. A late level is given a fresh period from now, so the estimate moves with the delay.
+ * Dates are days of the Kyiv calendar; public holidays are not counted separately.
  */
 @Component
 @RequiredArgsConstructor
@@ -42,13 +44,26 @@ public class StatusEstimator {
      * The deadline of a level whose review starts at the given time.
      *
      * @param start when the request reached the level
-     * @return the end of its review period: the whole days of the period as Kyiv calendar days, so a clock
-     *         change does not move the due date, then the rest of the period
+     * @return the same Kyiv time of day after the review period's number of working days (Monday to Friday);
+     *         a start on a weekend counts from the following Monday at midnight
      */
     public Instant deadline(Instant start) {
-        Duration period = properties.reviewPeriod();
-        long days = period.toDays();
-        return start.atZone(clock.getZone()).plusDays(days).plus(period.minusDays(days)).toInstant();
+        ZonedDateTime end = start.atZone(clock.getZone());
+        if (isWeekend(end)) {
+            end = end.toLocalDate().with(TemporalAdjusters.next(DayOfWeek.MONDAY)).atStartOfDay(clock.getZone());
+        }
+        int left = properties.reviewWorkingDays();
+        while (left > 0) {
+            end = end.plusDays(1);
+            if (!isWeekend(end)) {
+                left--;
+            }
+        }
+        return end.toInstant();
+    }
+
+    private static boolean isWeekend(ZonedDateTime time) {
+        return time.getDayOfWeek() == DayOfWeek.SATURDAY || time.getDayOfWeek() == DayOfWeek.SUNDAY;
     }
 
     /**

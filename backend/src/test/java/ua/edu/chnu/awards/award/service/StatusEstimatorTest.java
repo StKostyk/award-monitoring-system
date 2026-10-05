@@ -17,76 +17,88 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
-import ua.edu.chnu.awards.config.WorkflowProperties;
 import ua.edu.chnu.awards.support.TestWorkflow;
 
 class StatusEstimatorTest {
 
     private static final Instant NOW = Instant.parse("2026-10-01T09:00:00Z");
     private static final ZoneId KYIV = ZoneId.of("Europe/Kyiv");
+    private static final int DEFAULT_DAYS = 3;
+    private static final int LONGER_DAYS = 5;
 
-    private final StatusEstimator estimator = estimator(3);
+    private final StatusEstimator estimator = estimator(DEFAULT_DAYS);
 
     @Test
-    void ac1_1_theDeadlineIsOneReviewPeriodAfterTheStart() {
-        assertThat(estimator.deadline(NOW)).isEqualTo(Instant.parse("2026-10-04T09:00:00Z"));
+    void ac2_theDeadlineIsThreeWorkingDaysAfterTheStartAtTheSameTime() {
+        assertThat(estimator.deadline(NOW)).isEqualTo(Instant.parse("2026-10-06T09:00:00Z"));
+    }
+
+    @Test
+    void ac2_aStartOnFridaySkipsTheWeekend() {
+        assertThat(estimator.deadline(Instant.parse("2026-10-02T09:00:00Z")))
+            .isEqualTo(Instant.parse("2026-10-07T09:00:00Z"));
+    }
+
+    @Test
+    void ac2_aStartOnTheWeekendCountsFromMondayMidnight() {
+        assertThat(estimator.deadline(Instant.parse("2026-10-03T12:00:00Z")))
+            .isEqualTo(Instant.parse("2026-10-07T21:00:00Z"));
+        assertThat(estimator.deadline(Instant.parse("2026-10-04T20:59:00Z")))
+            .isEqualTo(Instant.parse("2026-10-07T21:00:00Z"));
     }
 
     @Test
     void ac1_3_theEstimateAddsOnePeriodForEveryLevelAfterTheCurrentOne() {
         StatusEstimator.Timeline timeline = estimator.timeline(
-            request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, days(2)), RecognitionLevel.FACULTY);
+            request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, days(1)), RecognitionLevel.NATIONAL);
 
-        assertThat(timeline.levels()).containsExactly(ApprovalLevel.FACULTY_SECRETARY, ApprovalLevel.DEAN);
+        assertThat(timeline.levels()).containsExactly(ApprovalLevel.FACULTY_SECRETARY, ApprovalLevel.DEAN,
+            ApprovalLevel.RECTOR_SECRETARY);
         assertThat(timeline.due()).containsExactlyInAnyOrderEntriesOf(Map.of(
-            ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 3),
-            ApprovalLevel.DEAN, LocalDate.of(2026, 10, 6)));
-        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 6));
+            ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 2),
+            ApprovalLevel.DEAN, LocalDate.of(2026, 10, 7),
+            ApprovalLevel.RECTOR_SECRETARY, LocalDate.of(2026, 10, 12)));
+        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 12));
         assertThat(timeline.overdue()).isFalse();
-        assertThat(timeline.deadline()).isEqualTo(days(2));
+        assertThat(timeline.deadline()).isEqualTo(days(1));
     }
 
-    @Test
-    void ac1_3_aOneLevelPathIsDueOnItsDeadline() {
+    @ParameterizedTest
+    @EnumSource(value = RecognitionLevel.class, names = {"NATIONAL", "INTERNATIONAL"},
+        mode = EnumSource.Mode.EXCLUDE)
+    void ac1_aLevelFinalAtTheFacultySecretaryIsDueOnItsDeadline(RecognitionLevel level) {
         StatusEstimator.Timeline timeline = estimator.timeline(
-            request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, days(3)), RecognitionLevel.DEPARTMENT);
+            request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, days(1)), level);
 
-        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 4));
-    }
-
-    @Test
-    void ac1_3_theUniversityPathTakesThreePeriods() {
-        StatusEstimator.Timeline timeline = estimator.timeline(
-            request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, days(3)), RecognitionLevel.NATIONAL);
-
-        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 10));
+        assertThat(timeline.levels()).containsExactly(ApprovalLevel.FACULTY_SECRETARY);
+        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 2));
     }
 
     @Test
     void ac1_4_aLateLevelGetsAFreshPeriodFromNowAndTheEstimateNeverMovesEarlier() {
         AwardRequest late = request(RequestStatus.IN_REVIEW, ApprovalLevel.FACULTY_SECRETARY, days(-2));
 
-        StatusEstimator.Timeline timeline = estimator.timeline(late, RecognitionLevel.FACULTY);
+        StatusEstimator.Timeline timeline = estimator.timeline(late, RecognitionLevel.NATIONAL);
 
         assertThat(timeline.overdue()).isTrue();
-        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 7))
-            .isAfterOrEqualTo(LocalDate.of(2026, 10, 2));
-        assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 4))
-            .containsEntry(ApprovalLevel.DEAN, LocalDate.of(2026, 10, 7));
+        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 14));
+        assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 6))
+            .containsEntry(ApprovalLevel.DEAN, LocalDate.of(2026, 10, 9))
+            .containsEntry(ApprovalLevel.RECTOR_SECRETARY, LocalDate.of(2026, 10, 14));
         assertThat(timeline.deadline()).isEqualTo(days(-2));
     }
 
     @Test
     void ac1_4_aRequestExactlyAtItsDeadlineIsNotOverdue() {
         assertThat(estimator.timeline(request(RequestStatus.SUBMITTED, ApprovalLevel.DEAN, NOW),
-            RecognitionLevel.FACULTY).overdue()).isFalse();
+            RecognitionLevel.NATIONAL).overdue()).isFalse();
     }
 
     @ParameterizedTest
     @EnumSource(value = RequestStatus.class, names = {"RETURNED", "APPROVED", "REJECTED", "EXPIRED"})
     void ac1_5_aReturnedOrFinalRequestHasNoEstimateAndIsNotOverdue(RequestStatus status) {
         StatusEstimator.Timeline timeline = estimator.timeline(
-            request(status, ApprovalLevel.FACULTY_SECRETARY, days(-5)), RecognitionLevel.FACULTY);
+            request(status, ApprovalLevel.FACULTY_SECRETARY, days(-5)), RecognitionLevel.NATIONAL);
 
         assertThat(timeline.estimatedCompletion()).isNull();
         assertThat(timeline.overdue()).isFalse();
@@ -99,68 +111,61 @@ class StatusEstimatorTest {
         AwardRequest request = AwardRequest.builder().status(RequestStatus.SUBMITTED)
             .currentLevel(ApprovalLevel.FACULTY_SECRETARY).submittedAt(NOW.minus(Duration.ofDays(1))).build();
 
-        assertThat(estimator.timeline(request, RecognitionLevel.DEPARTMENT).deadline()).isEqualTo(days(2));
+        assertThat(estimator.timeline(request, RecognitionLevel.DEPARTMENT).deadline())
+            .isEqualTo(Instant.parse("2026-10-05T09:00:00Z"));
     }
 
     @Test
-    void edge_aSubmissionJustBeforeKyivMidnightIsDueOnTheKyivDateThreeDaysLater() {
+    void edge_aSubmissionJustBeforeKyivMidnightIsDueOnTheKyivDateThreeWorkingDaysLater() {
         AwardRequest request = request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY,
             estimator.deadline(Instant.parse("2026-10-01T20:59:00Z")));
 
         assertThat(estimator.timeline(request, RecognitionLevel.DEPARTMENT).estimatedCompletion())
-            .isEqualTo(LocalDate.of(2026, 10, 4));
+            .isEqualTo(LocalDate.of(2026, 10, 6));
     }
 
     @Test
     void edge_aChangedPeriodKeepsTheStoredDeadlineAndMovesLaterLevels() {
-        StatusEstimator.Timeline timeline = estimator(5).timeline(
-            request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, days(2)), RecognitionLevel.FACULTY);
+        StatusEstimator.Timeline timeline = estimator(LONGER_DAYS).timeline(
+            request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY, days(1)), RecognitionLevel.NATIONAL);
 
-        assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 3));
-        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 8));
+        assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 2))
+            .containsEntry(ApprovalLevel.DEAN, LocalDate.of(2026, 10, 9));
+        assertThat(timeline.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 16));
     }
 
     @Test
-    void edge_aPeriodAcrossTheAutumnClockChangeEndsOnTheThirdKyivDay() {
+    void edge_aPeriodAcrossTheAutumnClockChangeKeepsTheKyivTime() {
         Instant deadline = estimator.deadline(Instant.parse("2026-10-22T21:30:00Z"));
 
-        assertThat(deadline).isEqualTo(Instant.parse("2026-10-25T22:30:00Z"));
-        assertThat(LocalDate.ofInstant(deadline, KYIV)).isEqualTo(LocalDate.of(2026, 10, 26));
+        assertThat(deadline).isEqualTo(Instant.parse("2026-10-27T22:30:00Z"));
+        assertThat(LocalDate.ofInstant(deadline, KYIV)).isEqualTo(LocalDate.of(2026, 10, 28));
     }
 
     @Test
-    void edge_aPeriodAcrossTheSpringClockChangeEndsOnTheThirdKyivDay() {
+    void edge_aPeriodAcrossTheSpringClockChangeKeepsTheKyivTime() {
         Instant deadline = estimator.deadline(Instant.parse("2027-03-26T21:30:00Z"));
 
-        assertThat(deadline).isEqualTo(Instant.parse("2027-03-29T20:30:00Z"));
-        assertThat(LocalDate.ofInstant(deadline, KYIV)).isEqualTo(LocalDate.of(2027, 3, 29));
+        assertThat(deadline).isEqualTo(Instant.parse("2027-03-31T20:30:00Z"));
+        assertThat(LocalDate.ofInstant(deadline, KYIV)).isEqualTo(LocalDate.of(2027, 3, 31));
     }
 
     @Test
-    void edge_aLaterLevelAcrossTheClockChangeIsDueOnTheThirdKyivDay() {
+    void edge_aLaterLevelAcrossTheClockChangeIsDueOnTheThirdWorkingDay() {
         AwardRequest request = request(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY,
             Instant.parse("2026-10-22T21:30:00Z"));
 
-        StatusEstimator.Timeline timeline = estimator(3, Instant.parse("2026-10-21T09:00:00Z"))
-            .timeline(request, RecognitionLevel.FACULTY);
+        StatusEstimator.Timeline timeline = estimator(DEFAULT_DAYS, Instant.parse("2026-10-21T09:00:00Z"))
+            .timeline(request, RecognitionLevel.NATIONAL);
 
         assertThat(timeline.due()).containsEntry(ApprovalLevel.FACULTY_SECRETARY, LocalDate.of(2026, 10, 23))
-            .containsEntry(ApprovalLevel.DEAN, LocalDate.of(2026, 10, 26));
-    }
-
-    @Test
-    void edge_aPeriodWithHoursAddsThemAfterTheDays() {
-        StatusEstimator hours = new StatusEstimator(Clock.fixed(NOW, KYIV),
-            new WorkflowProperties(Duration.ofHours(36)), new ApprovalPath());
-
-        assertThat(hours.deadline(Instant.parse("2026-10-24T09:00:00Z")))
-            .isEqualTo(Instant.parse("2026-10-25T22:00:00Z"));
+            .containsEntry(ApprovalLevel.DEAN, LocalDate.of(2026, 10, 28));
     }
 
     @Test
     void edge_aReturnedRequestKeepsItsStoredDeadline() {
         assertThat(estimator.timeline(request(RequestStatus.RETURNED, ApprovalLevel.DEAN, days(-1)),
-            RecognitionLevel.FACULTY).deadline()).isEqualTo(days(-1));
+            RecognitionLevel.NATIONAL).deadline()).isEqualTo(days(-1));
     }
 
     private static StatusEstimator estimator(int days) {
@@ -168,7 +173,7 @@ class StatusEstimatorTest {
     }
 
     private static StatusEstimator estimator(int days, Instant now) {
-        return TestWorkflow.estimator(Clock.fixed(now, KYIV), Duration.ofDays(days));
+        return TestWorkflow.estimator(Clock.fixed(now, KYIV), days);
     }
 
     private static Instant days(int days) {

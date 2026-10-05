@@ -21,8 +21,16 @@ export interface TokenPermissions {
   canGrant(role: RoleType): boolean;
 }
 
-/** Roles ordered by level; `SYSTEM_ADMIN` grants everything and `GDPR_OFFICER` grants nothing. */
+/** Roles ordered by level. */
 const LEVELS: RoleType[] = ['EMPLOYEE', 'FACULTY_SECRETARY', 'DEAN', 'RECTOR_SECRETARY', 'RECTOR'];
+
+/** The roles each role may grant; `SYSTEM_ADMIN` grants every role, anybody else nothing. */
+const GRANTS: Partial<Record<RoleType, RoleType[]>> = {
+  FACULTY_SECRETARY: ['EMPLOYEE'],
+  DEAN: ['FACULTY_SECRETARY', 'EMPLOYEE'],
+  RECTOR_SECRETARY: ['EMPLOYEE'],
+  RECTOR: ['RECTOR_SECRETARY', 'DEAN'],
+};
 
 /** Permissions that open the user directory. */
 export const DIRECTORY_PERMISSIONS = ['user:read:scope', 'user:read:all'];
@@ -130,10 +138,7 @@ function build(
   heldScopes: RoleScope[],
   delegations: DelegationScope[],
 ): TokenPermissions {
-  const level = heldScopes.reduce(
-    (highest, scope) => Math.max(highest, LEVELS.indexOf(scope.role)),
-    -1,
-  );
+  const grantable = new Set(heldScopes.flatMap((scope) => GRANTS[scope.role] ?? []));
   const administrator = heldScopes.some((scope) => scope.role === 'SYSTEM_ADMIN');
   return {
     permissions,
@@ -141,7 +146,7 @@ function build(
     heldScopes,
     delegations,
     hasPermission: (permission) => permissions.includes(permission),
-    canGrant: (role) => administrator || (LEVELS.includes(role) && LEVELS.indexOf(role) < level),
+    canGrant: (role) => administrator || grantable.has(role),
   };
 }
 

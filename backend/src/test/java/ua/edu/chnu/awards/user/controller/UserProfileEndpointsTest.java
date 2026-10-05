@@ -110,10 +110,10 @@ class UserProfileEndpointsTest extends AbstractUserEndpointsTest {
     @Test
     void ac31_theExportIsAnUncachedJsonAttachmentWithSnakeCaseSections() throws Exception {
         PersonalDataFile file = new PersonalDataFile(new PersonalDataFile.Metadata(
-            Instant.parse("2026-09-30T09:00:00Z"), 5L, "1.0", "Article 20 - Right to Data Portability"),
+            Instant.parse("2026-09-30T09:00:00Z"), 5L, "1.1", "Article 20 - Right to Data Portability"),
             new PersonalDataFile.PersonalData(new PersonalDataFile.Profile("employee.fmi@chnu.edu.ua", "Анастасія",
                 "Петренко", null, null, AccountStatus.ACTIVE, null, null)),
-            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+            List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         when(dataExportService.export(5L))
             .thenReturn(new DataExport("award-monitoring-export-2026-09-30.json", file));
 
@@ -123,7 +123,8 @@ class UserProfileEndpointsTest extends AbstractUserEndpointsTest {
             .andExpect(header().string("Content-Disposition",
                 "attachment; filename=\"award-monitoring-export-2026-09-30.json\""))
             .andExpect(header().string("Cache-Control", containsString("no-store")))
-            .andExpect(jsonPath("$.export_metadata.format_version").value("1.0"))
+            .andExpect(jsonPath("$.export_metadata.format_version").value("1.1"))
+            .andExpect(jsonPath("$.award_versions").isArray())
             .andExpect(jsonPath("$.export_metadata.export_date").value("2026-09-30T09:00:00Z"))
             .andExpect(jsonPath("$.personal_data.profile.first_name").value("Анастасія"))
             .andExpect(jsonPath("$.personal_data.profile.faculty").isEmpty())

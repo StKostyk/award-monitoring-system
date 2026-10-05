@@ -42,7 +42,7 @@ public class RoleAssignmentRules {
      *
      * @param role           the role
      * @param organizationId where it applies
-     * @return true for {@code user:manage}, or a held role above it whose scope covers the organisation
+     * @return true for {@code user:manage}, or a held role that grants it whose scope covers the organisation
      */
     public boolean mayManage(RoleType role, long organizationId) {
         return access.has(PERMISSION_MANAGE_ALL) || access.canManage(role, organizationId);
@@ -57,8 +57,8 @@ public class RoleAssignmentRules {
     public void requireAuthority(RoleType role, long organizationId) {
         if (!mayManage(role, organizationId)) {
             throw new ApiProblemException(HttpStatus.FORBIDDEN, "role-above-level",
-                "You may grant only roles below your own inside your organisation; university and system roles "
-                    + "are granted by the rector's office or the administrator");
+                "Your role does not grant this role here: secretaries confirm membership, deans appoint faculty "
+                    + "secretaries, the rector appoints deans and the rector's secretary, the administrator any role");
         }
     }
 

@@ -106,19 +106,19 @@ public class AccessScope {
     }
 
     /**
-     * Whether the caller's highest role anywhere outranks the role.
+     * Whether one of the caller's own roles grants the role somewhere.
      *
      * @param role the role to grant
      * @return true when the caller may grant it somewhere
      */
     public boolean below(RoleType role) {
-        return heldScopes().stream().anyMatch(scope -> levels.above(scope.role(), role)) && grant()
-            || refuse("no role above " + role);
+        return heldScopes().stream().anyMatch(scope -> levels.grants(scope.role(), role)) && grant()
+            || refuse("no role that grants " + role);
     }
 
     /**
      * Whether the caller may grant the role in the organisation: a scope covering the organisation whose role
-     * outranks it.
+     * grants it.
      *
      * @param role           the role to grant
      * @param organizationId where it would apply
@@ -126,8 +126,8 @@ public class AccessScope {
      */
     public boolean canManage(RoleType role, long organizationId) {
         return heldScopes().stream().anyMatch(scope -> tree.covers(scope.organizationId(), organizationId)
-            && levels.above(scope.role(), role)) && grant()
-            || refuse("no role above " + role + " in the scope of organisation " + organizationId);
+            && levels.grants(scope.role(), role)) && grant()
+            || refuse("no role that grants " + role + " in the scope of organisation " + organizationId);
     }
 
     /**

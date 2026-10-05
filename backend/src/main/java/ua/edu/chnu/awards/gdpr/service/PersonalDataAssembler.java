@@ -14,6 +14,7 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
@@ -32,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PersonalDataAssembler {
 
-    static final String FORMAT_VERSION = "1.0";
+    static final String FORMAT_VERSION = "1.1";
     static final String GDPR_ARTICLE = "Article 20 - Right to Data Portability";
     static final String GIVEN = "GIVEN";
     static final String RECEIVED = "RECEIVED";
@@ -46,6 +47,7 @@ public class PersonalDataAssembler {
     private final UserRoleRepository roles;
     private final RoleDelegationRepository delegations;
     private final AwardRepository awards;
+    private final AwardVersionRepository versions;
     private final UserDeviceRepository devices;
     private final PersonalDataQueries queries;
     private final PersonalDataMapper mapper;
@@ -68,6 +70,7 @@ public class PersonalDataAssembler {
             roles.findHistoryByUserId(userId).stream().map(role -> mapper.role(role, today)).toList(),
             delegations(userId, today),
             awards.findByOwnerIdOrderByCreatedAtDescIdDesc(userId).stream().map(mapper::award).toList(),
+            versions.findOfOwner(userId).stream().map(mapper::version).toList(),
             queries.documents(userId),
             queries.consents(userId),
             devices.findByUserIdOrderByLastUsedAtDesc(userId).stream().map(mapper::device).toList(),

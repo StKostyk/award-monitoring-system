@@ -148,6 +148,7 @@ class EmailChangeServiceTest {
     @Test
     void ac15_ac16_theLinkMovesTheAccountAndEndsEverySession() {
         when(tokens.redeem("raw", TokenPurpose.EMAIL_CHANGE)).thenReturn(Optional.of(token()));
+        when(tokens.issue(user, TokenPurpose.SECURITY_REVOKE, Duration.ofHours(24), OLD)).thenReturn("back");
 
         assertThat(service.confirm("raw")).isEqualTo(new EmailChangeResponse(12L, NEW));
 
@@ -159,16 +160,19 @@ class EmailChangeServiceTest {
         verify(tokens).invalidate(user, TokenPurpose.PASSWORD_RESET);
         verify(audit).record(AuditAction.EMAIL_CHANGED, AuditEntityConstants.USER, 12L, 12L,
             Map.of("oldEmail", OLD, "newEmail", NEW));
-        verify(events).publishEvent(new EmailChanged(OLD, NEW, "Петро"));
+        verify(events).publishEvent(new EmailChanged(OLD, NEW, "Петро",
+            "http://localhost:4200/security/not-me?token=back"));
     }
 
     @Test
-    void edge_linksMailedToTheOldAddressStopWorkingAfterTheMove() {
+    void ac5_notMeLinksOfTheOldAddressStayValidAndMoveTheAccountBack() {
         when(tokens.redeem("raw", TokenPurpose.EMAIL_CHANGE)).thenReturn(Optional.of(token()));
 
         service.confirm("raw");
 
-        verify(tokens).invalidate(user, TokenPurpose.SECURITY_REVOKE);
+        verify(tokens).bindAddress(user, TokenPurpose.SECURITY_REVOKE, OLD);
+        verify(tokens).issue(user, TokenPurpose.SECURITY_REVOKE, Duration.ofHours(24), OLD);
+        verify(tokens, never()).invalidate(user, TokenPurpose.SECURITY_REVOKE);
     }
 
     @Test

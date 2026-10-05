@@ -65,16 +65,20 @@ describe('permissions', () => {
     }
   });
 
-  it('ac2_2_offers_only_the_roles_below_the_callers_own_level', () => {
+  it('ac3_offers_only_the_roles_each_role_grants', () => {
     const secretary = readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] }));
     const dean = readPermissions(token({ role_scopes: ['DEAN:9'] }));
+    const office = readPermissions(token({ role_scopes: ['RECTOR_SECRETARY:1'] }));
     const rector = readPermissions(token({ role_scopes: ['RECTOR:1'] }));
+    const both = readPermissions(token({ role_scopes: ['RECTOR:1', 'DEAN:9'] }));
     const administrator = readPermissions(token({ role_scopes: ['SYSTEM_ADMIN:1'] }));
     const officer = readPermissions(token({ role_scopes: ['GDPR_OFFICER:1'] }));
 
     expect(grantableRoles(secretary)).toEqual(['EMPLOYEE']);
     expect(grantableRoles(dean)).toEqual(['EMPLOYEE', 'FACULTY_SECRETARY']);
-    expect(grantableRoles(rector)).toEqual([
+    expect(grantableRoles(office)).toEqual(['EMPLOYEE']);
+    expect(grantableRoles(rector)).toEqual(['DEAN', 'RECTOR_SECRETARY']);
+    expect(grantableRoles(both)).toEqual([
       'EMPLOYEE',
       'FACULTY_SECRETARY',
       'DEAN',

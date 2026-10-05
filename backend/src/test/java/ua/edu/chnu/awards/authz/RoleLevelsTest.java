@@ -16,17 +16,24 @@ class RoleLevelsTest {
         "FACULTY_SECRETARY, EMPLOYEE, true",
         "DEAN, FACULTY_SECRETARY, true",
         "DEAN, EMPLOYEE, true",
-        "RECTOR_SECRETARY, DEAN, true",
+        "RECTOR_SECRETARY, EMPLOYEE, true",
         "RECTOR, RECTOR_SECRETARY, true",
-        "RECTOR, EMPLOYEE, true",
+        "RECTOR, DEAN, true",
+        "RECTOR_SECRETARY, FACULTY_SECRETARY, false",
+        "RECTOR_SECRETARY, DEAN, false",
+        "RECTOR, FACULTY_SECRETARY, false",
+        "RECTOR, EMPLOYEE, false",
+        "RECTOR, RECTOR, false",
         "EMPLOYEE, EMPLOYEE, false",
         "DEAN, DEAN, false",
         "FACULTY_SECRETARY, DEAN, false",
+        "FACULTY_SECRETARY, FACULTY_SECRETARY, false",
         "DEAN, RECTOR, false",
+        "DEAN, RECTOR_SECRETARY, false",
         "EMPLOYEE, FACULTY_SECRETARY, false"
     })
-    void ac14_theLineOfAuthorityIsStrict(RoleType holder, RoleType target, boolean expected) {
-        assertThat(levels.above(holder, target)).isEqualTo(expected);
+    void ac3_eachRoleGrantsOnlyTheRolesTheReviewAssignedToIt(RoleType holder, RoleType target, boolean expected) {
+        assertThat(levels.grants(holder, target)).isEqualTo(expected);
     }
 
     @ParameterizedTest
@@ -42,7 +49,7 @@ class RoleLevelsTest {
         "DEAN, GDPR_OFFICER, false"
     })
     void ac14_systemRolesAreGrantedByTheAdministratorOnly(RoleType holder, RoleType target, boolean expected) {
-        assertThat(levels.above(holder, target)).isEqualTo(expected);
+        assertThat(levels.grants(holder, target)).isEqualTo(expected);
     }
 
     @ParameterizedTest
