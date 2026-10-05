@@ -17,8 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
@@ -70,8 +68,7 @@ class AwardStatusIT extends AbstractIntegrationTest {
         owner = userRepository.save(TestUsers.user(OWNER, department));
         secretary = userRepository.save(TestUsers.user(SECRETARY, department));
         dean = userRepository.save(TestUsers.user(DEAN, department));
-        Jwt jwt = Jwt.withTokenValue("token").header("alg", "RS256").subject(owner.getId().toString()).build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
+        TestUsers.signInAs(owner);
         statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.setStatisticsEnabled(true);
     }

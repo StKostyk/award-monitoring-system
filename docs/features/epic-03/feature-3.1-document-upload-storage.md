@@ -3,7 +3,7 @@
 > **Epic**: 3 — Document Processing & Parsing (SCRUM-34)
 > **Sprint**: 3–4 (2026-10-02 → 2026-10-11)
 > **Points**: 16 (three stories)
-> **Status**: Approved 2026-10-02
+> **Status**: Validated 2026-10-05 (§12, passed with notes; fixes in 3.1.5; the manual run of §9 pending)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 3.1, US-003 (certificate photo, DoD "security review for file upload"), DATA_DICTIONARY §2.3 and appendix (constraints), V006, V013, state-machine-document.puml, RBAC_matrix.md ("Upload Scanned Document"), AUTH §3.3, SECURITY_ARCHITECTURE (encryption at rest, OWASP A05), THREAT_MODEL, PRIVACY_BY_DESIGN (export, erasure), ADR-014, ADR-021, openapi.yml `/awards/{id}/documents`, `/documents/{id}`, EPIC-03 tracker
 
@@ -61,7 +61,7 @@ An award without its certificate is only a claim: the faculty secretary who revi
 - **AC-1.5** Given an award with 10 documents, then the next upload answers 409 `DOCUMENT_LIMIT`; given a file with the checksum of a document already on the award, then 409 `DUPLICATE_DOCUMENT` with the existing document's id.
 - **AC-1.6** Given a file name with a path (`C:\scans\..\диплом.pdf`), control characters or more than 255 characters, then `fileName` keeps the last path segment without control characters, Unicode letters kept, shortened to 255 with its extension kept; a missing `type` or one outside `CERTIFICATE`, `DIPLOMA`, `SUPPORTING_DOCUMENT`, `PHOTO` → 400; a description over 500 characters → 400.
 - **AC-1.7** Given a caller who may read the award (the owner in any status; a holder of an `award:read:*` scope covering the award's organisation for non-drafts — `AwardOwnership.isReadable`), when she calls `GET /api/v1/awards/{id}/documents`, then 200 with the documents oldest first; anyone else, or an unknown award, gets 404.
-- **AC-1.8** Given the same read rule, when she calls `GET /api/v1/documents/{id}`, then 200 with the bytes streamed from storage, `Content-Type` from the row, `Content-Disposition: attachment; filename*=UTF-8''<encoded name>`, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` and `Content-Security-Policy: sandbox`; an `audit_logs` row `DOCUMENT_DOWNLOAD` with the document and award id and the caller is written. A document of an award she may not read answers 404.
+- **AC-1.8** Given the same read rule, when she calls `GET /api/v1/documents/{id}`, then 200 with the bytes streamed from storage, `Content-Type` from the row, `Content-Disposition: attachment; filename*=UTF-8''<encoded name>`, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store, private` and `Content-Security-Policy: sandbox`; an `audit_logs` row `DOCUMENT_DOWNLOAD` with the document and award id and the caller is written. A document of an award she may not read answers 404.
 - **AC-1.9** Given the owner of a draft, when she calls `DELETE /api/v1/documents/{id}`, then 204, the row is gone and the object is removed after the commit; given a non-draft award, then 409 `AWARD_NOT_EDITABLE`; given anyone else, then 404.
 - **AC-1.10** Given a draft with documents, when the owner deletes the draft, then every object of its documents is removed after the commit.
 - **AC-1.11** Given object storage that is unreachable, then an upload answers 503 `STORAGE_UNAVAILABLE` and no row is written; given a database failure after the object was written, then the object is removed; given objects under `awards/` with no row and older than 24 h, then the daily sweep (`app.documents.sweep-cron`) removes them and logs the count.
@@ -227,11 +227,11 @@ Preconditions: `docker compose up -d postgres redis mailpit minio` (plus `clamav
 7. Delete the PNG («Видалити документ «…»?» → confirm). Expected: gone from the list; MinIO object gone; psql `select action_type, user_id from audit_logs where entity_type = 'documents' order by created_at desc limit 4;` shows `INSERT` rows and a `DELETE` with `employee.fmi`'s id. (AC-1.9, 1.14)
 8. Complete and submit the award. Expected: no «Ви не додали…» notice (it has documents). Create a second award without documents and submit it. Expected: the confirmation shows the notice and submission works. (AC-2.8)
 9. Open the first award's page. Expected: «Документи» with two files, download and preview, no «Видалити». Swagger: `DELETE /api/v1/documents/<id>` → 409 `AWARD_NOT_EDITABLE`; `POST …/documents` → 409. (AC-2.7, 1.4, 1.9)
-10. As `dean.fmi` open the first award. Expected: the documents listed; download works. psql: `select action_type, user_id, details from audit_logs where action_type = 'DOCUMENT_DOWNLOAD' order by created_at desc limit 2;` Expected: rows for the employee (step 6) and the dean. (AC-1.7, 1.8, 2.7)
-11. Browser devtools on the download in step 10. Expected: response headers `Content-Disposition: attachment; filename*=UTF-8''…`, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store`, `Content-Security-Policy: sandbox`; the request URL carries no token. (AC-1.8, 2.9)
+10. As `dean.fmi` open the first award. Expected: the documents listed; download works. psql: `select action_type, user_id, new_values from audit_logs where action_type = 'DOCUMENT_DOWNLOAD' order by created_at desc limit 2;` Expected: rows for the employee (step 6) and the dean. (AC-1.7, 1.8, 2.7)
+11. Browser devtools on the download in step 10. Expected: response headers `Content-Disposition: attachment; filename*=UTF-8''…`, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store, private`, `Content-Security-Policy: sandbox`; the request URL carries no token. (AC-1.8, 2.9)
 12. As `employee.fmi` request the data export (profile page, 1.3.3); in Swagger call `GET` on one document's `api_path`. Expected: the file. (AC-1.13)
 13. Create a draft with two documents, then delete the draft. Expected: MinIO folder `awards/<id>/` empty. (AC-1.10)
-14. After 3.1.3: upload `eicar.pdf` in the form. Expected: «Файл містить шкідливий код і не був завантажений», nothing in MinIO, psql shows `DOCUMENT_REJECTED` with `Eicar-Test-Signature`. (AC-3.1, 2.5)
+14. After 3.1.3: upload `eicar.pdf` in the form. Expected: «Файл містить шкідливий код і не був завантажений», nothing in MinIO, psql `select new_values from audit_logs where action_type = 'DOCUMENT_REJECTED' order by created_at desc limit 1;` shows `Eicar-Test-Signature` and the award id. (AC-3.1, 2.5)
 15. Switch to English and repeat steps 1 and 4. Expected: every text in English. (AC-2.10)
 16. With the keyboard only: Tab to the drop zone, Enter opens the picker; Tab to «Завантажити» and «Видалити». (AC-2.11)
 17. On a phone (or Chrome device mode with a camera), «Сфотографувати» opens the camera; the photo uploads as JPEG. (AC-2.1)
@@ -248,10 +248,14 @@ Preconditions: `docker compose up -d postgres redis mailpit minio` (plus `clamav
 25. Open the draft form in two tabs, upload the same file in both at once. Expected: one stored, the other «Цей файл уже додано». (§5)
 26. After 3.1.3, as `employee.fmi`: psql `select pg_size_pretty(sum(file_size)) from documents d join users u on u.user_id = d.uploaded_by where u.email_address = 'employee.fmi@chnu.edu.ua';`, then upload 10 MB files to drafts until the sum passes 50 MB. Expected: the file that would pass it shows «Ваші документи вже займають 50 МБ. Більше файлів додати не можна»; Swagger 409 `STORAGE_QUOTA` with `quota` and `used`. Delete those drafts afterwards. (AC-3.5)
 27. After 3.1.3: `docker compose exec redis redis-cli set documents:rate:<employee user_id>:<epoch seconds / 60> 100`, upload a file within that minute. Expected: «Забагато завантажень. Спробуйте ще раз за хвилину» with «Спробувати ще раз»; Swagger 429 with `Retry-After`; after the minute the retry uploads. (AC-3.6)
-26. Submit the draft in one tab while a file is uploading in the other. Expected: either the file is in the submitted award, or the upload answers «нагороду вже подано» (409) and nothing is left in MinIO. (§5)
-27. Restart the backend with the award page open, then download. Expected: works after the restart; the token is refreshed if needed. (§5)
-28. Let the access token expire on the form (15 minutes), then add a file. Expected: the upload succeeds after a silent refresh. (§5)
-29. Back button after deleting a document. Expected: the list does not show the deleted document after the page reloads. (AC-1.9)
+28. Submit the draft in one tab while a file is uploading in the other. Expected: either the file is in the submitted award, or the upload answers «нагороду вже подано» (409) and nothing is left in MinIO. (§5)
+29. Restart the backend with the award page open, then download. Expected: works after the restart; the token is refreshed if needed. (§5)
+30. Let the access token expire on the form (15 minutes), then add a file. Expected: the upload succeeds after a silent refresh. (§5)
+31. Back button after deleting a document. Expected: the list does not show the deleted document after the page reloads. (AC-1.9)
+32. On `http://localhost:4200/awards/new` add a file (the draft is saved), then delete that draft from «Мої нагороди» in a second tab; back in the first tab add another file. Expected: the form says the draft was deleted elsewhere and the address turns to `/awards/new`, the old documents disappear from the list, and the file is marked «Чернетку видалено в іншому вікні»; «Спробувати ще раз» (or the next file) saves a new draft at a new address and uploads it. (AC-2.2, validation finding 1)
+33. Queue three files on a draft and submit the same draft in a second tab while the first file uploads. Expected: the remaining files are refused with «нагороду вже подано» and the tab moves to the award page without «Видалити». (§5, validation finding 2)
+34. `docker compose stop redis`, upload a file. Expected: 201 within a second (uploads are not limited without Redis) and an `ERROR` log line; `docker compose start redis`. (AC-3.6)
+35. `docker compose stop minio`, download and then delete a document of a draft. Expected: the download shows «Не вдалося завантажити файл» and writes no `DOCUMENT_DOWNLOAD` row; the deletion answers 204 and the object is removed by the sweep later; `docker compose start minio`. (AC-1.11)
 
 ## 10. Risks
 
@@ -271,3 +275,93 @@ Preconditions: `docker compose up -d postgres redis mailpit minio` (plus `clamav
 - Docs in the same PR as the story: `openapi.yml` (document paths and schemas), DATA_DICTIONARY §2.3, V025, THREAT_MODEL, SECURITY_ARCHITECTURE note, RBAC_matrix.md rows, state-machine note, DEMO_DEPLOYMENT (MinIO KMS key, ClamAV), `.env.prod.example`, `CHANGELOG.md`, EPIC-03 tracker, `BACKLOG.md`
 - Security review of each story's diff (upload handling, US-003 DoD)
 - §9 manual verification run in the browser after the validation, including the detours
+
+## 12. Validation (2026-10-05, `develop` at 0e9ae47, fixes and refactor sweep in 3.1.5)
+
+Gates on `develop`: `mvn verify` — 696 unit and slice tests, 232 integration and functional, 98.4 % lines, Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 402 Vitest; Playwright 59/59 (`.\tools\e2e.ps1`, ClamAV and the frontend nginx included). `docker compose up -d --build` starts clean with all services healthy; the four document operations and the `Document` schema of `/v3/api-docs` match `openapi.yml` (the live document lists no error responses, as for every other endpoint); every `*IT` applies the migrations, V025 included, to an empty database. Steps 1–14 of §9 and detours 29 and 32 were walked through nginx on the rebuilt stack; a stack built before 3.1.3 answers EICAR with `unsupported-type`, so §9 needs `docker compose up -d --build` after pulling.
+
+### AC evidence
+
+Test methods are named after the AC they prove (`ac1_5_…`). FT = `DocumentFT`, IT = `DocumentStorageIT` / `MalwareScanIT`, E2E = `e2e/documents.spec.ts`, `#…` = `award-documents.component.spec`.
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 1.1 | FT `ac1_1_ac1_7_theOwnerUploadsEveryFormatAndListsThemOldestFirst`; IT `ac1_1_ac1_12_ac1_14_theContentIsEncryptedInAPrivateBucketAndTheRowNamesTheUploader`; `DocumentUploadTest#ac1_1_*`, `DocumentContentTest#ac1_1_*` (2), `DocumentEndpointsTest#ac1_1_*`; §9 steps 1–2 | pass |
+| 1.2 | FT `ac1_2_ac1_3_emptyOversizedAndMislabelledFilesAreRefused` (12 MB body → 413 problem); `DocumentUploadTest#ac1_2_*`, `DocumentEndpointsTest#ac1_2_*`; E2E `ac1_16 …`; §9 step 5 | pass |
+| 1.3 | FT `ac1_2_ac1_3_…`; `DocumentContentTest#ac1_3_*` (3), `DocumentUploadTest#ac1_3_*`; §9 step 5 | pass |
+| 1.4 | FT `ac1_4_ac1_7_ac1_8_ac1_9_readersOfTheAwardDownloadAndOnlyTheOwnerChangesADraft`; `DocumentUploadTest#ac1_4_*`, `DocumentEndpointsTest#ac1_4_*`; §9 step 9 | pass |
+| 1.5 | FT `ac1_5_theEleventhDocumentAndASecondCopyAreRefused`, `ac1_5_twoUploadsOfTheSameFileAtOnceStoreOne`; `DocumentUploadTest#ac1_5_*`; §9 step 5 | pass |
+| 1.6 | `DocumentContentTest#ac1_6_*` (3), `DocumentUploadTest#ac1_6_*`, `DocumentEndpointsTest#ac1_6_*` | pass |
+| 1.7 | FT `ac1_1_ac1_7_…`, `ac1_4_ac1_7_…`; `DocumentServiceTest#ac1_7_*` (2), `DocumentEndpointsTest#ac1_7_*` | pass |
+| 1.8 | FT `ac1_4_…_ac1_8_…`; IT `ac1_8_aDownloadStreamsTheContentAndIsRecorded`; `DocumentServiceTest#ac1_8_*` (2), `DocumentEndpointsTest#ac1_8_*` (2); §9 steps 10–11 | pass (F-5) |
+| 1.9 | FT `ac1_9_theOwnerDeletesADocumentOfTheDraft`; IT `ac1_9_ac1_14_…`; `DocumentServiceTest#ac1_9_*` (2), `StoredObjectCleanupTest#ac1_9_*`, `DocumentEndpointsTest#ac1_9_*`; §9 step 7 | pass |
+| 1.10 | IT `ac1_10_deletingTheDraftRemovesTheObjectsOfAllItsDocuments`; `DocumentServiceTest#ac1_10_*`, `AwardServiceTest#ac1_4_deletingRemovesTheDraftAndReleasesItsDocumentObjects`; §9 step 13 | pass |
+| 1.11 | IT `ac1_11_anUploadWhoseTransactionRollsBackLeavesNoObject`, `ac1_11_theSweepRemovesOldOrphans…`; `DocumentUploadTest#ac1_11_*` (2), `ObjectStorageTest#ac1_11_*`, `DocumentSweeperTest#ac1_11_*` (3), `StoredObjectCleanupTest#ac1_11_*` (2); the planned IT "MinIO stopped → 503" is missing | pass (F-4) |
+| 1.12 | IT `ac1_1_ac1_12_…` (private bucket, SSE); `ObjectStorageTest#ac1_12_*`; `docker-compose.yaml` and `docker-compose.prod.yml` (`MINIO_KMS_SECRET_KEY`, `ports: !reset []`, `minio-init`) | pass |
+| 1.13 | FT `ac1_13_theExportLinkDownloadsTheFileForTheOwner`; §9 step 12 | pass |
+| 1.14 | IT `ac1_1_ac1_12_ac1_14_…`, `ac1_9_ac1_14_…`; §9 step 7 | pass |
+| 1.15 | FT `ac1_15_aTenMegabyteUploadAnswersWithinFiveSeconds` | pass |
+| 1.16 | E2E `ac1_16 a 9.5 MB upload passes the frontend nginx and a larger body is refused there`; `frontend/nginx.conf` `client_max_body_size 11m`, Spring 10 MB / 11 MB | pass |
+| 2.1 | `#ac1_form_section_shows_drop_zone_type_and_hint`, `#ac1_*` type defaults (3); E2E `ac2_1 to ac2_7 …`; §9 step 1 (the camera button stays a manual step, §9 step 17) | pass |
+| 2.2 | `#ac2_new_award_is_saved_before_the_first_upload`, `#ac2_file_stays_queued_when_the_save_fails`; E2E `ac2_1 …`; §9 step 1 | pass (F-1, F-3) |
+| 2.3 | `#ac3_files_the_server_would_refuse_are_never_sent`, `documents.service.spec#ac2_3_*`; §9 step 4 | pass |
+| 2.4 | `#ac4_files_upload_one_after_another_with_progress_and_announcement`, `documents.service.spec#ac2_4_*`; §9 step 3 | pass |
+| 2.5 | `#ac5_refusals_a_retry_cannot_fix_offer_only_dismiss` (every code), `#ac3_6_too_many_uploads_is_shown_and_can_be_retried`; E2E `ac3_1 ac3_4 …`; §9 step 14 | pass (F-1, F-2) |
+| 2.6 | `#ac6_*` (6), `document-preview-dialog.component.spec#ac2_6_*`; §9 steps 6–7 | pass |
+| 2.7 | `#ac7_read_only_list_has_no_upload_and_no_delete`, `#ac7_award_without_documents_says_so`; E2E `ac2_1 …` (dean); §9 steps 9–10 | pass |
+| 2.8 | `award-form.component.spec#ac2_8_submitting_without_documents_asks_with_the_notice`; §9 step 8 | pass |
+| 2.9 | `#ac9_*` (3), `documents.service.spec#ac2_9_*`; E2E `ac2_9 a document removed elsewhere is no longer available`; §9 steps 10–11 | pass |
+| 2.10 | E2E `ac2_10 ac2_11 the section speaks English …`; `#ac6_english_sizes_use_a_decimal_point` | pass |
+| 2.11 | `#ac11_enter_and_space_on_the_drop_zone_open_the_picker`; E2E `ac2_10 ac2_11 …` (keyboard, axe) | pass |
+| 3.1 | IT `ac3_1_theEicarFileIsRefusedUnderAnyNameAndRecorded`, `ac3_1_aCleanFileIsStoredAndTheScannerIsUp`; `ClamAvScannerTest#ac3_1_*` (2), `MalwareScreeningTest#ac3_1_*` (2), `DocumentUploadTest#ac3_1_*`; E2E `ac3_1 ac3_4 …`; §9 step 14 | pass |
+| 3.2 | IT `ac3_2_aScannerThatStopsAnsweringRefusesTheUploadAndReportsDown`; `ClamAvScannerTest#ac3_2_*` (5) | pass |
+| 3.3 | `docker-compose.yaml` / `docker-compose.prod.yml` (`clamav` with health check and freshclam, `condition: service_healthy`, no port in production); `ClamAvScannerTest#ac3_3_*` | pass |
+| 3.4 | `tools/e2e.ps1` starts `clamav`; E2E `ac3_1 ac3_4 a file with malware is refused and nothing is attached` | pass |
+| 3.5 | FT `ac3_5_aFileBeyondTheUsersQuotaIsRefused`, `ac3_5_uploadsToTwoDraftsAtOnceCannotBothPassTheQuota`; `UploadLimitsTest#ac3_5_*` (2), `DocumentUploadTest#ac3_5_ac3_6_*`; `#ac5_refusals_…` (`storage-quota`) | pass |
+| 3.6 | FT `ac3_6_anUploadBeyondTheRateIsRefusedWithRetryAfter`; `UploadLimitsTest#ac3_6_*` (2), `DocumentUploadTest#ac3_6_*`; `#ac3_6_too_many_uploads_is_shown_and_can_be_retried` | pass |
+
+### Edge cases (§5)
+
+| Edge case | Evidence | Result |
+|-----------|----------|--------|
+| Two uploads of the same file at once | FT `ac1_5_twoUploadsOfTheSameFileAtOnceStoreOne` (row lock, `uq_documents_award_checksum`) | covered |
+| Eleventh upload racing the tenth | Count under the award's row lock (`DocumentUpload`); FT `ac1_5_theEleventhDocument…` runs sequentially | by design |
+| Draft submitted during an upload | `DocumentUploadTest#ac1_11_aSubmissionWhileTheContentIsStoredRefusesTheRowAndReleasesTheObject`; the form stays editable: F-2 | open (F-2) |
+| Draft deleted during a download | The started stream finishes; the next request answers 404 (`DocumentServiceTest#ac1_8_aDocumentOfAnUnreadableAward…`) | covered |
+| `IMG_2041.HEIC` | `DocumentContentTest#ac1_3_otherContentIsAnUnsupportedType`; `documents.service.spec#ac2_3_*` | covered |
+| PDF with JavaScript | Served only as an attachment with `sandbox` and `nosniff` (`DocumentEndpointsTest#ac1_8_*`) | by design (F-5) |
+| Name `..`, empty or control characters | `DocumentContentTest#ac1_6_controlAndFormatCharactersAreRemovedAndAMissingNameIsReplaced` | covered |
+| Same file on two awards | The duplicate lookup and `uq_documents_award_checksum` are per award; walked: `photo.jpg` stored on awards 112 and 114; no automated test | covered (manual) |
+| Owner moves after submission | Readers follow the award's organisation (`AwardOwnership.isReadable`, Feature 2.1) | covered |
+| Reader loses the scope with the page open | `#ac9_document_no_longer_available_reloads_the_list`; E2E `ac2_9 …` | covered |
+| Token expires during an upload | `unauthorized.interceptor` resends the form after one refresh; §9 detours 29–30 (29 walked) | covered (manual) |
+| MinIO restarted between upload and download | Objects on the `minio_data` volume; §9 steps 6–10 ran across a backend rebuild | covered |
+| Object missing for a row | `DocumentServiceTest#aMissingObjectIsReportedAsMissingContent`, IT `aMissingObjectIsEmpty` | covered |
+| Network drop mid-upload | Spring discards the partial multipart; a retry answers `duplicate-document` if the row committed | covered (manual, §9 detour 24) |
+| Export link opened in a tab | 401 problem with `WWW-Authenticate: Bearer` (probed) | covered |
+
+### Security checklist
+
+| OWASP | Control | Where |
+|-------|---------|-------|
+| A01 Broken access control | `award:update:own` and owner + draft for upload and deletion; the award read rule for list and download; unknown or unreadable awards and documents answer 404; ids checked by the binder | `DocumentController`, `DocumentAccess`, `AwardOwnership`; FT `ac1_4_ac1_7_ac1_8_ac1_9_…` |
+| A02 Cryptographic failures | MinIO SSE with the KMS key from the environment; private bucket; the backend's own MinIO account; no file names in object keys | `docker-compose*.yml`, `infra/minio`, IT `ac1_1_ac1_12_ac1_14_…`, D-1, D-8 |
+| A03 Injection | Type from the leading bytes, never from the name or `Content-Type`; names reduced to the last segment without control characters; downloads as `attachment` with `nosniff` and `sandbox`; JPA with bound parameters | `DocumentContent`, `DocumentController`, `DocumentContentTest` |
+| A04 Insecure design | 10 MB per file, 10 per award, 50 MB per user, 20 uploads a minute; ClamAV before any other content check, fail closed | `UploadLimits`, `ClamAvScanner`, `MalwareScreening`; THREAT_MODEL "Document upload" |
+| A07 Authentication failures | Bearer token only, no token in URLs (blob download); downloads and refusals audited (`DOCUMENT_DOWNLOAD`, `DOCUMENT_REJECTED`) | `documents.service.ts`, `DocumentService`, `MalwareScreening` |
+
+### Findings
+
+Scenario review of the untested detours, the walk of §9 and the refactor sweep; F-1…F-5 are fixed in 3.1.5.
+
+| # | Finding | Fix |
+|---|---------|-----|
+| F-1 | After the form saved a new draft for the first upload and the draft is deleted in another tab, the documents section keeps the old id: every upload answers 404 with «Спробувати ще раз» forever (each retry counts against the upload rate), the old documents stay listed and the AC-2.8 notice is skipped after the next save (confirmed on the stack, §9 detour 32) | A 404 on upload clears the section and tells the form, which saves a new draft before the next file |
+| F-2 | When the draft is submitted in another tab while files are queued, the files are refused but the tab stays on the editable form with «Видалити» | `award-not-editable` on upload leads to the award page like the form's own refusal |
+| F-3 | A file added while «Зберегти чернетку» is still saving a new award is marked as not saved although the save succeeds | The upload waits for the running save |
+| F-4 | The test plan's IT "MinIO stopped → 503" is missing; download and deletion with storage down have no test | IT with MinIO stopped for upload, download (no audit row) and deletion (orphan left for the sweep) |
+| F-5 | Downloads through the frontend nginx carry two `Content-Security-Policy` headers (the backend's `sandbox` and the site policy) and `X-Content-Type-Options` twice; browsers apply both, so the sandbox holds | nginx keeps the backend's security headers on `/api/` |
+
+Outside this feature: the Docker profile signs tokens with a key generated at every start, so a backend restart turns every open access token into a 401 and two tabs then refresh with the same refresh token (`RefreshTokenReuseGuard` may end the session); left for a Feature 1.x fix before the demo. The psql queries of §9 steps 10 and 14 named a `details` column that `audit_logs` does not have; corrected to `new_values`.
+
+Refactor sweep, applied in 3.1.5: one Redis fixed-window counter for the sign-in limit and the upload rate (`UploadLimits` copied `RateLimitFilter`); one confirm-dialog helper for the four confirmations; shared PDF/PNG fixtures and a test sign-in helper for the document tests; `ClamAvScanner.enabled()` removed (unused) and its close timer's catch split; download headers through `ContentDisposition`/`CacheControl` like the other downloads; award permission expressions in one constants class; `UploadLimits` with `@RequiredArgsConstructor`; one current-award id in the documents section; the E2E sign-in and axe helpers in `e2e/helpers.ts`. Left in the tracker's technical notes: one stream-opening helper for `DocumentUpload`, `ObjectStorage` and `MalwareScreening`; `DocumentEndpointsTest` belongs under `document/controller` with its base class in `support/`.

@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.unit.DataSize;
 
+import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.DocumentProperties;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
@@ -41,10 +42,10 @@ class UploadLimitsTest {
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final DocumentRepository documents = mock(DocumentRepository.class);
-    private final UploadLimits limits = new UploadLimits(redis, documents,
+    private final UploadLimits limits = new UploadLimits(
+        new FixedWindowCounter(redis, Clock.fixed(NOW, ZoneOffset.UTC)), documents,
         new DocumentProperties("award-documents", DataSize.ofMegabytes(10), 10, Duration.ofHours(24),
-            DataSize.ofMegabytes(50), RATE, null, null),
-        Clock.fixed(NOW, ZoneOffset.UTC));
+            DataSize.ofMegabytes(50), RATE, null, null));
 
     @BeforeEach
     void setUp() {

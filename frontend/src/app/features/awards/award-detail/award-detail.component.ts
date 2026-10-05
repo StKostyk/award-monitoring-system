@@ -27,7 +27,7 @@ import { AwardDocumentsComponent } from '../award-documents/award-documents.comp
 import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { AwardStatusComponent } from '../award-status/award-status.component';
 import { Award, AwardsService, awardTitle, categoryName, isOwnAward } from '../awards.service';
-import { confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
+import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-award-detail',
@@ -93,7 +93,7 @@ export class AwardDetailComponent implements OnInit {
   }
 
   remove(award: Award): void {
-    confirmRemoval(this.dialog)
+    confirmAction(this.dialog, 'awards.remove')
       .pipe(
         filter(Boolean),
         tap(() => this.loading.set(true)),

@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.document;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -215,10 +216,10 @@ class DocumentFT extends AbstractFunctionalTest {
         Response download = as(dean).get(DOCUMENTS + document);
         download.then().statusCode(200)
             .header("Content-Type", "application/pdf")
-            .header("Content-Disposition", "attachment; filename*=UTF-8''"
-                + "%D0%B3%D1%80%D0%B0%D0%BC%D0%BE%D1%82%D0%B0%202025.pdf")
+            .header("Content-Disposition", containsString("; filename*=UTF-8''"
+                + "%D0%B3%D1%80%D0%B0%D0%BC%D0%BE%D1%82%D0%B0%202025.pdf"))
             .header("X-Content-Type-Options", "nosniff")
-            .header("Cache-Control", "private, no-store")
+            .header("Cache-Control", "no-store, private")
             .header("Content-Security-Policy", "sandbox");
         assertThat(download.asByteArray()).isEqualTo(content);
         as(dean).get(AwardApi.AWARDS + "/" + award + "/documents").then().statusCode(200)

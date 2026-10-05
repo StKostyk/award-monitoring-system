@@ -15,12 +15,15 @@ import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.config.DocumentProperties;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Client of the {@code clamd} daemon over TCP: {@code INSTREAM} sends the content in length-prefixed chunks and
  * reads one verdict, {@code PING} checks that the daemon answers. One connection per call; the whole scan,
  * sending included, is bounded by the configured timeout, after which the connection is closed.
  */
 @Component
+@Slf4j
 public class ClamAvScanner {
 
     private static final int CHUNK_SIZE = 8192;
@@ -38,15 +41,6 @@ public class ClamAvScanner {
      */
     public ClamAvScanner(DocumentProperties properties) {
         this.properties = properties.scan();
-    }
-
-    /**
-     * Whether scanning is switched on; when it is not, every file passes.
-     *
-     * @return true when uploads are scanned
-     */
-    public boolean enabled() {
-        return properties.enabled();
     }
 
     /**
@@ -136,8 +130,10 @@ public class ClamAvScanner {
         try {
             Thread.sleep(timeout);
             socket.close();
-        } catch (InterruptedException | IOException finished) {
+        } catch (InterruptedException finished) {
             Thread.currentThread().interrupt();
+        } catch (IOException closeFailed) {
+            log.debug("The scanner connection could not be closed at its deadline: {}", closeFailed.getMessage());
         }
     }
 

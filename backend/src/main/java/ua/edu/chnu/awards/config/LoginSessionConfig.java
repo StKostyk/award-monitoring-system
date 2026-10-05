@@ -1,14 +1,11 @@
 package ua.edu.chnu.awards.config;
 
-import java.time.Clock;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
@@ -26,6 +23,7 @@ import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
 import ua.edu.chnu.awards.auth.security.RateLimitFilter;
 import ua.edu.chnu.awards.auth.security.RetryRequestSessionExpiredStrategy;
+import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 
 /**
  * The sign-in path: password checking with lock and status checks, login sessions tracked so a password reset
@@ -96,12 +94,12 @@ public class LoginSessionConfig {
     }
 
     @Bean
-    FilterRegistrationBean<RateLimitFilter> rateLimitFilter(StringRedisTemplate redis, ProtectionProperties properties,
-                                                            Clock clock,
+    FilterRegistrationBean<RateLimitFilter> rateLimitFilter(FixedWindowCounter counter,
+                                                            ProtectionProperties properties,
                                                             @Qualifier("corsConfigurationSource")
                                                             CorsConfigurationSource cors) {
         FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(
-            new RateLimitFilter(redis, properties, clock, cors));
+            new RateLimitFilter(counter, properties, cors));
         registration.addUrlPatterns("/oauth2/token", "/login", "/api/v1/auth/*");
         registration.setOrder(BEFORE_SESSION_FILTER);
         return registration;

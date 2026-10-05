@@ -13,6 +13,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.PDF;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.PNG;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.file;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -53,8 +56,8 @@ class DocumentUploadTest {
     private static final long OWNER_ID = 21L;
     private static final long AWARD_ID = TestAwards.AWARD_ID;
     private static final long DOCUMENT_ID = 7L;
-    private static final int LIMIT = 10;
-    private static final byte[] PDF = "%PDF-1.7 certificate".getBytes(StandardCharsets.US_ASCII);
+    private static final int DOCUMENT_LIMIT = 10;
+    private static final int UPLOAD_RATE = 20;
     private static final String TYPE = "type";
 
     private final DocumentRepository documents = mock(DocumentRepository.class);
@@ -65,7 +68,7 @@ class DocumentUploadTest {
     private final MalwareScreening malware = mock(MalwareScreening.class);
     private final UploadLimits limits = mock(UploadLimits.class);
     private final DocumentProperties properties = new DocumentProperties("award-documents",
-        DataSize.ofMegabytes(10), LIMIT, null, DataSize.ofMegabytes(50), LIMIT, null, null);
+        DataSize.ofMegabytes(10), DOCUMENT_LIMIT, null, DataSize.ofMegabytes(50), UPLOAD_RATE, null, null);
     private final DocumentUpload upload = new DocumentUpload(documents,
         new AwardOwnership(awards, mock(UserRepository.class), access), new DocumentContent(), storage, properties,
         events, new TransactionTemplate(mock(PlatformTransactionManager.class)), malware, limits, access);
@@ -136,11 +139,10 @@ class DocumentUploadTest {
     @Test
     void ac1_3_contentOfAnotherTypeOrAMismatchedExtensionIsRefused() {
         draft(AwardStatus.DRAFT, owner);
-        byte[] png = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 0x0D};
 
         assertProblem(() -> upload.upload(AWARD_ID, file("a.docx", "PK\u0003\u0004".getBytes(
             StandardCharsets.ISO_8859_1)), DocumentType.PHOTO, null), "unsupported-type");
-        assertProblem(() -> upload.upload(AWARD_ID, file("scan.pdf", png), DocumentType.PHOTO, null),
+        assertProblem(() -> upload.upload(AWARD_ID, file("scan.pdf", PNG), DocumentType.PHOTO, null),
             "content-mismatch");
         verify(storage, never()).put(anyString(), any(), anyLong(), anyString());
     }
@@ -160,7 +162,7 @@ class DocumentUploadTest {
     @Test
     void ac1_5_theEleventhDocumentAndASecondCopyAreRefused() {
         draft(AwardStatus.DRAFT, owner);
-        when(documents.countByAwardId(AWARD_ID)).thenReturn((long) LIMIT);
+        when(documents.countByAwardId(AWARD_ID)).thenReturn((long) DOCUMENT_LIMIT);
         assertProblem(() -> upload.upload(AWARD_ID, file("a.pdf", PDF), DocumentType.PHOTO, null),
             "document-limit");
 
@@ -242,10 +244,6 @@ class DocumentUploadTest {
     private void draft(AwardStatus status, User awardOwner) {
         Award award = TestAwards.award(awardOwner, department).status(status).build();
         when(awards.findForUpdate(AWARD_ID)).thenReturn(Optional.of(award));
-    }
-
-    private static MockMultipartFile file(String name, byte[] content) {
-        return new MockMultipartFile("file", name, "application/octet-stream", content);
     }
 
     private static void assertProblem(Runnable call, String type) {

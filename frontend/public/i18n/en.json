@@ -208,6 +208,7 @@
         "too-many-requests": "Too many uploads. Try again in a minute",
         "award-not-editable": "The award has been submitted; its documents can no longer be changed",
         "not-saved": "The draft was not saved. Correct the form and try again",
+        "award-gone": "The draft was deleted in another window. Try again to save a new draft",
         "failed": "The file could not be uploaded",
         "gone": "The document is no longer available",
         "list-failed": "The documents could not be loaded",

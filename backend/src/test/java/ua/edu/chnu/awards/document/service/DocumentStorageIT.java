@@ -2,6 +2,8 @@ package ua.edu.chnu.awards.document.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.PDF;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.file;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -14,10 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.award.dto.AwardForm;
@@ -45,7 +44,6 @@ class DocumentStorageIT extends AbstractIntegrationTest {
 
     private static final String OWNER = "it.documents@chnu.edu.ua";
     private static final String BUCKET = "award-documents";
-    private static final byte[] PDF = "%PDF-1.7 integration".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] OTHER_PDF = "%PDF-1.4 second page".getBytes(StandardCharsets.US_ASCII);
     private static final String AUDIT_ROWS = "select action_type, user_id from audit_logs "
         + "where entity_type = 'documents' and entity_id = ? order by log_id";
@@ -93,8 +91,7 @@ class DocumentStorageIT extends AbstractIntegrationTest {
     void setUp() {
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         owner = userRepository.save(TestUsers.user(OWNER, department));
-        Jwt jwt = Jwt.withTokenValue("token").header("alg", "RS256").subject(owner.getId().toString()).build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
+        TestUsers.signInAs(owner);
         awardId = awardService.create(new AwardForm("Letter", null, null, null, null, null, null, null, null)).id();
     }
 
@@ -107,7 +104,7 @@ class DocumentStorageIT extends AbstractIntegrationTest {
 
     @Test
     void ac1_1_ac1_12_ac1_14_theContentIsEncryptedInAPrivateBucketAndTheRowNamesTheUploader() {
-        DocumentResponse stored = upload.upload(awardId, pdf("диплом.pdf", PDF), DocumentType.CERTIFICATE, null);
+        DocumentResponse stored = upload.upload(awardId, file("диплом.pdf", PDF), DocumentType.CERTIFICATE, null);
 
         Map<String, Object> row = jdbc.queryForMap("select storage_bucket, storage_key, processing_status, "
             + "storage_url, file_type, mime_type, document_type from documents where document_id = ?", stored.id());
@@ -134,7 +131,7 @@ class DocumentStorageIT extends AbstractIntegrationTest {
 
     @Test
     void ac1_8_aDownloadStreamsTheContentAndIsRecorded() throws Exception {
-        DocumentResponse stored = upload.upload(awardId, pdf("scan.pdf", PDF), DocumentType.CERTIFICATE, null);
+        DocumentResponse stored = upload.upload(awardId, file("scan.pdf", PDF), DocumentType.CERTIFICATE, null);
 
         var download = documentService.open(stored.id());
 
@@ -149,7 +146,7 @@ class DocumentStorageIT extends AbstractIntegrationTest {
 
     @Test
     void ac1_9_ac1_14_deletingADocumentRemovesItsObjectAfterTheCommitAndNamesTheCaller() {
-        DocumentResponse stored = upload.upload(awardId, pdf("scan.pdf", PDF), DocumentType.CERTIFICATE, null);
+        DocumentResponse stored = upload.upload(awardId, file("scan.pdf", PDF), DocumentType.CERTIFICATE, null);
         String key = documents.findById(stored.id()).orElseThrow().getStorageKey();
 
         documentService.delete(stored.id());
@@ -163,8 +160,8 @@ class DocumentStorageIT extends AbstractIntegrationTest {
 
     @Test
     void ac1_10_deletingTheDraftRemovesTheObjectsOfAllItsDocuments() {
-        upload.upload(awardId, pdf("a.pdf", PDF), DocumentType.CERTIFICATE, null);
-        upload.upload(awardId, pdf("b.pdf", OTHER_PDF), DocumentType.SUPPORTING_DOCUMENT, null);
+        upload.upload(awardId, file("a.pdf", PDF), DocumentType.CERTIFICATE, null);
+        upload.upload(awardId, file("b.pdf", OTHER_PDF), DocumentType.SUPPORTING_DOCUMENT, null);
         List<String> keys = documents.storageKeysOfAward(awardId);
         assertThat(keys).hasSize(2).allMatch(this::exists);
 
@@ -177,7 +174,7 @@ class DocumentStorageIT extends AbstractIntegrationTest {
     @Test
     void ac1_11_anUploadWhoseTransactionRollsBackLeavesNoObject() {
         transactions.executeWithoutResult(status -> {
-            upload.upload(awardId, pdf("a.pdf", PDF), DocumentType.CERTIFICATE, null);
+            upload.upload(awardId, file("a.pdf", PDF), DocumentType.CERTIFICATE, null);
             status.setRollbackOnly();
         });
 
@@ -188,7 +185,7 @@ class DocumentStorageIT extends AbstractIntegrationTest {
 
     @Test
     void ac1_11_theSweepRemovesOldOrphansAndKeepsDocumentsAndYoungObjects() {
-        DocumentResponse stored = upload.upload(awardId, pdf("a.pdf", PDF), DocumentType.CERTIFICATE, null);
+        DocumentResponse stored = upload.upload(awardId, file("a.pdf", PDF), DocumentType.CERTIFICATE, null);
         final String documentKey = documents.findById(stored.id()).orElseThrow().getStorageKey();
         String orphan = "awards/999999/orphan-" + awardId;
         s3.putObject(request -> request.bucket(BUCKET).key(orphan), RequestBody.fromBytes(OTHER_PDF));
@@ -222,7 +219,4 @@ class DocumentStorageIT extends AbstractIntegrationTest {
             .credentialsProvider(AnonymousCredentialsProvider.create()).forcePathStyle(true).build();
     }
 
-    private static MockMultipartFile pdf(String name, byte[] content) {
-        return new MockMultipartFile("file", name, "application/pdf", content);
-    }
 }

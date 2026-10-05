@@ -1,9 +1,11 @@
 import { execFileSync } from 'node:child_process';
 
-import type { Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import type { Browser, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 const mailpit = 'http://localhost:8025';
+const demoPassword = 'Passw0rd-demo';
 
 interface MessageSummary {
   ID: string;
@@ -82,6 +84,40 @@ export async function signIn(page: Page, email: string, password: string): Promi
   await page.fill('#username', email);
   await page.fill('#password', password);
   await page.click('button[type="submit"]');
+}
+
+/** Signs a seed account in with the demo password and waits for the navigation. */
+export async function signInAsSeed(page: Page, email: string): Promise<void> {
+  await signIn(page, email, demoPassword);
+  await expect(page.getByTestId('nav-awards')).toBeVisible();
+}
+
+/** A page in a new browser context with a seed account signed in; native dialogs are accepted. */
+export async function signedIn(browser: Browser, email: string): Promise<Page> {
+  const page = await (await browser.newContext()).newPage();
+  page.on('dialog', (dialog) => void dialog.accept());
+  await signInAsSeed(page, email);
+  return page;
+}
+
+/** The computed background colour of the first element matching the selector. */
+export function background(page: Page, selector: string): Promise<string> {
+  return page
+    .locator(selector)
+    .first()
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+}
+
+/** The serious and critical WCAG 2.1 AA violations of the page, with the elements they concern. */
+export async function seriousViolations(page: Page): Promise<string[]> {
+  const result = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  return result.violations
+    .filter((violation) => violation.impact === 'serious' || violation.impact === 'critical')
+    .map(
+      (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(' | ')}`,
+    );
 }
 
 /**

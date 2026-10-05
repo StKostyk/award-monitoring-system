@@ -1,5 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
 import { Page, expect, test } from '@playwright/test';
+
+import { background, seriousViolations } from './helpers';
 
 const phoneWidth = 360;
 const phoneHeight = 740;
@@ -9,24 +10,6 @@ async function openLogin(page: Page): Promise<void> {
   await page.goto('/');
   await expect(page).toHaveURL(/localhost:8080\/login/);
   await expect(page.getByTestId('login-brand')).toBeVisible();
-}
-
-function background(page: Page, selector: string): Promise<string> {
-  return page
-    .locator(selector)
-    .first()
-    .evaluate((element) => getComputedStyle(element).backgroundColor);
-}
-
-async function seriousViolations(page: Page): Promise<string[]> {
-  const result = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-    .analyze();
-  return result.violations
-    .filter((violation) => violation.impact === 'serious' || violation.impact === 'critical')
-    .map(
-      (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(' | ')}`,
-    );
 }
 
 test.describe('sign-in page brand', () => {

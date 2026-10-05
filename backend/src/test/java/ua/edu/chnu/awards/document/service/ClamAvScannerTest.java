@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.document.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.PDF;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,7 +27,6 @@ import ua.edu.chnu.awards.config.DocumentProperties;
 
 class ClamAvScannerTest {
 
-    private static final byte[] PDF = "%PDF-1.7 certificate".getBytes(StandardCharsets.US_ASCII);
     private static final String INSTREAM = "zINSTREAM";
     private static final String PING = "zPING";
     private static final Duration TIMEOUT = Duration.ofMillis(500);

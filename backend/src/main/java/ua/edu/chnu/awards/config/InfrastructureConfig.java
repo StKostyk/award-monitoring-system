@@ -7,15 +7,18 @@ import org.springframework.boot.autoconfigure.data.redis.LettuceClientConfigurat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.TimeoutOptions;
 
+import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
+
 /**
- * Shared clock (injectable for tests), workflow timing, asynchronous execution for listeners and Redis client
- * behaviour.
+ * Shared clock (injectable for tests), workflow timing, asynchronous execution for listeners, Redis client
+ * behaviour and the request windows.
  */
 @Configuration
 @EnableAsync
@@ -41,5 +44,17 @@ public class InfrastructureConfig {
             .timeoutOptions(TimeoutOptions.enabled())
             .disconnectedBehavior(ClientOptions.DisconnectedBehavior.REJECT_COMMANDS)
             .build());
+    }
+
+    /**
+     * One-minute request windows in Redis, shared by the sign-in limit and the upload rate.
+     *
+     * @param redis the window counters
+     * @param clock the time of the window
+     * @return the counter
+     */
+    @Bean
+    FixedWindowCounter fixedWindowCounter(StringRedisTemplate redis, Clock clock) {
+        return new FixedWindowCounter(redis, clock);
     }
 }

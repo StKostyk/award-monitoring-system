@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
-import { Browser, Page, expect, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
 
-import { kyivDay, pastDay, shownDay, signIn, uniqueToken } from './helpers';
+import { kyivDay, pastDay, shownDay, signIn, signedIn, uniqueToken } from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
@@ -26,16 +26,15 @@ function jpeg(): Buffer {
   return Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from(uniqueToken())]);
 }
 
-async function signedIn(browser: Browser, email: string): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
-  await signIn(page, email, demo);
-  await expect(page.getByTestId('nav-awards')).toBeVisible();
-  return page;
-}
-
 async function newAward(page: Page, title: string): Promise<void> {
   await page.goto('/awards/new');
   await page.getByTestId('award-title-uk').fill(title);
+}
+
+function headerValues(headers: { name: string; value: string }[], name: string): string[] {
+  return headers
+    .filter((header) => header.name.toLowerCase() === name)
+    .map((header) => header.value);
 }
 
 function row(page: Page, name: string) {
@@ -217,7 +216,7 @@ test.describe('award documents', () => {
     await accessible(page);
   });
 
-  test('ac1_16 a 9.5 MB upload passes the frontend nginx and a larger body is refused there', async ({
+  test('ac1_16 finding5 a 9.5 MB upload passes the frontend nginx, a larger body is refused there and the download keeps the backend headers', async ({
     browser,
   }) => {
     test.skip(!nginx, 'E2E_NGINX_URL is set by tools/e2e.ps1');
@@ -240,6 +239,19 @@ test.describe('award documents', () => {
     try {
       const accepted = await send(9.5 * megabyte);
       expect(accepted.status()).toBe(201);
+      const download = await page.request.get(
+        `${nginx}/api/v1/documents/${(await accepted.json()).id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      expect(download.status()).toBe(200);
+      expect(headerValues(download.headersArray(), 'content-security-policy')).toEqual(['sandbox']);
+      expect(headerValues(download.headersArray(), 'x-content-type-options')).toEqual(['nosniff']);
+      const site = await page.request.get(`${nginx}/`);
+      expect(headerValues(site.headersArray(), 'content-security-policy')[0]).toContain(
+        "default-src 'self'",
+      );
       const refused = await send(12 * megabyte);
       expect(refused.status()).toBe(413);
       expect((await refused.json()).type).toBe('urn:awards:problem:file-too-large');
@@ -248,6 +260,47 @@ test.describe('award documents', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
     }
+  });
+
+  test('finding1 a draft deleted in another window is saved again when its file is retried', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, employee);
+    await newAward(page, `Грамота з двох вікон ${uniqueToken()}`);
+    await page.getByTestId('documents-input').setInputFiles({
+      name: 'перший.pdf',
+      mimeType: 'application/pdf',
+      buffer: pdf(),
+    });
+    await expect(row(page, 'перший.pdf')).toBeVisible();
+    await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
+    const deleted = /\/awards\/(\d+)\/edit/.exec(page.url())?.[1] ?? '';
+    const other = await signedIn(browser, employee);
+    await other.goto(`/awards/${deleted}`);
+    await other.getByTestId('award-remove').click();
+    await other.getByTestId('confirm-accept').click();
+    await expect(other).toHaveURL(/\/awards$/);
+
+    await page.getByTestId('documents-input').setInputFiles({
+      name: 'другий.pdf',
+      mimeType: 'application/pdf',
+      buffer: pdf(),
+    });
+
+    await expect(page.getByTestId('documents-queued-problem')).toHaveText(
+      'Чернетку видалено в іншому вікні. Спробуйте ще раз, щоб зберегти нову чернетку',
+    );
+    await expect(page).toHaveURL(/\/awards\/new$/);
+    await expect(row(page, 'перший.pdf')).toHaveCount(0);
+    await page.getByTestId('documents-retry').click();
+    await expect(row(page, 'другий.pdf')).toBeVisible();
+    await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
+    const saved = /\/awards\/(\d+)\/edit/.exec(page.url())?.[1] ?? '';
+    expect(saved).not.toBe(deleted);
+    await other.goto(`/awards/${saved}`);
+    await other.getByTestId('award-remove').click();
+    await other.getByTestId('confirm-accept').click();
+    await expect(other).toHaveURL(/\/awards$/);
   });
 
   test('ac3_1 ac3_4 a file with malware is refused and nothing is attached', async ({

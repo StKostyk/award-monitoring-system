@@ -40,10 +40,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AwardController {
 
-    private static final String CAN_CREATE = "@access.require('award:create')";
-    private static final String CAN_UPDATE = "@access.require('award:update:own')";
-    private static final String CAN_READ_OWN = "@access.require('award:read:own')";
-
     private final AwardService awardService;
     private final AwardSubmission submission;
     private final AwardStatusService statusService;
@@ -60,7 +56,7 @@ public class AwardController {
      * @return the page
      */
     @GetMapping
-    @PreAuthorize(CAN_READ_OWN)
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
     public PageResponse<AwardResponse> list(@RequestParam(required = false) AwardStatus status,
                                             @RequestParam(required = false) Long category,
                                             @RequestParam(required = false)
@@ -80,7 +76,7 @@ public class AwardController {
      * @return 201 with the draft and its location
      */
     @PostMapping
-    @PreAuthorize(CAN_CREATE)
+    @PreAuthorize(AwardPermissionConstants.CAN_CREATE)
     public ResponseEntity<AwardResponse> create(@RequestBody AwardForm form) {
         AwardResponse created = awardService.create(form);
         return ResponseEntity.created(URI.create("/api/v1/awards/" + created.id())).body(created);
@@ -93,7 +89,7 @@ public class AwardController {
      * @return the award
      */
     @GetMapping("/{id}")
-    @PreAuthorize(CAN_READ_OWN)
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
     public AwardResponse get(@PathVariable long id) {
         return awardService.get(id);
     }
@@ -105,7 +101,7 @@ public class AwardController {
      * @return the timeline; without a request for a draft
      */
     @GetMapping("/{id}/status")
-    @PreAuthorize(CAN_READ_OWN)
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
     public AwardStatusView status(@PathVariable long id) {
         return statusService.status(id);
     }
@@ -118,7 +114,7 @@ public class AwardController {
      * @return the draft with its new version
      */
     @PutMapping("/{id}")
-    @PreAuthorize(CAN_UPDATE)
+    @PreAuthorize(AwardPermissionConstants.CAN_UPDATE)
     public AwardResponse update(@PathVariable long id, @RequestBody AwardForm form) {
         return awardService.update(id, form);
     }
@@ -130,7 +126,7 @@ public class AwardController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize(CAN_READ_OWN)
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
     public void delete(@PathVariable long id) {
         awardService.delete(id);
     }
@@ -143,7 +139,7 @@ public class AwardController {
      * @return the pending award with its request
      */
     @PostMapping("/{id}/submit")
-    @PreAuthorize(CAN_CREATE)
+    @PreAuthorize(AwardPermissionConstants.CAN_CREATE)
     public AwardResponse submit(@PathVariable long id, @RequestBody(required = false) SubmitRequest request) {
         return submission.submit(id, request);
     }

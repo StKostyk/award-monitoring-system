@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.document.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.PNG;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,7 +22,6 @@ class DocumentContentTest {
 
     private static final byte[] PDF = bytes("%PDF-1.7\n");
     private static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0x10};
-    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 0x0D};
     private static final byte[] WEBP = {'R', 'I', 'F', 'F', '$', 0, 0, 0, 'W', 'E', 'B', 'P', 'V', 'P', '8', ' '};
     private static final int LONG_NAME = 300;
 

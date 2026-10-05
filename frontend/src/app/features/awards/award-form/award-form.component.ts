@@ -36,9 +36,11 @@ import {
   debounceTime,
   distinctUntilChanged,
   filter,
+  finalize,
   map,
   merge,
   of,
+  share,
   switchMap,
   tap,
   throwError,
@@ -67,7 +69,7 @@ import {
   flattenCategories,
   isRecent,
 } from '../awards.service';
-import { ConfirmDialogComponent, confirmRemoval } from '../confirm-dialog/confirm-dialog.component';
+import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
 import { DuplicateDialogComponent } from '../duplicate-dialog/duplicate-dialog.component';
 
 const COPY_DEBOUNCE = 400;
@@ -132,6 +134,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private owner: string | null = null;
   private version = 0;
   private leaving = false;
+  private running: Observable<Award> | null = null;
 
   readonly recentDate = signal(false);
   readonly limits = {
@@ -247,25 +250,13 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     if (!this.form.dirty || this.leaving) {
       return true;
     }
-    return this.dialog
-      .open(ConfirmDialogComponent, {
-        data: {
-          title: 'awards.leave.title',
-          text: 'awards.leave.text',
-          confirm: 'awards.leave.confirm',
-          cancel: 'awards.leave.cancel',
-        },
-        width: '420px',
-      })
-      .afterClosed()
-      .pipe(
-        map((confirmed?: boolean) => {
-          if (confirmed) {
-            this.dropCopy();
-          }
-          return confirmed === true;
-        }),
-      );
+    return confirmAction(this.dialog, 'awards.leave').pipe(
+      tap((confirmed) => {
+        if (confirmed) {
+          this.dropCopy();
+        }
+      }),
+    );
   }
 
   restore(): void {
@@ -300,7 +291,12 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       return;
     }
     this.start();
-    this.store().subscribe({
+    const request = this.store().pipe(
+      finalize(() => (this.running = null)),
+      share(),
+    );
+    this.running = request;
+    request.subscribe({
       next: (award) => this.finish(award, 'awards.messages.saved'),
       error: (error: unknown) => this.failed(error),
     });
@@ -308,6 +304,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   /** Saves a new award before its first file is uploaded, exactly as «Зберегти чернетку» does. */
   readonly prepareUpload = (): Observable<number> => {
+    if (this.running !== null) {
+      return this.running.pipe(map((award) => award.id));
+    }
     this.clearMarkedErrors();
     if (this.saving() || this.form.invalid) {
       this.form.markAllAsTouched();
@@ -339,19 +338,21 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       this.send();
       return;
     }
-    this.dialog
-      .open(ConfirmDialogComponent, {
-        data: {
-          title: 'awards.submitWithout.title',
-          text: 'awards.submitWithout.text',
-          confirm: 'awards.submitWithout.confirm',
-          cancel: 'awards.submitWithout.cancel',
-        },
-        width: '420px',
-      })
-      .afterClosed()
-      .pipe(filter((confirmed?: boolean) => confirmed === true))
+    confirmAction(this.dialog, 'awards.submitWithout')
+      .pipe(filter(Boolean))
       .subscribe(() => this.send());
+  }
+
+  /**
+   * Takes an upload refused because the draft was deleted or submitted elsewhere; a running save meets the
+   * same refusal itself.
+   *
+   * @param error the refusal of the upload
+   */
+  documentsLost(error: unknown): void {
+    if (!this.saving()) {
+      this.failed(error);
+    }
   }
 
   private send(): void {
@@ -369,7 +370,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     if (id === null || this.saving()) {
       return;
     }
-    confirmRemoval(this.dialog)
+    confirmAction(this.dialog, 'awards.remove')
       .pipe(
         filter(Boolean),
         switchMap(() => this.startRemoval(id)),
@@ -586,6 +587,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.version = 0;
     this.current.set(null);
     this.stale.set(false);
+    this.message.set(null);
     this.location.replaceState('/awards/new');
     this.form.markAsDirty();
     this.keepCopy();

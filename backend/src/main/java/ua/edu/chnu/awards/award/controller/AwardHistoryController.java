@@ -54,7 +54,7 @@ public class AwardHistoryController {
      * @return the page
      */
     @GetMapping("/versions")
-    @PreAuthorize("@access.require('award:read:own')")
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
     public PageResponse<AwardVersionResponse> versions(@PathVariable long id,
                                                        @RequestParam(defaultValue = "0") int page,
                                                        @RequestParam(defaultValue = "20") int size) {

@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,8 +22,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriUtils;
 
+import ua.edu.chnu.awards.award.controller.AwardPermissionConstants;
 import ua.edu.chnu.awards.document.dto.DocumentDownload;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
 import ua.edu.chnu.awards.document.entity.DocumentType;
@@ -39,8 +41,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DocumentController {
 
-    private static final String CAN_UPDATE = "@access.require('award:update:own')";
-    private static final String CAN_READ_OWN = "@access.require('award:read:own')";
     private static final String DOCUMENTS = "/documents/";
 
     private final DocumentService documentService;
@@ -56,7 +56,7 @@ public class DocumentController {
      * @return 201 with the document and its download location
      */
     @PostMapping(path = "/awards/{id}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize(CAN_UPDATE)
+    @PreAuthorize(AwardPermissionConstants.CAN_UPDATE)
     public ResponseEntity<DocumentResponse> upload(@PathVariable long id, @RequestPart("file") MultipartFile file,
                                                    @RequestParam DocumentType type,
                                                    @RequestParam(required = false) String description) {
@@ -71,7 +71,7 @@ public class DocumentController {
      * @return the documents
      */
     @GetMapping("/awards/{id}/documents")
-    @PreAuthorize(CAN_READ_OWN)
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
     public List<DocumentResponse> list(@PathVariable long id) {
         return documentService.list(id);
     }
@@ -83,15 +83,16 @@ public class DocumentController {
      * @return the content
      */
     @GetMapping(DOCUMENTS + "{id}")
-    @PreAuthorize(CAN_READ_OWN)
+    @PreAuthorize(AwardPermissionConstants.CAN_READ_OWN)
     public ResponseEntity<InputStreamResource> download(@PathVariable long id) {
         DocumentDownload download = documentService.open(id);
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(download.mimeType()))
             .contentLength(download.size())
             .header(HttpHeaders.CONTENT_DISPOSITION,
-                "attachment; filename*=UTF-8''" + UriUtils.encode(download.fileName(), StandardCharsets.UTF_8))
-            .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+                ContentDisposition.attachment().filename(download.fileName(), StandardCharsets.UTF_8).build()
+                    .toString())
+            .cacheControl(CacheControl.noStore().cachePrivate())
             .header("X-Content-Type-Options", "nosniff")
             .header("Content-Security-Policy", "sandbox")
             .body(new InputStreamResource(download.content()));
@@ -104,7 +105,7 @@ public class DocumentController {
      */
     @DeleteMapping(DOCUMENTS + "{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize(CAN_UPDATE)
+    @PreAuthorize(AwardPermissionConstants.CAN_UPDATE)
     public void delete(@PathVariable long id) {
         documentService.delete(id);
     }

@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.controller;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -14,9 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.PDF;
 
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 
@@ -37,6 +38,7 @@ import ua.edu.chnu.awards.document.entity.DocumentType;
 import ua.edu.chnu.awards.document.service.DocumentNotFoundException;
 import ua.edu.chnu.awards.document.service.DocumentService;
 import ua.edu.chnu.awards.document.service.DocumentUpload;
+import ua.edu.chnu.awards.support.DocumentTestConstants;
 
 @WebMvcTest(DocumentController.class)
 @Import(InvalidParameterProblems.class)
@@ -46,7 +48,6 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
     private static final String DOCUMENT = "/api/v1/documents/7";
     private static final String TYPE = "$.type";
     private static final String PROBLEM = "urn:awards:problem:";
-    private static final byte[] PDF = "%PDF-1.7 scan".getBytes(StandardCharsets.US_ASCII);
     private static final String NAME = "диплом.pdf";
 
     @MockitoBean
@@ -126,9 +127,9 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(header().string("Content-Type", "application/pdf"))
             .andExpect(header().longValue("Content-Length", PDF.length))
             .andExpect(header().string("Content-Disposition",
-                "attachment; filename*=UTF-8''%D0%B4%D0%B8%D0%BF%D0%BB%D0%BE%D0%BC.pdf"))
+                containsString("; filename*=UTF-8''%D0%B4%D0%B8%D0%BF%D0%BB%D0%BE%D0%BC.pdf")))
             .andExpect(header().string("X-Content-Type-Options", "nosniff"))
-            .andExpect(header().string("Cache-Control", "private, no-store"))
+            .andExpect(header().string("Cache-Control", "no-store, private"))
             .andExpect(header().string("Content-Security-Policy", "sandbox"));
     }
 
@@ -149,7 +150,7 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
     }
 
     private static MockMultipartFile file() {
-        return new MockMultipartFile("file", NAME, "application/octet-stream", PDF);
+        return DocumentTestConstants.file(NAME, PDF);
     }
 
     private static DocumentResponse document() {
