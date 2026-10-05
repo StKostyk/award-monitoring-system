@@ -183,7 +183,7 @@ Coverage target 85 % lines per `mvn verify`; static analysis clean. V024 is a mi
 
 ## 9. Manual verification
 
-Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhost:8080`, frontend `http://localhost:4200`). Seed accounts (password `Passw0rd-demo`): `employee.fmi@chnu.edu.ua` (faculty 9), `secretary.fmi@chnu.edu.ua` (faculty secretary, faculty 9), `dean.fmi@chnu.edu.ua` (dean, faculty 9), `admin@chnu.edu.ua`. Swagger at `http://localhost:8080/swagger-ui.html`. psql: `docker compose exec postgres psql -U postgres award_monitoring`.
+Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhost:8080`, frontend `http://localhost:4200`). Seed accounts (password `Passw0rd-demo`): `employee.fmi@chnu.edu.ua` (faculty 9), `secretary.fmi@chnu.edu.ua` (faculty secretary, faculty 9), `dean.fmi@chnu.edu.ua` (dean, faculty 9), `admin@chnu.edu.ua`. Swagger at `http://localhost:8080/swagger-ui.html`, or `http://localhost/swagger-ui/index.html` with the Compose stack. After «Logout» in Swagger, reload the page before «Authorize»; to switch accounts, also sign out of the application (or use a private window per account). psql: `docker compose exec postgres psql -U postgres award_monitoring`.
 
 1. psql: `select request_id, submitted_at, deadline from award_requests;` Expected: every row has `deadline` = `submitted_at` + 3 days. (AC-1.2)
 2. As `employee.fmi` create and submit an award of category level `FACULTY` (e.g. «Подяка декана»). Swagger `GET /api/v1/awards/{id}/status`. Expected: `requestStatus` `SUBMITTED`, `deadline` = submission + 3 days, path `FACULTY_SECRETARY` (`CURRENT`), `DEAN` (`UPCOMING`), `estimatedCompletion` = submission date + 6 days, `overdue` false, `delay` null, no decisions. (AC-1.1, 1.3, 1.6)

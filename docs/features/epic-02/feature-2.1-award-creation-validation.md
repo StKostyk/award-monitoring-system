@@ -189,7 +189,7 @@ Coverage target 85 % lines per `mvn verify`; static analysis clean; Playwright f
 
 ## 9. Manual verification
 
-Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhost:8080`, frontend `http://localhost:4200`, Mailpit `http://localhost:8025`). Seed accounts (password `Passw0rd-demo`): `employee.fmi@chnu.edu.ua` (`EMPLOYEE`, department 64 «Кафедра алгебри та інформатики», faculty 9), `secretary.fmi@chnu.edu.ua`, `dean.fmi@chnu.edu.ua` (faculty 9), `rector@chnu.edu.ua`, `admin@chnu.edu.ua`. Swagger at `http://localhost:8080/swagger-ui.html`. psql: `docker compose exec postgres psql -U postgres award_monitoring`. For step 9, a secretary of another faculty: register `secretary.fpp@chnu.edu.ua` with department 69 «Кафедра педагогіки та соціальної роботи», verify through Mailpit, and as `admin` assign `FACULTY_SECRETARY` for organisation 10 (Feature 1.2 §9 step 8).
+Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhost:8080`, frontend `http://localhost:4200`, Mailpit `http://localhost:8025`). Seed accounts (password `Passw0rd-demo`): `employee.fmi@chnu.edu.ua` (`EMPLOYEE`, department 64 «Кафедра алгебри та інформатики», faculty 9), `secretary.fmi@chnu.edu.ua`, `dean.fmi@chnu.edu.ua` (faculty 9), `rector@chnu.edu.ua`, `admin@chnu.edu.ua`. Swagger at `http://localhost:8080/swagger-ui.html`, or `http://localhost/swagger-ui/index.html` with the Compose stack. After «Logout» in Swagger, reload the page before «Authorize»; to switch accounts, also sign out of the application (or use a private window per account). psql: `docker compose exec postgres psql -U postgres award_monitoring`. For step 9, a secretary of another faculty: register `secretary.fpp@chnu.edu.ua` with department 69 «Кафедра педагогіки та соціальної роботи», verify through Mailpit, and as `admin` assign `FACULTY_SECRETARY` for organisation 10 (Feature 1.2 §9 step 8).
 
 ### After 2.1.0 (SCRUM-21)
 
@@ -237,6 +237,12 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 30. Open one draft in two tabs. In the first, «Видалити чернетку» → dialog «Видалити чернетку?» → «Видалити». Expected: the list with «Чернетку видалено.». In the second tab change the title and «Зберегти чернетку». Expected: «Чернетку видалено в іншому вікні. Введені дані збережуться як нова чернетка.», the address becomes `/awards/new`; saving again creates a new draft with the typed values. (F-3, F-9)
 31. On a draft's detail page `/awards/<id>` choose «Видалити чернетку», then «Скасувати». Expected: the draft stays. Repeat with «Видалити» → the list without it. A submitted award shows no delete action. (F-9)
 32. Sign in as `employee.fmi` in two browsers (e.g. Chrome and a Firefox or private window). «Вийти» in the first, then in the second. Expected: both end on the login page, no «Щось пішло не так». Sign in as `secretary.fpp` (preconditions) after step 9, let `admin` revoke its `FACULTY_SECRETARY` role in another browser (a revocation signs the holder out everywhere), then «Вийти» as `secretary.fpp` → the login page. (F-11)
+
+### After 2.1.7 (SCRUM-42)
+
+33. «Додати нагороду», type only a title, «Подати» → the three fields are marked as required; then «Зберегти чернетку». Expected: «Чернетку збережено» at once, the address `/awards/<id>/edit`, the marks gone. (M-1)
+34. On that draft press «Скасувати». Expected: the draft's page `/awards/<id>`. Open «Додати нагороду», type a title, «Скасувати» → the leave-page confirmation; «Вийти без збереження» → «Мої нагороди». (M-2)
+35. With the Compose stack, in a private window open `http://localhost/swagger-ui/index.html`, «Authorize», sign in as `employee.fmi`. Expected: «Authorized», server `http://localhost`; `GET /api/v1/awards` → 200. (M-3)
 
 ## 10. Risks
 

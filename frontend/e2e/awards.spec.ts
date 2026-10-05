@@ -161,6 +161,29 @@ test.describe('award drafts and submission on a phone', () => {
     await expect(page.getByTestId('award-not-found')).toBeVisible();
   });
 
+  test('m1 m2 an incomplete submission still saves the draft and cancel leads back', async ({
+    page,
+  }) => {
+    await openAwards(page);
+    await page.getByTestId('award-add').click();
+    await page.getByTestId('award-title-uk').fill(`Подяка кафедри ${uniqueToken()}`);
+    await page.getByTestId('award-submit').click();
+    await expect(page.getByTestId('award-form-error')).toContainText('заповніть категорію');
+
+    await page.getByTestId('award-save').click();
+    await expect(page.getByTestId('award-form-message')).toContainText('Чернетку збережено');
+    await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
+    const id = /\/awards\/(\d+)\/edit$/.exec(page.url())?.[1];
+    await page.getByTestId('award-cancel').click();
+    await expect(page).toHaveURL(new RegExp(`/awards/${id}$`));
+
+    await page.goto('/awards/new');
+    await page.getByTestId('award-title-uk').fill('Подяка');
+    await page.getByTestId('award-cancel').click();
+    await page.getByTestId('confirm-accept').click();
+    await expect(page).toHaveURL(/\/awards$/);
+  });
+
   test('f1 the confirmation page confirms only an own submitted award', async ({ page }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();

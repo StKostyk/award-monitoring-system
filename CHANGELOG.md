@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI backend job runs a single `mvn verify`; static analysis is a blocking step
 
 ### Fixed
+- Manual runs of Features 2.1 and 2.2: «Зберегти чернетку» works right after an incomplete «Подати»; «Скасувати» leaves the award form; Swagger UI is served at `http://localhost/swagger-ui/` so its sign-in stays on one origin
 - Dates are shown and typed day first in the UI language (`дд.мм.рррр`, `dd/mm/yyyy`) with a calendar picker instead of the browser's own date field; form values stay ISO dates and unreadable input is explained
 - Swagger UI authorization: the token request's CORS preflight with `X-Requested-With` is accepted
 - Database views and functions follow the award model: `vw_active_awards`, `vw_pending_requests` and `vw_award_statistics` take the organisation from `awards.organization_id` (the department of the submission) instead of the owner's current one; `fn_calculate_impact_score` uses the application's base scores; `fn_can_user_approve_award` reads the award organisation, accepts a delegation in effect, and refuses the owner, users who cannot sign in and requests that are no longer open

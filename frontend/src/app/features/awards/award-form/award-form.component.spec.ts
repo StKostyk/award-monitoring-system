@@ -198,6 +198,64 @@ describe('AwardFormComponent', () => {
     expect(component.problem()).toBe('awards.problems.award-incomplete');
   });
 
+  it('m1_a_draft_is_saved_after_a_submission_that_lacked_fields', async () => {
+    await open(null);
+    service.create.mockReturnValue(of(award()));
+    type('titleUk', 'Грамота');
+    component.submit();
+
+    component.save();
+
+    expect(service.create).toHaveBeenCalledTimes(1);
+    expect(component.errorKey('categoryId')).toBeNull();
+    expect(component.problem()).toBeNull();
+  });
+
+  it('m1_a_file_is_uploaded_after_a_submission_that_lacked_fields', async () => {
+    await open(null);
+    service.create.mockReturnValue(of(award()));
+    type('titleUk', 'Грамота');
+    component.submit();
+    let id: number | undefined;
+
+    component.prepareUpload().subscribe((saved) => (id = saved));
+
+    expect(id).toBe(5);
+  });
+
+  it('m1_a_draft_refused_for_another_reason_drops_the_submission_notice', async () => {
+    await open(null);
+    type('titleUk', 'Грамота');
+    component.submit();
+    type('externalUrl', 'mon.gov.ua');
+
+    component.save();
+
+    expect(service.create).not.toHaveBeenCalled();
+    expect(component.problem()).toBeNull();
+    expect(component.errorKey('externalUrl')).toBe('awards.errors.invalid');
+  });
+
+  it('m2_cancel_leads_back_to_the_list_from_a_new_form', async () => {
+    await open(null);
+    const cancel: HTMLAnchorElement = fixture.nativeElement.querySelector(
+      '[data-testid="award-cancel"]',
+    );
+
+    expect(cancel.getAttribute('href')).toBe('/awards');
+  });
+
+  it('m2_cancel_leads_back_to_the_draft_from_its_edit_page', async () => {
+    service.get.mockReturnValue(of(award()));
+    await open('5');
+    fixture.detectChanges();
+    const cancel: HTMLAnchorElement = fixture.nativeElement.querySelector(
+      '[data-testid="award-cancel"]',
+    );
+
+    expect(cancel.getAttribute('href')).toBe('/awards/5');
+  });
+
   it('ac1_5_ac1_9_saves_then_submits_and_shows_the_confirmation', async () => {
     await open(null);
     service.create.mockReturnValue(of(award({ version: 2 })));
