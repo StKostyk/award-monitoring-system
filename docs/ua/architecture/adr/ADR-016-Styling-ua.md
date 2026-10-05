@@ -232,7 +232,7 @@ $theme: mat.define-light-theme((
 ## Пов'язані документи
 
 - **Технічний стек**: [Вибір технологічного стеку](../TECH_STACK_ua.md)
-- **Інші ADR**: [ADR-014 UI Component Library](./ADR-014-UI-Component-Library-ua.md)
+- **Інші ADR**: [ADR-014 UI Component Library](./ADR-014-UI-Component-Library-ua.md), [ADR-022 Модульний моноліт і розгортання для кількох університетів](./ADR-022-Modular-Monolith-Multi-Tenancy-ua.md) (один бренд на розгортання)
 - **Зовнішні ресурси**: [Angular Material Theming](https://material.angular.io/guide/theming)
 
 ---

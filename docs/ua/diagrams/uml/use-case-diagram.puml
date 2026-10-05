@@ -77,7 +77,7 @@ rectangle "Система Моніторингу та Відстеження Н�
     
     ' Варіанти Використання Обробки Документів
     package "Обробка Документів" {
-        usecase "Парсинг Документа (ШІ, епік 3)" as UC_PARSE
+        usecase "Парсинг Документа (ШІ, відкладено)" as UC_PARSE
         usecase "Верифікація Документа" as UC_VERIFY
         usecase "Позначити Помилки Парсингу" as UC_FLAG
     }
@@ -164,7 +164,7 @@ UC_APPROVE ..> email : <<запускає>>
 UC_REJECT ..> email : <<запускає>>
 
 ' Зв'язки Включення
-UC_SUBMIT ..> UC_UPLOAD : <<включає>>
+UC_UPLOAD ..> UC_SUBMIT : <<розширює>>
 UC_PARSE ..> UC_SUBMIT : <<розширює>>
 UC_REVIEW ..> UC_VERIFY : <<включає>>
 

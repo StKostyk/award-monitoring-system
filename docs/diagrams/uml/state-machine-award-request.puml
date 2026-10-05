@@ -23,7 +23,8 @@ note as AsBuilt
     request SUBMITTED at FACULTY_SECRETARY and a deadline (V024).
     A draft is edited or deleted only by its owner.
     The other transitions are the Epic 4 workflow design;
-    document and AI substates belong to Epic 3.
+    documents are attached to a draft since Feature 3.1;
+    the AI parsing substates wait for OCR (deferred).
 end note
 
 [*] --> DRAFT <<draft>> : Employee creates award
@@ -31,8 +32,9 @@ end note
 state DRAFT <<draft>> {
     [*] --> Editing
     Editing --> Editing : Save changes
-    Editing --> DocumentUploaded : Upload certificate (Epic 3)
-    DocumentUploaded --> AIProcessing : Trigger AI parsing
+    Editing --> DocumentUploaded : Upload certificate (Feature 3.1)
+    DocumentUploaded --> Editing : Delete document / continue editing
+    DocumentUploaded --> AIProcessing : Trigger AI parsing (deferred)
     AIProcessing --> MetadataExtracted : AI completes
     MetadataExtracted --> Editing : Employee reviews
 }

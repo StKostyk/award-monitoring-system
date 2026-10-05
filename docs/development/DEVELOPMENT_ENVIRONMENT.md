@@ -105,30 +105,21 @@ choco install maven
 
 ### 3.3 Docker Services
 
-Start the required development services:
+The infrastructure services are defined in `docker-compose.yaml`:
 
 ```bash
-# Create network
-docker network create award-network
-
-# PostgreSQL 16
-docker run -d \
-    --name postgres-dev \
-    --network award-network \
-    -e POSTGRES_USER=award_dev \
-    -e POSTGRES_PASSWORD=dev_password \
-    -e POSTGRES_DB=award_monitoring \
-    -p 5432:5432 \
-    -v postgres-dev-data:/var/lib/postgresql/data \
-    postgres:16-alpine
-
-# Redis 7
-docker run -d \
-    --name redis-dev \
-    --network award-network \
-    -p 6379:6379 \
-    redis:7-alpine --appendonly yes
+docker compose up -d postgres redis mailpit minio clamav
 ```
+
+| Service | Purpose | Local port |
+|---------|---------|-----------|
+| `postgres` | PostgreSQL 17 | 5432 |
+| `redis` | Redis 7 (security counters) | 6379 |
+| `mailpit` | Mail catcher, web UI | 1025, 8025 |
+| `minio` | S3-compatible document storage (`minio-init` creates the bucket and the backend account) | 9000, 9001 |
+| `clamav` | Malware scanner; uploads answer 503 until it reports healthy (first start downloads signatures) | 3310 |
+
+`docker compose up -d --build` also builds and starts `app` (backend) and `frontend` (nginx at http://localhost).
 
 ### 3.4 Node.js & Angular
 

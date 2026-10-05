@@ -695,6 +695,24 @@ the Flyway migrations and [DATA_DICTIONARY.md](DATA_DICTIONARY.md).
 - **Seed data**: there is no versioned admin seed (`V002` creates the organizations table). Development accounts
   are loaded by `db/seed/local/R__seed_users_dev.sql`, which Flyway reads only in the `local` and `docker` profiles.
 
+## Addendum 2026-10: As Built After Epic 3
+
+Epic 3 delivered document upload (Feature 3.1); OCR and confidence scoring (Features 3.2, 3.3) are deferred.
+
+- **Document files**: kept in a private S3 bucket (MinIO, ADR-021) under `awards/<award_id>/<random UUID>`,
+  encrypted by MinIO server-side encryption (SSE-S3). `documents` holds metadata only; `storage_url` stays empty
+  because every download streams through the API and is audited (`DOCUMENT_DOWNLOAD`). The "pre-signed URL" and
+  "AI parsing on upload" rows of the tables above describe the target design.
+- **New columns**: `documents.document_type` and `description`, unique `(award_id, checksum_sha256)` (V025).
+- **Parsing columns**: `parsed_metadata`, `confidence_score`, `processed_at` stay empty and `processing_status`
+  stays `PENDING`, so a later parser picks up existing rows without a migration.
+- **Lifecycle**: documents follow their award (cascade on delete); objects are removed after the commit and a
+  daily sweep deletes objects older than 24 hours without a row. Per user at most 50 MB of documents.
+- **Recognition levels**: `UNIVERSITY` scores 50 and `LOCAL` 60 since the review of 2026-10-04; V026 rescored
+  submitted awards and removed historical password hashes from `audit_logs` snapshots of `users`.
+- **Demo seed**: `db/seed/demo/R__seed_users_demo.sql` creates fictional accounts on a deployed demo only when
+  `DEMO_PASSWORD_HASH` is set.
+
 ---
 
 ## 8. Implementation Roadmap

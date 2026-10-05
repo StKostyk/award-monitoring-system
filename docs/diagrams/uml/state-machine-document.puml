@@ -53,8 +53,10 @@ note right of UPLOADED
     documents row with processing_status
     PENDING; the object is kept in the
     private bucket awards/<award>/<UUID>.
-    Size, type (from the content) and limits
-    are checked before anything is stored.
+    Size, limits, a ClamAV malware scan
+    (fails closed) and the type (from the
+    content) are checked before anything
+    is stored.
     The states after UPLOADED and the 80 %
     threshold (0.7 in the data dictionary)
     are settled when OCR is planned.

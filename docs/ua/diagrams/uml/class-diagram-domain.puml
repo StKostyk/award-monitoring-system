@@ -3,7 +3,7 @@
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіку 2)
+title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіку 3)
 
 ' Сутності JPA пакета ua.edu.chnu.awards; класи з позначкою <<planned>> існують лише як таблиці
 
@@ -149,10 +149,10 @@ package "award" <<Rectangle>> {
     enum RecognitionLevel {
         SPECIALITY (FACULTY_SECRETARY, 10)
         DEPARTMENT (FACULTY_SECRETARY, 20)
-        COLLEGE (DEAN, 30)
-        FACULTY (DEAN, 40)
-        LOCAL (FACULTY_SECRETARY, 45)
-        UNIVERSITY (FACULTY_SECRETARY, 60)
+        COLLEGE (FACULTY_SECRETARY, 30)
+        FACULTY (FACULTY_SECRETARY, 40)
+        UNIVERSITY (FACULTY_SECRETARY, 50)
+        LOCAL (FACULTY_SECRETARY, 60)
         REGIONAL (FACULTY_SECRETARY, 70)
         NATIONAL (RECTOR_SECRETARY, 80)
         INTERNATIONAL (RECTOR_SECRETARY, 100)
@@ -233,6 +233,45 @@ package "award" <<Rectangle>> {
     }
 }
 
+package "document" <<Rectangle>> {
+
+    class Document {
+        -id: Long
+        -award: Award
+        -fileName: String
+        -format: DocumentFormat
+        -mimeType: String
+        -size: long
+        -storageBucket: String
+        -storageKey: String
+        -checksum: String
+        -type: DocumentType
+        -description: String
+        -uploadedAt: Instant
+        -uploadedBy: User
+    }
+
+    enum DocumentFormat {
+        PDF
+        JPEG
+        PNG
+        WEBP
+    }
+
+    enum DocumentType {
+        CERTIFICATE
+        DIPLOMA
+        SUPPORTING_DOCUMENT
+        PHOTO
+    }
+
+    note bottom of Document
+        Лише метадані; файл — це об'єкт у MinIO
+        (awards/<award>/<UUID>). Ще не відображено:
+        request_id (епік 4), стовпці парсингу (OCR, відкладено).
+    end note
+}
+
 package "audit" <<Rectangle>> {
 
     class AuditLog {
@@ -251,19 +290,6 @@ package "audit" <<Rectangle>> {
 }
 
 package "заплановано (лише таблиці)" <<Rectangle>> {
-
-    class Document <<planned епік 3>> {
-        -awardId: Long
-        -requestId: Long
-        -fileName: String
-        -fileType: String
-        -storageBucket: String
-        -storageKey: String
-        -parsedMetadata: JSON
-        -confidenceScore: BigDecimal
-        -processingStatus: String
-        -uploadedBy: Long
-    }
 
     class ConsentRecord <<planned епік 6>> {
         -userId: Long
@@ -309,7 +335,10 @@ AwardRequest "1" <-- "*" ReviewDecision : рішення
 ReviewDecision --> ReviewDecisionType
 ReviewDecision "*" --> "1" User : рецензент
 
-Document ..> Award
+Award "1" <-- "*" Document : докази
+Document "*" --> "1" User : завантажив
+Document --> DocumentFormat
+Document --> DocumentType
 ConsentRecord ..> User
 Notification ..> User
 

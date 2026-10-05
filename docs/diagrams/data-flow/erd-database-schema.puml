@@ -2,7 +2,7 @@
 !theme plain
 skinparam linetype ortho
 
-title Award Monitoring & Tracking System - Entity Relationship Diagram (as built, V024)
+title Award Monitoring & Tracking System - Entity Relationship Diagram (as built, V026)
 
 ' * mandatory (NOT NULL); all timestamps are TIMESTAMPTZ
 
@@ -152,6 +152,8 @@ entity "documents" as documents {
     * storage_key : VARCHAR(500)
     storage_url : VARCHAR(2048)
     checksum_sha256 : VARCHAR(64)
+    * document_type : VARCHAR(30)
+    description : VARCHAR(500)
     parsed_metadata : JSONB
     confidence_score : NUMERIC(5,4)
     * processing_status : VARCHAR(20)
@@ -300,6 +302,12 @@ note right of awards
     and award_date may be empty only
     while status = DRAFT (V020).
     Indexes: DATA_DICTIONARY.md 2.1
+end note
+
+note bottom of documents
+    Metadata only; the file is an object in MinIO.
+    Unique (award_id, checksum_sha256);
+    document_type and description since V025.
 end note
 
 note right of requests

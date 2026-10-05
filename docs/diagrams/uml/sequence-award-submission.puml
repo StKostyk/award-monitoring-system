@@ -2,7 +2,7 @@
 !theme plain
 skinparam sequenceMessageAlign center
 
-title Award Submission Sequence Diagram (as built after Epic 2)
+title Award Submission Sequence Diagram (as built after Epic 3)
 
 actor "Owner\n(award:create)" as owner
 participant "Angular app" as webapp
@@ -11,8 +11,12 @@ participant "AwardController" as ctrl
 participant "AwardService /\nAwardSubmission" as svc
 participant "AwardInputRules /\nDuplicateFinder" as rules
 participant "AwardHistory" as history
+participant "DocumentController /\nDocumentUpload" as doc
 participant "AuditService" as audit
 database "PostgreSQL" as db
+database "Redis" as redis
+participant "ClamAV" as scan
+database "MinIO" as s3
 
 note over webapp, ctrl
     Every call carries the bearer access token (authorization code + PKCE);
@@ -45,8 +49,36 @@ svc -> history: updated(award)
 history -> db: INSERT award_versions (UPDATED, changed fields)
 svc --> webapp: 200 AwardResponse
 
+== Documents (Feature 3.1) ==
+owner -> webapp: Attach a certificate (file or camera)
+webapp -> proxy: POST /api/v1/awards/{id}/documents (multipart: file, type, description)
+proxy -> doc: forward (nginx and Spring limit the body to 11 MB)
+doc -> redis: 20 uploads a minute per user
+doc -> db: own draft FOR UPDATE; 10 MB a file; 50 MB per user
+alt limit reached
+    doc --> webapp: 429 / 413 / 409 storage-quota
+end
+doc -> scan: INSTREAM file content (no transaction open)
+alt infected
+    doc -> audit: DOCUMENT_REJECTED {signature}
+    doc --> webapp: 422 malware-detected
+else scanner down
+    doc --> webapp: 503 scanner-unavailable (fail closed)
+end
+doc -> doc: type from the leading bytes, SHA-256, 10 files an award, no duplicate
+doc -> s3: PUT awards/{id}/{UUID} (SSE-S3)
+doc -> db: draft FOR UPDATE again; INSERT documents (metadata)
+note right of doc
+    trg_documents_audit writes the audit row;
+    the object is removed if the transaction rolls back.
+end note
+doc --> webapp: 201 Document (Location /api/v1/documents/{id})
+
 == Submission ==
 owner -> webapp: Submit
+opt the award has no documents
+    webapp --> owner: Confirm submission without a certificate
+end
 webapp -> proxy: POST /api/v1/awards/{id}/submit {version, acknowledgeDuplicate}
 proxy -> ctrl: forward
 ctrl -> svc: submit(id, request)
@@ -82,7 +114,7 @@ loop every 60 s while the award page is open and the request is not final
 end
 
 note over owner, db
-    Planned: certificate upload and OCR (Epic 3), reviewer decisions (Epic 4),
+    Planned: OCR of uploaded documents (deferred), reviewer decisions (Epic 4),
     notifications to reviewers (Epic 7).
 end note
 

@@ -11,13 +11,13 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 3.0 Production configuration (deployment preparation) | Done (3.0.1–3.0.4) | 2026-10-02 | 2026-10-04 |
-| 3.1 Document Upload & Storage | Validated 2026-10-05, passed with notes; fixes in 3.1.5, manual run pending ([feature-3.1](../features/epic-03/feature-3.1-document-upload-storage.md) §12) | 2026-10-02 | |
+| 3.1 Document Upload & Storage | Validated 2026-10-05, passed with notes; fixes merged in 3.1.5, manual run pending ([feature-3.1](../features/epic-03/feature-3.1-document-upload-storage.md) §12) | 2026-10-02 | 2026-10-05 |
 | 3.2 OCR & Intelligent Parsing | Deferred (see decisions) | | |
 | 3.3 Confidence Scoring & Manual Review | Deferred (see decisions) | | |
 
 ## Current focus
 
-Epic kickoff 2026-10-02. Story 3.0.1 (production configuration, ADR-021) is done. Feature 3.1 (stories 3.1.1–3.1.4) is merged and validated on 2026-10-05: every AC has its tests, five findings (two-tab draft handling in the documents section, a save race, missing storage-down tests, duplicated security headers through nginx) and the refactor sweep go into 3.1.5; the manual run of §9 follows on 2026-10-11, then `/thesis-sync 3` closes the epic.
+Epic kickoff 2026-10-02. Story 3.0.1 (production configuration, ADR-021) is done. Feature 3.1 (stories 3.1.1–3.1.5) is merged and validated; the documentation was synced with the code on 2026-10-05. The epic closes after the manual run of PRD §9 on 2026-10-11.
 
 ## Scope
 
@@ -39,7 +39,7 @@ Out of scope here: attaching documents to a returned request during resubmission
 | 6 | 3.0.3 Login and error pages in the university brand | 3.0 | 3 | SCRUM-40 | #123 | no | Done |
 | 7 | 3.0.4 Blocking lint and Playwright in CI | 3.0 | 3 | SCRUM-41 | #124 | no | Done |
 | 8 | 3.1.4 CI fixes after SCRUM-37 | 3.1 | 1 | SCRUM-44 | #133 | no | Done |
-| 9 | 3.1.5 Fixes and refactor sweep from the Feature 3.1 validation | 3.1 | 3 | SCRUM-45 | #135 | no | In review |
+| 9 | 3.1.5 Fixes and refactor sweep from the Feature 3.1 validation | 3.1 | 3 | SCRUM-45 | #135 | no | Done |
 
 Total: 33 points, sprints 3–4.
 
@@ -61,6 +61,7 @@ Total: 33 points, sprints 3–4.
 | 2026-10-04 | Story 3.0.2 (brand theming, dark mode, side menu) joins Feature 3.0: a deployment chooses its university brand with `brand.json`; precompiled Material 3 themes per brand, one responsive shell, self-hosted fonts | Review of 2026-10-04: the default Material look did not fit the university; one image must serve more universities later | ADR-016 addendum, UI_GUIDELINES |
 | 2026-10-05 | 3.1.3 adds per-user upload limits next to the scan: 50 MB of documents (409 `STORAGE_QUOTA`) and 20 uploads a minute (429, Redis window); the scan runs outside any transaction, between the size and quota checks and the type check | Review of 2026-10-04: 10 MB × 10 files per award bounds one award, not one account; the scan is the most expensive step and should only see uploads that can be stored | PRD AC-3.5, AC-3.6 |
 | 2026-10-05 | Feature 3.1 validated, passed with notes: findings F-1…F-5 and the refactor sweep in one story 3.1.5 (3 points); the Docker profile's per-start signing key is left for a Feature 1.x fix | The findings are UI and test gaps inside the feature; the signing key concerns every session, not uploads | PRD §12 |
+| 2026-10-05 | Documentation sync: diagrams, Postman, ADR addenda and Ukrainian copies follow the shipped code; no code drift needed a fix story | Thesis-cited documents must describe what was built | `docs/sync-epic-03` |
 
 ## Documentation deviations to resolve
 

@@ -43,7 +43,7 @@ Completed Points: 91 (these stories plus 3.0.2–3.0.4, 3.1.1 and 3.1.2 from Epi
 Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) were fixed in 2.1.5 (Sprint 3). Epic 2 done 2026-10-01.
 
 ### Epic 3 — Document Processing (Jira epic SCRUM-34)
-Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCESSING-STATUS.md). Upload only in this delivery; OCR and confidence scoring (US-006, US-007) are deferred until after Epic 8. Feature 3.1 PRD approved 2026-10-02: [feature-3.1-document-upload-storage.md](../features/epic-03/feature-3.1-document-upload-storage.md).
+Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCESSING-STATUS.md). Upload only in this delivery; OCR and confidence scoring (US-006, US-007) are deferred until after Epic 8. Feature 3.1 PRD approved 2026-10-02: [feature-3.1-document-upload-storage.md](../features/epic-03/feature-3.1-document-upload-storage.md). Feature 3.1 validated 2026-10-05 and its fixes merged (3.1.5); documentation synced with the code on 2026-10-05; the epic closes after the manual run of 2026-10-11.
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
@@ -54,7 +54,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | 3.0.3 | Login and error pages in the university brand | 3 | ✅ Done | SCRUM-40 | [#123](https://github.com/StKostyk/award-monitoring-system/issues/123) |
 | 3.0.4 | Blocking lint and Playwright in CI | 3 | ✅ Done | SCRUM-41 | [#124](https://github.com/StKostyk/award-monitoring-system/issues/124) |
 | 3.1.4 | CI fixes after SCRUM-37 | 1 | ✅ Done (Sprint 4) | SCRUM-44 | [#133](https://github.com/StKostyk/award-monitoring-system/issues/133) |
-| 3.1.5 | Fixes and refactor sweep from the Feature 3.1 validation | 3 | 👀 In review (Sprint 4) | SCRUM-45 | [#135](https://github.com/StKostyk/award-monitoring-system/issues/135) |
+| 3.1.5 | Fixes and refactor sweep from the Feature 3.1 validation | 3 | ✅ Done (Sprint 4) | SCRUM-45 | [#135](https://github.com/StKostyk/award-monitoring-system/issues/135) |
 
 ### Later epics
 | ID | Story | Points | Epic |
@@ -80,7 +80,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 163 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, 3.1.1–3.1.4); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1)
+Total Completed: 166 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3)
 
 ---
 
