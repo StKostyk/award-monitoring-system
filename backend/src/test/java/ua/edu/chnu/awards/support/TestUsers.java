@@ -1,6 +1,11 @@
 package ua.edu.chnu.awards.support;
 
 import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
@@ -53,6 +58,17 @@ public final class TestUsers {
     public static Organization organization(long id, OrganizationType type, String name) {
         return Organization.builder().id(id).orgType(type).name(name).nameUk(name + " (укр)").code("O" + id)
             .active(true).build();
+    }
+
+    /**
+     * Puts the user into the security context as a signed-in caller without permissions, as the services see a
+     * request.
+     *
+     * @param user the caller, saved
+     */
+    public static void signInAs(User user) {
+        Jwt jwt = Jwt.withTokenValue("token").header("alg", "RS256").subject(user.getId().toString()).build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
     }
 
     public static UserRole role(User user, RoleType type, Organization organization,

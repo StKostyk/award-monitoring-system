@@ -35,7 +35,7 @@ import { problemStatus, problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
 import { saveFile } from '../../../shared/file-download';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
 import { DocumentPreviewDialogComponent } from './document-preview-dialog.component';
 import {
   ACCEPTED_FORMATS,
@@ -118,6 +118,8 @@ export class AwardDocumentsComponent {
   readonly prepare = input<(() => Observable<number>) | null>(null);
   /** The number of stored documents, after every load and change. */
   readonly countChange = output<number>();
+  /** The refusal of an upload because the award was deleted or submitted elsewhere. */
+  readonly lost = output<unknown>();
 
   readonly types = DOCUMENT_TYPES;
   readonly accept = Object.entries(ACCEPTED_FORMATS)
@@ -137,7 +139,9 @@ export class AwardDocumentsComponent {
     effect(() => {
       const id = this.awardId();
       untracked(() => {
-        if (id !== null && id !== this.loadedFor) {
+        if (id === null && this.currentId() !== null) {
+          this.forget();
+        } else if (id !== null && id !== this.loadedFor) {
           this.load(id);
         }
       });
@@ -245,20 +249,9 @@ export class AwardDocumentsComponent {
 
   /** Asks before removing a document from the draft. */
   remove(document: AwardDocument): void {
-    this.dialog
-      .open(ConfirmDialogComponent, {
-        data: {
-          title: 'awards.documents.remove.title',
-          text: 'awards.documents.remove.text',
-          confirm: 'awards.documents.remove.confirm',
-          cancel: 'awards.documents.remove.cancel',
-          params: { name: document.fileName },
-        },
-        width: '420px',
-      })
-      .afterClosed()
+    confirmAction(this.dialog, 'awards.documents.remove', { name: document.fileName })
       .pipe(
-        filter((confirmed?: boolean) => confirmed === true),
+        filter(Boolean),
         switchMap(() => this.service.remove(document.id)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -351,7 +344,7 @@ export class AwardDocumentsComponent {
 
   /** The award to upload to, saving a new award first. */
   private target(): Observable<number> {
-    const id = this.awardId() ?? this.savedId;
+    const id = this.currentId();
     if (id !== null) {
       return of(id);
     }
@@ -376,18 +369,48 @@ export class AwardDocumentsComponent {
   }
 
   private refused(key: number, error: unknown): void {
+    if (problemStatus(error) === HttpStatusCode.NotFound) {
+      this.forget();
+      this.queue.update((queue) =>
+        queue.map((queued) =>
+          queued.state === 'refused'
+            ? queued
+            : {
+                ...queued,
+                state: 'failed',
+                progress: 0,
+                problem: 'awards.documents.problems.award-gone',
+              },
+        ),
+      );
+      this.lost.emit(error);
+      return;
+    }
     const type = problemType(error);
     const final = FINAL_PROBLEMS.includes(type);
     this.patch(key, {
       state: final ? 'refused' : 'failed',
       problem: this.problemKey(type),
     });
-    if (type === 'document-limit' || type === 'duplicate-document') {
-      const id = this.awardId() ?? this.savedId;
-      if (id !== null) {
-        this.load(id);
-      }
+    const id = this.currentId();
+    if ((type === 'document-limit' || type === 'duplicate-document') && id !== null) {
+      this.load(id);
     }
+    if (type === 'award-not-editable') {
+      this.lost.emit(error);
+    }
+  }
+
+  /** The award is gone: a later upload saves a new one. */
+  private forget(): void {
+    this.savedId = null;
+    this.loadedFor = null;
+    this.announcement.set('');
+    this.show([]);
+  }
+
+  private currentId(): number | null {
+    return this.awardId() ?? this.savedId;
   }
 
   private removed(id: number): void {
@@ -401,7 +424,7 @@ export class AwardDocumentsComponent {
         ? 'awards.documents.problems.gone'
         : 'awards.documents.problems.download-failed',
     );
-    const id = this.awardId() ?? this.savedId;
+    const id = this.currentId();
     if (id !== null && problemStatus(error) === HttpStatusCode.NotFound) {
       this.service.list(id).subscribe({
         next: (documents) => this.show(documents),

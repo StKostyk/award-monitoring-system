@@ -51,18 +51,28 @@ export class ConfirmDialogComponent {
   protected readonly data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
 }
 
-/** Asks whether a draft should be deleted; emits true only when the user confirms. */
-export function confirmRemoval(dialog: MatDialog): Observable<boolean> {
+/**
+ * Asks a yes-or-no question whose translation keys are `title`, `text`, `confirm` and `cancel` under one prefix.
+ *
+ * @param dialog the dialog service
+ * @param prefix the translation key prefix, e.g. `awards.remove`
+ * @param params values for the placeholders of the text
+ * @return true only when the user confirms
+ */
+export function confirmAction(
+  dialog: MatDialog,
+  prefix: string,
+  params?: Record<string, string>,
+): Observable<boolean> {
+  const data: ConfirmDialogData = {
+    title: `${prefix}.title`,
+    text: `${prefix}.text`,
+    confirm: `${prefix}.confirm`,
+    cancel: `${prefix}.cancel`,
+    params,
+  };
   return dialog
-    .open(ConfirmDialogComponent, {
-      data: {
-        title: 'awards.remove.title',
-        text: 'awards.remove.text',
-        confirm: 'awards.remove.confirm',
-        cancel: 'awards.remove.cancel',
-      },
-      width: '420px',
-    })
+    .open(ConfirmDialogComponent, { data, width: '420px' })
     .afterClosed()
     .pipe(map((confirmed?: boolean) => confirmed === true));
 }

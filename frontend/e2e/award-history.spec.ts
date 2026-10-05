@@ -1,19 +1,10 @@
-import { Browser, Page, expect, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
 
-import { pastDay, signIn, submitWithoutDocuments, uniqueToken } from './helpers';
+import { pastDay, signedIn, submitWithoutDocuments, uniqueToken } from './helpers';
 
-const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
 const dean = 'dean.fmi@chnu.edu.ua';
 const officer = 'gdpr@chnu.edu.ua';
-
-async function signedIn(browser: Browser, email: string): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
-  page.on('dialog', (dialog) => void dialog.accept());
-  await signIn(page, email, demo);
-  await expect(page.getByTestId('nav-awards')).toBeVisible();
-  return page;
-}
 
 async function open(page: Page, id: string): Promise<void> {
   const versions = page.waitForResponse((response) =>

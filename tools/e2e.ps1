@@ -47,6 +47,7 @@ docker rm -f $nginx 2>$null | Out-Null
 docker run -d --name $nginx -p 127.0.0.1:4280:80 --add-host app:host-gateway `
     -v "$(Join-Path $root 'frontend\nginx.conf'):/etc/nginx/conf.d/default.conf:ro" `
     -v "$(Join-Path $root 'frontend\security-headers.conf'):/etc/nginx/snippets/security-headers.conf:ro" `
+    -v "$(Join-Path $root 'frontend\backend-proxy.conf'):/etc/nginx/snippets/backend-proxy.conf:ro" `
     nginx:alpine | Out-Null
 $env:E2E_NGINX_URL = 'http://127.0.0.1:4280'
 

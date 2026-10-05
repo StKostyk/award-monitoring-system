@@ -17,8 +17,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -68,8 +66,7 @@ class AwardVersionsIT extends AbstractIntegrationTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setAttribute(ClientRequest.CORRELATION_ATTRIBUTE, correlation);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-        Jwt jwt = Jwt.withTokenValue("token").header("alg", "RS256").subject(owner.getId().toString()).build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
+        TestUsers.signInAs(owner);
     }
 
     @AfterEach

@@ -229,6 +229,7 @@
       [removable]="true"
       [prepare]="prepareUpload"
       (countChange)="documentCount.set($event)"
+      (lost)="documentsLost($event)"
     />
 
     <div class="award-form__actions">

@@ -174,6 +174,87 @@ describe('AwardDocumentsComponent', () => {
     });
   });
 
+  it('finding1_upload_to_a_deleted_draft_clears_the_section_and_tells_the_form', async () => {
+    const gone = new HttpErrorResponse({ status: 404 });
+    service.list.mockReturnValue(of([document()]));
+    service.upload.mockReturnValue(throwError(() => gone));
+    await render({ awardId: 5, uploads: true });
+    const lost = vi.fn();
+    const counts: number[] = [];
+    component.lost.subscribe(lost);
+    component.countChange.subscribe((count) => counts.push(count));
+
+    component.add([file('a.pdf'), file('b.pdf')]);
+
+    expect(service.upload).toHaveBeenCalledTimes(1);
+    expect(lost).toHaveBeenCalledExactlyOnceWith(gone);
+    expect(component.documents()).toEqual([]);
+    expect(counts).toEqual([0]);
+    expect(component.queue().map((item) => [item.state, item.problem])).toEqual([
+      ['failed', 'awards.documents.problems.award-gone'],
+      ['failed', 'awards.documents.problems.award-gone'],
+    ]);
+  });
+
+  it('finding1_retry_after_the_draft_was_deleted_saves_a_new_draft', async () => {
+    const prepare = vi.fn(() => of(42));
+    service.upload.mockReturnValueOnce(stored(document({ id: 7, awardId: 42 })));
+    service.upload.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 404 })));
+    service.upload.mockReturnValueOnce(stored(document({ id: 8, awardId: 43 })));
+    await render({ awardId: null, uploads: true, prepare });
+    component.add([file('a.pdf')]);
+    fixture.componentRef.setInput('awardId', 42);
+    fixture.detectChanges();
+
+    component.add([file('b.pdf')]);
+    fixture.componentRef.setInput('awardId', null);
+    fixture.detectChanges();
+    prepare.mockReturnValue(of(43));
+    component.retry(component.queue()[0]);
+
+    expect(prepare).toHaveBeenCalledTimes(2);
+    expect(service.upload.mock.calls.map((call) => call[0])).toEqual([42, 42, 43]);
+    expect(component.queue()).toEqual([]);
+    expect(component.documents().map((stored) => stored.id)).toEqual([8]);
+  });
+
+  it('finding1_award_cleared_by_the_form_resets_the_section', async () => {
+    const prepare = vi.fn(() => of(42));
+    service.upload.mockReturnValue(stored(document({ id: 7, awardId: 42 })));
+    await render({ awardId: null, uploads: true, prepare });
+    component.add([file('a.pdf')]);
+    fixture.componentRef.setInput('awardId', 42);
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('awardId', null);
+    fixture.detectChanges();
+    expect(component.documents()).toEqual([]);
+    expect(component.announcement()).toBe('');
+    prepare.mockReturnValue(of(43));
+    service.upload.mockReturnValue(stored(document({ id: 8, awardId: 43 })));
+    component.add([file('b.pdf')]);
+
+    expect(service.upload.mock.calls.map((call) => call[0])).toEqual([42, 43]);
+    expect(component.documents().map((stored) => stored.id)).toEqual([8]);
+    expect(service.list).not.toHaveBeenCalled();
+  });
+
+  it('finding2_upload_to_a_draft_submitted_elsewhere_tells_the_form', async () => {
+    const refusal = problem('award-not-editable', 409);
+    service.upload.mockReturnValue(throwError(() => refusal));
+    await render({ awardId: 5, uploads: true });
+    const lost = vi.fn();
+    component.lost.subscribe(lost);
+
+    component.add([file('a.pdf')]);
+
+    expect(lost).toHaveBeenCalledExactlyOnceWith(refusal);
+    expect(component.queue()[0]).toMatchObject({
+      state: 'refused',
+      problem: 'awards.documents.problems.award-not-editable',
+    });
+  });
+
   it('ac3_files_the_server_would_refuse_are_never_sent', async () => {
     service.list.mockReturnValue(of(Array.from({ length: 9 }, (_, id) => document({ id }))));
     service.upload.mockReturnValue(new Subject());

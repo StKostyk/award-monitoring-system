@@ -39,7 +39,7 @@ Out of scope here: attaching documents to a returned request during resubmission
 | 6 | 3.0.3 Login and error pages in the university brand | 3.0 | 3 | SCRUM-40 | #123 | no | Done |
 | 7 | 3.0.4 Blocking lint and Playwright in CI | 3.0 | 3 | SCRUM-41 | #124 | no | Done |
 | 8 | 3.1.4 CI fixes after SCRUM-37 | 3.1 | 1 | SCRUM-44 | #133 | no | Done |
-| 9 | 3.1.5 Fixes and refactor sweep from the Feature 3.1 validation | 3.1 | 3 | | | no | To do |
+| 9 | 3.1.5 Fixes and refactor sweep from the Feature 3.1 validation | 3.1 | 3 | SCRUM-45 | #135 | no | In review |
 
 Total: 33 points, sprints 3–4.
 

@@ -1041,7 +1041,7 @@ paths:
         Streams the content of a document of an award the caller may read (same rule as the list) and records a
         `DOCUMENT_DOWNLOAD` audit row. The response is an attachment that is neither rendered inline nor cached:
         `Content-Disposition: attachment; filename*=UTF-8''<encoded name>`, `X-Content-Type-Options: nosniff`,
-        `Cache-Control: private, no-store`, `Content-Security-Policy: sandbox`. There is no pre-signed storage
+        `Cache-Control: no-store, private`, `Content-Security-Policy: sandbox`. There is no pre-signed storage
         URL (`award:read:own`).
       security:
         - bearerAuth: []

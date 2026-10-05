@@ -1,7 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
-import { Page, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-import { signIn } from './helpers';
+import { background, seriousViolations, signIn, signInAsSeed } from './helpers';
 
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
@@ -15,29 +14,6 @@ const neutralBrand = {
 };
 const screens = ['/', '/awards', '/awards/new'];
 
-async function signedIn(page: Page): Promise<void> {
-  await signIn(page, employee, demo);
-  await expect(page.getByTestId('nav-awards')).toBeVisible();
-}
-
-function background(page: Page, selector: string): Promise<string> {
-  return page
-    .locator(selector)
-    .first()
-    .evaluate((element) => getComputedStyle(element).backgroundColor);
-}
-
-async function seriousViolations(page: Page): Promise<string[]> {
-  const result = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-    .analyze();
-  return result.violations
-    .filter((violation) => violation.impact === 'serious' || violation.impact === 'critical')
-    .map(
-      (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(' | ')}`,
-    );
-}
-
 test.describe('brand theme', () => {
   test('ac1 ac3 ac7 applies the ChNU brand with self-hosted fonts', async ({ page }) => {
     const external: string[] = [];
@@ -46,7 +22,7 @@ test.describe('brand theme', () => {
         external.push(request.url());
       }
     });
-    await signedIn(page);
+    await signInAsSeed(page, employee);
 
     await expect(page.locator('html')).toHaveClass(/brand-chnu/);
     await expect(page).toHaveTitle('Облік нагород ЧНУ');
@@ -69,7 +45,7 @@ test.describe('brand theme', () => {
 
   test('ac2 falls back to the neutral brand without a brand file', async ({ page }) => {
     await page.route('**/brand/brand.json', (route) => route.fulfill({ status: 404, body: '' }));
-    await signedIn(page);
+    await signInAsSeed(page, employee);
 
     await expect(page.locator('html')).toHaveClass(/brand-neutral/);
     await expect(page).toHaveTitle('Облік нагород');
@@ -78,7 +54,7 @@ test.describe('brand theme', () => {
 
   test('ac4 follows the device colour scheme and keeps the chosen one', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
-    await signedIn(page);
+    await signInAsSeed(page, employee);
 
     expect(await background(page, 'body')).toBe('rgb(31, 31, 31)');
 
@@ -138,7 +114,7 @@ test.describe('brand theme', () => {
           await page.route('**/brand/brand.json', (route) => route.fulfill({ json: neutralBrand }));
         }
         await page.emulateMedia({ colorScheme: scheme });
-        await signedIn(page);
+        await signInAsSeed(page, employee);
         await expect(page.locator('html')).toHaveClass(new RegExp(`brand-${brand}`));
 
         for (const screen of screens) {

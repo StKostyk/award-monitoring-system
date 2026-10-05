@@ -6,7 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -805,6 +805,82 @@ describe('AwardFormComponent', () => {
       expect(failed).toBe(true);
       expect(component.saving()).toBe(false);
       expect(component.problem()).toBe('awards.problems.validation-failed');
+    });
+
+    it('finding3_a_file_added_while_the_draft_is_saving_waits_for_that_save', async () => {
+      await open(null);
+      const response = new Subject<Award>();
+      service.create.mockReturnValue(response);
+      type('titleUk', 'Грамота');
+
+      component.save();
+      let saved: number | undefined;
+      let failed = false;
+      component.prepareUpload().subscribe({
+        next: (id) => (saved = id),
+        error: () => (failed = true),
+      });
+      response.next(award({ id: 42, version: 1 }));
+      response.complete();
+
+      expect(service.create).toHaveBeenCalledTimes(1);
+      expect(failed).toBe(false);
+      expect(saved).toBe(42);
+      expect(component.message()).toBe('awards.messages.saved');
+    });
+
+    it('finding3_a_failed_running_save_fails_the_waiting_file_too', async () => {
+      await open(null);
+      const response = new Subject<Award>();
+      service.create.mockReturnValue(response);
+      type('titleUk', 'Грамота');
+
+      component.save();
+      let failed = false;
+      component.prepareUpload().subscribe({ error: () => (failed = true) });
+      response.error(problem('validation-failed', 422));
+
+      expect(failed).toBe(true);
+      expect(component.saving()).toBe(false);
+      expect(component.problem()).toBe('awards.problems.validation-failed');
+    });
+
+    it('finding1_upload_to_a_draft_deleted_elsewhere_makes_the_values_a_new_draft', async () => {
+      service.get.mockReturnValue(of(award()));
+      await open('5');
+
+      component.message.set('awards.messages.saved');
+
+      component.documentsLost(new HttpErrorResponse({ status: 404 }));
+
+      expect(component.message()).toBeNull();
+      expect(component.problem()).toBe('awards.problems.award-deleted');
+      expect(component.editing()).toBe(false);
+      expect(location.replaceState).toHaveBeenCalledWith('/awards/new');
+    });
+
+    it('finding2_upload_to_a_draft_submitted_elsewhere_opens_the_award_page', async () => {
+      service.get.mockReturnValue(of(award()));
+      await open('5');
+
+      component.documentsLost(problem('award-not-editable', 409));
+
+      expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], {
+        state: { problem: 'award-not-editable' },
+      });
+    });
+
+    it('finding1_a_refusal_during_a_running_save_is_left_to_that_save', async () => {
+      service.get.mockReturnValue(of(award()));
+      await open('5');
+      service.update.mockReturnValue(new Subject<Award>());
+      type('titleUk', 'Грамота');
+      component.save();
+
+      component.documentsLost(new HttpErrorResponse({ status: 404 }));
+
+      expect(component.saving()).toBe(true);
+      expect(component.editing()).toBe(true);
     });
 
     it('ac2_8_submitting_without_documents_asks_with_the_notice', async () => {

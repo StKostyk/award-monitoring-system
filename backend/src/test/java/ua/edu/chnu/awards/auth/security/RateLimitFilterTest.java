@@ -26,6 +26,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.cors.CorsConfiguration;
 
+import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 import ua.edu.chnu.awards.config.ProtectionProperties;
 
 class RateLimitFilterTest {
@@ -35,9 +36,9 @@ class RateLimitFilterTest {
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
-    private final RateLimitFilter filter = new RateLimitFilter(redis,
-        new ProtectionProperties(5, Duration.ofMinutes(15), Duration.ofMinutes(30), 20),
-        Clock.fixed(NOW, ZoneOffset.UTC), request -> allowedOrigins());
+    private final RateLimitFilter filter = new RateLimitFilter(
+        new FixedWindowCounter(redis, Clock.fixed(NOW, ZoneOffset.UTC)),
+        new ProtectionProperties(5, Duration.ofMinutes(15), Duration.ofMinutes(30), 20), request -> allowedOrigins());
 
     @BeforeEach
     void setUp() {

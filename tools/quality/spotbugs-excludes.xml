@@ -190,6 +190,7 @@
             <Annotation name="org.springframework.web.bind.annotation.RestController"/>
             <Annotation name="org.springframework.context.annotation.Configuration"/>
             <Annotation name="org.springframework.boot.test.context.TestConfiguration"/>
+            <Class name="ua.edu.chnu.awards.common.limit.FixedWindowCounter"/>
         </Or>
         <Or>
             <Bug pattern="EI_EXPOSE_REP"/>

@@ -2,9 +2,10 @@ package ua.edu.chnu.awards.document.service;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.PDF;
+import static ua.edu.chnu.awards.support.DocumentTestConstants.file;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -22,8 +23,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 class ObjectStorageTest {
 
-    private static final byte[] PDF = "%PDF-1.7".getBytes(StandardCharsets.US_ASCII);
-
     private final S3Client unreachable = S3Client.builder().endpointOverride(URI.create("http://127.0.0.1:1"))
         .region(Region.US_EAST_1).credentialsProvider(AnonymousCredentialsProvider.create()).forcePathStyle(true)
         .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(5))).build();
@@ -37,7 +36,7 @@ class ObjectStorageTest {
 
     @Test
     void ac1_11_anUnreachableStorageIsUnavailableForEveryCall() {
-        MockMultipartFile file = new MockMultipartFile("file", "a.pdf", "application/pdf", PDF);
+        MockMultipartFile file = file("a.pdf", PDF);
 
         assertThatThrownBy(() -> storage.put("awards/1/x", file, PDF.length, "application/pdf"))
             .isInstanceOf(StorageUnavailableException.class);

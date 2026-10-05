@@ -2,7 +2,6 @@ package ua.edu.chnu.awards.audit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -120,8 +117,7 @@ class AuditContextIT extends AbstractIntegrationTest {
     }
 
     private void signIn() {
-        Jwt jwt = Jwt.withTokenValue("token").header("alg", "RS256").subject(user.getId().toString()).build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
+        TestUsers.signInAs(user);
     }
 
     private TransactionTemplate template(boolean readOnly, int propagation) {

@@ -51,7 +51,7 @@ public class AwardCategoryController {
      * @return the suggestions; empty when both inputs are shorter than three characters
      */
     @GetMapping("/suggestions")
-    @PreAuthorize("@access.require('award:create')")
+    @PreAuthorize(AwardPermissionConstants.CAN_CREATE)
     public List<CategorySuggestion> suggestions(@RequestParam(required = false) String title,
                                                 @RequestParam(required = false) String organization) {
         return suggester.suggest(title, organization);
