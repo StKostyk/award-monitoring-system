@@ -2,13 +2,13 @@
 ## Award Monitoring & Tracking System
 
 > **Last Updated**: October 2026  
-> **Story Points**: 133 delivered, 57 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
+> **Story Points**: 154 delivered, 57 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
 > **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34
 
 Every story is tracked twice: a Jira issue for the sprint board and a GitHub issue that the pull request closes.
 
-## Current Sprint: Sprint 3 (2026-09-28 – 2026-10-04) — Award creation
+## Sprint 3 (2026-09-28 – 2026-10-04) — Award creation, closed ([summary](sprints/SPRINT-03.md))
 
 | ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
@@ -28,11 +28,11 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.3.2 | Fixes from the Feature 2.3 validation | 2 | ✅ Done | SCRUM-31 | [#101](https://github.com/StKostyk/award-monitoring-system/issues/101) |
 | 2.1.5 | Database views and functions follow the award model | 2 | ✅ Done | SCRUM-32 | [#103](https://github.com/StKostyk/award-monitoring-system/issues/103) |
 | 2.1.6 | Fixes from the manual run of Feature 2.1 | 2 | ✅ Done | SCRUM-38 | [#117](https://github.com/StKostyk/award-monitoring-system/issues/117) |
-| 2.1.7 | Fixes from the manual runs of Features 2.1 and 2.2 | 3 | 4 | SCRUM-42 | [#127](https://github.com/StKostyk/award-monitoring-system/issues/127) |
+| 2.1.7 | Fixes from the manual runs of Features 2.1 and 2.2 | 3 | ✅ Done (Sprint 4) | SCRUM-42 | [#127](https://github.com/StKostyk/award-monitoring-system/issues/127) |
 | 3.0.1 | Production configuration and local production run | 3 | ✅ Done | SCRUM-33 | [#109](https://github.com/StKostyk/award-monitoring-system/issues/109) |
 
 Sprint Goal: an employee creates, checks, submits and tracks an award (Features 2.1–2.3).  
-Completed Points: 65 (Feature 2.1 validated 2026-09-29, Features 1.3 and 2.2 validated 2026-09-30, fixes 2.2.3 merged, Feature 2.3 validated and fixes 2.3.2 merged 2026-10-01, database objects 2.1.5 merged 2026-10-01, production configuration 3.0.1 merged 2026-10-02; the manual runs of PRD §9 pending)
+Completed Points: 91 (these stories plus 3.0.2–3.0.4, 3.1.1 and 3.1.2 from Epic 3, listed under the epic below)
 
 ---
 
@@ -65,6 +65,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | 2.4.2 | GDPR-compliant award deletion | 5 | Compliance |
 | US-008 | Personal Dashboard | 13 | Analytics |
 | US-010 | Executive Dashboard | 21 | Analytics |
+| — | Production hardening: backend-for-frontend with an HttpOnly cookie, refresh tokens hashed at rest, rate limits for a campus NAT, Spring Session on Redis (design review 2026-10-04) | - | Epic 9 |
 
 ---
 
@@ -74,9 +75,9 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 |--------|---------|--------|
 | Sprint 1 | Setup (7 tasks) | 14 |
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
-| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.4), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), database objects (2.1.5), production configuration (3.0.1) | 65 |
+| Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 125 points (Epics 1 and 2 except the stories moved to later epics, and 3.0.1)
+Total Completed: 151 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, 3.1.1 and 3.1.2); Sprint 4 so far: 2.1.7 (3)
 
 ---
 

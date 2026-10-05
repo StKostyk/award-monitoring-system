@@ -144,12 +144,23 @@ shortly before the defense or when a pilot user appears.
 
 ---
 
+## Addendum 2026-10-05: Production at the university
+
+This decision covers the defense demo. A production deployment at ChNU runs the same Compose stack on university
+infrastructure if the university's IT department can host it (the question is open with them); otherwise on a
+server like the one above, rented by the university. Either way, each university gets its own deployment
+(ADR-022), and the work left for production is the Epic 9 hardening (backend-for-frontend with an HttpOnly
+cookie, refresh tokens hashed at rest, rate limits that suit a campus NAT, shared sessions in Redis).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2026-10-02 | Stefan Kostyk | Initial version | Deployment target decision after Epic 2 |
 | 2026-10-02 | Stefan Kostyk | MinIO image `cgr.dev/chainguard/minio` (runs as root), server-side encryption with a static key (`MINIO_KMS_SECRET_KEY`) | MinIO no longer publishes images on Docker Hub or quay.io; Feature 3.1 D-8 |
+| 2026-10-05 | Stefan Kostyk | Addendum: production on university infrastructure, Epic 9 hardening | Design review of 2026-10-04 |
 
 ---
 

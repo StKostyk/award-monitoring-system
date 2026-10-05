@@ -267,6 +267,14 @@ against. Kubernetes stays the reference option for a university-wide rollout wit
 
 ---
 
+## Addendum 2026-10-05: Production direction
+
+A production rollout at a university runs the same Compose stack as the defense, on university servers where
+available (ADR-021 addendum), with one deployment per university (ADR-022). Kubernetes applies only when one
+deployment needs several replicas or a module is extracted as a service under the ADR-022 criteria.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
@@ -274,6 +282,7 @@ against. Kubernetes stays the reference option for a university-wide rollout wit
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 | 2026-10-02 | Stefan Kostyk | Addendum: superseded for the defense by ADR-021 | Deployment target decision |
+| 2026-10-05 | Stefan Kostyk | Addendum: production direction (Compose per university, ADR-022) | Design review of 2026-10-04 |
 
 ---
 

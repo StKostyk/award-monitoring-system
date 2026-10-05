@@ -26,18 +26,18 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Edit Own Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Upload Scanned Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Delete Own Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| Download Award Documents⁶ | Own | Own + Department | Own + Faculty | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
-| View Submitted Awards of Others⁵ | ❌ | Department | Faculty | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
+| Download Award Documents⁶ | Own | Own + Department | Own + Faculty | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
+| View Submitted Awards of Others⁵ | ❌ | Department | Faculty | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
 | View Approved University Awards (public pages, planned after Epic 4) | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View Own Awards⁵ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View Award Change History² | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
-| View Award Review Status and Reviewer Comments⁴ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
+| View Award Change History² | ✓ | ✓ | ✓ | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
+| View Award Review Status and Reviewer Comments⁴ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
 | Manage Personal Profile | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Manage Department Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage Faculty Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage University Profile | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 
-¹ Approvers receive awards too and submit their own like every employee (`award:create`, `award:update:own`; decision of 2026-09-28, Feature 2.1). A request always starts at the faculty secretary; that nobody reviews their own award is enforced in Epic 4. System administrators and GDPR officers read awards for oversight and never submit.
+¹ Approvers receive awards too and submit their own like every employee (`award:create`, `award:update:own`; decision of 2026-09-28, Feature 2.1). A request always starts at the faculty secretary; that nobody reviews their own award is enforced in Epic 4. GDPR officers read awards for oversight and never submit; system administrators neither submit nor read awards (note 7).
 
 ² The owner sees every saved version of their award; anyone who may read a submitted award (scope over its organisation, or `award:read:all`) sees its versions from the submission on (Feature 2.2, `GET /awards/{id}/versions`).
 
@@ -46,6 +46,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 ⁵ As built in Epic 2 (`RolePermissions`, `AwardOwnership.isReadable`): the owner always reads their award, drafts included. Anyone else reads only submitted awards whose organisation is covered by a role granting `award:read:department` (faculty secretary), `award:read:faculty` (dean) or `award:read:all` (rector's secretary, rector, system administrator, GDPR officer), held or delegated; any other award answers 404. `award:read:own` is held by every role and gates the read endpoints; system administrators and GDPR officers own no awards. The original "every employee sees all university awards" row is kept as the public award pages, planned once approved awards exist (proposed in the Epic 2 documentation sync, 2026-10-01).
 
 ⁶ Feature 3.1 (`DocumentUpload`, `DocumentService`): uploads and deletions need `award:update:own` and only touch the caller's own draft; documents of a submitted award are frozen. Downloads and the document list follow the award read rule of note 5, so whoever reads the award reads its documents; every download is recorded as `DOCUMENT_DOWNLOAD`. Unknown or unreadable documents answer 404.
+
+⁷ Decided in the design review of 2026-10-04, in force with the Sprint 4 review-decision fix story: the system administrator runs the system and keeps `audit:read` (the award audit trail, note 3), but loses `award:read:all`, so award content, documents, history and review status are no longer readable to that role. The GDPR officer keeps award reading for data-protection oversight.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
@@ -59,6 +61,24 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Reject Award Request | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Request Additional Information | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 
+### Final approval by recognition level
+
+The category's recognition level sets the lowest role that may give the final approval and the impact base score; every role above that minimum in the same line may approve too, and a request climbs every level from the faculty secretary to the minimum. Decided in the design review of 2026-10-04 (LOCAL = city or community, REGIONAL = oblast), in force with the Sprint 4 review-decision fix story; until then Feature 2.1 D-3 applies (college and faculty awards final at the dean, LOCAL 45, UNIVERSITY 60).
+
+| Recognition level | Final approval from | Impact base score |
+|-------------------|---------------------|:-----------------:|
+| `SPECIALITY` | Faculty Secretary | 10 |
+| `DEPARTMENT` | Faculty Secretary | 20 |
+| `COLLEGE` | Faculty Secretary | 30 |
+| `FACULTY` | Faculty Secretary | 40 |
+| `UNIVERSITY` | Faculty Secretary | 50 |
+| `LOCAL` | Faculty Secretary | 60 |
+| `REGIONAL` | Faculty Secretary | 70 |
+| `NATIONAL` | Rector's Secretary | 80 |
+| `INTERNATIONAL` | Rector's Secretary | 100 |
+
+No level requires the rector. The review period of each level is counted in working days (Monday to Friday, default 3, configurable), decided in the same review.
+
 ## 2. Administrative Permissions Matrix
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
@@ -69,8 +89,10 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Manage Department Users | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage Faculty Users | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage All Users | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ✓ |
-| Assign User Roles | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ✓ |
+| Assign User Roles⁸ | ❌ | Employee | Faculty Secretary, Employee | Employee | Rector's Secretary, Dean | All | ❌ | ❌ | ✓ |
 | Deactivate User Accounts | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ✓ |
+
+⁸ Roles each role may assign, always inside its own organisation subtree (design review of 2026-10-04, in force with the Sprint 4 review-decision fix story). The faculty secretary and the rector's secretary only confirm membership by assigning `EMPLOYEE`; the dean appoints faculty secretaries; the rector appoints the rector's secretary and deans; the system administrator assigns every role, including `SYSTEM_ADMIN` and `GDPR_OFFICER`. Until the fix story, the Feature 1.2 rule applies: any role strictly below the caller's own, university roles only by the rector.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
