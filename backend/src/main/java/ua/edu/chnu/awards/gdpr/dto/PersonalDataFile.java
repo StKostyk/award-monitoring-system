@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -23,6 +24,7 @@ import ua.edu.chnu.awards.user.entity.RoleType;
  * @param roles          role assignments past, present and future
  * @param delegations    delegations given and received
  * @param awards         own awards in every status
+ * @param awardVersions  every saved state of those awards, oldest first per award
  * @param documents      metadata of the documents of those awards
  * @param consentHistory every consent record
  * @param devices        browsers the account signed in from
@@ -31,8 +33,9 @@ import ua.edu.chnu.awards.user.entity.RoleType;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PersonalDataFile(Metadata exportMetadata, PersonalData personalData, List<RoleEntry> roles,
                                List<DelegationEntry> delegations, List<AwardEntry> awards,
-                               List<DocumentEntry> documents, List<ConsentEntry> consentHistory,
-                               List<DeviceEntry> devices, List<ActivityEntry> activityLog) {
+                               List<AwardVersionEntry> awardVersions, List<DocumentEntry> documents,
+                               List<ConsentEntry> consentHistory, List<DeviceEntry> devices,
+                               List<ActivityEntry> activityLog) {
 
     /**
      * Keeps unmodifiable copies of the sections.
@@ -41,6 +44,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         roles = List.copyOf(roles);
         delegations = List.copyOf(delegations);
         awards = List.copyOf(awards);
+        awardVersions = List.copyOf(awardVersions);
         documents = List.copyOf(documents);
         consentHistory = List.copyOf(consentHistory);
         devices = List.copyOf(devices);
@@ -57,6 +61,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         counts.put("roles", roles.size());
         counts.put("delegations", delegations.size());
         counts.put("awards", awards.size());
+        counts.put("award_versions", awardVersions.size());
         counts.put("documents", documents.size());
         counts.put("consent_history", consentHistory.size());
         counts.put("devices", devices.size());
@@ -168,6 +173,49 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
     public record AwardEntry(long awardId, String title, String titleUk, String description, String descriptionUk,
                              NamedRef category, String awardingOrganization, LocalDate awardDate, AwardStatus status,
                              String externalUrl, NamedRef organization, Instant createdAt, Instant updatedAt) {
+    }
+
+    /**
+     * One saved state of an own award.
+     *
+     * @param awardId       the award
+     * @param version       version number within the award
+     * @param action        what produced the version
+     * @param changedFields fields changed against the previous version, empty for the first one
+     * @param createdAt     when it was saved
+     * @param snapshot      the business fields at that moment
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record AwardVersionEntry(long awardId, long version, VersionAction action, List<String> changedFields,
+                                    Instant createdAt, VersionSnapshot snapshot) {
+
+        /**
+         * Keeps an unmodifiable copy of the changed fields.
+         */
+        public AwardVersionEntry {
+            changedFields = List.copyOf(changedFields);
+        }
+    }
+
+    /**
+     * The business fields of an award in one version.
+     *
+     * @param title                English title
+     * @param titleUk              Ukrainian title
+     * @param description          English description
+     * @param descriptionUk        Ukrainian description
+     * @param awardingOrganization who granted it
+     * @param awardDate            when it was granted
+     * @param categoryId           the category
+     * @param status               workflow status
+     * @param impactScore          impact score
+     * @param externalUrl          link to an external record
+     * @param organizationId       the unit it is recorded for
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record VersionSnapshot(String title, String titleUk, String description, String descriptionUk,
+                                  String awardingOrganization, LocalDate awardDate, Long categoryId,
+                                  AwardStatus status, Integer impactScore, String externalUrl, Long organizationId) {
     }
 
     /**

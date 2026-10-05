@@ -38,7 +38,10 @@ class ProfileFlowFT extends AbstractFunctionalTest {
     private static final String STUCK_TARGET = "ft.stuck.new@chnu.edu.ua";
     private static final String TRAVELLER = "ft.traveller@chnu.edu.ua";
     private static final String ARRIVED = "ft.traveller.new@chnu.edu.ua";
-    private static final List<String> ACCOUNTS = List.of(RENAMER, MOVER, GUESSER, STUCK, TRAVELLER);
+    private static final String WANDERER = "ft.wanderer@chnu.edu.ua";
+    private static final String WANDERED = "ft.wanderer.new@chnu.edu.ua";
+    private static final String CHANGED_SUBJECT = "sign-in address was changed";
+    private static final List<String> ACCOUNTS = List.of(RENAMER, MOVER, GUESSER, STUCK, TRAVELLER, WANDERER);
     private static final int MAX_FAILURES = 5;
 
     @Autowired
@@ -57,7 +60,7 @@ class ProfileFlowFT extends AbstractFunctionalTest {
 
     @AfterAll
     void deleteUsers() {
-        List.of(RENAMER, MOVER, MOVED, GUESSER, STUCK, TRAVELLER, ARRIVED).forEach(email ->
+        List.of(RENAMER, MOVER, MOVED, GUESSER, STUCK, TRAVELLER, ARRIVED, WANDERER, WANDERED).forEach(email ->
             userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
         ACCOUNTS.forEach(email -> redis.delete(List.of(LoginAttemptService.LOCK_KEY_PREFIX + email,
             LoginAttemptService.FAILURE_KEY_PREFIX + email)));
@@ -156,18 +159,42 @@ class ProfileFlowFT extends AbstractFunctionalTest {
     }
 
     @Test
-    void edge_linksMailedToTheOldAddressStopWorkingAfterTheMove() {
+    void ac5_aNotMeLinkMailedBeforeTheMoveSurvivesAPasswordResetAndMovesTheAccountBack() {
         mailpit.clear();
         String accessToken = tokenOf(TRAVELLER);
         String notMe = tokenIn(Mailpit.linkIn(mailpit.latestTextTo(TRAVELLER, "New sign-in")));
         requestChange(accessToken, ARRIVED, DEMO_PASSWORD).then().statusCode(202);
-
         confirm(tokenIn(Mailpit.linkIn(mailpit.latestTextTo(ARRIVED, CONFIRM_SUBJECT)))).then().statusCode(200);
+        String newSession = tokenOf(ARRIVED);
+        RestAssured.given().contentType(ContentType.JSON).body(Map.of("email", ARRIVED))
+            .post("/api/v1/auth/password-reset/request").then().statusCode(202);
+        RestAssured.given().contentType(ContentType.JSON)
+            .body(Map.of("token", tokenIn(Mailpit.linkIn(mailpit.latestTextTo(ARRIVED, "Password reset"))),
+                "password", "Another-passw0rd-1"))
+            .post("/api/v1/auth/password-reset/confirm").then().statusCode(204);
 
-        RestAssured.given().contentType(ContentType.JSON).body(Map.of("token", notMe))
-            .post("/api/v1/auth/security/revoke")
-            .then().statusCode(410).body("type", equalTo("urn:awards:problem:token-invalid"));
-        as(tokenOf(ARRIVED)).get("/api/v1/users/me").then().statusCode(200).body("email", equalTo(ARRIVED));
+        revoke(notMe).then().statusCode(204);
+
+        assertThat(userRepository.findByEmailAddressIgnoreCase(TRAVELLER)).isPresent();
+        assertThat(userRepository.findByEmailAddressIgnoreCase(ARRIVED)).isEmpty();
+        as(newSession).get("/api/v1/users/me").then().statusCode(401);
+        assertThat(mailpit.latestTextTo(TRAVELLER, "Password reset")).contains("/reset-password?token=");
+        assertThat(jdbc.queryForObject("select new_values->>'restoredEmail' from audit_logs "
+            + "where action_type = 'SECURITY_REVOKE' and new_values->>'replacedEmail' = ?", String.class, ARRIVED))
+            .isEqualTo(TRAVELLER);
+    }
+
+    @Test
+    void ac5_theChangeNoticeCarriesAOneUseLinkThatMovesTheAccountBack() {
+        mailpit.clear();
+        requestChange(tokenOf(WANDERER), WANDERED, DEMO_PASSWORD).then().statusCode(202);
+        confirm(tokenIn(Mailpit.linkIn(mailpit.latestTextTo(WANDERED, CONFIRM_SUBJECT)))).then().statusCode(200);
+        String back = tokenIn(Mailpit.linkIn(mailpit.latestTextTo(WANDERER, CHANGED_SUBJECT)));
+
+        revoke(back).then().statusCode(204);
+
+        assertThat(userRepository.findByEmailAddressIgnoreCase(WANDERER)).isPresent();
+        revoke(back).then().statusCode(410).body("type", equalTo("urn:awards:problem:token-invalid"));
     }
 
     private static Response rename(String token, Map<String, Object> body) {
@@ -182,6 +209,11 @@ class ProfileFlowFT extends AbstractFunctionalTest {
 
     private static String tokenIn(String link) {
         return UriComponentsBuilder.fromUri(URI.create(link)).build().getQueryParams().getFirst("token");
+    }
+
+    private static Response revoke(String token) {
+        return RestAssured.given().contentType(ContentType.JSON).body(Map.of("token", token))
+            .post("/api/v1/auth/security/revoke");
     }
 
     private static Response confirm(String token) {

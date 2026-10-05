@@ -82,7 +82,7 @@ public class PasswordResetService {
                 "The new password must differ from the current one");
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
-        tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
+        tokens.invalidateUnbound(user, TokenPurpose.SECURITY_REVOKE);
         tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
         authorizations.revokeAll(user);
         audit.record(AuditAction.PASSWORD_RESET, user.getId());

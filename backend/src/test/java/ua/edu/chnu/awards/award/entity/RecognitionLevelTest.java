@@ -14,10 +14,10 @@ class RecognitionLevelTest {
     @CsvSource({
         "SPECIALITY, FACULTY_SECRETARY, 10",
         "DEPARTMENT, FACULTY_SECRETARY, 20",
-        "COLLEGE, DEAN, 30",
-        "FACULTY, DEAN, 40",
-        "LOCAL, FACULTY_SECRETARY, 45",
-        "UNIVERSITY, FACULTY_SECRETARY, 60",
+        "COLLEGE, FACULTY_SECRETARY, 30",
+        "FACULTY, FACULTY_SECRETARY, 40",
+        "UNIVERSITY, FACULTY_SECRETARY, 50",
+        "LOCAL, FACULTY_SECRETARY, 60",
         "REGIONAL, FACULTY_SECRETARY, 70",
         "NATIONAL, RECTOR_SECRETARY, 80",
         "INTERNATIONAL, RECTOR_SECRETARY, 100"
@@ -33,6 +33,19 @@ class RecognitionLevelTest {
         assertThat(Arrays.stream(RecognitionLevel.values()).map(Enum::name))
             .containsExactlyInAnyOrder("SPECIALITY", "DEPARTMENT", "FACULTY", "COLLEGE", "UNIVERSITY", "LOCAL",
                 "REGIONAL", "NATIONAL", "INTERNATIONAL");
+    }
+
+    @Test
+    void ac1_onlyNationalAndInternationalClimbPastTheFacultySecretary() {
+        assertThat(Arrays.stream(RecognitionLevel.values())
+            .filter(level -> level.minimumApproval() != ApprovalLevel.FACULTY_SECRETARY))
+            .containsExactly(RecognitionLevel.NATIONAL, RecognitionLevel.INTERNATIONAL);
+    }
+
+    @Test
+    void ac1_baseScoresRankTheLevelsByReach() {
+        assertThat(Arrays.stream(RecognitionLevel.values()).mapToInt(RecognitionLevel::baseScore))
+            .isSorted();
     }
 
     @Test

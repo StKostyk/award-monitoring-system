@@ -55,8 +55,8 @@ class DataExportServiceTest {
 
     private final User user = TestUsers.person(5L, "employee.fmi@chnu.edu.ua", null);
     private final PersonalDataFile file = new PersonalDataFile(
-        new PersonalDataFile.Metadata(LATE_EVENING_UTC, 5L, "1.0", "Article 20"), null, List.of(), List.of(),
-        List.of(), List.of(), List.of(), List.of(), List.of());
+        new PersonalDataFile.Metadata(LATE_EVENING_UTC, 5L, "1.1", "Article 20"), null, List.of(), List.of(),
+        List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
     @BeforeEach
     void bindRequest() {
@@ -111,6 +111,6 @@ class DataExportServiceTest {
     @Test
     void ac34_theSectionCountsAreWhatTheAuditKeeps() {
         assertThat(file.sectionCounts()).isEqualTo(Map.of("roles", 0, "delegations", 0, "awards", 0,
-            "documents", 0, "consent_history", 0, "devices", 0, "activity_log", 0));
+            "award_versions", 0, "documents", 0, "consent_history", 0, "devices", 0, "activity_log", 0));
     }
 }

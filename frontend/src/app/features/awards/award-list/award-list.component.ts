@@ -10,6 +10,7 @@ import {
 } from '@angular/material/datepicker';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
@@ -20,6 +21,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
+import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import {
   AWARD_STATUSES,
   Award,
@@ -33,6 +35,8 @@ import {
 import { RequestTimingComponent } from '../request-timing/request-timing.component';
 import { AwardsActions } from '../store/awards.actions';
 import { awardsFeature } from '../store/awards.feature';
+
+const PAGE_SIZES = [20, 50, 100];
 
 @Component({
   selector: 'app-award-list',
@@ -52,8 +56,10 @@ import { awardsFeature } from '../store/awards.feature';
     MatSelect,
     MatOption,
     MatProgressBar,
+    MatPaginator,
     TranslocoPipe,
   ],
+  providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
   templateUrl: './award-list.component.html',
   styleUrl: './award-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,6 +80,9 @@ export class AwardListComponent implements OnInit {
   readonly loading = this.store.selectSignal(awardsFeature.selectLoading);
   readonly problem = this.store.selectSignal(awardsFeature.selectProblem);
   readonly total = this.store.selectSignal(awardsFeature.selectTotal);
+  readonly pageIndex = this.store.selectSignal(awardsFeature.selectPageIndex);
+  readonly pageSize = this.store.selectSignal(awardsFeature.selectPageSize);
+  protected readonly pageSizes = PAGE_SIZES;
   readonly notice = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -88,6 +97,12 @@ export class AwardListComponent implements OnInit {
   filter(change: Partial<AwardFilters>): void {
     this.store.dispatch(
       AwardsActions.filtersChanged({ filters: { ...this.filters(), ...change } }),
+    );
+  }
+
+  page(event: PageEvent): void {
+    this.store.dispatch(
+      AwardsActions.pageChanged({ pageIndex: event.pageIndex, pageSize: event.pageSize }),
     );
   }
 

@@ -14,7 +14,15 @@
     "logout": "Sign out",
     "loading": "Loading…",
     "datePlaceholder": "dd/mm/yyyy",
-    "dateInvalid": "Enter the date as dd/mm/yyyy"
+    "dateInvalid": "Enter the date as dd/mm/yyyy",
+    "paginator": {
+      "itemsPerPage": "Rows per page",
+      "first": "First page",
+      "previous": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "range": "{{from}}–{{to}} of {{total}}"
+    }
   },
   "home": {
     "greeting": "Welcome, {{name}}",
@@ -225,7 +233,6 @@
       "saved": "Draft saved.",
       "removed": "Draft deleted."
     },
-    "more": "Showing the first {{shown}} of {{total}}. Narrow the list with the filters.",
     "remove": {
       "action": "Delete draft",
       "title": "Delete the draft?",
@@ -341,14 +348,6 @@
         "status": "Status",
         "roles": "Roles",
         "actions": "Actions"
-      },
-      "paginator": {
-        "itemsPerPage": "Rows per page",
-        "first": "First page",
-        "previous": "Previous page",
-        "next": "Next page",
-        "last": "Last page",
-        "range": "{{from}}–{{to}} of {{total}}"
       }
     },
     "status": {
@@ -592,8 +591,8 @@
     }
   },
   "notMe": {
-    "title": "Was this sign-in yours?",
-    "text": "If you did not sign in from the device named in the email, confirm below. Every session will be ended, the known devices forgotten and the current password disabled; a link to set a new password will be emailed to you.",
+    "title": "Was this you?",
+    "text": "If you did not sign in from the device or change the sign-in address described in the email, confirm below. After an address change the account moves back to the address that received the email. Every session will be ended, the known devices forgotten and the current password disabled; a link to set a new password will be emailed to you.",
     "confirm": "This was not me",
     "done": "Access has been revoked. Check your inbox for the link to set a new password; it is valid for 1 hour.",
     "invalid": "The link is invalid, expired or already used. If you still suspect misuse, reset your password.",

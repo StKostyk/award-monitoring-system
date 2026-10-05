@@ -124,6 +124,22 @@ export function kyivDay(offset = 0): string {
   return new Date(Date.UTC(year, month - 1, day + offset)).toISOString().substring(0, 10);
 }
 
+/** The Kyiv date a review period of the given working days starting now ends on (weekends skipped). */
+export function workingDaysAhead(days: number): string {
+  let offset = 0;
+  const weekday = (shift: number): number => new Date(`${kyivDay(shift)}T00:00:00Z`).getUTCDay();
+  while (weekday(offset) === 0 || weekday(offset) === 6) {
+    offset++;
+  }
+  for (let left = days; left > 0;) {
+    offset++;
+    if (weekday(offset) !== 0 && weekday(offset) !== 6) {
+      left--;
+    }
+  }
+  return kyivDay(offset);
+}
+
 /** A random award date more than a year back, so that duplicate checks of parallel tests do not meet. */
 export function pastDay(): string {
   return kyivDay(-400 - Math.floor(Math.random() * 10000));

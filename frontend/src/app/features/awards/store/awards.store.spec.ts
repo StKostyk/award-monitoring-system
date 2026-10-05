@@ -25,6 +25,19 @@ describe('awards feature', () => {
     state = awardsFeature.reducer(state, AwardsActions.awardsLoadFailed({ problem: 'network' }));
     expect(state).toMatchObject({ awards: [], total: 0, problem: 'network' });
   });
+
+  it('ac8_keeps_the_page_and_returns_to_the_first_one_when_the_filters_change', () => {
+    expect(initialState).toMatchObject({ pageIndex: 0, pageSize: 20 });
+
+    let state = awardsFeature.reducer(
+      initialState,
+      AwardsActions.pageChanged({ pageIndex: 2, pageSize: 50 }),
+    );
+    expect(state).toMatchObject({ pageIndex: 2, pageSize: 50, loading: true });
+
+    state = awardsFeature.reducer(state, AwardsActions.filtersChanged({ filters: NO_FILTERS }));
+    expect(state).toMatchObject({ pageIndex: 0, pageSize: 50 });
+  });
 });
 
 describe('AwardsEffects', () => {
@@ -53,8 +66,27 @@ describe('AwardsEffects', () => {
 
     effects(filters).load$.subscribe((action) => emitted.push(action));
 
-    expect(service.list).toHaveBeenCalledWith(filters, 0, 100);
+    expect(service.list).toHaveBeenCalledWith(filters, 0, 20);
     expect(emitted).toEqual([AwardsActions.awardsLoaded({ page })]);
+  });
+
+  it('ac8_loads_the_requested_page', () => {
+    service.list.mockReturnValue(of(page));
+    actions$ = of(AwardsActions.pageChanged({ pageIndex: 2, pageSize: 50 }));
+    TestBed.configureTestingModule({
+      providers: [
+        AwardsEffects,
+        provideMockActions(() => actions$),
+        provideMockStore({
+          initialState: { awards: { ...initialState, pageIndex: 2, pageSize: 50 } },
+        }),
+        { provide: AwardsService, useValue: service },
+      ],
+    });
+
+    TestBed.inject(AwardsEffects).load$.subscribe();
+
+    expect(service.list).toHaveBeenCalledWith(NO_FILTERS, 2, 50);
   });
 
   it('ac1_7_reports_a_failed_load', () => {

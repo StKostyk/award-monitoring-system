@@ -103,7 +103,7 @@ public final class RequestRows {
      * @return id of the new request
      */
     public long insert() {
-        Instant end = deadlineSet ? deadline : submittedAt.plus(TestWorkflow.REVIEW_PERIOD);
+        Instant end = deadlineSet ? deadline : TestWorkflow.estimator().deadline(submittedAt);
         return jdbc.queryForObject(INSERT, Long.class, awardId, submitterId, status, level,
             Timestamp.from(submittedAt), end == null ? null : Timestamp.from(end));
     }

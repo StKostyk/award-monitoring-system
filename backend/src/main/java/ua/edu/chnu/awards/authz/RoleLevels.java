@@ -9,10 +9,11 @@ import org.springframework.stereotype.Component;
 import ua.edu.chnu.awards.user.entity.RoleType;
 
 /**
- * The line of authority for granting roles, lowest first: {@code EMPLOYEE}, {@code FACULTY_SECRETARY},
- * {@code DEAN}, {@code RECTOR_SECRETARY}, {@code RECTOR}. A holder may grant roles strictly below their own.
- * {@code SYSTEM_ADMIN} is above everything and is the only role that grants the system roles
- * ({@code SYSTEM_ADMIN}, {@code GDPR_OFFICER}); {@code GDPR_OFFICER} is outside the line and grants nothing.
+ * The line of authority, lowest first: {@code EMPLOYEE}, {@code FACULTY_SECRETARY}, {@code DEAN},
+ * {@code RECTOR_SECRETARY}, {@code RECTOR}, and the roles each role may grant: the faculty secretary and the
+ * rector's secretary confirm membership ({@code EMPLOYEE}), the dean appoints faculty secretaries, the rector
+ * appoints the rector's secretary and deans. {@code SYSTEM_ADMIN} grants every role, the system roles
+ * ({@code SYSTEM_ADMIN}, {@code GDPR_OFFICER}) included; {@code GDPR_OFFICER} and {@code EMPLOYEE} grant nothing.
  */
 @Component
 public class RoleLevels {
@@ -24,6 +25,12 @@ public class RoleLevels {
         RoleType.RECTOR_SECRETARY, 3,
         RoleType.RECTOR, 4);
     private static final Set<RoleType> SYSTEM = EnumSet.of(RoleType.SYSTEM_ADMIN, RoleType.GDPR_OFFICER);
+    private static final Map<RoleType, Set<RoleType>> GRANTS = Map.of(
+        RoleType.FACULTY_SECRETARY, EnumSet.of(RoleType.EMPLOYEE),
+        RoleType.DEAN, EnumSet.of(RoleType.FACULTY_SECRETARY, RoleType.EMPLOYEE),
+        RoleType.RECTOR_SECRETARY, EnumSet.of(RoleType.EMPLOYEE),
+        RoleType.RECTOR, EnumSet.of(RoleType.RECTOR_SECRETARY, RoleType.DEAN),
+        RoleType.SYSTEM_ADMIN, EnumSet.allOf(RoleType.class));
 
     /**
      * Position of a line role; system roles have no position.
@@ -50,15 +57,9 @@ public class RoleLevels {
      *
      * @param holder the role held
      * @param target the role to grant
-     * @return true when {@code holder} outranks {@code target}
+     * @return true when {@code target} is among the roles {@code holder} grants
      */
-    public boolean above(RoleType holder, RoleType target) {
-        if (holder == RoleType.SYSTEM_ADMIN) {
-            return true;
-        }
-        if (isSystem(holder) || isSystem(target)) {
-            return false;
-        }
-        return of(holder) > of(target);
+    public boolean grants(RoleType holder, RoleType target) {
+        return GRANTS.getOrDefault(holder, Set.of()).contains(target);
     }
 }

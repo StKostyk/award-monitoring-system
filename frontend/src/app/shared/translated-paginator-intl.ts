@@ -5,19 +5,19 @@ import { TranslocoService } from '@jsverse/transloco';
 
 /** Paginator labels in the active language. */
 @Injectable()
-export class AdminPaginatorIntl extends MatPaginatorIntl {
+export class TranslatedPaginatorIntl extends MatPaginatorIntl {
   private readonly transloco = inject(TranslocoService);
 
   constructor() {
     super();
     this.transloco
-      .selectTranslate('admin.users.paginator.itemsPerPage')
+      .selectTranslate('app.paginator.itemsPerPage')
       .pipe(takeUntilDestroyed())
       .subscribe((label: string) => this.relabel(label));
   }
 
   override getRangeLabel = (page: number, pageSize: number, length: number): string =>
-    this.transloco.translate('admin.users.paginator.range', {
+    this.transloco.translate('app.paginator.range', {
       from: length === 0 ? 0 : page * pageSize + 1,
       to: Math.min((page + 1) * pageSize, length),
       total: length,
@@ -25,10 +25,10 @@ export class AdminPaginatorIntl extends MatPaginatorIntl {
 
   private relabel(itemsPerPage: string): void {
     this.itemsPerPageLabel = itemsPerPage;
-    this.firstPageLabel = this.transloco.translate('admin.users.paginator.first');
-    this.previousPageLabel = this.transloco.translate('admin.users.paginator.previous');
-    this.nextPageLabel = this.transloco.translate('admin.users.paginator.next');
-    this.lastPageLabel = this.transloco.translate('admin.users.paginator.last');
+    this.firstPageLabel = this.transloco.translate('app.paginator.first');
+    this.previousPageLabel = this.transloco.translate('app.paginator.previous');
+    this.nextPageLabel = this.transloco.translate('app.paginator.next');
+    this.lastPageLabel = this.transloco.translate('app.paginator.last');
     this.changes.next();
   }
 }

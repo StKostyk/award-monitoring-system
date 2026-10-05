@@ -85,8 +85,8 @@ class AwardStatusServiceTest {
         assertThat(view.path()).extracting(PathStep::state)
             .containsExactly(StepState.CURRENT, StepState.UPCOMING, StepState.UPCOMING);
         assertThat(view.path()).extracting(PathStep::dueDate).containsExactly(LocalDate.of(2026, 10, 3),
-            LocalDate.of(2026, 10, 6), LocalDate.of(2026, 10, 9));
-        assertThat(view.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 9));
+            LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 13));
+        assertThat(view.estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 13));
         assertThat(view.delay()).isNull();
         assertThat(view.decisions()).isEmpty();
     }
@@ -167,7 +167,7 @@ class AwardStatusServiceTest {
 
         AwardStatusView view = service.status(AWARD_ID);
 
-        assertThat(view.path().get(0).dueDate()).isEqualTo(LocalDate.of(2026, 10, 4));
+        assertThat(view.path().get(0).dueDate()).isEqualTo(LocalDate.of(2026, 10, 6));
     }
 
     @Test

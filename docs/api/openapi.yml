@@ -1934,13 +1934,13 @@ components:
 
     PersonalDataExport:
       type: object
-      description: GDPR Article 20 export, format version 1.0; every list is present, possibly empty
-      required: [export_metadata, personal_data, roles, delegations, awards, documents, consent_history, devices,
-                 activity_log]
+      description: GDPR Article 20 export, format version 1.1; every list is present, possibly empty
+      required: [export_metadata, personal_data, roles, delegations, awards, award_versions, documents,
+                 consent_history, devices, activity_log]
       properties:
         export_metadata:
           type: object
-          description: '`export_date` (instant), `user_id`, `format_version` (`1.0`), `gdpr_article`'
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.1`), `gdpr_article`'
         personal_data:
           type: object
           description: |
@@ -1964,6 +1964,15 @@ components:
             Every own award in every status: `award_id`, `title`, `title_uk`, `description`, `description_uk`,
             `category`, `awarding_organization`, `award_date`, `status`, `external_url`, `organization`,
             `created_at`, `updated_at`
+          items:
+            type: object
+        award_versions:
+          type: array
+          description: |
+            Every saved state of those awards, oldest first per award, without the person who saved it:
+            `award_id`, `version`, `action`, `changed_fields`, `created_at`, `snapshot` (`title`, `title_uk`,
+            `description`, `description_uk`, `awarding_organization`, `award_date`, `category_id`, `status`,
+            `impact_score`, `external_url`, `organization_id`)
           items:
             type: object
         documents:
@@ -2286,8 +2295,8 @@ components:
         - DEPARTMENT
         - COLLEGE
         - FACULTY
-        - LOCAL
         - UNIVERSITY
+        - LOCAL
         - REGIONAL
         - NATIONAL
         - INTERNATIONAL
@@ -2307,7 +2316,8 @@ components:
           type: [string, 'null']
           format: date-time
           description: >
-            End of the current level's review period, whole days counted on the Kyiv calendar. While a level is
+            End of the current level's review period: the start moved by the configured number of working days
+            (Monday to Friday) at the same Kyiv time. While a level is
             reviewing, derived from the submission when none is stored; for a returned or final request the stored
             value, possibly null. Stays the missed deadline of an overdue level (the revised due date is in
             `AwardStatusView.path`)

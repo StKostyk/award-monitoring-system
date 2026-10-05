@@ -8,8 +8,6 @@ import { AwardsService } from '../awards.service';
 import { AwardsActions } from './awards.actions';
 import { awardsFeature } from './awards.feature';
 
-const PAGE_SIZE = 100;
-
 @Injectable()
 export class AwardsEffects {
   private readonly actions$ = inject(Actions);
@@ -18,10 +16,14 @@ export class AwardsEffects {
 
   readonly load$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AwardsActions.opened, AwardsActions.filtersChanged),
-      withLatestFrom(this.store.select(awardsFeature.selectFilters)),
-      switchMap(([, filters]) =>
-        this.awards.list(filters, 0, PAGE_SIZE).pipe(
+      ofType(AwardsActions.opened, AwardsActions.filtersChanged, AwardsActions.pageChanged),
+      withLatestFrom(
+        this.store.select(awardsFeature.selectFilters),
+        this.store.select(awardsFeature.selectPageIndex),
+        this.store.select(awardsFeature.selectPageSize),
+      ),
+      switchMap(([, filters, pageIndex, pageSize]) =>
+        this.awards.list(filters, pageIndex, pageSize).pipe(
           map((page) => AwardsActions.awardsLoaded({ page })),
           catchError((error: unknown) =>
             of(AwardsActions.awardsLoadFailed({ problem: problemType(error) })),

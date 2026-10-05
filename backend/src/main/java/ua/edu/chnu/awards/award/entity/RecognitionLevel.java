@@ -7,10 +7,10 @@ package ua.edu.chnu.awards.award.entity;
 public enum RecognitionLevel {
     SPECIALITY(ApprovalLevel.FACULTY_SECRETARY, 10),
     DEPARTMENT(ApprovalLevel.FACULTY_SECRETARY, 20),
-    COLLEGE(ApprovalLevel.DEAN, 30),
-    FACULTY(ApprovalLevel.DEAN, 40),
-    LOCAL(ApprovalLevel.FACULTY_SECRETARY, 45),
-    UNIVERSITY(ApprovalLevel.FACULTY_SECRETARY, 60),
+    COLLEGE(ApprovalLevel.FACULTY_SECRETARY, 30),
+    FACULTY(ApprovalLevel.FACULTY_SECRETARY, 40),
+    UNIVERSITY(ApprovalLevel.FACULTY_SECRETARY, 50),
+    LOCAL(ApprovalLevel.FACULTY_SECRETARY, 60),
     REGIONAL(ApprovalLevel.FACULTY_SECRETARY, 70),
     NATIONAL(ApprovalLevel.RECTOR_SECRETARY, 80),
     INTERNATIONAL(ApprovalLevel.RECTOR_SECRETARY, 100);

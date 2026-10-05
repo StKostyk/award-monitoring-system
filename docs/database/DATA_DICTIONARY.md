@@ -182,7 +182,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Business Rules**:
 - A token is redeemable once: `used_at` is set on first use and later attempts are rejected
 - Lifetime by purpose: `EMAIL_VERIFICATION` 24 hours, `PASSWORD_RESET` 1 hour, `SECURITY_REVOKE` 24 hours, `EMAIL_CHANGE` 1 hour
-- An `EMAIL_CHANGE` token carries the requested address in `new_email_address`; no other purpose does (V022). A new request cancels the user's earlier unused `EMAIL_CHANGE` tokens; a confirmed change cancels the unused `PASSWORD_RESET` tokens
+- An `EMAIL_CHANGE` token carries the requested address in `new_email_address`; a `SECURITY_REVOKE` token may carry the previous sign-in address after an address change (V026), and redeeming it moves the account back there unless another account uses it; no other purpose carries an address. A confirmed change binds the user's unused "not me" links to the old address and issues one more for the notice to the old address; a password reset and the link of a new device cancel only the unbound ones. A new request cancels the user's earlier unused `EMAIL_CHANGE` tokens; a confirmed change cancels the unused `PASSWORD_RESET` tokens
 - Expired and used rows are removed by a scheduled cleanup
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
@@ -191,7 +191,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `token_hash` | `VARCHAR(64)` | NO | - | UK | SHA-256 hex digest of the token |
 | `user_id` | `BIGINT` | NO | - | FK→users | Owner of the token |
 | `purpose` | `VARCHAR(30)` | NO | - | CK | `EMAIL_VERIFICATION`, `PASSWORD_RESET`, `SECURITY_REVOKE`, `EMAIL_CHANGE` |
-| `new_email_address` | `VARCHAR(255)` | YES | - | CK | Requested sign-in address, lower case; present exactly when `purpose` = `EMAIL_CHANGE` (GDPR: Personal Data) |
+| `new_email_address` | `VARCHAR(255)` | YES | - | CK | `EMAIL_CHANGE`: requested sign-in address, lower case, always present; `SECURITY_REVOKE`: the address to restore after an address change, otherwise null; null for other purposes (GDPR: Personal Data) |
 | `expires_at` | `TIMESTAMPTZ` | NO | - | - | Moment after which the token is rejected |
 | `used_at` | `TIMESTAMPTZ` | YES | - | - | Moment of redemption (NULL while unused) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
@@ -394,16 +394,16 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 **Recognition Levels** (`level`, application enum `RecognitionLevel`):
 
-The minimum approval level is the lowest role that may give the final approval; every role above it in the line Faculty Secretary → Dean → Rector's Secretary → Rector may approve as well.
+The minimum approval level is the lowest role that may give the final approval; every role above it in the line Faculty Secretary → Dean → Rector's Secretary → Rector may approve as well. Only national and international awards climb past the faculty secretary (design review of 2026-10-04, V026 rescored submitted awards).
 
 | Value | Description | Minimum Approval Level | Impact Base Score |
 |-------|-------------|------------------------|-------------------|
 | `SPECIALITY` | Recognition within an academic speciality | Faculty Secretary | 10 |
 | `DEPARTMENT` | Department-level recognition | Faculty Secretary | 20 |
-| `COLLEGE` | Recognition by a university college | Dean | 30 |
-| `FACULTY` | Faculty-level recognition | Dean | 40 |
-| `LOCAL` | City or community recognition | Faculty Secretary | 45 |
-| `UNIVERSITY` | University-level recognition | Faculty Secretary | 60 |
+| `COLLEGE` | Recognition by a university college | Faculty Secretary | 30 |
+| `FACULTY` | Faculty-level recognition | Faculty Secretary | 40 |
+| `UNIVERSITY` | University-level recognition | Faculty Secretary | 50 |
+| `LOCAL` | City or community recognition | Faculty Secretary | 60 |
 | `REGIONAL` | Oblast-level recognition | Faculty Secretary | 70 |
 | `NATIONAL` | National-level recognition | Rector's Secretary | 80 |
 | `INTERNATIONAL` | International recognition | Rector's Secretary | 100 |
@@ -555,7 +555,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - One-to-one relationship with awards (each award has exactly one request)
 - Workflow levels: Faculty Secretary → Dean → Rector Secretary → Rector
 - Escalation based on award category recognition level
-- `deadline` is the end of the current level's review period: set at submission to `submitted_at` + `app.workflow.review-period` (3 Kyiv calendar days by default, so a clock change does not move the due date) and reset at every level change by the Epic 4 workflow; requests submitted before V024 were back-filled with `submitted_at` + 3 days
+- `deadline` is the end of the current level's review period: set at submission to `submitted_at` moved by `app.workflow.review-working-days` working days (Monday to Friday, default 3, same Kyiv time of day, so a clock change does not move it; a weekend start counts from Monday 00:00) and reset at every level change by the Epic 4 workflow; requests submitted before V024 were back-filled with `submitted_at` + 3 days, and deadlines stored before 2.1.8 (SCRUM-43) keep their calendar-day value
 - Expected completion is computed on read, never stored: the deadline plus one review period for every level still ahead on the approval path (faculty secretary up to the higher of the category's minimum approval level and the current level); a level past its deadline gets a fresh period from now
 - A request past its deadline is marked overdue and explained; expiry (`EXPIRED`) and escalation of late requests belong to the Epic 4 workflow
 
@@ -942,7 +942,7 @@ Defined in the repeatable migrations `R__create_views.sql` and `R__create_functi
 |--------|------|
 | `vw_active_awards`, `vw_pending_requests` | Organisation columns come from `awards.organization_id`, the department of the submission, not the owner's current department |
 | `vw_award_statistics` | An award counts for `awards.organization_id`, whatever the owner's current department or account status |
-| `fn_calculate_impact_score(category_id)` | Base score of the category level, equal to `RecognitionLevel` (SPECIALITY 10, DEPARTMENT 20, COLLEGE 30, FACULTY 40, LOCAL 45, UNIVERSITY 60, REGIONAL 70, NATIONAL 80, INTERNATIONAL 100) |
+| `fn_calculate_impact_score(category_id)` | Base score of the category level, equal to `RecognitionLevel` (SPECIALITY 10, DEPARTMENT 20, COLLEGE 30, FACULTY 40, UNIVERSITY 50, LOCAL 60, REGIONAL 70, NATIONAL 80, INTERNATIONAL 100) |
 | `fn_can_user_approve_award(user_id, award_id)` | True when the request is `SUBMITTED`, `IN_REVIEW` or `ESCALATED` and the user holds the role of `current_level`, or a delegation of it in effect whose delegator still holds the role, in the award's organisation or one above it, can sign in (`ACTIVE`, `RETIRED`) and does not own the award; days are Kyiv calendar days |
 
 ---

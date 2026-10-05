@@ -9,7 +9,7 @@
 -- Calculates impact score for an award based on category level
 -- Score range: 0-100
 -- Base scores match RecognitionLevel in the application:
--- SPECIALITY=10, DEPARTMENT=20, COLLEGE=30, FACULTY=40, LOCAL=45, UNIVERSITY=60, REGIONAL=70, NATIONAL=80,
+-- SPECIALITY=10, DEPARTMENT=20, COLLEGE=30, FACULTY=40, UNIVERSITY=50, LOCAL=60, REGIONAL=70, NATIONAL=80,
 -- INTERNATIONAL=100
 -- ============================================================================
 
@@ -34,8 +34,8 @@ BEGIN
         WHEN 'DEPARTMENT' THEN 20
         WHEN 'COLLEGE' THEN 30
         WHEN 'FACULTY' THEN 40
-        WHEN 'LOCAL' THEN 45
-        WHEN 'UNIVERSITY' THEN 60
+        WHEN 'UNIVERSITY' THEN 50
+        WHEN 'LOCAL' THEN 60
         WHEN 'REGIONAL' THEN 70
         WHEN 'NATIONAL' THEN 80
         WHEN 'INTERNATIONAL' THEN 100

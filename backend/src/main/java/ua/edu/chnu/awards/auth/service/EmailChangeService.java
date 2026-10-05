@@ -32,7 +32,8 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Change of the sign-in address: requested with the current password, confirmed from the new mailbox. The
- * confirmation signs the user out everywhere, because every session and token carries the old address.
+ * confirmation signs the user out everywhere, because every session and token carries the old address, and
+ * leaves the previous address a 24-hour "this was not me" link that moves the account back.
  */
 @Service
 @RequiredArgsConstructor
@@ -93,9 +94,10 @@ public class EmailChangeService {
     }
 
     /**
-     * Moves the account to the address of a confirmation link and signs it out everywhere. Links mailed to the
-     * old address stop working. While the current address is locked after failed sign-ins the account stays
-     * where it is.
+     * Moves the account to the address of a confirmation link and signs it out everywhere. Password reset and
+     * address links stop working; "this was not me" links already mailed, and a new one sent to the old address
+     * with the notice, are bound to the old address, so using one moves the account back. While the current
+     * address is locked after failed sign-ins the account stays where it is.
      *
      * @param rawToken token from the link
      * @return the account and its new sign-in address
@@ -129,10 +131,12 @@ public class EmailChangeService {
         authorizations.revokeAll(user.getId(), oldEmail);
         tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
         tokens.invalidate(user, TokenPurpose.PASSWORD_RESET);
-        tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
+        tokens.bindAddress(user, TokenPurpose.SECURITY_REVOKE, oldEmail);
+        String revoke = tokens.issue(user, TokenPurpose.SECURITY_REVOKE, properties.securityRevokeTtl(), oldEmail);
         audit.record(AuditAction.EMAIL_CHANGED, AuditEntityConstants.USER, user.getId(), user.getId(),
             Map.of("oldEmail", oldEmail, "newEmail", newEmail));
-        events.publishEvent(new EmailChanged(oldEmail, newEmail, user.getFirstName()));
+        events.publishEvent(new EmailChanged(oldEmail, newEmail, user.getFirstName(),
+            properties.link("/security/not-me", revoke)));
         return new EmailChangeResponse(user.getId(), newEmail);
     }
 

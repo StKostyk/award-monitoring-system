@@ -75,7 +75,7 @@ class AccessScopeTest {
         assertThat(access.canManage(RoleType.DEAN, 64L)).isFalse();
         assertThat(access.canManage(RoleType.RECTOR, 9L)).isFalse();
         assertThat(request.getAttribute(AccessScope.MISSING_ATTRIBUTE))
-            .isEqualTo("no role above RECTOR in the scope of organisation 9");
+            .isEqualTo("no role that grants RECTOR in the scope of organisation 9");
     }
 
     @Test

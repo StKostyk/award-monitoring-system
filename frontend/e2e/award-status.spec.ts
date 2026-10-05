@@ -1,13 +1,13 @@
 import { Page, expect, test } from '@playwright/test';
 
 import {
-  kyivDay,
   pastDay,
   shownDay,
   signIn,
   sql,
   submitWithoutDocuments,
   uniqueToken,
+  workingDaysAhead,
 } from './helpers';
 
 const demo = 'Passw0rd-demo';
@@ -88,7 +88,7 @@ test.describe('award status tracking', () => {
       /Розгляд триває довше, ніж зазвичай \(з \d{2}\.\d{2}\.\d{4}\)\. Нова орієнтовна дата: /,
     );
     await expect(page.getByTestId('award-status-due')).toHaveText(
-      new RegExp(`Очікується до (${shownDay(kyivDay(3))}|${shownDay(kyivDay(4))})`),
+      `Очікується до ${shownDay(workingDaysAhead(3))}`,
     );
 
     await page.getByTestId('nav-awards').click();

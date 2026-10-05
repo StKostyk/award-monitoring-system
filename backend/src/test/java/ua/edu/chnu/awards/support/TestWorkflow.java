@@ -1,30 +1,30 @@
 package ua.edu.chnu.awards.support;
 
 import java.time.Clock;
-import java.time.Duration;
+import java.time.ZoneId;
 
 import ua.edu.chnu.awards.award.service.ApprovalPath;
 import ua.edu.chnu.awards.award.service.StatusEstimator;
 import ua.edu.chnu.awards.config.WorkflowProperties;
 
 /**
- * The workflow timing of unit tests: the default review period of three days.
+ * The workflow timing of unit tests: the default review period of three working days.
  */
 public final class TestWorkflow {
 
-    /** The default review period. */
-    public static final Duration REVIEW_PERIOD = Duration.ofDays(3);
+    /** The default review period in working days. */
+    public static final int REVIEW_WORKING_DAYS = 3;
 
     private TestWorkflow() {
     }
 
     /**
-     * An estimator on the system clock.
+     * An estimator on the system clock in Kyiv time, as the application runs.
      *
      * @return the estimator
      */
     public static StatusEstimator estimator() {
-        return estimator(Clock.systemUTC());
+        return estimator(Clock.system(ZoneId.of("Europe/Kyiv")));
     }
 
     /**
@@ -34,10 +34,17 @@ public final class TestWorkflow {
      * @return the estimator
      */
     public static StatusEstimator estimator(Clock clock) {
-        return estimator(clock, REVIEW_PERIOD);
+        return estimator(clock, REVIEW_WORKING_DAYS);
     }
 
-    public static StatusEstimator estimator(Clock clock, Duration reviewPeriod) {
-        return new StatusEstimator(clock, new WorkflowProperties(reviewPeriod), new ApprovalPath());
+    /**
+     * An estimator on the given clock with the given review period.
+     *
+     * @param clock       the clock
+     * @param workingDays the review period in working days
+     * @return the estimator
+     */
+    public static StatusEstimator estimator(Clock clock, int workingDays) {
+        return new StatusEstimator(clock, new WorkflowProperties(workingDays), new ApprovalPath());
     }
 }

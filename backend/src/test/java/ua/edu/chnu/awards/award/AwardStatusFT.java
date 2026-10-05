@@ -26,12 +26,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 
+import ua.edu.chnu.awards.award.service.StatusEstimator;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardApi;
 import ua.edu.chnu.awards.support.AwardRows;
 import ua.edu.chnu.awards.support.DecisionRows;
 import ua.edu.chnu.awards.support.RequestRows;
 import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.support.TestWorkflow;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.repository.OrganizationRepository;
@@ -87,7 +89,7 @@ class AwardStatusFT extends AbstractFunctionalTest {
     }
 
     @Test
-    void ac1_1_ac1_3_ac1_6_aSubmittedAwardIsDueInThreeDaysAndExpectedAfterItsWholePath() {
+    void ac1_1_ac1_3_ac1_6_ac2_aSubmittedAwardIsDueInThreeWorkingDaysAndExpectedAfterItsWholePath() {
         long id = submitted("Diploma");
 
         JsonPath status = as(employee).get(AWARDS + "/" + id + "/status").then().statusCode(200)
@@ -103,9 +105,10 @@ class AwardStatusFT extends AbstractFunctionalTest {
 
         Instant submittedAt = Instant.parse(status.getString("submittedAt"));
         Instant deadline = Instant.parse(status.getString("deadline"));
-        assertThat(Duration.between(submittedAt, deadline)).isEqualTo(Duration.ofDays(3));
-        assertThat(status.getString("estimatedCompletion"))
-            .isEqualTo(LocalDate.ofInstant(deadline, KYIV).plusDays(6).toString());
+        StatusEstimator estimator = TestWorkflow.estimator();
+        assertThat(deadline).isEqualTo(estimator.deadline(submittedAt));
+        assertThat(status.getString("estimatedCompletion")).isEqualTo(
+            LocalDate.ofInstant(estimator.deadline(estimator.deadline(deadline)), KYIV).toString());
     }
 
     @Test
@@ -153,7 +156,7 @@ class AwardStatusFT extends AbstractFunctionalTest {
             .body("overdue", equalTo(true))
             .body("delay.reason", equalTo("REVIEW_OVERDUE"))
             .body("delay.since", notNullValue())
-            .body("estimatedCompletion", equalTo(LocalDate.now(KYIV).plusDays(9).toString()));
+            .body("estimatedCompletion", equalTo(LocalDate.ofInstant(threePeriodsFromNow(), KYIV).toString()));
         as(employee).get(AWARDS + "/" + id).then().statusCode(200)
             .body("request.overdue", equalTo(true));
     }
@@ -161,7 +164,7 @@ class AwardStatusFT extends AbstractFunctionalTest {
     @Test
     void edge_aRequestWithoutStoredDeadlineAnswersTheDeadlineOfItsEstimate() {
         long id = submitted("Undated");
-        jdbc.update("update award_requests set deadline = null, submitted_at = now() - interval '5 days' "
+        jdbc.update("update award_requests set deadline = null, submitted_at = now() - interval '10 days' "
             + "where award_id = ?", id);
 
         as(employee).get(AWARDS + "/" + id + "/status").then().statusCode(200)
@@ -218,5 +221,10 @@ class AwardStatusFT extends AbstractFunctionalTest {
 
     private long submitted(String title) {
         return AwardApi.submitted(employee, Map.of("title", title));
+    }
+
+    private static Instant threePeriodsFromNow() {
+        StatusEstimator estimator = TestWorkflow.estimator();
+        return estimator.deadline(estimator.deadline(estimator.deadline(Instant.now())));
     }
 }

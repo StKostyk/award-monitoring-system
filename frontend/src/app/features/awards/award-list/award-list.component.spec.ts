@@ -63,7 +63,6 @@ const translations = {
       statusPanel: { returned: 'Очікує ваших виправлень' },
       add: 'Додати нагороду',
       empty: 'Нагород ще немає.',
-      more: 'Показано {{shown}} з {{total}}',
       messages: { removed: 'Чернетку видалено.' },
       status: { DRAFT: 'Чернетка', PENDING: 'На розгляді' },
     },
@@ -214,32 +213,34 @@ describe('AwardListComponent', () => {
     ).toContain('Нагород ще немає.');
   });
 
-  it('f8_says_how_many_awards_the_first_page_leaves_out', async () => {
+  it('ac8_pages_through_the_awards_instead_of_cutting_the_list', async () => {
     await create();
     const element: HTMLElement = fixture.nativeElement;
     store.dispatch(
       AwardsActions.awardsLoaded({
-        page: { content: [award()], totalElements: 1, totalPages: 1, size: 100, number: 0 },
+        page: { content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 },
       }),
     );
     fixture.detectChanges();
-    expect(element.querySelector('[data-testid="awards-more"]')).toBeNull();
+    expect(element.querySelector('[data-testid="awards-paginator"]')).toBeNull();
 
     store.dispatch(
       AwardsActions.awardsLoaded({
         page: {
           content: [award(), award({ id: 6 })],
           totalElements: 130,
-          totalPages: 65,
-          size: 2,
+          totalPages: 7,
+          size: 20,
           number: 0,
         },
       }),
     );
     fixture.detectChanges();
+    element.querySelector<HTMLButtonElement>('.mat-mdc-paginator-navigation-next')?.click();
 
-    expect(element.querySelector('[data-testid="awards-more"]')?.textContent).toContain(
-      'Показано 2 з 130',
+    expect(element.querySelector('[data-testid="awards-paginator"]')).not.toBeNull();
+    expect(store.dispatch).toHaveBeenCalledWith(
+      AwardsActions.pageChanged({ pageIndex: 1, pageSize: 20 }),
     );
   });
 

@@ -5,7 +5,7 @@ import { pastDay, signIn, submitWithoutDocuments, uniqueToken } from './helpers'
 const demo = 'Passw0rd-demo';
 const employee = 'employee.fmi@chnu.edu.ua';
 const dean = 'dean.fmi@chnu.edu.ua';
-const admin = 'admin@chnu.edu.ua';
+const officer = 'gdpr@chnu.edu.ua';
 
 async function signedIn(browser: Browser, email: string): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
@@ -80,7 +80,7 @@ test.describe('award history and audit log', () => {
     expect(await actions(reader)).toEqual(['Подано']);
     await expect(reader.getByTestId('award-audit-tab')).toHaveCount(0);
 
-    const auditor = await signedIn(browser, admin);
+    const auditor = await signedIn(browser, officer);
     await open(auditor, id);
     const trail = auditor.waitForResponse((response) =>
       response.url().includes(`/awards/${id}/audit-trail`),

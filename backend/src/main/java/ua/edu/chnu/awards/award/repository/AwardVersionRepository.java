@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import ua.edu.chnu.awards.award.entity.AwardVersion;
 import ua.edu.chnu.awards.award.entity.VersionAction;
@@ -23,6 +25,19 @@ public interface AwardVersionRepository extends JpaRepository<AwardVersion, Long
      * @return the version, empty when none was recorded
      */
     Optional<AwardVersion> findFirstByAwardIdOrderByNumberDesc(Long awardId);
+
+    /**
+     * Every version of the awards a person owns, award by award, oldest first.
+     *
+     * @param ownerId the owner
+     * @return the versions
+     */
+    @Query("""
+        select v from AwardVersion v
+        where v.awardId in (select a.id from Award a where a.owner.id = :ownerId)
+        order by v.awardId, v.number
+        """)
+    List<AwardVersion> findOfOwner(@Param("ownerId") Long ownerId);
 
     /**
      * The newest version older than a given one.

@@ -47,7 +47,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 ⁶ Feature 3.1 (`DocumentUpload`, `DocumentService`): uploads and deletions need `award:update:own` and only touch the caller's own draft; documents of a submitted award are frozen. Downloads and the document list follow the award read rule of note 5, so whoever reads the award reads its documents; every download is recorded as `DOCUMENT_DOWNLOAD`. Unknown or unreadable documents answer 404.
 
-⁷ Decided in the design review of 2026-10-04, in force with the Sprint 4 review-decision fix story: the system administrator runs the system and keeps `audit:read` (the award audit trail, note 3), but loses `award:read:all`, so award content, documents, history and review status are no longer readable to that role. The GDPR officer keeps award reading for data-protection oversight.
+⁷ Decided in the design review of 2026-10-04, in force since 2.1.8 (SCRUM-43): the system administrator runs the system and keeps `audit:read` (the award audit trail, note 3), but loses `award:read:all`, so award content, documents, history and review status are no longer readable to that role. The GDPR officer keeps award reading for data-protection oversight.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
@@ -63,7 +63,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 ### Final approval by recognition level
 
-The category's recognition level sets the lowest role that may give the final approval and the impact base score; every role above that minimum in the same line may approve too, and a request climbs every level from the faculty secretary to the minimum. Decided in the design review of 2026-10-04 (LOCAL = city or community, REGIONAL = oblast), in force with the Sprint 4 review-decision fix story; until then Feature 2.1 D-3 applies (college and faculty awards final at the dean, LOCAL 45, UNIVERSITY 60).
+The category's recognition level sets the lowest role that may give the final approval and the impact base score; every role above that minimum in the same line may approve too, and a request climbs every level from the faculty secretary to the minimum. Decided in the design review of 2026-10-04 (LOCAL = city or community, REGIONAL = oblast), in force since 2.1.8 (SCRUM-43) (Feature 2.1 D-3 had college and faculty awards final at the dean, LOCAL 45, UNIVERSITY 60).
 
 | Recognition level | Final approval from | Impact base score |
 |-------------------|---------------------|:-----------------:|
@@ -92,7 +92,7 @@ No level requires the rector. The review period of each level is counted in work
 | Assign User Roles⁸ | ❌ | Employee | Faculty Secretary, Employee | Employee | Rector's Secretary, Dean | All | ❌ | ❌ | ✓ |
 | Deactivate User Accounts | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ✓ |
 
-⁸ Roles each role may assign, always inside its own organisation subtree (design review of 2026-10-04, in force with the Sprint 4 review-decision fix story). The faculty secretary and the rector's secretary only confirm membership by assigning `EMPLOYEE`; the dean appoints faculty secretaries; the rector appoints the rector's secretary and deans; the system administrator assigns every role, including `SYSTEM_ADMIN` and `GDPR_OFFICER`. Until the fix story, the Feature 1.2 rule applies: any role strictly below the caller's own, university roles only by the rector.
+⁸ Roles each role may assign, always inside its own organisation subtree (design review of 2026-10-04, in force since 2.1.8 (SCRUM-43)). The faculty secretary and the rector's secretary only confirm membership by assigning `EMPLOYEE`; the dean appoints faculty secretaries; the rector appoints the rector's secretary and deans; the system administrator assigns every role, including `SYSTEM_ADMIN` and `GDPR_OFFICER`. Feature 1.2 allowed any role strictly below the caller's own, university roles only by the rector.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

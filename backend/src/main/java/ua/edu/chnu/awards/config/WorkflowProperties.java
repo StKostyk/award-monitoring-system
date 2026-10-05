@@ -1,26 +1,25 @@
 package ua.edu.chnu.awards.config;
 
-import java.time.Duration;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
  * Timing of the approval workflow.
  *
- * @param reviewPeriod how long one approval level has for its review, in calendar time
+ * @param reviewWorkingDays how many working days (Monday to Friday) one approval level has for its review
  */
 @ConfigurationProperties(prefix = "app.workflow")
-public record WorkflowProperties(@DefaultValue("3d") Duration reviewPeriod) {
+public record WorkflowProperties(@DefaultValue("3") int reviewWorkingDays) {
 
     /**
      * Refuses a review period that is not positive, so the application never starts with deadlines in the past.
      *
-     * @param reviewPeriod how long one approval level has for its review
+     * @param reviewWorkingDays how many working days one approval level has for its review
      */
     public WorkflowProperties {
-        if (reviewPeriod == null || reviewPeriod.isNegative() || reviewPeriod.isZero()) {
-            throw new IllegalArgumentException("app.workflow.review-period must be positive: " + reviewPeriod);
+        if (reviewWorkingDays <= 0) {
+            throw new IllegalArgumentException("app.workflow.review-working-days must be positive: "
+                + reviewWorkingDays);
         }
     }
 }

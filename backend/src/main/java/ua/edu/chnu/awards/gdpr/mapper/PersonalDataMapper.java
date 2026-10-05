@@ -1,19 +1,25 @@
 package ua.edu.chnu.awards.gdpr.mapper;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.auth.entity.UserDevice;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
+import ua.edu.chnu.awards.award.entity.AwardSnapshot;
+import ua.edu.chnu.awards.award.entity.AwardVersion;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.AwardEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.AwardVersionEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DeviceEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.NamedRef;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.RoleEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.VersionSnapshot;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
@@ -79,6 +85,22 @@ public class PersonalDataMapper {
             category == null ? null : new NamedRef(category.getId(), category.getName(), category.getNameUk()),
             award.getAwardingOrganization(), award.getAwardDate(), award.getStatus(), award.getExternalUrl(),
             ref(award.getOrganization()), award.getCreatedAt(), award.getUpdatedAt());
+    }
+
+    /**
+     * One saved state of an own award, without the actor.
+     *
+     * @param version the version
+     * @return version entry
+     */
+    public AwardVersionEntry version(AwardVersion version) {
+        AwardSnapshot snapshot = version.getSnapshot();
+        List<String> changed = version.getChangedFields() == null ? List.of()
+            : Arrays.asList(version.getChangedFields());
+        return new AwardVersionEntry(version.getAwardId(), version.getNumber(), version.getAction(), changed,
+            version.getCreatedAt(), new VersionSnapshot(snapshot.title(), snapshot.titleUk(), snapshot.description(),
+            snapshot.descriptionUk(), snapshot.awardingOrganization(), snapshot.awardDate(), snapshot.categoryId(),
+            snapshot.status(), snapshot.impactScore(), snapshot.externalUrl(), snapshot.organizationId()));
     }
 
     /**

@@ -39,6 +39,14 @@ class RolePermissionsTest {
     }
 
     @Test
+    void ac4_theAdministratorReadsTheAuditTrailButNoAwardsAndTheGdprOfficerReadsBoth() {
+        assertThat(permissions.of(RoleType.SYSTEM_ADMIN)).contains("audit:read", "award:read:own")
+            .doesNotContain("award:read:department", "award:read:faculty", "award:read:all");
+        assertThat(permissions.of(RoleType.GDPR_OFFICER)).contains("audit:read", "award:read:department",
+            "award:read:faculty", "award:read:all");
+    }
+
+    @Test
     void ac14_unionIsSortedAndDeduplicated() {
         List<String> union = permissions.union(List.of(RoleType.EMPLOYEE, RoleType.FACULTY_SECRETARY));
 

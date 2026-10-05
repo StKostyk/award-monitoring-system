@@ -7,6 +7,7 @@ INSERT INTO users (email_address, first_name, last_name, password_hash, account_
 VALUES
     ('admin@chnu.edu.ua', 'Ігор', 'Адміненко', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 1),
     ('rector@chnu.edu.ua', 'Роман', 'Ректоренко', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 1),
+    ('gdpr@chnu.edu.ua', 'Галина', 'Захисник', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 1),
     ('dean.fmi@chnu.edu.ua', 'Мартин', 'Мартинюк', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 9),
     ('secretary.fmi@chnu.edu.ua', 'Аліна', 'Секретаренко', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 9),
     ('employee.fmi@chnu.edu.ua', 'Анастасія', 'Працівник', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 64),
@@ -18,6 +19,7 @@ SELECT u.user_id, r.organization_id, r.role_type, DATE '2026-09-01'
 FROM (VALUES
     ('admin@chnu.edu.ua', 1, 'SYSTEM_ADMIN'),
     ('rector@chnu.edu.ua', 1, 'RECTOR'),
+    ('gdpr@chnu.edu.ua', 1, 'GDPR_OFFICER'),
     ('dean.fmi@chnu.edu.ua', 9, 'DEAN'),
     ('secretary.fmi@chnu.edu.ua', 9, 'FACULTY_SECRETARY'),
     ('employee.fmi@chnu.edu.ua', 64, 'EMPLOYEE'),

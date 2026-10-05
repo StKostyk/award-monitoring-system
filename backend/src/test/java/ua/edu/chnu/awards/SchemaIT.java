@@ -24,6 +24,11 @@ import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 
 class SchemaIT extends AbstractIntegrationTest {
 
+    private static final int OLD_UNIVERSITY_SCORE = 60;
+    private static final int OLD_LOCAL_SCORE = 45;
+    private static final int NEW_UNIVERSITY_SCORE = 50;
+    private static final int NEW_LOCAL_SCORE = 60;
+
     @Autowired
     private DataSource dataSource;
 
@@ -109,6 +114,50 @@ class SchemaIT extends AbstractIntegrationTest {
 
             assertThat(old.queryForObject("select deadline = timestamptz '2026-10-01 23:30:00+03' "
                 + "from award_requests", Boolean.class)).isTrue();
+        } finally {
+            jdbc.execute("drop database " + database + " with (force)");
+        }
+    }
+
+    @Test
+    void ac1_6_v026RescoresSubmittedAwardsAndRemovesOldPasswordHashesFromTheAuditTrail() {
+        String database = "v026_review_" + System.nanoTime();
+        jdbc.execute("create database " + database);
+        try {
+            String url = "jdbc:postgresql://" + postgres.getHost() + ":"
+                + postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT) + "/" + database;
+            DriverManagerDataSource target = new DriverManagerDataSource(url, postgres.getUsername(),
+                postgres.getPassword());
+            Flyway.configure().dataSource(target).locations("classpath:db/migration").target("025").load()
+                .migrate();
+            JdbcTemplate old = new JdbcTemplate(target);
+            Long owner = old.queryForObject("insert into users (email_address, first_name, last_name, password_hash, "
+                + "organization_id) values ('rescore@chnu.edu.ua', 'Re', 'Score', 'x', 64) returning user_id",
+                Long.class);
+            String insertAward = "insert into awards (user_id, organization_id, title, status, category_id, "
+                + "awarding_organization, award_date, impact_score) values (?, 64, ?, ?, (select min(category_id) "
+                + "from award_categories where level = ?), 'ЧНУ', date '2025-05-01', ?)";
+            old.update(insertAward, owner, "University", "PENDING", "UNIVERSITY", OLD_UNIVERSITY_SCORE);
+            old.update(insertAward, owner, "Local", "APPROVED", "LOCAL", OLD_LOCAL_SCORE);
+            old.update(insertAward, owner, "Draft", "DRAFT", "UNIVERSITY", null);
+            old.update("insert into audit_logs (user_id, action_type, entity_type, entity_id, old_values, new_values, "
+                + "changed_fields) values (?, 'UPDATE', 'users', ?, '{\"first_name\":\"A\",\"password_hash\":\"h1\"}', "
+                + "'{\"first_name\":\"B\",\"password_hash\":\"h2\"}', array['first_name','password_hash'])",
+                owner, owner);
+
+            Flyway.configure().dataSource(target).locations("classpath:db/migration").load().migrate();
+
+            assertThat(old.queryForList("select title || '=' || coalesce(impact_score::text, '-') from awards "
+                + "order by title", String.class))
+                .containsExactly("Draft=-", "Local=" + NEW_LOCAL_SCORE, "University=" + NEW_UNIVERSITY_SCORE);
+            Map<String, Object> audit = old.queryForMap("select old_values::text as old_values, "
+                + "new_values::text as new_values, array_to_string(changed_fields, ',') as changed "
+                + "from audit_logs where entity_type = 'users' and action_type = 'UPDATE' and entity_id = ?", owner);
+            assertThat(audit).containsEntry("old_values", "{\"first_name\": \"A\"}")
+                .containsEntry("new_values", "{\"first_name\": \"B\"}").containsEntry("changed", "first_name");
+            old.update("update audit_logs set entity_type = 'changed'");
+            assertThat(old.queryForObject("select count(*) from audit_logs where entity_type = 'changed'",
+                Long.class)).isZero();
         } finally {
             jdbc.execute("drop database " + database + " with (force)");
         }

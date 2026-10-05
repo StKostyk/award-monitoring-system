@@ -44,8 +44,10 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     private static final String REVOKED = "ft.roles.revoked@chnu.edu.ua";
     private static final String NEWCOMER = "ft.roles.newcomer@chnu.edu.ua";
     private static final String GONE = "ft.roles.gone@chnu.edu.ua";
+    private static final String OFFICE = "ft.roles.office@chnu.edu.ua";
+    private static final String JOINER = "ft.roles.joiner@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(ADMIN, RECTOR, DEAN, SECRETARY, PROMOTED, SCHEDULED,
-        SENIOR, RULES, REVOKED, NEWCOMER, GONE);
+        SENIOR, RULES, REVOKED, NEWCOMER, GONE, OFFICE, JOINER);
     private static final long OTHER_DEPARTMENT_ID = 65L;
 
     @Autowired
@@ -65,6 +67,7 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     private long rulesId;
     private long revokedId;
     private long newcomerId;
+    private long joinerId;
 
     @BeforeAll
     void createUsers() {
@@ -81,6 +84,8 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
         rulesId = withRole(RULES, department, RoleType.EMPLOYEE, department);
         revokedId = withRole(REVOKED, department, RoleType.EMPLOYEE, department);
         newcomerId = userRepository.save(TestUsers.user(NEWCOMER, department)).getId();
+        joinerId = userRepository.save(TestUsers.user(JOINER, department)).getId();
+        withRole(OFFICE, university, RoleType.RECTOR_SECRETARY, university);
     }
 
     @AfterAll
@@ -154,6 +159,34 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
             .body(Map.of("role", "GDPR_OFFICER", "organizationId", TestUsers.UNIVERSITY_ID))
             .post("/api/v1/users/" + seniorId + "/roles").then().statusCode(201)
             .body("role", equalTo("GDPR_OFFICER"));
+    }
+
+    @Test
+    void ac3_theRectorAppointsDeansAndTheRectorsSecretaryOnlyConfirmsMembership() {
+        String rectorToken = tokenOf(RECTOR);
+        String officeToken = tokenOf(OFFICE);
+
+        as(rectorToken).contentType(ContentType.JSON)
+            .body(Map.of("role", "FACULTY_SECRETARY", "organizationId", TestUsers.FMI_FACULTY_ID))
+            .post("/api/v1/users/" + joinerId + "/roles").then().statusCode(403)
+            .body("type", equalTo("urn:awards:problem:role-above-level"));
+        as(rectorToken).contentType(ContentType.JSON)
+            .body(Map.of("role", "EMPLOYEE", "organizationId", TestUsers.DAI_DEPARTMENT_ID))
+            .post("/api/v1/users/" + joinerId + "/roles").then().statusCode(403)
+            .body("type", equalTo("urn:awards:problem:role-above-level"));
+        as(officeToken).contentType(ContentType.JSON)
+            .body(Map.of("role", "DEAN", "organizationId", TestUsers.FMI_FACULTY_ID))
+            .post("/api/v1/users/" + joinerId + "/roles").then().statusCode(403)
+            .body("type", equalTo("urn:awards:problem:role-above-level"));
+
+        as(officeToken).contentType(ContentType.JSON)
+            .body(Map.of("role", "EMPLOYEE", "organizationId", TestUsers.DAI_DEPARTMENT_ID))
+            .post("/api/v1/users/" + joinerId + "/roles").then().statusCode(201)
+            .body("role", equalTo("EMPLOYEE"));
+        as(rectorToken).contentType(ContentType.JSON)
+            .body(Map.of("role", "DEAN", "organizationId", TestUsers.FMI_FACULTY_ID))
+            .post("/api/v1/users/" + joinerId + "/roles").then().statusCode(201)
+            .body("role", equalTo("DEAN"));
     }
 
     @Test

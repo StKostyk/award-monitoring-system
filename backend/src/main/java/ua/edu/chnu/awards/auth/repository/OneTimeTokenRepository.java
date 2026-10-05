@@ -64,4 +64,38 @@ public interface OneTimeTokenRepository extends JpaRepository<OneTimeToken, Long
         """)
     int cancelUnused(@Param("userId") Long userId, @Param("purpose") TokenPurpose purpose,
                      @Param("now") Instant now);
+
+    /**
+     * Marks every unused token of a user and purpose that carries no address as used.
+     *
+     * @param userId  the owner
+     * @param purpose the purpose
+     * @param now     the current moment
+     * @return number of tokens cancelled
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("""
+        update OneTimeToken t set t.usedAt = :now
+        where t.user.id = :userId and t.purpose = :purpose and t.usedAt is null and t.newEmailAddress is null
+        """)
+    int cancelUnusedWithoutAddress(@Param("userId") Long userId, @Param("purpose") TokenPurpose purpose,
+                                   @Param("now") Instant now);
+
+    /**
+     * Gives every usable token of a user and purpose that carries no address the given one.
+     *
+     * @param userId  the owner
+     * @param purpose the purpose
+     * @param address the address to carry
+     * @param now     the current moment
+     * @return number of tokens changed
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("""
+        update OneTimeToken t set t.newEmailAddress = :address
+        where t.user.id = :userId and t.purpose = :purpose and t.usedAt is null and t.expiresAt > :now
+          and t.newEmailAddress is null
+        """)
+    int bindAddress(@Param("userId") Long userId, @Param("purpose") TokenPurpose purpose,
+                    @Param("address") String address, @Param("now") Instant now);
 }

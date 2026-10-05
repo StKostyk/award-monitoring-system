@@ -153,6 +153,32 @@ public class OneTimeTokenService {
         return repository.cancelUnused(user.getId(), purpose, clock.instant());
     }
 
+    /**
+     * Cancels the unused tokens of the user for the purpose that carry no address; tokens bound to an address
+     * stay usable.
+     *
+     * @param user    owner
+     * @param purpose the purpose
+     * @return number of tokens cancelled
+     */
+    @Transactional
+    public int invalidateUnbound(User user, TokenPurpose purpose) {
+        return repository.cancelUnusedWithoutAddress(user.getId(), purpose, clock.instant());
+    }
+
+    /**
+     * Binds the usable tokens of the user for the purpose that carry no address to the given address.
+     *
+     * @param user    owner
+     * @param purpose the purpose
+     * @param address the address the tokens carry from now on
+     * @return number of tokens bound
+     */
+    @Transactional
+    public int bindAddress(User user, TokenPurpose purpose, String address) {
+        return repository.bindAddress(user.getId(), purpose, address, clock.instant());
+    }
+
     static String hash(String raw) {
         return HashUtils.sha256Hex(raw);
     }
