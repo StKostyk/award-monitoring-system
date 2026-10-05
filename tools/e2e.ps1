@@ -9,6 +9,7 @@
     The frontend nginx configuration also runs in a throwaway container on port 4280 in front of the local backend
     (`E2E_NGINX_URL`), so that the upload limits are tested through it.
     A running award-backend container is stopped for the run and started again afterwards.
+    Browsers come from PLAYWRIGHT_BROWSERS_PATH, D:\Tools\ms-playwright when it is not set.
 
 .PARAMETER Grep
     Runs only the tests whose title or file matches the pattern (Playwright --grep).
@@ -24,6 +25,9 @@ param(
 
 $root = Split-Path -Parent $PSScriptRoot
 $started = $null
+if (-not $env:PLAYWRIGHT_BROWSERS_PATH) {
+    $env:PLAYWRIGHT_BROWSERS_PATH = 'D:\Tools\ms-playwright'
+}
 
 docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio clamav | Out-Null
 
