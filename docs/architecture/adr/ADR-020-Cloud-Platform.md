@@ -232,6 +232,14 @@ stays the reference option for a production rollout.
 
 ---
 
+## Addendum 2026-10-05: Production direction
+
+University servers come first for production (ADR-021 addendum): they keep personal data on the controller's own
+infrastructure. Where a university has none, a single EU virtual server as in ADR-021 is the default; managed
+AWS or Azure services apply only to a deployment that outgrows one host (ADR-022).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
@@ -239,6 +247,7 @@ stays the reference option for a production rollout.
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 | 2026-10-02 | Stefan Kostyk | Addendum: superseded for the defense by ADR-021 | Deployment target decision |
+| 2026-10-05 | Stefan Kostyk | Addendum: production direction (university servers, then one EU server) | Design review of 2026-10-04 |
 
 ---
 

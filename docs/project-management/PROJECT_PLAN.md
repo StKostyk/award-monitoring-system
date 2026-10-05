@@ -270,9 +270,13 @@ The plan above is the December 2025 baseline. Development since September 2026 r
   scopes and delegation, profile, GDPR data export) and Epic 2 (award drafts, validation, categories, version
   history, status tracking). MFA (1.3.5) is in the icebox; notification preferences (1.3.2) move to Epic 7;
   award correction (2.4.1) and GDPR deletion (2.4.2) move to Epics 4 and 6.
-- **Epic order**: 1 → 2 → 3 (upload; OCR later) → 4 → 7 → 6 → 5 → 8, each epic a vertical slice (API and UI).
+- **Epic order**: 1 → 2 → 3 (upload; OCR later) → 4 → 7 → 6 → 5 → 8, each epic a vertical slice (API and UI),
+  then Epic 9, production hardening before a pilot (backend-for-frontend with an HttpOnly cookie, refresh
+  tokens hashed at rest, rate limits for a campus NAT, shared sessions in Redis; design review of 2026-10-04).
 - **Deferred infrastructure**: Kafka, Elasticsearch, API gateway, Kubernetes and the cloud platform (ADR addenda
   of 2026-10); the defense runs on one EU server with Docker Compose (ADR-021, 2026-10-02), rented shortly before the defense.
+  Production runs one Compose deployment per university, on university servers where available, and the backend
+  stays a modular monolith until a module meets the extraction criteria (ADR-022, proposed 2026-10-05).
 
 Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](../epics/).
 

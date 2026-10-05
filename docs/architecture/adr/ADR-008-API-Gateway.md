@@ -133,12 +133,23 @@ reconsidered only if the backend is split into services.
 
 ---
 
+## Addendum 2026-10-05: Reverse proxy confirmed
+
+The design review of 2026-10-04 confirmed nginx as the only entry point. Since Epic 3 it also proxies
+`/login-assets/`, `/swagger-ui/` and `/v3/api-docs`, so the sign-in page, Swagger UI and the SPA share one origin
+and the token endpoint needs no cross-origin access, and it answers oversized uploads with a problem document.
+A gateway returns to the table only when a module is extracted under the criteria of ADR-022; until then
+Spring Cloud Gateway stays the reference option.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: reverse proxy instead of a gateway | Documentation sync after Epic 2 |
+| 2026-10-05 | Stefan Kostyk | Addendum: reverse proxy confirmed, gateway tied to ADR-022 | Design review of 2026-10-04 |
 
 ---
 

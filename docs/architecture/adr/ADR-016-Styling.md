@@ -233,7 +233,7 @@ The theme configuration above uses the Material 2 API (`define-palette`, `define
 
 - **Technology Stack**: [Technology Stack Selection](../TECH_STACK.md)
 - **UI guidelines**: [UI_GUIDELINES.md](../../frontend/UI_GUIDELINES.md)
-- **Other ADRs**: [ADR-014 UI Component Library](./ADR-014-UI-Component-Library.md)
+- **Other ADRs**: [ADR-014 UI Component Library](./ADR-014-UI-Component-Library.md), [ADR-022 Modular Monolith and Multi-University Deployment](./ADR-022-Modular-Monolith-Multi-Tenancy.md) (one brand per deployment)
 - **External Resources**: [Angular Material Theming](https://material.angular.io/guide/theming)
 
 ---

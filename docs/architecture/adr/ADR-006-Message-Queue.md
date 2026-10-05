@@ -1,6 +1,6 @@
 # ADR-006: Message Queue Selection
 
-**Status**: Accepted (implementation deferred to Epic 7, see Addendum 2026-10)  
+**Status**: Accepted (implementation deferred to Epic 7; Spring events first, see Addendum 2026-10-05)  
 **Date**: 2025-08-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team, Operations Team
@@ -123,12 +123,28 @@ kickoff, when the first asynchronous consumer appears. The decision above remain
 
 ---
 
+## Addendum 2026-10-05: Spring events with a publication registry
+
+Direction after the design review of 2026-10-04, to be confirmed at the Epic 7 kickoff:
+
+- Inside the application, events stay in-process Spring application events. Spring Modulith's event
+  publication registry stores each event in PostgreSQL in the publishing transaction and marks it complete when
+  the listener succeeds, so a crash or a failed email no longer loses an event, and unfinished publications are
+  retried at start-up. No broker is operated for this.
+- Kafka is introduced only when a consumer outside the application needs the events (another system, an
+  extracted service under the ADR-022 criteria). Spring Modulith can then externalise selected events to Kafka
+  without changing the publishers.
+- Audit rows and award versions stay synchronous, in the transaction of the change.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
+| 2026-10-05 | Stefan Kostyk | Addendum: Spring events with a publication registry, Kafka for external consumers | Design review of 2026-10-04 |
 
 ---
 

@@ -1,6 +1,6 @@
 # ADR-007: Search Engine Selection
 
-**Status**: Accepted (implementation deferred to Epic 5, see Addendum 2026-10)  
+**Status**: Accepted (deferred to Epic 5; PostgreSQL full-text search evaluated first, see Addendum 2026-10-05)  
 **Date**: 2025-02-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team
@@ -133,12 +133,24 @@ store (see ADR-011 addendum). Full-text award search is decided at the Epic 5 ki
 
 ---
 
+## Addendum 2026-10-05: PostgreSQL full-text search evaluated first
+
+The Epic 5 kickoff evaluates PostgreSQL full-text search before Elasticsearch: a `tsvector` over the Ukrainian
+and English titles, the awarding organisation and the description, with a GIN index, combined with the existing
+`pg_trgm` similarity for typos. One university holds tens of thousands of awards at most, which PostgreSQL
+searches in milliseconds, and the data stays in one store with the same access rules and backups. Elasticsearch
+is chosen only if the evaluation shows a need PostgreSQL cannot meet (relevance tuning across languages, facets
+over large volumes, cross-university search).
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
+| 2026-10-05 | Stefan Kostyk | Addendum: PostgreSQL full-text search evaluated first | Design review of 2026-10-04 |
 
 ---
 
