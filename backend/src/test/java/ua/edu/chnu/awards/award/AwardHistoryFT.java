@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
+import static ua.edu.chnu.awards.common.web.ApiExceptionHandler.TYPE_PREFIX;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -44,7 +45,6 @@ class AwardHistoryFT extends AbstractFunctionalTest {
     private static final List<String> ACCOUNTS = List.of(EMPLOYEE, DEAN, OUTSIDER, ADMIN, NEWCOMER);
     private static final String AWARDS = "/api/v1/awards";
     private static final String VERSION = "version";
-    private static final String PROBLEM = "urn:awards:problem:";
     private static final long OTHER_FACULTY_ID = 10L;
     private static final long MINISTRY_CATEGORY = 13L;
 
@@ -103,7 +103,7 @@ class AwardHistoryFT extends AbstractFunctionalTest {
                 "awardingOrganization", "МОН", "awardDate", yearAgo, VERSION, 2))
             .put(AWARDS + "/" + id).then().statusCode(200).body(VERSION, equalTo(2));
         as(employee).contentType(ContentType.JSON).body(complete).put(AWARDS + "/" + id).then().statusCode(409)
-            .body("type", equalTo(PROBLEM + "award-stale"));
+            .body("type", equalTo(TYPE_PREFIX + "award-stale"));
         AwardApi.submit(employee, id, 2, true).then().statusCode(200);
 
         Response versions = as(employee).get(AWARDS + "/" + id + "/versions");
@@ -152,7 +152,7 @@ class AwardHistoryFT extends AbstractFunctionalTest {
             .body("content.find { it.action == 'INSERT' && it.entityType == 'awards' }.actorId",
                 equalTo((int) employeeId));
         as(tokenOf(DEAN)).get(AWARDS + "/" + id + "/audit-trail").then().statusCode(403)
-            .body("type", equalTo(PROBLEM + "access-denied"));
+            .body("type", equalTo(TYPE_PREFIX + "access-denied"));
         assertThat(jdbc.queryForObject("select count(*) from audit_logs where action_type = 'ACCESS_DENIED' "
             + "and new_values->>'path' like ?", Integer.class, "%/" + id + "/audit-trail")).isPositive();
 
@@ -187,7 +187,7 @@ class AwardHistoryFT extends AbstractFunctionalTest {
             + "where action_type = 'AUDIT_EXPORT' and entity_id = ? and user_id = ?", Integer.class, id, adminId))
             .isEqualTo(lines.length - 1);
         as(tokenOf(DEAN)).get(AWARDS + "/" + id + "/audit-trail/export").then().statusCode(403)
-            .body("type", equalTo(PROBLEM + "access-denied"));
+            .body("type", equalTo(TYPE_PREFIX + "access-denied"));
     }
 
     @Test

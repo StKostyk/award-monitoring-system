@@ -1,6 +1,8 @@
 import { Page, expect, test } from '@playwright/test';
 
 import {
+  DEMO_PASSWORD,
+  SEED,
   pastDay,
   shownDay,
   signIn,
@@ -10,10 +12,7 @@ import {
   workingDaysAhead,
 } from './helpers';
 
-const demo = 'Passw0rd-demo';
-const employee = 'employee.fmi@chnu.edu.ua';
-const secretary = 'secretary.fmi@chnu.edu.ua';
-
+const { employee, secretary } = SEED;
 async function submitted(page: Page, title: string): Promise<string> {
   await page.getByTestId('nav-awards').click();
   await page.getByTestId('award-add').click();
@@ -41,7 +40,7 @@ async function openAward(page: Page, id: string): Promise<void> {
 test.describe('award status tracking', () => {
   test.beforeEach(async ({ page }) => {
     page.on('dialog', (dialog) => void dialog.accept());
-    await signIn(page, employee, demo);
+    await signIn(page, employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-awards')).toBeVisible();
   });
 

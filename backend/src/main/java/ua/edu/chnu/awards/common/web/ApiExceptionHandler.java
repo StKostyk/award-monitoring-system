@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ApiExceptionHandler {
 
-    static final String TYPE_PREFIX = "urn:awards:problem:";
+    public static final String TYPE_PREFIX = "urn:awards:problem:";
 
     /** Problem property in seconds that is also sent as the {@code Retry-After} header. */
     public static final String RETRY_AFTER = "retryAfter";

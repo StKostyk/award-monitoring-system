@@ -1,12 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-import { signIn } from './helpers';
+import { DEMO_PASSWORD, SEED, signIn } from './helpers';
 
-const demo = 'Passw0rd-demo';
-const dean = 'dean.fmi@chnu.edu.ua';
-const secretary = 'secretary.fmi@chnu.edu.ua';
-const employee = 'employee.fmi@chnu.edu.ua';
-
+const { employee, secretary, dean } = SEED;
 function inDays(count: number): string {
   const date = new Date();
   date.setDate(date.getDate() + count);
@@ -43,7 +39,7 @@ test.describe('approval delegation', () => {
 
   test.beforeAll(async ({ browser }) => {
     const page = await browser.newPage();
-    await signIn(page, dean, demo);
+    await signIn(page, dean, DEMO_PASSWORD);
     const standing = activeGiven(page);
     for (let left = 10; left > 0; left -= 1) {
       await listDelegations(page);
@@ -58,7 +54,7 @@ test.describe('approval delegation', () => {
   });
 
   test('ac31 ac35 the dean delegates the approval authority to the secretary', async ({ page }) => {
-    await signIn(page, dean, demo);
+    await signIn(page, dean, DEMO_PASSWORD);
     await page.getByTestId('nav-delegations').click();
 
     await expect(page).toHaveURL(/\/delegations$/);
@@ -78,7 +74,7 @@ test.describe('approval delegation', () => {
   });
 
   test('ac32 the secretary acts for the dean and cannot pass the role on', async ({ page }) => {
-    await signIn(page, secretary, demo);
+    await signIn(page, secretary, DEMO_PASSWORD);
 
     await expect(page.getByTestId('acting-for')).toContainText('Діє за дорученням');
 
@@ -100,7 +96,7 @@ test.describe('approval delegation', () => {
   });
 
   test('ac34 the dean revokes the delegation', async ({ page }) => {
-    await signIn(page, dean, demo);
+    await signIn(page, dean, DEMO_PASSWORD);
     await listDelegations(page);
     const row = activeGiven(page);
 
@@ -127,7 +123,7 @@ test.describe('approval delegation', () => {
   });
 
   test('ac36 an employee has no entry and lands on the forbidden page', async ({ page }) => {
-    await signIn(page, employee, demo);
+    await signIn(page, employee, DEMO_PASSWORD);
 
     await expect(page.getByTestId('nav-delegations')).toHaveCount(0);
 

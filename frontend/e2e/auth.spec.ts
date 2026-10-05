@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { signIn } from './helpers';
+import { DEMO_PASSWORD, SEED, signIn } from './helpers';
 
 const employee = {
-  email: 'employee.fmi@chnu.edu.ua',
-  password: 'Passw0rd-demo',
+  email: SEED.employee,
+  password: DEMO_PASSWORD,
   name: 'Анастасія Працівник',
 };
 

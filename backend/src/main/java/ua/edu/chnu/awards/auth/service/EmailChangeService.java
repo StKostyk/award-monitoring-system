@@ -20,6 +20,7 @@ import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
 import ua.edu.chnu.awards.auth.event.EmailChanged;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.common.EmailUtils;
+import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.common.web.FieldViolation;
@@ -82,8 +83,8 @@ public class EmailChangeService {
         String email = EmailUtils.normalize(newEmail);
         requireAvailable(user, email);
         if (!throttle.claimForTransaction(REQUEST_KEY_PREFIX + userId, properties.resendInterval())) {
-            throw new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests",
-                "A confirmation link was sent recently; try again in a minute");
+            throw ApiProblemException.tooManyRequests("A confirmation link was sent recently; try again in a minute",
+                properties.resendInterval().toSeconds());
         }
         tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
         String raw = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, properties.emailChangeTtl(), email);

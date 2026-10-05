@@ -1,12 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-import { registerAndVerify, signIn } from './helpers';
+import { DEMO_PASSWORD, SEED, registerAndVerify, signIn } from './helpers';
 
+const { employee, secretary, dean } = SEED;
 const password = 'correct-horse-battery';
-const demo = 'Passw0rd-demo';
-const secretary = 'secretary.fmi@chnu.edu.ua';
-const dean = 'dean.fmi@chnu.edu.ua';
-const employee = 'employee.fmi@chnu.edu.ua';
 
 test.describe('role assignment', () => {
   test('ac26 a newcomer keeps the membership banner and cannot open the directory', async ({
@@ -33,7 +30,7 @@ test.describe('role assignment', () => {
     const email = `confirm.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, password);
 
-    await signIn(page, secretary, demo);
+    await signIn(page, secretary, DEMO_PASSWORD);
     await page.getByTestId('nav-users').click();
 
     await expect(page).toHaveURL(/\/admin\/users$/);
@@ -51,7 +48,7 @@ test.describe('role assignment', () => {
   test('ac210 the dean assigns a role and revokes it after the confirmation', async ({ page }) => {
     const email = `assignee.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, password);
-    await signIn(page, dean, demo);
+    await signIn(page, dean, DEMO_PASSWORD);
     await page.goto('/admin/users');
     await page.getByTestId('filter-q').fill(email);
     await page.getByRole('row').filter({ hasText: email }).getByTestId('user-link').click();
@@ -104,7 +101,7 @@ test.describe('role assignment', () => {
         calls.push(request.url());
       }
     });
-    await signIn(page, dean, demo);
+    await signIn(page, dean, DEMO_PASSWORD);
 
     await page.goto('/admin/users/999999');
 
@@ -120,7 +117,7 @@ test.describe('role assignment', () => {
         calls.push(request.url());
       }
     });
-    await signIn(page, dean, demo);
+    await signIn(page, dean, DEMO_PASSWORD);
 
     await page.goto('/admin/users/abc');
 
@@ -131,7 +128,7 @@ test.describe('role assignment', () => {
   test('ac210 the directory is closed to an employee and reads in English too', async ({
     page,
   }) => {
-    await signIn(page, employee, demo);
+    await signIn(page, employee, DEMO_PASSWORD);
 
     await expect(page.getByTestId('nav-users')).toHaveCount(0);
 

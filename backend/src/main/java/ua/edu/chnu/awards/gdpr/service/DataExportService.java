@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +12,7 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.service.DeviceFingerprint;
-import ua.edu.chnu.awards.auth.service.RequestThrottle;
+import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.gdpr.dto.DataExport;
@@ -56,8 +55,8 @@ public class DataExportService {
     public DataExport export(long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         if (!throttle.claimForTransaction(THROTTLE_KEY_PREFIX + userId, INTERVAL)) {
-            throw new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests",
-                "Your data was exported a moment ago; try again in a minute");
+            throw ApiProblemException.tooManyRequests("Your data was exported a moment ago; try again in a minute",
+                INTERVAL.toSeconds());
         }
         PersonalDataFile file = assembler.assemble(user);
         audit.record(AuditAction.DATA_EXPORT, AuditEntityConstants.GDPR, userId, userId, file.sectionCounts());

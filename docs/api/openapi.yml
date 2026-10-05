@@ -244,6 +244,11 @@ paths:
           description: Accepted
         '429':
           description: An email was sent within the last minute (`urn:awards:problem:too-many-requests`)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until another request is accepted (also `retryAfter` in the body)
 
   /auth/password-reset/request:
     post:
@@ -998,7 +1003,7 @@ paths:
         '413':
           description: >
             `urn:awards:problem:file-too-large`: the file is over 10 MB or the request over the 11 MB multipart
-            limit; nothing is stored
+            limit, with the file limit in `maxSize` (bytes); nothing is stored
           content:
             application/problem+json:
               schema:
@@ -1207,6 +1212,11 @@ paths:
             the password is not checked
         '429':
           description: A link was sent within the last minute (`urn:awards:problem:too-many-requests`)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until another request is accepted (also `retryAfter` in the body)
 
   /users/me/export:
     get:
@@ -1244,6 +1254,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '429':
           description: An export was made within the last minute (`urn:awards:problem:too-many-requests`)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until another request is accepted (also `retryAfter` in the body)
 
   /users:
     get:

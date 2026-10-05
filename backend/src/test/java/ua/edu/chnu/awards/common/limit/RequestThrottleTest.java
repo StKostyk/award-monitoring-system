@@ -1,4 +1,4 @@
-package ua.edu.chnu.awards.auth.service;
+package ua.edu.chnu.awards.common.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;

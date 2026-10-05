@@ -29,7 +29,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.service.DeviceFingerprint;
-import ua.edu.chnu.awards.auth.service.RequestThrottle;
+import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.gdpr.dto.DataExport;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
@@ -96,6 +96,7 @@ class DataExportServiceTest {
             .isInstanceOfSatisfying(ApiProblemException.class, problem -> {
                 assertThat(problem.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
                 assertThat(problem.getType()).isEqualTo("too-many-requests");
+                assertThat(problem.getProperties()).containsEntry("retryAfter", DataExportService.INTERVAL.toSeconds());
             });
         verifyNoInteractions(assembler, audit, events);
     }

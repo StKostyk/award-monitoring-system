@@ -2,10 +2,12 @@ package ua.edu.chnu.awards.common.web;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,12 +18,19 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 /**
  * A path or query value of the wrong type (an id that is not a number or does not fit 64 bits) is answered as
  * 400 {@code invalid-parameter} naming the parameter, a missing parameter or multipart part as 400
- * {@code missing-parameter}, and an upload over the multipart limits as 413 {@code file-too-large}. Ordered
- * before the framework's own problem details, which would answer the same status without a type.
+ * {@code missing-parameter}, and an upload over the multipart limits as 413 {@code file-too-large} with the file
+ * limit in {@code maxSize}. Ordered before the framework's own problem details, which would answer the same
+ * status without a type.
  */
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class InvalidParameterProblems {
+
+    private final long maxFileSize;
+
+    public InvalidParameterProblems(@Value("${spring.servlet.multipart.max-file-size}") DataSize maxFileSize) {
+        this.maxFileSize = maxFileSize.toBytes();
+    }
 
     /**
      * Turns a value that cannot be converted into a typed problem.
@@ -62,12 +71,12 @@ public class InvalidParameterProblems {
      * A multipart request whose file or body is over the configured limits; nothing of it was handled.
      *
      * @param exception what the multipart resolver reported
-     * @return 413 {@code file-too-large}
+     * @return 413 {@code file-too-large} with {@code maxSize} in bytes
      */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ProblemDetail uploadTooLarge(MaxUploadSizeExceededException exception) {
         return new ApiProblemException(HttpStatus.PAYLOAD_TOO_LARGE, "file-too-large",
-            "The file is larger than the limit").toProblem();
+            "The file is larger than the limit", Map.of("maxSize", maxFileSize)).toProblem();
     }
 
     private static ProblemDetail missing(String name) {

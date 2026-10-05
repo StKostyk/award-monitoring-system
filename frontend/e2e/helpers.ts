@@ -5,7 +5,20 @@ import type { Browser, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 const mailpit = 'http://localhost:8025';
-const demoPassword = 'Passw0rd-demo';
+
+/** The password of every seed account (`db/seed/local`). */
+export const DEMO_PASSWORD = 'Passw0rd-demo';
+
+/** Seed accounts of the Faculty of Mathematics and Informatics and the university roles. */
+export const SEED = {
+  employee: 'employee.fmi@chnu.edu.ua',
+  secretary: 'secretary.fmi@chnu.edu.ua',
+  dean: 'dean.fmi@chnu.edu.ua',
+  gdpr: 'gdpr@chnu.edu.ua',
+} as const;
+
+/** Password of the accounts the tests register themselves. */
+export const FRESH_PASSWORD = 'correct-horse-battery';
 
 interface MessageSummary {
   ID: string;
@@ -88,16 +101,37 @@ export async function signIn(page: Page, email: string, password: string): Promi
 
 /** Signs a seed account in with the demo password and waits for the navigation. */
 export async function signInAsSeed(page: Page, email: string): Promise<void> {
-  await signIn(page, email, demoPassword);
+  await signIn(page, email, DEMO_PASSWORD);
   await expect(page.getByTestId('nav-awards')).toBeVisible();
 }
 
-/** A page in a new browser context with a seed account signed in; native dialogs are accepted. */
-export async function signedIn(browser: Browser, email: string): Promise<Page> {
+/**
+ * Registers a fresh account in the department of the seed employee and confirms it as an employee, for tests
+ * that leave drafts or documents behind; seed accounts keep their quota and history. Answers the address.
+ */
+export async function freshEmployee(browser: Browser, name: string): Promise<string> {
+  const email = `e2e.${name}.${uniqueToken()}@chnu.edu.ua`;
+  const context = await browser.newContext();
+  await registerAndVerify(await context.newPage(), email, FRESH_PASSWORD);
+  await context.close();
+  sql(
+    `insert into user_roles (user_id, organization_id, role_type) select user_id, 64, 'EMPLOYEE' from users where email_address = '${email}'`,
+  );
+  return email;
+}
+
+/** A page in a new browser context with the account signed in; native dialogs are accepted. */
+export async function signedInAs(browser: Browser, email: string, password: string): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
   page.on('dialog', (dialog) => void dialog.accept());
-  await signInAsSeed(page, email);
+  await signIn(page, email, password);
+  await expect(page.getByTestId('nav-awards')).toBeVisible();
   return page;
+}
+
+/** A page in a new browser context with a seed account signed in; native dialogs are accepted. */
+export function signedIn(browser: Browser, email: string): Promise<Page> {
+  return signedInAs(browser, email, DEMO_PASSWORD);
 }
 
 /** The computed background colour of the first element matching the selector. */

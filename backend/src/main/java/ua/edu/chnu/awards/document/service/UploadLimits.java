@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
-import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.DocumentProperties;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
@@ -40,8 +39,7 @@ public class UploadLimits {
     public void checkRate(long userId) {
         long wait = counter.secondsToWait(RATE_KEY_PREFIX, userId, properties.uploadRate());
         if (wait > 0) {
-            throw new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests",
-                "Too many uploads; try again in a minute", Map.of(ApiExceptionHandler.RETRY_AFTER, wait));
+            throw ApiProblemException.tooManyRequests("Too many uploads; try again in a minute", wait);
         }
     }
 

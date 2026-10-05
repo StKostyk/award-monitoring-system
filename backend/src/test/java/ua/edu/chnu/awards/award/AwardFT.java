@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.nullValue;
+import static ua.edu.chnu.awards.common.web.ApiExceptionHandler.TYPE_PREFIX;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -53,7 +54,6 @@ class AwardFT extends AbstractFunctionalTest {
     private static final String SUGGESTIONS = "/api/v1/award-categories/suggestions";
     private static final String TYPE = "type";
     private static final String VERSION = "version";
-    private static final String PROBLEM = "urn:awards:problem:";
     private static final long OTHER_FACULTY_ID = 10L;
     private static final long MINISTRY_CATEGORY = 13L;
     private static final long COMMUNITY_CATEGORY = 72L;
@@ -114,7 +114,7 @@ class AwardFT extends AbstractFunctionalTest {
 
         as(employee).contentType(ContentType.JSON).body(Map.of(VERSION, version)).post(AWARDS + "/" + id + "/submit")
             .then().statusCode(422)
-            .body(TYPE, equalTo(PROBLEM + "award-incomplete"))
+            .body(TYPE, equalTo(TYPE_PREFIX + "award-incomplete"))
             .body("errors.field", containsInAnyOrder("categoryId", "awardingOrganization", "awardDate"));
 
         Response updated = as(employee).contentType(ContentType.JSON).body(Map.of(
@@ -128,7 +128,7 @@ class AwardFT extends AbstractFunctionalTest {
 
         as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Інша", VERSION, version))
             .put(AWARDS + "/" + id)
-            .then().statusCode(409).body(TYPE, equalTo(PROBLEM + "award-stale"))
+            .then().statusCode(409).body(TYPE, equalTo(TYPE_PREFIX + "award-stale"))
             .body("currentVersion", equalTo((int) current));
 
         as(employee).contentType(ContentType.JSON).body(Map.of(VERSION, current)).post(AWARDS + "/" + id + "/submit")
@@ -139,9 +139,9 @@ class AwardFT extends AbstractFunctionalTest {
             .body("request.currentLevel", equalTo("FACULTY_SECRETARY"));
 
         as(employee).contentType(ContentType.JSON).body(Map.of(VERSION, current)).post(AWARDS + "/" + id + "/submit")
-            .then().statusCode(409).body(TYPE, equalTo(PROBLEM + "award-not-editable"));
+            .then().statusCode(409).body(TYPE, equalTo(TYPE_PREFIX + "award-not-editable"));
         as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Інша", VERSION, current))
-            .put(AWARDS + "/" + id).then().statusCode(409).body(TYPE, equalTo(PROBLEM + "award-not-editable"));
+            .put(AWARDS + "/" + id).then().statusCode(409).body(TYPE, equalTo(TYPE_PREFIX + "award-not-editable"));
         as(employee).delete(AWARDS + "/" + id).then().statusCode(409);
 
         assertThat(jdbc.queryForMap("select status, current_level, submitter_id from award_requests "
@@ -157,7 +157,7 @@ class AwardFT extends AbstractFunctionalTest {
         as(employee).contentType(ContentType.JSON).body(Map.of("externalUrl", "javascript:alert(1)",
                 "awardDate", LocalDate.now().plusDays(2).toString()))
             .post(AWARDS)
-            .then().statusCode(422).body(TYPE, equalTo(PROBLEM + "validation-failed"))
+            .then().statusCode(422).body(TYPE, equalTo(TYPE_PREFIX + "validation-failed"))
             .body("errors.field", containsInAnyOrder("title", "externalUrl", "awardDate"));
     }
 
@@ -165,7 +165,7 @@ class AwardFT extends AbstractFunctionalTest {
     void ac2_1_ac2_2_theDateIsNeitherInTheFutureNorOlderThanFiftyYears() {
         LocalDate today = LocalDate.now(KYIV);
 
-        dated(today.plusDays(1)).then().statusCode(422).body(TYPE, equalTo(PROBLEM + "validation-failed"))
+        dated(today.plusDays(1)).then().statusCode(422).body(TYPE, equalTo(TYPE_PREFIX + "validation-failed"))
             .body("errors.code", contains("future"));
         dated(today.minusYears(50)).then().statusCode(201);
         dated(today.minusYears(50).minusDays(1)).then().statusCode(422).body("errors.code", contains("too-old"));
@@ -177,7 +177,7 @@ class AwardFT extends AbstractFunctionalTest {
         created.then().statusCode(201).body("warnings.code", contains("RECENT_DATE"))
             .body("warnings[0].field", equalTo("awardDate"));
 
-        submit(employee, created.jsonPath().getLong("id"), created.jsonPath().getLong(VERSION), null)
+        AwardApi.submit(employee, created.jsonPath().getLong("id"), created.jsonPath().getLong(VERSION), null)
             .then().statusCode(200).body("warnings", hasSize(0));
     }
 
@@ -196,11 +196,11 @@ class AwardFT extends AbstractFunctionalTest {
         long id = second.jsonPath().getLong("id");
         long version = second.jsonPath().getLong(VERSION);
 
-        submit(employee, id, version, null).then().statusCode(409)
-            .body(TYPE, equalTo(PROBLEM + "award-possible-duplicate"))
+        AwardApi.submit(employee, id, version, null).then().statusCode(409)
+            .body(TYPE, equalTo(TYPE_PREFIX + "award-possible-duplicate"))
             .body("matches.id", contains((int) first));
         as(employee).get(AWARDS + "/" + id).then().statusCode(200).body("status", equalTo("DRAFT"));
-        submit(employee, id, version, true).then().statusCode(200).body("status", equalTo("PENDING"));
+        AwardApi.submit(employee, id, version, true).then().statusCode(200).body("status", equalTo("PENDING"));
 
         assertThat(jdbc.queryForObject("select new_values ->> 'duplicateAcknowledged' from audit_logs "
             + "where action_type = 'AWARD_SUBMITTED' and entity_id = ?", String.class, id)).isEqualTo("true");
@@ -220,7 +220,7 @@ class AwardFT extends AbstractFunctionalTest {
     @Test
     void ac1_2_administratorsAndUnconfirmedAccountsDoNotSubmit() {
         as(tokenOf(ADMIN)).contentType(ContentType.JSON).body(Map.of("title", "x")).post(AWARDS)
-            .then().statusCode(403).body(TYPE, equalTo(PROBLEM + "access-denied"));
+            .then().statusCode(403).body(TYPE, equalTo(TYPE_PREFIX + "access-denied"));
         as(tokenOf(NEWCOMER)).contentType(ContentType.JSON).body(Map.of("title", "x")).post(AWARDS)
             .then().statusCode(403);
         assertThat(jdbc.queryForObject("select count(*) from audit_logs where action_type = 'ACCESS_DENIED' "
@@ -294,8 +294,8 @@ class AwardFT extends AbstractFunctionalTest {
         long version = created.jsonPath().getLong(VERSION);
         jdbc.update("update award_categories set is_active = false where category_id = ?", COMMUNITY_CATEGORY);
         try {
-            submit(employee, id, version, null).then().statusCode(422)
-                .body(TYPE, equalTo(PROBLEM + "validation-failed"))
+            AwardApi.submit(employee, id, version, null).then().statusCode(422)
+                .body(TYPE, equalTo(TYPE_PREFIX + "validation-failed"))
                 .body("errors.field", contains("categoryId"))
                 .body("errors.code", contains("inactive"));
             as(employee).contentType(ContentType.JSON).body(Map.of("titleUk", "Подяка міської громади",
@@ -317,8 +317,8 @@ class AwardFT extends AbstractFunctionalTest {
                 "awardDate", LocalDate.now(KYIV).minusMonths(3).toString(), VERSION, version))
             .put(AWARDS + "/" + id).then().statusCode(200).extract().jsonPath().getLong(VERSION);
 
-        submit(employee, id, version, null).then().statusCode(409)
-            .body(TYPE, equalTo(PROBLEM + "award-stale"))
+        AwardApi.submit(employee, id, version, null).then().statusCode(409)
+            .body(TYPE, equalTo(TYPE_PREFIX + "award-stale"))
             .body("currentVersion", equalTo((int) current));
         as(employee).contentType(ContentType.JSON).body(Map.of()).post(AWARDS + "/" + id + "/submit")
             .then().statusCode(422).body("errors.field", hasItem(VERSION));
@@ -374,10 +374,6 @@ class AwardFT extends AbstractFunctionalTest {
 
     private long submitted(String token, String title, LocalDate date) {
         return AwardApi.submitted(token, Map.of("titleUk", title, "awardDate", date.toString()));
-    }
-
-    private Response submit(String token, long id, long version, Boolean acknowledgeDuplicate) {
-        return AwardApi.submit(token, id, version, acknowledgeDuplicate);
     }
 
     private Response dated(LocalDate date) {

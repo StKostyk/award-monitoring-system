@@ -83,6 +83,7 @@ Each item is settled in the Feature 3.1 PRD (§7, deviations 1–8) and applied 
 - `trg_documents_audit` (V013) already writes `audit_logs` rows for every insert, update and delete of `documents`; downloads are reads and need an application audit entry.
 - Integration tests run MinIO through TestContainers next to PostgreSQL and Redis.
 - The GDPR export (1.3.3) lists document metadata with `api_path`; the download endpoint makes that link work.
+- Epic refactor sweep (2026-10-05), applied in `refactor(epic-03)`: one `too-many-requests` problem with `Retry-After` for every throttle, `RequestThrottle` moved to `common/limit`, `maxSize` in the multipart 413, shared document test helpers (`support/DocumentApi`) and problem prefix, seed accounts and passwords exported from the E2E helpers, document E2E tests on fresh accounts, `readProblem` reused in the documents section. Left for later: typed not-found problems for awards, users and delegations (`about:blank` today, an API contract change); upload limits served by the API instead of constants in the frontend; the login page brand colours copied from the frontend brand files (one source or a comparison test).
 - Refactor sweep leftovers (Feature 3.1 validation): one stream-opening helper for `DocumentUpload`, `ObjectStorage` and `MalwareScreening`; `DocumentEndpointsTest` belongs under `document/controller` with its base class in `support/`.
 
 ## Risks

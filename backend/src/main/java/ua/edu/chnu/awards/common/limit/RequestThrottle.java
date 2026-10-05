@@ -1,4 +1,4 @@
-package ua.edu.chnu.awards.auth.service;
+package ua.edu.chnu.awards.common.limit;
 
 import java.time.Duration;
 

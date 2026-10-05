@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -38,7 +39,8 @@ class RateLimitFilterTest {
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final RateLimitFilter filter = new RateLimitFilter(
         new FixedWindowCounter(redis, Clock.fixed(NOW, ZoneOffset.UTC)),
-        new ProtectionProperties(5, Duration.ofMinutes(15), Duration.ofMinutes(30), 20), request -> allowedOrigins());
+        new ProtectionProperties(5, Duration.ofMinutes(15), Duration.ofMinutes(30), 20), request -> allowedOrigins(),
+        Jackson2ObjectMapperBuilder.json().build());
 
     @BeforeEach
     void setUp() {
@@ -69,7 +71,8 @@ class RateLimitFilterTest {
         assertThat(api.getStatus()).isEqualTo(429);
         assertThat(api.getHeader("Retry-After")).isEqualTo("45");
         assertThat(api.getContentType()).isEqualTo("application/problem+json");
-        assertThat(api.getContentAsString()).contains("urn:awards:problem:too-many-requests");
+        assertThat(api.getContentAsString()).contains("urn:awards:problem:too-many-requests")
+            .contains("\"retryAfter\":45");
         assertThat(browser.getStatus()).isEqualTo(429);
         assertThat(browser.getHeader("Retry-After")).isEqualTo("45");
     }

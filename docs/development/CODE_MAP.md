@@ -23,6 +23,7 @@ Where things live and the conventions that keep them there. Updated whenever the
 | `tools/tracker-sync.ps1` | Moves a story in Jira and GitHub together |
 | `tools/reset-db.ps1` | Recreates the local PostgreSQL volume (Flyway reapplies everything) and restarts a running backend |
 | `tools/ua-drift.ps1` | Lists Ukrainian copies behind their English source; `-Missing` also lists documents without a copy |
+| `tools/puml-check.ps1` | Checks that every diagram under `docs/` parses (PlantUML `-checkonly`); lists the broken ones |
 | `.github/workflows/` | CI/CD pipeline and documentation checks |
 
 ## Backend
@@ -33,7 +34,7 @@ Base package `ua.edu.chnu.awards`. Code is organised by domain, each domain owni
 ua.edu.chnu.awards
 ├── AwardMonitoringSystemApplication      entry point
 ├── config/                                cross-cutting Spring configuration (security chains, authorization server, tokens, locale, metrics)
-├── common/                                Problem Details exception handling, paging, correlation id (web/), mail delivery (mail/), Redis fixed-window counters (limit/)
+├── common/                                Problem Details exception handling, paging, correlation id (web/), mail delivery (mail/), Redis rate limits and one-per-interval throttles (limit/)
 ├── metrics/                               Micrometer business metrics
 ├── auth/                                  authorization server pieces: user lookup, status checks, claims, refresh-token guard, login page
 ├── authz/                                 organisation scopes, role levels, delegated scopes, access-denied auditing

@@ -1,4 +1,4 @@
-import { HttpEventType, HttpStatusCode } from '@angular/common/http';
+import { HttpEventType } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -31,7 +31,7 @@ import {
   throwError,
 } from 'rxjs';
 
-import { problemStatus, problemType } from '../../../core/api/problem';
+import { problemType, readProblem } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
 import { saveFile } from '../../../shared/file-download';
@@ -258,7 +258,7 @@ export class AwardDocumentsComponent {
       .subscribe({
         next: () => this.removed(document.id),
         error: (error: unknown) => {
-          if (problemStatus(error) === HttpStatusCode.NotFound) {
+          if (readProblem(error) === 'gone') {
             this.removed(document.id);
           } else {
             this.notice.set(this.problemKey(problemType(error)));
@@ -305,7 +305,7 @@ export class AwardDocumentsComponent {
       error: (error: unknown) => {
         this.loading.set(false);
         this.notice.set(
-          problemStatus(error) === HttpStatusCode.NotFound
+          readProblem(error) === 'gone'
             ? 'awards.documents.problems.gone'
             : 'awards.documents.problems.list-failed',
         );
@@ -369,7 +369,7 @@ export class AwardDocumentsComponent {
   }
 
   private refused(key: number, error: unknown): void {
-    if (problemStatus(error) === HttpStatusCode.NotFound) {
+    if (readProblem(error) === 'gone') {
       this.forget();
       this.queue.update((queue) =>
         queue.map((queued) =>
@@ -420,12 +420,12 @@ export class AwardDocumentsComponent {
   /** A document that cannot be read any more: the list is read again. */
   private unavailable(error: unknown): void {
     this.notice.set(
-      problemStatus(error) === HttpStatusCode.NotFound
+      readProblem(error) === 'gone'
         ? 'awards.documents.problems.gone'
         : 'awards.documents.problems.download-failed',
     );
     const id = this.currentId();
-    if (id !== null && problemStatus(error) === HttpStatusCode.NotFound) {
+    if (id !== null && readProblem(error) === 'gone') {
       this.service.list(id).subscribe({
         next: (documents) => this.show(documents),
         error: () => this.show([]),
