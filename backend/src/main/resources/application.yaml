@@ -138,6 +138,13 @@ app:
     max-files-per-award: 10
     sweep-cron: ${APP_DOCUMENTS_SWEEP_CRON:0 30 3 * * *}
     sweep-age: ${APP_DOCUMENTS_SWEEP_AGE:24h}
+    user-quota: ${APP_DOCUMENTS_USER_QUOTA:50MB}
+    upload-rate: ${APP_DOCUMENTS_UPLOAD_RATE:20}
+    scan:
+      enabled: ${APP_DOCUMENTS_SCAN_ENABLED:true}
+      host: ${CLAMAV_HOST:localhost}
+      port: ${CLAMAV_PORT:3310}
+      timeout: ${APP_DOCUMENTS_SCAN_TIMEOUT:30s}
     storage:
       endpoint: ${STORAGE_S3_ENDPOINT:http://localhost:9000}
       access-key: ${STORAGE_S3_ACCESS_KEY:minioadmin}
@@ -284,6 +291,9 @@ spring:
     locations: classpath:db/migration,classpath:db/seed/local
   thymeleaf:
     cache: false
+  servlet:
+    multipart:
+      file-size-threshold: 1MB
   data:
     redis:
       host: localhost

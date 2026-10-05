@@ -256,6 +256,7 @@ describe('AwardDocumentsComponent', () => {
     ['content-mismatch', 400],
     ['document-limit', 409],
     ['malware-detected', 422],
+    ['storage-quota', 409],
   ])('ac5_server_refusal_%s_is_shown_by_its_code', async (type, status) => {
     service.upload.mockReturnValue(throwError(() => problem(type, status)));
     await render({ awardId: 5, uploads: true });
@@ -263,6 +264,24 @@ describe('AwardDocumentsComponent', () => {
     component.add([file('a.pdf')]);
 
     expect(component.queue()[0].problem).toBe(`awards.documents.problems.${type}`);
+  });
+
+  it('ac3_6_too_many_uploads_is_shown_and_can_be_retried', async () => {
+    service.upload
+      .mockReturnValueOnce(throwError(() => problem('too-many-requests', 429)))
+      .mockReturnValueOnce(stored(document()));
+    await render({ awardId: 5, uploads: true });
+
+    component.add([file('a.pdf')]);
+    fixture.detectChanges();
+
+    expect(component.queue()[0]).toMatchObject({
+      state: 'failed',
+      problem: 'awards.documents.problems.too-many-requests',
+    });
+    byTestId('documents-retry')?.click();
+
+    expect(component.queue()).toHaveLength(0);
   });
 
   it.each([

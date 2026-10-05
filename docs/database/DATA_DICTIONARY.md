@@ -698,6 +698,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
 - `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
 - `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
+- `DOCUMENT_REJECTED` - the malware scanner refused an upload (`entity_type` = `documents`, `entity_id` null since nothing was stored, `user_id` = the uploader; `new_values` = `awardId` and the `signature` ClamAV found; never the file name) (Feature 3.1.3)
 - `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 

@@ -3,7 +3,7 @@
     Runs the Playwright end-to-end suite against a locally booted backend.
 
 .DESCRIPTION
-    Starts the infrastructure containers and the backend with the local profile (request limit raised so the suite
+    Starts the infrastructure containers (the malware scanner included, waited for until healthy) and the backend with the local profile (request limit raised so the suite
     is not rate limited) unless port 8080 is already in use (a port Docker still holds after `docker compose stop app` is waited for),
     runs `npx playwright test` in frontend/ (Playwright starts the dev server itself), then stops the backend it started.
     The frontend nginx configuration also runs in a throwaway container on port 4280 in front of the local backend
@@ -25,7 +25,12 @@ param(
 $root = Split-Path -Parent $PSScriptRoot
 $started = $null
 
-docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio | Out-Null
+docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio clamav | Out-Null
+
+$scannerDeadline = (Get-Date).AddMinutes(5)
+while ((docker inspect --format '{{.State.Health.Status}}' award-clamav) -ne 'healthy' -and (Get-Date) -lt $scannerDeadline) {
+    Start-Sleep -Seconds 5
+}
 
 $container = [bool](docker ps --filter 'name=^award-backend$' --filter 'status=running' --format '{{.Names}}')
 if ($container) {

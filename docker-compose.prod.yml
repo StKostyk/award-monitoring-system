@@ -27,6 +27,9 @@ services:
     environment:
       MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY:?set MINIO_KMS_SECRET_KEY}
 
+  clamav:
+    ports: !reset []
+
   minio-init:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
@@ -54,6 +57,7 @@ services:
       - STORAGE_S3_ENDPOINT=http://minio:9000
       - STORAGE_S3_ACCESS_KEY=${MINIO_APP_USER:?set MINIO_APP_USER}
       - STORAGE_S3_SECRET_KEY=${MINIO_APP_PASSWORD:?set MINIO_APP_PASSWORD}
+      - CLAMAV_HOST=clamav
       - AUTH_ISSUER=https://${SITE_ADDRESS:?set SITE_ADDRESS}
       - AUTH_FRONTEND_URL=https://${SITE_ADDRESS}
       - AUTH_ALLOWED_ORIGINS=https://${SITE_ADDRESS}
@@ -74,6 +78,8 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
 
   frontend:
     image: ${FRONTEND_IMAGE:-award-frontend:prod}

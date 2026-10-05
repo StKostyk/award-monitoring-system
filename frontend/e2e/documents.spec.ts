@@ -9,6 +9,8 @@ const dean = 'dean.fmi@chnu.edu.ua';
 const megabyte = 1024 * 1024;
 /** The frontend nginx in front of the local backend, started by `tools/e2e.ps1`. */
 const nginx = process.env['E2E_NGINX_URL'];
+/** The EICAR anti-virus test file: harmless, detected by every scanner. */
+const eicar = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
 const tinyPng = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64',
@@ -235,10 +237,34 @@ test.describe('award documents', () => {
         timeout: 30_000,
       });
 
-    const accepted = await send(9.5 * megabyte);
-    expect(accepted.status()).toBe(201);
-    const refused = await send(12 * megabyte);
-    expect(refused.status()).toBe(413);
-    expect((await refused.json()).type).toBe('urn:awards:problem:file-too-large');
+    try {
+      const accepted = await send(9.5 * megabyte);
+      expect(accepted.status()).toBe(201);
+      const refused = await send(12 * megabyte);
+      expect(refused.status()).toBe(413);
+      expect((await refused.json()).type).toBe('urn:awards:problem:file-too-large');
+    } finally {
+      await page.request.delete(`${nginx}/api/v1/awards/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  });
+
+  test('ac3_1 ac3_4 a file with malware is refused and nothing is attached', async ({ browser }) => {
+    const page = await signedIn(browser, employee);
+    await newAward(page, `Грамота з вірусом ${uniqueToken()}`);
+
+    await page.getByTestId('documents-input').setInputFiles({
+      name: 'eicar.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from(eicar, 'ascii'),
+    });
+
+    await expect(page.getByTestId('documents-queued-problem')).toHaveText(
+      'Файл містить шкідливий код і не був завантажений',
+    );
+    await expect(page.getByTestId('documents-retry')).toHaveCount(0);
+    await page.getByTestId('documents-dismiss').click();
+    await expect(page.getByTestId('documents-empty')).toBeVisible();
   });
 });

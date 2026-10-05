@@ -932,8 +932,10 @@ paths:
         bytes of the content (PDF, JPEG, PNG, WEBP), never from the name or the part's `Content-Type`; the file
         name keeps its last path segment without control characters, gets the extension of its content when it
         has none or an unknown one, and is shortened to 255 characters. At most 10 MB per file and 10 documents
-        per award, one copy of a file per award. The draft row is locked, so uploads, deletions and the
-        submission of one award run one after the other (`award:update:own`).
+        per award, one copy of a file per award, 50 MB of documents and 20 uploads a minute per user. Every file
+        is scanned by ClamAV after the size check and before the type check; an infected file is refused and
+        recorded as `DOCUMENT_REJECTED`, and an unreachable scanner refuses the upload. The draft row is locked,
+        so uploads, deletions and the submission of one award run one after the other (`award:update:own`).
       security:
         - bearerAuth: []
       operationId: uploadDocument
@@ -986,7 +988,8 @@ paths:
         '409':
           description: >
             `urn:awards:problem:award-not-editable` (the award was submitted), `document-limit` (10 documents,
-            with `limit`), `duplicate-document` (the same file is attached, with `documentId`)
+            with `limit`), `duplicate-document` (the same file is attached, with `documentId`), `storage-quota`
+            (the caller's documents would exceed 50 MB, with `quota` and `used` in bytes)
           content:
             application/problem+json:
               schema:
@@ -999,8 +1002,32 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: >
+            `urn:awards:problem:malware-detected`: the scanner found malicious code; nothing is stored and a
+            `DOCUMENT_REJECTED` audit row names the signature
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '429':
+          description: >
+            `urn:awards:problem:too-many-requests`: more than 20 uploads by the caller in the current minute, with
+            `retryAfter` in seconds
+          headers:
+            Retry-After:
+              description: Seconds until the next minute window
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
         '503':
-          description: "`urn:awards:problem:storage-unavailable`: the object storage did not answer; no row is written"
+          description: >
+            `urn:awards:problem:storage-unavailable`: the object storage did not answer; no row is written.
+            `scanner-unavailable`: the malware scanner did not answer within 30 s or reported an error; nothing
+            is stored
           content:
             application/problem+json:
               schema:

@@ -48,7 +48,16 @@ as root so that it owns its volume.
 
 **Upload limits.** nginx accepts request bodies up to 11 MB on the API paths and Spring up to 10 MB per file and
 11 MB per request; Caddy sets no body limit. A larger upload is answered by nginx with the same
-`urn:awards:problem:file-too-large` problem details as the application.
+`urn:awards:problem:file-too-large` problem details as the application. Per user, the application accepts at most
+50 MB of documents and 20 uploads a minute (`APP_DOCUMENTS_USER_QUOTA`, `APP_DOCUMENTS_UPLOAD_RATE`).
+
+**Malware scanner.** The `clamav` service (`clamav/clamav:stable`, no published port) scans every upload; the
+backend waits for it to be healthy, which takes one to three minutes after a start while the signatures load, and
+refuses uploads while it is down. It needs about 1.2 GB of memory and keeps its signatures in the `clamav_data`
+volume; `freshclam` inside the container updates them every two hours, so the server needs outbound HTTPS. On the
+very first start the full signature download can take longer than the health check allows (about 5.5 minutes);
+if `docker compose up` then reports `clamav` unhealthy, wait until `docker compose ps clamav` shows `healthy` and
+run `docker compose up -d` again.
 
 **Demo accounts.** `db/seed/demo` creates `admin`, `rector`, `dean.fmi`, `secretary.fmi` and `employee.fmi`
 at `@demo.example` (a reserved domain, so no mail reaches a real mailbox) with one shared password. Set

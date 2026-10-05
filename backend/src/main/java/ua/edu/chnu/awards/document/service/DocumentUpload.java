@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
@@ -28,10 +29,10 @@ import ua.edu.chnu.awards.document.repository.DocumentRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Attaches files to the caller's drafts. The content is checked and written to the storage outside any database
- * transaction, so a slow storage holds no connection or lock; the row is then inserted in a short transaction
- * under the award's row lock, which uploads, deletions and the submission of one award share. The object is
- * removed again when that transaction rolls back.
+ * Attaches files to the caller's drafts. The content is scanned for malware, checked and written to the storage
+ * outside any database transaction, so a slow scanner or storage holds no connection or lock; the row is then
+ * inserted in a short transaction under the award's row lock, which uploads, deletions and the submission of one
+ * award share. The object is removed again when that transaction rolls back.
  */
 @Service
 @RequiredArgsConstructor
@@ -50,6 +51,9 @@ public class DocumentUpload {
     private final DocumentProperties properties;
     private final ApplicationEventPublisher events;
     private final TransactionTemplate transactions;
+    private final MalwareScreening malware;
+    private final UploadLimits limits;
+    private final AccessScope access;
 
     /**
      * Attaches a file to the caller's draft.
@@ -60,13 +64,24 @@ public class DocumentUpload {
      * @param description optional note, at most {@value #MAX_DESCRIPTION_LENGTH} characters
      * @return the stored document
      * @throws AwardNotFoundException      when the award does not exist or is not the caller's
-     * @throws ApiProblemException         409 {@code award-not-editable}, 400 {@code empty-file},
+     * @throws ApiProblemException         429 {@code too-many-requests}, 409 {@code award-not-editable}, 400
+     *                                     {@code empty-file}, 413 {@code file-too-large}, 409
+     *                                     {@code storage-quota}, 422 {@code malware-detected}, 400
      *                                     {@code unsupported-type}, {@code content-mismatch},
-     *                                     {@code invalid-parameter}, 413 {@code file-too-large}, 409
-     *                                     {@code document-limit} or {@code duplicate-document}
+     *                                     {@code invalid-parameter}, 409 {@code document-limit} or
+     *                                     {@code duplicate-document}
+     * @throws ScannerUnavailableException when the file cannot be scanned
      * @throws StorageUnavailableException when the content cannot be stored
      */
     public DocumentResponse upload(long awardId, MultipartFile file, DocumentType type, String description) {
+        limits.checkRate(access.callerId());
+        long ownerId = Objects.requireNonNull(transactions.execute(status -> {
+            Award draft = ownership.lockedDraft(awardId);
+            checkSize(file.getSize());
+            limits.checkQuota(draft.getOwner().getId(), file.getSize());
+            return draft.getOwner().getId();
+        }));
+        malware.check(awardId, ownerId, file);
         final Accepted accepted = Objects.requireNonNull(transactions.execute(status -> {
             ownership.lockedDraft(awardId);
             return accept(awardId, file, description);
@@ -77,6 +92,7 @@ public class DocumentUpload {
             events.publishEvent(new ObjectStored(key));
             Award award = ownership.lockedDraft(awardId);
             checkRoom(awardId, accepted.checksum());
+            limits.checkQuotaLocked(ownerId, file.getSize());
             return DocumentResponse.of(documents.saveAndFlush(Document.builder()
                 .award(award)
                 .fileName(accepted.fileName())
@@ -94,7 +110,6 @@ public class DocumentUpload {
     }
 
     private Accepted accept(long awardId, MultipartFile file, String description) {
-        checkSize(file.getSize());
         DocumentContent.Facts facts = content.read(inputOf(file));
         DocumentFormat format = content.format(facts.head());
         String fileName = content.fileName(file.getOriginalFilename(), format);

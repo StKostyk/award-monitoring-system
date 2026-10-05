@@ -91,6 +91,8 @@ An award without its certificate is only a claim: the faculty secretary who revi
 - **AC-3.2** Given `clamd` unreachable or not answering within `app.documents.scan.timeout` (default 30 s), then 503 `SCANNER_UNAVAILABLE` and nothing stored (fail closed); the actuator health shows `clamav` down.
 - **AC-3.3** Given both Compose files, then a `clamav` service with a health check and signature updates runs, the backend depends on it being healthy, and it publishes no port in production; `app.documents.scan.enabled` is true everywhere except tests that do not exercise scanning.
 - **AC-3.4** Given `.\tools\e2e.ps1`, then the scanner is started with the infrastructure and the E2E run includes an EICAR upload.
+- **AC-3.5** Given a user whose documents (all her awards, `uploaded_by`) plus the new file exceed `app.documents.user-quota` (default 50 MB), then 409 `STORAGE_QUOTA` with `quota` and `used` in bytes, checked before the scan and again under the award lock; the UI shows «Ваші документи вже займають 50 МБ. Більше файлів додати не можна» with «Прибрати» only. (Design review 2026-10-04)
+- **AC-3.6** Given a user who started more than `app.documents.upload-rate` (default 20) uploads in the current minute, then 429 `TOO_MANY_REQUESTS` with `retryAfter` and a `Retry-After` header before the award is read or the file scanned (Redis window per user; without Redis uploads are not limited); the UI shows «Забагато завантажень. Спробуйте ще раз за хвилину» with «Спробувати ще раз». (Design review 2026-10-04)
 
 ## 5. Edge cases
 
@@ -208,6 +210,7 @@ MinIO (already in both Compose files), ClamAV (new service in both Compose files
 | 2.10, 2.11 | ✓ English keys | | | | ✓ English run; axe check; keyboard opens the picker |
 | 3.1, 3.2 | ✓ INSTREAM protocol against a fake socket server (clean, found, error, timeout) | | ✓ real `clamav/clamav`: EICAR → found; clean PDF → OK; `DOCUMENT_REJECTED` row | ✓ scanner stubbed down → 503 | ✓ EICAR upload shows the malware message |
 | 3.3, 3.4 | | | | | ✓ through `e2e.ps1` |
+| 3.5, 3.6 | ✓ quota sum, window count, fail-open without Redis, order rate → quota → scan → quota under the lock; component messages | | | ✓ quota → 409 with `quota`; full window → 429 with `Retry-After` | |
 
 Coverage target 85 % lines per `mvn verify`; static analysis clean. Every story touches upload handling, so the security review agent runs on each diff.
 
@@ -238,11 +241,13 @@ Preconditions: `docker compose up -d postgres redis mailpit minio` (plus `clamav
 18. Swagger as `secretary.fpp`: `GET /api/v1/awards/<first award>/documents` → 404; `GET /api/v1/documents/<id>` → 404. As `employee.fmi` on someone else's draft → 404; as `admin` `POST` → 403; `GET /api/v1/documents/abc` → 400. (AC-1.4, 1.7)
 19. Open `http://localhost:4200/awards/<first award>` as `dean.fmi`; in another browser as `admin` end the dean's role; click «Завантажити». Expected: «Документ більше не доступний» (or the login page when the role change signed the dean out), the list reloads empty or the page answers «Не знайдено». Re-assign the role. (§5, AC-2.9)
 20. `docker compose stop minio`, upload a file. Expected: «Не вдалося завантажити файл» with «Спробувати ще раз»; Swagger 503 `STORAGE_UNAVAILABLE`; no new row. `docker compose start minio`, retry → uploads. (AC-1.11, 2.5)
-21. After 3.1.3: `docker compose stop clamav`, upload a file. Expected: 503 `SCANNER_UNAVAILABLE`, «Не вдалося завантажити файл», nothing stored; `http://localhost:8080/actuator/health` shows `clamav` down. Start it again. (AC-3.2)
+21. After 3.1.3: `docker compose stop clamav`, upload a file. Expected: 503 `SCANNER_UNAVAILABLE`, «Не вдалося завантажити файл», nothing stored; `http://localhost:8080/actuator/health` answers 503 `{"status":"DOWN"}` (the `clamav` component is listed for an authorised caller). `docker compose start clamav`, wait until it is healthy (about 1 min), retry → uploads. (AC-3.2)
 22. Delete an object by hand in the MinIO console, then download its document. Expected: 404 `DOCUMENT_CONTENT_MISSING` and an `ERROR` log line; the UI says «Документ більше не доступний». (§5)
 23. Upload an object by hand to `awards/999/orphan` in the console; set `app.documents.sweep-cron` to run every minute and the age to `PT1M`, restart, wait 2 minutes. Expected: the orphan removed, the log reports 1 removed, documents with rows untouched. Restore the settings. (AC-1.11)
 24. Start an upload of the 9.5 MB file and press reload in the middle. Expected: nothing stored or one complete document, never a row without its object; uploading the same file again is either accepted or answers «Цей файл уже додано». (§5)
 25. Open the draft form in two tabs, upload the same file in both at once. Expected: one stored, the other «Цей файл уже додано». (§5)
+26. After 3.1.3, as `employee.fmi`: psql `select pg_size_pretty(sum(file_size)) from documents d join users u on u.user_id = d.uploaded_by where u.email_address = 'employee.fmi@chnu.edu.ua';`, then upload 10 MB files to drafts until the sum passes 50 MB. Expected: the file that would pass it shows «Ваші документи вже займають 50 МБ. Більше файлів додати не можна»; Swagger 409 `STORAGE_QUOTA` with `quota` and `used`. Delete those drafts afterwards. (AC-3.5)
+27. After 3.1.3: `docker compose exec redis redis-cli set documents:rate:<employee user_id>:<epoch seconds / 60> 100`, upload a file within that minute. Expected: «Забагато завантажень. Спробуйте ще раз за хвилину» with «Спробувати ще раз»; Swagger 429 with `Retry-After`; after the minute the retry uploads. (AC-3.6)
 26. Submit the draft in one tab while a file is uploading in the other. Expected: either the file is in the submitted award, or the upload answers «нагороду вже подано» (409) and nothing is left in MinIO. (§5)
 27. Restart the backend with the award page open, then download. Expected: works after the restart; the token is refreshed if needed. (§5)
 28. Let the access token expire on the form (15 minutes), then add a file. Expected: the upload succeeds after a silent refresh. (§5)

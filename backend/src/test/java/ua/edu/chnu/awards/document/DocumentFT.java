@@ -5,8 +5,10 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.matchesPattern;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,7 @@ import io.restassured.config.RestAssuredConfig;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
+import ua.edu.chnu.awards.document.service.UploadLimits;
 import ua.edu.chnu.awards.gdpr.service.DataExportService;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardApi;
@@ -48,7 +51,8 @@ class DocumentFT extends AbstractFunctionalTest {
     private static final String DEAN = "ft.doc.dean@chnu.edu.ua";
     private static final String OUTSIDER = "ft.doc.outsider@chnu.edu.ua";
     private static final String ADMIN = "ft.doc.admin@chnu.edu.ua";
-    private static final List<String> ACCOUNTS = List.of(EMPLOYEE, COLLEAGUE, DEAN, OUTSIDER, ADMIN);
+    private static final String RACER = "ft.doc.racer@chnu.edu.ua";
+    private static final List<String> ACCOUNTS = List.of(EMPLOYEE, COLLEAGUE, DEAN, OUTSIDER, ADMIN, RACER);
     private static final String DOCUMENTS = "/api/v1/documents/";
     private static final String TYPE = "type";
     private static final String PROBLEM = "urn:awards:problem:";
@@ -58,6 +62,9 @@ class DocumentFT extends AbstractFunctionalTest {
     private static final int TEN_MB = 10 * 1024 * 1024;
     private static final int LIMIT = 10;
     private static final long FIVE_SECONDS = 5000L;
+    private static final int QUOTA_FILES = 5;
+    private static final int ROOM = 100;
+    private static final long SECONDS_PER_MINUTE = 60;
     private static final RestAssuredConfig BROWSER_MULTIPART = RestAssuredConfig.config()
         .httpClient(HttpClientConfig.httpClientConfig().httpMultipartMode(HttpMultipartMode.BROWSER_COMPATIBLE));
 
@@ -82,6 +89,7 @@ class DocumentFT extends AbstractFunctionalTest {
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         employeeId = withRole(EMPLOYEE, department, RoleType.EMPLOYEE, department);
         withRole(COLLEAGUE, department, RoleType.EMPLOYEE, department);
+        withRole(RACER, department, RoleType.EMPLOYEE, department);
         Organization faculty = organizationRepository.findById(TestUsers.FMI_FACULTY_ID).orElseThrow();
         withRole(DEAN, faculty, RoleType.DEAN, faculty);
         Organization other = organizationRepository.findById(OTHER_FACULTY_ID).orElseThrow();
@@ -266,6 +274,61 @@ class DocumentFT extends AbstractFunctionalTest {
         long elapsed = System.currentTimeMillis() - started;
 
         assertThat(elapsed).isLessThan(FIVE_SECONDS);
+    }
+
+    @Test
+    void ac3_5_aFileBeyondTheUsersQuotaIsRefused() {
+        String colleague = tokenOf(COLLEAGUE);
+        long award = AwardApi.complete(colleague, Map.of("titleUk", "Квота"));
+        for (int i = 0; i < QUOTA_FILES; i++) {
+            long id = upload(colleague, award, "page" + i + ".pdf", pdf(), PHOTO).then().statusCode(201)
+                .extract().jsonPath().getLong("id");
+            jdbc.update("update documents set file_size = ? where document_id = ?", TEN_MB, id);
+        }
+
+        upload(colleague, award, "one-more.pdf", pdf(), PHOTO).then().statusCode(409)
+            .body(TYPE, equalTo(PROBLEM + "storage-quota"))
+            .body("quota", equalTo(QUOTA_FILES * TEN_MB));
+    }
+
+    @Test
+    void ac3_5_uploadsToTwoDraftsAtOnceCannotBothPassTheQuota() throws Exception {
+        String racer = tokenOf(RACER);
+        long first = AwardApi.complete(racer, Map.of("titleUk", "Перша квота"));
+        long second = AwardApi.complete(racer, Map.of("titleUk", "Друга квота"));
+        for (int i = 0; i < QUOTA_FILES; i++) {
+            long id = upload(racer, first, "page" + i + ".pdf", pdf(), PHOTO).then().statusCode(201)
+                .extract().jsonPath().getLong("id");
+            jdbc.update("update documents set file_size = ? where document_id = ?",
+                i == 0 ? TEN_MB - ROOM : TEN_MB, id);
+        }
+
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            byte[] one = pdf();
+            byte[] other = pdf();
+            Future<Integer> toFirst = pool.submit(() -> upload(racer, first, "a.pdf", one, PHOTO).statusCode());
+            Future<Integer> toSecond = pool.submit(() -> upload(racer, second, "b.pdf", other, PHOTO).statusCode());
+            assertThat(List.of(toFirst.get(), toSecond.get())).containsExactlyInAnyOrder(201, 409);
+        } finally {
+            pool.shutdown();
+        }
+    }
+
+    @Test
+    void ac3_6_anUploadBeyondTheRateIsRefusedWithRetryAfter() {
+        long award = AwardApi.complete(employee, Map.of("titleUk", "Частота"));
+        long window = Instant.now().getEpochSecond() / SECONDS_PER_MINUTE;
+        List<String> keys = List.of(UploadLimits.RATE_KEY_PREFIX + employeeId + ":" + window,
+            UploadLimits.RATE_KEY_PREFIX + employeeId + ":" + (window + 1));
+        keys.forEach(key -> redis.opsForValue().set(key, String.valueOf(Integer.MAX_VALUE - 1)));
+        try {
+            upload(employee, award, "fast.pdf", pdf(), PHOTO).then().statusCode(429)
+                .header("Retry-After", matchesPattern("\\d+"))
+                .body(TYPE, equalTo(PROBLEM + "too-many-requests"));
+        } finally {
+            redis.delete(keys);
+        }
     }
 
     private static Response upload(String token, long award, String name, byte[] content, String type) {

@@ -161,6 +161,7 @@ cookie, refresh tokens hashed at rest, rate limits that suit a campus NAT, share
 | 2026-10-02 | Stefan Kostyk | Initial version | Deployment target decision after Epic 2 |
 | 2026-10-02 | Stefan Kostyk | MinIO image `cgr.dev/chainguard/minio` (runs as root), server-side encryption with a static key (`MINIO_KMS_SECRET_KEY`) | MinIO no longer publishes images on Docker Hub or quay.io; Feature 3.1 D-8 |
 | 2026-10-05 | Stefan Kostyk | Addendum: production on university infrastructure, Epic 9 hardening | Design review of 2026-10-04 |
+| 2026-10-05 | Stefan Kostyk | ClamAV (`clamav/clamav:stable`, about 1.2 GB) joins the Compose stack; the backend depends on it being healthy | Feature 3.1.3, PRD assumption A4 |
 
 ---
 

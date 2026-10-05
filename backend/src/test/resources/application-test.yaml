@@ -2,6 +2,10 @@ app:
   auth:
     protection:
       requests-per-minute: 200
+  documents:
+    upload-rate: 200
+    scan:
+      enabled: false
 
 spring:
   jpa:

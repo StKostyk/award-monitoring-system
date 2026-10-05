@@ -34,7 +34,7 @@ Out of scope here: attaching documents to a returned request during resubmission
 | 1 | 3.0.1 Production configuration and local production run | 3.0 | 3 | SCRUM-33 | #109 | no | Done |
 | 2 | 3.1.1 Document storage and upload API | 3.1 | 8 | SCRUM-35 | #111 | no | Done |
 | 3 | 3.1.2 Certificate upload in the award form and award page | 3.1 | 5 | SCRUM-36 | #112 | no | Done |
-| 4 | 3.1.3 Malware scanning of uploads | 3.1 | 3 | SCRUM-37 | #113 | no | To do |
+| 4 | 3.1.3 Malware scanning of uploads and per-user upload limits | 3.1 | 3 | SCRUM-37 | #113 | no | In Review |
 | 5 | 3.0.2 Brand theming, dark mode and side-nav shell | 3.0 | 5 | SCRUM-39 | #121 | no | Done |
 | 6 | 3.0.3 Login and error pages in the university brand | 3.0 | 3 | SCRUM-40 | #123 | no | Done |
 | 7 | 3.0.4 Blocking lint and Playwright in CI | 3.0 | 3 | SCRUM-41 | #124 | no | Done |
@@ -57,6 +57,7 @@ Total: 30 points, sprints 3–4. A fixes story follows the Feature 3.1 validatio
 | 2026-10-02 | The frontend CSP allows `blob:` images (`img-src 'self' data: blob:`) | The image preview shows the downloaded file from an object URL; scripts stay `'self'` only | 3.1.2 |
 | 2026-10-02 | `tools/e2e.ps1` runs the frontend nginx configuration in a throwaway container (port 4280) in front of the local backend | AC-1.16: the 9.5 MB upload and the 413 answer are tested through nginx, not only through the dev server proxy | 3.1.2 |
 | 2026-10-04 | Story 3.0.2 (brand theming, dark mode, side menu) joins Feature 3.0: a deployment chooses its university brand with `brand.json`; precompiled Material 3 themes per brand, one responsive shell, self-hosted fonts | Review of 2026-10-04: the default Material look did not fit the university; one image must serve more universities later | ADR-016 addendum, UI_GUIDELINES |
+| 2026-10-05 | 3.1.3 adds per-user upload limits next to the scan: 50 MB of documents (409 `STORAGE_QUOTA`) and 20 uploads a minute (429, Redis window); the scan runs outside any transaction, between the size and quota checks and the type check | Review of 2026-10-04: 10 MB × 10 files per award bounds one award, not one account; the scan is the most expensive step and should only see uploads that can be stored | PRD AC-3.5, AC-3.6 |
 
 ## Documentation deviations to resolve
 

@@ -19,7 +19,7 @@ param(
 
 $root = Split-Path -Parent $PSScriptRoot
 
-docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio
+docker compose -f (Join-Path $root 'docker-compose.yaml') up -d postgres redis mailpit minio clamav
 
 function Get-RedisRunId([string]$reply) {
     if ($reply -match 'run_id:([0-9a-f]+)') { return $Matches[1] }

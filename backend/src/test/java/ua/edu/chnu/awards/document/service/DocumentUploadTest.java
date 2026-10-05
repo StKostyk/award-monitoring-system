@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,7 +15,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,6 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
-import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.DocumentProperties;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
 import ua.edu.chnu.awards.document.entity.Document;
@@ -62,11 +62,13 @@ class DocumentUploadTest {
     private final AccessScope access = mock(AccessScope.class);
     private final ObjectStorage storage = mock(ObjectStorage.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final MalwareScreening malware = mock(MalwareScreening.class);
+    private final UploadLimits limits = mock(UploadLimits.class);
     private final DocumentProperties properties = new DocumentProperties("award-documents",
-        DataSize.ofMegabytes(10), LIMIT, Duration.ofHours(24), null);
+        DataSize.ofMegabytes(10), LIMIT, null, DataSize.ofMegabytes(50), LIMIT, null, null);
     private final DocumentUpload upload = new DocumentUpload(documents,
         new AwardOwnership(awards, mock(UserRepository.class), access), new DocumentContent(), storage, properties,
-        events, new TransactionTemplate(mock(PlatformTransactionManager.class)));
+        events, new TransactionTemplate(mock(PlatformTransactionManager.class)), malware, limits, access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 
@@ -167,10 +169,8 @@ class DocumentUploadTest {
         ReflectionTestUtils.setField(existing, "id", 3L);
         when(documents.findFirstByAwardIdAndChecksum(eq(AWARD_ID), anyString())).thenReturn(Optional.of(existing));
         assertThatThrownBy(() -> upload.upload(AWARD_ID, file("a.pdf", PDF), DocumentType.PHOTO, null))
-            .isInstanceOf(ApiProblemException.class)
-            .satisfies(problem -> assertThat(((ApiProblemException) problem).getProperties())
-                .containsEntry("documentId", 3L))
-            .extracting(TYPE).isEqualTo("duplicate-document");
+            .hasFieldOrPropertyWithValue(TYPE, "duplicate-document")
+            .extracting("properties").isEqualTo(Map.of("documentId", 3L));
         verifyNoInteractions(storage);
     }
 
@@ -190,7 +190,8 @@ class DocumentUploadTest {
     void ac1_11_aSubmissionWhileTheContentIsStoredRefusesTheRowAndReleasesTheObject() {
         Award draft = TestAwards.award(owner, department).build();
         Award submitted = TestAwards.award(owner, department).status(AwardStatus.PENDING).build();
-        when(awards.findForUpdate(AWARD_ID)).thenReturn(Optional.of(draft), Optional.of(submitted));
+        when(awards.findForUpdate(AWARD_ID)).thenReturn(Optional.of(draft), Optional.of(draft),
+            Optional.of(submitted));
 
         assertProblem(() -> upload.upload(AWARD_ID, file("a.pdf", PDF), DocumentType.PHOTO, null),
             "award-not-editable");
@@ -199,6 +200,43 @@ class DocumentUploadTest {
         verify(storage).put(key.capture(), any(), anyLong(), anyString());
         verify(events).publishEvent(new ObjectStored(key.getValue()));
         verify(documents, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void ac3_1_aRefusalOfTheScreeningStoresNothing() {
+        draft(AwardStatus.DRAFT, owner);
+        MockMultipartFile eicar = file("eicar.pdf", "X5O!P%@AP[4".getBytes(StandardCharsets.US_ASCII));
+        doThrow(new IllegalStateException("malware-detected"))
+            .when(malware).check(AWARD_ID, OWNER_ID, eicar);
+
+        assertThatThrownBy(() -> upload.upload(AWARD_ID, eicar, DocumentType.PHOTO, null))
+            .isInstanceOf(IllegalStateException.class);
+        verifyNoInteractions(storage, events);
+        verify(documents, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void ac3_5_ac3_6_theRateIsCountedFirstAndTheQuotaBeforeTheScanAndAgainUnderTheLock() {
+        draft(AwardStatus.DRAFT, owner);
+
+        upload.upload(AWARD_ID, file("a.pdf", PDF), DocumentType.PHOTO, null);
+
+        var order = inOrder(limits, malware, storage);
+        order.verify(limits).checkRate(OWNER_ID);
+        order.verify(limits).checkQuota(OWNER_ID, PDF.length);
+        order.verify(malware).check(eq(AWARD_ID), eq(OWNER_ID), any());
+        order.verify(storage).put(anyString(), any(), anyLong(), anyString());
+        order.verify(limits).checkQuotaLocked(OWNER_ID, PDF.length);
+    }
+
+    @Test
+    void ac3_6_aRefusedRateTouchesNeitherTheAwardNorTheScanner() {
+        doThrow(new IllegalStateException("too-many-requests"))
+            .when(limits).checkRate(OWNER_ID);
+
+        assertThatThrownBy(() -> upload.upload(AWARD_ID, file("a.pdf", PDF), DocumentType.PHOTO, null))
+            .isInstanceOf(IllegalStateException.class);
+        verifyNoInteractions(awards, malware, storage);
     }
 
     private void draft(AwardStatus status, User awardOwner) {
@@ -211,6 +249,6 @@ class DocumentUploadTest {
     }
 
     private static void assertProblem(Runnable call, String type) {
-        assertThatThrownBy(call::run).isInstanceOf(ApiProblemException.class).extracting(TYPE).isEqualTo(type);
+        assertThatThrownBy(call::run).hasFieldOrPropertyWithValue(TYPE, type);
     }
 }

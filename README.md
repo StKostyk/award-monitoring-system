@@ -22,7 +22,7 @@ The Award Monitoring & Tracking System transforms manual award management into a
 
 - **Backend**: Java 21, Spring Boot 3.5, Spring Security with Spring Authorization Server, PostgreSQL 17, Redis 7, Flyway
 - **Frontend**: Angular 21, TypeScript, Angular Material, NgRx, Transloco (uk, en)
-- **Infrastructure**: Docker Compose (PostgreSQL, Redis, Mailpit, MinIO), GitHub Actions; Kafka, Elasticsearch and Kubernetes are deferred (see the ADR addenda)
+- **Infrastructure**: Docker Compose (PostgreSQL, Redis, Mailpit, MinIO, ClamAV), GitHub Actions; Kafka, Elasticsearch and Kubernetes are deferred (see the ADR addenda)
 - **Quality**: JUnit 5, TestContainers, SonarQube (85% coverage target)
 
 ## 📊 **Project Status**
