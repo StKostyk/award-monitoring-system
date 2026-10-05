@@ -125,8 +125,8 @@ Rehearsal on a workstation, `.env.prod` as in section 2 with the demo seed enabl
 5. In the developer tools, Application → Cookies. Expected: `JSESSIONID` is `Secure` and `HttpOnly`.
 6. Sign out, choose "Forgot password", enter `employee.fmi@demo.example`. Expected: the message arrives in
    Mailpit at `http://localhost:8025`, sent from `MAIL_FROM`.
-7. Open `https://localhost/swagger-ui/index.html`. Expected: the application's own page, not Swagger UI
-   (API documentation is disabled in production).
+7. Open `https://localhost/swagger-ui/index.html`. Expected: 404, not Swagger UI (API documentation is
+   disabled in production).
 8. `docker logs award-backend | grep -c '"level":"DEBUG"'`. Expected: `0`.
 9. `docker exec award-redis redis-cli ping`. Expected: `NOAUTH Authentication required.`
 10. Clean up as in section 2. Expected: `docker compose up -d` brings the development stack back with its data.

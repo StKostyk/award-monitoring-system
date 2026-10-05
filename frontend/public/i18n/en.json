@@ -152,7 +152,8 @@
       "noCategory": "Not chosen",
       "saveDraft": "Save draft",
       "submit": "Submit",
-      "reload": "Load the current version"
+      "reload": "Load the current version",
+      "cancel": "Cancel"
     },
     "documents": {
       "title": "Documents",

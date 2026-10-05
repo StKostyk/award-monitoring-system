@@ -244,6 +244,9 @@
           {{ 'awards.remove.action' | transloco }}
         </button>
       }
+      <a mat-button [routerLink]="cancelLink()" data-testid="award-cancel">
+        {{ 'awards.form.cancel' | transloco }}
+      </a>
       <button
         mat-stroked-button
         type="submit"

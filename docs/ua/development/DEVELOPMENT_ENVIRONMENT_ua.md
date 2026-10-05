@@ -379,7 +379,9 @@ mvn site
 mvn spring-boot:run
 
 # Доступ до Swagger UI
-# http://localhost:8080/swagger-ui.html
+# http://localhost:8080/swagger-ui.html (бекенд запущено напряму)
+# http://localhost/swagger-ui/index.html (стек Compose, те саме походження, що й сторінка входу)
+# Після Logout у Swagger UI оновіть сторінку перед Authorize: інакше він повторно надсилає перший код
 
 # OpenAPI JSON
 # http://localhost:8080/v3/api-docs

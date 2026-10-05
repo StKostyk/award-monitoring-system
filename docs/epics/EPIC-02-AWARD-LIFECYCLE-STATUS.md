@@ -45,8 +45,9 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 10 | 2.3.2 Fixes from the Feature 2.3 validation | 2.3 | 2 | SCRUM-31 | #101 | no | Done |
 | 11 | 2.1.5 Database views and functions follow the award model | 2.1 | 2 | SCRUM-32 | #103 | no | Done |
 | 12 | 2.1.6 Fixes from the manual run of Feature 2.1 | 2.1 | 2 | SCRUM-38 | #117 | no | Done |
+| 13 | 2.1.7 Fixes from the manual runs of Features 2.1 and 2.2 | 2.1 | 3 | SCRUM-42 | #127 | no | In review |
 
-Total: 46 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
+Total: 49 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 
 ## Decisions
 

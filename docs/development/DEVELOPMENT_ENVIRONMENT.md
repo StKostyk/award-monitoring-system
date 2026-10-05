@@ -393,7 +393,9 @@ mvn site
 mvn spring-boot:run
 
 # Access Swagger UI
-# http://localhost:8080/swagger-ui.html
+# http://localhost:8080/swagger-ui.html (backend run directly)
+# http://localhost/swagger-ui/index.html (Compose stack, same origin as the sign-in page)
+# After Logout in Swagger UI, reload the page before Authorize: it otherwise resends the first code
 
 # OpenAPI JSON
 # http://localhost:8080/v3/api-docs

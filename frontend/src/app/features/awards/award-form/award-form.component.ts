@@ -17,7 +17,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
+import { MatAnchor, MatButton } from '@angular/material/button';
 import {
   MatDatepicker,
   MatDatepickerInput,
@@ -106,6 +106,7 @@ type FieldName = keyof AwardForm;
     MatSuffix,
     MatSelect,
     MatOption,
+    MatAnchor,
     MatButton,
     MatProgressBar,
     RouterLink,
@@ -152,6 +153,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly categoryChosen = signal(false);
   readonly documentCount = signal(0);
   readonly editing = computed(() => this.current() !== null);
+  readonly cancelLink = computed(() => {
+    const award = this.current();
+    return award ? ['/awards', award.id] : ['/awards'];
+  });
   readonly duplicates = computed(
     () =>
       this.current()?.warnings.find((warning) => warning.code === 'POSSIBLE_DUPLICATE')?.matches ??
@@ -289,7 +294,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     if (this.saving()) {
       return;
     }
-    this.clearServerErrors();
+    this.clearMarkedErrors();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -303,7 +308,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   /** Saves a new award before its first file is uploaded, exactly as «Зберегти чернетку» does. */
   readonly prepareUpload = (): Observable<number> => {
-    this.clearServerErrors();
+    this.clearMarkedErrors();
     if (this.saving() || this.form.invalid) {
       this.form.markAllAsTouched();
       return throwError(() => new Error('The draft cannot be saved'));
@@ -322,7 +327,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     if (this.saving()) {
       return;
     }
-    this.clearServerErrors();
+    this.clearMarkedErrors();
     const missing = SUBMISSION_FIELDS.filter((field) => empty(this.form.controls[field].value));
     missing.forEach((field) => this.form.controls[field].setErrors({ required: true }));
     if (this.form.invalid || missing.length) {
@@ -592,10 +597,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     return `awards.problems.${KNOWN_PROBLEMS.includes(type) ? type : 'unknown'}`;
   }
 
-  private clearServerErrors(): void {
+  private clearMarkedErrors(): void {
+    this.problem.set(null);
     for (const control of Object.values(this.form.controls)) {
-      if (control.hasError('server')) {
-        control.setErrors(null);
+      if (control.hasError('server') || control.hasError('required')) {
         control.updateValueAndValidity({ emitEvent: false });
       }
     }
