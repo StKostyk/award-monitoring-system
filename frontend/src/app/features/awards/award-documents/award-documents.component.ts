@@ -57,8 +57,11 @@ const FINAL_PROBLEMS = [
   'duplicate-document',
   'document-limit',
   'malware-detected',
+  'storage-quota',
   'award-not-editable',
 ];
+/** Server refusals that pass after a wait: they can be retried and show their own reason. */
+const WAIT_PROBLEMS = ['too-many-requests'];
 const PERCENT = 100;
 const KILOBYTE = 1024;
 const MEGABYTE = KILOBYTE * KILOBYTE;
@@ -377,7 +380,7 @@ export class AwardDocumentsComponent {
     const final = FINAL_PROBLEMS.includes(type);
     this.patch(key, {
       state: final ? 'refused' : 'failed',
-      problem: final ? this.problemKey(type) : 'awards.documents.problems.failed',
+      problem: this.problemKey(type),
     });
     if (type === 'document-limit' || type === 'duplicate-document') {
       const id = this.awardId() ?? this.savedId;
@@ -454,7 +457,7 @@ export class AwardDocumentsComponent {
   }
 
   private problemKey(type: string): string {
-    return FINAL_PROBLEMS.includes(type)
+    return FINAL_PROBLEMS.includes(type) || WAIT_PROBLEMS.includes(type)
       ? `awards.documents.problems.${type}`
       : 'awards.documents.problems.failed';
   }

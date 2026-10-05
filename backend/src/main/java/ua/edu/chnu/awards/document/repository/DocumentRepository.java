@@ -34,6 +34,25 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     long countByAwardId(long awardId);
 
     /**
+     * Total size of the documents a user has uploaded, over all her awards.
+     *
+     * @param userId the uploader
+     * @return the size in bytes, 0 when there are none
+     */
+    @Query("select coalesce(sum(d.size), 0) from Document d where d.uploadedBy.id = :userId")
+    long totalSizeUploadedBy(long userId);
+
+    /**
+     * Takes a transaction-scoped advisory lock, so that uploads of one user to different awards check the quota
+     * one after the other.
+     *
+     * @param key the lock key of the user
+     * @return always 1
+     */
+    @Query(value = "select count(*) from (select pg_advisory_xact_lock(:key)) l", nativeQuery = true)
+    long lockUploadsOf(long key);
+
+    /**
      * A document of the award with the same content.
      *
      * @param awardId  the award

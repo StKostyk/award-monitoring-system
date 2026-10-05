@@ -29,7 +29,7 @@ Every story is tracked twice: a Jira issue for the sprint board and a GitHub iss
 | 2.1.5 | Database views and functions follow the award model | 2 | ✅ Done | SCRUM-32 | [#103](https://github.com/StKostyk/award-monitoring-system/issues/103) |
 | 2.1.6 | Fixes from the manual run of Feature 2.1 | 2 | ✅ Done | SCRUM-38 | [#117](https://github.com/StKostyk/award-monitoring-system/issues/117) |
 | 2.1.7 | Fixes from the manual runs of Features 2.1 and 2.2 | 3 | ✅ Done (Sprint 4) | SCRUM-42 | [#127](https://github.com/StKostyk/award-monitoring-system/issues/127) |
-| 2.1.8 | Review decisions: approval levels, working-day review period, role assignment, GDPR and audit fixes | 8 | In Review (Sprint 4) | SCRUM-43 | [#130](https://github.com/StKostyk/award-monitoring-system/issues/130) |
+| 2.1.8 | Review decisions: approval levels, working-day review period, role assignment, GDPR and audit fixes | 8 | ✅ Done (Sprint 4) | SCRUM-43 | [#130](https://github.com/StKostyk/award-monitoring-system/issues/130) |
 | 3.0.1 | Production configuration and local production run | 3 | ✅ Done | SCRUM-33 | [#109](https://github.com/StKostyk/award-monitoring-system/issues/109) |
 
 Sprint Goal: an employee creates, checks, submits and tracks an award (Features 2.1–2.3).  
@@ -49,7 +49,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 |----|-------|--------|--------|------|-------|
 | 3.1.1 | Document storage and upload API | 8 | ✅ Done | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
 | 3.1.2 | Certificate upload in the award form and award page | 5 | ✅ Done | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
-| 3.1.3 | Malware scanning of uploads | 3 | 4 | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
+| 3.1.3 | Malware scanning of uploads and per-user upload limits | 3 | In Review (Sprint 4) | SCRUM-37 | [#113](https://github.com/StKostyk/award-monitoring-system/issues/113) |
 | 3.0.2 | Brand theming, dark mode and side-nav shell | 5 | ✅ Done | SCRUM-39 | [#121](https://github.com/StKostyk/award-monitoring-system/issues/121) |
 | 3.0.3 | Login and error pages in the university brand | 3 | ✅ Done | SCRUM-40 | [#123](https://github.com/StKostyk/award-monitoring-system/issues/123) |
 | 3.0.4 | Blocking lint and Playwright in CI | 3 | ✅ Done | SCRUM-41 | [#124](https://github.com/StKostyk/award-monitoring-system/issues/124) |
@@ -78,7 +78,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 151 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, 3.1.1 and 3.1.2); Sprint 4 so far: 2.1.7 (3)
+Total Completed: 159 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, 3.1.1 and 3.1.2); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8)
 
 ---
 

@@ -14,14 +14,20 @@ import org.springframework.util.unit.DataSize;
  * @param maxFileSize      largest accepted file
  * @param maxFilesPerAward most documents one award may have
  * @param sweepAge         how old an object without a document row must be before the sweep removes it
+ * @param userQuota        total size of the documents one user may have uploaded
+ * @param uploadRate       most uploads one user may start per minute
  * @param storage          connection to the S3-compatible storage
+ * @param scan             malware scanning of uploads
  */
 @ConfigurationProperties(prefix = "app.documents")
 public record DocumentProperties(@DefaultValue("award-documents") String bucket,
                                  @DefaultValue("10MB") DataSize maxFileSize,
                                  @DefaultValue("10") int maxFilesPerAward,
                                  @DefaultValue("24h") Duration sweepAge,
-                                 @DefaultValue Storage storage) {
+                                 @DefaultValue("50MB") DataSize userQuota,
+                                 @DefaultValue("20") int uploadRate,
+                                 @DefaultValue Storage storage,
+                                 @DefaultValue Scan scan) {
 
     /**
      * Connection to the S3-compatible storage (MinIO).
@@ -44,5 +50,21 @@ public record DocumentProperties(@DefaultValue("award-documents") String bucket,
         public String toString() {
             return "Storage[endpoint=" + endpoint + ", region=" + region + "]";
         }
+    }
+
+    /**
+     * The {@code clamd} daemon that scans every upload before it is stored.
+     *
+     * @param enabled        false only in tests that do not exercise scanning; then every file passes
+     * @param host           host of {@code clamd}
+     * @param port           TCP port of {@code clamd}
+     * @param connectTimeout how long to wait for a connection
+     * @param timeout        how long one scan may take, sending included
+     */
+    public record Scan(@DefaultValue("true") boolean enabled,
+                       @DefaultValue("localhost") String host,
+                       @DefaultValue("3310") int port,
+                       @DefaultValue("2s") Duration connectTimeout,
+                       @DefaultValue("30s") Duration timeout) {
     }
 }

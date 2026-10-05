@@ -28,7 +28,7 @@ class ObjectStorageTest {
         .region(Region.US_EAST_1).credentialsProvider(AnonymousCredentialsProvider.create()).forcePathStyle(true)
         .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(5))).build();
     private final ObjectStorage storage = new ObjectStorage(unreachable, new DocumentProperties("award-documents",
-        DataSize.ofMegabytes(10), 10, Duration.ofHours(24), null));
+        DataSize.ofMegabytes(10), 10, Duration.ofHours(24), null, 0, null, null));
 
     @AfterEach
     void close() {

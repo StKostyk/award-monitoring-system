@@ -31,7 +31,8 @@ class DocumentSweeperTest {
     private final ObjectStorage storage = mock(ObjectStorage.class);
     private final DocumentRepository documents = mock(DocumentRepository.class);
     private final DocumentSweeper sweeper = new DocumentSweeper(storage, documents,
-        new DocumentProperties("award-documents", DataSize.ofMegabytes(10), 10, Duration.ofHours(24), null),
+        new DocumentProperties("award-documents", DataSize.ofMegabytes(10), 10, Duration.ofHours(24), null, 0, null,
+            null),
         Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test

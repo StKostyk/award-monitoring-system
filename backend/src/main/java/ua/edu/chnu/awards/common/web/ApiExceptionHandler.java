@@ -2,8 +2,10 @@ package ua.edu.chnu.awards.common.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,6 +28,9 @@ import lombok.RequiredArgsConstructor;
 public class ApiExceptionHandler {
 
     static final String TYPE_PREFIX = "urn:awards:problem:";
+
+    /** Problem property in seconds that is also sent as the {@code Retry-After} header. */
+    public static final String RETRY_AFTER = "retryAfter";
 
     private final AccessDenials denials;
 
@@ -60,7 +65,11 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(ApiProblemException.class)
-    ProblemDetail apiProblem(ApiProblemException exception) {
-        return exception.toProblem();
+    ResponseEntity<ProblemDetail> apiProblem(ApiProblemException exception) {
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(exception.getStatus());
+        if (exception.getProperties().get(RETRY_AFTER) instanceof Number seconds) {
+            response.header(HttpHeaders.RETRY_AFTER, String.valueOf(seconds.longValue()));
+        }
+        return response.body(exception.toProblem());
     }
 }
