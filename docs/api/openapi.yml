@@ -14,8 +14,9 @@ info:
     The HTML sign-in pages (`GET /login`, `GET /`) are served by the authorization server and are not API operations.
 
     ## Rate Limiting
-    - Standard users: 1000 requests/hour
-    - Admin users: 5000 requests/hour
+    Counters in Redis, answered with 429 and `Retry-After`: the authentication endpoints (sign-in, token, `/auth`)
+    are limited per client address (20 requests a minute by default), document uploads per user (20 a minute).
+    Other operations have no request quota.
     
     ## Response Formats
     All responses are JSON. Dates are ISO 8601 format (UTC).

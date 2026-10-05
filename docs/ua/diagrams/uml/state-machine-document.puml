@@ -18,7 +18,7 @@ title Діаграма Скінченного Автомата Обробки Д
 state UPLOADING <<uploading>> {
     [*] --> Validating
     Validating --> FileTypeCheck : Перевірка типу файлу
-    FileTypeCheck --> FileSizeCheck : Тип OK (PDF, JPG, PNG)
+    FileTypeCheck --> FileSizeCheck : Тип OK (PDF, JPEG, PNG, WEBP)
     FileSizeCheck --> Uploading : Розмір OK (< 10MB)
     Uploading --> [*] : Завантаження завершено
     
@@ -48,6 +48,17 @@ state UPLOADED <<uploaded>> {
 note right of UPLOADED
     Файл збережено в тимчасовому
     місці до ШІ-обробки
+    --
+    У реалізації (функція 3.1): UPLOADED — це
+    рядок documents із processing_status
+    PENDING; об'єкт зберігається в
+    приватному бакеті awards/<award>/<UUID>.
+    Розмір, обмеження, антивірусна перевірка
+    ClamAV (відмова за замовчуванням) і тип
+    (за вмістом) перевіряються до будь-якого
+    збереження. Стани після UPLOADED і поріг
+    80 % (0.7 у словнику даних) визначаються,
+    коли плануватиметься OCR.
 end note
 
 UPLOADED --> PROCESSING <<processing>> : ШІ-обробка починається

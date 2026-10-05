@@ -117,6 +117,28 @@ This document outlines the comprehensive technology stack selection for the Awar
 
 ---
 
+## Addendum 2026-10: Stack As Built After Epic 3
+
+The tables above are the August 2025 selection. The delivered system (Epics 1–3) uses the following; deviations
+are recorded in the ADR addenda.
+
+| **Layer** | **As built** | **Reference** |
+|-----------|--------------|---------------|
+| Backend | Spring Boot 3.5, Java 21, Maven; modular monolith | ADR-001, ADR-022 (proposed) |
+| Security | Spring Security with the embedded Spring Authorization Server (OAuth 2.1, OIDC, PKCE) | ADR-009 addendum |
+| Database | PostgreSQL 17, Flyway | ADR-004 |
+| Cache and counters | Redis 7: revoked tokens, lockout, rate limits; no application cache | ADR-005 addendum |
+| Object storage | MinIO (S3 API, SSE-S3) through the AWS SDK v2 | ADR-021 |
+| Malware scanning | ClamAV (`clamd`, `freshclam`) | Feature 3.1, THREAT_MODEL §2.2.5 |
+| Mail | Mailpit locally; SMTP relay (Brevo) for the demo | ADR-021 |
+| Messaging, search, gateway | Not deployed: Spring application events, PostgreSQL queries, nginx reverse proxy | ADR-006, ADR-007, ADR-008 addenda |
+| Frontend | Angular 21 (no SSR), Angular Material 3 with brand themes, NgRx, Transloco (uk, en), angular-oauth2-oidc | ADR-013 – ADR-016 |
+| Testing | JUnit 5, Testcontainers, REST-assured, JaCoCo, Vitest, Playwright, axe | ADR-010 |
+| Static analysis | Checkstyle, PMD, SpotBugs, ESLint, Prettier (blocking) | ADR-019 addendum |
+| Delivery | Docker Compose (development and demo), GitHub Actions; Kubernetes and a cloud platform deferred | ADR-017 – ADR-021 |
+
+---
+
 ## Conclusion
 
 This technology stack selection balances enterprise-grade capabilities with solo developer feasibility. The choices demonstrate current industry best practices while maintaining practical implementation scope. All technologies support the project's bilingual requirements, GDPR compliance needs, and portfolio development objectives.

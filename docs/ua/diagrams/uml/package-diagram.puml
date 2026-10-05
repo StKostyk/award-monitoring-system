@@ -7,7 +7,7 @@ skinparam package {
     BackgroundColor<<config>> LightGray
 }
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Пакетів (Java Backend, реалізація після епіку 2)
+title Система Моніторингу та Відстеження Нагород - Діаграма Пакетів (Java Backend, реалізація після епіку 3)
 
 ' Пакети за доменами: кожен домен має controller, dto, entity, event, mapper, repository, service за потреби
 
@@ -103,6 +103,28 @@ package "ua.edu.chnu.awards" {
         }
     }
 
+    package "document" <<domain>> {
+        package "controller" as document_controller {
+            class DocumentController
+        }
+        package "service" as document_service {
+            class DocumentService
+            class DocumentUpload
+            class UploadLimits
+            class MalwareScreening
+            class ClamAvScanner
+            class ObjectStorage
+            class StoredObjectCleanup
+            class DocumentSweeper
+        }
+        package "entity" as document_entity {
+            class Document
+        }
+        package "repository" as document_repository {
+            class DocumentRepository
+        }
+    }
+
     package "gdpr" <<domain>> {
         class DataExportService
         class PersonalDataAssembler
@@ -124,6 +146,9 @@ package "ua.edu.chnu.awards" {
         package "mail" as common_mail {
             class MailDelivery
         }
+        package "limit" as common_limit {
+            class FixedWindowCounter
+        }
     }
 
     package "metrics" <<shared>> {
@@ -136,6 +161,8 @@ package "ua.edu.chnu.awards" {
         class LoginSessionConfig
         class TokenConfig
         class OpenApiConfig
+        class StorageConfig
+        class InfrastructureConfig
     }
 }
 
@@ -143,6 +170,11 @@ package "ua.edu.chnu.awards" {
 award ..> user : власник, підрозділ
 award ..> authz : область читання
 award ..> audit : рядки AWARD_*
+award ..> document : чернетки видаляються разом з об'єктами
+document ..> award : чернетка власника, правило читання
+document ..> authz
+document ..> audit : рядки DOCUMENT_*
+document ..> common
 delegation ..> user
 delegation ..> authz
 user ..> authz
@@ -158,7 +190,7 @@ user ..> common
 
 note bottom of award
     Мапери — написані вручну класи @Component;
-    без MapStruct. Заплановані домени: document (епік 3),
+    без MapStruct. Заплановані домени: parsing (OCR, відкладено),
     workflow (епік 4), analytics (епік 5),
     compliance (епік 6), notification (епік 7).
 end note

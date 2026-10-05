@@ -2,13 +2,12 @@
 !theme plain
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок (реалізація, V024)
+title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок (реалізація, V026)
 
 ' * обов'язкове (NOT NULL); усі мітки часу — TIMESTAMPTZ
 
 package "Ідентичність" {
-entity "users
-(користувачі)" as users {
+entity "users\n(користувачі)" as users {
     * user_id : BIGINT <<PK>>
     --
     * email_address : VARCHAR(255) <<UK lower>>
@@ -23,8 +22,7 @@ entity "users
     * version : BIGINT
 }
 
-entity "organizations
-(підрозділи)" as organizations {
+entity "organizations\n(підрозділи)" as organizations {
     * org_id : BIGINT <<PK>>
     --
     * name : VARCHAR(255)
@@ -39,8 +37,7 @@ entity "organizations
     * updated_at : TIMESTAMPTZ
 }
 
-entity "user_roles
-(ролі користувачів)" as user_roles {
+entity "user_roles\n(ролі користувачів)" as user_roles {
     * user_role_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
@@ -52,8 +49,7 @@ entity "user_roles
     created_by : BIGINT <<FK>>
 }
 
-entity "role_delegations
-(делегування ролей)" as delegations {
+entity "role_delegations\n(делегування ролей)" as delegations {
     * delegation_id : BIGINT <<PK>>
     --
     * delegator_id : BIGINT <<FK>>
@@ -68,8 +64,7 @@ entity "role_delegations
     revoked_by : BIGINT <<FK>>
 }
 
-entity "one_time_tokens
-(одноразові токени)" as tokens {
+entity "one_time_tokens\n(одноразові токени)" as tokens {
     * id : BIGINT <<PK>>
     --
     * token_hash : VARCHAR(64) <<UK>>
@@ -81,8 +76,7 @@ entity "one_time_tokens
     * created_at : TIMESTAMPTZ
 }
 
-entity "user_devices
-(пристрої користувачів)" as devices {
+entity "user_devices\n(пристрої користувачів)" as devices {
     * id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
@@ -96,8 +90,7 @@ entity "user_devices
 }
 
 package "Нагороди" {
-entity "awards
-(нагороди)" as awards {
+entity "awards\n(нагороди)" as awards {
     * award_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
@@ -118,8 +111,7 @@ entity "awards
     * version : BIGINT
 }
 
-entity "award_categories
-(категорії нагород)" as categories {
+entity "award_categories\n(категорії нагород)" as categories {
     * category_id : BIGINT <<PK>>
     --
     * name : VARCHAR(100) <<UK>>
@@ -135,8 +127,7 @@ entity "award_categories
     * updated_at : TIMESTAMPTZ
 }
 
-entity "award_versions
-(версії нагород)" as versions {
+entity "award_versions\n(версії нагород)" as versions {
     * version_id : BIGINT <<PK>>
     --
     * award_id : BIGINT <<FK>>
@@ -148,8 +139,7 @@ entity "award_versions
     * created_at : TIMESTAMPTZ
 }
 
-entity "documents
-(документи)" as documents {
+entity "documents\n(документи)" as documents {
     * document_id : BIGINT <<PK>>
     --
     award_id : BIGINT <<FK>>
@@ -162,6 +152,8 @@ entity "documents
     * storage_key : VARCHAR(500)
     storage_url : VARCHAR(2048)
     checksum_sha256 : VARCHAR(64)
+    * document_type : VARCHAR(30)
+    description : VARCHAR(500)
     parsed_metadata : JSONB
     confidence_score : NUMERIC(5,4)
     * processing_status : VARCHAR(20)
@@ -172,8 +164,7 @@ entity "documents
 }
 
 package "Робочий процес" {
-entity "award_requests
-(запити на нагороди)" as requests {
+entity "award_requests\n(запити на нагороди)" as requests {
     * request_id : BIGINT <<PK>>
     --
     * award_id : BIGINT <<FK>> <<UK>>
@@ -189,8 +180,7 @@ entity "award_requests
     * updated_at : TIMESTAMPTZ
 }
 
-entity "review_decisions
-(рішення рецензентів)" as decisions {
+entity "review_decisions\n(рішення рецензентів)" as decisions {
     * decision_id : BIGINT <<PK>>
     --
     * request_id : BIGINT <<FK>>
@@ -203,8 +193,7 @@ entity "review_decisions
 }
 
 package "Відповідність" {
-entity "audit_logs
-(журнали аудиту)" as audit_logs {
+entity "audit_logs\n(журнали аудиту)" as audit_logs {
     * log_id : BIGINT <<PK>>
     --
     user_id : BIGINT
@@ -220,8 +209,7 @@ entity "audit_logs
     * created_at : TIMESTAMPTZ <<partition key>>
 }
 
-entity "consent_records
-(записи згоди)" as consent_records {
+entity "consent_records\n(записи згоди)" as consent_records {
     * consent_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
@@ -237,8 +225,7 @@ entity "consent_records
 }
 
 package "Сповіщення" {
-entity "notifications
-(сповіщення)" as notifications {
+entity "notifications\n(сповіщення)" as notifications {
     * notification_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
@@ -254,8 +241,7 @@ entity "notifications
     expires_at : TIMESTAMPTZ
 }
 
-entity "notification_preferences
-(налаштування сповіщень)" as notif_prefs {
+entity "notification_preferences\n(налаштування сповіщень)" as notif_prefs {
     * preference_id : BIGINT <<PK>>
     --
     * user_id : BIGINT <<FK>>
@@ -316,6 +302,12 @@ note right of awards
     і award_date можуть бути порожніми лише
     поки status = DRAFT (V020).
     Індекси: DATA_DICTIONARY_ua.md 2.1
+end note
+
+note bottom of documents
+    Лише метадані; файл — це об'єкт у MinIO.
+    Унікальність (award_id, checksum_sha256);
+    document_type і description з V025.
 end note
 
 note right of requests

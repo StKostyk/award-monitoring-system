@@ -126,6 +126,9 @@ The award category catalogue, the only read-heavy reference data so far, is cach
 caching (`Cache-Control: max-age=3600` and an `ETag` on `GET /award-categories`). Application-level caching is
 reconsidered when the Epic 5 dashboards produce measurable read load.
 
+Epic 3 adds one more counter of the same kind: uploads per user (20 a minute, `UploadLimits` on the shared
+`FixedWindowCounter`). Without Redis this limit, like the others, is not applied.
+
 ---
 
 ## Revision History
@@ -134,6 +137,7 @@ reconsidered when the Epic 5 dashboards produce measurable read load.
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: redis scope as built | Documentation sync after Epic 2 |
+| 2026-10-05 | Stefan Kostyk | Upload counter added to the addendum | Documentation sync after Epic 3 |
 
 ---
 

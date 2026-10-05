@@ -99,16 +99,20 @@ src/main/resources/
         ├── V022__email_change_tokens.sql
         ├── V023__award_versions.sql
         ├── V024__award_request_deadlines.sql
+        ├── V025__document_type_description.sql
+        ├── V026__review_decisions.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql
         └── R__seed_award_categories.sql
     └── seed/
-        └── local/
-            └── R__seed_users_dev.sql
+        ├── local/
+        │   └── R__seed_users_dev.sql
+        └── demo/
+            └── R__seed_users_demo.sql
 ```
 
-`db/migration` містить схему й довідкові дані та виконується в кожному середовищі. `db/seed/local` містить демонстраційні облікові записи й додається до `spring.flyway.locations` лише профілями `local` і `docker`; виробничий профіль його не бачить. Повторювані скрипти виконуються в алфавітному порядку опису, тож початкові дані, що залежать від інших, називають так, щоб вони сортувалися після них.
+`db/migration` містить схему й довідкові дані та виконується в кожному середовищі. `db/seed/local` містить демонстраційні облікові записи й додається до `spring.flyway.locations` лише профілями `local` і `docker`; виробничий профіль його не бачить. `db/seed/demo` містить вигадані облікові записи `@demo.example` для розгорнутої демонстрації: він виконується, лише якщо його вказано в `FLYWAY_LOCATIONS`, і нічого не вставляє, доки не задано `DEMO_PASSWORD_HASH` (ADR-021, [DEMO_DEPLOYMENT](../../deployment/DEMO_DEPLOYMENT.md)). Повторювані скрипти виконуються в алфавітному порядку опису, тож початкові дані, що залежать від інших, називають так, щоб вони сортувалися після них.
 
 ### 1.3 Конвенція Нумерації Версій
 

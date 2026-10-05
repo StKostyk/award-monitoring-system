@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "award-monitoring-api-v1",
     "name": "Award Monitoring & Tracking System API",
-    "description": "Requests for the implemented endpoints of the Award Monitoring System (Epics 1 and 2). The contract is docs/api/openapi.yml; planned endpoints (approval, documents, reports) are not included.\n\n## Authentication\nThe application is its own OAuth 2.1 provider. The collection uses Postman's OAuth 2.0 helper with the authorization code flow and PKCE for the public client `award-web`:\n1. Open the collection, tab Authorization, and click *Get New Access Token*.\n2. Sign in with a seed account (for example `employee.fmi@chnu.edu.ua`) in the Postman window.\n3. Click *Use Token*. Access tokens live 15 minutes; request a new one when it expires.\n\nThe callback URL `http://localhost:4200/callback` is a registered redirect URI; Postman captures the redirect, so the frontend does not need to run. Leave *Authorize using browser* off.\n\n## Variables\n`baseUrl` (backend, default http://localhost:8080/api/v1), `authBase` (http://localhost:8080), `awardId`, `awardVersion` (saved from award responses), `categoryId`, `userId`, `delegationId`.",
+    "description": "Requests for the implemented endpoints of the Award Monitoring System (Epics 1 to 3). The contract is docs/api/openapi.yml; planned endpoints (approval, reports) are not included.\n\n## Authentication\nThe application is its own OAuth 2.1 provider. The collection uses Postman's OAuth 2.0 helper with the authorization code flow and PKCE for the public client `award-web`:\n1. Open the collection, tab Authorization, and click *Get New Access Token*.\n2. Sign in with a seed account (for example `employee.fmi@chnu.edu.ua`) in the Postman window.\n3. Click *Use Token*. Access tokens live 15 minutes; request a new one when it expires.\n\nThe callback URL `http://localhost:4200/callback` is a registered redirect URI; Postman captures the redirect, so the frontend does not need to run. Leave *Authorize using browser* off.\n\n## Variables\n`baseUrl` (backend, default http://localhost:8080/api/v1), `authBase` (http://localhost:8080), `awardId`, `awardVersion` (saved from award responses), `categoryId`, `userId`, `delegationId`, `documentId` (saved from an upload).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -92,6 +92,10 @@
     },
     {
       "key": "delegationId",
+      "value": ""
+    },
+    {
+      "key": "documentId",
       "value": ""
     }
   ],
@@ -1017,6 +1021,119 @@
               ]
             },
             "description": "Own drafts only."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "description": "Feature 3.1. Files of an award live in a private MinIO bucket; downloads stream through the API and follow the award read rule. Uploads need ClamAV to be running (503 scanner-unavailable otherwise).",
+      "item": [
+        {
+          "name": "List award documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "documents"
+              ]
+            },
+            "description": "Metadata of the documents of a readable award, oldest first."
+          }
+        },
+        {
+          "name": "Upload document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "documents"
+              ]
+            },
+            "description": "Own draft only. PDF, JPEG, PNG or WEBP by content, at most 10 MB, 10 documents an award, 50 MB per user, 20 uploads a minute. Choose a file before sending.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "type",
+                  "value": "CERTIFICATE",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Scanned certificate",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('documentId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/documents/{{documentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents",
+                "{{documentId}}"
+              ]
+            },
+            "description": "Streams the file as an attachment; every download is audited (DOCUMENT_DOWNLOAD)."
+          }
+        },
+        {
+          "name": "Delete document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/documents/{{documentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents",
+                "{{documentId}}"
+              ]
+            },
+            "description": "Own draft only; the object is removed after the commit."
           }
         }
       ]

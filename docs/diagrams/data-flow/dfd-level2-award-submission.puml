@@ -2,7 +2,7 @@
 !theme plain
 skinparam defaultTextAlignment center
 
-title Award Submission Process - Data Flow Diagram (Level 2, as built after Epic 2)
+title Award Submission Process - Data Flow Diagram (Level 2, as built after Epic 3)
 
 ' External Entity
 rectangle "Employee" as employee #LightBlue
@@ -18,7 +18,7 @@ usecase "2.7\nSuggest\nCategory" as P27 #White
 usecase "2.8\nRecord\nVersion" as P28 #White
 
 ' Connected Processes
-usecase "3.0\nDocument\nProcessing" as P3 #LightGray
+usecase "3.0\nDocument\nParsing (OCR)" as P3 #LightGray
 usecase "4.0\nWorkflow\nEngine" as P4 #LightGray
 usecase "5.0\nNotification" as P5 #LightGray
 usecase "7.0\nAudit" as P7 #LightGray
@@ -26,6 +26,7 @@ usecase "7.0\nAudit" as P7 #LightGray
 ' Data Stores
 database "D2\nAward\nDatabase" as D2 #LightYellow
 database "D3\nDocument\nStore" as D3 #LightYellow
+rectangle "Malware\nScanner\n(ClamAV)" as SCAN #LightBlue
 database "D4\nWorkflow\nState" as D4 #LightYellow
 database "D5\nAward\nVersions" as D5 #LightYellow
 database "D6\nCategory\nCatalogue" as D6 #LightYellow
@@ -47,11 +48,14 @@ employee --> P27 : Title,\nawarding organisation
 P27 --> D6 : Read keywords
 P27 --> employee : Ranked\ncategories
 
-P23 ..> D3 : Document Reference\n(Epic 3)
-P23 ..> P3 : Document for\nAI Processing (Epic 3)
+employee --> P23 : Document Files\n(own draft)
+P23 --> SCAN : File content
+SCAN --> P23 : Clean / infected
+P23 --> D3 : Object (MinIO)\n+ metadata row
+P23 --> employee : Document list,\nrefusal reason
+P23 --> P7 : DOCUMENT_* events
+P23 ..> P3 : Document for\nparsing (deferred)
 P3 ..> P23 : Parsed Metadata
-
-employee ..> P23 : Document Files
 employee --> P24 : Submit Command
 
 P24 --> P21 : Final Validation
@@ -78,15 +82,22 @@ note right of P21
     • Active category, http(s) URL
 end note
 
+note right of P23
+    Upload Rules:
+    • Owner's draft only; frozen after submission
+    • PDF, JPEG, PNG, WEBP by content; 10 MB a file,
+      10 files an award, one copy of a file per award
+    • 50 MB per user, 20 uploads a minute
+    • Scanner down: refused (fail closed)
+end note
+
 note right of P25
     Level Determination:
     • Every request starts at Faculty Secretary
     • Recognition level sets the minimum approval:
-      Faculty Secretary (speciality, department,
-      local, university, regional), Dean (college,
-      faculty), Rector's Secretary (national,
-      international)
-    • Dashed flows: planned (Epics 3, 4, 7)
+      Faculty Secretary (speciality to regional),
+      Rector's Secretary (national, international)
+    • Dashed flows: planned (OCR deferred, Epics 4, 7)
 end note
 
 @enduml

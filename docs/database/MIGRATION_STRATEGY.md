@@ -99,16 +99,20 @@ src/main/resources/
         ├── V022__email_change_tokens.sql
         ├── V023__award_versions.sql
         ├── V024__award_request_deadlines.sql
+        ├── V025__document_type_description.sql
+        ├── V026__review_decisions.sql
         ├── R__create_views.sql
         ├── R__create_functions.sql
         ├── R__seed_organizations.sql
         └── R__seed_award_categories.sql
     └── seed/
-        └── local/
-            └── R__seed_users_dev.sql
+        ├── local/
+        │   └── R__seed_users_dev.sql
+        └── demo/
+            └── R__seed_users_demo.sql
 ```
 
-`db/migration` holds schema and reference data and runs in every environment. `db/seed/local` holds demo accounts and is added to `spring.flyway.locations` only by the `local` and `docker` profiles; the production profile never sees it. Repeatable scripts run in alphabetical order of their description, so a seed that depends on another is named to sort after it.
+`db/migration` holds schema and reference data and runs in every environment. `db/seed/local` holds demo accounts and is added to `spring.flyway.locations` only by the `local` and `docker` profiles; the production profile never sees it. `db/seed/demo` holds the fictional `@demo.example` accounts of a deployed demo: it runs only when `FLYWAY_LOCATIONS` names it and inserts nothing unless `DEMO_PASSWORD_HASH` is set (ADR-021, [DEMO_DEPLOYMENT](../deployment/DEMO_DEPLOYMENT.md)). Repeatable scripts run in alphabetical order of their description, so a seed that depends on another is named to sort after it.
 
 ### 1.3 Version Numbering Convention
 

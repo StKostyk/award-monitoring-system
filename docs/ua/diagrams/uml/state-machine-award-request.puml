@@ -23,7 +23,8 @@ note as AsBuilt
     запитом SUBMITTED на рівні FACULTY_SECRETARY і строком (V024).
     Чернетку редагує чи видаляє лише її власник.
     Інші переходи — проєкт робочого процесу епіку 4;
-    підстани документів і ШІ належать до епіку 3.
+    документи додаються до чернетки з функції 3.1;
+    підстани ШІ-парсингу чекають на OCR (відкладено).
 end note
 
 [*] --> DRAFT <<draft>> : Працівник створює нагороду
@@ -31,8 +32,9 @@ end note
 state DRAFT <<draft>> {
     [*] --> Editing
     Editing --> Editing : Зберегти зміни
-    Editing --> DocumentUploaded : Завантажити сертифікат (епік 3)
-    DocumentUploaded --> AIProcessing : Запустити ШІ-парсинг
+    Editing --> DocumentUploaded : Завантажити сертифікат (функція 3.1)
+    DocumentUploaded --> Editing : Видалити документ / редагувати далі
+    DocumentUploaded --> AIProcessing : Запустити ШІ-парсинг (відкладено)
     AIProcessing --> MetadataExtracted : ШІ завершено
     MetadataExtracted --> Editing : Працівник перевіряє
 }

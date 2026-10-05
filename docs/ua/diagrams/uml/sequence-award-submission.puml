@@ -2,7 +2,7 @@
 !theme plain
 skinparam sequenceMessageAlign center
 
-title Діаграма Послідовності Подання Нагороди (реалізація після епіку 2)
+title Діаграма Послідовності Подання Нагороди (реалізація після епіку 3)
 
 actor "Власник\n(award:create)" as owner
 participant "Застосунок Angular" as webapp
@@ -11,8 +11,12 @@ participant "AwardController" as ctrl
 participant "AwardService /\nAwardSubmission" as svc
 participant "AwardInputRules /\nDuplicateFinder" as rules
 participant "AwardHistory" as history
+participant "DocumentController /\nDocumentUpload" as doc
 participant "AuditService" as audit
 database "PostgreSQL" as db
+database "Redis" as redis
+participant "ClamAV" as scan
+database "MinIO" as s3
 
 note over webapp, ctrl
     Кожен виклик несе bearer-токен доступу (код авторизації + PKCE);
@@ -45,8 +49,36 @@ svc -> history: updated(award)
 history -> db: INSERT award_versions (UPDATED, змінені поля)
 svc --> webapp: 200 AwardResponse
 
+== Документи (функція 3.1) ==
+owner -> webapp: Прикріпити сертифікат (файл або камера)
+webapp -> proxy: POST /api/v1/awards/{id}/documents (multipart: file, type, description)
+proxy -> doc: передати (nginx і Spring обмежують тіло 11 МБ)
+doc -> redis: 20 завантажень на хвилину на користувача
+doc -> db: власна чернетка FOR UPDATE; 10 МБ на файл; 50 МБ на користувача
+alt обмеження досягнуто
+    doc --> webapp: 429 / 413 / 409 storage-quota
+end
+doc -> scan: INSTREAM вмісту файлу (без відкритої транзакції)
+alt заражено
+    doc -> audit: DOCUMENT_REJECTED {signature}
+    doc --> webapp: 422 malware-detected
+else сканер недоступний
+    doc --> webapp: 503 scanner-unavailable (відмова за замовчуванням)
+end
+doc -> doc: тип за початковими байтами, SHA-256, 10 файлів на нагороду, без дублікатів
+doc -> s3: PUT awards/{id}/{UUID} (SSE-S3)
+doc -> db: знову чернетка FOR UPDATE; INSERT documents (метадані)
+note right of doc
+    trg_documents_audit записує рядок аудиту;
+    якщо транзакцію відкочено, об'єкт видаляється.
+end note
+doc --> webapp: 201 Document (Location /api/v1/documents/{id})
+
 == Подання ==
 owner -> webapp: Подати
+opt нагорода не має документів
+    webapp --> owner: Підтвердити подання без сертифіката
+end
 webapp -> proxy: POST /api/v1/awards/{id}/submit {version, acknowledgeDuplicate}
 proxy -> ctrl: переслати
 ctrl -> svc: submit(id, request)
@@ -82,7 +114,7 @@ loop кожні 60 с, поки сторінка нагороди відкрит
 end
 
 note over owner, db
-    Заплановано: завантаження сертифіката та OCR (епік 3), рішення рецензентів (епік 4),
+    Заплановано: OCR завантажених документів (відкладено), рішення рецензентів (епік 4),
     сповіщення рецензентам (епік 7).
 end note
 

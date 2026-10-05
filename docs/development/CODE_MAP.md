@@ -1,7 +1,7 @@
 # Code Map
 ## Award Monitoring & Tracking System
 
-> **Last Updated**: September 2026
+> **Last Updated**: October 2026
 > **Author**: Stefan Kostyk
 
 Where things live and the conventions that keep them there. Updated whenever the structure changes.
@@ -21,6 +21,8 @@ Where things live and the conventions that keep them there. Updated whenever the
 | `tools/dev-up.ps1` | Starts containers, backend (local profile) and frontend for manual testing |
 | `tools/e2e.ps1` | Boots the backend if needed (pausing the `award-backend` container) and runs the Playwright suite; `-Grep` runs matching tests only |
 | `tools/tracker-sync.ps1` | Moves a story in Jira and GitHub together |
+| `tools/reset-db.ps1` | Recreates the local PostgreSQL volume (Flyway reapplies everything) and restarts a running backend |
+| `tools/ua-drift.ps1` | Lists Ukrainian copies behind their English source; `-Missing` also lists documents without a copy |
 | `.github/workflows/` | CI/CD pipeline and documentation checks |
 
 ## Backend
@@ -31,12 +33,12 @@ Base package `ua.edu.chnu.awards`. Code is organised by domain, each domain owni
 ua.edu.chnu.awards
 ├── AwardMonitoringSystemApplication      entry point
 ├── config/                                cross-cutting Spring configuration (security chains, authorization server, tokens, locale, metrics)
-├── common/                                Problem Details exception handling, paging, correlation id (web/), mail delivery (mail/)
+├── common/                                Problem Details exception handling, paging, correlation id (web/), mail delivery (mail/), Redis fixed-window counters (limit/)
 ├── metrics/                               Micrometer business metrics
 ├── auth/                                  authorization server pieces: user lookup, status checks, claims, refresh-token guard, login page
 ├── authz/                                 organisation scopes, role levels, delegated scopes, access-denied auditing
 ├── audit/                                 audit_logs writer and the per-award audit trail
-└── <domain>/                              user, delegation, award, gdpr (document, workflow, notification, compliance follow in later epics)
+└── <domain>/                              user, delegation, award, document, gdpr (workflow, notification, compliance follow in later epics)
     ├── controller/                        REST endpoints (thin, validation and mapping only)
     ├── service/                           business logic, transactions
     ├── repository/                        Spring Data JPA
@@ -50,7 +52,8 @@ Conventions:
 
 - Constructor injection via Lombok `@RequiredArgsConstructor`; no field injection.
 - Entities never leave the service layer; controllers exchange DTOs (Java records).
-- Database schema is owned by Flyway (`src/main/resources/db/migration`): versioned `V###__*.sql` files are immutable once merged, repeatable `R__*.sql` files hold views, functions and reference data. Demo accounts live in `db/seed/local` and are loaded only by the `local` and `docker` profiles. Hibernate runs with `ddl-auto: validate`; columns with PostgreSQL-specific types (`ltree`, `inet`) are left unmapped and reached through native queries.
+- Database schema is owned by Flyway (`src/main/resources/db/migration`): versioned `V###__*.sql` files are immutable once merged, repeatable `R__*.sql` files hold views, functions and reference data. Development accounts live in `db/seed/local` and are loaded only by the `local` and `docker` profiles; the fictional accounts of a deployed demo live in `db/seed/demo` (ADR-021). Hibernate runs with `ddl-auto: validate`; columns with PostgreSQL-specific types (`ltree`, `inet`) are left unmapped and reached through native queries.
+- Document files go to MinIO through `document/service/ObjectStorage` (AWS SDK v2) and are scanned by `ClamAvScanner`; keys never contain file names or personal data.
 - Configuration lives in `application.yaml` with profiles `local`, `docker`, `production`; secrets come from environment variables, never from the file.
 
 ### Tests
@@ -58,7 +61,7 @@ Conventions:
 | Suffix | Runner | Scope | Infrastructure |
 |--------|--------|-------|----------------|
 | `*Test` | Surefire | unit tests and `@WebMvcTest` slices | none |
-| `*IT` | Failsafe | full context integration and `@DataJpaTest` slices (`@AutoConfigureTestDatabase(replace = NONE)`) | PostgreSQL 17 and Redis 7 via TestContainers (`support/ContainersConfiguration`) |
+| `*IT` | Failsafe | full context integration and `@DataJpaTest` slices (`@AutoConfigureTestDatabase(replace = NONE)`) | PostgreSQL 17, Redis 7 and MinIO via TestContainers (`support/ContainersConfiguration`) |
 | `*FT` | Failsafe | functional API tests with REST-assured (`support/AuthorizationCodeFlow` drives the login and PKCE exchange) | same containers, random port |
 
 `support/AbstractIntegrationTest` boots the application once per JVM with the `test` profile (`src/test/resources/application-test.yaml`). Coverage is merged from both runners; `mvn verify` fails below 85% line coverage or on any Checkstyle, PMD or SpotBugs finding.

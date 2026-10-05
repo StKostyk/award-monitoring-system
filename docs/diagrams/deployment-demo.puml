@@ -28,7 +28,8 @@ node "EU virtual server (Ubuntu LTS, Docker Engine)" <<cloud>> as host {
         component [app\nSpring Boot, profile production\nauthorization server + API] as app
         database "PostgreSQL 17" <<database>> as postgres
         database "Redis 7\n(password)" <<database>> as redis
-        database "MinIO" <<database>> as minio
+        database "MinIO\n(SSE-S3)" <<database>> as minio
+        component [ClamAV clamd\n+ freshclam] as clamav
     }
 
     storage "Docker volumes" as volumes
@@ -46,6 +47,7 @@ frontend --> app : /api, /oauth2, /login (8080)
 app --> postgres : JDBC (5432)
 app --> redis : RESP (6379)
 app --> minio : S3 API (9000)
+app --> clamav : INSTREAM (3310)
 app --> smtp : SMTP + STARTTLS (587)
 postgres --> volumes
 minio --> volumes

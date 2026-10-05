@@ -7,7 +7,7 @@ skinparam package {
     BackgroundColor<<config>> LightGray
 }
 
-title Award Monitoring & Tracking System - Package Diagram (Java backend, as built after Epic 2)
+title Award Monitoring & Tracking System - Package Diagram (Java backend, as built after Epic 3)
 
 ' Package by domain: each domain has controller, dto, entity, event, mapper, repository, service as needed
 
@@ -103,6 +103,28 @@ package "ua.edu.chnu.awards" {
         }
     }
 
+    package "document" <<domain>> {
+        package "controller" as document_controller {
+            class DocumentController
+        }
+        package "service" as document_service {
+            class DocumentService
+            class DocumentUpload
+            class UploadLimits
+            class MalwareScreening
+            class ClamAvScanner
+            class ObjectStorage
+            class StoredObjectCleanup
+            class DocumentSweeper
+        }
+        package "entity" as document_entity {
+            class Document
+        }
+        package "repository" as document_repository {
+            class DocumentRepository
+        }
+    }
+
     package "gdpr" <<domain>> {
         class DataExportService
         class PersonalDataAssembler
@@ -124,6 +146,9 @@ package "ua.edu.chnu.awards" {
         package "mail" as common_mail {
             class MailDelivery
         }
+        package "limit" as common_limit {
+            class FixedWindowCounter
+        }
     }
 
     package "metrics" <<shared>> {
@@ -136,6 +161,8 @@ package "ua.edu.chnu.awards" {
         class LoginSessionConfig
         class TokenConfig
         class OpenApiConfig
+        class StorageConfig
+        class InfrastructureConfig
     }
 }
 
@@ -143,6 +170,11 @@ package "ua.edu.chnu.awards" {
 award ..> user : owner, organisation
 award ..> authz : readable scope
 award ..> audit : AWARD_* rows
+award ..> document : drafts deleted with their objects
+document ..> award : owner draft, read rule
+document ..> authz
+document ..> audit : DOCUMENT_* rows
+document ..> common
 delegation ..> user
 delegation ..> authz
 user ..> authz
@@ -158,7 +190,7 @@ user ..> common
 
 note bottom of award
     Mappers are hand-written @Component classes;
-    no MapStruct. Planned domains: document (Epic 3),
+    no MapStruct. Planned domains: parsing (OCR, deferred),
     workflow (Epic 4), analytics (Epic 5),
     compliance (Epic 6), notification (Epic 7).
 end note

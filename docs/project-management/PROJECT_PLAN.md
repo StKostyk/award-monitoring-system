@@ -280,6 +280,17 @@ The plan above is the December 2025 baseline. Development since September 2026 r
 
 Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](../epics/).
 
+## Addendum 2026-10: After Epic 3
+
+- **Velocity**: Sprint 3 closed with 91 points (Epic 2 and the first Epic 3 stories); Sprint 4 (2026-10-05 –
+  2026-10-11) has 18 points so far; 166 points delivered.
+- **Delivered scope**: Epic 3 as upload only. Feature 3.0 prepared the defense deployment (production Compose file,
+  university brand and dark mode, blocking lint and browser tests in CI); Feature 3.1 keeps award evidence in
+  encrypted object storage with malware scanning and per-user limits.
+- **Deferred**: OCR and confidence scoring (Features 3.2, 3.3, US-006, US-007, 29 points) are re-planned after
+  Epic 8; the BRD parsing metric stays unproven until then.
+- **Next**: Epic 4 (review workflow).
+
 ---
 
 ## Summary

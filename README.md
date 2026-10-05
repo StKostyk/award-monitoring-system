@@ -12,7 +12,7 @@ The Award Monitoring & Tracking System transforms manual award management into a
 
 ### **Key Features**
 - 🔍 **Complete Transparency** - All awards publicly visible with verification badges
-- 🤖 **AI-Powered Parsing** - Automatic metadata extraction from uploaded certificates  
+- 📎 **Secure Evidence Upload** - Certificates scanned for malware, encrypted at rest and readable only to those who may read the award; automatic metadata extraction (OCR) is planned  
 - 📋 **Multi-Level Workflows** - Department → Faculty → University approval chains
 - 📊 **Real-Time Analytics** - Customizable dashboards and reporting
 - 🔒 **GDPR Compliant** - Built-in privacy controls and data retention policies
@@ -28,8 +28,8 @@ The Award Monitoring & Tracking System transforms manual award management into a
 ## 📊 **Project Status**
 
 **Current Phase**: Development  
-**Progress**: Epic 1 (users and authentication) and Epic 2 (award lifecycle) delivered, Sprint 3  
-**Next Phase**: Epic 3 (document upload)
+**Progress**: Epic 1 (users and authentication), Epic 2 (award lifecycle) and Epic 3 (document upload; OCR deferred) delivered, Sprint 4  
+**Next Phase**: Epic 4 (review workflow)
 
 | **Phase** | **Status** | **Key Deliverables** | **Completion** |
 |-----------|------------|---------------------|----------------|
