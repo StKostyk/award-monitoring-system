@@ -13,7 +13,7 @@ import { map } from 'rxjs';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
 import { AuthService } from '../auth/auth.service';
-import { canDelegate, canReadDirectory, canReadOwnAwards } from '../auth/permissions';
+import { canDelegate, canReadDirectory, canReadOwnAwards, canReview } from '../auth/permissions';
 import { BrandService } from '../brand/brand.service';
 import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-scheme.service';
 import { LanguageService } from '../i18n/language.service';
@@ -71,6 +71,9 @@ export class ShellComponent {
   );
   protected readonly canOpenUsers = computed(
     () => this.auth.isAuthenticated() && canReadDirectory(this.auth.permissions()),
+  );
+  protected readonly canOpenReviews = computed(
+    () => this.auth.isAuthenticated() && canReview(this.auth.permissions()),
   );
   protected readonly canOpenDelegations = computed(
     () => this.auth.isAuthenticated() && canDelegate(this.auth.permissions()),

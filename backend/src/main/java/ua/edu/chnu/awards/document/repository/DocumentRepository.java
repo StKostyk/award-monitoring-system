@@ -34,6 +34,18 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     long countByAwardId(long awardId);
 
     /**
+     * How many documents each of several awards has.
+     *
+     * @param awardIds the awards
+     * @return one count per award that has documents
+     */
+    @Query("""
+        select new ua.edu.chnu.awards.document.repository.DocumentCount(d.award.id, count(d))
+        from Document d where d.award.id in :awardIds group by d.award.id
+        """)
+    List<DocumentCount> countByAwardIds(@Param("awardIds") Collection<Long> awardIds);
+
+    /**
      * Total size of the documents a user has uploaded, over all her awards.
      *
      * @param userId the uploader

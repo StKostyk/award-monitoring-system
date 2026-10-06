@@ -1,13 +1,16 @@
 import {
+  approvalScopes,
   canCreateAwards,
   canDelegate,
   canReadDirectory,
   canReadOwnAwards,
+  canReview,
   delegatableOrganizations,
   delegatableRoles,
   grantableRoles,
   readPermissions,
   readSubject,
+  reviewableLevels,
 } from './permissions';
 
 function token(claims: Record<string, unknown>): string {
@@ -156,6 +159,25 @@ describe('permissions', () => {
     expect(delegatableRoles(dean)).toEqual(['DEAN']);
     expect(canDelegate(employee)).toBe(false);
     expect(canDelegate(borrowed)).toBe(false);
+  });
+
+  it('ac1_10_ac1_2_counts_own_and_delegated_approval_roles_for_the_queue', () => {
+    const borrowed = readPermissions(
+      token({
+        role_scopes: ['EMPLOYEE:64', 'DEAN:9', 'FACULTY_SECRETARY:9'],
+        delegations: ['DEAN:9:2'],
+      }),
+    );
+    const employee = readPermissions(token({ role_scopes: ['EMPLOYEE:64'] }));
+
+    expect(canReview(borrowed)).toBe(true);
+    expect(approvalScopes(borrowed).map((scope) => scope.role)).toEqual([
+      'DEAN',
+      'FACULTY_SECRETARY',
+    ]);
+    expect(reviewableLevels(borrowed)).toEqual(['FACULTY_SECRETARY', 'DEAN']);
+    expect(canReview(employee)).toBe(false);
+    expect(reviewableLevels(employee)).toEqual([]);
   });
 
   it('ac1_10_reads_the_user_id_of_the_token', () => {

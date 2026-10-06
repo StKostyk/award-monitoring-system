@@ -8,7 +8,7 @@ import {
 } from '@angular/router';
 import { vi } from 'vitest';
 
-import { authGuard, delegationGuard, userDirectoryGuard } from './auth.guard';
+import { approverGuard, authGuard, delegationGuard, userDirectoryGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { NO_PERMISSIONS, readPermissions } from './permissions';
 
@@ -69,6 +69,26 @@ describe('authGuard', () => {
 
     const refused = TestBed.runInInjectionContext(() =>
       userDirectoryGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac1_10_opens_the_queue_for_an_own_or_delegated_approval_role_only', () => {
+    for (const claims of [
+      { role_scopes: ['FACULTY_SECRETARY:9'] },
+      { role_scopes: ['EMPLOYEE:64', 'DEAN:9'], delegations: ['DEAN:9:2'] },
+    ]) {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+
+      expect(
+        TestBed.runInInjectionContext(() => approverGuard({} as ActivatedRouteSnapshot, state)),
+      ).toBe(true);
+    }
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));
+
+    const refused = TestBed.runInInjectionContext(() =>
+      approverGuard({} as ActivatedRouteSnapshot, state),
     );
 
     expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());

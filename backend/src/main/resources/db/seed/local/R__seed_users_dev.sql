@@ -10,6 +10,8 @@ VALUES
     ('gdpr@chnu.edu.ua', 'Галина', 'Захисник', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 1),
     ('dean.fmi@chnu.edu.ua', 'Мартин', 'Мартинюк', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 9),
     ('secretary.fmi@chnu.edu.ua', 'Аліна', 'Секретаренко', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 9),
+    ('secretary2.fmi@chnu.edu.ua', 'Олена', 'Петрук', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 9),
+    ('rector.secretary@chnu.edu.ua', 'Вікторія', 'Канцелярук', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 1),
     ('employee.fmi@chnu.edu.ua', 'Анастасія', 'Працівник', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'ACTIVE', 64),
     ('pending@chnu.edu.ua', 'Петро', 'Новачок', '$2a$12$aHfrRHPVY2s/0iSzOm5Jkua5t87xeHqTfXWPovs7uM/trJp2mgoTi', 'PENDING', 64)
 ON CONFLICT (email_address) DO NOTHING;
@@ -22,6 +24,8 @@ FROM (VALUES
     ('gdpr@chnu.edu.ua', 1, 'GDPR_OFFICER'),
     ('dean.fmi@chnu.edu.ua', 9, 'DEAN'),
     ('secretary.fmi@chnu.edu.ua', 9, 'FACULTY_SECRETARY'),
+    ('secretary2.fmi@chnu.edu.ua', 9, 'FACULTY_SECRETARY'),
+    ('rector.secretary@chnu.edu.ua', 1, 'RECTOR_SECRETARY'),
     ('employee.fmi@chnu.edu.ua', 64, 'EMPLOYEE'),
     ('pending@chnu.edu.ua', 64, 'EMPLOYEE')
 ) AS r(email_address, organization_id, role_type)

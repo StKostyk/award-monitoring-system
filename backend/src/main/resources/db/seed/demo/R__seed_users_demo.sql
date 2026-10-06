@@ -10,6 +10,8 @@ FROM (VALUES
     ('rector@demo.example', 'Роман', 'Ректоренко', 1),
     ('dean.fmi@demo.example', 'Мартин', 'Мартинюк', 9),
     ('secretary.fmi@demo.example', 'Аліна', 'Секретаренко', 9),
+    ('secretary2.fmi@demo.example', 'Олена', 'Петрук', 9),
+    ('rector.secretary@demo.example', 'Вікторія', 'Канцелярук', 1),
     ('employee.fmi@demo.example', 'Анастасія', 'Працівник', 64)
 ) AS d(email_address, first_name, last_name, organization_id)
 WHERE '${demo_password_hash}' <> ''
@@ -22,6 +24,8 @@ FROM (VALUES
     ('rector@demo.example', 1, 'RECTOR'),
     ('dean.fmi@demo.example', 9, 'DEAN'),
     ('secretary.fmi@demo.example', 9, 'FACULTY_SECRETARY'),
+    ('secretary2.fmi@demo.example', 9, 'FACULTY_SECRETARY'),
+    ('rector.secretary@demo.example', 1, 'RECTOR_SECRETARY'),
     ('employee.fmi@demo.example', 64, 'EMPLOYEE')
 ) AS r(email_address, organization_id, role_type)
 JOIN users u ON u.email_address = r.email_address

@@ -73,9 +73,15 @@
       }
     </dl>
     <div class="award-detail__actions">
-      <a mat-button routerLink="/awards" data-testid="award-back">{{
-        'awards.back' | transloco
-      }}</a>
+      @if (reviewable(award)) {
+        <a mat-button routerLink="/reviews" data-testid="award-back">{{
+          'reviews.back' | transloco
+        }}</a>
+      } @else {
+        <a mat-button routerLink="/awards" data-testid="award-back">{{
+          'awards.back' | transloco
+        }}</a>
+      }
       @if (ownDraft(award)) {
         <button
           mat-button
@@ -94,6 +100,9 @@
       }
     </div>
   </article>
+  @if (reviewable(award)) {
+    <app-review-panel [awardId]="award.id" (changed)="refresh(award.id)" />
+  }
   <app-award-documents [awardId]="award.id" [removable]="editable(award)" />
   @if (award.status !== 'DRAFT') {
     <app-award-status

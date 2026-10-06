@@ -1,6 +1,11 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, delegationGuard, userDirectoryGuard } from './core/auth/auth.guard';
+import {
+  approverGuard,
+  authGuard,
+  delegationGuard,
+  userDirectoryGuard,
+} from './core/auth/auth.guard';
 import { CallbackComponent } from './core/auth/callback.component';
 import { ShellComponent } from './core/layout/shell.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
@@ -39,6 +44,12 @@ export const routes: Routes = [
         path: 'awards',
         canActivate: [authGuard, ownAwardsGuard],
         loadChildren: () => import('./features/awards/awards.routes').then((m) => m.AWARD_ROUTES),
+      },
+      {
+        path: 'reviews',
+        canActivate: [authGuard, approverGuard],
+        loadChildren: () =>
+          import('./features/reviews/reviews.routes').then((m) => m.REVIEW_ROUTES),
       },
       {
         path: 'delegations',

@@ -34,6 +34,8 @@ class DevSeedIT {
         "gdpr@chnu.edu.ua", RoleType.GDPR_OFFICER,
         "dean.fmi@chnu.edu.ua", RoleType.DEAN,
         "secretary.fmi@chnu.edu.ua", RoleType.FACULTY_SECRETARY,
+        "secretary2.fmi@chnu.edu.ua", RoleType.FACULTY_SECRETARY,
+        "rector.secretary@chnu.edu.ua", RoleType.RECTOR_SECRETARY,
         "employee.fmi@chnu.edu.ua", RoleType.EMPLOYEE,
         "pending@chnu.edu.ua", RoleType.EMPLOYEE);
 

@@ -59,6 +59,9 @@ public class ReviewDecision {
     @Column(name = "comments")
     private String comments;
 
+    @Column(name = "delegator_id")
+    private Long delegatorId;
+
     @Column(name = "decided_at", nullable = false)
     private Instant decidedAt;
 }

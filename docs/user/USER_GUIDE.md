@@ -14,9 +14,10 @@
 2. [Submitting Awards](#submitting-awards)
 3. [Document Management](#document-management)
 4. [Tracking Award Status](#tracking-award-status)
-5. [Managing Your Profile](#managing-your-profile)
-6. [Notifications](#notifications)
-7. [FAQ](#faq)
+5. [Reviewing Awards](#reviewing-awards)
+6. [Managing Your Profile](#managing-your-profile)
+7. [Notifications](#notifications)
+8. [FAQ](#faq)
 
 ---
 
@@ -163,6 +164,32 @@ Each award shows complete history:
 - Who reviewed it at each level
 - Comments from reviewers
 - Decision timestamps
+
+---
+
+## Reviewing Awards
+
+For faculty secretaries, deans, the rector's secretary and the rector, and for colleagues acting for them by
+delegation.
+
+### The review queue
+
+1. Open **"Reviews"** in the side menu.
+2. The tabs show **Mine** (awards you have claimed), **Unassigned** (nobody works on them yet) and **All**.
+3. Filter by review level or by faculty or department. Overdue awards come first and carry an **Overdue** chip.
+4. Click a row to open the award.
+
+### Working on an award
+
+The **Review** panel of the award page shows who reviews it and the deadline.
+
+- **Claim**: you become the reviewer; colleagues see your name in the queue.
+- **Release**: the award goes back to the queue of its level.
+- **Hand over…**: choose a colleague of the same level (colleagues acting by delegation are marked).
+- **Take over**: a dean or a higher level takes an award from the reviewer below, after a confirmation naming them.
+
+If a colleague claimed the award a moment earlier, the panel names them and shows the current state; if the data
+was out of date, the page refreshes itself.
 
 ---
 

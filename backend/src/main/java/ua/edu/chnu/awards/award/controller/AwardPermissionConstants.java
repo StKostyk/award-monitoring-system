@@ -13,6 +13,8 @@ public final class AwardPermissionConstants {
     public static final String CAN_UPDATE = "@access.require('award:update:own')";
     /** Reading an award; the services narrow it to the caller's own awards and scope. */
     public static final String CAN_READ_OWN = "@access.require('award:read:own')";
+    /** Reviewing requests at some level, by an own or a borrowed role; the services apply the reviewer rule. */
+    public static final String CAN_REVIEW = "@access.require('award:approve:level1')";
 
     private AwardPermissionConstants() {
     }

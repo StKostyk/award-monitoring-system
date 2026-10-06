@@ -103,6 +103,25 @@ export function heldApprovalScopes(permissions: TokenPermissions): RoleScope[] {
   return permissions.heldScopes.filter((scope) => APPROVAL_ROLES.includes(scope.role));
 }
 
+/** The approval roles the caller may act in, their own and those held by delegation. */
+export function approvalScopes(permissions: TokenPermissions): RoleScope[] {
+  return permissions.roleScopes.filter((scope) => APPROVAL_ROLES.includes(scope.role));
+}
+
+/** Whether the caller may open the reviewer queue: an approval role of their own or by delegation. */
+export function canReview(permissions: TokenPermissions): boolean {
+  return approvalScopes(permissions).length > 0;
+}
+
+/** The approval levels up to the caller's highest approval role, in level order; empty without one. */
+export function reviewableLevels(permissions: TokenPermissions): RoleType[] {
+  const highest = Math.max(
+    -1,
+    ...approvalScopes(permissions).map((scope) => APPROVAL_ROLES.indexOf(scope.role)),
+  );
+  return APPROVAL_ROLES.slice(0, highest + 1);
+}
+
 /** Own scopes for a token issued before `held_scopes` existed: everything not named by a delegation. */
 function withoutBorrowed(roleScopes: RoleScope[], delegated: DelegationScope[]): RoleScope[] {
   return roleScopes.filter(

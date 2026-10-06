@@ -515,6 +515,68 @@
       "unknown": "The action failed. Try again later."
     }
   },
+  "reviews": {
+    "title": "Reviews",
+    "tabs": {
+      "mine": "Mine",
+      "unassigned": "Unassigned",
+      "all": "All"
+    },
+    "filters": {
+      "level": "Review level",
+      "unit": "Unit",
+      "all": "All"
+    },
+    "columns": {
+      "title": "Award",
+      "recipient": "Recipient",
+      "organization": "Faculty or department",
+      "category": "Category level",
+      "level": "Review level",
+      "submitted": "Submitted",
+      "deadline": "Deadline",
+      "reviewer": "Reviewer"
+    },
+    "overdue": "Overdue",
+    "empty": "No awards to review",
+    "back": "Back to reviews",
+    "panel": {
+      "title": "Review",
+      "nobody": "Nobody has claimed it yet",
+      "delegatedFrom": "On behalf of",
+      "claim": "Claim",
+      "release": "Release",
+      "handOver": "Hand over…",
+      "takeOver": "Take over"
+    },
+    "handOver": {
+      "title": "Hand over to a colleague",
+      "empty": "No other reviewer can take this award.",
+      "delegated": "by delegation",
+      "confirm": "Hand over",
+      "cancel": "Cancel"
+    },
+    "takeOver": {
+      "title": "Take over",
+      "text": "{{name}} is reviewing this award. Take it over?",
+      "confirm": "Take over",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "claimed": "You are now reviewing this award.",
+      "released": "The award is back in the queue.",
+      "handedOver": "The award was handed over."
+    },
+    "problems": {
+      "request-claimed": "{{name}} is already reviewing this award",
+      "request-stale": "The data was out of date; the page has been refreshed",
+      "reviewer-not-eligible": "This colleague may not review the award. Choose someone else.",
+      "invalid-parameter": "This filter is outside your authority.",
+      "access-denied": "You are not allowed to review awards.",
+      "network": "The server is unreachable. Try again.",
+      "unknown": "The action failed. Try again."
+    }
+  },
   "register": {
     "title": "Registration",
     "hint": "Registration is open to university addresses @chnu.edu.ua only. After registering, confirm the address with the link from the email.",

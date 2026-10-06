@@ -1,0 +1,189 @@
+<h1 class="reviews__title">{{ 'reviews.title' | transloco }}</h1>
+
+<nav mat-tab-nav-bar [tabPanel]="panel" class="reviews__tabs" data-testid="review-tabs">
+  @for (tab of tabs; track tab.label) {
+    <a
+      mat-tab-link
+      href=""
+      [active]="filters().assigned === tab.assigned"
+      (click)="$event.preventDefault(); filter({ assigned: tab.assigned })"
+      [attr.data-testid]="'review-tab-' + (tab.assigned ?? 'all')"
+    >
+      {{ tab.label | transloco }}
+    </a>
+  }
+</nav>
+
+<mat-tab-nav-panel #panel>
+  <div class="reviews__filters">
+    <mat-form-field class="reviews__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'reviews.filters.level' | transloco }}</mat-label>
+      <mat-select
+        [ngModel]="filters().level"
+        (ngModelChange)="filter({ level: $event })"
+        data-testid="review-filter-level"
+      >
+        <mat-option [value]="null">{{ 'reviews.filters.all' | transloco }}</mat-option>
+        @for (level of levels; track level) {
+          <mat-option [value]="level">{{ 'awards.levels.' + level | transloco }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="reviews__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'reviews.filters.unit' | transloco }}</mat-label>
+      <mat-select
+        [ngModel]="filters().organizationId"
+        (ngModelChange)="filter({ organizationId: $event })"
+        data-testid="review-filter-unit"
+      >
+        <mat-option [value]="null">{{ 'reviews.filters.all' | transloco }}</mat-option>
+        @for (unit of units(); track unit.id) {
+          <mat-option [value]="unit.id" [class.reviews__child]="unit.type === 'DEPARTMENT'">
+            {{ unitName(unit) }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" data-testid="reviews-loading" />
+  }
+
+  @if (problem(); as problem) {
+    <p class="reviews__problem" role="alert" data-testid="reviews-error">
+      {{ 'reviews.problems.' + problem | transloco }}
+    </p>
+  }
+
+  @if (wide()) {
+    <table mat-table [dataSource]="items()" class="reviews__table" data-testid="review-table">
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.title' | transloco }}</th>
+        <td mat-cell *matCellDef="let item">
+          <a
+            class="reviews__link"
+            [routerLink]="['/awards', item.awardId]"
+            (click)="$event.stopPropagation()"
+            data-testid="review-title"
+            >{{ title(item) }}</a
+          >
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="recipient">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.recipient' | transloco }}</th>
+        <td mat-cell *matCellDef="let item">{{ recipient(item) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="organization">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.organization' | transloco }}</th>
+        <td mat-cell *matCellDef="let item">{{ organization(item) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="category">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.category' | transloco }}</th>
+        <td mat-cell *matCellDef="let item">
+          {{ item.category ? ('categories.levels.' + item.category.level | transloco) : '—' }}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="level">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.level' | transloco }}</th>
+        <td mat-cell *matCellDef="let item">{{ 'awards.levels.' + item.level | transloco }}</td>
+      </ng-container>
+      <ng-container matColumnDef="submitted">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.submitted' | transloco }}</th>
+        <td mat-cell *matCellDef="let item">{{ day(item.submittedAt) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="deadline">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.deadline' | transloco }}</th>
+        <td mat-cell *matCellDef="let item">
+          <span class="reviews__deadline">
+            {{ day(item.deadline) }}
+            @if (item.overdue) {
+              <mat-chip class="reviews__overdue" data-testid="review-overdue">{{
+                'reviews.overdue' | transloco
+              }}</mat-chip>
+            }
+          </span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="reviewer">
+        <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.reviewer' | transloco }}</th>
+        <td mat-cell *matCellDef="let item" data-testid="review-reviewer">
+          {{ item.reviewer?.name ?? '—' }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: columns"
+        class="reviews__row"
+        (click)="open(row)"
+        data-testid="review-item"
+      ></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell reviews__empty" [attr.colspan]="columns.length">
+          @if (!loading() && !problem()) {
+            <span data-testid="reviews-empty">{{ 'reviews.empty' | transloco }}</span>
+          }
+        </td>
+      </tr>
+    </table>
+  } @else {
+    <ul class="reviews__cards" data-testid="review-cards">
+      @for (item of items(); track item.requestId) {
+        <li class="reviews__card" data-testid="review-item">
+          <a
+            class="reviews__link"
+            [routerLink]="['/awards', item.awardId]"
+            data-testid="review-title"
+          >
+            {{ title(item) }}
+          </a>
+          <dl class="reviews__card-fields">
+            <dt>{{ 'reviews.columns.recipient' | transloco }}</dt>
+            <dd>{{ recipient(item) }}</dd>
+            <dt>{{ 'reviews.columns.organization' | transloco }}</dt>
+            <dd>{{ organization(item) }}</dd>
+            <dt>{{ 'reviews.columns.level' | transloco }}</dt>
+            <dd>
+              {{ 'awards.levels.' + item.level | transloco }}
+              @if (item.category) {
+                · {{ 'categories.levels.' + item.category.level | transloco }}
+              }
+            </dd>
+            <dt>{{ 'reviews.columns.submitted' | transloco }}</dt>
+            <dd>{{ day(item.submittedAt) }}</dd>
+            <dt>{{ 'reviews.columns.deadline' | transloco }}</dt>
+            <dd class="reviews__deadline">
+              {{ day(item.deadline) }}
+              @if (item.overdue) {
+                <mat-chip class="reviews__overdue" data-testid="review-overdue">{{
+                  'reviews.overdue' | transloco
+                }}</mat-chip>
+              }
+            </dd>
+            <dt>{{ 'reviews.columns.reviewer' | transloco }}</dt>
+            <dd data-testid="review-reviewer">{{ item.reviewer?.name ?? '—' }}</dd>
+          </dl>
+        </li>
+      } @empty {
+        @if (!loading() && !problem()) {
+          <li class="reviews__empty" data-testid="reviews-empty">
+            {{ 'reviews.empty' | transloco }}
+          </li>
+        }
+      }
+    </ul>
+  }
+
+  @if (total() > 0) {
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizes"
+      (page)="page($event)"
+      data-testid="reviews-paginator"
+    />
+  }
+</mat-tab-nav-panel>

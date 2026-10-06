@@ -567,7 +567,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `award_id` | `BIGINT` | NO | - | FK→awards, UK | Associated award (unique) |
 | `submitter_id` | `BIGINT` | NO | - | FK→users | User who submitted |
 | `status` | `VARCHAR(20)` | NO | `'SUBMITTED'` | CK | Current request status |
-| `current_reviewer_id` | `BIGINT` | YES | - | FK→users | Currently assigned reviewer |
+| `current_reviewer_id` | `BIGINT` | YES | - | FK→users | Reviewer who claimed the request; NULL while nobody holds it (claim, release, hand-over, take-over since 4.1.1) |
 | `current_level` | `VARCHAR(30)` | NO | - | CK | Current approval level |
 | `submitted_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Submission timestamp |
 | `deadline` | `TIMESTAMPTZ` | YES | - | - | End of the current level's review period (set at submission since V024) |
@@ -575,13 +575,14 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `rejection_reason` | `TEXT` | YES | - | - | Reason if rejected |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
+| `version` | `BIGINT` | NO | `0` | - | Optimistic lock version; raised by every claim, release, hand-over and decision; sent back as `requestVersion` (V028) |
 
 **Request Status Values** (`status`):
 | Value | Description | Transitions To |
 |-------|-------------|----------------|
-| `SUBMITTED` | Initial submission | IN_REVIEW |
-| `IN_REVIEW` | Currently being reviewed | ESCALATED, APPROVED, REJECTED, RETURNED |
-| `ESCALATED` | Moved to higher approval level | IN_REVIEW |
+| `SUBMITTED` | Initial submission, waiting to be claimed | IN_REVIEW (claim) |
+| `IN_REVIEW` | Claimed by `current_reviewer_id` | SUBMITTED or ESCALATED (release), ESCALATED, APPROVED, REJECTED, RETURNED |
+| `ESCALATED` | Moved to a higher level by a decision, waiting to be claimed | IN_REVIEW (claim) |
 | `APPROVED` | Final approval granted | - |
 | `REJECTED` | Final rejection | - |
 | `RETURNED` | Returned for corrections | SUBMITTED |
@@ -607,6 +608,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `idx_requests_active` - Partial B-tree on `(current_reviewer_id, created_at DESC)` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`
 - `idx_requests_status_level` - B-tree on `(status, current_level)` (V012)
 - `idx_requests_submitted` - B-tree on `submitted_at DESC` (V012)
+- `idx_requests_open_level` - Partial B-tree on `(current_level, deadline, request_id)` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`: the reviewer queue (V028)
 
 **Relationships**:
 - BELONGS TO `awards` (1:1) via `award_id`
@@ -638,6 +640,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `level` | `VARCHAR(30)` | NO | - | CK | Approval level at decision |
 | `comments` | `TEXT` | YES | - | - | Reviewer comments |
 | `decided_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Decision timestamp |
+| `delegator_id` | `BIGINT` | YES | - | FK→users | Holder of the role the reviewer borrowed ("за дорученням"); NULL for a decision under an own role (V028, written from 4.1.2) |
 
 **Decision Types** (`decision`):
 | Value | Description | Request Status After |
@@ -652,10 +655,12 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `idx_review_decisions_request` - B-tree on `request_id`
 - `idx_review_decisions_reviewer` - B-tree on `reviewer_id`
 - `idx_review_decisions_decided` - B-tree on `decided_at DESC`
+- `idx_review_decisions_delegator` - Partial B-tree on `delegator_id` where not NULL (V028)
 
 **Relationships**:
 - BELONGS TO `award_requests` (N:1) via `request_id`
 - BELONGS TO `users` (N:1) via `reviewer_id`
+- BELONGS TO `users` (N:1) via `delegator_id`
 
 ---
 

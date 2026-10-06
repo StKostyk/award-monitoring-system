@@ -1,5 +1,8 @@
 package ua.edu.chnu.awards.award.entity;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 import ua.edu.chnu.awards.user.entity.RoleType;
 
 /**
@@ -24,5 +27,25 @@ public enum ApprovalLevel {
      */
     public RoleType role() {
         return role;
+    }
+
+    /**
+     * The level whose requests holders of a role review.
+     *
+     * @param role any role
+     * @return the level, empty for a role that reviews nothing
+     */
+    public static Optional<ApprovalLevel> of(RoleType role) {
+        return Arrays.stream(values()).filter(level -> level.role == role).findFirst();
+    }
+
+    /**
+     * Whether this level is the given one or above it.
+     *
+     * @param other another level
+     * @return true when this level reviews at least as high
+     */
+    public boolean covers(ApprovalLevel other) {
+        return compareTo(other) >= 0;
     }
 }
