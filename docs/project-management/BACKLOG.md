@@ -2,9 +2,9 @@
 ## Award Monitoring & Tracking System
 
 > **Last Updated**: October 2026  
-> **Story Points**: 154 delivered, 57 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
+> **Story Points**: 167 delivered, 104 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
-> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34
+> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47
 
 Every story is tracked twice: a Jira issue for the sprint board and a GitHub issue that the pull request closes.
 
@@ -55,16 +55,29 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | 3.0.4 | Blocking lint and Playwright in CI | 3 | ✅ Done | SCRUM-41 | [#124](https://github.com/StKostyk/award-monitoring-system/issues/124) |
 | 3.1.4 | CI fixes after SCRUM-37 | 1 | ✅ Done (Sprint 4) | SCRUM-44 | [#133](https://github.com/StKostyk/award-monitoring-system/issues/133) |
 | 3.1.5 | Fixes and refactor sweep from the Feature 3.1 validation | 3 | ✅ Done (Sprint 4) | SCRUM-45 | [#135](https://github.com/StKostyk/award-monitoring-system/issues/135) |
-| 3.1.6 | CI fixes: nginx proxy snippet and Kyiv dates | 1 | 👀 In review (Sprint 4) | SCRUM-46 | [#140](https://github.com/StKostyk/award-monitoring-system/issues/140) |
+| 3.1.6 | CI fixes: nginx proxy snippet and Kyiv dates | 1 | ✅ Done (Sprint 4) | SCRUM-46 | [#140](https://github.com/StKostyk/award-monitoring-system/issues/140) |
+
+### Epic 4 — Approval Workflow Engine (Jira epic SCRUM-47)
+Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLOW-STATUS.md). Kickoff 2026-10-06; the organisational award model comes first, the achievement pages last. Story 2.4.1 from Epic 2 belongs here.
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 4.1.0 | Organisational awards: unit recipients and submitter | 5 | Sprint 4 | SCRUM-48 | [#142](https://github.com/StKostyk/award-monitoring-system/issues/142) |
+| 4.1.1 | Reviewer queue with claim, release and hand-over | 8 | Sprint 4 | SCRUM-49 | [#143](https://github.com/StKostyk/award-monitoring-system/issues/143) |
+| 4.1.2 | Review decisions: approve, reject, return, escalate to the dean | 8 | Sprint 4 | SCRUM-50 | [#144](https://github.com/StKostyk/award-monitoring-system/issues/144) |
+| 4.1.3 | Withdraw an unclaimed request and resubmit a returned award | 3 | Sprint 5 | SCRUM-51 | [#145](https://github.com/StKostyk/award-monitoring-system/issues/145) |
+| 4.1.4 | Batch review with template responses (US-004) | 5 | Sprint 5 | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |
+| 4.2.1 | Per-faculty review period set by the dean | 3 | Sprint 5 | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
+| 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | Sprint 5 | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
+| 2.4.1 | Award correction by reviewers | 5 | Sprint 5 | SCRUM-55 | [#149](https://github.com/StKostyk/award-monitoring-system/issues/149) |
+| 4.3.1 | Colleague visibility and the achievements page | 5 | Sprint 5 | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
+| 4.3.2 | Unit achievement pages and public achievements | 5 | Sprint 5 | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 
 ### Later epics
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
 | US-006 | AI-Powered Document Parsing (deferred) | 21 | Documents |
 | US-007 | Confidence Score Display (deferred) | 8 | Documents |
-| US-004 | Multi-Level Approval Routing | - | Workflows |
-| 4.2.1 | Automatic Escalation | - | Workflows |
-| 2.4.1 | Award correction by reviewers (end of Epic 4) | 5 | Workflows |
 | 1.3.2 | Notification preferences (SCRUM-16, [#39](https://github.com/StKostyk/award-monitoring-system/issues/39)) | 3 | Notifications |
 | 2.4.2 | GDPR-compliant award deletion | 5 | Compliance |
 | US-008 | Personal Dashboard | 13 | Analytics |
@@ -81,7 +94,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 166 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3)
+Total Completed: 167 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3), 3.1.6 (1)
 
 ---
 
