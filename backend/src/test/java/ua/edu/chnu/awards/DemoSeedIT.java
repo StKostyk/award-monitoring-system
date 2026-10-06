@@ -34,6 +34,8 @@ class DemoSeedIT {
         "rector@demo.example", RoleType.RECTOR,
         "dean.fmi@demo.example", RoleType.DEAN,
         "secretary.fmi@demo.example", RoleType.FACULTY_SECRETARY,
+        "secretary2.fmi@demo.example", RoleType.FACULTY_SECRETARY,
+        "rector.secretary@demo.example", RoleType.RECTOR_SECRETARY,
         "employee.fmi@demo.example", RoleType.EMPLOYEE);
 
     @Nested

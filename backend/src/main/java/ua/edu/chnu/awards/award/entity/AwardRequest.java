@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -38,7 +39,7 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@ToString(exclude = {"award", "submitter"})
+@ToString(exclude = {"award", "submitter", "currentReviewer"})
 public class AwardRequest {
 
     @Id
@@ -53,6 +54,10 @@ public class AwardRequest {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "submitter_id", nullable = false, updatable = false)
     private User submitter;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "current_reviewer_id")
+    private User currentReviewer;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -81,4 +86,29 @@ public class AwardRequest {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Builder.Default
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
+
+    /**
+     * Whether the request still waits for a decision.
+     *
+     * @return true while submitted, in review or escalated
+     */
+    public boolean isOpen() {
+        return status == RequestStatus.SUBMITTED || status == RequestStatus.IN_REVIEW
+            || status == RequestStatus.ESCALATED;
+    }
+
+    /**
+     * Whether the request reached an outcome that no reviewer changes any more.
+     *
+     * @return true when approved, rejected or expired
+     */
+    public boolean isFinal() {
+        return status == RequestStatus.APPROVED || status == RequestStatus.REJECTED
+            || status == RequestStatus.EXPIRED;
+    }
 }

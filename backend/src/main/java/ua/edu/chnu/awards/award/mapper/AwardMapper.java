@@ -56,16 +56,16 @@ public class AwardMapper {
             award.getVersion());
     }
 
-    private static AwardRecipient recipient(Award award) {
+    static AwardRecipient recipient(Award award) {
         return award.isUnitAward() ? AwardRecipient.unit(award.getOrganization()) : AwardRecipient.PERSON;
     }
 
-    private static CategoryRef categoryRef(AwardCategory category) {
+    static CategoryRef categoryRef(AwardCategory category) {
         return category == null ? null
             : new CategoryRef(category.getId(), category.getName(), category.getNameUk(), category.getLevel());
     }
 
-    private static OrganizationRef organizationRef(Organization organization) {
+    static OrganizationRef organizationRef(Organization organization) {
         return new OrganizationRef(organization.getId(), organization.getName(), organization.getNameUk(),
             organization.getCode(), organization.getOrgType());
     }

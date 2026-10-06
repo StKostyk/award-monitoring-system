@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 
 /**
@@ -149,4 +150,25 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
     boolean existsHolder(@Param("role") RoleType role, @Param("organizationIds") Collection<Long> organizationIds,
                          @Param("statuses") Collection<AccountStatus> statuses,
                          @Param("excludedUserId") long excludedUserId, @Param("day") LocalDate day);
+
+    /**
+     * People with an account in one of the given states who hold a role on the given day in one of the given
+     * organisations.
+     *
+     * @param role            the role
+     * @param organizationIds organisations whose holders count
+     * @param statuses        account states whose holders count
+     * @param day             the day the assignment must be valid on
+     * @return distinct holders
+     */
+    @Query("""
+        select distinct r.user from UserRole r
+        where r.roleType = :role
+          and r.organization.id in :organizationIds
+          and r.user.accountStatus in :statuses
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    List<User> findHolders(@Param("role") RoleType role, @Param("organizationIds") Collection<Long> organizationIds,
+                           @Param("statuses") Collection<AccountStatus> statuses, @Param("day") LocalDate day);
 }

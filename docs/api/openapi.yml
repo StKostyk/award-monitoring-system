@@ -848,6 +848,195 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /reviews:
+    get:
+      tags: [Workflows]
+      summary: Reviewer queue
+      description: >
+        Open requests (`SUBMITTED`, `IN_REVIEW`, `ESCALATED`) the caller may review under the reviewer rule: a
+        role, own or delegated, whose approval level is the request's level or above and whose scope covers the
+        award's organisation; awards the caller owns or submitted, and awards of the delegator for a delegated
+        role, are left out. Without `level` the queue holds the levels of the caller's roles; with `level` any
+        level up to the caller's highest. Ordered by deadline (so overdue first), then request id
+        (`award:approve:level1`, 4.1.1).
+      security:
+        - bearerAuth: []
+      operationId: listReviews
+      parameters:
+        - name: assigned
+          in: query
+          schema:
+            type: string
+            enum: [me, unassigned, others]
+          description: Who holds the requests; everybody when absent
+        - name: level
+          in: query
+          schema:
+            $ref: '#/components/schemas/ApprovalLevel'
+          description: The level the requests wait at; at most the caller's highest level
+        - name: organizationId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: A faculty or department inside the caller's scopes, sub-units included
+        - name: overdue
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: A page of the queue; empty for an approver with nothing to review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItemPage'
+        '400':
+          description: >
+            `urn:awards:problem:invalid-parameter` naming `assigned`, `level` (unknown or above the caller's
+            roles) or `organizationId` (outside the caller's scopes)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /awards/{id}/reviewer:
+    put:
+      tags: [Workflows]
+      summary: Claim, take over or hand over the request of an award
+      description: >
+        Without `reviewerId` the caller claims the request: status `IN_REVIEW`, the caller as reviewer, the version
+        raised, an audit row `REVIEW_CLAIMED` (with `delegatorId` for a delegate); claiming a request one already
+        holds changes nothing. A request held by someone else is taken over with `takeOver: true` by a caller whose
+        level is above the request's level, or by a peer when the holder may no longer review it
+        (`REVIEW_TAKEN_OVER` with `previousReviewerId`). With `reviewerId` the holder hands the request to a
+        colleague from `GET /awards/{id}/reviewers` (`REVIEW_HANDED_OVER`). The request row is locked, so of two
+        claims at once one answers 409 (`award:approve:level1`, reviewer rule, 4.1.1).
+      security:
+        - bearerAuth: []
+      operationId: assignReviewer
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewerChange'
+      responses:
+        '200':
+          description: The request with its new reviewer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No pending request the caller may review (unknown award, draft, returned, own award)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: >
+            `urn:awards:problem:request-claimed` with the holder in `reviewer` (null when a hand-over is sent for
+            a request nobody holds), `request-stale` with `currentVersion`, or `request-closed` with
+            `requestStatus` for a decided request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: >
+            `urn:awards:problem:validation-failed` without `requestVersion`, or `reviewer-not-eligible` when
+            `reviewerId` is not among the candidates
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    delete:
+      tags: [Workflows]
+      summary: Release the request of an award
+      description: >
+        The holder gives the request back to the queue of its level: reviewer null, status `ESCALATED` when a
+        decision at a lower level brought it there and `SUBMITTED` otherwise; audit row `REVIEW_RELEASED`
+        (`award:approve:level1`, 4.1.1).
+      security:
+        - bearerAuth: []
+      operationId: releaseReviewer
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+        - name: requestVersion
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Released
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >
+            `urn:awards:problem:request-claimed` when the caller does not hold the request, `request-stale`,
+            `request-closed`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /awards/{id}/reviewers:
+    get:
+      tags: [Workflows]
+      summary: Colleagues the request of an award can be handed over to
+      description: >
+        People who may review at the request's level for its organisation today (own role, or a delegation in
+        effect whose delegator still holds the role), able to sign in, other than the caller, the owner and the
+        submitter; by name (`award:approve:level1`, reviewer rule, 4.1.1).
+      security:
+        - bearerAuth: []
+      operationId: listReviewerCandidates
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: The candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewerCandidate'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: '`urn:awards:problem:request-closed` for a decided request'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
   /awards/{id}/approve:
     post:
       tags: [Workflows]
@@ -2696,6 +2885,95 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Award'
+
+    ReviewItem:
+      type: object
+      description: One request in a reviewer's queue
+      properties:
+        awardId:
+          type: integer
+          format: int64
+          description: The award; workflow paths take award ids
+        requestId:
+          type: integer
+          format: int64
+        requestVersion:
+          type: integer
+          format: int64
+          description: Version to send back with a claim, release or decision
+        title:
+          type: [string, 'null']
+        titleUk:
+          type: [string, 'null']
+        recipient:
+          $ref: '#/components/schemas/AwardRecipient'
+        owner:
+          $ref: '#/components/schemas/UserRef'
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        category:
+          $ref: '#/components/schemas/AwardCategoryRef'
+        level:
+          $ref: '#/components/schemas/ApprovalLevel'
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        reviewer:
+          description: Who claimed the request; null while nobody holds it
+          oneOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: 'null'
+        submittedAt:
+          type: string
+          format: date-time
+        deadline:
+          type: [string, 'null']
+          format: date-time
+        overdue:
+          type: boolean
+        documentCount:
+          type: integer
+          format: int64
+        delegatedFrom:
+          description: The delegator when only a delegation lets the caller review the request
+          oneOf:
+            - $ref: '#/components/schemas/UserRef'
+            - type: 'null'
+
+    ReviewItemPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReviewItem'
+
+    ReviewerChange:
+      type: object
+      required: [requestVersion]
+      properties:
+        requestVersion:
+          type: integer
+          format: int64
+          description: Version of the request the caller last read
+        reviewerId:
+          type: [integer, 'null']
+          format: int64
+          description: The colleague to hand the request to; absent to claim it
+        takeOver:
+          type: boolean
+          default: false
+          description: Take the request over from the reviewer holding it
+
+    ReviewerCandidate:
+      allOf:
+        - $ref: '#/components/schemas/UserRef'
+        - type: object
+          properties:
+            delegated:
+              type: boolean
+              description: True when only a delegation lets the colleague review
 
     UserRef:
       type: object

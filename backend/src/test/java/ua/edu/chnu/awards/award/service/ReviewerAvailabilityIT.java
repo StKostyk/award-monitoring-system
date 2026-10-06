@@ -1,10 +1,12 @@
 package ua.edu.chnu.awards.award.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -157,6 +159,53 @@ class ReviewerAvailabilityIT extends AbstractJpaSliceTest {
             .setParameter("day", today.minusDays(1)).setParameter("dean", dean).executeUpdate();
 
         assertThat(reviewable(ApprovalLevel.DEAN)).isFalse();
+    }
+
+    @Test
+    void ac1_8_theCandidatesAreHoldersAndDelegatesButNotTheOwnerOrSubmitter() {
+        User secretary = person("first.secretary");
+        User colleague = person("second.secretary");
+        User blocked = person("blocked.secretary");
+        blocked.setAccountStatus(AccountStatus.SUSPENDED);
+        User submitter = person("submitter");
+        User deputy = person("deputy.secretary");
+        final User ownersDeputy = person("owners.deputy");
+        for (User holder : List.of(secretary, colleague, blocked, submitter, owner)) {
+            role(holder, RoleType.FACULTY_SECRETARY, faculty, today.minusYears(1), null);
+        }
+        delegate(secretary, deputy);
+        delegate(colleague, secretary);
+        delegate(owner, ownersDeputy);
+
+        assertThat(availability.candidates(ApprovalLevel.FACULTY_SECRETARY, department.getId(), owner.getId(),
+                submitter.getId()))
+            .extracting(ReviewerAvailability.Candidate::id, ReviewerAvailability.Candidate::delegated)
+            .containsExactlyInAnyOrder(tuple(secretary.getId(), false),
+                tuple(colleague.getId(), false),
+                tuple(deputy.getId(), true));
+    }
+
+    @Test
+    void ac1_6_aDeanStaysEligibleForTheSecretaryLevelUntilTheRoleEnds() {
+        User dean = person("eligible.dean");
+        role(dean, RoleType.DEAN, faculty, today.minusYears(1), null);
+        assertThat(availability.isEligible(dean.getId(), ApprovalLevel.FACULTY_SECRETARY, department.getId(),
+            owner.getId(), owner.getId())).isTrue();
+        assertThat(availability.isEligible(dean.getId(), ApprovalLevel.RECTOR_SECRETARY, department.getId(),
+            owner.getId(), owner.getId())).isFalse();
+
+        entityManager.getEntityManager().createQuery("update UserRole r set r.validTo = :day where r.user = :dean")
+            .setParameter("day", today.minusDays(1)).setParameter("dean", dean).executeUpdate();
+
+        assertThat(availability.isEligible(dean.getId(), ApprovalLevel.FACULTY_SECRETARY, department.getId(),
+            owner.getId(), owner.getId())).isFalse();
+    }
+
+    private void delegate(User delegator, User delegate) {
+        entityManager.persist(RoleDelegation.builder().delegator(delegator).delegate(delegate)
+            .roleType(RoleType.FACULTY_SECRETARY).organization(faculty).validFrom(today.minusDays(1))
+            .validTo(today.plusDays(5)).reason("Leave").build());
+        entityManager.flush();
     }
 
     private boolean reviewable(ApprovalLevel level) {

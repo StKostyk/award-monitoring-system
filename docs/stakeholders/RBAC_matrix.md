@@ -52,6 +52,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 ⁹ Feature 4.1.0 (`RecipientUnits`, `GET /awards/recipient-units`): a faculty secretary or dean, by own or delegated role, enters and submits awards received by an active faculty or department inside the role's scope; no new permission. The entering person owns the award (draft rights, GDPR export) and the award belongs to the unit, so its review and the scoped reads of note 5 follow the unit. The scope is checked again at submission (`recipient-out-of-scope`).
 
+¹⁰ Feature 4.1.1 (`ReviewerRule`, `ReviewAssignment`, `GET /reviews`, `PUT`/`DELETE /awards/{id}/reviewer`): any approval role, own or delegated (`award:approve:level1`), reviews requests at its level or below inside its scope, never an award its holder owns or submitted, nor one owned or submitted by the person who lent a delegated role. The queue shows the own level; a lower level is reached through the `level` filter. A claim makes the caller the only reviewer; a higher level, or a peer when the holder may no longer review, takes it over; the holder releases it or hands it to an eligible colleague. Every change is audited (`REVIEW_CLAIMED`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER`, `REVIEW_TAKEN_OVER`).
+
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Approval Workflow** |
@@ -60,6 +62,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Review Faculty Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Approve Faculty Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Escalate to University Level | ❌ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Claim, Release and Hand Over a Review¹⁰ | ❌ | Own level | Own level; take over lower | Own level; take over lower | Own level; take over lower | ❌ | ❌ | ❌ | ❌ |
 | Final University Approval | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Reject Award Request | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Request Additional Information | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |

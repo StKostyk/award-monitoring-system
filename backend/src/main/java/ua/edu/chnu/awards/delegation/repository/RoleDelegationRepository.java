@@ -186,4 +186,36 @@ public interface RoleDelegationRepository extends JpaRepository<RoleDelegation, 
                            @Param("organizationIds") Collection<Long> organizationIds,
                            @Param("statuses") Collection<AccountStatus> statuses,
                            @Param("excludedUserId") long excludedUserId, @Param("day") LocalDate day);
+
+    /**
+     * Delegations of a role in one of the given organisations in effect on the given day for a delegate with an
+     * account in one of the given states, while the delegator still holds the role.
+     *
+     * @param role            the role lent
+     * @param organizationIds organisations whose delegations count
+     * @param statuses        account states of the delegate that count
+     * @param day             the day the delegation must cover
+     * @return matching delegations with their delegate loaded
+     */
+    @Query("""
+        select d from RoleDelegation d join fetch d.delegate
+        where d.roleType = :role
+          and d.organization.id in :organizationIds
+          and d.delegate.accountStatus in :statuses
+          and d.revokedAt is null
+          and d.validFrom <= :day
+          and d.validTo >= :day
+          and exists (
+            select 1 from UserRole r
+            where r.user.id = d.delegator.id
+              and r.roleType = d.roleType
+              and r.organization.id = d.organization.id
+              and r.validFrom <= :day
+              and (r.validTo is null or r.validTo >= :day)
+          )
+        """)
+    List<RoleDelegation> findInEffect(@Param("role") RoleType role,
+                                      @Param("organizationIds") Collection<Long> organizationIds,
+                                      @Param("statuses") Collection<AccountStatus> statuses,
+                                      @Param("day") LocalDate day);
 }
