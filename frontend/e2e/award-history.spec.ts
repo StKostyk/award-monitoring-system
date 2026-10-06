@@ -1,11 +1,9 @@
 import { Page, expect, test } from '@playwright/test';
 
-import { pastDay, signedIn, submitWithoutDocuments, uniqueToken } from './helpers';
+import { SEED, pastDay, signedIn, submitWithoutDocuments, uniqueToken } from './helpers';
 
-const employee = 'employee.fmi@chnu.edu.ua';
-const dean = 'dean.fmi@chnu.edu.ua';
-const officer = 'gdpr@chnu.edu.ua';
-
+const { employee, dean } = SEED;
+const officer = SEED.gdpr;
 async function open(page: Page, id: string): Promise<void> {
   const versions = page.waitForResponse((response) =>
     response.url().includes(`/awards/${id}/versions`),

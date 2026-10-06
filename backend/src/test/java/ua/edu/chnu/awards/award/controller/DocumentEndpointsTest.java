@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ua.edu.chnu.awards.common.web.ApiExceptionHandler.TYPE_PREFIX;
 import static ua.edu.chnu.awards.support.DocumentTestConstants.PDF;
 
 import java.io.ByteArrayInputStream;
@@ -47,7 +48,6 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
     private static final String UPLOAD = "/api/v1/awards/5/documents";
     private static final String DOCUMENT = "/api/v1/documents/7";
     private static final String TYPE = "$.type";
-    private static final String PROBLEM = "urn:awards:problem:";
     private static final String NAME = "диплом.pdf";
 
     @MockitoBean
@@ -76,11 +76,11 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
     void ac1_6_aMissingOrUnknownTypeAndAMissingFileAnswer400() throws Exception {
         mockMvc.perform(multipart(UPLOAD).file(file()).with(employee()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath(TYPE).value(PROBLEM + "missing-parameter"))
+            .andExpect(jsonPath(TYPE).value(TYPE_PREFIX + "missing-parameter"))
             .andExpect(jsonPath("$.parameter").value("type"));
         mockMvc.perform(multipart(UPLOAD).file(file()).param("type", "PASSPORT").with(employee()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath(TYPE).value(PROBLEM + "invalid-parameter"));
+            .andExpect(jsonPath(TYPE).value(TYPE_PREFIX + "invalid-parameter"));
         mockMvc.perform(multipart(UPLOAD).param("type", "PHOTO").with(employee()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.parameter").value("file"));
@@ -94,7 +94,7 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
 
         mockMvc.perform(multipart(UPLOAD).file(file()).param("type", "PHOTO").with(employee()))
             .andExpect(status().isPayloadTooLarge())
-            .andExpect(jsonPath(TYPE).value(PROBLEM + "file-too-large"));
+            .andExpect(jsonPath(TYPE).value(TYPE_PREFIX + "file-too-large"));
     }
 
     @Test
@@ -103,7 +103,7 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/v1/documents/abc").with(employee()))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath(TYPE).value(PROBLEM + "invalid-parameter"));
+            .andExpect(jsonPath(TYPE).value(TYPE_PREFIX + "invalid-parameter"));
         verifyNoInteractions(documentUpload, documentService);
     }
 
@@ -139,7 +139,7 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
 
         mockMvc.perform(get(DOCUMENT).with(employee()))
             .andExpect(status().isNotFound())
-            .andExpect(jsonPath(TYPE).value(PROBLEM + "document-not-found"));
+            .andExpect(jsonPath(TYPE).value(TYPE_PREFIX + "document-not-found"));
     }
 
     @Test

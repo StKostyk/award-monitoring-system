@@ -75,6 +75,7 @@ class DataExportFT extends AbstractFunctionalTest {
         assertThat(notice).contains("Firefox", "IP: ");
 
         as(token).get("/api/v1/users/me/export").then().statusCode(429)
+            .header("Retry-After", "60")
             .body("type", equalTo("urn:awards:problem:too-many-requests"));
     }
 }

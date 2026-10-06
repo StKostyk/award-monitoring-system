@@ -1,12 +1,18 @@
 import { expect, test } from '@playwright/test';
 
-import { kyivDay, pastDay, signIn, submitWithoutDocuments, uniqueToken } from './helpers';
-
-const demo = 'Passw0rd-demo';
-const employee = 'employee.fmi@chnu.edu.ua';
+import {
+  DEMO_PASSWORD,
+  SEED,
+  kyivDay,
+  pastDay,
+  signIn,
+  submitWithoutDocuments,
+  uniqueToken,
+} from './helpers';
 
 type Page = import('@playwright/test').Page;
 
+const { employee } = SEED;
 async function fillComplete(page: Page, title: string, date: string): Promise<void> {
   await page.getByTestId('award-title-uk').fill(title);
   await chooseCategory(page, 13);
@@ -53,7 +59,7 @@ test.describe('award drafts and submission on a phone', () => {
 
   test.beforeEach(async ({ page }) => {
     page.on('dialog', (dialog) => void dialog.accept());
-    await signIn(page, employee, demo);
+    await signIn(page, employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
   });
 
@@ -130,7 +136,7 @@ test.describe('award drafts and submission on a phone', () => {
 
     await page.getByTestId('logout').click();
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
-    await signIn(page, employee, demo);
+    await signIn(page, employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
     await page.goto('/awards/new');
 

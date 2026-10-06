@@ -1,9 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-import { background, seriousViolations, signIn, signInAsSeed } from './helpers';
+import {
+  DEMO_PASSWORD,
+  SEED,
+  background,
+  seriousViolations,
+  signIn,
+  signInAsSeed,
+} from './helpers';
 
-const demo = 'Passw0rd-demo';
-const employee = 'employee.fmi@chnu.edu.ua';
+const { employee } = SEED;
 const phoneWidth = 400;
 const phoneHeight = 800;
 const neutralBrand = {
@@ -76,7 +82,7 @@ test.describe('brand theme', () => {
 
   test('ac5 opens the menu as a drawer on a phone', async ({ page }) => {
     await page.setViewportSize({ width: phoneWidth, height: phoneHeight });
-    await signIn(page, employee, demo);
+    await signIn(page, employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
     await expect(page.getByTestId('nav-awards')).toBeHidden();
     await expect(page.getByTestId('brand')).toBeVisible();

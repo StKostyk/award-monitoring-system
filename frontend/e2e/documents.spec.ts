@@ -1,11 +1,19 @@
 import AxeBuilder from '@axe-core/playwright';
 import { Page, expect, test } from '@playwright/test';
 
-import { kyivDay, pastDay, shownDay, signIn, signedIn, uniqueToken } from './helpers';
+import {
+  FRESH_PASSWORD,
+  SEED,
+  freshEmployee,
+  kyivDay,
+  pastDay,
+  shownDay,
+  signIn,
+  signedIn,
+  signedInAs,
+  uniqueToken,
+} from './helpers';
 
-const demo = 'Passw0rd-demo';
-const employee = 'employee.fmi@chnu.edu.ua';
-const dean = 'dean.fmi@chnu.edu.ua';
 const megabyte = 1024 * 1024;
 /** The frontend nginx in front of the local backend, started by `tools/e2e.ps1`. */
 const nginx = process.env['E2E_NGINX_URL'];
@@ -53,7 +61,8 @@ test.describe('award documents', () => {
     browser,
   }) => {
     const title = `Грамота з документами ${uniqueToken()}`;
-    const page = await signedIn(browser, employee);
+    const employee = await freshEmployee(browser, 'documents');
+    const page = await signedInAs(browser, employee, FRESH_PASSWORD);
     let uploads = 0;
     page.on('request', (request) => {
       if (request.method() === 'POST' && /\/documents$/.test(request.url())) {
@@ -137,7 +146,7 @@ test.describe('award documents', () => {
     await expect(page.getByTestId('document-remove')).toHaveCount(0);
     await expect(page.getByTestId('documents-drop')).toHaveCount(0);
 
-    const reader = await signedIn(browser, dean);
+    const reader = await signedIn(browser, SEED.dean);
     await reader.goto(`/awards/${id}`);
     await expect(reader.getByTestId('documents-list').locator('li')).toHaveCount(2);
     await expect(reader.getByTestId('document-remove')).toHaveCount(0);
@@ -152,7 +161,8 @@ test.describe('award documents', () => {
   });
 
   test('ac2_9 a document removed elsewhere is no longer available', async ({ browser }) => {
-    const page = await signedIn(browser, employee);
+    const employee = await freshEmployee(browser, 'documents');
+    const page = await signedInAs(browser, employee, FRESH_PASSWORD);
     await newAward(page, `Грамота ${uniqueToken()}`);
     await page.getByTestId('documents-input').setInputFiles({
       name: 'диплом.pdf',
@@ -163,7 +173,7 @@ test.describe('award documents', () => {
     const id = /\/awards\/(\d+)\/edit/.exec(page.url())?.[1] ?? '';
 
     const other = await (await browser.newContext()).newPage();
-    await signIn(other, employee, demo);
+    await signIn(other, employee, FRESH_PASSWORD);
     await other.goto(`/awards/${id}`);
     await row(other, 'диплом.pdf').getByTestId('document-remove').click();
     await other.getByTestId('confirm-accept').click();
@@ -177,7 +187,8 @@ test.describe('award documents', () => {
   test('ac2_10 ac2_11 the section speaks English and the drop zone opens the picker from the keyboard', async ({
     browser,
   }) => {
-    const page = await signedIn(browser, employee);
+    const employee = await freshEmployee(browser, 'documents');
+    const page = await signedInAs(browser, employee, FRESH_PASSWORD);
     await page.getByTestId('language-toggle').click();
     await newAward(page, `Certificate ${uniqueToken()}`);
     const section = page.getByTestId('award-documents');
@@ -220,7 +231,8 @@ test.describe('award documents', () => {
     browser,
   }) => {
     test.skip(!nginx, 'E2E_NGINX_URL is set by tools/e2e.ps1');
-    const page = await signedIn(browser, employee);
+    const employee = await freshEmployee(browser, 'documents');
+    const page = await signedInAs(browser, employee, FRESH_PASSWORD);
     await newAward(page, `Велика грамота ${uniqueToken()}`);
     await page.getByTestId('award-save').click();
     await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
@@ -265,7 +277,8 @@ test.describe('award documents', () => {
   test('finding1 a draft deleted in another window is saved again when its file is retried', async ({
     browser,
   }) => {
-    const page = await signedIn(browser, employee);
+    const employee = await freshEmployee(browser, 'documents');
+    const page = await signedInAs(browser, employee, FRESH_PASSWORD);
     await newAward(page, `Грамота з двох вікон ${uniqueToken()}`);
     await page.getByTestId('documents-input').setInputFiles({
       name: 'перший.pdf',
@@ -275,7 +288,7 @@ test.describe('award documents', () => {
     await expect(row(page, 'перший.pdf')).toBeVisible();
     await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
     const deleted = /\/awards\/(\d+)\/edit/.exec(page.url())?.[1] ?? '';
-    const other = await signedIn(browser, employee);
+    const other = await signedInAs(browser, employee, FRESH_PASSWORD);
     await other.goto(`/awards/${deleted}`);
     await other.getByTestId('award-remove').click();
     await other.getByTestId('confirm-accept').click();
@@ -306,7 +319,8 @@ test.describe('award documents', () => {
   test('ac3_1 ac3_4 a file with malware is refused and nothing is attached', async ({
     browser,
   }) => {
-    const page = await signedIn(browser, employee);
+    const employee = await freshEmployee(browser, 'documents');
+    const page = await signedInAs(browser, employee, FRESH_PASSWORD);
     await newAward(page, `Грамота з вірусом ${uniqueToken()}`);
 
     await page.getByTestId('documents-input').setInputFiles({

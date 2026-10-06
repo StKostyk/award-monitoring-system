@@ -134,7 +134,9 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
         String address = "ft.resend@chnu.edu.ua";
         resend(address).then().statusCode(202);
         resend(address).then().statusCode(429)
-            .body("type", equalTo("urn:awards:problem:too-many-requests"));
+            .header("Retry-After", "60")
+            .body("type", equalTo("urn:awards:problem:too-many-requests"))
+            .body("retryAfter", equalTo(60));
     }
 
     @Test

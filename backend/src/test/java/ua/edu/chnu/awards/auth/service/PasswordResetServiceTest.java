@@ -25,6 +25,7 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
+import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;

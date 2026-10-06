@@ -15,7 +15,10 @@ import org.springframework.web.cors.CorsProcessor;
 import org.springframework.web.cors.DefaultCorsProcessor;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
+import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.config.ProtectionProperties;
 
@@ -28,19 +31,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /** Redis key prefix of the per-address request windows. */
     public static final String KEY_PREFIX = "auth:rate:";
-    static final String PROBLEM_BODY = "{\"type\":\"urn:awards:problem:too-many-requests\","
-        + "\"title\":\"Too Many Requests\",\"status\":429,"
-        + "\"detail\":\"Too many requests from this address; try again in a minute\"}";
     private final FixedWindowCounter counter;
     private final ProtectionProperties properties;
     private final CorsConfigurationSource cors;
+    private final ObjectMapper objectMapper;
     private final CorsProcessor corsProcessor = new DefaultCorsProcessor();
 
     public RateLimitFilter(FixedWindowCounter counter, ProtectionProperties properties,
-                           CorsConfigurationSource cors) {
+                           CorsConfigurationSource cors, ObjectMapper objectMapper) {
         this.counter = counter;
         this.properties = properties;
         this.cors = cors;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -73,6 +75,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        response.getWriter().write(PROBLEM_BODY);
+        objectMapper.writeValue(response.getOutputStream(), ApiProblemException.tooManyRequests(
+            "Too many requests from this address; try again in a minute", retryAfter).toProblem());
     }
 }

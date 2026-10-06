@@ -48,6 +48,19 @@ public class ApiProblemException extends RuntimeException {
             Map.of("errors", List.copyOf(errors)));
     }
 
+    /**
+     * A request refused by a rate limit or throttle: 429 {@code too-many-requests} with {@code retryAfter}, which
+     * is also sent as the {@code Retry-After} header.
+     *
+     * @param detail            why the request was refused, for the problem detail
+     * @param retryAfterSeconds when the caller may try again, at least 1
+     * @return the exception
+     */
+    public static ApiProblemException tooManyRequests(String detail, long retryAfterSeconds) {
+        return new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests", detail,
+            Map.of(ApiExceptionHandler.RETRY_AFTER, Math.max(1, retryAfterSeconds)));
+    }
+
     public HttpStatus getStatus() {
         return status;
     }

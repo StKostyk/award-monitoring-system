@@ -2,6 +2,9 @@ package ua.edu.chnu.awards.document;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static ua.edu.chnu.awards.common.web.ApiExceptionHandler.TYPE_PREFIX;
+import static ua.edu.chnu.awards.support.DocumentApi.DOCUMENTS;
+import static ua.edu.chnu.awards.support.DocumentApi.upload;
 import static ua.edu.chnu.awards.support.DocumentTestConstants.PDF;
 
 import java.util.Map;
@@ -40,9 +43,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 class DocumentStorageDownFT extends AbstractFunctionalTest {
 
     private static final String OWNER = "ft.down.owner@chnu.edu.ua";
-    private static final String DOCUMENTS = "/api/v1/documents/";
     private static final String BUCKET = "award-documents";
-    private static final String UNAVAILABLE = "urn:awards:problem:storage-unavailable";
+    private static final String UNAVAILABLE = TYPE_PREFIX + "storage-unavailable";
     private static final String TYPE = "type";
 
     @Autowired
@@ -84,7 +86,7 @@ class DocumentStorageDownFT extends AbstractFunctionalTest {
     void f4_anUploadWhileTheStorageIsDownAnswers503AndStoresNoRow() {
         long award = AwardApi.complete(owner, Map.of("titleUk", "Сховище недоступне"));
 
-        Response refused = whileStorageIsDown(() -> upload(award));
+        Response refused = whileStorageIsDown(() -> upload(owner, award, "диплом.pdf", PDF, "CERTIFICATE"));
 
         refused.then().statusCode(HttpStatus.SERVICE_UNAVAILABLE.value()).body(TYPE, equalTo(UNAVAILABLE));
         assertThat(jdbc.queryForObject("select count(*) from documents where award_id = ?", Long.class, award))
@@ -119,13 +121,8 @@ class DocumentStorageDownFT extends AbstractFunctionalTest {
 
     private long stored(String title) {
         long award = AwardApi.complete(owner, Map.of("titleUk", title));
-        return upload(award).then().statusCode(HttpStatus.CREATED.value()).extract().jsonPath().getLong("id");
-    }
-
-    private Response upload(long award) {
-        return as(owner).multiPart("file", "диплом.pdf", PDF, "application/octet-stream")
-            .multiPart(TYPE, "CERTIFICATE")
-            .post(AwardApi.AWARDS + "/" + award + "/documents");
+        return upload(owner, award, "диплом.pdf", PDF, "CERTIFICATE").then().statusCode(HttpStatus.CREATED.value())
+            .extract().jsonPath().getLong("id");
     }
 
     private Response whileStorageIsDown(Supplier<Response> call) {

@@ -16,6 +16,7 @@ import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 import ua.edu.chnu.awards.common.EmailUtils;
+import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -148,8 +149,8 @@ public class RegistrationService {
     public void resend(String email) {
         String normalized = EmailUtils.normalize(email);
         if (!throttle.claimForTransaction(RESEND_KEY_PREFIX + normalized, properties.resendInterval())) {
-            throw new ApiProblemException(HttpStatus.TOO_MANY_REQUESTS, "too-many-requests",
-                "A verification email was sent recently; try again in a minute");
+            throw ApiProblemException.tooManyRequests("A verification email was sent recently; try again in a minute",
+                properties.resendInterval().toSeconds());
         }
         userRepository.findByEmailAddressIgnoreCase(normalized)
             .filter(user -> user.getAccountStatus() == AccountStatus.PENDING)

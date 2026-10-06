@@ -18,6 +18,8 @@ import org.springframework.security.web.session.ConcurrentSessionFilter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
 import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
 import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
@@ -97,9 +99,10 @@ public class LoginSessionConfig {
     FilterRegistrationBean<RateLimitFilter> rateLimitFilter(FixedWindowCounter counter,
                                                             ProtectionProperties properties,
                                                             @Qualifier("corsConfigurationSource")
-                                                            CorsConfigurationSource cors) {
+                                                            CorsConfigurationSource cors,
+                                                            ObjectMapper objectMapper) {
         FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(
-            new RateLimitFilter(counter, properties, cors));
+            new RateLimitFilter(counter, properties, cors, objectMapper));
         registration.addUrlPatterns("/oauth2/token", "/login", "/api/v1/auth/*");
         registration.setOrder(BEFORE_SESSION_FILTER);
         return registration;
