@@ -10,14 +10,15 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Planned | | |
+| 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Approved ([PRD](../features/epic-04/feature-4.1-workflow-engine-core.md)) | | |
 | 4.2 Review Period & Escalation (per-faculty period, overdue notice, reviewer corrections) | Planned | | |
 | 4.3 Achievements (colleague visibility, unit and public pages) | Planned | | |
 
 ## Current focus
 
-Epic kickoff 2026-10-06: stories created in Jira and GitHub, order proposed. Next: the Feature 4.1 PRD, with a
-design note on the organisational award model before story 4.1.0.
+Epic kickoff 2026-10-06: stories created in Jira and GitHub, order approved. Feature 4.1 PRD approved 2026-10-06,
+including the organisational award design (§7.1), the transition table (§7.2) and the settlement of deviations 2,
+3, 5 and 6 (§7). Next: story 4.1.0 (SCRUM-48).
 
 ## Scope
 

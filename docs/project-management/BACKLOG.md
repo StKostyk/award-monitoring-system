@@ -58,7 +58,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | 3.1.6 | CI fixes: nginx proxy snippet and Kyiv dates | 1 | ✅ Done (Sprint 4) | SCRUM-46 | [#140](https://github.com/StKostyk/award-monitoring-system/issues/140) |
 
 ### Epic 4 — Approval Workflow Engine (Jira epic SCRUM-47)
-Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLOW-STATUS.md). Kickoff 2026-10-06; the organisational award model comes first, the achievement pages last. Story 2.4.1 from Epic 2 belongs here.
+Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLOW-STATUS.md). Kickoff 2026-10-06; the organisational award model comes first, the achievement pages last. Story 2.4.1 from Epic 2 belongs here. Feature 4.1 PRD approved 2026-10-06: [feature-4.1-workflow-engine-core.md](../features/epic-04/feature-4.1-workflow-engine-core.md).
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
