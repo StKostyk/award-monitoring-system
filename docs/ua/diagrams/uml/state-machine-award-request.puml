@@ -1,4 +1,4 @@
-@startuml StateMachine_Award_Request_UA
+@startuml StateMachine_Award_Request
 !theme plain
 skinparam state {
     BackgroundColor<<draft>> LightBlue
@@ -14,137 +14,64 @@ skinparam state {
 title Діаграма Скінченного Автомата Запиту на Нагороду
 
 note as AsBuilt
-    <b>Реалізація після епіку 2 (2026-10)</b>
-    Два поля статусу: нагорода (<i>AwardStatus</i>:
-    DRAFT, PENDING, APPROVED, REJECTED, ARCHIVED) і її
-    запит (<i>RequestStatus</i>: SUBMITTED, IN_REVIEW, ESCALATED,
-    APPROVED, REJECTED, RETURNED, EXPIRED).
-    Реалізовано: DRAFT -> подання -> нагорода PENDING з новим
-    запитом SUBMITTED на рівні FACULTY_SECRETARY і строком (V024).
-    Чернетку редагує чи видаляє лише її власник.
-    Інші переходи — проєкт робочого процесу епіку 4;
-    документи додаються до чернетки з функції 3.1;
-    підстани ШІ-парсингу чекають на OCR (відкладено).
+    <b>Таблиця переходів ADR-023 (функція 4.1, §7.2)</b>
+    Стани — статуси заявки (<i>award_requests.status</i>);
+    статус нагороди (<i>awards.status</i>) вказано в дужках.
+    «Рівень» — <i>current_level</i>: FACULTY_SECRETARY, DEAN,
+    RECTOR_SECRETARY, RECTOR. Рівень, єдиним рецензентом
+    якого був би сам автор подання, пропускається (AC-0.6).
+    Рішення ухвалюються в SUBMITTED, ESCALATED або IN_REVIEW;
+    заявку, яку ніхто не взяв, рішення бере в роботу саме.
+    EXPIRED лишається в обмеженні CHECK, не використовується.
 end note
 
-[*] --> DRAFT <<draft>> : Працівник створює нагороду
+[*] --> DRAFT <<draft>> : Власник створює нагороду
 
-state DRAFT <<draft>> {
-    [*] --> Editing
-    Editing --> Editing : Зберегти зміни
-    Editing --> DocumentUploaded : Завантажити сертифікат (функція 3.1)
-    DocumentUploaded --> Editing : Видалити документ / редагувати далі
-    DocumentUploaded --> AIProcessing : Запустити ШІ-парсинг (відкладено)
-    AIProcessing --> MetadataExtracted : ШІ завершено
-    MetadataExtracted --> Editing : Працівник перевіряє
-}
+state DRAFT <<draft>> : нагорода DRAFT; редагує, додає документи\nчи видаляє лише власник
 
-DRAFT --> SUBMITTED <<pending>> : Власник подає\n[категорію, організацію, що нагороджує, і дату задано;\nможливий дублікат підтверджено]\n/ нагорода PENDING, версія SUBMITTED
+DRAFT --> SUBMITTED <<pending>> : подати\n/ початковий рівень (AC-0.6), строк,\nнагорода PENDING
 
-state SUBMITTED <<pending>> {
-    [*] --> AwaitingReviewer
-    AwaitingReviewer --> ReviewerAssigned : Система призначає рецензента
-}
+state SUBMITTED <<pending>> : очікує рецензента на рівні
+state ESCALATED <<escalated>> : очікує рецензента вищого рівня\nпісля рішення нижче
+state IN_REVIEW <<review>> : у роботі в одного рецензента\n(current_reviewer_id)
 
-note right of SUBMITTED
-    Першим рецензентом завжди є
-    Секретар Факультету
-end note
+SUBMITTED --> IN_REVIEW : взяти в роботу
+ESCALATED --> IN_REVIEW : взяти в роботу
+IN_REVIEW --> SUBMITTED : звільнити\n[нижче рішень не було]
+IN_REVIEW --> ESCALATED : звільнити\n[нижчий рівень ухвалив рішення]
+IN_REVIEW --> IN_REVIEW : передати колезі, взяти на себе
 
-SUBMITTED --> IN_REVIEW <<review>> : Рецензент відкриває запит
+state "SUBMITTED, ESCALATED, IN_REVIEW" as Open <<review>>
+Open --> APPROVED <<approved>> : затвердити\n[рівень >= мінімального для категорії]\n/ нагорода APPROVED
+Open --> ESCALATED : затвердити [рівень < мінімального]\nпередати вище [рівень < RECTOR]\n/ наступний непропущений рівень,\nновий строк, рецензента знято
+Open --> RETURNED <<returned>> : повернути [коментар]\n/ нагорода DRAFT, рецензента\nі строк знято
+Open --> REJECTED <<rejected>> : відхилити [коментар]\n/ rejection_reason, нагорода REJECTED
 
-state IN_REVIEW <<review>> {
-    [*] --> UnderReview
-    UnderReview --> DocumentVerification : Верифікація сертифіката
-    DocumentVerification --> DecisionPending : Верифікація завершена
-    DecisionPending --> [*] : Рішення прийнято
-}
+SUBMITTED --> WITHDRAWN : відкликати [без рецензента]\n/ нагорода DRAFT (4.1.3)
+ESCALATED --> WITHDRAWN : відкликати [без рецензента]\n/ нагорода DRAFT (4.1.3)
 
-IN_REVIEW --> APPROVED <<approved>> : Рецензент схвалює\n[Більше рівнів не потрібно]
-IN_REVIEW --> REJECTED <<rejected>> : Рецензент відхиляє\n[З причиною]
-IN_REVIEW --> ESCALATED <<escalated>> : Рецензент ескалює\n[Потрібні вищі повноваження]
-IN_REVIEW --> RETURNED <<returned>> : Рецензент повертає\n[Потрібні виправлення]
+state RETURNED <<returned>> : нагорода DRAFT; власник виправляє
+state WITHDRAWN <<draft>> : нагорода DRAFT; власник відкликав
 
-state ESCALATED <<escalated>> {
-    [*] --> Level2_Dean
-    Level2_Dean --> Level3_RectorSecretary : Декан ескалює
-    Level3_RectorSecretary --> Level4_Rector : Секретар ескалює
-}
+RETURNED --> SUBMITTED : подати повторно\n/ той самий рівень (або наступний непропущений),\nнагорода PENDING (4.1.3)
+WITHDRAWN --> SUBMITTED : подати повторно\n/ початковий рівень, нагорода PENDING (4.1.3)
 
-note right of ESCALATED
-    Рівні ескалації:
-    - Декан перевіряє від Секретаря Факультету
-    - Ректор має остаточні повноваження
-end note
+state APPROVED <<approved>> : остаточний; позначка перевірки, коли\nрецензент перевірив документи
+state REJECTED <<rejected>> : остаточний; причину показано власникові
 
-ESCALATED --> IN_REVIEW : Новий рецензент відкриває\n[На вищому рівні]
-
-state RETURNED <<returned>> {
-    [*] --> AwaitingCorrections
-    AwaitingCorrections --> CorrectionsMade : Працівник редагує
-}
-
-RETURNED --> IN_REVIEW : Працівник повторно подає\n[В межах терміну]
-RETURNED --> EXPIRED : Термін минув\n[Без повторного подання]
-
-state REJECTED <<rejected>> {
-    [*] --> RejectionNotified
-    RejectionNotified --> AppealWindow : 7 днів на апеляцію
-}
-
-REJECTED --> DRAFT : Працівник створює нове подання\n[З виправленнями]
-
-state APPROVED <<approved>> {
-    [*] --> Published
-    Published --> VerificationBadgeAdded : Документи верифіковано
-}
-
-note right of APPROVED
-    Нагорода тепер публічно видима
-end note
-
-APPROVED --> ARCHIVED <<archived>> : Період зберігання минув
-
-state ARCHIVED <<archived>>
-
-note right of ARCHIVED
-    Нагорода збережена для історичного запису
-    Персональні дані анонімізовані згідно GDPR
-end note
-
+APPROVED --> ARCHIVED <<archived>> : минув строк зберігання (статус нагороди)
+REJECTED --> [*]
 ARCHIVED --> [*]
 
-' Переходи з таймаутом
-SUBMITTED --> EXPIRED : Термін рецензування перевищено\n[Налаштовуваний таймаут]
-IN_REVIEW --> EXPIRED : Термін рішення перевищено
-
-state EXPIRED
-
-note right of EXPIRED
-    Прострочені запити вимагають
-    ручного втручання або нового подання
-    Ціль епіку 4: доки механізм робочих
-    процесів не реалізовано, прострочений запит
-    лише позначається, а затримка пояснюється
-    (функція 2.3 D-5)
-end note
-
-EXPIRED --> [*]
-
-' Легенда
 legend right
-    |= Стан |= Опис |
-    | DRAFT | Нагорода готується (статус нагороди) |
-    | SUBMITTED | Очікує першого рецензування |
-    | IN_REVIEW | Зараз на рецензуванні |
-    | ESCALATED | Передано вищим повноваженням |
-    | APPROVED | Повністю схвалено, опубліковано |
-    | REJECTED | Відхилено рецензентом |
-    | RETURNED | Повернуто на виправлення |
-    | ARCHIVED | Переміщено в архів |
-    | EXPIRED | Автоматично прострочено |
+    |= Стан |= Нагорода |= Опис |
+    | SUBMITTED | PENDING | Очікує рецензента на початковому рівні |
+    | IN_REVIEW | PENDING | У роботі в одного рецензента |
+    | ESCALATED | PENDING | Очікує рецензента вищого рівня |
+    | RETURNED | DRAFT | Повернуто на доопрацювання |
+    | WITHDRAWN | DRAFT | Відкликано власником до взяття в роботу |
+    | APPROVED | APPROVED | Остаточний |
+    | REJECTED | REJECTED | Остаточний |
 endlegend
 
 @enduml
-
-

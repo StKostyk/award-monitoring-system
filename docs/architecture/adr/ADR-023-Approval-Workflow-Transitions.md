@@ -38,8 +38,18 @@ branch) and gave no rule for two reviewers of the same level opening the same re
    | `IN_REVIEW` | release | `ESCALATED` when a lower level decided, else `SUBMITTED` | = | = |
    | `IN_REVIEW` | hand-over, take-over | `IN_REVIEW` | = | = |
 
-   The decision rows (approve, escalate, return, reject, withdraw, resubmit) follow in 4.1.2 and 4.1.3 from the
-   PRD table (Feature 4.1 §7.2).
+   Rows of 4.1.2 (decisions, `POST /awards/{id}/decisions`; an unclaimed request is claimed by the decision):
+
+   | From (request) | Action | To (request) | Level | Award |
+   |----------------|--------|--------------|-------|-------|
+   | `SUBMITTED`, `ESCALATED`, `IN_REVIEW` | approve, level ≥ category minimum | `APPROVED` | = | `APPROVED` |
+   | same | approve, level < category minimum | `ESCALATED` | next not passed over | = |
+   | same | escalate (level < `RECTOR`) | `ESCALATED` | next not passed over | = |
+   | same | return (comment required) | `RETURNED` | = | `DRAFT` |
+   | same | reject (comment required) | `REJECTED` | = | `REJECTED` |
+
+   The withdraw and resubmit rows follow in 4.1.3 from the PRD table (Feature 4.1 §7.2). `APPROVED` and `REJECTED`
+   are final; `EXPIRED` stays in the check constraint, unused.
 2. **Claim = reviewer + version + row lock.** `current_reviewer_id` names the holder; the request row is locked
    (`SELECT … FOR UPDATE`) and `award_requests.version` is checked, so of two claims at once exactly one succeeds and
    the other answers 409 `request-claimed` with the holder. A stale version answers 409 `request-stale`.
@@ -49,7 +59,13 @@ branch) and gave no rule for two reviewers of the same level opening the same re
    `REVIEW_HANDED_OVER`, `REVIEW_TAKEN_OVER`).
 4. **Higher levels may review lower levels** through the `level` filter of the queue and take-over; the default queue
    shows the caller's own levels.
-5. **404 over 403.** A request the caller may not review, an unknown id and the caller's own award all answer 404;
+5. **Decisions.** Every decision writes one `review_decisions` row at the level it was taken (`APPROVED` for an
+   approval that only passes the request on), stamped with `delegator_id` when the reviewer acts under a delegated
+   role, an `audit_logs` row `REVIEW_DECISION` and an award version `DECIDED`. A level passed over without a decision
+   shows as `SKIPPED` in the status path. The owner's e-mail is sent after the commit, so a rollback sends nothing
+   and a mail failure does not undo the decision. `verified: true` (approve only, award with documents) sets the
+   verification badge.
+6. **404 over 403.** A request the caller may not review, an unknown id and the caller's own award all answer 404;
    a decided request answers 409 `request-closed`.
 
 ### Rationale

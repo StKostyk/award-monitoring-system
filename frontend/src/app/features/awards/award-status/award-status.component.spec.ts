@@ -41,6 +41,8 @@ const returned: AwardStatusView = {
       reviewerName: 'Аліна Мартинюк',
       comments: 'Додайте номер наказу',
       decidedAt: '2026-09-30T10:15:00Z',
+      delegatorId: null,
+      delegatorName: null,
     },
   ],
 };
@@ -77,7 +79,13 @@ const translations = {
         completed: 'Розгляд завершено: {{date}}',
         rejectionReason: 'Причина відхилення: {{reason}}',
         decisions: 'Рішення',
-        decision: { RETURNED: 'Повернуто на доопрацювання', APPROVED: 'Схвалено' },
+        skipped: 'пропущено',
+        onBehalf: '(за дорученням {{name}})',
+        decision: {
+          RETURNED: 'Повернуто на доопрацювання',
+          APPROVED: 'Схвалено',
+          ESCALATED: 'Передано на вищий рівень',
+        },
         updated: 'Статус розгляду оновлено',
         retry: 'Спробувати ще раз',
         problems: {
@@ -88,7 +96,11 @@ const translations = {
       },
       timing: { expected: 'Очікується до {{date}}' },
     },
-    roles: { FACULTY_SECRETARY: 'Секретар факультету', DEAN: 'Декан' },
+    roles: {
+      FACULTY_SECRETARY: 'Секретар факультету',
+      DEAN: 'Декан',
+      RECTOR_SECRETARY: 'Секретар ректора',
+    },
   },
 };
 
@@ -220,6 +232,44 @@ describe('AwardStatusComponent', () => {
     expect(text(element, 'award-status-decision')).toContain('Аліна Мартинюк');
     expect(text(element, 'award-status-decision')).toContain('30.09.2026, 13:15');
     expect(text(element, 'award-status-comment')).toContain('Додайте номер наказу');
+  });
+
+  it('ac2_7_ac2_12_a_delegated_escalation_names_the_delegator_and_a_skipped_level', async () => {
+    service.status.mockReturnValue(
+      of({
+        ...submitted,
+        requestStatus: 'ESCALATED',
+        currentLevel: 'RECTOR_SECRETARY',
+        path: [
+          {
+            level: 'FACULTY_SECRETARY',
+            state: 'DONE',
+            dueDate: null,
+            completedAt: '2026-09-29T10:00:00Z',
+          },
+          { level: 'DEAN', state: 'SKIPPED', dueDate: null, completedAt: null },
+          { level: 'RECTOR_SECRETARY', state: 'CURRENT', dueDate: '2026-10-08', completedAt: null },
+        ],
+        decisions: [
+          {
+            ...returned.decisions[0],
+            decision: 'ESCALATED',
+            comments: 'Національна відзнака',
+            delegatorId: 31,
+            delegatorName: 'Ірина Секретар',
+          },
+        ],
+      } satisfies AwardStatusView),
+    );
+    const element = await create();
+
+    const steps = element.querySelectorAll('[data-testid="award-status-step"]');
+    expect(steps[1].getAttribute('data-state')).toBe('SKIPPED');
+    expect(text(element, 'award-status-skipped')).toContain('пропущено');
+    expect(text(element, 'award-status-decision')).toContain(
+      'Аліна Мартинюк (за дорученням Ірина Секретар)',
+    );
+    expect(text(element, 'award-status-comment')).toContain('Національна відзнака');
   });
 
   it('ac1_14_a_rejected_request_shows_its_reason_and_completion', async () => {

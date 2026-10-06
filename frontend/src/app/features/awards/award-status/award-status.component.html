@@ -29,7 +29,11 @@
             data-testid="award-status-step"
           >
             <span class="award-status__level">{{ 'roles.' + step.level | transloco }}</span>
-            @if (step.state === 'DONE' && step.completedAt) {
+            @if (step.state === 'SKIPPED') {
+              <span class="award-status__when" data-testid="award-status-skipped">{{
+                'awards.statusPanel.skipped' | transloco
+              }}</span>
+            } @else if (step.state === 'DONE' && step.completedAt) {
               <span class="award-status__when">{{ date(step.completedAt) }}</span>
             } @else if (step.state === 'CURRENT' && step.dueDate) {
               <span class="award-status__when" data-testid="award-status-due">{{
@@ -90,7 +94,13 @@
                   'awards.statusPanel.decision.' + decision.decision | transloco
                 }}</strong>
                 <span class="award-status__meta">
-                  · {{ decision.reviewerName }} · {{ 'roles.' + decision.level | transloco }} ·
+                  · {{ decision.reviewerName }}
+                  @if (decision.delegatorName) {
+                    <span data-testid="award-status-delegator">{{
+                      'awards.statusPanel.onBehalf' | transloco: { name: decision.delegatorName }
+                    }}</span>
+                  }
+                  · {{ 'roles.' + decision.level | transloco }} ·
                   <time [attr.datetime]="decision.decidedAt">{{ time(decision.decidedAt) }}</time>
                 </span>
               </div>

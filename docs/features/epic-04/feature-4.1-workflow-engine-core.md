@@ -28,8 +28,8 @@ Submitted awards wait in `award_requests` with nobody to act on them: no reviewe
 - Claim, release, hand-over to a peer, take-over by a higher level; an optimistic version on `award_requests` (V028)
 - Decisions `POST /api/v1/awards/{id}/decisions`: approve (final or to the next level), reject, return, escalate one level up; comments; the verification badge on approval
 - Decision e-mails to the owner (uk, en) through the existing after-commit mail listener
-- Withdrawal of an unclaimed request back to a draft; resubmission of a returned or withdrawn award (V029)
-- Batch decisions over up to 50 requests, one transaction per item, with template responses (V030)
+- Withdrawal of an unclaimed request back to a draft; resubmission of a returned or withdrawn award (V030)
+- Batch decisions over up to 50 requests, one transaction per item, with template responses (V031)
 - Queue page `/reviews`, review panel on the award page, «Відкликати», returned-award banner in the form
 - ADR-023 (transition table), redrawn request state machine, OpenAPI contract for all of the above
 
@@ -107,7 +107,7 @@ The **reviewer rule** used below: a caller may review a request at level L when 
 
 ### 4.1.3 Withdraw and resubmit (SCRUM-51)
 
-- **AC-3.1** Given the owner of a pending award whose request is unclaimed (`SUBMITTED` or `ESCALATED`, reviewer null), when they call `POST /api/v1/awards/{id}/withdraw` with `{ "version": v }` (award version), then 200 with the award: status `DRAFT`, request `WITHDRAWN` (V029), deadline null; `AWARD_WITHDRAWN` in `audit_logs`; the request leaves every queue.
+- **AC-3.1** Given the owner of a pending award whose request is unclaimed (`SUBMITTED` or `ESCALATED`, reviewer null), when they call `POST /api/v1/awards/{id}/withdraw` with `{ "version": v }` (award version), then 200 with the award: status `DRAFT`, request `WITHDRAWN` (V030), deadline null; `AWARD_WITHDRAWN` in `audit_logs`; the request leaves every queue.
 - **AC-3.2** Given a claimed request → 409 `request-claimed` («Нагороду вже розглядає рецензент, відкликати її не можна»); a final or returned request, or a draft → 409 `award-not-pending`; someone else's award → 404; stale version → 409 `award-stale`. Withdrawal and claim lock the same request row: one of them wins.
 - **AC-3.3** Given a withdrawn award, when the owner submits it again (`POST /awards/{id}/submit`), then the existing request is reused: status `SUBMITTED`, `submitted_at` now, new deadline, starting level by AC-0.6 from `FACULTY_SECRETARY`; earlier decisions stay on the timeline.
 - **AC-3.4** Given a returned award, when the owner submits it again, then the request becomes `SUBMITTED` at the level that returned it (or the next level not passed over), reviewer null, new deadline; the timeline shows «Подано повторно».
@@ -155,8 +155,9 @@ The **reviewer rule** used below: a caller may review a request at level L when 
 | `awards` (V027) | `recipient_org_id BIGINT NULL` FK → `organizations`, partial index `(recipient_org_id, award_date)` where not null; `user_id` reads "owner: the recipient of a personal award, the submitter of a unit award" |
 | `award_requests` (V028) | `version BIGINT NOT NULL DEFAULT 0`; index `(current_level, status, deadline)` for open requests if the plan check of the queue needs it |
 | `review_decisions` (V028) | `delegator_id BIGINT NULL` FK → `users` (tracker deviation 5) |
-| `award_requests` (V029) | `ck_award_requests_status` recreated with `WITHDRAWN` |
-| `review_templates` (V030, new) | `template_id`, `decision`, `title_uk`, `title_en`, `body_uk`, `body_en`, `sort_order`, `active`; seeded; audit trigger |
+| `award_versions` (V029) | `ck_award_versions_action` widened with `DECIDED` (4.1.2, award history of AC-2.9) |
+| `award_requests` (V030) | `ck_award_requests_status` recreated with `WITHDRAWN` |
+| `review_templates` (V031, new) | `template_id`, `decision`, `title_uk`, `title_en`, `body_uk`, `body_en`, `sort_order`, `active`; seeded; audit trigger |
 | `audit_logs` | New actions `REVIEW_CLAIMED`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER`, `REVIEW_TAKEN_OVER`, `REVIEW_DECISION`, `REVIEW_BATCH`, `AWARD_WITHDRAWN` |
 
 ### Endpoints
@@ -335,7 +336,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 | Unit awards change ownership semantics | Regressions in editing and GDPR export | §7.1 keeps one ownership rule; the 2.1 and 1.3.3 FTs stay green |
 | Return turning the award into a draft hides it from reviewers | Reviewer cannot follow up a returned award | A2; the returning level gets it back first on resubmission; Feature 4.2 may add a «Повернуті» filter |
 | E-mail volume from batches | Owners flooded | One e-mail per award and decision (A3); preferences in Epic 7 |
-| Five migrations in one feature | Ordering conflicts between parallel branches | One story at a time; V027–V030 reserved in this order |
+| Five migrations in one feature | Ordering conflicts between parallel branches | One story at a time; V027–V031 reserved in this order |
 
 ## 11. Definition of Done
 

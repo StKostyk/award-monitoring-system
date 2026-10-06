@@ -65,6 +65,14 @@ export const SUGGESTION_MIN_LENGTH = 3;
 
 export type ApprovalLevel = 'FACULTY_SECRETARY' | 'DEAN' | 'RECTOR_SECRETARY' | 'RECTOR';
 
+/** Approval levels from the lowest to the highest. */
+export const APPROVAL_LEVELS: ApprovalLevel[] = [
+  'FACULTY_SECRETARY',
+  'DEAN',
+  'RECTOR_SECRETARY',
+  'RECTOR',
+];
+
 export interface AwardRequestSummary {
   status: RequestStatus;
   currentLevel: ApprovalLevel;
@@ -78,7 +86,7 @@ export interface AwardRequestSummary {
 /** Request statuses after which nothing changes any more. */
 export const FINAL_REQUEST_STATUSES: RequestStatus[] = ['APPROVED', 'REJECTED', 'EXPIRED'];
 
-export type StepState = 'DONE' | 'CURRENT' | 'UPCOMING';
+export type StepState = 'DONE' | 'SKIPPED' | 'CURRENT' | 'UPCOMING';
 export type ReviewDecisionType = 'APPROVED' | 'REJECTED' | 'ESCALATED' | 'RETURNED';
 export type DelayReason = 'NO_REVIEWER' | 'REVIEW_OVERDUE';
 
@@ -99,6 +107,9 @@ export interface ReviewDecision {
   reviewerName: string;
   comments: string | null;
   decidedAt: string;
+  /** Who lent the role the reviewer decided under; null for an own role. */
+  delegatorId: number | null;
+  delegatorName: string | null;
 }
 
 /** The review timeline of an award; request fields are null for an award without a request. */
@@ -208,7 +219,7 @@ export interface Page<T> {
   number: number;
 }
 
-export type VersionAction = 'BASELINE' | 'CREATED' | 'UPDATED' | 'SUBMITTED';
+export type VersionAction = 'BASELINE' | 'CREATED' | 'UPDATED' | 'SUBMITTED' | 'DECIDED';
 
 /** The business fields of an award as saved in one version. */
 export interface AwardSnapshot {

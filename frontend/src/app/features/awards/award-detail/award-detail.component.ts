@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatChip } from '@angular/material/chips';
@@ -23,11 +24,13 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { ReviewPanelComponent } from '../../reviews/review-panel/review-panel.component';
+import { DecisionOutcome } from '../../reviews/reviews.service';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { AwardStatusComponent } from '../award-status/award-status.component';
 import {
+  ApprovalLevel,
   Award,
   AwardsService,
   UnitRef,
@@ -72,6 +75,9 @@ export class AwardDetailComponent implements OnInit {
   readonly notFound = signal(false);
   readonly failed = signal(false);
   readonly notice = signal<string | null>(null);
+  /** The result of the caller's last decision, with the level the request now waits at. */
+  readonly decision = signal<{ key: string; level: ApprovalLevel } | null>(null);
+  private readonly statusPanel = viewChild(AwardStatusComponent);
   readonly canAudit = computed(() => this.auth.permissions().hasPermission('audit:read'));
 
   ngOnInit(): void {
@@ -135,6 +141,23 @@ export class AwardDetailComponent implements OnInit {
         }
       },
     });
+  }
+
+  /**
+   * Shows where a decision took the request and reloads the award and its status; a returned award is a draft
+   * again and readable only by its owner, so the reviewer goes back to the queue.
+   */
+  onDecided(outcome: DecisionOutcome): void {
+    if (outcome.status === 'DRAFT') {
+      void this.router.navigate(['/reviews'], {
+        replaceUrl: true,
+        state: { notice: `reviews.messages.${outcome.requestStatus}` },
+      });
+      return;
+    }
+    this.decision.set({ key: `reviews.messages.${outcome.requestStatus}`, level: outcome.level });
+    this.refresh(outcome.awardId);
+    this.statusPanel()?.load();
   }
 
   /** Drafts are private to their owner; everybody else who may open the award sees it from the submission on. */

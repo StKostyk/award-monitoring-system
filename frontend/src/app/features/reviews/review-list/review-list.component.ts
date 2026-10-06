@@ -119,8 +119,11 @@ export class ReviewListComponent implements OnInit {
   readonly total = this.store.selectSignal(reviewsFeature.selectTotal);
   readonly pageIndex = this.store.selectSignal(reviewsFeature.selectPageIndex);
   readonly pageSize = this.store.selectSignal(reviewsFeature.selectPageSize);
+  /** A message handed over by the page the reviewer came from. */
+  readonly notice = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);
     this.store.dispatch(ReviewsActions.opened());
     forkJoin([
       this.organizationList.ofType('FACULTY'),

@@ -50,6 +50,10 @@
   color: var(--mat-sys-on-surface);
 }
 
+.award-status__step--SKIPPED {
+  border-style: dashed;
+}
+
 .award-status__step--CURRENT {
   border-width: 2px;
   border-color: var(--mat-sys-primary);

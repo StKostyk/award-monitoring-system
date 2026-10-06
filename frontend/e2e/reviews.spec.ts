@@ -14,6 +14,10 @@ import {
 /** A faculty without seed reviewers or awards, so the queue holds only what this spec submits. */
 const FACULTY = 5;
 const DEPARTMENT = 41;
+/** A national category: a faculty secretary's approval passes it on. */
+const NATIONAL = 13;
+/** A university category: any reviewing level approves it for good. */
+const UNIVERSITY = 21;
 
 function grant(email: string, role: string, lastName: string): void {
   sql(
@@ -26,12 +30,17 @@ function user(email: string): string {
   return `(select user_id from users where email_address = '${email}')`;
 }
 
-async function submittedBy(browser: Browser, owner: string, title: string): Promise<string> {
+async function submittedBy(
+  browser: Browser,
+  owner: string,
+  title: string,
+  category = NATIONAL,
+): Promise<string> {
   const page = await signedInAs(browser, owner, FRESH_PASSWORD);
   await page.goto('/awards/new');
   await page.getByTestId('award-title-uk').fill(title);
   await page.getByTestId('award-category').click();
-  await page.getByTestId('category-option-13').click();
+  await page.getByTestId(`category-option-${category}`).click();
   await page.getByTestId('award-organization').fill('Міністерство освіти і науки України');
   await page.getByTestId('award-date').fill(pastDay());
   await submitWithoutDocuments(page);
@@ -160,5 +169,77 @@ test.describe('reviewer queue', () => {
     );
     expect(await seriousViolations(page)).toEqual([]);
     expect(sql(`select status from award_requests where award_id = ${id}`)).toBe('SUBMITTED');
+  });
+
+  test('ac2_4 ac2_11 a returned award goes back to its owner with the comment', async ({
+    browser,
+  }) => {
+    const title = `Грамота на доопрацювання ${uniqueToken()}`;
+    const comment = 'Додайте номер і дату наказу';
+    const id = await submittedBy(browser, owner, title, UNIVERSITY);
+    const page = await signedInAs(browser, first, FRESH_PASSWORD);
+    await openAward(page, id);
+
+    await page.getByTestId('review-return').click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByTestId('decision-title')).toHaveText('Повернути на доопрацювання');
+    await dialog.getByTestId('decision-confirm').click();
+    await expect(dialog).toContainText('Вкажіть, що потрібно виправити');
+    await dialog.getByTestId('decision-comment').fill(comment);
+    await expect(dialog.locator('.mat-mdc-form-field-hint-wrapper')).toHaveCSS('opacity', '1');
+    expect(await seriousViolations(page)).toEqual([]);
+    await dialog.getByTestId('decision-confirm').click();
+
+    await expect(page).toHaveURL(/\/reviews$/);
+    await expect(page.getByTestId('reviews-notice')).toHaveText(
+      'Нагороду повернуто на доопрацювання.',
+    );
+    const mine = await signedInAs(browser, owner, FRESH_PASSWORD);
+    await mine.goto(`/awards/${id}`);
+    await expect(mine.getByTestId('award-detail-status')).toHaveText('Чернетка');
+    expect(sql(`select status from award_requests where award_id = ${id}`)).toBe('RETURNED');
+    expect(
+      sql(
+        `select comments from review_decisions where request_id = (select request_id from award_requests where award_id = ${id})`,
+      ),
+    ).toBe(comment);
+  });
+
+  test('ac2_2 ac2_5 ac2_11 a secretary passes a national award on and a dean approves another', async ({
+    browser,
+  }) => {
+    const national = await submittedBy(browser, owner, `Відзнака МОН ${uniqueToken()}`);
+    const university = await submittedBy(
+      browser,
+      owner,
+      `Університетська грамота ${uniqueToken()}`,
+      UNIVERSITY,
+    );
+    const page = await signedInAs(browser, first, FRESH_PASSWORD);
+    await openAward(page, national);
+
+    await page.getByTestId('review-escalate').click();
+    await expect(page.getByRole('dialog').getByTestId('decision-title')).toHaveText(
+      'Передати декану',
+    );
+    await page.getByTestId('decision-comment').fill('Національний рівень');
+    await page.getByTestId('decision-confirm').click();
+    await expect(page.getByTestId('award-detail-decision')).toHaveText('Передано декану.');
+    await expect(page.getByTestId('award-status-decision')).toContainText('Ірина Перша');
+    await expect(page.getByTestId('award-status-comment')).toHaveText('Національний рівень');
+    expect(
+      sql(`select status || ':' || current_level from award_requests where award_id = ${national}`),
+    ).toBe('ESCALATED:DEAN');
+
+    const head = await signedInAs(browser, dean, FRESH_PASSWORD);
+    await openAward(head, university);
+    await head.getByTestId('review-approve').click();
+    await expect(head.getByTestId('decision-verified')).toHaveCount(0);
+    await head.getByTestId('decision-confirm').click();
+    await expect(head.getByTestId('award-detail-decision')).toHaveText('Нагороду затверджено.');
+    await expect(head.getByTestId('review-panel')).toHaveCount(0);
+    await expect(head.getByTestId('award-status-completed')).toBeVisible();
+    expect(await seriousViolations(head)).toEqual([]);
+    expect(sql(`select status from awards where award_id = ${university}`)).toBe('APPROVED');
   });
 });

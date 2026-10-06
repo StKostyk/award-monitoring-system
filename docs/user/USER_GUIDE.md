@@ -191,6 +191,22 @@ The **Review** panel of the award page shows who reviews it and the deadline.
 If a colleague claimed the award a moment earlier, the panel names them and shows the current state; if the data
 was out of date, the page refreshes itself.
 
+### Deciding
+
+You decide on an award you have claimed, or on an unclaimed one (the decision claims it for you). Each button opens
+a dialog with a comment field:
+
+- **Approve**: the award is approved when your level is high enough for its category; otherwise it goes to the next
+  level and the page says where («Passed to the dean.»). Tick **Documents checked** when the award has documents and
+  you checked them: the award gets the verification badge.
+- **Return for corrections** (comment required): the award goes back to its owner as a draft with your comment; you
+  return to the queue, because the draft is visible only to its owner.
+- **Reject** (comment required): the review ends; the owner sees the comment as the reason.
+- **Pass to the …**: the award goes to the next level without your approval (not offered to the rector).
+
+The owner gets an e-mail about every decision. The status timeline names the reviewer of each decision, adds
+"(on behalf of …)" when the reviewer acted by delegation, and marks a level that was passed over as "skipped".
+
 ---
 
 ## Managing Your Profile

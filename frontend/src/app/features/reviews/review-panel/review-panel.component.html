@@ -29,10 +29,55 @@
           <dd>{{ delegator.name }}</dd>
         }
       </dl>
+      @if (canDecide()) {
+        <div class="review-panel__actions" data-testid="review-decisions">
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="busy()"
+            (click)="decide(item, 'APPROVE')"
+            data-testid="review-approve"
+          >
+            {{ 'reviews.panel.approve' | transloco }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy()"
+            (click)="decide(item, 'RETURN')"
+            data-testid="review-return"
+          >
+            {{ 'reviews.panel.return' | transloco }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy()"
+            (click)="decide(item, 'REJECT')"
+            data-testid="review-reject"
+          >
+            {{ 'reviews.panel.reject' | transloco }}
+          </button>
+          @if (nextLevel(); as next) {
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="busy()"
+              (click)="decide(item, 'ESCALATE')"
+              data-testid="review-escalate"
+            >
+              {{
+                'reviews.panel.escalate'
+                  | transloco: { level: ('reviews.decide.to.' + next | transloco) }
+              }}
+            </button>
+          }
+        </div>
+      }
       <div class="review-panel__actions">
         @if (item.reviewer === null) {
           <button
-            mat-flat-button
+            mat-stroked-button
             type="button"
             [disabled]="busy()"
             (click)="claim(item)"
