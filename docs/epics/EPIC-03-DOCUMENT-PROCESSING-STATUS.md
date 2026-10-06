@@ -40,8 +40,9 @@ Out of scope here: attaching documents to a returned request during resubmission
 | 7 | 3.0.4 Blocking lint and Playwright in CI | 3.0 | 3 | SCRUM-41 | #124 | no | Done |
 | 8 | 3.1.4 CI fixes after SCRUM-37 | 3.1 | 1 | SCRUM-44 | #133 | no | Done |
 | 9 | 3.1.5 Fixes and refactor sweep from the Feature 3.1 validation | 3.1 | 3 | SCRUM-45 | #135 | no | Done |
+| 10 | 3.1.6 CI fixes: nginx proxy snippet and Kyiv dates | 3.1 | 1 | SCRUM-46 | #140 | no | In review |
 
-Total: 33 points, sprints 3–4.
+Total: 34 points, sprints 3–4.
 
 ## Decisions
 

@@ -165,6 +165,7 @@ jobs:
           docker run -d --name award-e2e-nginx -p 127.0.0.1:4280:80 --add-host app:host-gateway \
             -v "$GITHUB_WORKSPACE/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
             -v "$GITHUB_WORKSPACE/frontend/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro" \
+            -v "$GITHUB_WORKSPACE/frontend/backend-proxy.conf:/etc/nginx/snippets/backend-proxy.conf:ro" \
             nginx:alpine
 
       - name: Start the backend

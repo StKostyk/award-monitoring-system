@@ -27,10 +27,11 @@ import { grantableRoles } from '../../../core/auth/permissions';
 import { RoleAssignment, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { OrganizationSummary } from '../../../core/organizations/organizations.service';
-import { organizationTypesFor, today } from '../role-organizations';
+import { organizationTypesFor } from '../role-organizations';
 import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { UserSummary, UsersService } from '../users.service';
+import { kyivToday } from '../../../shared/date-format';
 
 @Component({
   selector: 'app-assign-role-dialog',
@@ -81,12 +82,12 @@ export class AssignRoleDialogComponent {
   protected readonly organizations = signal<OrganizationSummary[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly submitting = signal(false);
-  protected readonly minimumDate = today();
+  protected readonly minimumDate = kyivToday();
 
   readonly form = this.fb.nonNullable.group({
     role: [null as RoleType | null, Validators.required],
     organizationId: [null as number | null, Validators.required],
-    validFrom: [today(), Validators.required],
+    validFrom: [kyivToday(), Validators.required],
     validTo: [''],
   });
 

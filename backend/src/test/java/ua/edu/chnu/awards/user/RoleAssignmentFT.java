@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static ua.edu.chnu.awards.support.AwardApi.KYIV;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -98,12 +99,12 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     void ac2_1_ac2_5_ac2_9_theDeanGrantsARoleThatReachesTheNextTokenAndTheHoldersInbox() {
         as(tokenOf(DEAN)).contentType(ContentType.JSON)
             .body(Map.of("role", "FACULTY_SECRETARY", "organizationId", TestUsers.FMI_FACULTY_ID,
-                "validTo", LocalDate.now().plusMonths(1).toString()))
+                "validTo", LocalDate.now(KYIV).plusMonths(1).toString()))
             .post("/api/v1/users/" + promotedId + "/roles").then().statusCode(201)
             .body("role", equalTo("FACULTY_SECRETARY"))
             .body("organization.id", equalTo((int) TestUsers.FMI_FACULTY_ID))
-            .body("validFrom", equalTo(LocalDate.now().toString()))
-            .body("validTo", equalTo(LocalDate.now().plusMonths(1).toString()));
+            .body("validFrom", equalTo(LocalDate.now(KYIV).toString()))
+            .body("validTo", equalTo(LocalDate.now(KYIV).plusMonths(1).toString()));
 
         assertThat(mailpit.latestTextTo(PROMOTED, "Роль призначено")).contains("FACULTY_SECRETARY");
         assertThat(claims(tokenOf(PROMOTED)).get("role_scopes").toString())
@@ -205,7 +206,7 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
         as(deanToken).delete("/api/v1/users/" + revokedId + "/roles/" + roleId).then().statusCode(409)
             .body("type", equalTo("urn:awards:problem:role-already-revoked"));
         assertThat(jdbc.queryForObject("select valid_to from user_roles where user_role_id = ?",
-            java.sql.Date.class, roleId).toLocalDate()).isEqualTo(LocalDate.now().minusDays(1));
+            java.sql.Date.class, roleId).toLocalDate()).isEqualTo(LocalDate.now(KYIV).minusDays(1));
         assertThat(jdbc.queryForList("select action_type from audit_logs where entity_type = 'AUTHORIZATION'"
             + " and user_id = ? and action_type in ('ROLE_ASSIGNED', 'ROLE_REVOKED') order by created_at",
             revokedId)).extracting(row -> row.get("action_type"))
@@ -218,7 +219,7 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
         String deanToken = tokenOf(DEAN);
         long roleId = as(deanToken).contentType(ContentType.JSON)
             .body(Map.of("role", "FACULTY_SECRETARY", "organizationId", TestUsers.FMI_FACULTY_ID,
-                "validFrom", LocalDate.now().plusMonths(1).toString()))
+                "validFrom", LocalDate.now(KYIV).plusMonths(1).toString()))
             .post("/api/v1/users/" + scheduledId + "/roles").then().statusCode(201)
             .extract().jsonPath().getLong("id");
 
@@ -227,7 +228,7 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
             .body("type", equalTo("urn:awards:problem:role-already-revoked"));
 
         assertThat(jdbc.queryForObject("select valid_to from user_roles where user_role_id = ?",
-            java.sql.Date.class, roleId).toLocalDate()).isEqualTo(LocalDate.now().plusMonths(1).minusDays(1));
+            java.sql.Date.class, roleId).toLocalDate()).isEqualTo(LocalDate.now(KYIV).plusMonths(1).minusDays(1));
         assertThat(jdbc.queryForObject("select count(*) from audit_logs where action_type = 'ROLE_REVOKED'"
             + " and user_id = ?", Integer.class, scheduledId)).isEqualTo(1);
     }

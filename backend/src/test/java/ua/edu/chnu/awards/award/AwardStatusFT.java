@@ -178,8 +178,9 @@ class AwardStatusFT extends AbstractFunctionalTest {
     @Test
     void ac1_9_withoutAFacultySecretaryTheDelayNamesTheMissingReviewer() {
         long id = submitted("Unreviewed");
-        jdbc.update("update user_roles set valid_to = current_date - 1, valid_from = current_date - 30 "
-            + "where user_id = ?", secretaryId);
+        LocalDate today = LocalDate.now(KYIV);
+        jdbc.update("update user_roles set valid_to = ?, valid_from = ? where user_id = ?",
+            java.sql.Date.valueOf(today.minusDays(1)), java.sql.Date.valueOf(today.minusDays(30)), secretaryId);
 
         as(employee).get(AWARDS + "/" + id + "/status").then().statusCode(200)
             .body("overdue", equalTo(false))

@@ -16,11 +16,11 @@ import { OrganizationRef, RoleAssignment } from '../../../core/auth/user-profile
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AssignRoleDialogComponent } from '../assign-role-dialog/assign-role-dialog.component';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
-import { today } from '../role-organizations';
 import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
 import { UserDetail, UsersService } from '../users.service';
+import { kyivToday } from '../../../shared/date-format';
 
 @Component({
   selector: 'app-user-detail',
@@ -92,7 +92,7 @@ export class UserDetailComponent implements OnInit {
   }
 
   ended(assignment: RoleAssignment): boolean {
-    return !!assignment.validTo && assignment.validTo < today();
+    return !!assignment.validTo && assignment.validTo < kyivToday();
   }
 
   name(organization: OrganizationRef): string {
