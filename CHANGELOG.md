@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend runs client-side only; SSR scaffold removed (ADR-013 addendum)
 - Docker Compose adds Mailpit (SMTP) and MinIO (S3) for local development
 - CI backend job runs a single `mvn verify`; static analysis is a blocking step
+- README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
 - Role assignment and delegation dialogs start on the Kyiv calendar day like the server, so a browser in another time zone or after 21:00 UTC no longer proposes a start date the server refuses as past; CI mounts the nginx `backend-proxy.conf` snippet for the browser tests, and the delegation and role FTs compare with the Kyiv date at any hour
