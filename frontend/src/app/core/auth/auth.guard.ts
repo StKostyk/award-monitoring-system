@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
-import { canDelegate, canReadDirectory } from './permissions';
+import { canDelegate, canReadDirectory, canReview } from './permissions';
 
 export const authGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
@@ -25,4 +25,11 @@ export const delegationGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return canDelegate(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** The reviewer queue is open to a caller with an approval role, their own or by delegation. */
+export const approverGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return canReview(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };

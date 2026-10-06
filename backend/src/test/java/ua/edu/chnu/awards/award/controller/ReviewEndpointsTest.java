@@ -111,8 +111,20 @@ class ReviewEndpointsTest extends AbstractAwardEndpointsTest {
     @Test
     void ac1_9_aRequestTheCallerMayNotReviewAnswers404() throws Exception {
         when(assignment.candidates(5L)).thenThrow(new AwardNotFoundException(5L));
+        when(assignment.item(5L)).thenThrow(new AwardNotFoundException(5L));
 
         mockMvc.perform(get("/api/v1/awards/5/reviewers").with(secretary())).andExpect(status().isNotFound());
+        mockMvc.perform(get(REVIEWER).with(secretary())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void ac1_11_theReviewerResourceAnswersTheItem() throws Exception {
+        when(assignment.item(5L)).thenReturn(item());
+
+        mockMvc.perform(get(REVIEWER).with(secretary()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.requestVersion").value(3));
+        mockMvc.perform(get(REVIEWER).with(employee())).andExpect(status().isForbidden());
     }
 
     @Test

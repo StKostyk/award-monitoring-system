@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.award.dto.ReviewItem;
 import ua.edu.chnu.awards.award.dto.ReviewerCandidate;
 import ua.edu.chnu.awards.award.dto.ReviewerChange;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
@@ -133,12 +134,24 @@ class ReviewAssignmentTest {
     @Test
     void ac1_6_aHigherLevelTakesARequestOverFromAPeer() {
         held(peer);
+        eligible(peer, ApprovalLevel.FACULTY_SECRETARY);
         when(rule.highestLevel(request)).thenReturn(Optional.of(ApprovalLevel.DEAN));
 
         assignment.assign(AWARD, new ReviewerChange(VERSION, null, true));
 
         assertThat(request.getCurrentReviewer()).isEqualTo(caller);
         assertThat(audited(AuditAction.REVIEW_TAKEN_OVER)).containsEntry("previousReviewerId", peer.getId());
+    }
+
+    @Test
+    void ac1_6_aTakeOverNeedsALevelAboveTheHolderNotOnlyAboveTheRequest() {
+        held(peer);
+        eligible(peer, ApprovalLevel.FACULTY_SECRETARY);
+        eligible(peer, ApprovalLevel.DEAN);
+        when(rule.highestLevel(request)).thenReturn(Optional.of(ApprovalLevel.DEAN));
+
+        assertProblem(() -> assignment.assign(AWARD, new ReviewerChange(VERSION, null, true)),
+            HttpStatus.CONFLICT, "request-claimed");
     }
 
     @Test
@@ -252,6 +265,25 @@ class ReviewAssignmentTest {
     }
 
     @Test
+    void ac1_11_theItemOfAnOpenRequestTheCallerMayReview() {
+        ReviewItem item = mock(ReviewItem.class);
+        when(mapper.toItem(request)).thenReturn(item);
+
+        assertThat(assignment.item(AWARD)).isSameAs(item);
+    }
+
+    @Test
+    void ac1_11_noItemForADecidedOrForeignRequest() {
+        request.setStatus(RequestStatus.APPROVED);
+        assertThatThrownBy(() -> assignment.item(AWARD)).isInstanceOf(AwardNotFoundException.class);
+
+        request.setStatus(RequestStatus.SUBMITTED);
+        when(rule.grant(request)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> assignment.item(AWARD)).isInstanceOf(AwardNotFoundException.class);
+        assertThatThrownBy(() -> assignment.item(3L)).isInstanceOf(AwardNotFoundException.class);
+    }
+
+    @Test
     void ac1_9_aDecidedRequestAnswersRequestClosed() {
         request.setStatus(RequestStatus.APPROVED);
 
@@ -267,6 +299,10 @@ class ReviewAssignmentTest {
     private void own(ApprovalLevel level) {
         when(rule.grant(request)).thenReturn(Optional.of(new ReviewGrant(level, FACULTY, null)));
         when(rule.highestLevel(request)).thenReturn(Optional.of(level));
+    }
+
+    private void eligible(User reviewer, ApprovalLevel level) {
+        when(availability.isEligible(reviewer.getId(), level, FACULTY, owner.getId(), owner.getId())).thenReturn(true);
     }
 
     private void held(User reviewer) {

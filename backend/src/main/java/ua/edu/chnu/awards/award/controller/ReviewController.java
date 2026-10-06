@@ -61,6 +61,18 @@ public class ReviewController {
     }
 
     /**
+     * The open request of an award as a queue item, for the review panel of the award page.
+     *
+     * @param id the award
+     * @return the request as a queue item
+     */
+    @GetMapping("/api/v1/awards/{id}/reviewer")
+    @PreAuthorize(AwardPermissionConstants.CAN_REVIEW)
+    public ReviewItem item(@PathVariable long id) {
+        return assignment.item(id);
+    }
+
+    /**
      * Claims the request of an award, takes it over or hands it to a colleague.
      *
      * @param id     the award

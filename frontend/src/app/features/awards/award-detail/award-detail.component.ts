@@ -18,10 +18,11 @@ import { filter, switchMap, tap } from 'rxjs';
 
 import { problemStatus, problemType, readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
-import { canEditOwnAwards } from '../../../core/auth/permissions';
+import { canEditOwnAwards, canReview } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
+import { ReviewPanelComponent } from '../../reviews/review-panel/review-panel.component';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
@@ -51,6 +52,7 @@ import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
     AwardAuditTrailComponent,
     AwardStatusComponent,
     AwardDocumentsComponent,
+    ReviewPanelComponent,
     TranslocoPipe,
   ],
   templateUrl: './award-detail.component.html',
@@ -138,6 +140,15 @@ export class AwardDetailComponent implements OnInit {
   /** Drafts are private to their owner; everybody else who may open the award sees it from the submission on. */
   showHistory(award: Award): boolean {
     return award.status !== 'DRAFT' || isOwnAward(award, this.auth.userId());
+  }
+
+  /** A pending award of somebody else, which an approver may be able to review. */
+  reviewable(award: Award): boolean {
+    return (
+      award.status === 'PENDING' &&
+      canReview(this.auth.permissions()) &&
+      !isOwnAward(award, this.auth.userId())
+    );
   }
 
   /** The caller's own draft, which the caller may delete. */

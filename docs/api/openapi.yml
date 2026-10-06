@@ -908,6 +908,31 @@ paths:
           $ref: '#/components/responses/Forbidden'
 
   /awards/{id}/reviewer:
+    get:
+      tags: [Workflows]
+      summary: The open request of an award as a queue item
+      description: >
+        The review panel of the award page reads the reviewer, deadline and request version here. Answers 404 when
+        the award has no open request (`SUBMITTED`, `IN_REVIEW`, `ESCALATED`) the caller may review
+        (`award:approve:level1`, reviewer rule, 4.1.1).
+      security:
+        - bearerAuth: []
+      operationId: getReviewItem
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: The request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
       tags: [Workflows]
       summary: Claim, take over or hand over the request of an award
@@ -915,7 +940,8 @@ paths:
         Without `reviewerId` the caller claims the request: status `IN_REVIEW`, the caller as reviewer, the version
         raised, an audit row `REVIEW_CLAIMED` (with `delegatorId` for a delegate); claiming a request one already
         holds changes nothing. A request held by someone else is taken over with `takeOver: true` by a caller whose
-        level is above the request's level, or by a peer when the holder may no longer review it
+        level is above the holder's highest level on the request, or by anyone eligible when the holder may no longer
+        review it
         (`REVIEW_TAKEN_OVER` with `previousReviewerId`). With `reviewerId` the holder hands the request to a
         colleague from `GET /awards/{id}/reviewers` (`REVIEW_HANDED_OVER`). The request row is locked, so of two
         claims at once one answers 409 (`award:approve:level1`, reviewer rule, 4.1.1).

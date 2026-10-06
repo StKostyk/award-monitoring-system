@@ -147,6 +147,9 @@ class ReviewFT extends AbstractFunctionalTest {
             .body(VERSION, equalTo((int) version + 1));
         claim(secretary, id, Map.of(VERSION, version)).then().statusCode(HttpStatus.OK.value())
             .body(VERSION, equalTo((int) version + 1));
+        as(colleague).get(reviewer(id)).then().statusCode(HttpStatus.OK.value())
+            .body("reviewer.id", equalTo((int) secretaryId))
+            .body(VERSION, equalTo((int) version + 1));
         claim(colleague, id, Map.of(VERSION, version + 1)).then().statusCode(HttpStatus.CONFLICT.value())
             .body(TYPE, equalTo(PROBLEM + "request-claimed"))
             .body("reviewer.id", equalTo((int) secretaryId));
@@ -215,6 +218,7 @@ class ReviewFT extends AbstractFunctionalTest {
         claim(secretary, Long.MAX_VALUE, Map.of(VERSION, 0)).then().statusCode(HttpStatus.NOT_FOUND.value());
         as(secretary).get("/api/v1/awards/" + draft + "/reviewers").then()
             .statusCode(HttpStatus.NOT_FOUND.value());
+        as(secretary).get(reviewer(draft)).then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     @Test

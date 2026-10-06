@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -137,6 +138,22 @@ public class ReviewAssignment {
             .toList();
     }
 
+    /**
+     * The open request of an award as a queue item.
+     *
+     * @param awardId the award
+     * @return the request as a queue item
+     * @throws AwardNotFoundException when the award has no open request the caller may review
+     */
+    @Transactional(readOnly = true)
+    public ReviewItem item(long awardId) {
+        return requests.findByAwardId(awardId)
+            .filter(AwardRequest::isOpen)
+            .filter(this::isReviewable)
+            .map(mapper::toItem)
+            .orElseThrow(() -> new AwardNotFoundException(awardId));
+    }
+
     private ReviewItem handOver(AwardRequest request, ReviewerChange change) {
         final User previous = requireHeldByCaller(request);
         requireVersion(request, change.requestVersion());
@@ -165,11 +182,14 @@ public class ReviewAssignment {
     }
 
     private boolean mayTakeOver(AwardRequest request, User holder) {
-        boolean higher = rule.highestLevel(request)
-            .filter(level -> level.compareTo(request.getCurrentLevel()) > 0).isPresent();
-        return higher || !availability.isEligible(holder.getId(), request.getCurrentLevel(),
-            request.getAward().getOrganization().getId(), request.getAward().getOwner().getId(),
-            request.getSubmitter().getId());
+        Optional<ApprovalLevel> holderLevel = Arrays.stream(ApprovalLevel.values())
+            .filter(level -> level.compareTo(request.getCurrentLevel()) >= 0)
+            .filter(level -> availability.isEligible(holder.getId(), level,
+                request.getAward().getOrganization().getId(), request.getAward().getOwner().getId(),
+                request.getSubmitter().getId()))
+            .reduce((lower, higher) -> higher);
+        return holderLevel.isEmpty() || rule.highestLevel(request)
+            .filter(level -> level.compareTo(holderLevel.get()) > 0).isPresent();
     }
 
     private AwardRequest lockedReviewable(long awardId) {

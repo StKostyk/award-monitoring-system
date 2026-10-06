@@ -45,6 +45,21 @@
             <span matListItemTitle>{{ 'awards.title' | transloco }}</span>
           </a>
         }
+        @if (canOpenReviews()) {
+          <a
+            mat-list-item
+            (click)="closeDrawer()"
+            routerLink="/reviews"
+            routerLinkActive
+            #reviewsLink="routerLinkActive"
+            [activated]="reviewsLink.isActive"
+            [attr.aria-current]="reviewsLink.isActive ? 'page' : null"
+            data-testid="nav-reviews"
+          >
+            <mat-icon matListItemIcon>fact_check</mat-icon>
+            <span matListItemTitle>{{ 'reviews.title' | transloco }}</span>
+          </a>
+        }
         @if (canOpenUsers()) {
           <a
             mat-list-item

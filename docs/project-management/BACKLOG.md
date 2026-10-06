@@ -63,7 +63,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 4.1.0 | Organisational awards: unit recipients and submitter | 5 | ✅ Done | SCRUM-48 | [#142](https://github.com/StKostyk/award-monitoring-system/issues/142) |
-| 4.1.1 | Reviewer queue with claim, release and hand-over | 8 | Sprint 4 | SCRUM-49 | [#143](https://github.com/StKostyk/award-monitoring-system/issues/143) |
+| 4.1.1 | Reviewer queue with claim, release and hand-over | 8 | 👀 In review (Sprint 4) | SCRUM-49 | [#143](https://github.com/StKostyk/award-monitoring-system/issues/143) |
 | 4.1.2 | Review decisions: approve, reject, return, escalate to the dean | 8 | Sprint 4 | SCRUM-50 | [#144](https://github.com/StKostyk/award-monitoring-system/issues/144) |
 | 4.1.3 | Withdraw an unclaimed request and resubmit a returned award | 3 | Sprint 5 | SCRUM-51 | [#145](https://github.com/StKostyk/award-monitoring-system/issues/145) |
 | 4.1.4 | Batch review with template responses (US-004) | 5 | Sprint 5 | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |

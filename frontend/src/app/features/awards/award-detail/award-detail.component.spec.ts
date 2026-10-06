@@ -8,7 +8,9 @@ import { of, throwError } from 'rxjs';
 import { MockInstance, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { RoleScope } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { ReviewsService } from '../../reviews/reviews.service';
 import { AwardDocument, DocumentsService } from '../award-documents/documents.service';
 import { Award, AwardStatusView, AwardsService } from '../awards.service';
 import { AwardSubmittedComponent } from '../award-submitted/award-submitted.component';
@@ -106,9 +108,12 @@ describe('AwardDetailComponent', () => {
     status: vi.fn(),
   };
   const granted = signal<string[]>([]);
+  const roleScopes = signal<RoleScope[]>([]);
   const permissions = computed(() => ({
     hasPermission: (permission: string) => granted().includes(permission),
+    roleScopes: roleScopes(),
   }));
+  const reviews = { item: vi.fn() };
   const dialog = { open: vi.fn() };
   const documents = { list: vi.fn(() => of<AwardDocument[]>([])) };
   let navigate: MockInstance<Router['navigate']>;
@@ -133,6 +138,7 @@ describe('AwardDetailComponent', () => {
         { provide: AuthService, useValue: { userId: signal('21'), permissions } },
         { provide: MatDialog, useValue: dialog },
         { provide: DocumentsService, useValue: documents },
+        { provide: ReviewsService, useValue: reviews },
       ],
     }).compileComponents();
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -150,6 +156,10 @@ describe('AwardDetailComponent', () => {
     service.auditTrail.mockReset().mockReturnValue(of(noVersions));
     service.status.mockReset().mockReturnValue(of(withoutRequest));
     granted.set([]);
+    roleScopes.set([]);
+    reviews.item
+      .mockReset()
+      .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
     documents.list.mockReset().mockReturnValue(of([]));
   });
 
@@ -170,6 +180,26 @@ describe('AwardDetailComponent', () => {
     expect(element.querySelector('[data-testid="award-edit"]')).toBeNull();
     expect(element.querySelector('[data-testid="award-status-panel"]')).not.toBeNull();
     expect(service.status).toHaveBeenCalledWith(5);
+  });
+
+  it('ac1_11_shows_the_review_panel_to_an_approver_on_somebody_elses_pending_award', async () => {
+    service.get.mockReturnValue(of(pending));
+    let fixture = await open(AwardDetailComponent, '5');
+    expect(reviews.item).not.toHaveBeenCalled();
+
+    TestBed.resetTestingModule();
+    roleScopes.set([{ role: 'FACULTY_SECRETARY', organizationId: 9 }]);
+    fixture = await open(AwardDetailComponent, '5');
+    expect(reviews.item).not.toHaveBeenCalled();
+
+    TestBed.resetTestingModule();
+    service.get.mockReturnValue(of({ ...pending, owner: { ...pending.owner, id: 22 } }));
+    fixture = await open(AwardDetailComponent, '5');
+    expect(reviews.item).toHaveBeenCalledWith(5);
+    expect(fixture.nativeElement.querySelector('app-review-panel')).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="award-back"]')?.getAttribute('href'),
+    ).toBe('/reviews');
   });
 
   it('ac0_7_a_unit_award_names_the_unit_as_recipient_and_who_entered_it', async () => {
