@@ -12,9 +12,9 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { today } from '../../admin/role-organizations';
 import { UserSummary } from '../../admin/users.service';
 import { DelegateDialogComponent } from './delegate-dialog.component';
+import { kyivToday } from '../../../shared/date-format';
 
 const faculty = {
   id: 9,
@@ -163,12 +163,12 @@ describe('DelegateDialogComponent', () => {
 
     expect(form.controls.validFrom.hasError('matDatepickerMin')).toBe(true);
 
-    form.patchValue({ validFrom: today(), validTo: days(today(), 91) });
+    form.patchValue({ validFrom: kyivToday(), validTo: days(kyivToday(), 91) });
     fixture.componentInstance.submit();
 
     expect(form.controls.validTo.hasError('range')).toBe(true);
 
-    form.patchValue({ validTo: days(today(), -1) });
+    form.patchValue({ validTo: days(kyivToday(), -1) });
     fixture.componentInstance.submit();
 
     expect(form.controls.validTo.hasError('matDatepickerMin')).toBe(true);
@@ -177,7 +177,7 @@ describe('DelegateDialogComponent', () => {
 
   it('ac3_1_sends_the_delegation_and_closes_on_success', async () => {
     const { fixture, http, close } = await build({ role_scopes: ['DEAN:9'] });
-    const validTo = days(today(), 14);
+    const validTo = days(kyivToday(), 14);
     fixture.componentInstance.form.patchValue({
       role: 'DEAN',
       organizationId: 9,
@@ -193,7 +193,7 @@ describe('DelegateDialogComponent', () => {
       delegateId: 3,
       role: 'DEAN',
       organizationId: 9,
-      validFrom: today(),
+      validFrom: kyivToday(),
       validTo,
       reason: 'Відпустка',
     });
@@ -208,7 +208,7 @@ describe('DelegateDialogComponent', () => {
       role: 'DEAN',
       organizationId: 9,
       delegate: secretary,
-      validTo: days(today(), 14),
+      validTo: days(kyivToday(), 14),
     });
 
     fixture.componentInstance.submit();

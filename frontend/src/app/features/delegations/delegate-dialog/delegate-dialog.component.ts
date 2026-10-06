@@ -25,11 +25,12 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { delegatableOrganizations, delegatableRoles } from '../../../core/auth/permissions';
 import { RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { organizationTypesFor, today } from '../../admin/role-organizations';
+import { organizationTypesFor } from '../../admin/role-organizations';
 import { organizationName } from '../../../shared/organization-name';
 import { UserSummary, UsersService } from '../../admin/users.service';
 import { OrganizationSummary } from '../../../core/organizations/organizations.service';
 import { Delegation, DelegationsService } from '../delegations.service';
+import { kyivToday } from '../../../shared/date-format';
 
 const DEBOUNCE = 300;
 const MINIMUM_QUERY = 2;
@@ -88,14 +89,14 @@ export class DelegateDialogComponent {
   readonly candidates = signal<UserSummary[]>([]);
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
-  readonly minimumDate = today();
+  readonly minimumDate = kyivToday();
   readonly reasonLimit = REASON_LIMIT;
 
   readonly form = this.fb.nonNullable.group({
     role: [null as RoleType | null, Validators.required],
     organizationId: [null as number | null, Validators.required],
     delegate: [null as UserSummary | string | null, Validators.required],
-    validFrom: [today(), Validators.required],
+    validFrom: [kyivToday(), Validators.required],
     validTo: ['', Validators.required],
     reason: ['', Validators.maxLength(REASON_LIMIT)],
   });

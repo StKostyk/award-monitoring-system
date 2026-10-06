@@ -154,6 +154,18 @@ describe('AssignRoleDialogComponent', () => {
     http.expectNone(`${environment.apiUrl}/users/7/roles`);
   });
 
+  it('scrum46_starts_on_the_kyiv_day_when_it_is_already_tomorrow_there', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-05T21:30:00Z'));
+    try {
+      const { fixture } = await build(['DEAN:9']);
+
+      expect(fixture.componentInstance.form.controls.validFrom.value).toBe('2026-10-06');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('ac2_10_keeps_the_dialog_filled_when_the_server_is_unreachable', async () => {
     const { fixture, http, close } = await build(['DEAN:9']);
     const form = fixture.componentInstance.form;

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static ua.edu.chnu.awards.support.AwardApi.KYIV;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -116,8 +117,8 @@ class DelegationFT extends AbstractFunctionalTest {
     @Test
     void ac3_1_ac3_2_ac3_5_theDeanLendsApprovalAuthorityAndItReachesTheDelegatesToken() {
         long id = as(tokenOf(DEAN_CLAIMS)).contentType(ContentType.JSON)
-            .body(delegation(secretaryId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(14)))
+            .body(delegation(secretaryId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(14)))
             .post(DELEGATIONS).then().statusCode(201)
             .body("role", equalTo(DEAN_ROLE))
             .body("state", equalTo("active"))
@@ -143,14 +144,14 @@ class DelegationFT extends AbstractFunctionalTest {
     @Test
     void ac3_2_borrowedAuthorityIsNeitherLentOnNorUsedToManageUsers() {
         as(tokenOf(DEAN_LEND_ON)).contentType(ContentType.JSON)
-            .body(delegation(borrowerId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(3)))
+            .body(delegation(borrowerId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(3)))
             .post(DELEGATIONS).then().statusCode(201);
 
         String borrowerToken = tokenOf(BORROWER);
         as(borrowerToken).contentType(ContentType.JSON)
-            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(2)))
+            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(2)))
             .post(DELEGATIONS).then().statusCode(422)
             .body(PROBLEM_TYPE, equalTo("urn:awards:problem:delegation-not-holder"));
 
@@ -164,25 +165,25 @@ class DelegationFT extends AbstractFunctionalTest {
     void ac3_1_thePeriodTheDelegateAndTheCallerAreChecked() {
         String deanToken = tokenOf(DEAN_RULES);
         as(deanToken).contentType(ContentType.JSON)
-            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(100)))
+            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(100)))
             .post(DELEGATIONS).then().statusCode(422)
             .body(PROBLEM_TYPE, equalTo("urn:awards:problem:delegation-period"));
 
         as(deanToken).contentType(ContentType.JSON)
-            .body(delegation(employeeId, "RECTOR", TestUsers.UNIVERSITY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(3)))
+            .body(delegation(employeeId, "RECTOR", TestUsers.UNIVERSITY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(3)))
             .post(DELEGATIONS).then().statusCode(422)
             .body(PROBLEM_TYPE, equalTo("urn:awards:problem:delegation-not-holder"));
 
         as(deanToken).contentType(ContentType.JSON)
-            .body(delegation(outsiderId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(3)))
+            .body(delegation(outsiderId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(3)))
             .post(DELEGATIONS).then().statusCode(404);
 
         as(tokenOf(EMPLOYEE)).contentType(ContentType.JSON)
-            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(3)))
+            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(3)))
             .post(DELEGATIONS).then().statusCode(403)
             .body(PROBLEM_TYPE, equalTo("urn:awards:problem:access-denied"));
     }
@@ -191,14 +192,14 @@ class DelegationFT extends AbstractFunctionalTest {
     void ac3_1_thesameRoleIsNotLentTwiceOverThesamePeriod() {
         String deanToken = tokenOf(DEAN_RULES);
         as(deanToken).contentType(ContentType.JSON)
-            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now().plusDays(40),
-                LocalDate.now().plusDays(50)))
+            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV).plusDays(40),
+                LocalDate.now(KYIV).plusDays(50)))
             .post(DELEGATIONS).then().statusCode(201)
             .body("state", equalTo("upcoming"));
 
         as(deanToken).contentType(ContentType.JSON)
-            .body(delegation(secretaryId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now().plusDays(45),
-                LocalDate.now().plusDays(60)))
+            .body(delegation(secretaryId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV).plusDays(45),
+                LocalDate.now(KYIV).plusDays(60)))
             .post(DELEGATIONS).then().statusCode(422)
             .body(PROBLEM_TYPE, equalTo("urn:awards:problem:delegation-overlap"));
     }
@@ -206,12 +207,12 @@ class DelegationFT extends AbstractFunctionalTest {
     @Test
     void ac3_3_ac3_5_anExpiredDelegationLeavesTheTokenButStaysOnThePage() {
         long id = as(tokenOf(DEAN_EXPIRY)).contentType(ContentType.JSON)
-            .body(delegation(cascadeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now()))
+            .body(delegation(cascadeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV)))
             .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
         jdbc.update("update role_delegations set valid_from = ?, valid_to = ? where delegation_id = ?",
-            java.sql.Date.valueOf(LocalDate.now().minusDays(2)),
-            java.sql.Date.valueOf(LocalDate.now().minusDays(1)), id);
+            java.sql.Date.valueOf(LocalDate.now(KYIV).minusDays(2)),
+            java.sql.Date.valueOf(LocalDate.now(KYIV).minusDays(1)), id);
 
         assertThat(claims(tokenOf(CASCADE)).get("delegations")).isEqualTo(List.of());
         as(tokenOf(CASCADE)).queryParam("state", "expired").get(DELEGATIONS).then().statusCode(200)
@@ -224,8 +225,8 @@ class DelegationFT extends AbstractFunctionalTest {
     void ac3_4_ac3_5_revocationEndsTheBorrowedAuthorityAndTheDelegatesSessions() {
         String deanToken = tokenOf(DEAN_REVOKE);
         long id = as(deanToken).contentType(ContentType.JSON)
-            .body(delegation(benchId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(5)))
+            .body(delegation(benchId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(5)))
             .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
         String benchToken = tokenOf(BENCH);
         as(benchToken).get(DELEGATIONS).then().statusCode(200);
@@ -245,8 +246,8 @@ class DelegationFT extends AbstractFunctionalTest {
     void ac4_9_twoRevocationsArrivingAtOnceEndTheDelegationOnce() throws Exception {
         String deanToken = tokenOf(DEAN_RACE);
         long id = as(deanToken).contentType(ContentType.JSON)
-            .body(delegation(racerId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(5)))
+            .body(delegation(racerId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(5)))
             .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
 
         ExecutorService pool = Executors.newFixedThreadPool(2);
@@ -267,8 +268,8 @@ class DelegationFT extends AbstractFunctionalTest {
     @Test
     void ac4_3_movingTheDelegateToAnotherFacultyTakesTheBorrowedAuthorityBack() {
         long id = as(tokenOf(DEAN_MOVE)).contentType(ContentType.JSON)
-            .body(delegation(moverId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(5)))
+            .body(delegation(moverId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(5)))
             .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
         long elsewhere = jdbc.queryForObject("select org_id from organizations where parent_org_id = ?"
             + " and org_type = 'DEPARTMENT' and is_active order by org_id limit 1", Long.class,
@@ -287,8 +288,8 @@ class DelegationFT extends AbstractFunctionalTest {
     @Test
     void ac3_4_onlyTheDelegatorOrSomebodyAboveThemMayEndIt() {
         long id = as(tokenOf(DEAN_AUTHORITY)).contentType(ContentType.JSON)
-            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now().plusDays(60),
-                LocalDate.now().plusDays(70)))
+            .body(delegation(employeeId, DEAN_ROLE, TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV).plusDays(60),
+                LocalDate.now(KYIV).plusDays(70)))
             .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
 
         as(tokenOf(SECRETARY)).delete(DELEGATIONS + "/" + id).then().statusCode(404);
@@ -302,8 +303,8 @@ class DelegationFT extends AbstractFunctionalTest {
             "select user_role_id from user_roles where user_id = ? and role_type = 'FACULTY_SECRETARY'",
             Long.class, standInId);
         long id = as(tokenOf(STAND_IN)).contentType(ContentType.JSON)
-            .body(delegation(employeeId, "FACULTY_SECRETARY", TestUsers.FMI_FACULTY_ID, LocalDate.now(),
-                LocalDate.now().plusDays(5)))
+            .body(delegation(employeeId, "FACULTY_SECRETARY", TestUsers.FMI_FACULTY_ID, LocalDate.now(KYIV),
+                LocalDate.now(KYIV).plusDays(5)))
             .post(DELEGATIONS).then().statusCode(201).extract().jsonPath().getLong("id");
 
         as(adminToken).delete("/api/v1/users/" + standInId + "/roles/" + standInRole).then().statusCode(204);

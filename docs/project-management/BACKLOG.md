@@ -55,6 +55,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | 3.0.4 | Blocking lint and Playwright in CI | 3 | ✅ Done | SCRUM-41 | [#124](https://github.com/StKostyk/award-monitoring-system/issues/124) |
 | 3.1.4 | CI fixes after SCRUM-37 | 1 | ✅ Done (Sprint 4) | SCRUM-44 | [#133](https://github.com/StKostyk/award-monitoring-system/issues/133) |
 | 3.1.5 | Fixes and refactor sweep from the Feature 3.1 validation | 3 | ✅ Done (Sprint 4) | SCRUM-45 | [#135](https://github.com/StKostyk/award-monitoring-system/issues/135) |
+| 3.1.6 | CI fixes: nginx proxy snippet and Kyiv dates | 1 | 👀 In review (Sprint 4) | SCRUM-46 | [#140](https://github.com/StKostyk/award-monitoring-system/issues/140) |
 
 ### Later epics
 | ID | Story | Points | Epic |

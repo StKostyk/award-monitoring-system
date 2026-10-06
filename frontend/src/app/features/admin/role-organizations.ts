@@ -27,9 +27,3 @@ export const STATUSES: AccountStatus[] = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'RE
 export function organizationTypesFor(role: RoleType): OrganizationType[] {
   return TYPES[role];
 }
-
-/** Today as `YYYY-MM-DD`, the format the API uses for role validity. */
-export function today(): string {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().substring(0, 10);
-}
