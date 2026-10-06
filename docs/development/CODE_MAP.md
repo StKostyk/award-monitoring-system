@@ -21,6 +21,8 @@ Where things live and the conventions that keep them there. Updated whenever the
 | `tools/dev-up.ps1` | Starts containers, backend (local profile) and frontend for manual testing |
 | `tools/e2e.ps1` | Boots the backend if needed (pausing the `award-backend` container) and runs the Playwright suite; `-Grep` runs matching tests only |
 | `tools/tracker-sync.ps1` | Moves a story in Jira and GitHub together |
+| `tools/story-start.ps1` | Starts a story: branch from the base, In Progress in Jira and GitHub, tracker row, PRD section printed; `-DryRun` only prints |
+| `tools/story-ship.ps1` | Ships a story: checks the last gate run of the branch, marks tracker and BACKLOG rows, commits, pushes, opens the pull request, moves to In Review |
 | `tools/reset-db.ps1` | Recreates the local PostgreSQL volume (Flyway reapplies everything) and restarts a running backend |
 | `tools/ua-drift.ps1` | Lists Ukrainian copies behind their English source; `-Missing` also lists documents without a copy |
 | `tools/puml-check.ps1` | Checks that every diagram under `docs/` parses (PlantUML `-checkonly`); lists the broken ones |
