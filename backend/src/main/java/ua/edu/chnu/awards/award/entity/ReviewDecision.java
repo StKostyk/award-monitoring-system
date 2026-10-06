@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -24,8 +26,8 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
- * One reviewer decision on an approval request. The application reads these rows; the review workflow writes
- * them, and they never change afterwards.
+ * One reviewer decision on an approval request, with the person who lent the role when it was made under a
+ * delegation. Rows are written by the review workflow and never change afterwards.
  */
 @Entity
 @Table(name = "review_decisions")
@@ -34,10 +36,11 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@ToString(exclude = "reviewer")
+@ToString(exclude = {"reviewer", "delegator"})
 public class ReviewDecision {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "decision_id")
     private Long id;
 
@@ -59,8 +62,9 @@ public class ReviewDecision {
     @Column(name = "comments")
     private String comments;
 
-    @Column(name = "delegator_id")
-    private Long delegatorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "delegator_id")
+    private User delegator;
 
     @Column(name = "decided_at", nullable = false)
     private Instant decidedAt;

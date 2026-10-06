@@ -59,7 +59,7 @@ class ReviewAssignmentTest {
     private final ReviewItemMapper mapper = mock(ReviewItemMapper.class);
     private final AccessScope access = mock(AccessScope.class);
     private final ReviewAssignment assignment = new ReviewAssignment(requests, decisions, rule, availability, users,
-        audit, mapper, access);
+        audit, mapper, access, new ReviewGuards(requests, rule, access));
 
     private final Organization faculty = TestUsers.organization(FACULTY, OrganizationType.FACULTY);
     private final User owner = TestUsers.person(7L, "employee@chnu.edu.ua", faculty);

@@ -6,5 +6,6 @@ package ua.edu.chnu.awards.award.dto;
 public enum StepState {
     DONE,
     CURRENT,
-    UPCOMING
+    UPCOMING,
+    SKIPPED
 }

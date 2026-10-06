@@ -7,5 +7,6 @@ public enum VersionAction {
     BASELINE,
     CREATED,
     UPDATED,
-    SUBMITTED
+    SUBMITTED,
+    DECIDED
 }

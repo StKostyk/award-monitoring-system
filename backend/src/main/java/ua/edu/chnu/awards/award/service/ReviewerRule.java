@@ -80,6 +80,16 @@ public class ReviewerRule {
     }
 
     /**
+     * Who lent the role the caller reviews the request under.
+     *
+     * @param request the request
+     * @return the delegator, null for an own role or when the caller may not review it
+     */
+    public Long delegatorId(AwardRequest request) {
+        return grant(request).map(ReviewGrant::delegatorId).orElse(null);
+    }
+
+    /**
      * The highest level the caller reviews the request's award at.
      *
      * @param request the request

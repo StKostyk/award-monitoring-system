@@ -1,7 +1,6 @@
 package ua.edu.chnu.awards.award.service;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +17,6 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.dto.ReviewItem;
 import ua.edu.chnu.awards.award.dto.ReviewerCandidate;
 import ua.edu.chnu.awards.award.dto.ReviewerChange;
-import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
@@ -26,7 +24,6 @@ import ua.edu.chnu.awards.award.mapper.ReviewItemMapper;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.common.web.FieldViolation;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
@@ -53,6 +50,7 @@ public class ReviewAssignment {
     private final AuditService audit;
     private final ReviewItemMapper mapper;
     private final AccessScope access;
+    private final ReviewGuards guards;
 
     /**
      * Claims, takes over or hands over the request of an award.
@@ -66,8 +64,8 @@ public class ReviewAssignment {
      */
     @Transactional
     public ReviewItem assign(long awardId, ReviewerChange change) {
-        AwardRequest request = lockedReviewable(awardId);
-        requirePresent(change.requestVersion());
+        AwardRequest request = guards.lockedReviewable(awardId);
+        guards.requirePresent(change.requestVersion());
         return change.reviewerId() == null ? claim(request, change) : handOver(request, change);
     }
 
@@ -78,9 +76,9 @@ public class ReviewAssignment {
             return mapper.toItem(request);
         }
         if (holder != null && !(change.isTakeOver() && mayTakeOver(request, holder))) {
-            throw claimed(holder);
+            throw guards.claimed(holder);
         }
-        requireVersion(request, change.requestVersion());
+        guards.requireVersion(request, change.requestVersion());
         User caller = users.findById(callerId).orElseThrow(() -> new IllegalStateException("Caller has no account"));
         request.setCurrentReviewer(caller);
         request.setStatus(RequestStatus.IN_REVIEW);
@@ -105,10 +103,10 @@ public class ReviewAssignment {
      */
     @Transactional
     public void release(long awardId, Long requestVersion) {
-        AwardRequest request = lockedReviewable(awardId);
-        requirePresent(requestVersion);
-        requireHeldByCaller(request);
-        requireVersion(request, requestVersion);
+        AwardRequest request = guards.lockedReviewable(awardId);
+        guards.requirePresent(requestVersion);
+        guards.requireHeldByCaller(request);
+        guards.requireVersion(request, requestVersion);
         List<ApprovalLevel> below = Arrays.stream(ApprovalLevel.values())
             .filter(level -> level.compareTo(request.getCurrentLevel()) < 0).toList();
         boolean decidedBelow = !below.isEmpty() && decisions.existsByRequestIdAndLevelIn(request.getId(), below);
@@ -129,9 +127,9 @@ public class ReviewAssignment {
      */
     @Transactional(readOnly = true)
     public List<ReviewerCandidate> candidates(long awardId) {
-        AwardRequest request = requests.findByAwardId(awardId).filter(this::isReviewable)
+        AwardRequest request = requests.findByAwardId(awardId).filter(guards::isReviewable)
             .orElseThrow(() -> new AwardNotFoundException(awardId));
-        requireOpen(request);
+        guards.requireOpen(request);
         return eligible(request).stream()
             .map(candidate -> new ReviewerCandidate(candidate.id(), candidate.name(), candidate.email(),
                 candidate.delegated()))
@@ -149,14 +147,14 @@ public class ReviewAssignment {
     public ReviewItem item(long awardId) {
         return requests.findByAwardId(awardId)
             .filter(AwardRequest::isOpen)
-            .filter(this::isReviewable)
+            .filter(guards::isReviewable)
             .map(mapper::toItem)
             .orElseThrow(() -> new AwardNotFoundException(awardId));
     }
 
     private ReviewItem handOver(AwardRequest request, ReviewerChange change) {
-        final User previous = requireHeldByCaller(request);
-        requireVersion(request, change.requestVersion());
+        final User previous = guards.requireHeldByCaller(request);
+        guards.requireVersion(request, change.requestVersion());
         ReviewerAvailability.Candidate target = eligible(request).stream()
             .filter(candidate -> change.reviewerId().equals(candidate.id()))
             .findFirst()
@@ -190,52 +188,6 @@ public class ReviewAssignment {
             .reduce((lower, higher) -> higher);
         return holderLevel.isEmpty() || rule.highestLevel(request)
             .filter(level -> level.compareTo(holderLevel.get()) > 0).isPresent();
-    }
-
-    private AwardRequest lockedReviewable(long awardId) {
-        AwardRequest request = requests.findByAwardIdForUpdate(awardId).filter(this::isReviewable)
-            .orElseThrow(() -> new AwardNotFoundException(awardId));
-        requireOpen(request);
-        return request;
-    }
-
-    private boolean isReviewable(AwardRequest request) {
-        return (request.isOpen() || request.isFinal()) && rule.grant(request).isPresent();
-    }
-
-    private static void requireOpen(AwardRequest request) {
-        if (request.isFinal()) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "request-closed", "The request was already decided",
-                Map.of("requestStatus", request.getStatus().name()));
-        }
-    }
-
-    private User requireHeldByCaller(AwardRequest request) {
-        User holder = request.getCurrentReviewer();
-        if (holder == null || holder.getId() != access.callerId()) {
-            throw claimed(holder);
-        }
-        return holder;
-    }
-
-    private static void requirePresent(Long requestVersion) {
-        if (requestVersion == null) {
-            throw ApiProblemException.validationFailed("The request version last read is required",
-                List.of(new FieldViolation("requestVersion", "required", "The request version last read is required")));
-        }
-    }
-
-    private static void requireVersion(AwardRequest request, long requestVersion) {
-        if (requestVersion != request.getVersion()) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "request-stale",
-                "The request was changed in the meantime", Map.of("currentVersion", request.getVersion()));
-        }
-    }
-
-    private static ApiProblemException claimed(User holder) {
-        return new ApiProblemException(HttpStatus.CONFLICT, "request-claimed",
-            holder == null ? "Nobody holds the request" : "Another reviewer holds the request",
-            Collections.singletonMap("reviewer", UserRef.of(holder)));
     }
 
     private static Map<String, Object> details(AwardRequest request) {

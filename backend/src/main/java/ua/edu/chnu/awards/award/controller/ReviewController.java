@@ -9,18 +9,22 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ua.edu.chnu.awards.award.dto.DecisionOutcome;
+import ua.edu.chnu.awards.award.dto.ReviewDecisionRequest;
 import ua.edu.chnu.awards.award.dto.ReviewItem;
 import ua.edu.chnu.awards.award.dto.ReviewQuery;
 import ua.edu.chnu.awards.award.dto.ReviewerCandidate;
 import ua.edu.chnu.awards.award.dto.ReviewerChange;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.service.ReviewAssignment;
+import ua.edu.chnu.awards.award.service.ReviewDecisions;
 import ua.edu.chnu.awards.award.service.ReviewQueue;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.PageResponse;
@@ -28,7 +32,7 @@ import ua.edu.chnu.awards.common.web.PageResponse;
 import lombok.RequiredArgsConstructor;
 
 /**
- * The reviewer queue and who works on a request.
+ * The reviewer queue, who works on a request, and the reviewer's decision.
  */
 @RestController
 @RequiredArgsConstructor
@@ -36,6 +40,7 @@ public class ReviewController {
 
     private final ReviewQueue queue;
     private final ReviewAssignment assignment;
+    private final ReviewDecisions decisions;
 
     /**
      * The open requests the caller may review.
@@ -108,6 +113,19 @@ public class ReviewController {
     @PreAuthorize(AwardPermissionConstants.CAN_REVIEW)
     public List<ReviewerCandidate> candidates(@PathVariable long id) {
         return assignment.candidates(id);
+    }
+
+    /**
+     * Approves, rejects, returns or escalates the request of an award at the level it stands at.
+     *
+     * @param id       the award
+     * @param decision the decision, the request version last read and the comment
+     * @return where the award and its request stand afterwards
+     */
+    @PostMapping("/api/v1/awards/{id}/decisions")
+    @PreAuthorize(AwardPermissionConstants.CAN_REVIEW)
+    public DecisionOutcome decide(@PathVariable long id, @RequestBody ReviewDecisionRequest decision) {
+        return decisions.decide(id, decision);
     }
 
     private static ReviewQuery.Assignment assignment(String assigned) {

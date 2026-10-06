@@ -36,6 +36,7 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.ReviewAssignment;
+import ua.edu.chnu.awards.award.service.ReviewDecisions;
 import ua.edu.chnu.awards.award.service.ReviewQueue;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 
@@ -51,6 +52,9 @@ class ReviewEndpointsTest extends AbstractAwardEndpointsTest {
 
     @MockitoBean
     private ReviewAssignment assignment;
+
+    @MockitoBean
+    private ReviewDecisions decisions;
 
     @Test
     void ac1_1_theQueueAnswersAPageOfReviewItems() throws Exception {
