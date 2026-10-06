@@ -18,8 +18,7 @@
 
 Epic kickoff 2026-10-06: stories created in Jira and GitHub, order approved. Feature 4.1 PRD approved 2026-10-06,
 including the organisational award design (§7.1), the transition table (§7.2) and the settlement of deviations 2,
-3, 5 and 6 (§7). Story 4.1.0 (SCRUM-48) in review: unit recipients (V027), recipient units endpoint, start-level
-rule. Next: 4.1.1 (SCRUM-49).
+3, 5 and 6 (§7). Story status lives in the table below.
 
 ## Scope
 
@@ -41,8 +40,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 4.1.0 Organisational awards: unit recipients and submitter | 4.1 | 5 | SCRUM-48 | #142 | no | In review |
-| 2 | 4.1.1 Reviewer queue with claim, release and hand-over | 4.1 | 8 | SCRUM-49 | #143 | yes | To do |
+| 1 | 4.1.0 Organisational awards: unit recipients and submitter | 4.1 | 5 | SCRUM-48 | #142 | no | Done |
+| 2 | 4.1.1 Reviewer queue with claim, release and hand-over | 4.1 | 8 | SCRUM-49 | #143 | yes | In progress |
 | 3 | 4.1.2 Review decisions: approve, reject, return, escalate to the dean | 4.1 | 8 | SCRUM-50 | #144 | yes | To do |
 | 4 | 4.1.3 Withdraw an unclaimed request and resubmit a returned award | 4.1 | 3 | SCRUM-51 | #145 | no | To do |
 | 5 | 4.1.4 Batch review with template responses | 4.1 | 5 | SCRUM-52 | #146 | yes | To do |
