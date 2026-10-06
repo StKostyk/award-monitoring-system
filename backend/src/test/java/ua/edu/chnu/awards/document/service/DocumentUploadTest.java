@@ -49,6 +49,7 @@ import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class DocumentUploadTest {
@@ -70,7 +71,8 @@ class DocumentUploadTest {
     private final DocumentProperties properties = new DocumentProperties("award-documents",
         DataSize.ofMegabytes(10), DOCUMENT_LIMIT, null, DataSize.ofMegabytes(50), UPLOAD_RATE, null, null);
     private final DocumentUpload upload = new DocumentUpload(documents,
-        new AwardOwnership(awards, mock(UserRepository.class), access), new DocumentContent(), storage, properties,
+        new AwardOwnership(awards, mock(UserRepository.class), mock(OrganizationRepository.class), access),
+        new DocumentContent(), storage, properties,
         events, new TransactionTemplate(mock(PlatformTransactionManager.class)), malware, limits, access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);

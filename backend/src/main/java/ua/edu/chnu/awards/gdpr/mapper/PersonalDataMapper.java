@@ -84,7 +84,8 @@ public class PersonalDataMapper {
             award.getDescriptionUk(),
             category == null ? null : new NamedRef(category.getId(), category.getName(), category.getNameUk()),
             award.getAwardingOrganization(), award.getAwardDate(), award.getStatus(), award.getExternalUrl(),
-            ref(award.getOrganization()), award.getCreatedAt(), award.getUpdatedAt());
+            ref(award.getOrganization()), award.isUnitAward() ? ref(award.getOrganization()) : null,
+            award.getCreatedAt(), award.getUpdatedAt());
     }
 
     /**

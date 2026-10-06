@@ -22,6 +22,7 @@ function pending(id: number, overdue: boolean): Award {
     status: 'PENDING',
     impactScore: 80,
     owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
+    recipient: { type: 'PERSON', organization: null },
     organization: { id: 64, name: 'Algebra', nameUk: null, code: 'DAI', type: 'DEPARTMENT' },
     request: {
       status: 'SUBMITTED',

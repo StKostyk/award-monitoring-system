@@ -32,6 +32,7 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.authz.ProblemDetailsAccessDeniedHandler;
 import ua.edu.chnu.awards.authz.RoleLevels;
+import ua.edu.chnu.awards.award.dto.AwardRecipient;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.CategoryRef;
 import ua.edu.chnu.awards.award.dto.RequestSummary;
@@ -136,7 +137,7 @@ abstract class AbstractAwardEndpointsTest {
         return new AwardResponse(5L, null, "Грамота МОН", null, null,
             new CategoryRef(13L, "Ministry Recognition", "Відзнака міністерства", RecognitionLevel.NATIONAL),
             "МОН України", LocalDate.of(2025, 5, 1), null, status, request == null ? null : 80,
-            new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"),
+            new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"), AwardRecipient.PERSON,
             new OrganizationRef(64L, "Algebra and Informatics", "Кафедра алгебри та інформатики", "DAI",
                 OrganizationType.DEPARTMENT), request, List.of(), Instant.parse("2026-09-28T08:00:00Z"),
             Instant.parse("2026-09-28T08:30:00Z"), 3L);

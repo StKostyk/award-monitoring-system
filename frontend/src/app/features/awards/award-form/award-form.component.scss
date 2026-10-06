@@ -18,6 +18,19 @@
   width: 100%;
 }
 
+.award-form__recipient {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin-bottom: 12px;
+}
+
+.award-form__recipient-label {
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .award-form__restore {
   display: flex;
   flex-wrap: wrap;

@@ -502,8 +502,9 @@ paths:
       tags: [Awards]
       summary: Create an award draft
       description: >
-        Creates a `DRAFT` owned by the caller in the caller's department (`award:create`). A title in one
-        language is enough; fields that are present are checked (lengths, active category, `http`/`https` link,
+        Creates a `DRAFT` owned by the caller in the caller's department (`award:create`), or, with
+        `recipientOrganizationId`, an award of that faculty or department owned by the caller and belonging to
+        the unit. A title in one language is enough; fields that are present are checked (lengths, active category, `http`/`https` link,
         award date not after today in Europe/Kyiv). Surrounding spaces are removed and blank texts count as empty.
       security:
         - bearerAuth: []
@@ -536,6 +537,29 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '422':
           $ref: '#/components/responses/ValidationFailed'
+
+  /awards/recipient-units:
+    get:
+      tags: [Awards]
+      summary: Units the caller may enter awards for
+      description: >
+        Active faculties and departments inside the scope of the caller's `FACULTY_SECRETARY` or `DEAN` role,
+        own or delegated: faculties first, then departments, each by Ukrainian name. Any signed-in caller; an
+        empty list without either role (4.1.0).
+      security:
+        - bearerAuth: []
+      operationId: listRecipientUnits
+      responses:
+        '200':
+          description: The units
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnitRef'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /awards/{id}:
     get:
@@ -628,8 +652,10 @@ paths:
       description: >
         Checks completeness (category, awarding organisation, award date) and the field rules, then in one
         transaction sets the award `PENDING` with the level base score, creates its request (`SUBMITTED` at
-        `FACULTY_SECRETARY`) and writes an `AWARD_SUBMITTED` audit row. The organisation is refreshed from the
-        owner's department. The draft row is locked, so a repeated submission answers 409 (`award:create`).
+        `FACULTY_SECRETARY`; a level whose only reviewer would be the submitter is passed over, a vacant level is
+        kept) and writes an `AWARD_SUBMITTED` audit row (with `recipientOrganizationId` for a unit award). The
+        organisation of a personal award is refreshed from the owner's department; a unit award stays with its
+        unit, and the caller's scope over it is checked again. The draft row is locked, so a repeated submission answers 409 (`award:create`).
         A draft that looks like another award of the owner (same date, similar title) is submitted only with
         `acknowledgeDuplicate: true`, and the audit row then records `duplicateAcknowledged`.
       security:
@@ -667,8 +693,10 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '422':
           description: >
-            `urn:awards:problem:award-incomplete` naming each empty field in `errors`, or `validation-failed`
-            (category no longer available, date in the future or more than 50 years ago, `version` missing)
+            `urn:awards:problem:award-incomplete` naming each empty field in `errors`, `validation-failed`
+            (category no longer available, date in the future or more than 50 years ago, `version` missing), or
+            `recipient-out-of-scope` when the caller no longer holds a secretary or dean role covering the
+            recipient unit
           content:
             application/problem+json:
               schema:
@@ -2004,8 +2032,9 @@ components:
         awards:
           type: array
           description: |
-            Every own award in every status: `award_id`, `title`, `title_uk`, `description`, `description_uk`,
-            `category`, `awarding_organization`, `award_date`, `status`, `external_url`, `organization`,
+            Every own award in every status, the awards entered for a faculty or department included:
+            `award_id`, `title`, `title_uk`, `description`, `description_uk`, `category`, `awarding_organization`,
+            `award_date`, `status`, `external_url`, `organization`, `recipient_unit` (null for a personal award),
             `created_at`, `updated_at`
           items:
             type: object
@@ -2221,6 +2250,36 @@ components:
           default: true
 
     # Organization
+    UnitRef:
+      type: object
+      description: A faculty or department that receives awards
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        nameUk:
+          type: [string, 'null']
+        type:
+          type: string
+          enum: [FACULTY, DEPARTMENT]
+
+    AwardRecipient:
+      type: object
+      description: >
+        Who received the award: `PERSON` (the owner; `organization` null) or `UNIT` (a faculty or department
+        that the owner, its secretary or dean, entered the award for)
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [PERSON, UNIT]
+        organization:
+          oneOf:
+            - $ref: '#/components/schemas/UnitRef'
+            - type: 'null'
+
     OrganizationRef:
       type: object
       properties:
@@ -2241,9 +2300,9 @@ components:
     Award:
       type: object
       description: >
-        An award of one person. Title, category, awarding organisation and date may be empty while the award is
-        a draft; at least one of `title` and `titleUk` is always present (columns relaxed by V020 with the
-        award endpoints).
+        An award of one person, or of a faculty or department (`recipient`, V027). Title, category, awarding
+        organisation and date may be empty while the award is a draft; at least one of `title` and `titleUk` is
+        always present (columns relaxed by V020 with the award endpoints).
       properties:
         id:
           type: integer
@@ -2273,9 +2332,17 @@ components:
           minimum: 0
           maximum: 100
         owner:
-          $ref: '#/components/schemas/UserRef'
+          allOf:
+            - $ref: '#/components/schemas/UserRef'
+          description: The recipient of a personal award; the person who entered a unit award
+        recipient:
+          $ref: '#/components/schemas/AwardRecipient'
         organization:
-          $ref: '#/components/schemas/OrganizationRef'
+          allOf:
+            - $ref: '#/components/schemas/OrganizationRef'
+          description: >
+            The owner's department at submission (their current one for a draft); the recipient unit of a unit
+            award, which routes the review and the scoped reads
         request:
           $ref: '#/components/schemas/AwardRequestSummary'
         warnings:
@@ -2283,7 +2350,8 @@ components:
           description: >
             Hints that do not block saving, computed for the owner's drafts only (empty for a submitted award):
             `RECENT_DATE` when the award date lies within the last 30 days, `POSSIBLE_DUPLICATE` when another
-            award of the owner has the same date and a title similarity of at least 0.6
+            personal award of the owner (for a unit award: another award of the same unit) has the same date and a
+            title similarity of at least 0.6
           items:
             $ref: '#/components/schemas/AwardWarning'
         createdAt:
@@ -2587,6 +2655,14 @@ components:
           type: string
           format: uri
           maxLength: 2048
+        recipientOrganizationId:
+          type: [integer, 'null']
+          format: int64
+          description: >
+            Faculty or department that received the award (4.1.0). Only an active unit of type `FACULTY` or
+            `DEPARTMENT` inside the scope of the caller's `FACULTY_SECRETARY` or `DEAN` role, own or delegated
+            (`GET /awards/recipient-units`); anything else answers 422 `validation-failed` on this field with
+            code `out-of-scope`. Null or absent: a personal award of the caller.
 
     AwardUpdateRequest:
       allOf:

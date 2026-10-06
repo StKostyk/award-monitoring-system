@@ -41,6 +41,7 @@ import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class DocumentServiceTest {
@@ -58,7 +59,8 @@ class DocumentServiceTest {
     private final AuditService audit = mock(AuditService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final DocumentService service = new DocumentService(documents,
-        new AwardOwnership(awards, mock(UserRepository.class), access), storage, audit, access, events);
+        new AwardOwnership(awards, mock(UserRepository.class), mock(OrganizationRepository.class), access), storage,
+        audit, access, events);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 

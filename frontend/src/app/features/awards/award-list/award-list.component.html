@@ -84,6 +84,12 @@
       <a class="awards__link" [routerLink]="link(award)">
         <span class="awards__name" data-testid="award-title">{{ title(award) }}</span>
         <span class="awards__meta">
+          @if (award.recipient.organization; as unit) {
+            <mat-chip class="awards__unit" data-testid="award-unit">
+              <span class="cdk-visually-hidden">{{ 'awards.fields.recipient' | transloco }}: </span
+              >{{ unitName(unit) }}
+            </mat-chip>
+          }
           @if (award.category) {
             <span>{{ category(award) }}</span>
           }

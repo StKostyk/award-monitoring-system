@@ -16,7 +16,6 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.DuplicateMatch;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
-import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
@@ -29,8 +28,10 @@ import ua.edu.chnu.awards.common.web.ApiProblemException;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Turns a complete draft into a pending award with its approval request at the faculty secretary, due by the
- * end of one review period. The draft row is locked for the whole step, so a repeated submission waits and then
+ * Turns a complete draft into a pending award with its approval request at the faculty secretary (or the
+ * first level above that the submitter does not hold alone), due by the end of one review period. A personal
+ * award moves to the owner's current department; a unit award stays with its unit. The draft row is locked for
+ * the whole step, so a repeated submission waits and then
  * finds the award no longer a draft.
  */
 @Service
@@ -46,6 +47,7 @@ public class AwardSubmission {
     private final AuditService audit;
     private final AwardHistory history;
     private final StatusEstimator estimator;
+    private final StartLevel startLevel;
     private final Clock clock;
 
     /**
@@ -69,7 +71,9 @@ public class AwardSubmission {
             throw new ApiProblemException(HttpStatus.CONFLICT, "award-possible-duplicate",
                 "The award looks like one already entered", Map.of("matches", matches));
         }
-        award.setOrganization(award.getOwner().getOrganization());
+        if (!award.isUnitAward()) {
+            award.setOrganization(award.getOwner().getOrganization());
+        }
         award.setStatus(AwardStatus.PENDING);
         award.setImpactScore(award.getCategory().getLevel().baseScore());
         awards.saveAndFlush(award);
@@ -79,7 +83,7 @@ public class AwardSubmission {
             .award(award)
             .submitter(award.getOwner())
             .status(RequestStatus.SUBMITTED)
-            .currentLevel(ApprovalLevel.FACULTY_SECRETARY)
+            .currentLevel(startLevel.of(award.getOrganization().getId(), award.getOwner().getId()))
             .submittedAt(now)
             .deadline(estimator.deadline(now))
             .build());
@@ -87,6 +91,9 @@ public class AwardSubmission {
             "level", created.getCurrentLevel().name(), "organizationId", award.getOrganization().getId()));
         if (!matches.isEmpty()) {
             details.put("duplicateAcknowledged", true);
+        }
+        if (award.isUnitAward()) {
+            details.put("recipientOrganizationId", award.getRecipientOrganizationId());
         }
         audit.record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, award.getOwner().getId(), award.getId(),
             details);

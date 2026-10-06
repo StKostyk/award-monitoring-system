@@ -153,7 +153,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
     }
 
     /**
-     * One own award.
+     * One own award: received personally, or entered for a faculty or department.
      *
      * @param awardId              identifier
      * @param title                English title
@@ -166,13 +166,15 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
      * @param status               workflow status
      * @param externalUrl          link to an external record
      * @param organization         the unit it is recorded for
+     * @param recipientUnit        the faculty or department that received it, null for a personal award
      * @param createdAt            creation moment
      * @param updatedAt            last change
      */
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record AwardEntry(long awardId, String title, String titleUk, String description, String descriptionUk,
                              NamedRef category, String awardingOrganization, LocalDate awardDate, AwardStatus status,
-                             String externalUrl, NamedRef organization, Instant createdAt, Instant updatedAt) {
+                             String externalUrl, NamedRef organization, NamedRef recipientUnit, Instant createdAt,
+                             Instant updatedAt) {
     }
 
     /**

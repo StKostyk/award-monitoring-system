@@ -62,6 +62,21 @@
   font: var(--mat-sys-body-medium);
 }
 
+.awards__unit {
+  max-width: 100%;
+  height: auto;
+  min-height: 32px;
+  --mat-chip-outline-color: var(--mat-sys-outline-variant);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+
+  ::ng-deep .mdc-evolution-chip__cell,
+  ::ng-deep .mdc-evolution-chip__action,
+  ::ng-deep .mdc-evolution-chip__text-label {
+    white-space: normal;
+    overflow: visible;
+  }
+}
+
 .awards__chip {
   flex-shrink: 0;
   --mat-chip-outline-width: 0;

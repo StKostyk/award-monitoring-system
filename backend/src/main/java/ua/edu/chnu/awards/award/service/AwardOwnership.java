@@ -12,6 +12,7 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class AwardOwnership {
 
     private final AwardRepository awards;
     private final UserRepository users;
+    private final OrganizationRepository organizations;
     private final AccessScope access;
 
     /**
@@ -37,6 +39,19 @@ public class AwardOwnership {
         User owner = users.findById(access.callerId())
             .orElseThrow(() -> new IllegalStateException("Caller has no account"));
         return Award.builder().owner(owner).organization(owner.getOrganization()).build();
+    }
+
+    /**
+     * Sets who received the award: a unit becomes the award's organisation, a personal award belongs to the
+     * owner's current department. The unit was checked by {@link AwardInputRules}.
+     *
+     * @param award  the draft
+     * @param unitId the faculty or department that received it, null for the owner
+     */
+    public void assignRecipient(Award award, Long unitId) {
+        award.setRecipientOrganizationId(unitId);
+        award.setOrganization(unitId == null ? award.getOwner().getOrganization()
+            : organizations.findById(unitId).orElseThrow(() -> new IllegalStateException("Unknown unit " + unitId)));
     }
 
     /**

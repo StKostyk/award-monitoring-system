@@ -21,17 +21,19 @@ import ua.edu.chnu.awards.user.dto.OrganizationRef;
  * @param externalUrl          link to the award
  * @param status               status of the award
  * @param impactScore          impact score, set at submission
- * @param owner                who received the award
- * @param organization         department of the owner at submission (their current one for a draft)
+ * @param owner                who received a personal award or entered a unit award
+ * @param recipient            the owner, or the faculty or department that received the award
+ * @param organization         the owner's department at submission, or the recipient unit
  * @param request              approval request, null for a draft
  * @param warnings             hints about the data that do not block saving
  * @param createdAt            when it was created
  * @param updatedAt            when it was last changed
  * @param version              optimistic-lock version
  */
+@SuppressWarnings("PMD.CommentSize")
 public record AwardResponse(Long id, String title, String titleUk, String description, String descriptionUk,
                             CategoryRef category, String awardingOrganization, LocalDate awardDate,
                             String externalUrl, AwardStatus status, Integer impactScore, UserRef owner,
-                            OrganizationRef organization, RequestSummary request, List<AwardWarning> warnings,
-                            Instant createdAt, Instant updatedAt, Long version) {
+                            AwardRecipient recipient, OrganizationRef organization, RequestSummary request,
+                            List<AwardWarning> warnings, Instant createdAt, Instant updatedAt, Long version) {
 }

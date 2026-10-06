@@ -92,7 +92,8 @@ class DocumentStorageIT extends AbstractIntegrationTest {
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         owner = userRepository.save(TestUsers.user(OWNER, department));
         TestUsers.signInAs(owner);
-        awardId = awardService.create(new AwardForm("Letter", null, null, null, null, null, null, null, null)).id();
+        awardId = awardService.create(new AwardForm("Letter", null, null, null, null, null, null, null, null,
+            null)).id();
     }
 
     @AfterEach

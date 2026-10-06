@@ -21,6 +21,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
+import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import {
   AWARD_STATUSES,
@@ -28,6 +29,7 @@ import {
   AwardFilters,
   AwardsService,
   CategoryNode,
+  UnitRef,
   awardTitle,
   categoryName,
   flattenCategories,
@@ -124,6 +126,10 @@ export class AwardListComponent implements OnInit {
 
   category(award: Award): string {
     return award.category ? categoryName(award.category, this.language.current()) : '';
+  }
+
+  unitName(unit: UnitRef): string {
+    return organizationName(unit, this.language.current());
   }
 
   optionName(category: CategoryNode): string {

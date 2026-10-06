@@ -43,6 +43,7 @@ import ua.edu.chnu.awards.support.TestWorkflow;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class AwardStatusServiceTest {
@@ -55,7 +56,8 @@ class AwardStatusServiceTest {
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserRepository.class), access);
+    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserRepository.class),
+        mock(OrganizationRepository.class), access);
     private final ReviewerAvailability reviewers = mock(ReviewerAvailability.class);
     private final AwardStatusService service = new AwardStatusService(requests, decisions, ownership,
         TestWorkflow.estimator(Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"))), reviewers);

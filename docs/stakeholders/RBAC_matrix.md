@@ -23,6 +23,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Award Management** |
 | Submit Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Submit an Award for a Faculty or Department⁹ | ❌ | Faculty + its departments | Faculty + its departments | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Edit Own Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Upload Scanned Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Delete Own Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
@@ -37,7 +38,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Manage Faculty Profile | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Manage University Profile | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 
-¹ Approvers receive awards too and submit their own like every employee (`award:create`, `award:update:own`; decision of 2026-09-28, Feature 2.1). A request always starts at the faculty secretary; that nobody reviews their own award is enforced in Epic 4. GDPR officers read awards for oversight and never submit; system administrators neither submit nor read awards (note 7).
+¹ Approvers receive awards too and submit their own like every employee (`award:create`, `award:update:own`; decision of 2026-09-28, Feature 2.1). A request starts at the faculty secretary; since 4.1.0 a level whose only reviewer would be the submitter, or a delegate the submitter lent the role to, is passed over (the only secretary of a faculty submits their own award to the dean), and a vacant level is kept. GDPR officers read awards for oversight and never submit; system administrators neither submit nor read awards (note 7).
 
 ² The owner sees every saved version of their award; anyone who may read a submitted award (scope over its organisation, or `award:read:all`) sees its versions from the submission on (Feature 2.2, `GET /awards/{id}/versions`).
 
@@ -48,6 +49,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 ⁶ Feature 3.1 (`DocumentUpload`, `DocumentService`): uploads and deletions need `award:update:own` and only touch the caller's own draft; documents of a submitted award are frozen. Downloads and the document list follow the award read rule of note 5, so whoever reads the award reads its documents; every download is recorded as `DOCUMENT_DOWNLOAD`. Unknown or unreadable documents answer 404.
 
 ⁷ Decided in the design review of 2026-10-04, in force since 2.1.8 (SCRUM-43): the system administrator runs the system and keeps `audit:read` (the award audit trail, note 3), but loses `award:read:all`, so award content, documents, history and review status are no longer readable to that role. The GDPR officer keeps award reading for data-protection oversight.
+
+⁹ Feature 4.1.0 (`RecipientUnits`, `GET /awards/recipient-units`): a faculty secretary or dean, by own or delegated role, enters and submits awards received by an active faculty or department inside the role's scope; no new permission. The entering person owns the award (draft rights, GDPR export) and the award belongs to the unit, so its review and the scoped reads of note 5 follow the unit. The scope is checked again at submission (`recipient-out-of-scope`).
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

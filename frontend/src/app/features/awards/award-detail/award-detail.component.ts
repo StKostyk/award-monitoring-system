@@ -26,7 +26,14 @@ import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { AwardStatusComponent } from '../award-status/award-status.component';
-import { Award, AwardsService, awardTitle, categoryName, isOwnAward } from '../awards.service';
+import {
+  Award,
+  AwardsService,
+  UnitRef,
+  awardTitle,
+  categoryName,
+  isOwnAward,
+} from '../awards.service';
 import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -153,6 +160,10 @@ export class AwardDetailComponent implements OnInit {
 
   category(award: Award): string {
     return award.category ? categoryName(award.category, this.language.current()) : '';
+  }
+
+  unitName(unit: UnitRef): string {
+    return organizationName(unit, this.language.current());
   }
 
   organization(award: Award): string {
