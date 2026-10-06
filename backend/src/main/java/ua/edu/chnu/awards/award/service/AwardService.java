@@ -49,7 +49,7 @@ public class AwardService {
     private final DocumentService documents;
 
     /**
-     * Creates a draft owned by the caller in the caller's department.
+     * Creates a draft owned by the caller in the caller's department, or in the unit that received it.
      *
      * @param form the form
      * @return the draft
@@ -60,6 +60,7 @@ public class AwardService {
         Optional<AwardCategory> category = rules.check(clean, Optional.empty());
         Award award = ownership.newDraft();
         apply(award, clean, category);
+        ownership.assignRecipient(award, clean.recipientOrganizationId());
         Award created = awards.saveAndFlush(award);
         history.created(created);
         return draftResponse(created);
@@ -78,6 +79,7 @@ public class AwardService {
         AwardForm clean = rules.normalize(form);
         ownership.requireVersion(award, clean.version());
         apply(award, clean, rules.check(clean, Optional.ofNullable(award.getCategory())));
+        ownership.assignRecipient(award, clean.recipientOrganizationId());
         Award saved = awards.saveAndFlush(award);
         history.updated(saved);
         return draftResponse(saved);

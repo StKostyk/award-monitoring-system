@@ -31,8 +31,8 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * An award of one person, from the first draft to the approved record. Title, category, awarding organisation
- * and date may be empty while the award is a draft.
+ * An award of one person or of a faculty or department, from the first draft to the approved record. Title,
+ * category, awarding organisation and date may be empty while the award is a draft.
  */
 @Entity
 @Table(name = "awards")
@@ -57,6 +57,9 @@ public class Award {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
+
+    @Column(name = "recipient_org_id")
+    private Long recipientOrganizationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
@@ -114,5 +117,14 @@ public class Award {
      */
     public boolean isDraft() {
         return status == AwardStatus.DRAFT;
+    }
+
+    /**
+     * Whether a faculty or department received the award; its organisation is then that unit.
+     *
+     * @return true for a unit award
+     */
+    public boolean isUnitAward() {
+        return recipientOrganizationId != null;
     }
 }

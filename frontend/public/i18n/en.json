@@ -102,7 +102,15 @@
       "request": "Request",
       "impactScore": "Impact score",
       "status": "Status",
-      "verificationBadge": "Verification badge"
+      "verificationBadge": "Verification badge",
+      "recipient": "Recipient",
+      "enteredBy": "Entered by"
+    },
+    "recipient": {
+      "label": "Recipient",
+      "person": "Me",
+      "unit": "Faculty or department",
+      "unitPicker": "Faculty or department"
     },
     "history": {
       "title": "Change history",
@@ -255,7 +263,8 @@
       "invalid": "Enter an address starting with http:// or https://",
       "inactive": "The category is no longer available",
       "future": "The award date cannot be in the future",
-      "too-old": "The award date cannot be more than 50 years ago"
+      "too-old": "The award date cannot be more than 50 years ago",
+      "out-of-scope": "You cannot enter awards for this faculty or department"
     },
     "warnings": {
       "RECENT_DATE": "Check the date: it lies within the last 30 days. Is it the date of the award rather than of the submission?",
@@ -276,7 +285,8 @@
       "award-possible-duplicate": "This looks like an award you already entered.",
       "access-denied": "You are not allowed to enter awards.",
       "network": "The server is not reachable. Your values are kept; please try again.",
-      "unknown": "Something went wrong. Please try again."
+      "unknown": "Something went wrong. Please try again.",
+      "recipient-out-of-scope": "You can no longer submit awards for this faculty or department. Choose “Me” or another unit."
     },
     "statusPanel": {
       "title": "Review status",

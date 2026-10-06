@@ -14,7 +14,7 @@ import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { DocumentsService } from '../award-documents/documents.service';
-import { Award, AwardsService, CategoryNode, CategorySuggestion } from '../awards.service';
+import { Award, AwardsService, CategoryNode, CategorySuggestion, UnitRef } from '../awards.service';
 import { AwardFormComponent } from './award-form.component';
 
 const tree: CategoryNode[] = [
@@ -37,6 +37,11 @@ const tree: CategoryNode[] = [
   },
 ];
 
+const units: UnitRef[] = [
+  { id: 9, name: 'Faculty of Mathematics', nameUk: 'Факультет математики', type: 'FACULTY' },
+  { id: 64, name: 'Algebra', nameUk: 'Кафедра алгебри', type: 'DEPARTMENT' },
+];
+
 function award(overrides: Partial<Award> = {}): Award {
   return {
     id: 5,
@@ -51,6 +56,7 @@ function award(overrides: Partial<Award> = {}): Award {
     status: 'DRAFT',
     impactScore: null,
     owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
+    recipient: { type: 'PERSON', organization: null },
     organization: {
       id: 64,
       name: 'Algebra',
@@ -85,6 +91,7 @@ describe('AwardFormComponent', () => {
     submit: vi.fn(),
     remove: vi.fn(),
     suggestions: vi.fn((): Observable<CategorySuggestion[]> => of([])),
+    recipientUnits: vi.fn((): Observable<UnitRef[]> => of([])),
   };
   const dialog = { open: vi.fn() };
   const documents = {
@@ -156,9 +163,97 @@ describe('AwardFormComponent', () => {
     service.categories.mockImplementation(() => of(tree));
     service.suggestions.mockReset();
     service.suggestions.mockReturnValue(of([]));
+    service.recipientUnits.mockReset();
+    service.recipientUnits.mockReturnValue(of([]));
     dialog.open.mockReset();
     auth.userId.set('21');
     auth.isAuthenticated.set(true);
+  });
+
+  it('ac0_8_offers_no_recipient_choice_to_anyone_without_units', async () => {
+    await open(null);
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-recipient"]')).toBeNull();
+  });
+
+  it('ac0_8_a_secretary_enters_a_department_award', async () => {
+    service.recipientUnits.mockReturnValue(of(units));
+    await open(null);
+    service.create.mockReturnValue(of(award()));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="award-recipient"]')).not.toBeNull();
+    type('titleUk', 'Грамота кафедрі');
+    type('recipient', 'UNIT');
+    type('recipientOrganizationId', 64);
+
+    component.save();
+
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ titleUk: 'Грамота кафедрі', recipientOrganizationId: 64 }),
+    );
+  });
+
+  it('ac0_8_switching_back_to_me_clears_the_unit', async () => {
+    service.recipientUnits.mockReturnValue(of(units));
+    await open(null);
+    service.create.mockReturnValue(of(award()));
+    type('titleUk', 'Грамота');
+    type('recipient', 'UNIT');
+    type('recipientOrganizationId', 64);
+    type('recipient', 'PERSON');
+
+    component.save();
+
+    expect(component.form.controls.recipientOrganizationId.value).toBeNull();
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientOrganizationId: null }),
+    );
+  });
+
+  it('ac0_8_a_unit_choice_without_a_unit_is_marked_and_not_sent', async () => {
+    service.recipientUnits.mockReturnValue(of(units));
+    await open(null);
+    type('titleUk', 'Грамота');
+    type('recipient', 'UNIT');
+
+    component.save();
+
+    expect(service.create).not.toHaveBeenCalled();
+    expect(component.errorKey('recipientOrganizationId')).toBe('awards.errors.required');
+  });
+
+  it('ac0_3_a_unit_refused_by_the_server_is_shown_on_the_picker', async () => {
+    service.recipientUnits.mockReturnValue(of(units));
+    await open(null);
+    service.create.mockReturnValue(
+      throwError(() =>
+        problem('validation-failed', 422, [
+          { field: 'recipientOrganizationId', code: 'out-of-scope', message: 'x' },
+        ]),
+      ),
+    );
+    type('titleUk', 'Грамота');
+    type('recipient', 'UNIT');
+    type('recipientOrganizationId', 64);
+
+    component.save();
+
+    expect(component.errorKey('recipientOrganizationId')).toBe('awards.errors.out-of-scope');
+  });
+
+  it('ac0_4_a_unit_draft_keeps_its_unit_after_the_role_is_gone', async () => {
+    const unit = {
+      id: 70,
+      name: 'Geometry',
+      nameUk: 'Кафедра геометрії',
+      type: 'DEPARTMENT' as const,
+    };
+    service.get.mockReturnValue(of(award({ recipient: { type: 'UNIT', organization: unit } })));
+    await open('5');
+
+    expect(component.form.controls.recipient.value).toBe('UNIT');
+    expect(component.form.controls.recipientOrganizationId.value).toBe(70);
+    expect(component.unitOptions()).toEqual([unit]);
   });
 
   it('ac1_1_saves_a_draft_with_only_a_title_and_moves_to_its_address', async () => {

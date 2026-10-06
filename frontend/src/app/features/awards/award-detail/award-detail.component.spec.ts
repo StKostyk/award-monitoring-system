@@ -32,6 +32,7 @@ const pending: Award = {
   status: 'PENDING',
   impactScore: 80,
   owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
+  recipient: { type: 'PERSON', organization: null },
   organization: {
     id: 64,
     name: 'Algebra',
@@ -169,6 +170,37 @@ describe('AwardDetailComponent', () => {
     expect(element.querySelector('[data-testid="award-edit"]')).toBeNull();
     expect(element.querySelector('[data-testid="award-status-panel"]')).not.toBeNull();
     expect(service.status).toHaveBeenCalledWith(5);
+  });
+
+  it('ac0_7_a_unit_award_names_the_unit_as_recipient_and_who_entered_it', async () => {
+    service.get.mockReturnValue(
+      of({
+        ...pending,
+        recipient: {
+          type: 'UNIT',
+          organization: { id: 64, name: 'Algebra', nameUk: 'Кафедра алгебри', type: 'DEPARTMENT' },
+        },
+      }),
+    );
+    const fixture = await open(AwardDetailComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-detail-recipient"]')?.textContent).toContain(
+      'Кафедра алгебри',
+    );
+    expect(element.textContent).toContain('Анастасія Коваль');
+    expect(element.textContent?.split('Кафедра алгебри').length).toBe(2);
+  });
+
+  it('ac0_7_a_personal_award_shows_no_unit_recipient', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-testid="award-detail-recipient"]',
+      ),
+    ).toBeNull();
   });
 
   it('ac1_15_a_changed_review_status_reloads_the_award', async () => {

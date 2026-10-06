@@ -25,6 +25,7 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 class DuplicateFinderIT extends AbstractJpaSliceTest {
 
     private static final LocalDate DATE = LocalDate.of(2025, 5, 1);
+    private static final String TITLE = "Грамота Міністерства освіти і науки";
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -74,6 +75,27 @@ class DuplicateFinderIT extends AbstractJpaSliceTest {
 
         assertThat(finder.matches(List.of(draft))).isEmpty();
         assertThat(finder.matches(List.of())).isEmpty();
+    }
+
+    @Test
+    void ac0_5_unitAwardsAreComparedWithTheAwardsOfTheSameUnitWhoeverEnteredThem() {
+        User secretary = userRepository.saveAndFlush(TestUsers.user("duplicate.secretary@chnu.edu.ua",
+            owner.getOrganization()));
+        long first = award(jdbc, owner.getId()).unit(TestUsers.FMI_FACULTY_ID).titleUk(TITLE).status("PENDING")
+            .insert();
+        long draft = award(jdbc, secretary.getId()).unit(TestUsers.FMI_FACULTY_ID).titleUk(TITLE).insert();
+        award(jdbc, secretary.getId()).unit(TestUsers.DAI_DEPARTMENT_ID).titleUk(TITLE).insert();
+        award(jdbc, owner.getId()).unit(TestUsers.FMI_FACULTY_ID).titleUk(TITLE).insert();
+
+        assertThat(finder.matches(List.of(draft)).get(draft)).extracting(DuplicateMatch::id).containsExactly(first);
+    }
+
+    @Test
+    void ac0_5_personalAndUnitAwardsAreNeverCompared() {
+        long personal = insert(owner, null, TITLE, "PENDING", DATE);
+        long unit = award(jdbc, owner.getId()).unit(TestUsers.DAI_DEPARTMENT_ID).titleUk(TITLE).insert();
+
+        assertThat(finder.matches(List.of(personal, unit))).isEmpty();
     }
 
     private long insert(User user, String title, String titleUk, String status, LocalDate date) {

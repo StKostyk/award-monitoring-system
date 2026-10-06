@@ -57,6 +57,24 @@ class ReviewerAvailabilityTest {
     }
 
     @Test
+    void ac0_6_aLevelHeldOnlyByThePersonIsNotReviewedByAnybodyElse() {
+        when(tree.ancestors(64L)).thenReturn(SCOPES);
+        when(roles.existsHolder(RoleType.FACULTY_SECRETARY, SCOPES, SIGNING_IN, ReviewerAvailability.NOBODY, TODAY))
+            .thenReturn(true);
+
+        assertThat(availability.isHeldOnlyBy(ApprovalLevel.FACULTY_SECRETARY, 64L, OWNER)).isTrue();
+    }
+
+    @Test
+    void ac0_6_aLevelWithAnotherHolderOrNoHolderIsNotHeldOnlyByThePerson() {
+        when(tree.ancestors(64L)).thenReturn(SCOPES);
+        when(roles.existsHolder(RoleType.DEAN, SCOPES, SIGNING_IN, OWNER, TODAY)).thenReturn(true);
+
+        assertThat(availability.isHeldOnlyBy(ApprovalLevel.DEAN, 64L, OWNER)).isFalse();
+        assertThat(availability.isHeldOnlyBy(ApprovalLevel.FACULTY_SECRETARY, 64L, OWNER)).isFalse();
+    }
+
+    @Test
     void edge_anOrganisationMissingFromTheTreeIsItsOwnScope() {
         when(tree.ancestors(700L)).thenReturn(Set.of());
         when(roles.existsHolder(RoleType.RECTOR, Set.of(700L), SIGNING_IN, OWNER, TODAY)).thenReturn(true);

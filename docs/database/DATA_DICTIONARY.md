@@ -289,9 +289,10 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Description**: Core business entity representing professional achievements, recognition, and awards received by employees. Contains both public award information and metadata.
 
 **Business Rules**:
-- Each award belongs to exactly one user (recipient)
+- Each award belongs to exactly one user (owner). A personal award (`recipient_org_id` NULL) was received by its owner; a unit award (`recipient_org_id` set, V027) was received by a faculty or department and its owner is the faculty secretary or dean who entered and submitted it (own or delegated role whose scope covers the unit)
+- A unit award belongs to the unit: `organization_id` = `recipient_org_id` from the first save (`ck_awards_recipient`), so scoped reads and reviewer routing follow the unit; the duplicate check compares it with the awards of the same unit only (other people's drafts left out), and it is part of the owner's GDPR export
 - An award is entered as a `DRAFT` and may be saved with a title alone (Ukrainian or English, `ck_awards_title`); category, awarding organization and award date are required once it leaves `DRAFT` (`ck_awards_complete`, V020)
-- `organization_id` is the owner's department: set when the draft is created, refreshed at submission and kept afterwards, so scoped reads and reviewer routing do not follow a later transfer
+- `organization_id` of a personal award is the owner's department: set when the draft is created, refreshed at submission and kept afterwards, so scoped reads and reviewer routing do not follow a later transfer
 - Only the owner may change or delete a `DRAFT`; a submitted award is changed only by the workflow
 - Awards must be categorized via `category_id` before submission
 - Award status follows defined workflow progression
@@ -302,8 +303,9 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `award_id` | `BIGSERIAL` | NO | Auto | PK | Unique award identifier |
-| `user_id` | `BIGINT` | NO | - | FK→users | Award recipient |
-| `organization_id` | `BIGINT` | NO | - | FK→organizations | Owner's department at submission (V020) |
+| `user_id` | `BIGINT` | NO | - | FK→users | Owner: the recipient of a personal award, the person who entered a unit award (V027) |
+| `organization_id` | `BIGINT` | NO | - | FK→organizations | Owner's department at submission (V020); the recipient unit of a unit award |
+| `recipient_org_id` | `BIGINT` | YES | - | FK→organizations; CK: NULL or = `organization_id`; partial index with `award_date` | Faculty or department that received the award; NULL for a personal award (V027) |
 | `category_id` | `BIGINT` | YES (draft) | - | FK→award_categories | Award classification; required outside `DRAFT` |
 | `title` | `VARCHAR(500)` | YES | - | CK: `title` or `title_uk` | English title |
 | `title_uk` | `VARCHAR(500)` | YES | - | CK: `title` or `title_uk` | Ukrainian title |

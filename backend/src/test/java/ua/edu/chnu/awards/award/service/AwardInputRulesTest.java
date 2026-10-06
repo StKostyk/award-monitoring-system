@@ -33,10 +33,11 @@ class AwardInputRulesTest {
     private static final String TITLE = "Грамота Міністерства освіти і науки";
 
     private final AwardCategoryRepository categories = mock(AwardCategoryRepository.class);
+    private final RecipientUnits recipients = mock(RecipientUnits.class);
     private final Clock justAfterKyivMidnight = Clock.fixed(Instant.parse("2026-09-27T21:30:00Z"),
         ZoneId.of("Europe/Kyiv"));
     private final AwardInputRules rules = new AwardInputRules(categories,
-        new AwardDateRules(justAfterKyivMidnight));
+        new AwardDateRules(justAfterKyivMidnight), recipients);
     private final AwardCategory active = category(13L, true);
     private final AwardCategory retired = category(14L, false);
 
@@ -50,10 +51,10 @@ class AwardInputRulesTest {
     @Test
     void ac1_1_normalizeTrimsTextsAndTreatsBlankAsEmpty() {
         AwardForm clean = rules.normalize(new AwardForm("  Letter  ", " ", null, "\t", 13L, " MON ", null,
-            " https://mon.gov.ua ", 3L));
+            " https://mon.gov.ua ", 70L, 3L));
 
         assertThat(clean).isEqualTo(new AwardForm("Letter", null, null, null, 13L, "MON", null,
-            "https://mon.gov.ua", 3L));
+            "https://mon.gov.ua", 70L, 3L));
     }
 
     @Test
@@ -73,7 +74,7 @@ class AwardInputRulesTest {
     @Test
     void ac1_1_everyRefusedFieldIsListed() {
         AwardForm form = new AwardForm("x".repeat(501), "т".repeat(501), "d".repeat(4001), "о".repeat(4001),
-            999L, "o".repeat(256), KYIV_TODAY.plusDays(1), "javascript:alert(1)", null);
+            999L, "o".repeat(256), KYIV_TODAY.plusDays(1), "javascript:alert(1)", null, null);
 
         assertThatThrownBy(() -> rules.check(form, Optional.empty()))
             .extracting(e -> ((ApiProblemException) e).getProperties().get("errors"), list(FieldViolation.class))
@@ -85,7 +86,7 @@ class AwardInputRulesTest {
     @Test
     void ac1_1_limitsAreInclusive() {
         AwardForm form = new AwardForm("x".repeat(500), null, "d".repeat(4000), null, 13L, "o".repeat(255),
-            KYIV_TODAY, "https://example.org/" + "p".repeat(2028), null);
+            KYIV_TODAY, "https://example.org/" + "p".repeat(2028), null, null);
 
         assertThat(rules.check(form, Optional.empty())).contains(active);
     }
@@ -170,6 +171,33 @@ class AwardInputRulesTest {
         assertThat(draft.getStatus()).isNotNull();
     }
 
+    @Test
+    void ac0_2_aUnitTheCallerCoversIsAccepted() {
+        when(recipients.covers(64L)).thenReturn(true);
+
+        assertThat(rules.check(unitForm(64L), Optional.empty())).isEmpty();
+    }
+
+    @Test
+    void ac0_3_aUnitOutsideTheCallersRolesIsRefusedOnTheField() {
+        assertThatThrownBy(() -> rules.check(unitForm(10L), Optional.empty()))
+            .satisfies(e -> assertProblem(e, "validation-failed"))
+            .extracting(e -> ((ApiProblemException) e).getProperties().get("errors"), list(FieldViolation.class))
+            .extracting(FieldViolation::field, FieldViolation::code)
+            .containsExactly(tuple("recipientOrganizationId", "out-of-scope"));
+    }
+
+    @Test
+    void ac0_4_aUnitAwardIsNotSubmittedOnceTheCallerLostTheRole() {
+        Award draft = Award.builder().title(TITLE).category(active).awardingOrganization("MON")
+            .awardDate(KYIV_TODAY).recipientOrganizationId(64L).build();
+
+        assertThatThrownBy(() -> rules.checkComplete(draft))
+            .satisfies(e -> assertProblem(e, "recipient-out-of-scope"));
+        when(recipients.covers(64L)).thenReturn(true);
+        rules.checkComplete(draft);
+    }
+
     private static void assertProblem(Throwable error, String type) {
         assertThat(error).isInstanceOf(ApiProblemException.class);
         assertThat(((ApiProblemException) error).getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
@@ -177,7 +205,11 @@ class AwardInputRulesTest {
     }
 
     private static AwardForm form(String title, String titleUk, Long categoryId, LocalDate date, String link) {
-        return new AwardForm(title, titleUk, null, null, categoryId, null, date, link, null);
+        return new AwardForm(title, titleUk, null, null, categoryId, null, date, link, null, null);
+    }
+
+    private static AwardForm unitForm(long unitId) {
+        return new AwardForm(null, TITLE, null, null, null, null, null, null, unitId, null);
     }
 
     private static AwardCategory category(long id, boolean isActive) {

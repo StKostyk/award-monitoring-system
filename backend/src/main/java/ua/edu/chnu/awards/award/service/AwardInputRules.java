@@ -35,10 +35,12 @@ public class AwardInputRules {
     static final int URL_MAX = 2048;
     static final String TITLE = "title";
     static final String CATEGORY = "categoryId";
+    static final String RECIPIENT = "recipientOrganizationId";
     private static final Set<String> WEB_SCHEMES = Set.of("http", "https");
 
     private final AwardCategoryRepository categories;
     private final AwardDateRules dates;
+    private final RecipientUnits recipients;
 
     /**
      * The form with surrounding spaces removed and blank texts treated as empty.
@@ -49,11 +51,12 @@ public class AwardInputRules {
     public AwardForm normalize(AwardForm form) {
         return new AwardForm(clean(form.title()), clean(form.titleUk()), clean(form.description()),
             clean(form.descriptionUk()), form.categoryId(), clean(form.awardingOrganization()), form.awardDate(),
-            clean(form.externalUrl()), form.version());
+            clean(form.externalUrl()), form.recipientOrganizationId(), form.version());
     }
 
     /**
-     * Checks the fields of a draft; fields that are empty are not checked beyond the title.
+     * Checks the fields of a draft; fields that are empty are not checked beyond the title. A recipient unit
+     * must be one the caller may enter awards for.
      *
      * @param form    the cleaned form
      * @param current the category the draft already has, which may stay even if it was deactivated since
@@ -69,6 +72,10 @@ public class AwardInputRules {
                 .isPresent());
         if (form.categoryId() != null && category.isEmpty()) {
             errors.add(inactiveCategory());
+        }
+        if (form.recipientOrganizationId() != null && !recipients.covers(form.recipientOrganizationId())) {
+            errors.add(new FieldViolation(RECIPIENT, "out-of-scope",
+                "Awards can be entered only for a faculty or department of your secretary or dean role"));
         }
         if (!errors.isEmpty()) {
             throw ApiProblemException.validationFailed("The award form has invalid fields", errors);
@@ -95,11 +102,12 @@ public class AwardInputRules {
 
     /**
      * Checks that a draft can be submitted: the fields a request needs are filled, the category is still
-     * offered and the date is acceptable.
+     * offered, the date is acceptable and the caller may still enter awards for its recipient unit.
      *
      * @param award the draft
-     * @throws ApiProblemException 422 {@code award-incomplete} naming the empty fields, or
-     *                             {@code validation-failed} for a deactivated category or a refused date
+     * @throws ApiProblemException 422 {@code award-incomplete} naming the empty fields,
+     *                             {@code validation-failed} for a deactivated category or a refused date, or
+     *                             {@code recipient-out-of-scope} for a unit the caller no longer covers
      */
     public void checkComplete(Award award) {
         List<FieldViolation> missing = new ArrayList<>();
@@ -123,6 +131,15 @@ public class AwardInputRules {
         dates.check(award.getAwardDate()).ifPresent(errors::add);
         if (!errors.isEmpty()) {
             throw ApiProblemException.validationFailed("The award has invalid fields", errors);
+        }
+        requireRecipientInScope(award);
+    }
+
+    private void requireRecipientInScope(Award award) {
+        if (award.isUnitAward() && !recipients.covers(award.getRecipientOrganizationId())) {
+            throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "recipient-out-of-scope",
+                "You can no longer submit awards for this faculty or department",
+                Map.of(RECIPIENT, award.getRecipientOrganizationId()));
         }
     }
 

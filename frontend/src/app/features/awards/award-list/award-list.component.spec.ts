@@ -35,6 +35,7 @@ function award(overrides: Partial<Award> = {}): Award {
     status: 'DRAFT',
     impactScore: null,
     owner: { id: 21, name: 'Анастасія Коваль', email: 'employee.fmi@chnu.edu.ua' },
+    recipient: { type: 'PERSON', organization: null },
     organization: {
       id: 64,
       name: 'Algebra',
@@ -128,6 +129,44 @@ describe('AwardListComponent', () => {
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/awards/5/edit');
     expect(items[1].querySelector('a')?.getAttribute('href')).toBe('/awards/6');
     expect(element.querySelector('[data-testid="award-add"]')).not.toBeNull();
+  });
+
+  it('ac0_7_a_unit_award_carries_the_unit_as_a_chip', async () => {
+    await create();
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: {
+          content: [
+            award(),
+            award({
+              id: 6,
+              recipient: {
+                type: 'UNIT',
+                organization: {
+                  id: 64,
+                  name: 'Algebra',
+                  nameUk: 'Кафедра алгебри',
+                  type: 'DEPARTMENT',
+                },
+              },
+            }),
+          ],
+          totalElements: 2,
+          totalPages: 1,
+          size: 100,
+          number: 0,
+        },
+      }),
+    );
+    fixture.detectChanges();
+    const items = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="award-item"]',
+    );
+
+    expect(items[0].querySelector('[data-testid="award-unit"]')).toBeNull();
+    expect(items[1].querySelector('[data-testid="award-unit"]')?.textContent).toContain(
+      'Кафедра алгебри',
+    );
   });
 
   it('ac1_18_a_returned_request_waits_for_the_owner_corrections', async () => {

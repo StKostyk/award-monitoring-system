@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.award.dto.AwardRecipient;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.AwardWarning;
 import ua.edu.chnu.awards.award.dto.CategoryRef;
@@ -50,8 +51,13 @@ public class AwardMapper {
         return new AwardResponse(award.getId(), award.getTitle(), award.getTitleUk(), award.getDescription(),
             award.getDescriptionUk(), categoryRef(award.getCategory()), award.getAwardingOrganization(),
             award.getAwardDate(), award.getExternalUrl(), award.getStatus(), award.getImpactScore(),
-            UserRef.of(award.getOwner()), organizationRef(award.getOrganization()), toSummary(award, request),
-            List.copyOf(warnings), award.getCreatedAt(), award.getUpdatedAt(), award.getVersion());
+            UserRef.of(award.getOwner()), recipient(award), organizationRef(award.getOrganization()),
+            toSummary(award, request), List.copyOf(warnings), award.getCreatedAt(), award.getUpdatedAt(),
+            award.getVersion());
+    }
+
+    private static AwardRecipient recipient(Award award) {
+        return award.isUnitAward() ? AwardRecipient.unit(award.getOrganization()) : AwardRecipient.PERSON;
     }
 
     private static CategoryRef categoryRef(AwardCategory category) {

@@ -95,6 +95,33 @@ class ReviewerAvailabilityIT extends AbstractJpaSliceTest {
     }
 
     @Test
+    void ac0_6_theOnlySecretaryHoldsHerLevelAloneUntilASecondOneArrives() {
+        role(owner, RoleType.FACULTY_SECRETARY, faculty, today.minusYears(1), null);
+
+        assertThat(availability.isHeldOnlyBy(ApprovalLevel.FACULTY_SECRETARY, department.getId(), owner.getId()))
+            .isTrue();
+        assertThat(availability.isHeldOnlyBy(ApprovalLevel.DEAN, department.getId(), owner.getId())).isFalse();
+
+        role(person("second.secretary"), RoleType.FACULTY_SECRETARY, faculty, today.minusYears(1), null);
+
+        assertThat(availability.isHeldOnlyBy(ApprovalLevel.FACULTY_SECRETARY, department.getId(), owner.getId()))
+            .isFalse();
+    }
+
+    @Test
+    void ac0_6_aDelegateOfTheOwnerDoesNotReviewTheOwnersAward() {
+        role(owner, RoleType.FACULTY_SECRETARY, faculty, today.minusYears(1), null);
+        entityManager.persist(RoleDelegation.builder().delegator(owner).delegate(person("assistant"))
+            .roleType(RoleType.FACULTY_SECRETARY).organization(faculty).validFrom(today.minusDays(1))
+            .validTo(today.plusDays(5)).reason("Leave").build());
+        entityManager.flush();
+
+        assertThat(reviewable(ApprovalLevel.FACULTY_SECRETARY)).isFalse();
+        assertThat(availability.isHeldOnlyBy(ApprovalLevel.FACULTY_SECRETARY, department.getId(), owner.getId()))
+            .isTrue();
+    }
+
+    @Test
     void ac1_9_aDelegateStandsInForASuspendedDelegator() {
         User dean = person("suspended.dean");
         dean.setAccountStatus(AccountStatus.SUSPENDED);

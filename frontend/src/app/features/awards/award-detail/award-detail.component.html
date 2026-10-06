@@ -48,10 +48,18 @@
           }}</a>
         </dd>
       }
-      <dt>{{ 'awards.fields.owner' | transloco }}</dt>
+      @if (award.recipient.organization; as unit) {
+        <dt>{{ 'awards.fields.recipient' | transloco }}</dt>
+        <dd data-testid="award-detail-recipient">{{ unitName(unit) }}</dd>
+        <dt>{{ 'awards.fields.enteredBy' | transloco }}</dt>
+      } @else {
+        <dt>{{ 'awards.fields.owner' | transloco }}</dt>
+      }
       <dd>{{ award.owner.name }}</dd>
-      <dt>{{ 'awards.fields.organization' | transloco }}</dt>
-      <dd>{{ organization(award) }}</dd>
+      @if (!award.recipient.organization) {
+        <dt>{{ 'awards.fields.organization' | transloco }}</dt>
+        <dd>{{ organization(award) }}</dd>
+      }
       @if (award.request; as request) {
         <dt>{{ 'awards.fields.request' | transloco }}</dt>
         <dd data-testid="award-detail-request">

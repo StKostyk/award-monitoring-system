@@ -16,8 +16,10 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Finds awards of the same owner with the same award date and a similar title ({@code pg_trgm} similarity of
- * the lower-cased English or Ukrainian titles of at least 0.6). Awards of other people are never compared.
+ * Finds awards with the same award date and a similar title ({@code pg_trgm} similarity of the lower-cased
+ * English or Ukrainian titles of at least 0.6): personal awards among the personal awards of the same owner,
+ * unit awards among the awards of the same unit, whoever entered them, leaving out the drafts of other people,
+ * which only their owner may see. Personal and unit awards are never compared with each other.
  */
 @Component
 @RequiredArgsConstructor
@@ -28,7 +30,10 @@ public class DuplicateFinder {
     private static final String QUERY = """
         select a.award_id as award_id, b.award_id as match_id, b.title, b.title_uk, b.award_date, b.status
           from awards a
-          join awards b on b.user_id = a.user_id and b.award_date = a.award_date and b.award_id <> a.award_id
+          join awards b on b.award_date = a.award_date and b.award_id <> a.award_id
+                       and (a.recipient_org_id is null and b.recipient_org_id is null and b.user_id = a.user_id
+                         or b.recipient_org_id = a.recipient_org_id
+                            and (b.user_id = a.user_id or b.status <> 'DRAFT'))
          where a.award_id in (:ids)
            and (similarity(lower(a.title), lower(b.title)) >= :threshold
              or similarity(lower(a.title_uk), lower(b.title_uk)) >= :threshold)

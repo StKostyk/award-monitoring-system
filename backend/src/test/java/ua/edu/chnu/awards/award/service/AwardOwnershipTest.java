@@ -20,6 +20,7 @@ import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class AwardOwnershipTest {
@@ -28,7 +29,8 @@ class AwardOwnershipTest {
 
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserRepository.class), access);
+    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserRepository.class),
+        mock(OrganizationRepository.class), access);
 
     @BeforeEach
     void setUp() {

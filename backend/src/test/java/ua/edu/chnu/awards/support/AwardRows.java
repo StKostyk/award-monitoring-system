@@ -10,8 +10,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 public final class AwardRows {
 
-    private static final String INSERT = "insert into awards (user_id, organization_id, title, title_uk, status, "
-        + "category_id, awarding_organization, award_date) values (?, ?, ?, ?, ?, ?, ?, ?) returning award_id";
+    private static final String INSERT = "insert into awards (user_id, organization_id, recipient_org_id, title, "
+        + "title_uk, status, category_id, awarding_organization, award_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        + "returning award_id";
     private static final long MINISTRY_CATEGORY = 13L;
 
     private final JdbcTemplate jdbc;
@@ -22,6 +23,7 @@ public final class AwardRows {
     private Long categoryId = MINISTRY_CATEGORY;
     private String awardingOrganization = "МОН";
     private LocalDate awardDate = LocalDate.of(2025, 5, 1);
+    private Long unitId;
 
     private AwardRows(JdbcTemplate jdbc, long userId) {
         this.jdbc = jdbc;
@@ -106,12 +108,23 @@ public final class AwardRows {
     }
 
     /**
+     * Makes the row an award of a unit, which is then also its organisation.
+     *
+     * @param value the faculty or department that received it
+     * @return this row
+     */
+    public AwardRows unit(long value) {
+        unitId = value;
+        return this;
+    }
+
+    /**
      * Inserts the row.
      *
      * @return id of the new award
      */
     public long insert() {
-        return jdbc.queryForObject(INSERT, Long.class, userId, TestUsers.DAI_DEPARTMENT_ID, title, titleUk, status,
-            categoryId, awardingOrganization, awardDate);
+        return jdbc.queryForObject(INSERT, Long.class, userId, unitId == null ? TestUsers.DAI_DEPARTMENT_ID : unitId,
+            unitId, title, titleUk, status, categoryId, awardingOrganization, awardDate);
     }
 }

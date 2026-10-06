@@ -36,6 +36,7 @@ import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class AwardHistoryTest {
@@ -50,7 +51,7 @@ class AwardHistoryTest {
     private final UserRepository users = mock(UserRepository.class);
     private final AccessScope access = mock(AccessScope.class);
     private final AwardHistory history = new AwardHistory(versions, users,
-        new AwardOwnership(awards, users, access), access);
+        new AwardOwnership(awards, users, mock(OrganizationRepository.class), access), access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 

@@ -21,11 +21,13 @@ import lombok.RequiredArgsConstructor;
 /**
  * Whether somebody can review a request at a level: a person other than the award's owner who may sign in holds
  * the level's role today in the award's organisation or in an organisation above it, by assignment or by a
- * delegation in effect.
+ * delegation in effect that the owner did not lend.
  */
 @Component
 @RequiredArgsConstructor
 public class ReviewerAvailability {
+
+    static final long NOBODY = 0L;
 
     private static final Set<AccountStatus> CAN_REVIEW = Arrays.stream(AccountStatus.values())
         .filter(AccountStatus::canLogIn)
@@ -53,5 +55,18 @@ public class ReviewerAvailability {
         LocalDate today = LocalDate.now(clock);
         return roles.existsHolder(role, scopes, CAN_REVIEW, ownerId, today)
             || delegations.existsInEffect(role, scopes, CAN_REVIEW, ownerId, today);
+    }
+
+    /**
+     * Whether the person is the only one who could review at the level: the level has a holder for the
+     * organisation, but nobody else.
+     *
+     * @param level          the approval level
+     * @param organizationId the award's organisation
+     * @param userId         the person, usually the submitter
+     * @return true when only that person holds the level
+     */
+    public boolean isHeldOnlyBy(ApprovalLevel level, long organizationId, long userId) {
+        return !hasReviewer(level, organizationId, userId) && hasReviewer(level, organizationId, NOBODY);
     }
 }

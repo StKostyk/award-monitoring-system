@@ -1,7 +1,12 @@
 package ua.edu.chnu.awards.support;
 
-import java.time.Instant;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.time.Instant;
+import java.util.Optional;
+
+import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
@@ -9,8 +14,12 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.entity.ReviewDecision;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
+import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.service.AwardOwnership;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.repository.OrganizationRepository;
+import ua.edu.chnu.awards.user.repository.UserRepository;
 
 /**
  * Award, request and decision entities for unit tests, with defaults that callers override through the builder.
@@ -63,5 +72,23 @@ public final class TestAwards {
                                           Instant decidedAt) {
         return ReviewDecision.builder().id(id).requestId(REQUEST_ID).decision(type).level(level).reviewer(reviewer)
             .comments("comment " + id).decidedAt(decidedAt).build();
+    }
+
+    /**
+     * Ownership checks over mocked repositories that know the given units.
+     *
+     * @param awards the award repository
+     * @param users  the user repository
+     * @param access the caller
+     * @param units  organisations a unit award may be entered for
+     * @return the ownership checks
+     */
+    public static AwardOwnership ownership(AwardRepository awards, UserRepository users, AccessScope access,
+                                           Organization... units) {
+        OrganizationRepository organizations = mock(OrganizationRepository.class);
+        for (Organization unit : units) {
+            when(organizations.findById(unit.getId())).thenReturn(Optional.of(unit));
+        }
+        return new AwardOwnership(awards, users, organizations, access);
     }
 }

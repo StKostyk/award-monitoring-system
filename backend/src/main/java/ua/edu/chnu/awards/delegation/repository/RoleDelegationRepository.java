@@ -158,7 +158,8 @@ public interface RoleDelegationRepository extends JpaRepository<RoleDelegation, 
      * @param role            the role lent
      * @param organizationIds organisations whose delegations count
      * @param statuses        account states of the delegate that count
-     * @param excludedUserId  the user who does not count, such as the owner of the award under review
+     * @param excludedUserId  the user who does not count, such as the owner of the award under review; neither
+     *                        as a delegate nor through a delegate acting for them
      * @param day             the day the delegation must cover
      * @return true when at least one delegation matches
      */
@@ -168,6 +169,7 @@ public interface RoleDelegationRepository extends JpaRepository<RoleDelegation, 
           and d.organization.id in :organizationIds
           and d.delegate.accountStatus in :statuses
           and d.delegate.id <> :excludedUserId
+          and d.delegator.id <> :excludedUserId
           and d.revokedAt is null
           and d.validFrom <= :day
           and d.validTo >= :day

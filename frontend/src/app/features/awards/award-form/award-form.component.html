@@ -42,6 +42,44 @@
   }
 
   <form class="award-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    @if (unitOptions().length) {
+      <div class="award-form__recipient" data-testid="award-recipient">
+        <span class="award-form__recipient-label" id="award-recipient-label">{{
+          'awards.recipient.label' | transloco
+        }}</span>
+        <mat-radio-group formControlName="recipient" aria-labelledby="award-recipient-label">
+          <mat-radio-button value="PERSON" data-testid="award-recipient-person">{{
+            'awards.recipient.person' | transloco
+          }}</mat-radio-button>
+          <mat-radio-button value="UNIT" data-testid="award-recipient-unit">{{
+            'awards.recipient.unit' | transloco
+          }}</mat-radio-button>
+        </mat-radio-group>
+      </div>
+      @if (unitChosen()) {
+        <mat-form-field class="award-form__field">
+          <mat-label>{{ 'awards.recipient.unitPicker' | transloco }}</mat-label>
+          <mat-select
+            formControlName="recipientOrganizationId"
+            data-testid="award-recipient-picker"
+          >
+            @for (unit of unitOptions(); track unit.id) {
+              <mat-option
+                [value]="unit.id"
+                [class.award-form__child]="unit.type === 'DEPARTMENT'"
+                [attr.data-testid]="'recipient-option-' + unit.id"
+              >
+                {{ unitName(unit) }}
+              </mat-option>
+            }
+          </mat-select>
+          @if (errorKey('recipientOrganizationId'); as key) {
+            <mat-error>{{ key | transloco }}</mat-error>
+          }
+        </mat-form-field>
+      }
+    }
+
     <mat-form-field class="award-form__field">
       <mat-label>{{ 'awards.fields.titleUk' | transloco }}</mat-label>
       <input

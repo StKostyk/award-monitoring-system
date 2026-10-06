@@ -49,6 +49,7 @@ import ua.edu.chnu.awards.user.repository.UserRepository;
 class AwardServiceTest {
 
     private static final long OWNER_ID = 21L;
+    private static final Organization FACULTY = TestUsers.organization(9L, OrganizationType.FACULTY);
     private static final AwardWarning RECENT =
         new AwardWarning(AwardWarning.RECENT_DATE, AwardDateRules.AWARD_DATE, List.of());
 
@@ -58,7 +59,7 @@ class AwardServiceTest {
     private final AwardSpecifications specifications = mock(AwardSpecifications.class);
     private final AwardInputRules rules = mock(AwardInputRules.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardOwnership ownership = new AwardOwnership(awards, users, access);
+    private final AwardOwnership ownership = TestAwards.ownership(awards, users, access, FACULTY);
     private final AwardWarnings warnings = mock(AwardWarnings.class);
     private final DocumentService documents = mock(DocumentService.class);
     private final AwardService service = new AwardService(awards, requests, specifications, rules,
@@ -89,11 +90,37 @@ class AwardServiceTest {
     }
 
     @Test
+    void ac0_2_aUnitDraftBelongsToTheCallerAndToTheUnit() {
+        when(users.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+
+        AwardResponse created = service.create(new AwardForm("Letter", null, null, null, null, null, null, null,
+            9L, null));
+
+        assertThat(created.owner().id()).isEqualTo(OWNER_ID);
+        assertThat(created.organization().id()).isEqualTo(9L);
+        assertThat(created.recipient().organization().id()).isEqualTo(9L);
+    }
+
+    @Test
+    void ac0_8_switchingBackToThePersonMakesTheDraftPersonalInTheOwnersDepartment() {
+        Award draft = award(OWNER_ID, AwardStatus.DRAFT);
+        draft.setOrganization(FACULTY);
+        draft.setRecipientOrganizationId(9L);
+        when(awards.findForUpdate(5L)).thenReturn(Optional.of(draft));
+
+        AwardResponse saved = service.update(5L, form(4L));
+
+        assertThat(saved.recipient().organization()).isNull();
+        assertThat(draft.getRecipientOrganizationId()).isNull();
+        assertThat(draft.getOrganization().getId()).isEqualTo(64L);
+    }
+
+    @Test
     void ac1_3_anUpdateReplacesTheDraftFields() {
         Award draft = award(OWNER_ID, AwardStatus.DRAFT);
         when(awards.findForUpdate(5L)).thenReturn(Optional.of(draft));
 
-        service.update(5L, new AwardForm(null, "Подяка", null, null, null, "МОН", null, null, 4L));
+        service.update(5L, new AwardForm(null, "Подяка", null, null, null, "МОН", null, null, null, 4L));
 
         assertThat(draft.getTitle()).isNull();
         assertThat(draft.getTitleUk()).isEqualTo("Подяка");
@@ -193,6 +220,6 @@ class AwardServiceTest {
     }
 
     private static AwardForm form(Long version) {
-        return new AwardForm("Letter", null, null, null, null, null, null, null, version);
+        return new AwardForm("Letter", null, null, null, null, null, null, null, null, version);
     }
 }

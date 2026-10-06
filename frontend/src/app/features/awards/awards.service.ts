@@ -138,6 +138,15 @@ export const MAX_AGE_YEARS = 50;
 /** A date within this many days is pointed out as possibly the submission date. */
 export const RECENT_DAYS = 30;
 
+/** A faculty or department that receives awards. */
+export interface UnitRef extends OrganizationName {
+  type: OrganizationType;
+}
+
+/** Who received an award: its owner, or a faculty or department the owner entered it for. */
+export type AwardRecipient =
+  { type: 'PERSON'; organization: null } | { type: 'UNIT'; organization: UnitRef };
+
 export interface Award {
   id: number;
   title: string | null;
@@ -151,6 +160,7 @@ export interface Award {
   status: AwardStatus;
   impactScore: number | null;
   owner: { id: number; name: string; email: string };
+  recipient: AwardRecipient;
   organization: OrganizationRef;
   request: AwardRequestSummary | null;
   warnings: AwardWarning[];
@@ -169,6 +179,8 @@ export interface AwardForm {
   awardingOrganization: string | null;
   awardDate: string | null;
   externalUrl: string | null;
+  /** The faculty or department that received the award; null for the caller. */
+  recipientOrganizationId: number | null;
 }
 
 export interface AwardFilters {
@@ -334,6 +346,11 @@ export class AwardsService {
     return forkJoin(ORGANIZATION_TYPES.map((type) => this.organizationList.ofType(type))).pipe(
       map((lists) => new Map(lists.flat().map((organization) => [organization.id, organization]))),
     );
+  }
+
+  /** Faculties and departments the caller may enter awards for; empty without a secretary or dean role. */
+  recipientUnits(): Observable<UnitRef[]> {
+    return this.http.get<UnitRef[]>(`${this.base}/recipient-units`);
   }
 
   /** Up to three categories for the title and awarding organisation typed so far. */

@@ -59,10 +59,11 @@ class AwardSubmissionTest {
     private final AuditService audit = mock(AuditService.class);
     private final DuplicateFinder duplicates = mock(DuplicateFinder.class);
     private final AwardHistory history = mock(AwardHistory.class);
+    private final StartLevel startLevel = mock(StartLevel.class);
     private final Clock clock = Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"));
     private final StatusEstimator estimator = TestWorkflow.estimator(clock);
     private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules, duplicates,
-        new AwardMapper(estimator), audit, history, estimator, clock);
+        new AwardMapper(estimator), audit, history, estimator, startLevel, clock);
     private final Organization oldDepartment = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final Organization newDepartment = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", newDepartment);
@@ -75,6 +76,7 @@ class AwardSubmissionTest {
         draft = TestAwards.award(owner, oldDepartment).category(category).awardingOrganization("MON")
             .awardDate(LocalDate.of(2025, 5, 1)).build();
         when(ownership.lockedDraft(5L)).thenReturn(draft);
+        when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.FACULTY_SECRETARY);
         when(requests.saveAndFlush(any(AwardRequest.class))).thenAnswer(invocation -> {
             AwardRequest request = invocation.getArgument(0);
             request.setId(40L);
@@ -162,6 +164,32 @@ class AwardSubmissionTest {
         verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
             Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L,
                 "duplicateAcknowledged", true));
+    }
+
+    @Test
+    void ac0_6_theRequestStartsAtTheLevelTheStartRuleChooses() {
+        when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.DEAN);
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().currentLevel()).isEqualTo(ApprovalLevel.DEAN);
+    }
+
+    @Test
+    void ac0_4_aUnitAwardStaysWithItsUnitAndTheAuditRowNamesIt() {
+        Organization faculty = TestUsers.organization(9L, OrganizationType.FACULTY);
+        draft.setOrganization(faculty);
+        draft.setRecipientOrganizationId(9L);
+        when(startLevel.of(9L, 21L)).thenReturn(ApprovalLevel.FACULTY_SECRETARY);
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.organization().id()).isEqualTo(9L);
+        assertThat(response.recipient().organization().id()).isEqualTo(9L);
+        verify(rules).checkComplete(draft);
+        verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
+            Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 9L,
+                "recipientOrganizationId", 9L));
     }
 
     @Test

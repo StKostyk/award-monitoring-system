@@ -170,6 +170,6 @@ class AwardVersionsIT extends AbstractIntegrationTest {
     }
 
     private static AwardForm form(String title, LocalDate date, Long version) {
-        return new AwardForm(title, null, null, null, null, null, date, null, version);
+        return new AwardForm(title, null, null, null, null, null, date, null, null, version);
     }
 }

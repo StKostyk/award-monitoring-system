@@ -21,6 +21,7 @@ const form = {
   awardingOrganization: 'МОН',
   awardDate: '2025-05-01',
   externalUrl: null,
+  recipientOrganizationId: null,
 };
 
 describe('AwardsService', () => {
@@ -156,6 +157,16 @@ describe('AwardsService', () => {
       ['Algebra', 'Mathematics'],
       ['Algebra', 'Mathematics'],
     ]);
+  });
+  it('ac0_1_reads_the_units_the_caller_may_enter_awards_for', () => {
+    let units: unknown;
+    service.recipientUnits().subscribe((found) => (units = found));
+
+    http
+      .expectOne((r) => r.url.endsWith('/awards/recipient-units'))
+      .flush([{ id: 9, type: 'FACULTY' }]);
+
+    expect(units).toEqual([{ id: 9, type: 'FACULTY' }]);
   });
 });
 

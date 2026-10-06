@@ -277,11 +277,11 @@ class AwardFT extends AbstractFunctionalTest {
     }
 
     @Test
-    void ac1_11_anApproverSubmitsTheirOwnAward() {
+    void ac1_11_ac0_6_theOnlySecretaryOfTheFacultySubmitsHerOwnAwardToTheDean() {
         long id = submitted(tokenOf(SECRETARY), "Відзнака секретаря факультету");
 
         assertThat(jdbc.queryForObject("select current_level from award_requests where award_id = ?", String.class,
-            id)).isEqualTo("FACULTY_SECRETARY");
+            id)).isEqualTo("DEAN");
     }
 
     @Test
