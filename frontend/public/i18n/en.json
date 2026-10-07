@@ -118,7 +118,8 @@
         "BASELINE": "Initial state",
         "CREATED": "Created",
         "UPDATED": "Changed",
-        "SUBMITTED": "Submitted"
+        "SUBMITTED": "Submitted",
+        "DECIDED": "Reviewer decision"
       },
       "unknownActor": "Unknown user",
       "system": "System",
@@ -311,7 +312,9 @@
         "failed": "The review status could not be updated.",
         "gone": "This award is no longer available to you.",
         "denied": "You no longer have access to the review status of this award."
-      }
+      },
+      "skipped": "skipped",
+      "onBehalf": "(on behalf of {{name}})"
     },
     "timing": {
       "expected": "Expected by {{date}}",
@@ -547,7 +550,11 @@
       "claim": "Claim",
       "release": "Release",
       "handOver": "Hand over…",
-      "takeOver": "Take over"
+      "takeOver": "Take over",
+      "approve": "Approve",
+      "return": "Return for corrections",
+      "reject": "Reject",
+      "escalate": "Pass to the {{level}}"
     },
     "handOver": {
       "title": "Hand over to a colleague",
@@ -565,7 +572,11 @@
     "messages": {
       "claimed": "You are now reviewing this award.",
       "released": "The award is back in the queue.",
-      "handedOver": "The award was handed over."
+      "handedOver": "The award was handed over.",
+      "APPROVED": "The award is approved.",
+      "REJECTED": "The award is rejected.",
+      "RETURNED": "The award is returned for corrections.",
+      "ESCALATED": "Passed to the {{level}}."
     },
     "problems": {
       "request-claimed": "{{name}} is already reviewing this award",
@@ -574,7 +585,37 @@
       "invalid-parameter": "This filter is outside your authority.",
       "access-denied": "You are not allowed to review awards.",
       "network": "The server is unreachable. Try again.",
-      "unknown": "The action failed. Try again."
+      "unknown": "The action failed. Try again.",
+      "request-closed": "The review of this award has already finished",
+      "no-higher-level": "There is no higher review level",
+      "validation-failed": "Check the comment and the documents mark"
+    },
+    "decide": {
+      "title": {
+        "APPROVE": "Approve the award",
+        "RETURN": "Return for corrections",
+        "REJECT": "Reject the award",
+        "ESCALATE": "Pass to the {{level}}"
+      },
+      "comment": "Comment",
+      "commentRequired": "Comment for the owner",
+      "commentHint": "The owner sees this comment in the review status",
+      "required": "Say what to correct or why the award is rejected",
+      "tooLong": "At most 2000 characters",
+      "verified": "Documents checked",
+      "confirm": {
+        "APPROVE": "Approve",
+        "RETURN": "Return",
+        "REJECT": "Reject",
+        "ESCALATE": "Pass on"
+      },
+      "cancel": "Cancel",
+      "to": {
+        "FACULTY_SECRETARY": "faculty secretary",
+        "DEAN": "dean",
+        "RECTOR_SECRETARY": "rector's secretary",
+        "RECTOR": "rector"
+      }
     }
   },
   "register": {

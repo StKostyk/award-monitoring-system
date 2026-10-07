@@ -114,9 +114,39 @@ class AwardStatusServiceTest {
     }
 
     @Test
+    void ac2_12_aLevelPassedOverWithoutDecisionIsSkipped() {
+        request(RequestStatus.ESCALATED, ApprovalLevel.RECTOR_SECRETARY, NOW.plus(Duration.ofDays(1)));
+        when(decisions.findByRequestId(REQUEST_ID)).thenReturn(List.of(
+            decision(1L, ReviewDecisionType.APPROVED, ApprovalLevel.FACULTY_SECRETARY, secretary, "2026-09-25")));
+
+        AwardStatusView view = service.status(AWARD_ID);
+
+        assertThat(view.path()).extracting(PathStep::state)
+            .containsExactly(StepState.DONE, StepState.SKIPPED, StepState.CURRENT);
+        assertThat(view.path().get(1).completedAt()).isNull();
+    }
+
+    @Test
+    void ac2_7_aDelegatedDecisionNamesWhoLentTheRole() {
+        request(RequestStatus.ESCALATED, ApprovalLevel.DEAN, NOW.plus(Duration.ofDays(1)));
+        when(decisions.findByRequestId(REQUEST_ID)).thenReturn(List.of(ReviewDecision.builder().id(1L)
+            .requestId(REQUEST_ID).decision(ReviewDecisionType.APPROVED).level(ApprovalLevel.FACULTY_SECRETARY)
+            .reviewer(secretary).delegator(dean).decidedAt(NOW).build()));
+
+        AwardStatusView view = service.status(AWARD_ID);
+
+        assertThat(view.decisions().getFirst().delegatorId()).isEqualTo(dean.getId());
+        assertThat(view.decisions().getFirst().delegatorName()).isEqualTo(dean.getFullName());
+    }
+
+    @Test
     void ac1_5_anApprovedRequestHasEveryLevelDoneNoEstimateAndItsCompletion() {
         AwardRequest approved = request(RequestStatus.APPROVED, ApprovalLevel.RECTOR_SECRETARY, NOW);
         approved.setCompletedAt(NOW);
+        when(decisions.findByRequestId(REQUEST_ID)).thenReturn(List.of(
+            decision(1L, ReviewDecisionType.APPROVED, ApprovalLevel.FACULTY_SECRETARY, secretary, "2026-09-20"),
+            decision(2L, ReviewDecisionType.ESCALATED, ApprovalLevel.DEAN, dean, "2026-09-25"),
+            decision(3L, ReviewDecisionType.APPROVED, ApprovalLevel.RECTOR_SECRETARY, dean, "2026-09-28")));
 
         AwardStatusView view = service.status(AWARD_ID);
 
@@ -131,6 +161,8 @@ class AwardStatusServiceTest {
     void ac1_5_aRejectedRequestShowsItsReasonAndStopsAtItsLevel() {
         AwardRequest rejected = request(RequestStatus.REJECTED, ApprovalLevel.DEAN, NOW);
         rejected.setRejectionReason("Not an award of the university");
+        when(decisions.findByRequestId(REQUEST_ID)).thenReturn(List.of(
+            decision(1L, ReviewDecisionType.APPROVED, ApprovalLevel.FACULTY_SECRETARY, secretary, "2026-09-20")));
 
         AwardStatusView view = service.status(AWARD_ID);
 

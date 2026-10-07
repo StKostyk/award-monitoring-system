@@ -101,7 +101,16 @@
     </div>
   </article>
   @if (reviewable(award)) {
-    <app-review-panel [awardId]="award.id" (changed)="refresh(award.id)" />
+    <app-review-panel
+      [awardId]="award.id"
+      (changed)="refresh(award.id)"
+      (decided)="onDecided($event)"
+    />
+  }
+  @if (decision(); as decision) {
+    <p class="award-detail__decision" role="status" data-testid="award-detail-decision">
+      {{ decision.key | transloco: { level: ('reviews.decide.to.' + decision.level | transloco) } }}
+    </p>
   }
   <app-award-documents [awardId]="award.id" [removable]="editable(award)" />
   @if (award.status !== 'DRAFT') {

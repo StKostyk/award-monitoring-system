@@ -16,13 +16,13 @@ import ua.edu.chnu.awards.award.entity.ReviewDecision;
 public interface ReviewDecisionRepository extends JpaRepository<ReviewDecision, Long> {
 
     /**
-     * The decisions on a request, oldest first, with their reviewers loaded.
+     * The decisions on a request, oldest first, with their reviewers and delegators loaded.
      *
      * @param requestId the request
      * @return the decisions
      */
     @Query("""
-        select d from ReviewDecision d join fetch d.reviewer
+        select d from ReviewDecision d join fetch d.reviewer left join fetch d.delegator
         where d.requestId = :requestId
         order by d.decidedAt, d.id
         """)

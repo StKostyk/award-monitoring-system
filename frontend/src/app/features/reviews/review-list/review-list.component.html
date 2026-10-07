@@ -1,4 +1,7 @@
 <h1 class="reviews__title">{{ 'reviews.title' | transloco }}</h1>
+@if (notice(); as notice) {
+  <p class="reviews__notice" role="status" data-testid="reviews-notice">{{ notice | transloco }}</p>
+}
 
 <nav mat-tab-nav-bar [tabPanel]="panel" class="reviews__tabs" data-testid="review-tabs">
   @for (tab of tabs; track tab.label) {

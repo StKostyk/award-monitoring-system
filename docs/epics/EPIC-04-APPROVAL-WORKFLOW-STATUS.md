@@ -41,8 +41,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 4.1.0 Organisational awards: unit recipients and submitter | 4.1 | 5 | SCRUM-48 | #142 | no | Done |
-| 2 | 4.1.1 Reviewer queue with claim, release and hand-over | 4.1 | 8 | SCRUM-49 | #143 | yes | In review |
-| 3 | 4.1.2 Review decisions: approve, reject, return, escalate to the dean | 4.1 | 8 | SCRUM-50 | #144 | yes | To do |
+| 2 | 4.1.1 Reviewer queue with claim, release and hand-over | 4.1 | 8 | SCRUM-49 | #143 | yes | Done |
+| 3 | 4.1.2 Review decisions: approve, reject, return, escalate to the dean | 4.1 | 8 | SCRUM-50 | #144 | yes | In review |
 | 4 | 4.1.3 Withdraw an unclaimed request and resubmit a returned award | 4.1 | 3 | SCRUM-51 | #145 | no | To do |
 | 5 | 4.1.4 Batch review with template responses | 4.1 | 5 | SCRUM-52 | #146 | yes | To do |
 | 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | To do |

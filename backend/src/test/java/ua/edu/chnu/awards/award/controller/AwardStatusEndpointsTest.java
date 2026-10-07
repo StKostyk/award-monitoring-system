@@ -44,7 +44,7 @@ class AwardStatusEndpointsTest extends AbstractAwardEndpointsTest {
                     Instant.parse("2026-09-29T10:00:00Z")),
                 new PathStep(ApprovalLevel.DEAN, StepState.CURRENT, LocalDate.of(2026, 10, 1), null)),
             List.of(new DecisionView(7L, ReviewDecisionType.RETURNED, ApprovalLevel.DEAN, 30L, "Петро Мартинюк",
-                "Додайте номер наказу", Instant.parse("2026-09-30T10:00:00Z")))));
+                "Додайте номер наказу", Instant.parse("2026-09-30T10:00:00Z"), null, null))));
 
         mockMvc.perform(get(STATUS).with(employee()))
             .andExpect(status().isOk())

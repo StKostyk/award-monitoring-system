@@ -21,12 +21,25 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { reviewableLevels } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
+import { APPROVAL_LEVELS, ApprovalLevel } from '../../awards/awards.service';
 import { confirmAction } from '../../awards/confirm-dialog/confirm-dialog.component';
+import {
+  DecisionDialogComponent,
+  DecisionDialogData,
+  DecisionInput,
+} from '../decision-dialog/decision-dialog.component';
 import {
   HandOverDialogComponent,
   HandOverDialogData,
 } from '../hand-over-dialog/hand-over-dialog.component';
-import { ReviewItem, ReviewerCandidate, ReviewsService, UserRef } from '../reviews.service';
+import {
+  DecisionOutcome,
+  DecisionType,
+  ReviewItem,
+  ReviewerCandidate,
+  ReviewsService,
+  UserRef,
+} from '../reviews.service';
 
 /** A translated message with its placeholder values. */
 interface Notice {
@@ -37,11 +50,11 @@ interface Notice {
 /** Conflicts after which the request is read again. */
 const RELOADING = ['request-claimed', 'request-stale', 'request-closed'];
 /** Problem types with a message of their own. */
-const KNOWN = ['reviewer-not-eligible', 'network'];
+const KNOWN = ['reviewer-not-eligible', 'no-higher-level', 'validation-failed', 'network'];
 
 /**
- * Who reviews the request of an award and until when, with claim, release, hand-over and take-over; hidden when
- * the caller may not review the request.
+ * Who reviews the request of an award and until when, with claim, release, hand-over, take-over and the four
+ * decisions; hidden when the caller may not review the request.
  */
 @Component({
   selector: 'app-review-panel',
@@ -54,6 +67,8 @@ export class ReviewPanelComponent implements OnInit {
   readonly awardId = input.required<number>();
   /** Emitted after the request changed, so the award page reads it again. */
   readonly changed = output<void>();
+  /** Emitted after a decision, with where the request went. */
+  readonly decided = output<DecisionOutcome>();
 
   private readonly reviews = inject(ReviewsService);
   private readonly auth = inject(AuthService);
@@ -75,6 +90,18 @@ export class ReviewPanelComponent implements OnInit {
       !this.mine() &&
       this.levels.indexOf(item.level) < this.levels.length - 1
     );
+  });
+
+  /** The holder decides; an unclaimed request is claimed by the decision itself. */
+  readonly canDecide = computed(() => {
+    const item = this.item();
+    return item !== null && (item.reviewer === null || this.mine());
+  });
+  /** The level an escalation goes to; null at the top. */
+  readonly nextLevel = computed<ApprovalLevel | null>(() => {
+    const level = this.item()?.level;
+    const index = level ? APPROVAL_LEVELS.indexOf(level) : -1;
+    return index >= 0 && index < APPROVAL_LEVELS.length - 1 ? APPROVAL_LEVELS[index + 1] : null;
   });
 
   ngOnInit(): void {
@@ -120,6 +147,39 @@ export class ReviewPanelComponent implements OnInit {
       )
       .subscribe({
         next: (updated) => this.done(updated, 'reviews.messages.handedOver'),
+        error: (error: unknown) => this.failed(error),
+      });
+  }
+
+  decide(item: ReviewItem, decision: DecisionType): void {
+    const data: DecisionDialogData = {
+      decision,
+      target: this.nextLevel(),
+      documents: item.documentCount,
+    };
+    this.dialog
+      .open<DecisionDialogComponent, DecisionDialogData, DecisionInput>(DecisionDialogComponent, {
+        data,
+        width: '480px',
+      })
+      .afterClosed()
+      .pipe(
+        filter((input): input is DecisionInput => !!input),
+        tap(() => this.start()),
+        switchMap((input) =>
+          this.reviews.decide(item.awardId, {
+            decision,
+            requestVersion: item.requestVersion,
+            ...input,
+          }),
+        ),
+      )
+      .subscribe({
+        next: (outcome) => {
+          this.busy.set(false);
+          this.item.set(null);
+          this.decided.emit(outcome);
+        },
         error: (error: unknown) => this.failed(error),
       });
   }

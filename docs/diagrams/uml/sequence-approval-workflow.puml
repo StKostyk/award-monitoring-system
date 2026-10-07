@@ -4,175 +4,68 @@ skinparam sequenceMessageAlign center
 
 title Award Approval Workflow Sequence Diagram
 
-actor "Faculty\nSecretary" as fac_sec
-actor "Dean" as dean
-actor "Rector's\nSecretary" as rec_sec
-actor "Rector" as rector
-actor "Employee" as employee
-
+actor "Reviewer\n(any level)" as reviewer
+actor "Owner" as owner
 participant "Web Application" as webapp
-participant "API Gateway" as gateway
-participant "Core API" as core
-participant "Workflow\nEngine" as workflow
+participant "ReviewController" as api
+participant "ReviewAssignment" as assignment
+participant "ReviewDecisions" as decisions
+participant "Transitions" as transitions
 database "PostgreSQL" as db
-queue "Kafka" as kafka
-participant "Notification\nService" as notif
+participant "DecisionMails\n(after commit)" as mails
 
-== Level 1: Faculty Secretary Review ==
-fac_sec -> webapp: View review queue
-webapp -> gateway: GET /api/reviews/queue
-gateway -> core: Get pending reviews
-core -> db: SELECT FROM award_requests\nWHERE current_reviewer = fac_sec_id
-db --> core: Pending requests
-core --> gateway: Review queue
-gateway --> webapp: Display queue
-webapp --> fac_sec: Show pending awards
+note over webapp, db
+    Steps are the same at every level (faculty secretary, dean,
+    rector's secretary, rector); the level only changes who may
+    review (role or delegation scope) and whether an approval is final.
+    Batch decisions (4.1.4) run the same decision per request.
+end note
 
-fac_sec -> webapp: Open award for review
-webapp -> gateway: GET /api/awards/{id}
-gateway -> core: Get award details
-core -> db: SELECT award + documents
-db --> core: Award data
-core --> gateway: Award details
-gateway --> webapp: Display award
-webapp --> fac_sec: Show award + certificate
+== Queue and claim (4.1.1) ==
+reviewer -> webapp: Open "На розгляді"
+webapp -> api: GET /api/v1/reviews?assigned=…&level=…
+api -> db: open requests at the caller's levels and scopes
+api --> webapp: page of ReviewItem
+reviewer -> webapp: Open the award
+webapp -> api: GET /api/v1/awards/{id}/reviewer
+api --> webapp: ReviewItem (holder, deadline, version)
 
-alt Faculty Secretary Approves
-    fac_sec -> webapp: Click "Approve"
-    webapp -> gateway: POST /api/reviews/{requestId}/approve
-    gateway -> core: Process approval
-    core -> workflow: ApproveAtLevel(FACULTY_SECRETARY)
-    workflow -> workflow: Check if more levels needed
-    
-    alt Award level = DEPARTMENT or FACULTY (no more levels)
-        workflow -> db: INSERT INTO review_decisions
-        workflow -> db: UPDATE award_requests SET status='APPROVED'
-        workflow -> db: UPDATE awards SET status='APPROVED'
-        workflow -> kafka: publish(award.approved)
-        workflow --> core: Approval complete
-        core --> gateway: 200 OK
-        gateway --> webapp: Award approved
-        webapp --> fac_sec: "Award approved and published"
-        
-        kafka -> notif: consume(award.approved)
-        notif -> employee: Send approval notification
-        
-    else Award level = UNIVERSITY or higher (needs Dean)
-        workflow -> db: INSERT INTO review_decisions
-        workflow -> db: UPDATE award_requests SET\ncurrent_level='DEAN', current_reviewer=dean_id
-        workflow -> kafka: publish(award.escalated)
-        workflow --> core: Escalated to Dean
-        core --> gateway: 200 OK
-        gateway --> webapp: "Forwarded to Dean"
-        webapp --> fac_sec: Show escalation confirmation
-        
-        kafka -> notif: consume(award.escalated)
-        notif -> dean: Send review notification
-    end
-
-else Faculty Secretary Rejects
-    fac_sec -> webapp: Click "Reject" + reason
-    webapp -> gateway: POST /api/reviews/{requestId}/reject
-    gateway -> core: Process rejection
-    core -> workflow: RejectAtLevel(FACULTY_SECRETARY, reason)
-    workflow -> db: INSERT INTO review_decisions
-    workflow -> db: UPDATE award_requests SET status='REJECTED'
-    workflow -> db: UPDATE awards SET status='REJECTED'
-    workflow -> kafka: publish(award.rejected)
-    workflow --> core: Rejection complete
-    core --> gateway: 200 OK
-    gateway --> webapp: Award rejected
-    webapp --> fac_sec: "Award rejected"
-    
-    kafka -> notif: consume(award.rejected)
-    notif -> employee: Send rejection notification with reason
-
-else Faculty Secretary Escalates Directly
-    fac_sec -> webapp: Click "Escalate to Dean"
-    webapp -> gateway: POST /api/reviews/{requestId}/escalate
-    gateway -> core: Process escalation
-    core -> workflow: EscalateToLevel(DEAN)
-    workflow -> db: INSERT INTO review_decisions (decision='ESCALATED')
-    workflow -> db: UPDATE award_requests SET\ncurrent_level='DEAN', current_reviewer=dean_id
-    workflow -> kafka: publish(award.escalated)
-    core --> gateway: 200 OK
-    gateway --> webapp: "Escalated to Dean"
-    
-    kafka -> notif: consume(award.escalated)
-    notif -> dean: Send review notification
+opt Claim before deciding
+    reviewer -> webapp: «Взяти в роботу»
+    webapp -> api: PUT /awards/{id}/reviewer {requestVersion}
+    api -> assignment: claim
+    assignment -> db: SELECT … FOR UPDATE, check version
+    assignment -> db: status IN_REVIEW, current_reviewer_id
+    api --> webapp: ReviewItem
 end
 
-== Level 2: Dean Review (if escalated) ==
-dean -> webapp: View review queue
-webapp -> gateway: GET /api/reviews/queue
-gateway -> core: Get pending reviews
-core -> db: SELECT FROM award_requests\nWHERE current_reviewer = dean_id
-db --> core: Pending requests
-core --> gateway: Review queue
-gateway --> webapp: Display queue
-webapp --> dean: Show pending awards
-
-dean -> webapp: Review award
-dean -> webapp: Click "Approve"
-webapp -> gateway: POST /api/reviews/{requestId}/approve
-gateway -> core: Process Dean approval
-core -> workflow: ApproveAtLevel(DEAN)
-workflow -> workflow: Check if more levels needed
-
-alt Award level = FACULTY (Dean is final authority)
-    workflow -> db: UPDATE awards SET status='APPROVED'
-    workflow -> kafka: publish(award.approved)
-    workflow --> core: Approval complete
-    core --> gateway: 200 OK
-    gateway --> webapp: "Award approved"
-    
-    kafka -> notif: consume(award.approved)
-    notif -> employee: Send approval notification
-    
-else Award level = UNIVERSITY, NATIONAL, INTERNATIONAL
-    workflow -> db: UPDATE award_requests SET\ncurrent_level='RECTOR_SECRETARY', current_reviewer=rec_sec_id
-    workflow -> kafka: publish(award.escalated)
-    workflow --> core: Escalated to Rector's Secretary
-    core --> gateway: 200 OK
-    gateway --> webapp: "Forwarded to Rector's Office"
-    
-    kafka -> notif: consume(award.escalated)
-    notif -> rec_sec: Send review notification
+== Decision (4.1.2) ==
+reviewer -> webapp: «Затвердити» / «Повернути» / «Відхилити» / «Передати …»
+webapp -> webapp: dialog: comment (required for return and reject),\n«Документи перевірено» on approval
+webapp -> api: POST /awards/{id}/decisions\n{decision, requestVersion, comment?, verified?}
+api -> decisions: decide
+decisions -> db: SELECT … FOR UPDATE
+alt held by a colleague / stale version / already decided
+    decisions --> api: 409 request-claimed | request-stale | request-closed
+    api --> webapp: problem
+    webapp --> reviewer: notice, panel read again
+else open request
+    decisions -> transitions: next state (level, category minimum)
+    transitions --> decisions: APPROVED | ESCALATED (next level not passed over)\n| RETURNED | REJECTED
+    decisions -> db: UPDATE award_requests (status, level,\nreviewer, deadline, version)
+    decisions -> db: UPDATE awards (status, verification_badge)
+    decisions -> db: INSERT review_decisions (delegator_id)
+    decisions -> db: INSERT award_versions (DECIDED), audit_logs (REVIEW_DECISION)
+    decisions --> api: DecisionOutcome
+    api --> webapp: 200 {status, requestStatus, level, requestVersion}
+    webapp --> reviewer: «Нагороду затверджено» / «Передано декану» …,\nstatus and timeline reloaded
+    decisions -> mails: decision event, delivered after the commit
+    mails -> owner: e-mail: approved, passed on, returned\nwith the comment or rejected with the reason
 end
 
-== Level 3: Rector's Secretary Review (if escalated) ==
-rec_sec -> webapp: Review award
-rec_sec -> webapp: Click "Approve" or "Escalate to Rector"
-webapp -> gateway: POST /api/reviews/{requestId}/approve
-gateway -> core: Process approval
-core -> workflow: ApproveAtLevel(RECTOR_SECRETARY)
-
-alt Rector's Secretary can approve
-    workflow -> db: UPDATE awards SET status='APPROVED'
-    workflow -> kafka: publish(award.approved)
-else Needs Rector decision
-    workflow -> db: UPDATE award_requests SET\ncurrent_level='RECTOR', current_reviewer=rector_id
-    kafka -> notif: consume(award.escalated)
-    notif -> rector: Send review notification
-end
-
-== Level 4: Rector Final Decision (if escalated) ==
-rector -> webapp: Review award
-rector -> webapp: Click "Approve"
-webapp -> gateway: POST /api/reviews/{requestId}/approve
-gateway -> core: Process Rector approval
-core -> workflow: ApproveAtLevel(RECTOR)
-workflow -> db: INSERT INTO review_decisions
-workflow -> db: UPDATE awards SET status='APPROVED'
-workflow -> kafka: publish(award.approved)
-core --> gateway: 200 OK
-gateway --> webapp: "Award approved by Rector"
-
-kafka -> notif: consume(award.approved)
-notif -> employee: Send final approval notification
-notif -> fac_sec: Send approval notification (FYI)
+== Owner ==
+owner -> webapp: Open the award
+webapp -> api: GET /awards/{id}/status
+api --> webapp: path (DONE, SKIPPED, CURRENT, UPCOMING),\ndecisions with reviewer, delegator and comment
 
 @enduml
-
-
-

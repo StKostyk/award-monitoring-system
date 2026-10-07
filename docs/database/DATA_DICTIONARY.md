@@ -314,7 +314,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `awarding_organization` | `VARCHAR(255)` | YES (draft) | - | - | Organization that granted the award; required outside `DRAFT` |
 | `award_date` | `DATE` | YES (draft) | - | CK: ≤ today in Europe/Kyiv | Date award was granted; required outside `DRAFT`; the application also refuses dates more than 50 years back |
 | `status` | `VARCHAR(20)` | NO | `'DRAFT'` | CK | Current workflow status |
-| `verification_badge` | `BOOLEAN` | NO | `FALSE` | - | Verified by supporting documents |
+| `verification_badge` | `BOOLEAN` | NO | `FALSE` | - | Set when a reviewer approves with «Документи перевірено» (the award has at least one document, 4.1.2) |
 | `impact_score` | `INTEGER` | YES | - | CK: 0-100 | Calculated significance score |
 | `external_url` | `VARCHAR(2048)` | YES | - | - | Link to external verification |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
@@ -325,9 +325,9 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | Value | Description | Transitions To |
 |-------|-------------|----------------|
 | `DRAFT` | Initial state, being edited | PENDING |
-| `PENDING` | Submitted, awaiting approval | APPROVED, REJECTED |
+| `PENDING` | Submitted, awaiting approval | APPROVED, REJECTED, DRAFT (returned for changes) |
 | `APPROVED` | Approved through workflow | ARCHIVED |
-| `REJECTED` | Rejected during workflow | DRAFT (resubmission) |
+| `REJECTED` | Rejected during workflow; final | - |
 | `ARCHIVED` | Historical record, no longer active | - |
 
 **Impact Score Calculation** (0-100):
@@ -525,7 +525,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `version_id` | `BIGSERIAL` | NO | Auto | PK | Row identifier |
 | `award_id` | `BIGINT` | NO | - | FK→awards `ON DELETE CASCADE` | The award |
 | `version_number` | `BIGINT` | NO | - | UNIQUE with `award_id` | `awards.version` after the change |
-| `action` | `VARCHAR(20)` | NO | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED` (Epic 4 adds its review actions) |
+| `action` | `VARCHAR(20)` | NO | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED`, `DECIDED` (a reviewer decision changed the award's status, V029) |
 | `actor_id` | `BIGINT` | YES | - | FK→users `ON DELETE SET NULL` | Who saved the version; NULL for baselines and erased accounts |
 | `snapshot` | `JSONB` | NO | - | - | `title`, `titleUk`, `description`, `descriptionUk`, `awardingOrganization`, `awardDate` (ISO date), `categoryId`, `status`, `impactScore`, `verificationBadge`, `externalUrl`, `organizationId` |
 | `changed_fields` | `TEXT[]` | YES | - | - | Snapshot keys that differ from the previous version; NULL for the first |
@@ -556,10 +556,10 @@ The minimum approval level is the lowest role that may give the final approval; 
 **Business Rules**:
 - One-to-one relationship with awards (each award has exactly one request)
 - Workflow levels: Faculty Secretary → Dean → Rector Secretary → Rector
-- Escalation based on award category recognition level
+- Transitions follow the table of ADR-023: a reviewer approves, rejects, returns or escalates at the request's level; an approval below the category's minimum level, or an escalation (any level below the rector), moves the request to the next level not passed over with a fresh deadline and no reviewer; a return gives the award back as a draft without reviewer or deadline; approval and rejection set `completed_at` (4.1.2)
 - `deadline` is the end of the current level's review period: set at submission to `submitted_at` moved by `app.workflow.review-working-days` working days (Monday to Friday, default 3, same Kyiv time of day, so a clock change does not move it; a weekend start counts from Monday 00:00) and reset at every level change by the Epic 4 workflow; requests submitted before V024 were back-filled with `submitted_at` + 3 days, and deadlines stored before 2.1.8 (SCRUM-43) keep their calendar-day value
 - Expected completion is computed on read, never stored: the deadline plus one review period for every level still ahead on the approval path (faculty secretary up to the higher of the category's minimum approval level and the current level); a level past its deadline gets a fresh period from now
-- A request past its deadline is marked overdue and explained; expiry (`EXPIRED`) and escalation of late requests belong to the Epic 4 workflow
+- A request past its deadline is marked overdue and explained; it is never escalated or expired automatically (`EXPIRED` stays in the check constraint, unused)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -580,13 +580,13 @@ The minimum approval level is the lowest role that may give the final approval; 
 **Request Status Values** (`status`):
 | Value | Description | Transitions To |
 |-------|-------------|----------------|
-| `SUBMITTED` | Initial submission, waiting to be claimed | IN_REVIEW (claim) |
+| `SUBMITTED` | Initial submission, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED (a decision claims it in the same transaction) |
 | `IN_REVIEW` | Claimed by `current_reviewer_id` | SUBMITTED or ESCALATED (release), ESCALATED, APPROVED, REJECTED, RETURNED |
-| `ESCALATED` | Moved to a higher level by a decision, waiting to be claimed | IN_REVIEW (claim) |
+| `ESCALATED` | Moved to a higher level by a decision, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED |
 | `APPROVED` | Final approval granted | - |
 | `REJECTED` | Final rejection | - |
 | `RETURNED` | Returned for corrections | SUBMITTED |
-| `EXPIRED` | Deadline passed without decision | - |
+| `EXPIRED` | Unused (kept in the check constraint) | - |
 
 **Approval Levels** (`current_level`):
 | Value | Description | Next Level |
@@ -615,7 +615,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - BELONGS TO `users` (N:1) via `submitter_id`
 - BELONGS TO `users` (N:1) via `current_reviewer_id`
 - HAS MANY `review_decisions` (1:N)
-- HAS MANY `documents` (1:N)
+- `documents.request_id` exists but is not used; documents belong to the award
 
 ---
 
@@ -629,7 +629,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 - Decisions are immutable once recorded
 - Comments required for rejections and returns
 - Timestamp records exact decision moment
-- Read by the status timeline (`GET /awards/{id}/status`), oldest first with the reviewer's name, for everybody who may read the award; written only by the Epic 4 review workflow
+- Read by the status timeline (`GET /awards/{id}/status`), oldest first with the reviewer's name and, for a delegate, the delegator's, for everybody who may read the award; written by `POST /awards/{id}/decisions` at the level the request stood at (4.1.2)
+- A level the request passed over (its only reviewer submitted the award) has no row; the status page shows it as skipped
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -647,7 +648,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 |-------|-------------|---------------------|
 | `APPROVED` | Approved at this level | ESCALATED or APPROVED (final) |
 | `REJECTED` | Rejected at this level | REJECTED |
-| `ESCALATED` | Manually escalated to higher level | ESCALATED |
+| `ESCALATED` | Escalated one level up by the reviewer (any level below the rector) | ESCALATED |
 | `RETURNED` | Returned to submitter for corrections | RETURNED |
 
 **Indexes**:

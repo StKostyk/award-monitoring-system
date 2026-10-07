@@ -7,6 +7,7 @@ import { OrganizationRef } from '../../core/auth/user-profile';
 import {
   ApprovalLevel,
   AwardRecipient,
+  AwardStatus,
   CategoryRef,
   Page,
   RequestStatus,
@@ -43,6 +44,25 @@ export interface ReviewItem {
 /** A colleague the request can be handed over to. */
 export interface ReviewerCandidate extends UserRef {
   delegated: boolean;
+}
+
+export type DecisionType = 'APPROVE' | 'REJECT' | 'RETURN' | 'ESCALATE';
+
+/** What a reviewer decides at the current level of a request. */
+export interface DecisionRequest {
+  decision: DecisionType;
+  requestVersion: number;
+  comment?: string;
+  verified?: boolean;
+}
+
+/** The award and its request after a decision; `level` is where the request now waits or was decided. */
+export interface DecisionOutcome {
+  awardId: number;
+  status: AwardStatus;
+  requestStatus: RequestStatus;
+  level: ApprovalLevel;
+  requestVersion: number;
 }
 
 /** Whose requests the queue shows: the caller's, nobody's or everybody's (null). */
@@ -92,6 +112,11 @@ export class ReviewsService {
 
   release(awardId: number, requestVersion: number): Observable<void> {
     return this.http.delete<void>(this.reviewer(awardId), { params: { requestVersion } });
+  }
+
+  /** Approves, rejects, returns or escalates the request, claiming it first when nobody holds it. */
+  decide(awardId: number, request: DecisionRequest): Observable<DecisionOutcome> {
+    return this.http.post<DecisionOutcome>(`${this.base}/${awardId}/decisions`, request);
   }
 
   candidates(awardId: number): Observable<ReviewerCandidate[]> {

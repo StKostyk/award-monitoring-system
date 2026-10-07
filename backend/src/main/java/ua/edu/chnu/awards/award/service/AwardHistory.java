@@ -74,6 +74,16 @@ public class AwardHistory {
         record(award, VersionAction.SUBMITTED);
     }
 
+    /**
+     * Records the award after a reviewer decision changed its status, inside the caller's transaction.
+     *
+     * @param award the award, flushed so that its version number is current
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void decided(Award award) {
+        record(award, VersionAction.DECIDED);
+    }
+
     private void record(Award award, VersionAction action) {
         AwardVersion previous = versions.findFirstByAwardIdOrderByNumberDesc(award.getId()).orElse(null);
         if (previous != null && previous.getNumber() == award.getVersion()) {

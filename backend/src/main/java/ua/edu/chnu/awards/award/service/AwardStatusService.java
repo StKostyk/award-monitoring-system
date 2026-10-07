@@ -83,11 +83,18 @@ public class AwardStatusService {
         for (int i = 0; i < timeline.levels().size(); i++) {
             ApprovalLevel level = timeline.levels().get(i);
             boolean done = i < current || i == current && request.getStatus() == RequestStatus.APPROVED;
-            StepState state = done ? StepState.DONE : i == current ? StepState.CURRENT : StepState.UPCOMING;
-            steps.add(new PathStep(level, state, done ? null : timeline.due().get(level),
-                done ? passedAt(made, level) : null));
+            Instant passed = done ? passedAt(made, level) : null;
+            steps.add(new PathStep(level, state(done, passed, i == current), done ? null : timeline.due().get(level),
+                passed));
         }
         return steps;
+    }
+
+    private static StepState state(boolean done, Instant passed, boolean current) {
+        if (done) {
+            return passed == null ? StepState.SKIPPED : StepState.DONE;
+        }
+        return current ? StepState.CURRENT : StepState.UPCOMING;
     }
 
     private static Instant passedAt(List<ReviewDecision> made, ApprovalLevel level) {

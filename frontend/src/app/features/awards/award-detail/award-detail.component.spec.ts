@@ -95,6 +95,10 @@ const translations = {
       levels: { FACULTY_SECRETARY: 'секретар факультету' },
       submitted: { text: 'Подано на розгляд секретарю факультету.' },
     },
+    reviews: {
+      messages: { APPROVED: 'Нагороду затверджено.', ESCALATED: 'Передано {{level}}.' },
+      decide: { to: { DEAN: 'декану' } },
+    },
   },
 };
 
@@ -243,6 +247,45 @@ describe('AwardDetailComponent', () => {
 
     expect(service.get).toHaveBeenCalledTimes(2);
     expect(fixture.componentInstance.award()?.status).toBe('APPROVED');
+  });
+
+  it('ac2_11_a_decision_shows_where_the_request_went_and_reloads_award_and_status', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+    const loads = service.status.mock.calls.length;
+
+    fixture.componentInstance.onDecided({
+      awardId: 5,
+      status: 'PENDING',
+      requestStatus: 'ESCALATED',
+      level: 'DEAN',
+      requestVersion: 4,
+    });
+    fixture.detectChanges();
+
+    const notice = fixture.nativeElement.querySelector('[data-testid="award-detail-decision"]');
+    expect(notice?.textContent?.trim()).toBe('Передано декану.');
+    expect(service.get).toHaveBeenCalledTimes(2);
+    expect(service.status.mock.calls.length).toBe(loads + 1);
+  });
+
+  it('ac2_4_a_returned_award_sends_the_reviewer_back_to_the_queue', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    fixture.componentInstance.onDecided({
+      awardId: 5,
+      status: 'DRAFT',
+      requestStatus: 'RETURNED',
+      level: 'FACULTY_SECRETARY',
+      requestVersion: 4,
+    });
+
+    expect(navigate).toHaveBeenCalledWith(['/reviews'], {
+      replaceUrl: true,
+      state: { notice: 'reviews.messages.RETURNED' },
+    });
+    expect(service.get).toHaveBeenCalledTimes(1);
   });
 
   it('ac1_15_an_award_no_longer_readable_is_replaced_by_the_not_found_notice', async () => {

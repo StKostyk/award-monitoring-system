@@ -1063,41 +1063,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
-  /awards/{id}/approve:
+  /awards/{id}/decisions:
     post:
       tags: [Workflows]
-      summary: Approve award at current level (planned, Epic 4)
-      x-status: planned
+      summary: Approve, reject, return or escalate the request of an award
+      description: >
+        Decides the open request at the level it stands at (transition table of ADR-023). `APPROVE` at or above
+        the category's minimum level approves the award (`completedAt`, the reviewer kept); below it the request is
+        `ESCALATED` to the next level not passed over with a new deadline. `ESCALATE` moves one level up the same
+        way (comment optional; 409 `no-higher-level` at the rector). `RETURN` gives the award back as a draft
+        (request `RETURNED`, no reviewer, no deadline); `REJECT` ends it (`rejectionReason`); both need a comment.
+        `verified: true` on an approval sets the award's verification badge and needs at least one document. A
+        decision on an unclaimed request claims it in the same transaction. Every decision writes a
+        `review_decisions` row at the deciding level (with `delegator_id` under a delegated role), an award version
+        `DECIDED` when the award's status changes, an audit row `REVIEW_DECISION`, and after the commit one e-mail
+        to the owner (`award:approve:level1`, reviewer rule, 4.1.2).
       security:
         - bearerAuth: []
-      operationId: approveAward
-      parameters:
-        - $ref: '#/components/parameters/AwardIdParam'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApprovalRequest'
-      responses:
-        '200':
-          description: Award approved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Award'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /awards/{id}/reject:
-    post:
-      tags: [Workflows]
-      summary: Reject award (planned, Epic 4)
-      x-status: planned
-      security:
-        - bearerAuth: []
-      operationId: rejectAward
+      operationId: decideReview
       parameters:
         - $ref: '#/components/parameters/AwardIdParam'
       requestBody:
@@ -1105,42 +1088,36 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RejectionRequest'
+              $ref: '#/components/schemas/ReviewDecision'
       responses:
         '200':
-          description: Award rejected
+          description: Where the award and its request stand afterwards
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Award'
+                $ref: '#/components/schemas/DecisionOutcome'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
-
-  /awards/{id}/return:
-    post:
-      tags: [Workflows]
-      summary: Return award for revision (planned, Epic 4)
-      x-status: planned
-      security:
-        - bearerAuth: []
-      operationId: returnAward
-      parameters:
-        - $ref: '#/components/parameters/AwardIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReturnRequest'
-      responses:
-        '200':
-          description: Award returned for revision
+          description: No pending request the caller may review (unknown award, draft, returned, own award)
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/Award'
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: >
+            `urn:awards:problem:request-claimed` (another reviewer holds it, with `reviewer`),
+            `request-stale` (with `currentVersion`), `request-closed` (with `requestStatus`) or `no-higher-level`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
 
   # ============== Documents ==============
   /awards/{id}/documents:
@@ -2721,7 +2698,8 @@ components:
           $ref: '#/components/schemas/ApprovalLevel'
         state:
           type: string
-          enum: [DONE, CURRENT, UPCOMING]
+          enum: [DONE, CURRENT, UPCOMING, SKIPPED]
+          description: '`SKIPPED` for a level the request passed over (its only reviewer submitted the award)'
         dueDate:
           type: [string, 'null']
           format: date
@@ -2752,6 +2730,12 @@ components:
         decidedAt:
           type: string
           format: date-time
+        delegatorId:
+          type: [integer, 'null']
+          format: int64
+          description: Who lent the role the reviewer decided under; null for an own role
+        delegatorName:
+          type: [string, 'null']
 
     AwardWarning:
       type: object
@@ -3015,8 +2999,10 @@ components:
 
     VersionAction:
       type: string
-      enum: [BASELINE, CREATED, UPDATED, SUBMITTED]
-      description: What produced the version; `BASELINE` is the state of an award when versioning started
+      enum: [BASELINE, CREATED, UPDATED, SUBMITTED, DECIDED]
+      description: >
+        What produced the version; `BASELINE` is the state of an award when versioning started, `DECIDED` a
+        reviewer decision that changed the award's status
 
     AwardSnapshot:
       type: object
@@ -3182,32 +3168,41 @@ components:
           $ref: '#/components/schemas/DocumentType'
 
     # Workflow
-    ApprovalRequest:
+    ReviewDecision:
       type: object
+      required: [decision, requestVersion]
       properties:
+        decision:
+          type: string
+          enum: [APPROVE, REJECT, RETURN, ESCALATE]
+        requestVersion:
+          type: integer
+          format: int64
+          description: The version of the request the caller last read
         comment:
-          type: string
-          maxLength: 1000
+          type: [string, 'null']
+          maxLength: 2000
+          description: Required to return or reject; shown to the owner and on the status page
+        verified:
+          type: boolean
+          default: false
+          description: On an approval, the reviewer checked the award's documents (sets the verification badge)
 
-    RejectionRequest:
+    DecisionOutcome:
       type: object
-      required: [reason]
       properties:
-        reason:
-          type: string
-          maxLength: 1000
-
-    ReturnRequest:
-      type: object
-      required: [reason]
-      properties:
-        reason:
-          type: string
-          maxLength: 1000
-        requiredChanges:
-          type: array
-          items:
-            type: string
+        awardId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/AwardStatus'
+        requestStatus:
+          $ref: '#/components/schemas/RequestStatus'
+        level:
+          $ref: '#/components/schemas/ApprovalLevel'
+        requestVersion:
+          type: integer
+          format: int64
 
     # Document
     Document:

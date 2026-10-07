@@ -14,135 +14,64 @@ skinparam state {
 title Award Request State Machine Diagram
 
 note as AsBuilt
-    <b>As built after Epic 2 (2026-10)</b>
-    Two status fields: the award (<i>AwardStatus</i>:
-    DRAFT, PENDING, APPROVED, REJECTED, ARCHIVED) and its
-    request (<i>RequestStatus</i>: SUBMITTED, IN_REVIEW, ESCALATED,
-    APPROVED, REJECTED, RETURNED, EXPIRED).
-    Implemented: DRAFT -> submit -> award PENDING with a new
-    request SUBMITTED at FACULTY_SECRETARY and a deadline (V024).
-    A draft is edited or deleted only by its owner.
-    The other transitions are the Epic 4 workflow design;
-    documents are attached to a draft since Feature 3.1;
-    the AI parsing substates wait for OCR (deferred).
+    <b>Transition table of ADR-023 (Feature 4.1 §7.2)</b>
+    States are request statuses (<i>award_requests.status</i>);
+    the award status (<i>awards.status</i>) follows in brackets.
+    "Level" is <i>current_level</i>: FACULTY_SECRETARY, DEAN,
+    RECTOR_SECRETARY, RECTOR. A level whose only reviewer
+    would be the submitter is passed over (AC-0.6).
+    Decisions are taken in SUBMITTED, ESCALATED or IN_REVIEW;
+    an unclaimed request is claimed by the decision itself.
+    EXPIRED stays in the check constraint, unused.
 end note
 
-[*] --> DRAFT <<draft>> : Employee creates award
+[*] --> DRAFT <<draft>> : Owner creates award
 
-state DRAFT <<draft>> {
-    [*] --> Editing
-    Editing --> Editing : Save changes
-    Editing --> DocumentUploaded : Upload certificate (Feature 3.1)
-    DocumentUploaded --> Editing : Delete document / continue editing
-    DocumentUploaded --> AIProcessing : Trigger AI parsing (deferred)
-    AIProcessing --> MetadataExtracted : AI completes
-    MetadataExtracted --> Editing : Employee reviews
-}
+state DRAFT <<draft>> : award DRAFT; edited, documents\nattached or deleted by its owner only
 
-DRAFT --> SUBMITTED <<pending>> : Owner submits\n[category, awarding organisation, date set;\npossible duplicate acknowledged]\n/ award PENDING, version SUBMITTED
+DRAFT --> SUBMITTED <<pending>> : submit\n/ start level (AC-0.6), deadline,\naward PENDING
 
-state SUBMITTED <<pending>> {
-    [*] --> AwaitingReviewer
-    AwaitingReviewer --> ReviewerAssigned : System assigns reviewer
-}
+state SUBMITTED <<pending>> : awaiting a reviewer at the level
+state ESCALATED <<escalated>> : awaiting a reviewer at a higher level\nafter a decision below
+state IN_REVIEW <<review>> : claimed by one reviewer\n(current_reviewer_id)
 
-note right of SUBMITTED
-    First reviewer is always
-    Faculty Secretary
-end note
+SUBMITTED --> IN_REVIEW : claim
+ESCALATED --> IN_REVIEW : claim
+IN_REVIEW --> SUBMITTED : release\n[no decision below]
+IN_REVIEW --> ESCALATED : release\n[a lower level decided]
+IN_REVIEW --> IN_REVIEW : hand-over, take-over
 
-SUBMITTED --> IN_REVIEW <<review>> : Reviewer opens request
+state "SUBMITTED, ESCALATED, IN_REVIEW" as Open <<review>>
+Open --> APPROVED <<approved>> : approve\n[level >= category minimum]\n/ award APPROVED
+Open --> ESCALATED : approve [level < category minimum]\nescalate [level < RECTOR]\n/ next level not passed over,\nnew deadline, reviewer cleared
+Open --> RETURNED <<returned>> : return [comment]\n/ award DRAFT, reviewer and\ndeadline cleared
+Open --> REJECTED <<rejected>> : reject [comment]\n/ rejection_reason, award REJECTED
 
-state IN_REVIEW <<review>> {
-    [*] --> UnderReview
-    UnderReview --> DocumentVerification : Verify certificate
-    DocumentVerification --> DecisionPending : Verification complete
-    DecisionPending --> [*] : Decision made
-}
+SUBMITTED --> WITHDRAWN : withdraw [no reviewer]\n/ award DRAFT (4.1.3)
+ESCALATED --> WITHDRAWN : withdraw [no reviewer]\n/ award DRAFT (4.1.3)
 
-IN_REVIEW --> APPROVED <<approved>> : Reviewer approves\n[No more levels required]
-IN_REVIEW --> REJECTED <<rejected>> : Reviewer rejects\n[With reason]
-IN_REVIEW --> ESCALATED <<escalated>> : Reviewer escalates\n[Higher authority needed]
-IN_REVIEW --> RETURNED <<returned>> : Reviewer returns\n[Corrections needed]
+state RETURNED <<returned>> : award DRAFT; owner corrects
+state WITHDRAWN <<draft>> : award DRAFT; owner took it back
 
-state ESCALATED <<escalated>> {
-    [*] --> Level2_Dean
-    Level2_Dean --> Level3_RectorSecretary : Dean escalates
-    Level3_RectorSecretary --> Level4_Rector : Secretary escalates
-}
+RETURNED --> SUBMITTED : resubmit\n/ same level (or next not passed over),\naward PENDING (4.1.3)
+WITHDRAWN --> SUBMITTED : resubmit\n/ start level, award PENDING (4.1.3)
 
-note right of ESCALATED
-    Escalation levels:
-    - Dean reviews from Faculty Secretary
-    - Rector has final authority
-end note
+state APPROVED <<approved>> : final; verification badge when\nthe reviewer checked the documents
+state REJECTED <<rejected>> : final; reason shown to the owner
 
-ESCALATED --> IN_REVIEW : New reviewer opens\n[At higher level]
-
-state RETURNED <<returned>> {
-    [*] --> AwaitingCorrections
-    AwaitingCorrections --> CorrectionsMade : Employee edits
-}
-
-RETURNED --> IN_REVIEW : Employee resubmits\n[Within deadline]
-RETURNED --> EXPIRED : Deadline passed\n[No resubmission]
-
-state REJECTED <<rejected>> {
-    [*] --> RejectionNotified
-    RejectionNotified --> AppealWindow : 7 days to appeal
-}
-
-REJECTED --> DRAFT : Employee creates new submission\n[With corrections]
-
-state APPROVED <<approved>> {
-    [*] --> Published
-    Published --> VerificationBadgeAdded : Documents verified
-}
-
-note right of APPROVED
-    Award is now publicly visible
-end note
-
-APPROVED --> ARCHIVED <<archived>> : Retention period elapsed
-
-state ARCHIVED <<archived>>
-
-note right of ARCHIVED
-    Award preserved for historical record
-    Personal data anonymized per GDPR
-end note
-
+APPROVED --> ARCHIVED <<archived>> : retention period elapsed (award status)
+REJECTED --> [*]
 ARCHIVED --> [*]
 
-' Timeout transitions
-SUBMITTED --> EXPIRED : Review deadline exceeded\n[Configurable timeout]
-IN_REVIEW --> EXPIRED : Decision deadline exceeded
-
-state EXPIRED
-
-note right of EXPIRED
-    Auto-expired requests require
-    manual intervention or new submission
-    Epic 4 target: until the workflow engine
-    ships, a request past its deadline is only
-    marked overdue and its delay explained
-    (Feature 2.3 D-5)
-end note
-
-EXPIRED --> [*]
-
-' Legend
 legend right
-    |= State |= Description |
-    | DRAFT | Award being prepared (award status) |
-    | SUBMITTED | Awaiting first review |
-    | IN_REVIEW | Currently under review |
-    | ESCALATED | Forwarded to higher authority |
-    | APPROVED | Fully approved, published |
-    | REJECTED | Rejected by reviewer |
-    | RETURNED | Sent back for corrections |
-    | ARCHIVED | Moved to archive |
-    | EXPIRED | Auto-expired |
+    |= State |= Award |= Description |
+    | SUBMITTED | PENDING | Awaiting a reviewer at the start level |
+    | IN_REVIEW | PENDING | Claimed by one reviewer |
+    | ESCALATED | PENDING | Awaiting a reviewer at a higher level |
+    | RETURNED | DRAFT | Sent back for corrections |
+    | WITHDRAWN | DRAFT | Taken back by the owner before a claim |
+    | APPROVED | APPROVED | Final |
+    | REJECTED | REJECTED | Final |
 endlegend
 
 @enduml

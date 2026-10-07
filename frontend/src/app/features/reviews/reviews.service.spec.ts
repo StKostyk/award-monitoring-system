@@ -57,4 +57,26 @@ describe('ReviewsService', () => {
     http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/awards/5/reviewer')).flush({});
     http.expectOne((r) => r.url.endsWith('/awards/5/reviewers')).flush([]);
   });
+
+  it('ac2_1_posts_the_decision_with_its_version_and_comment', () => {
+    service
+      .decide(5, { decision: 'RETURN', requestVersion: 3, comment: 'Додайте наказ' })
+      .subscribe((outcome) => expect(outcome.status).toBe('DRAFT'));
+
+    const request = http.expectOne(
+      (r) => r.method === 'POST' && r.url.endsWith('/awards/5/decisions'),
+    );
+    expect(request.request.body).toEqual({
+      decision: 'RETURN',
+      requestVersion: 3,
+      comment: 'Додайте наказ',
+    });
+    request.flush({
+      awardId: 5,
+      status: 'DRAFT',
+      requestStatus: 'RETURNED',
+      level: 'FACULTY_SECRETARY',
+      requestVersion: 4,
+    });
+  });
 });

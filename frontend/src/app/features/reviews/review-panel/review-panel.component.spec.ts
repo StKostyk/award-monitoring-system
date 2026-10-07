@@ -60,11 +60,17 @@ const translations = {
         release: 'Звільнити',
         handOver: 'Передати колезі…',
         takeOver: 'Взяти на себе',
+        approve: 'Затвердити',
+        return: 'Повернути на доопрацювання',
+        reject: 'Відхилити',
+        escalate: 'Передати {{level}}',
       },
+      decide: { to: { DEAN: 'декану', RECTOR_SECRETARY: 'секретарю ректора' } },
       messages: { claimed: 'Нагороду взято в роботу.', released: 'Нагороду повернуто до черги.' },
       problems: {
         'request-claimed': 'Нагороду вже взяв у роботу {{name}}',
         'request-stale': 'Дані застаріли, сторінку оновлено',
+        'no-higher-level': 'Вищого рівня розгляду немає',
         unknown: 'Не вдалося виконати дію.',
       },
     },
@@ -79,6 +85,7 @@ describe('ReviewPanelComponent', () => {
     claim: vi.fn(),
     release: vi.fn(),
     handOver: vi.fn(),
+    decide: vi.fn(),
   };
   const dialog = { open: vi.fn() };
 
@@ -224,5 +231,74 @@ describe('ReviewPanelComponent', () => {
 
     expect(text(element, 'review-panel-notice')).toBe('Не вдалося виконати дію.');
     expect(service.item).toHaveBeenCalledTimes(1);
+  });
+
+  it('ac2_11_offers_the_four_decisions_on_an_own_or_unclaimed_request_only', async () => {
+    service.item.mockReturnValue(of(item({ reviewer: PEER })));
+    let element = await create();
+    expect(element.querySelector('[data-testid="review-decisions"]')).toBeNull();
+
+    TestBed.resetTestingModule();
+    service.item.mockReturnValue(of(item()));
+    element = await create();
+
+    expect(text(element, 'review-approve')).toBe('Затвердити');
+    expect(text(element, 'review-return')).toBe('Повернути на доопрацювання');
+    expect(text(element, 'review-reject')).toBe('Відхилити');
+    expect(text(element, 'review-escalate')).toBe('Передати декану');
+  });
+
+  it('ac2_11_sends_the_dialog_input_with_the_version_and_emits_the_outcome', async () => {
+    const outcome = {
+      awardId: 5,
+      status: 'PENDING',
+      requestStatus: 'ESCALATED',
+      level: 'DEAN',
+      requestVersion: 4,
+    };
+    service.item.mockReturnValue(of(item({ reviewer: SELF, documentCount: 2 })));
+    service.decide.mockReturnValue(of(outcome));
+    dialog.open.mockReturnValue({ afterClosed: () => of({ comment: 'Варто декану' }) });
+    const decided = vi.fn();
+    const element = await create();
+    fixture.componentInstance.decided.subscribe(decided);
+
+    click(element, 'review-escalate');
+
+    expect(dialog.open.mock.calls[0][1].data).toEqual({
+      decision: 'ESCALATE',
+      target: 'DEAN',
+      documents: 2,
+    });
+    expect(service.decide).toHaveBeenCalledWith(5, {
+      decision: 'ESCALATE',
+      requestVersion: 3,
+      comment: 'Варто декану',
+    });
+    expect(decided).toHaveBeenCalledWith(outcome);
+    expect(element.querySelector('[data-testid="review-panel"]')).toBeNull();
+  });
+
+  it('ac2_11_a_cancelled_dialog_decides_nothing', async () => {
+    service.item.mockReturnValue(of(item({ reviewer: SELF })));
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
+    const element = await create();
+
+    click(element, 'review-reject');
+
+    expect(service.decide).not.toHaveBeenCalled();
+  });
+
+  it('ac2_5_the_top_level_offers_no_escalation_and_a_refusal_is_reported', async () => {
+    permissions.set(readPermissions(token({ role_scopes: ['RECTOR:1'] })));
+    service.item.mockReturnValue(of(item({ reviewer: SELF, level: 'RECTOR' })));
+    service.decide.mockReturnValue(throwError(() => conflict('no-higher-level')));
+    dialog.open.mockReturnValue({ afterClosed: () => of({}) });
+    const element = await create();
+
+    expect(element.querySelector('[data-testid="review-escalate"]')).toBeNull();
+    click(element, 'review-approve');
+
+    expect(text(element, 'review-panel-notice')).toBe('Вищого рівня розгляду немає');
   });
 });

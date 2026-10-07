@@ -38,6 +38,16 @@ class HistoryContractTest {
     }
 
     @Test
+    void ac2_13_decisionSchemasMatchTheBodyAndTheOutcome() throws IOException {
+        Map<String, Object> schemas = schemas();
+
+        assertThat(properties(schemas, "ReviewDecision")).containsExactlyInAnyOrderElementsOf(
+            names(ReviewDecisionRequest.class.getRecordComponents()));
+        assertThat(properties(schemas, "DecisionOutcome")).containsExactlyInAnyOrderElementsOf(
+            names(DecisionOutcome.class.getRecordComponents()));
+    }
+
+    @Test
     void ac1_10_auditTrailSchemaMatchesTheEntry() throws IOException {
         assertThat(properties(schemas(), "AuditTrailEntry")).containsExactlyInAnyOrderElementsOf(
             names(AuditTrailEntry.class.getRecordComponents()));

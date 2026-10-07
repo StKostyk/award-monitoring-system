@@ -3,86 +3,57 @@
 
 title Award Approval Workflow - Activity Diagram
 
+|Owner|
 start
+:Submit the award\n(category, organisation, date set);
+|System|
+:Open a request at the start level\n(levels the submitter alone would review are passed over);
+:Set the deadline and notify the level's reviewers;
 
-:Employee submits award;
-
-:System validates submission;
-
-if (Valid?) then (yes)
-    :Create review request;
-    :Determine award level;
-    
-    if (Award Level?) then (Department/Faculty)
-        :Assign to Faculty Secretary;
-        
-        :Faculty Secretary reviews award;
-        :Verify documents;
-        
-        switch (Secretary Decision?)
-        case (Approve)
-            :Record approval;
-            :Publish award;
-            :Notify employee of approval;
-            stop
-        case (Reject)
-            :Record rejection with reason;
-            :Notify employee of rejection;
-            
-            if (Resubmit?) then (yes)
-                :Employee edits award;
-                :Reset to draft;
-            else (no)
-                stop
-            endif
-        case (Escalate)
-            :Escalate to Dean;
-            
-            :Dean reviews award;
-            
-            if (Dean approves?) then (yes)
-                :Record approval;
-                :Publish award;
-                :Notify employee;
-                stop
-            else (no)
-                :Record rejection;
-                :Notify employee;
-                stop
-            endif
-        endswitch
-        
-    else (University/National/International)
-        :Assign to Faculty Secretary;
-        :Faculty Secretary reviews and recommends;
-        :Forward to Dean;
-        
-        :Dean reviews and recommends;
-        :Forward to Rector's Office;
-        
-        :Rector's Office reviews;
-        
-        if (Rector approves?) then (yes)
-            if (Secretary has authority?) then (yes)
-                :Secretary approves;
-            else (no)
-                :Escalate to Rector;
-                :Rector reviews and approves;
-            endif
-            :Publish award;
-            :Notify employee of approval;
+repeat
+    |Reviewer|
+    :Open the request from the queue;
+    if (Claimed by a colleague?) then (yes)
+        :Wait, or take over from a lower level;
+    else (no)
+        :Claim it, or decide directly\n(the decision claims it);
+    endif
+    note right
+        One by one or in a batch (4.1.4).
+        A missed deadline only marks the request
+        overdue; the reviewers are reminded (4.2.2).
+        Nothing escalates on its own.
+    end note
+    switch (Decision?)
+    case (Approve)
+        |System|
+        if (Level >= category minimum?) then (yes)
+            :Request and award APPROVED;\nverification badge when documents were checked;
+            :Mail the owner «approved»;
             stop
         else (no)
-            :Record rejection;
-            :Notify employee of rejection;
-            stop
+            :Request ESCALATED to the next level\nnot passed over, new deadline;
+            :Mail the owner «passed on»;
         endif
-    endif
-    
-else (no)
-    :Return validation errors;
-    :Employee fixes errors;
-endif
+    case (Escalate)
+        |System|
+        :Request ESCALATED to the next level\nnot passed over, new deadline\n(409 no-higher-level at the rector);
+        :Mail the owner «passed on»;
+    case (Return, comment)
+        |System|
+        :Request RETURNED, award DRAFT;
+        :Mail the owner the comment;
+        |Owner|
+        :Correct the award and resubmit (4.1.3);
+        |System|
+        :Request SUBMITTED at the same level;
+    case (Reject, comment)
+        |System|
+        :Request and award REJECTED\nwith the reason;
+        :Mail the owner the reason;
+        stop
+    endswitch
+repeat while (Request open?) is (yes)
 
 stop
 
