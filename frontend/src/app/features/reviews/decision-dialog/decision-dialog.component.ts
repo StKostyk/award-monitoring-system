@@ -1,5 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { HttpStatusCode } from '@angular/common/http';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormControl,
@@ -12,41 +22,59 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
-  MatDialogClose,
   MatDialogContent,
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
 import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { catchError, of } from 'rxjs';
+import { Observable, catchError, of } from 'rxjs';
 
+import { problemStatus, problemType } from '../../../core/api/problem';
+import { AuthService } from '../../../core/auth/auth.service';
 import { ApprovalLevel } from '../../awards/awards.service';
+import { reviewerOf } from '../review-problems';
 import { DecisionType, ReviewTemplate, ReviewsService } from '../reviews.service';
+import { clearDraft, readDraft, writeDraft } from './decision-draft';
 
 /** Longest comment the server accepts. */
 export const COMMENT_MAX_LENGTH = 2000;
 
+/** Problem types with a message of their own when no dialog-specific one applies. */
+const KNOWN = ['reviewer-not-eligible', 'no-higher-level', 'validation-failed', 'access-denied'];
+
 /**
  * The decision to confirm, the level an escalation goes to (null: the next level of each award) and whether the
- * award has documents; `count` is the number of awards of a batch.
+ * award has documents; `count` is the number of awards of a batch. `draft` names where the typed comment is kept
+ * for the signed-in user (the award id, or the awards of a batch); `submit` sends the decision, and the dialog
+ * closes with its answer or stays open on a failure.
  */
-export interface DecisionDialogData {
+export interface DecisionDialogData<R = unknown> {
   decision: DecisionType;
   target: ApprovalLevel | null;
   documents: number;
   count?: number;
+  draft: string;
+  submit: (input: DecisionInput) => Observable<R>;
 }
 
-/** What the reviewer entered; the dialog closes with nothing when cancelled. */
+/** What the reviewer entered. */
 export interface DecisionInput {
   comment?: string;
   verified?: boolean;
 }
 
-/** Confirms a review decision with a comment, required for a return or a rejection. */
+/** Why a decision was not sent; a final problem leaves only closing the dialog. */
+interface DecisionProblem {
+  key: string;
+  params?: Record<string, string>;
+  final?: boolean;
+}
+
+/** Confirms a review decision with a comment, required for a return or a rejection, and sends it. */
 @Component({
   selector: 'app-decision-dialog',
   imports: [
@@ -54,7 +82,6 @@ export interface DecisionInput {
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
-    MatDialogClose,
     MatButton,
     MatCheckbox,
     MatFormField,
@@ -64,6 +91,7 @@ export interface DecisionInput {
     MatInput,
     MatSelect,
     MatOption,
+    MatProgressBar,
     TranslocoPipe,
   ],
   template: `
@@ -139,14 +167,44 @@ export interface DecisionInput {
           {{ 'reviews.decide.verified' | transloco }}
         </mat-checkbox>
       }
+      @if (problem(); as shown) {
+        <p class="decision__problem" role="alert" data-testid="decision-error">
+          {{ shown.key | transloco: shown.params }}
+        </p>
+      }
+      @if (sending()) {
+        <mat-progress-bar
+          mode="indeterminate"
+          [attr.aria-label]="'reviews.decide.sending' | transloco"
+          data-testid="decision-progress"
+        />
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button type="button" mat-dialog-close data-testid="decision-cancel">
-        {{ 'reviews.decide.cancel' | transloco }}
-      </button>
-      <button mat-flat-button type="button" (click)="confirm()" data-testid="decision-confirm">
-        {{ 'reviews.decide.confirm.' + data.decision | transloco }}
-      </button>
+      @if (problem()?.final) {
+        <button mat-flat-button type="button" (click)="close()" data-testid="decision-close">
+          {{ 'reviews.decide.close' | transloco }}
+        </button>
+      } @else {
+        <button
+          mat-button
+          type="button"
+          [disabled]="sending()"
+          (click)="close()"
+          data-testid="decision-cancel"
+        >
+          {{ 'reviews.decide.cancel' | transloco }}
+        </button>
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="sending()"
+          (click)="confirm()"
+          data-testid="decision-confirm"
+        >
+          {{ 'reviews.decide.confirm.' + data.decision | transloco }}
+        </button>
+      }
     </mat-dialog-actions>
   `,
   styles: `
@@ -165,6 +223,11 @@ export interface DecisionInput {
       font: var(--mat-sys-title-small);
     }
 
+    .decision__problem {
+      margin: 0;
+      color: var(--mat-sys-error);
+    }
+
     .decision__replace {
       display: flex;
       flex-wrap: wrap;
@@ -180,11 +243,15 @@ export interface DecisionInput {
 })
 export class DecisionDialogComponent {
   readonly data = inject<DecisionDialogData>(MAT_DIALOG_DATA);
-  private readonly ref = inject<MatDialogRef<DecisionDialogComponent, DecisionInput>>(MatDialogRef);
+  private readonly ref = inject<MatDialogRef<DecisionDialogComponent, unknown>>(MatDialogRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private readonly self = inject(AuthService).userId();
+  private readonly draft = `${this.self ?? ''}:${this.data.draft}`;
 
   readonly maxLength = COMMENT_MAX_LENGTH;
   readonly commentRequired = this.data.decision === 'RETURN' || this.data.decision === 'REJECT';
-  readonly comment = new FormControl('', {
+  readonly comment = new FormControl(readDraft(this.draft, this.data.decision), {
     nonNullable: true,
     validators: this.commentRequired
       ? [Validators.required, notBlank, Validators.maxLength(COMMENT_MAX_LENGTH)]
@@ -200,7 +267,16 @@ export class DecisionDialogComponent {
   );
   /** A template waiting for the reviewer to confirm that it may replace their edited text. */
   readonly pending = signal<ReviewTemplate | null>(null);
+  readonly sending = signal(false);
+  readonly problem = signal<DecisionProblem | null>(null);
   private filled: { id: number; body: string } | null = null;
+
+  constructor() {
+    this.comment.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((value) => writeDraft(this.draft, this.data.decision, value));
+    inject(DestroyRef).onDestroy(() => clearDraft(this.draft, this.data.decision));
+  }
 
   /** Fills the comment with a template, asking first when that would replace text the reviewer wrote. */
   pick(id: number): void {
@@ -229,19 +305,70 @@ export class DecisionDialogComponent {
     this.pending.set(null);
   }
 
+  /** Sends the decision and keeps the dialog open until the answer. */
   confirm(): void {
     if (this.comment.invalid) {
       this.comment.markAsTouched();
       return;
     }
     const comment = this.comment.value.trim();
-    this.ref.close({
-      ...(comment ? { comment } : {}),
-      ...(this.verified.value ? { verified: true } : {}),
-    });
+    this.sending.set(true);
+    this.problem.set(null);
+    this.ref.disableClose = true;
+    this.data
+      .submit({
+        ...(comment ? { comment } : {}),
+        ...(this.verified.value ? { verified: true } : {}),
+      })
+      .subscribe({
+        next: (answer) => this.ref.close(answer),
+        error: (error: unknown) => {
+          this.sending.set(false);
+          this.ref.disableClose = false;
+          this.problem.set(explain(error, this.self));
+          afterNextRender(() => this.focusAction(), { injector: this.injector });
+        },
+      });
+  }
+
+  /** Closes without a decision; the kept comment goes with the dialog. */
+  close(): void {
+    this.ref.close();
+  }
+
+  private focusAction(): void {
+    this.host.nativeElement
+      .querySelector<HTMLElement>(
+        '[data-testid="decision-close"], [data-testid="decision-confirm"]',
+      )
+      ?.focus();
   }
 }
 
 function notBlank(control: AbstractControl<string>): ValidationErrors | null {
   return control.value.trim() ? null : { required: true };
+}
+
+function explain(error: unknown, self: string | null): DecisionProblem {
+  const type = problemType(error);
+  const status = problemStatus(error);
+  if (type === 'request-claimed') {
+    const holder = reviewerOf(error);
+    return holder && String(holder.id) !== self
+      ? { key: 'reviews.decide.errors.claimed', params: { name: holder.name } }
+      : { key: 'reviews.decide.errors.stale' };
+  }
+  if (type === 'request-stale') {
+    return { key: 'reviews.decide.errors.stale' };
+  }
+  if (type === 'request-closed') {
+    return { key: 'reviews.decide.errors.closed', final: true };
+  }
+  if (status === HttpStatusCode.NotFound) {
+    return { key: 'reviews.decide.errors.gone', final: true };
+  }
+  if (type === 'network' || status >= HttpStatusCode.InternalServerError) {
+    return { key: 'reviews.decide.errors.network' };
+  }
+  return { key: `reviews.problems.${KNOWN.includes(type) ? type : 'unknown'}` };
 }

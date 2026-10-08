@@ -692,7 +692,16 @@
       "template": "Response template",
       "replace": "Replace your edited comment?",
       "replaceYes": "Replace",
-      "replaceNo": "Keep my text"
+      "replaceNo": "Keep my text",
+      "sending": "Sending the decision",
+      "close": "Close",
+      "errors": {
+        "claimed": "{{name}} has already taken this award for review",
+        "stale": "The data changed — the page was refreshed, check it and confirm again",
+        "closed": "A decision has already been made",
+        "gone": "The review of this award is no longer available to you",
+        "network": "Could not send, please try again"
+      }
     },
     "batch": {
       "selectAll": "Select all on this page",

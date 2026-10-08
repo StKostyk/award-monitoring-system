@@ -77,12 +77,6 @@
     </p>
   }
 
-  @if (batchProblem(); as batchProblem) {
-    <p class="reviews__problem" role="alert" data-testid="batch-error">
-      {{ 'reviews.problems.' + batchProblem | transloco }}
-    </p>
-  }
-
   @if (summary(); as summary) {
     <section class="reviews__summary" role="status" data-testid="batch-result">
       <p class="reviews__summary-title" data-testid="batch-done">

@@ -34,9 +34,8 @@ import { MatTabLink, MatTabNav, MatTabNavPanel } from '@angular/material/tabs';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
-import { filter as present, forkJoin, map, switchMap } from 'rxjs';
+import { filter as present, forkJoin, map, tap } from 'rxjs';
 
-import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { approvalScopes, reviewableLevels } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -186,7 +185,6 @@ export class ReviewListComponent implements OnInit {
   );
   readonly busy = signal(false);
   readonly summary = signal<BatchSummary | null>(null);
-  readonly batchProblem = signal<string | null>(null);
 
   ngOnInit(): void {
     this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);
@@ -242,38 +240,35 @@ export class ReviewListComponent implements OnInit {
     if (chosen.length === 0 || this.busy()) {
       return;
     }
-    const data: DecisionDialogData = {
+    const data: DecisionDialogData<BatchItemResult[]> = {
       decision,
       target: decision === 'ESCALATE' ? this.escalateTarget() : null,
       documents: 0,
       count: chosen.length,
-    };
-    this.dialog
-      .open<DecisionDialogComponent, DecisionDialogData, DecisionInput>(DecisionDialogComponent, {
-        data,
-        width: '480px',
-      })
-      .afterClosed()
-      .pipe(
-        present((input): input is DecisionInput => !!input),
-        switchMap((input) => {
-          this.busy.set(true);
-          this.summary.set(null);
-          this.batchProblem.set(null);
-          return this.reviews.decideBatch({
+      draft: `batch:${chosen.map((item) => item.awardId).join('-')}`,
+      submit: (input: DecisionInput) => {
+        this.busy.set(true);
+        this.summary.set(null);
+        return this.reviews
+          .decideBatch({
             decision,
             ...input,
             items: chosen.map((item) => ({
               awardId: item.awardId,
               requestVersion: item.requestVersion,
             })),
-          });
-        }),
+          })
+          .pipe(tap({ error: () => this.busy.set(false) }));
+      },
+    };
+    this.dialog
+      .open<DecisionDialogComponent, DecisionDialogData<BatchItemResult[]>, BatchItemResult[]>(
+        DecisionDialogComponent,
+        { data, width: '480px' },
       )
-      .subscribe({
-        next: (results) => this.decided(chosen, results),
-        error: (error: unknown) => this.batchFailed(error),
-      });
+      .afterClosed()
+      .pipe(present((results): results is BatchItemResult[] => !!results))
+      .subscribe((results) => this.decided(chosen, results));
   }
 
   clear(): void {
@@ -331,16 +326,6 @@ export class ReviewListComponent implements OnInit {
         ReviewsActions.pageChanged({ pageIndex: this.pageIndex(), pageSize: this.pageSize() }),
       );
     }
-  }
-
-  private batchFailed(error: unknown): void {
-    this.busy.set(false);
-    const type = problemType(error);
-    this.batchProblem.set(type === 'network' || type === 'access-denied' ? type : 'unknown');
-    this.selected.set(new Set());
-    this.store.dispatch(
-      ReviewsActions.pageChanged({ pageIndex: this.pageIndex(), pageSize: this.pageSize() }),
-    );
   }
 
   /**

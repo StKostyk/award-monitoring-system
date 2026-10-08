@@ -218,6 +218,57 @@ test.describe('reviewer queue', () => {
     ).toBe('SUBMITTED FACULTY_SECRETARY');
   });
 
+  test('ac4_2 ac4_3 a conflict keeps the dialog and the comment, which survives a reload', async ({
+    browser,
+  }) => {
+    const title = `Грамота з конфліктом ${uniqueToken()}`;
+    const comment = 'Додайте скан наказу';
+    const id = await submittedBy(browser, owner, title, UNIVERSITY);
+    const page = await signedInAs(browser, first, FRESH_PASSWORD);
+    const decisions = `**/api/v1/awards/${id}/decisions`;
+    await page.route(decisions, (route) =>
+      route.fulfill({
+        status: 409,
+        contentType: 'application/problem+json',
+        body: JSON.stringify({
+          type: 'urn:awards:problem:request-claimed',
+          status: 409,
+          reviewer: { id: 1, name: 'Олена Коваль', email: 'kovalh@chnu.edu.ua' },
+        }),
+      }),
+    );
+    await openAward(page, id);
+
+    await page.getByTestId('review-return').click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByTestId('decision-comment').fill(comment);
+    await dialog.getByTestId('decision-confirm').click();
+    await expect(dialog.getByTestId('decision-error')).toHaveText(
+      'Нагороду вже взяв у роботу Олена Коваль',
+    );
+    await expect(dialog.getByTestId('decision-comment')).toHaveValue(comment);
+    await expect(dialog.getByTestId('decision-confirm')).toBeFocused();
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.unroute(decisions);
+    await openAward(page, id);
+    await page.getByTestId('review-return').click();
+    await expect(dialog.getByTestId('decision-comment')).toHaveValue(comment);
+    await dialog.getByTestId('decision-confirm').click();
+    await expect(page).toHaveURL(/\/reviews$/);
+    expect(
+      sql(
+        `select comments from review_decisions where request_id = (select request_id from award_requests where award_id = ${id})`,
+      ),
+    ).toBe(comment);
+
+    expect(
+      await page.evaluate(() =>
+        Object.keys(sessionStorage).filter((key) => key.startsWith('awards.decision-draft')),
+      ),
+    ).toEqual([]);
+  });
+
   test('ac3_1 ac3_6 the owner withdraws an unclaimed award and edits it', async ({ browser }) => {
     const title = `Грамота для відкликання ${uniqueToken()}`;
     const id = await submittedBy(browser, owner, title, UNIVERSITY);
