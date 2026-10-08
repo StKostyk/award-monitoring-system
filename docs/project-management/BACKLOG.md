@@ -58,7 +58,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 | 3.1.6 | CI fixes: nginx proxy snippet and Kyiv dates | 1 | ✅ Done (Sprint 4) | SCRUM-46 | [#140](https://github.com/StKostyk/award-monitoring-system/issues/140) |
 
 ### Epic 4 — Approval Workflow Engine (Jira epic SCRUM-47)
-Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLOW-STATUS.md). Kickoff 2026-10-06; the organisational award model comes first, the achievement pages last. Story 2.4.1 from Epic 2 belongs here. Feature 4.1 PRD approved 2026-10-06: [feature-4.1-workflow-engine-core.md](../features/epic-04/feature-4.1-workflow-engine-core.md).
+Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLOW-STATUS.md). Kickoff 2026-10-06; the organisational award model comes first, the achievement pages last. Story 2.4.1 from Epic 2 belongs here. Feature 4.1 PRD approved 2026-10-06: [feature-4.1-workflow-engine-core.md](../features/epic-04/feature-4.1-workflow-engine-core.md). Feature 4.2 PRD approved 2026-10-08: [feature-4.2-review-period-escalation.md](../features/epic-04/feature-4.2-review-period-escalation.md).
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
@@ -71,6 +71,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.2.1 | Per-faculty review period set by the dean | 3 | Sprint 5 | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
 | 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | Sprint 5 | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
 | 2.4.1 | Award correction by reviewers | 5 | Sprint 5 | SCRUM-55 | [#149](https://github.com/StKostyk/award-monitoring-system/issues/149) |
+| 4.2.3 | Keep the decision dialog open until the answer | 2 | Sprint 5 | SCRUM-59 | [#162](https://github.com/StKostyk/award-monitoring-system/issues/162) |
 | 4.3.1 | Colleague visibility and the achievements page | 5 | Sprint 5 | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
 | 4.3.2 | Unit achievement pages and public achievements | 5 | Sprint 5 | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 
