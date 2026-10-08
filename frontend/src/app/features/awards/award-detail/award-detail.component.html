@@ -94,7 +94,12 @@
         </button>
       }
       @if (withdrawable(award)) {
-        <button mat-stroked-button type="button" (click)="withdraw(award)" data-testid="award-withdraw">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="withdraw(award)"
+          data-testid="award-withdraw"
+        >
           {{ 'awards.withdraw.action' | transloco }}
         </button>
       }
