@@ -39,7 +39,8 @@ class AwardStatusEndpointsTest extends AbstractAwardEndpointsTest {
         Instant deadline = Instant.parse("2026-10-01T09:00:00Z");
         when(statusService.status(5L)).thenReturn(new AwardStatusView(5L, AwardStatus.PENDING,
             RequestStatus.RETURNED, ApprovalLevel.DEAN, Instant.parse("2026-09-28T09:00:00Z"), deadline,
-            LocalDate.of(2026, 10, 7), true, null, null, new StatusDelay(DelayReason.REVIEW_OVERDUE, deadline),
+            LocalDate.of(2026, 10, 7), true, null, null, new StatusDelay(DelayReason.REVIEW_OVERDUE, deadline,
+                Instant.parse("2026-10-01T10:05:00Z")),
             List.of(new PathStep(ApprovalLevel.FACULTY_SECRETARY, StepState.DONE, null,
                     Instant.parse("2026-09-29T10:00:00Z")),
                 new PathStep(ApprovalLevel.DEAN, StepState.CURRENT, LocalDate.of(2026, 10, 1), null)),
@@ -54,6 +55,7 @@ class AwardStatusEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.overdue").value(true))
             .andExpect(jsonPath("$.delay.reason").value("REVIEW_OVERDUE"))
             .andExpect(jsonPath("$.delay.since").value("2026-10-01T09:00:00Z"))
+            .andExpect(jsonPath("$.delay.noticedAt").value("2026-10-01T10:05:00Z"))
             .andExpect(jsonPath("$.path[0].state").value("DONE"))
             .andExpect(jsonPath("$.path[1].dueDate").value("2026-10-01"))
             .andExpect(jsonPath("$.decisions[0].reviewerName").value("Петро Мартинюк"))

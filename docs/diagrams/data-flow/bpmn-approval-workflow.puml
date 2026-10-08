@@ -20,8 +20,9 @@ repeat
     endif
     note right
         One by one or in a batch (4.1.4).
-        A missed deadline only marks the request
-        overdue; the reviewers are reminded (4.2.2).
+        A missed deadline: the hourly job marks the
+        request once per level and e-mails the next
+        level with a reviewer (4.2.2).
         Nothing escalates on its own.
     end note
     switch (Decision?)

@@ -198,6 +198,19 @@ for example **"Review period: 3 working days (default)"**.
 3. The new period applies to deadlines set from now on (a new submission, a resubmission or a move to the dean);
    deadlines already set stay. The rector's levels always keep the default.
 
+### Overdue requests
+
+Once an hour the system checks for open requests whose deadline has passed. Each such request is marked once per
+level, and the reviewers of the next level with a reviewer get one e-mail per check listing them («Прострочені
+заявки: N / Overdue requests: N»). Nothing moves or decides a request on its own.
+
+1. A marked request carries **Overdue** and **"Manager notified <date>"** in the queue.
+2. Tick **"Manager notified"** to list only marked requests; a dean's **"Overdue at the level below"** lists the
+   faculty secretaries' marked requests, which the dean may take over.
+3. The owner's status page reads **"The review period ended <date>; the manager was notified <date>"**.
+4. A move to another level, a return, a resubmission or a withdrawal clears the mark with the new deadline. The
+   queue counts in the monitoring metrics are refreshed by the same hourly check.
+
 ### Working on an award
 
 The **Review** panel of the award page shows who reviews it and the deadline.

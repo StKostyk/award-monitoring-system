@@ -1,6 +1,8 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +21,7 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.ReviewDecision;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.event.AwardDecided;
+import ua.edu.chnu.awards.award.event.ReviewMeasured;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
@@ -37,6 +40,24 @@ public class DecisionLog {
     private final UserRepository users;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
+
+    /**
+     * Publishes the decision for the review metrics, before the decision row is written and the request moves.
+     *
+     * @param request   the request before the decision
+     * @param level     the deciding level
+     * @param type      what the row will record
+     * @param decidedAt when
+     */
+    public void measure(AwardRequest request, ApprovalLevel level, ReviewDecisionType type, Instant decidedAt) {
+        Instant reached = decisions.findByRequestId(request.getId()).stream()
+            .map(ReviewDecision::getDecidedAt)
+            .filter(request.getSubmittedAt()::isBefore)
+            .max(Comparator.naturalOrder())
+            .orElse(request.getSubmittedAt());
+        boolean onTime = request.getDeadline() == null || decidedAt.isBefore(request.getDeadline());
+        events.publishEvent(new ReviewMeasured(level, type, onTime, Duration.between(reached, decidedAt)));
+    }
 
     /**
      * Saves the decision row, inside the caller's transaction.

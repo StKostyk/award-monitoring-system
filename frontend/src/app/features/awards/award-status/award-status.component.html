@@ -58,6 +58,11 @@
               'awards.statusPanel.noReviewer'
                 | transloco: { level: ('roles.' + view.currentLevel | transloco) }
             }}
+          } @else if (delay.since && delay.noticedAt) {
+            {{
+              'awards.statusPanel.overdueNoticed'
+                | transloco: { since: date(delay.since), noticed: date(delay.noticedAt) }
+            }}
           } @else if (delay.since && view.estimatedCompletion) {
             {{
               'awards.statusPanel.overdue'

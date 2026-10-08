@@ -32,6 +32,7 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
     submittedAt: '2026-10-01T08:00:00Z',
     deadline: '2026-10-06T20:59:59Z',
     overdue: true,
+    overdueNoticedAt: null,
     documentCount: 0,
     delegatedFrom: null,
     ...overrides,

@@ -570,6 +570,8 @@
 | `current_level` | `VARCHAR(30)` | НІ | - | CK | Поточний рівень затвердження |
 | `submitted_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу подання |
 | `deadline` | `TIMESTAMPTZ` | ТАК | - | - | Кінець періоду розгляду на поточному рівні (встановлюється при поданні починаючи з V024) |
+| `overdue_noticed_at` | `TIMESTAMPTZ` | ТАК | - | CK пари | Коли щогодинне завдання помітило минулий термін і надіслало лист наступному рівню з рецензентом; очищується з кожним новим терміном (інший рівень, повторне подання, повернення, відкликання) (V033, 4.2.2) |
+| `overdue_noticed_level` | `VARCHAR(30)` | ТАК | - | CK як `current_level`; CK пари | Рівень, на якому чекав запит у момент позначки; встановлюється й очищується разом з `overdue_noticed_at` (`ck_award_requests_noticed_pair`) (V033) |
 | `completed_at` | `TIMESTAMPTZ` | ТАК | - | - | Мітка часу остаточного рішення |
 | `rejection_reason` | `TEXT` | ТАК | - | - | Причина якщо відхилено |
 | `created_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу створення запису |
@@ -608,6 +610,7 @@
 - `idx_requests_active` - Частковий B-tree на `(current_reviewer_id, created_at DESC)` де `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`
 - `idx_requests_status_level` - B-tree на `(status, current_level)` (V012)
 - `idx_requests_submitted` - B-tree на `submitted_at DESC` (V012)
+- `idx_requests_overdue_unnoticed` - Частковий B-tree на `deadline` де `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED') AND overdue_noticed_at IS NULL` (V033, завдання прострочень)
 - `idx_requests_open_level` - Частковий B-tree на `(current_level, deadline, request_id)` де `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`: черга розгляду (V028)
 
 **Зв'язки**:
@@ -737,6 +740,7 @@
 - `DOCUMENT_REJECTED` - антивірусний сканер відхилив завантаження (`entity_type` = `documents`, `entity_id` null, бо нічого не збережено, `user_id` = той, хто завантажує; `new_values` = `awardId` і знайдена ClamAV `signature`; ніколи не назва файлу) (функція 3.1.3)
 - `REVIEW_BATCH` - рецензент застосував одне рішення до кількох нагород через `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = рецензент; `new_values` = `decision`, `items`, `done`, `failed`); кожна вирішена нагорода має також власний рядок `REVIEW_DECISION` (4.1.4)
 - `REVIEW_PERIOD_CHANGED` - декан (власна роль або доручення) чи системний адміністратор змінив термін розгляду факультету через `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = факультет, `user_id` = виконавець; `old_values`/`new_values` = `workingDays` (власне значення, null для типового) і `effectiveWorkingDays`; `new_values.delegatorId` за дорученням); незмінене значення рядка не пише (4.2.1)
+- `REVIEW_OVERDUE_NOTICED` - щогодинне завдання позначило відкритий запит із минулим терміном (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = id адресатів листа, порожньо на рівні ректора чи без рецензента вище); один раз на рівень (4.2.2)
 - `DATA_DELETE` - Права GDPR
 - `APPROVAL`, `REJECTION` - Рішення робочого процесу
 

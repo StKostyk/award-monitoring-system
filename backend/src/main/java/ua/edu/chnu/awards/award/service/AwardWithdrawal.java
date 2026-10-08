@@ -61,7 +61,7 @@ public class AwardWithdrawal {
         ownership.requireVersion(award, body == null ? null : body.version());
         final RequestStatus from = request.getStatus();
         request.setStatus(RequestStatus.WITHDRAWN);
-        request.setDeadline(null);
+        request.restartPeriod(null);
         award.setStatus(AwardStatus.DRAFT);
         requests.saveAndFlush(request);
         awards.saveAndFlush(award);

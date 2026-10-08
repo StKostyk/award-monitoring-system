@@ -1020,8 +1020,7 @@ paths:
             type: boolean
             default: false
           description: >
-            True for requests whose overdue notice went to the next level (`overdueNoticedAt` set); planned, 4.2.2
-          x-status: planned
+            True for requests whose overdue notice went to the next level (`overdueNoticedAt` set)
         - name: overdue
           in: query
           schema:
@@ -2966,6 +2965,10 @@ components:
             since:
               type: [string, 'null']
               format: date-time
+            noticedAt:
+              type: [string, 'null']
+              format: date-time
+              description: When the next level was told about the missed deadline; null while not yet
         path:
           type: array
           description: Approval levels from the faculty secretary up, lowest first
@@ -3235,6 +3238,10 @@ components:
           format: date-time
         overdue:
           type: boolean
+        overdueNoticedAt:
+          type: [string, 'null']
+          format: date-time
+          description: When the next level was told about the missed deadline; null while not yet
         documentCount:
           type: integer
           format: int64

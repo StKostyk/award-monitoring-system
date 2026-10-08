@@ -71,9 +71,10 @@ public class AwardStatusService {
         }
         if (!reviewers.hasReviewer(request.getCurrentLevel(), award.getOrganization().getId(),
             award.getOwner().getId())) {
-            return new StatusDelay(DelayReason.NO_REVIEWER, null);
+            return new StatusDelay(DelayReason.NO_REVIEWER, null, null);
         }
-        return timeline.overdue() ? new StatusDelay(DelayReason.REVIEW_OVERDUE, timeline.deadline()) : null;
+        return timeline.overdue() ? new StatusDelay(DelayReason.REVIEW_OVERDUE, timeline.deadline(),
+            request.getOverdueNoticedAt()) : null;
     }
 
     private static List<PathStep> steps(AwardRequest request, StatusEstimator.Timeline timeline,

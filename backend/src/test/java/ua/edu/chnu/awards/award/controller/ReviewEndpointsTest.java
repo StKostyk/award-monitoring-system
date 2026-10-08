@@ -67,7 +67,18 @@ class ReviewEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.content[0].reviewer").isEmpty())
             .andExpect(jsonPath("$.totalElements").value(1));
         verify(queue).list(new ReviewQuery(ReviewQuery.Assignment.UNASSIGNED, ApprovalLevel.FACULTY_SECRETARY, 64L,
-            true), 0, 20);
+            true, false), 0, 20);
+    }
+
+    @Test
+    void ac2_4_theNoticedFilterReachesTheQueueAndItemsCarryTheNotice() throws Exception {
+        when(queue.list(any(), anyInt(), anyInt())).thenReturn(new PageImpl<>(List.of(item()), PageRequest.of(0, 20),
+            1));
+
+        mockMvc.perform(get(REVIEWS).param("level", "FACULTY_SECRETARY").param("noticed", "true").with(secretary()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content[0].overdueNoticedAt").value("2026-10-07T08:05:00Z"));
+        verify(queue).list(new ReviewQuery(null, ApprovalLevel.FACULTY_SECRETARY, null, false, true), 0, 20);
     }
 
     @Test
@@ -154,6 +165,6 @@ class ReviewEndpointsTest extends AbstractAwardEndpointsTest {
         return new ReviewItem(5L, 8L, 3L, "Certificate", "Грамота", AwardRecipient.PERSON,
             new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"), null, null,
             ApprovalLevel.FACULTY_SECRETARY, RequestStatus.SUBMITTED, null, Instant.parse("2026-10-01T08:00:00Z"),
-            Instant.parse("2026-10-06T21:00:00Z"), false, 2, null);
+            Instant.parse("2026-10-06T21:00:00Z"), false, Instant.parse("2026-10-07T08:05:00Z"), 2, null);
     }
 }

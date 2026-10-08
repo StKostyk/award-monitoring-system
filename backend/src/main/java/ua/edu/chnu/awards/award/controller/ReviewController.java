@@ -49,6 +49,7 @@ public class ReviewController {
      * @param level          the level the requests wait at; the caller's own levels when absent
      * @param organizationId a faculty or department inside the caller's scopes
      * @param overdue        true for overdue requests only
+     * @param noticed        true for requests whose missed deadline the next level was told about only
      * @param page           0-based page
      * @param size           page size, capped at 100
      * @return the page, overdue and earliest deadline first
@@ -59,10 +60,11 @@ public class ReviewController {
                                          @RequestParam(required = false) ApprovalLevel level,
                                          @RequestParam(required = false) Long organizationId,
                                          @RequestParam(defaultValue = "false") boolean overdue,
+                                         @RequestParam(defaultValue = "false") boolean noticed,
                                          @RequestParam(defaultValue = "0") int page,
                                          @RequestParam(defaultValue = "20") int size) {
-        return PageResponse.of(queue.list(new ReviewQuery(assignment(assigned), level, organizationId, overdue),
-            page, size));
+        return PageResponse.of(queue.list(new ReviewQuery(assignment(assigned), level, organizationId, overdue,
+            noticed), page, size));
     }
 
     /**

@@ -309,6 +309,7 @@
       "upcomingBy": "by {{date}}",
       "estimate": "Expected completion: {{date}}",
       "overdue": "The review is taking longer than usual (since {{since}}). New expected date: {{date}}",
+      "overdueNoticed": "The review period ended {{since}}; the manager was notified {{noticed}}",
       "noReviewer": "Nobody currently holds the post of «{{level}}» for your unit. Please contact the dean's office",
       "returned": "Waiting for your corrections",
       "completed": "Review completed: {{date}}",
@@ -542,7 +543,9 @@
     "filters": {
       "level": "Review level",
       "unit": "Unit",
-      "all": "All"
+      "all": "All",
+      "noticed": "Manager notified",
+      "lowerOverdue": "Overdue at the level below"
     },
     "columns": {
       "title": "Award",
@@ -555,6 +558,7 @@
       "reviewer": "Reviewer"
     },
     "overdue": "Overdue",
+    "noticed": "Manager notified {{date}}",
     "empty": "No awards to review",
     "back": "Back to reviews",
     "panel": {

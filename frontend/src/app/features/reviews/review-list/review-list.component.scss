@@ -47,6 +47,12 @@
   gap: 8px;
 }
 
+.reviews__noticed {
+  --mat-chip-outline-width: 0;
+  --mat-chip-elevated-container-color: var(--mat-sys-tertiary-container);
+  --mat-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+}
+
 .reviews__overdue {
   --mat-chip-outline-width: 0;
   --mat-chip-elevated-container-color: var(--mat-sys-error-container);

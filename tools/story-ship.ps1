@@ -67,6 +67,13 @@ if ($CommitBody) { git commit -q -m $Commit -m $CommitBody } else { git commit -
 if ($LASTEXITCODE) { throw 'Commit failed (hook or nothing to commit).' }
 git push -u origin $branch
 if ($LASTEXITCODE) { throw 'Push failed; is the SSH key loaded?' }
+if ($Base -ne 'develop') {
+    git ls-remote --exit-code --heads origin $Base *> $null
+    if ($LASTEXITCODE) {
+        Write-Host "Base $Base no longer exists on origin; the pull request targets develop."
+        $Base = 'develop'
+    }
+}
 $url = gh pr create --base $Base --head $branch --title "${Key}: $Title" --body-file $BodyFile
 if ($LASTEXITCODE) { throw 'Pull request was not created.' }
 

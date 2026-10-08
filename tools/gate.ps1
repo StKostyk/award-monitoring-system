@@ -78,10 +78,12 @@ if ($StaticOnly) {
     if ($frontendStaticOk) { exit 0 } else { exit 1 }
 }
 
-$backendChanged = @(git -C $root diff --name-only develop -- backend) + @(git -C $root status --porcelain -- backend)
+$backendPaths = @('backend', 'docs/api/openapi.yml')
+$backendChanged = @(git -C $root diff --name-only develop -- $backendPaths) +
+    @(git -C $root status --porcelain -- $backendPaths)
 $backendOk = $true
 $unit = $integration = $coverage = '-'
-$backendStatus = 'SKIPPED (no backend changes since develop; -Full runs it)'
+$backendStatus = 'SKIPPED (no backend or openapi.yml changes since develop; -Full runs it)'
 if ($Full -or ($backendChanged | Where-Object { $_ })) {
     docker info --format '{{.ServerVersion}}' *> $null
     if ($LASTEXITCODE -ne 0) {

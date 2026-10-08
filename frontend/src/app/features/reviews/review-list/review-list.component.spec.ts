@@ -46,6 +46,7 @@ function reviewItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     submittedAt: '2026-10-01T08:00:00Z',
     deadline: '2026-10-06T20:59:59Z',
     overdue: false,
+    overdueNoticedAt: null,
     documentCount: 2,
     delegatedFrom: null,
     ...overrides,
@@ -74,6 +75,8 @@ const translations = {
       title: 'На розгляді',
       tabs: { mine: 'Мої', unassigned: 'Нерозподілені', all: 'Усі' },
       overdue: 'Прострочено',
+      noticed: 'Керівника повідомлено {{date}}',
+      filters: { noticed: 'Повідомлені', lowerOverdue: 'Прострочені нижчого рівня' },
       empty: 'Немає нагород на розгляді',
       batch: {
         selected: 'Вибрано: {{count}}',
@@ -198,6 +201,56 @@ describe('ReviewListComponent', () => {
     expect(rows[1].querySelector('[data-testid="review-reviewer"]')?.textContent).toContain(
       'Олена Петрук',
     );
+  });
+
+  it('ac2_4_a_noticed_request_shows_the_notice_next_to_the_overdue_chip', async () => {
+    await create();
+    load([
+      reviewItem(),
+      reviewItem({
+        awardId: 6,
+        requestId: 9,
+        overdue: true,
+        overdueNoticedAt: '2026-10-07T08:05:00Z',
+      }),
+    ]);
+    const rows = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="review-item"]',
+    );
+
+    expect(rows[0].querySelector('[data-testid="review-noticed"]')).toBeNull();
+    expect(rows[1].querySelector('[data-testid="review-noticed"]')?.textContent).toContain(
+      'Керівника повідомлено 07.10.2026',
+    );
+  });
+
+  it('ac2_4_the_noticed_filter_toggles_the_query', async () => {
+    await create();
+    const element: HTMLElement = fixture.nativeElement;
+
+    element.querySelector<HTMLInputElement>('[data-testid="review-filter-noticed"] input')?.click();
+
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.filtersChanged({ filters: { ...NO_REVIEW_FILTERS, noticed: true } }),
+    );
+    expect(element.querySelector('[data-testid="review-filter-lower-overdue"]')).toBeNull();
+  });
+
+  it('ac2_4_a_dean_lists_the_noticed_requests_of_the_faculty_secretaries', async () => {
+    const own = permissions();
+    permissions.set(readPermissions(token({ role_scopes: ['DEAN:9'] })));
+    await create();
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLElement>('[data-testid="review-filter-lower-overdue"]')
+      ?.click();
+
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.filtersChanged({
+        filters: { ...NO_REVIEW_FILTERS, level: 'FACULTY_SECRETARY', noticed: true },
+      }),
+    );
+    permissions.set(own);
   });
 
   it('ac1_10_opens_the_award_on_a_row_click', async () => {

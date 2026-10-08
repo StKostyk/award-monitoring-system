@@ -127,7 +127,7 @@ public class AwardSubmission {
         request.setStatus(RequestStatus.SUBMITTED);
         request.setCurrentReviewer(null);
         request.setSubmittedAt(now);
-        request.setDeadline(estimator.deadline(award, request.getCurrentLevel(), now));
+        request.restartPeriod(estimator.deadline(award, request.getCurrentLevel(), now));
         request.setCompletedAt(null);
         return request;
     }

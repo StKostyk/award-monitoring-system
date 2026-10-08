@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Overdue requests are noticed once per level with a digest e-mail to the next level, a queue filter and review SLA metrics (SCRUM-54)
 - Per-faculty review period: the dean sets 1-20 working days for the faculty levels on /reviews; deadlines set from then on follow it (4.2.1)
 - Batch review: approve, return, reject or escalate up to 50 queue items at once, with per-item results and comment templates (4.1.4)
 - Owners withdraw a pending award no reviewer has claimed and resubmit returned or withdrawn awards on the same request (4.1.3)

@@ -78,7 +78,8 @@ public class ReviewItemMapper {
             award.getTitleUk(), AwardMapper.recipient(award), UserRef.of(award.getOwner()),
             AwardMapper.organizationRef(award.getOrganization()), AwardMapper.categoryRef(award.getCategory()),
             request.getCurrentLevel(), request.getStatus(), UserRef.of(request.getCurrentReviewer()),
-            request.getSubmittedAt(), timeline.deadline(), timeline.overdue(), documentCount,
+            request.getSubmittedAt(), timeline.deadline(), timeline.overdue(), request.getOverdueNoticedAt(),
+            documentCount,
             UserRef.of(delegator));
     }
 }

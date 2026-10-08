@@ -53,9 +53,10 @@ public class MailDelivery {
      * @param to the recipient address
      * @param subject the subject line
      * @param text the plain-text body
+     * @return true when the mail server accepted the message
      */
-    public void send(String to, String subject, String text) {
-        send(List.of(to), subject, text);
+    public boolean send(String to, String subject, String text) {
+        return send(List.of(to), subject, text);
     }
 
     /**
@@ -64,8 +65,9 @@ public class MailDelivery {
      * @param to the recipient addresses
      * @param subject the subject line
      * @param text the plain-text body
+     * @return true when the mail server accepted the message
      */
-    public void send(List<String> to, String subject, String text) {
+    public boolean send(List<String> to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(to.toArray(String[]::new));
@@ -79,7 +81,7 @@ public class MailDelivery {
                 } finally {
                     smtp.unlock();
                 }
-                return;
+                return true;
             } catch (MailException e) {
                 log.warn("Email '{}' to {} failed (attempt {} of {}): {}", subject, to, attempt, ATTEMPTS,
                     e.getMessage());
@@ -89,6 +91,7 @@ public class MailDelivery {
             }
         }
         log.error("Email '{}' to {} was not delivered", subject, to);
+        return false;
     }
 
     private static void sleep(long millis) {
