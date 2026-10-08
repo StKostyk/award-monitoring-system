@@ -2966,10 +2966,6 @@ components:
             since:
               type: [string, 'null']
               format: date-time
-            noticedAt:
-              type: [string, 'null']
-              format: date-time
-              description: When the next level was told about the overdue request (planned, 4.2.2)
         path:
           type: array
           description: Approval levels from the faculty secretary up, lowest first
@@ -3239,10 +3235,6 @@ components:
           format: date-time
         overdue:
           type: boolean
-        overdueNoticedAt:
-          type: [string, 'null']
-          format: date-time
-          description: When the next level was told about the overdue request at this level (planned, 4.2.2)
         documentCount:
           type: integer
           format: int64
@@ -3302,10 +3294,10 @@ components:
 
     VersionAction:
       type: string
-      enum: [BASELINE, CREATED, UPDATED, SUBMITTED, DECIDED, CORRECTED]
+      enum: [BASELINE, CREATED, UPDATED, SUBMITTED, DECIDED]
       description: >
         What produced the version; `BASELINE` is the state of an award when versioning started, `DECIDED` a
-        reviewer decision that changed the award's status, `CORRECTED` a reviewer's correction (planned, 2.4.1)
+        reviewer decision that changed the award's status
 
     AwardSnapshot:
       type: object
@@ -3386,9 +3378,6 @@ components:
           description: Fields that differ from the previous visible version; empty for the first
           items:
             $ref: '#/components/schemas/FieldChange'
-        comment:
-          type: [string, 'null']
-          description: The reason of a `CORRECTED` version; empty otherwise (planned, 2.4.1)
 
     AwardCorrection:
       type: object

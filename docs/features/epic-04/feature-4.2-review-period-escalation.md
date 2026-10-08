@@ -205,6 +205,8 @@ Mailpit in development, the SMTP relay in production (unchanged). Prometheus scr
 
 ### 8.1 OpenAPI stubs (written to `openapi.yml` in this PRD's PR, `x-status: planned`)
 
+New operations and schemas are stubbed now. New properties and enum values of schemas the contract tests compare with the DTOs (`StatusDelay.noticedAt`, `ReviewItem.overdueNoticedAt`, `VersionAction.CORRECTED`, `AwardVersion.comment`) enter `openapi.yml` with the story that implements them.
+
 - `GET /organizations/{id}/review-period` → 200 `ReviewPeriod`; 401, 403, 404. 4.2.1.
 - `PUT /organizations/{id}/review-period`, body `ReviewPeriodUpdate` → 200 `ReviewPeriod`; 401, 403, 404, 422. 4.2.1.
 - `ReviewPeriod`: `organizationId` (int64), `workingDays` (integer, nullable: own value), `effectiveWorkingDays` (integer), `defaultWorkingDays` (integer), `updatable` (boolean: the caller may change it).
