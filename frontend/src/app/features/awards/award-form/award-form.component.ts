@@ -152,6 +152,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   };
   readonly categories = signal<{ category: CategoryNode; depth: number }[]>([]);
   readonly current = signal<Award | null>(null);
+  /** The reviewer's return of the draft being edited, shown until the draft is submitted again. */
+  readonly returned = signal<{ comment: string | null } | null>(null);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly notFound = signal(false);
@@ -538,6 +540,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
           return;
         }
         this.show(award);
+        this.returned.set(
+          award.request?.status === 'RETURNED' ? { comment: award.request.returnComment ?? null } : null,
+        );
         this.stale.set(false);
         this.problem.set(null);
         this.offerCopy();

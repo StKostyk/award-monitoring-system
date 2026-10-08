@@ -71,6 +71,7 @@ const translations = {
       statusPanel: {
         title: 'Статус розгляду',
         submitted: 'Подано',
+        resubmitted: 'Подано повторно',
         upcomingBy: 'до {{date}}',
         estimate: 'Орієнтовне завершення: {{date}}',
         overdue: 'Розгляд триває довше, ніж зазвичай (з {{since}}). Нова орієнтовна дата: {{date}}',
@@ -181,6 +182,22 @@ describe('AwardStatusComponent', () => {
     expect(steps[1].textContent).toContain('Декан');
     expect(text(element, 'award-status-estimate')).toContain('Орієнтовне завершення: 04.10.2026');
     expect(element.querySelector('[data-testid="award-status-delay"]')).toBeNull();
+  });
+
+  it('ac3_4_a_resubmission_after_a_return_is_shown_as_submitted_again', async () => {
+    service.status.mockReturnValue(
+      of({ ...returned, requestStatus: 'SUBMITTED', submittedAt: '2026-10-02T08:00:00Z' }),
+    );
+    const element = await create();
+
+    expect(text(element, 'award-status-submitted')?.trim()).toBe('Подано повторно');
+  });
+
+  it('ac3_4_a_first_submission_is_shown_as_submitted', async () => {
+    service.status.mockReturnValue(of(submitted));
+    const element = await create();
+
+    expect(text(element, 'award-status-submitted')?.trim()).toBe('Подано');
   });
 
   it('edge_an_award_without_request_hides_the_panel_and_does_not_poll', async () => {

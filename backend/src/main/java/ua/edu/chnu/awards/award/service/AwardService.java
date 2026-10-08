@@ -3,8 +3,6 @@ package ua.edu.chnu.awards.award.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,7 +20,6 @@ import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
-import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.document.service.DocumentService;
@@ -38,7 +35,7 @@ import lombok.RequiredArgsConstructor;
 public class AwardService {
 
     private final AwardRepository awards;
-    private final AwardRequestRepository requests;
+    private final RequestLookup requests;
     private final AwardSpecifications specifications;
     private final AwardInputRules rules;
     private final AwardOwnership ownership;
@@ -86,13 +83,15 @@ public class AwardService {
     }
 
     /**
-     * Deletes the caller's draft; the objects of its documents are removed after the commit.
+     * Deletes the caller's draft that was never submitted (409 {@code award-has-request} otherwise); the objects
+     * of its documents are removed after the commit.
      *
      * @param id the draft
      */
     @Transactional
     public void delete(long id) {
         Award draft = ownership.lockedDraft(id);
+        requests.requireNeverSubmitted(id);
         documents.releaseObjectsOf(id);
         awards.delete(draft);
     }
@@ -107,7 +106,9 @@ public class AwardService {
     @Transactional(readOnly = true)
     public AwardResponse get(long id) {
         Award award = ownership.readableWithDetails(id);
-        return mapper.toResponse(award, requests.findByAwardId(id).orElse(null), warnings.of(award));
+        return requests.of(id)
+            .map(request -> mapper.toResponse(award, request, warnings.of(award), requests.returnComment(request)))
+            .orElseGet(() -> draftResponse(award));
     }
 
     /**
@@ -123,8 +124,7 @@ public class AwardService {
         PageRequest pageable = PageResponse.request(page, size,
             Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
         Page<Award> found = awards.findAll(specifications.ownedBy(access.callerId(), query), pageable);
-        Map<Long, AwardRequest> byAward = requests.findByAwardIdIn(found.map(Award::getId).getContent()).stream()
-            .collect(Collectors.toMap(request -> request.getAward().getId(), Function.identity()));
+        Map<Long, AwardRequest> byAward = requests.byAward(found.map(Award::getId).getContent());
         Map<Long, List<AwardWarning>> hints = warnings.forDrafts(found.getContent());
         return found.map(award -> mapper.toResponse(award, byAward.get(award.getId()),
             hints.getOrDefault(award.getId(), List.of())));

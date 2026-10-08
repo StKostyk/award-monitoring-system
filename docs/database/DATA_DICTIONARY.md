@@ -325,7 +325,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | Value | Description | Transitions To |
 |-------|-------------|----------------|
 | `DRAFT` | Initial state, being edited | PENDING |
-| `PENDING` | Submitted, awaiting approval | APPROVED, REJECTED, DRAFT (returned for changes) |
+| `PENDING` | Submitted, awaiting approval | APPROVED, REJECTED, DRAFT (returned for changes, or withdrawn by the owner before a claim) |
 | `APPROVED` | Approved through workflow | ARCHIVED |
 | `REJECTED` | Rejected during workflow; final | - |
 | `ARCHIVED` | Historical record, no longer active | - |
@@ -340,7 +340,9 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `ck_awards_date` - recreated as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`; the V005 version compared with the session date (UTC) and refused awards dated today between 00:00 and 03:00 Kyiv time
 - `fk_awards_organizations` - `organization_id` → `organizations(org_id)`
 
-**Submission** (`POST /awards/{id}/submit`): under a row lock on the draft, `status` becomes `PENDING`, `impact_score` the level base score, `organization_id` the owner's current department, one `award_requests` row is created (`SUBMITTED`, `FACULTY_SECRETARY`) and an `AWARD_SUBMITTED` row is written to `audit_logs` (`entity_type = 'awards'`, `entity_id` = the award). A draft with another award of the same owner on the same `award_date` and a `pg_trgm` similarity of at least 0.6 on the lower-cased `title` or `title_uk` is submitted only when the owner confirms it; the audit row then carries `duplicateAcknowledged: true`.
+**Submission** (`POST /awards/{id}/submit`): under a row lock on the draft, `status` becomes `PENDING`, `impact_score` the level base score, `organization_id` the owner's current department, one `award_requests` row is created (`SUBMITTED`, `FACULTY_SECRETARY`) and an `AWARD_SUBMITTED` row is written to `audit_logs` (`entity_type = 'awards'`, `entity_id` = the award). A draft with another award of the same owner on the same `award_date` and a `pg_trgm` similarity of at least 0.6 on the lower-cased `title` or `title_uk` is submitted only when the owner confirms it; the audit row then carries `duplicateAcknowledged: true`. A returned or withdrawn draft keeps its `award_requests` row: the submission locks it before the draft and reuses it (`SUBMITTED` at the returning level after a return, at the start level after a withdrawal; reviewer cleared, new `submitted_at` and `deadline`), so its `review_decisions` stay on the timeline; the audit row carries `resubmittedFrom`. Such a draft cannot be deleted (409 `award-has-request`).
+
+**Withdrawal** (`POST /awards/{id}/withdraw`, V030): the owner of a `PENDING` award whose request is `SUBMITTED` or `ESCALATED` with no `current_reviewer_id` sets the request `WITHDRAWN` (deadline null) and the award `DRAFT`, under the same request row lock as a claim; `AWARD_WITHDRAWN` is written to `audit_logs` with the former status and level.
 
 **Indexes**:
 - `pk_awards` - Primary key on `award_id`
@@ -580,13 +582,14 @@ The minimum approval level is the lowest role that may give the final approval; 
 **Request Status Values** (`status`):
 | Value | Description | Transitions To |
 |-------|-------------|----------------|
-| `SUBMITTED` | Initial submission, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED (a decision claims it in the same transaction) |
+| `SUBMITTED` | Initial submission, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED (a decision claims it in the same transaction), WITHDRAWN |
 | `IN_REVIEW` | Claimed by `current_reviewer_id` | SUBMITTED or ESCALATED (release), ESCALATED, APPROVED, REJECTED, RETURNED |
-| `ESCALATED` | Moved to a higher level by a decision, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED |
+| `ESCALATED` | Moved to a higher level by a decision, waiting to be claimed | IN_REVIEW (claim), ESCALATED, APPROVED, REJECTED, RETURNED, WITHDRAWN |
 | `APPROVED` | Final approval granted | - |
 | `REJECTED` | Final rejection | - |
-| `RETURNED` | Returned for corrections | SUBMITTED |
+| `RETURNED` | Returned for corrections | SUBMITTED (resubmission at the returning level) |
 | `EXPIRED` | Unused (kept in the check constraint) | - |
+| `WITHDRAWN` | Withdrawn by the owner before a claim (V030) | SUBMITTED (resubmission at the start level) |
 
 **Approval Levels** (`current_level`):
 | Value | Description | Next Level |

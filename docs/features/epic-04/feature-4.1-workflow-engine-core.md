@@ -131,7 +131,7 @@ The **reviewer rule** used below: a caller may review a request at level L when 
 |------|----------|
 | Two secretaries claim the same request at once | One 200, one 409 `request-claimed` (row lock + version) |
 | Decision sent while a colleague takes the request over | The second writer gets 409 `request-stale`; nothing is decided twice |
-| Owner withdraws while a secretary claims | Both lock the request row; one wins, the other answers 409 |
+| Owner withdraws while a secretary claims | Both lock the request row; one wins: a late withdrawal answers 409 `request-claimed`, a late claim 404 (the request left the queue) |
 | Reviewer loses the role (or the delegation ends) while holding a claim | The claim stays visible to peers as «Взято в роботу: <name>»; a decision by them answers 404; a peer or the dean takes it over (AC-1.6 allows a peer take-over when the holder is no longer eligible) |
 | Delegate and delegator both review the same faculty | Either may claim; a decision records `delegator_id` only for the delegate |
 | Secretary's own award, she is the only secretary | Starts at `DEAN` (AC-0.6); not in her queue |

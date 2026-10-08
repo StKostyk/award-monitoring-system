@@ -48,8 +48,19 @@ branch) and gave no rule for two reviewers of the same level opening the same re
    | same | return (comment required) | `RETURNED` | = | `DRAFT` |
    | same | reject (comment required) | `REJECTED` | = | `REJECTED` |
 
-   The withdraw and resubmit rows follow in 4.1.3 from the PRD table (Feature 4.1 §7.2). `APPROVED` and `REJECTED`
-   are final; `EXPIRED` stays in the check constraint, unused.
+   Rows of 4.1.3 (owner actions, `POST /awards/{id}/withdraw` and `POST /awards/{id}/submit`; the request row is
+   reused, so its decisions stay on the timeline):
+
+   | From (request) | Action | To (request) | Level | Award |
+   |----------------|--------|--------------|-------|-------|
+   | `SUBMITTED`, `ESCALATED` (no reviewer) | withdraw | `WITHDRAWN` | = | `DRAFT` |
+   | `RETURNED` | resubmit | `SUBMITTED` | = (or next not passed over) | `PENDING` |
+   | `WITHDRAWN` | resubmit | `SUBMITTED` | start level | `PENDING` |
+
+   `APPROVED` and `REJECTED` are final; `EXPIRED` stays in the check constraint, unused. A withdrawal locks the
+   request row before the award, as a claim and a decision do, and a submission does the same, so the owner's and the
+   reviewer's actions on one request run one after the other: a late withdrawal answers 409 `request-claimed`, a late
+   claim 404 (the request left the queue). A returned or withdrawn draft cannot be deleted (409 `award-has-request`).
 2. **Claim = reviewer + version + row lock.** `current_reviewer_id` names the holder; the request row is locked
    (`SELECT … FOR UPDATE`) and `award_requests.version` is checked, so of two claims at once exactly one succeeds and
    the other answers 409 `request-claimed` with the holder. A stale version answers 409 `request-stale`.

@@ -12,7 +12,7 @@ import { RoleScope } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { ReviewsService } from '../../reviews/reviews.service';
 import { AwardDocument, DocumentsService } from '../award-documents/documents.service';
-import { Award, AwardStatusView, AwardsService } from '../awards.service';
+import { Award, AwardRequestSummary, AwardStatusView, AwardsService } from '../awards.service';
 import { AwardSubmittedComponent } from '../award-submitted/award-submitted.component';
 import { AwardDetailComponent } from './award-detail.component';
 
@@ -54,6 +54,15 @@ const pending: Award = {
   createdAt: '2026-09-28T08:00:00Z',
   updatedAt: '2026-09-28T09:00:00Z',
   version: 3,
+};
+
+const returnedRequest: AwardRequestSummary = {
+  status: 'RETURNED',
+  currentLevel: 'FACULTY_SECRETARY',
+  submittedAt: '2026-09-28T09:00:00Z',
+  deadline: null,
+  estimatedCompletion: null,
+  overdue: false,
 };
 
 const withoutRequest: AwardStatusView = {
@@ -106,6 +115,7 @@ describe('AwardDetailComponent', () => {
   const service = {
     get: vi.fn(),
     remove: vi.fn(),
+    withdraw: vi.fn(),
     versions: vi.fn(),
     categories: vi.fn(),
     auditTrail: vi.fn(),
@@ -154,6 +164,7 @@ describe('AwardDetailComponent', () => {
   beforeEach(() => {
     service.get.mockReset();
     service.remove.mockReset();
+    service.withdraw.mockReset();
     dialog.open.mockReset();
     service.versions.mockReset().mockReturnValue(of(noVersions));
     service.categories.mockReset().mockReturnValue(of([]));
@@ -487,6 +498,84 @@ describe('AwardDetailComponent', () => {
     const fixture = await open(AwardDetailComponent, '5');
 
     expect(fixture.nativeElement.querySelector('[data-testid="award-remove"]')).toBeNull();
+  });
+
+  it('edge_a_returned_draft_offers_editing_but_no_deletion', async () => {
+    granted.set(['award:update:own']);
+    service.get.mockReturnValue(
+      of({ ...pending, status: 'DRAFT', request: { ...returnedRequest } }),
+    );
+    const fixture = await open(AwardDetailComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-remove"]')).toBeNull();
+    expect(element.querySelector('[data-testid="award-edit"]')).not.toBeNull();
+  });
+
+  it('ac3_6_the_owner_withdraws_an_unclaimed_award_and_opens_the_form', async () => {
+    granted.set(['award:update:own']);
+    service.get.mockReturnValue(of(pending));
+    service.withdraw.mockReturnValue(of({ ...pending, status: 'DRAFT' }));
+    const fixture = await open(AwardDetailComponent, '5');
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="award-withdraw"]',
+    ) as HTMLButtonElement;
+
+    dialog.open.mockReturnValue({ afterClosed: () => of(false) });
+    button.click();
+    expect(service.withdraw).not.toHaveBeenCalled();
+
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    button.click();
+    expect(service.withdraw).toHaveBeenCalledWith(5, 3);
+    expect(navigate).toHaveBeenCalledWith(['/awards', 5, 'edit']);
+  });
+
+  it('ac3_6_a_claimed_request_or_somebody_elses_award_offers_no_withdrawal', async () => {
+    granted.set(['award:update:own']);
+    service.get.mockReturnValue(
+      of({ ...pending, request: { ...returnedRequest, status: 'IN_REVIEW' } }),
+    );
+    const claimed = await open(AwardDetailComponent, '5');
+    expect(claimed.nativeElement.querySelector('[data-testid="award-withdraw"]')).toBeNull();
+
+    const component = claimed.componentInstance;
+    expect(component.withdrawable({ ...pending, owner: { ...pending.owner, id: 22 } })).toBe(false);
+    expect(
+      component.withdrawable({ ...pending, request: { ...returnedRequest, status: 'ESCALATED' } }),
+    ).toBe(true);
+  });
+
+  it('ac3_6_a_refused_withdrawal_shows_why_and_reloads', async () => {
+    granted.set(['award:update:own']);
+    service.get.mockReturnValue(of(pending));
+    service.withdraw.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: { type: 'urn:awards:problem:request-claimed' },
+          }),
+      ),
+    );
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    const fixture = await open(AwardDetailComponent, '5');
+
+    fixture.componentInstance.withdraw(pending);
+
+    expect(fixture.componentInstance.notice()).toBe('awards.problems.request-claimed');
+    expect(service.get).toHaveBeenCalledTimes(2);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('edge_a_reload_after_a_change_reloads_the_history', async () => {
+    service.get.mockReturnValue(of(pending));
+    const fixture = await open(AwardDetailComponent, '5');
+    const loads = service.versions.mock.calls.length;
+
+    fixture.componentInstance.refresh(5);
+
+    expect(service.versions.mock.calls.length).toBe(loads + 1);
   });
 
   it('ac2_7_a_submitted_award_lists_its_documents_without_deletion', async () => {

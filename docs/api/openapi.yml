@@ -638,7 +638,9 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: The award was submitted (`urn:awards:problem:award-not-editable`)
+          description: >
+            `urn:awards:problem:award-not-editable` when the award was submitted, `award-has-request` with
+            `requestStatus` when it is a returned or withdrawn draft (its request and decisions are history)
           content:
             application/problem+json:
               schema:
@@ -658,6 +660,10 @@ paths:
         unit, and the caller's scope over it is checked again. The draft row is locked, so a repeated submission answers 409 (`award:create`).
         A draft that looks like another award of the owner (same date, similar title) is submitted only with
         `acknowledgeDuplicate: true`, and the audit row then records `duplicateAcknowledged`.
+        A returned or withdrawn draft reuses its request (the request row is locked before the draft row):
+        after a return it is `SUBMITTED` again at the level that returned it (or the next level the submitter
+        does not hold alone), after a withdrawal at the start level; reviewer cleared, new `submittedAt` and
+        deadline, earlier decisions kept on the timeline, and the audit row records `resubmittedFrom`.
       security:
         - bearerAuth: []
       operationId: submitAward
@@ -702,6 +708,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
+  /awards/{id}/withdraw:
+    post:
+      tags: [Workflows]
+      summary: Withdraw an own pending award no reviewer has claimed
+      description: >
+        Locks the request row (as a claim and a decision do), then the award. An unclaimed `SUBMITTED` or
+        `ESCALATED` request becomes `WITHDRAWN` with no deadline and the award a `DRAFT` again; the request leaves
+        every queue and an `AWARD_WITHDRAWN` audit row records the former status and level. A later submission
+        reuses the request from the start level (`award:update:own`).
+      security:
+        - bearerAuth: []
+      operationId: withdrawAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: false
+        description: Optional in the signature, but `version` is required; a missing body answers 422 on `version`.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardWithdrawRequest'
+      responses:
+        '200':
+          description: The draft with its `WITHDRAWN` request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >
+            `urn:awards:problem:request-claimed` when a reviewer holds the request (no reviewer named),
+            `award-not-pending` with `awardStatus` (and `requestStatus`) for a draft, a returned or a decided
+            award, or `award-stale` with `currentVersion`; nothing is changed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: "`urn:awards:problem:validation-failed`: `version` missing"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
   /awards/{id}/status:
     get:
       tags: [Awards]
@@ -711,8 +767,10 @@ paths:
         deadline of the current level, the expected completion (a Kyiv date, null for a returned or final
         request), whether the review is overdue and why it is delayed, and the reviewer decisions oldest first
         with their comments. Readable by the owner (any status) and by readers whose scope covers the award's
-        organisation (submitted awards only), as `GET /awards/{id}`; a draft answers without a request. Other
-        drafts, awards out of scope and unknown ids answer 404. Clients poll it at most once a minute.
+        organisation (submitted awards only), as `GET /awards/{id}`; a draft (also a returned or withdrawn one)
+        answers without a request. After a resubmission `submittedAt` is the new submission and the decisions
+        taken before it stay in `decisions`; a decision older than `submittedAt` marks the award as submitted
+        again. Other drafts, awards out of scope and unknown ids answer 404. Clients poll it at most once a minute.
       security:
         - bearerAuth: []
       operationId: getAwardStatus
@@ -2578,6 +2636,7 @@ components:
         - REJECTED
         - RETURNED
         - EXPIRED
+        - WITHDRAWN
 
     ApprovalLevel:
       type: string
@@ -2633,6 +2692,11 @@ components:
         overdue:
           type: boolean
           description: Whether the current level is past its deadline
+        returnComment:
+          type: [string, 'null']
+          description: >
+            The reviewer's comment of the latest return while the request is `RETURNED`; set only by
+            `GET /awards/{id}`, null everywhere else
 
     AwardStatusView:
       type: object
@@ -2885,6 +2949,15 @@ components:
           type: boolean
           default: false
           description: The owner confirmed that a possible duplicate is another award
+
+    AwardWithdrawRequest:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: Version of the award last read
 
     AwardPage:
       allOf:

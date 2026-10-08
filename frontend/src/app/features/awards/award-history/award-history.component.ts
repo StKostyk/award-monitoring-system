@@ -71,6 +71,11 @@ export class AwardHistoryComponent implements OnInit {
     this.list.load();
   }
 
+  /** Shows the newest versions again, after the award changed while the page was open. */
+  reload(): void {
+    this.list.reload();
+  }
+
   view(version: AwardVersion): void {
     const data: VersionDialogData = { version, names: this.names() };
     this.dialog.open(AwardVersionDialogComponent, { data, width: '560px', maxWidth: '95vw' });

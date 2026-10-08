@@ -80,7 +80,8 @@
       "APPROVED": "Approved",
       "REJECTED": "Rejected",
       "RETURNED": "Returned for changes",
-      "EXPIRED": "Expired"
+      "EXPIRED": "Expired",
+      "WITHDRAWN": "Withdrawn"
     },
     "levels": {
       "FACULTY_SECRETARY": "faculty secretary",
@@ -252,6 +253,15 @@
       "confirm": "Delete",
       "cancel": "Cancel"
     },
+    "withdraw": {
+      "action": "Withdraw",
+      "title": "Withdraw the award?",
+      "text": "It will become a draft again.",
+      "confirm": "Withdraw",
+      "cancel": "Cancel"
+    },
+    "returned": "A reviewer returned the award for changes: {{comment}}",
+    "returnedNoComment": "A reviewer returned the award for changes.",
     "submitted": {
       "title": "Award submitted",
       "text": "Submitted for review to the faculty secretary.",
@@ -287,11 +297,15 @@
       "access-denied": "You are not allowed to enter awards.",
       "network": "The server is not reachable. Your values are kept; please try again.",
       "unknown": "Something went wrong. Please try again.",
-      "recipient-out-of-scope": "You can no longer submit awards for this faculty or department. Choose “Me” or another unit."
+      "recipient-out-of-scope": "You can no longer submit awards for this faculty or department. Choose “Me” or another unit.",
+      "request-claimed": "A reviewer is already reviewing the award, so it can no longer be withdrawn.",
+      "award-not-pending": "The award is no longer under review, so it cannot be withdrawn.",
+      "award-has-request": "The award was submitted before, so it cannot be deleted: its request and decisions stay in the history."
     },
     "statusPanel": {
       "title": "Review status",
       "submitted": "Submitted",
+      "resubmitted": "Submitted again",
       "upcomingBy": "by {{date}}",
       "estimate": "Expected completion: {{date}}",
       "overdue": "The review is taking longer than usual (since {{since}}). New expected date: {{date}}",

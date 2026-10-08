@@ -20,7 +20,14 @@ const ORGANIZATION_TYPES: OrganizationType[] = ['DEPARTMENT', 'FACULTY', 'COLLEG
 
 export type AwardStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'ARCHIVED';
 export type RequestStatus =
-  'SUBMITTED' | 'IN_REVIEW' | 'ESCALATED' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'EXPIRED';
+  | 'SUBMITTED'
+  | 'IN_REVIEW'
+  | 'ESCALATED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'RETURNED'
+  | 'EXPIRED'
+  | 'WITHDRAWN';
 export type RecognitionLevel =
   | 'SPECIALITY'
   | 'DEPARTMENT'
@@ -81,7 +88,12 @@ export interface AwardRequestSummary {
   /** Kyiv date `YYYY-MM-DD` the last level is expected to finish; null while no level is reviewing. */
   estimatedCompletion: string | null;
   overdue: boolean;
+  /** The reviewer's comment while a returned award waits for resubmission; only on a single award. */
+  returnComment?: string | null;
 }
+
+/** Request statuses the owner may still withdraw, as long as no reviewer has claimed them. */
+export const WITHDRAWABLE_REQUEST_STATUSES: RequestStatus[] = ['SUBMITTED', 'ESCALATED'];
 
 /** Request statuses after which nothing changes any more. */
 export const FINAL_REQUEST_STATUSES: RequestStatus[] = ['APPROVED', 'REJECTED', 'EXPIRED'];
@@ -325,6 +337,11 @@ export class AwardsService {
 
   submit(id: number, version: number, acknowledgeDuplicate = false): Observable<Award> {
     return this.http.post<Award>(`${this.base}/${id}/submit`, { version, acknowledgeDuplicate });
+  }
+
+  /** Takes a pending award no reviewer has claimed back as a draft. */
+  withdraw(id: number, version: number): Observable<Award> {
+    return this.http.post<Award>(`${this.base}/${id}/withdraw`, { version });
   }
 
   /** The review timeline of an award. */

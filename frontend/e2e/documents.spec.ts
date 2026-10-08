@@ -7,6 +7,7 @@ import {
   freshEmployee,
   kyivDay,
   pastDay,
+  settled,
   shownDay,
   signIn,
   signedIn,
@@ -50,6 +51,7 @@ function row(page: Page, name: string) {
 }
 
 async function accessible(page: Page): Promise<void> {
+  await settled(page);
   const result = await new AxeBuilder({ page })
     .include('[data-testid="award-documents"]')
     .analyze();

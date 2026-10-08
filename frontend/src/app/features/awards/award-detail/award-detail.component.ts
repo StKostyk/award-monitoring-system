@@ -34,6 +34,7 @@ import {
   Award,
   AwardsService,
   UnitRef,
+  WITHDRAWABLE_REQUEST_STATUSES,
   awardTitle,
   categoryName,
   isOwnAward,
@@ -78,6 +79,7 @@ export class AwardDetailComponent implements OnInit {
   /** The result of the caller's last decision, with the level the request now waits at. */
   readonly decision = signal<{ key: string; level: ApprovalLevel } | null>(null);
   private readonly statusPanel = viewChild(AwardStatusComponent);
+  private readonly historyPanel = viewChild(AwardHistoryComponent);
   readonly canAudit = computed(() => this.auth.permissions().hasPermission('audit:read'));
 
   ngOnInit(): void {
@@ -128,12 +130,15 @@ export class AwardDetailComponent implements OnInit {
   }
 
   /**
-   * Reloads the award after its review status changed or was lost; an award no longer readable is replaced by
-   * the not-found notice, any other failure keeps what is shown.
+   * Reloads the award and its history after its review status changed or was lost; an award no longer readable
+   * is replaced by the not-found notice, any other failure keeps what is shown.
    */
   refresh(id: number): void {
     this.service.get(id).subscribe({
-      next: (award) => this.award.set(award),
+      next: (award) => {
+        this.award.set(award);
+        this.historyPanel()?.reload();
+      },
       error: (error: unknown) => {
         if (readProblem(error) !== 'failed') {
           this.award.set(null);
@@ -177,6 +182,46 @@ export class AwardDetailComponent implements OnInit {
   /** The caller's own draft, which the caller may delete. */
   ownDraft(award: Award): boolean {
     return award.status === 'DRAFT' && isOwnAward(award, this.auth.userId());
+  }
+
+  /** An own draft never submitted; a returned or withdrawn draft keeps its request and decisions. */
+  removable(award: Award): boolean {
+    return this.ownDraft(award) && !award.request;
+  }
+
+  /** The caller's pending award that no reviewer has claimed yet. */
+  withdrawable(award: Award): boolean {
+    return (
+      award.status === 'PENDING' &&
+      isOwnAward(award, this.auth.userId()) &&
+      canEditOwnAwards(this.auth.permissions()) &&
+      !!award.request &&
+      WITHDRAWABLE_REQUEST_STATUSES.includes(award.request.status)
+    );
+  }
+
+  /**
+   * Withdraws the award after confirmation and opens it in the form; a refusal shows why and reloads the award,
+   * since a reviewer may have claimed it in the meantime.
+   */
+  withdraw(award: Award): void {
+    confirmAction(this.dialog, 'awards.withdraw')
+      .pipe(
+        filter(Boolean),
+        tap(() => this.loading.set(true)),
+        switchMap(() => this.service.withdraw(award.id, award.version)),
+      )
+      .subscribe({
+        next: (draft) => {
+          this.loading.set(false);
+          void this.router.navigate(['/awards', draft.id, 'edit']);
+        },
+        error: (error: unknown) => {
+          this.loading.set(false);
+          this.notice.set(`awards.problems.${problemType(error)}`);
+          this.refresh(award.id);
+        },
+      });
   }
 
   /** An own draft the caller may also change. */

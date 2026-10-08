@@ -48,11 +48,25 @@ public class AwardMapper {
      * @return response
      */
     public AwardResponse toResponse(Award award, AwardRequest request, List<AwardWarning> warnings) {
+        return toResponse(award, request, warnings, null);
+    }
+
+    /**
+     * Builds the response of an award returned for changes, with the reviewer's comment.
+     *
+     * @param award         the award
+     * @param request       its approval request, null for a draft never submitted
+     * @param warnings      hints about the award data
+     * @param returnComment the comment of the return, null when the request was not returned
+     * @return response
+     */
+    public AwardResponse toResponse(Award award, AwardRequest request, List<AwardWarning> warnings,
+                                    String returnComment) {
         return new AwardResponse(award.getId(), award.getTitle(), award.getTitleUk(), award.getDescription(),
             award.getDescriptionUk(), categoryRef(award.getCategory()), award.getAwardingOrganization(),
             award.getAwardDate(), award.getExternalUrl(), award.getStatus(), award.getImpactScore(),
             UserRef.of(award.getOwner()), recipient(award), organizationRef(award.getOrganization()),
-            toSummary(award, request), List.copyOf(warnings), award.getCreatedAt(), award.getUpdatedAt(),
+            toSummary(award, request, returnComment), List.copyOf(warnings), award.getCreatedAt(), award.getUpdatedAt(),
             award.getVersion());
     }
 
@@ -70,12 +84,12 @@ public class AwardMapper {
             organization.getCode(), organization.getOrgType());
     }
 
-    private RequestSummary toSummary(Award award, AwardRequest request) {
+    private RequestSummary toSummary(Award award, AwardRequest request, String returnComment) {
         if (request == null) {
             return null;
         }
         StatusEstimator.Timeline timeline = estimator.timeline(award, request);
         return new RequestSummary(request.getStatus(), request.getCurrentLevel(), request.getSubmittedAt(),
-            timeline.deadline(), timeline.estimatedCompletion(), timeline.overdue());
+            timeline.deadline(), timeline.estimatedCompletion(), timeline.overdue(), returnComment);
     }
 }

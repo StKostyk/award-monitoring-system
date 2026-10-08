@@ -133,7 +133,7 @@ abstract class AbstractAwardEndpointsTest {
         RequestSummary request = status == AwardStatus.DRAFT ? null
             : new RequestSummary(RequestStatus.SUBMITTED, ApprovalLevel.FACULTY_SECRETARY,
                 Instant.parse("2026-09-28T09:00:00Z"), Instant.parse("2026-10-01T09:00:00Z"),
-                LocalDate.of(2026, 10, 7), false);
+                LocalDate.of(2026, 10, 7), false, null);
         return new AwardResponse(5L, null, "Грамота МОН", null, null,
             new CategoryRef(13L, "Ministry Recognition", "Відзнака міністерства", RecognitionLevel.NATIONAL),
             "МОН України", LocalDate.of(2025, 5, 1), null, status, request == null ? null : 80,

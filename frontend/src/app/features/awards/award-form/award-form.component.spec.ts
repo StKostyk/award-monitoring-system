@@ -170,6 +170,38 @@ describe('AwardFormComponent', () => {
     auth.isAuthenticated.set(true);
   });
 
+  it('ac3_5_a_returned_draft_shows_the_reviewers_comment', async () => {
+    service.get.mockReturnValue(
+      of(
+        award({
+          request: {
+            status: 'RETURNED',
+            currentLevel: 'DEAN',
+            submittedAt: '2026-09-28T09:00:00Z',
+            deadline: null,
+            estimatedCompletion: null,
+            overdue: false,
+            returnComment: 'Додайте номер наказу',
+          },
+        }),
+      ),
+    );
+    await open('5');
+    fixture.detectChanges();
+
+    expect(component.returned()).toEqual({ comment: 'Додайте номер наказу' });
+    expect(fixture.nativeElement.querySelector('[data-testid="award-returned"]')).not.toBeNull();
+  });
+
+  it('ac3_5_a_draft_never_returned_shows_no_banner', async () => {
+    service.get.mockReturnValue(of(award()));
+    await open('5');
+    fixture.detectChanges();
+
+    expect(component.returned()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="award-returned"]')).toBeNull();
+  });
+
   it('ac0_8_offers_no_recipient_choice_to_anyone_without_units', async () => {
     await open(null);
 
