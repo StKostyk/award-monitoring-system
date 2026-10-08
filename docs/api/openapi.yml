@@ -375,6 +375,82 @@ paths:
                 items:
                   $ref: '#/components/schemas/OrganizationSummary'
 
+  /organizations/{id}/review-period:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: A faculty; any other organisation answers 404
+    get:
+      tags: [Workflows]
+      summary: Review period of a faculty (planned, 4.2.1)
+      description: >
+        Working days (Monday to Friday) each faculty level (`FACULTY_SECRETARY`, `DEAN`) has for a request of the
+        faculty or its departments; the rector's levels always use the global default. Readable by holders of a
+        `FACULTY_SECRETARY` or `DEAN` role, own or delegated, whose scope covers the faculty, and by
+        `SYSTEM_ADMIN` (4.2.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getReviewPeriod
+      responses:
+        '200':
+          description: The faculty's own value, the effective value and the global default
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewPeriod'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Not a faculty, or outside the caller's scope
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    put:
+      tags: [Workflows]
+      summary: Set or reset the review period of a faculty (planned, 4.2.1)
+      description: >
+        The dean of the faculty (own role or a delegation in effect) or `SYSTEM_ADMIN` sets 1–20 working days, or
+        `null` for the global default. Deadlines already set stay; the new period applies to the next deadline set
+        by a submission, a level change or a resubmission. Writes an audit row `REVIEW_PERIOD_CHANGED` with the old
+        and new value (and `delegatorId` under a delegation) (4.2.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: updateReviewPeriod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewPeriodUpdate'
+      responses:
+        '200':
+          description: The period after the change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewPeriod'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Not a faculty, or outside the caller's dean scope
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
   # ============== Awards ==============
   /award-categories:
     get:
@@ -938,6 +1014,14 @@ paths:
             type: integer
             format: int64
           description: A faculty or department inside the caller's scopes, sub-units included
+        - name: noticed
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: >
+            True for requests whose overdue notice went to the next level (`overdueNoticedAt` set); planned, 4.2.2
+          x-status: planned
         - name: overdue
           in: query
           schema:
@@ -1254,6 +1338,66 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '422':
           $ref: '#/components/responses/ValidationFailed'
+
+  /awards/{id}/corrections:
+    post:
+      tags: [Workflows]
+      summary: Correct a pending award as its reviewer (planned, 2.4.1)
+      description: >
+        A reviewer of the request (reviewer rule) changes the title, description, awarding organisation, award
+        date, category or external URL of a pending award, with a reason; the recipient and documents stay the
+        owner's. An absent field is unchanged, `null` clears an optional one; the submission rules apply to the
+        result. An unclaimed request is claimed by the caller in the same transaction; the request keeps its
+        status, level and deadline. Writes an award version `CORRECTED` with the reason as `comment`, an audit row
+        `AWARD_CORRECTED` (old and new values, reason, `delegatorId` under a delegation) and after the commit one
+        e-mail to the owner (`award:approve:level1`, 2.4.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: correctAward
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardCorrection'
+      responses:
+        '200':
+          description: The corrected award, the request version and the changed fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionOutcome'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No pending request the caller may review (unknown, draft, returned, withdrawn, final, own)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: >
+            `urn:awards:problem:award-stale` (award `version`), `request-stale` (with `currentVersion`) or
+            `request-claimed` (another reviewer holds it, with `reviewer`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: >
+            `validation-failed` (a field, or `reason` missing or over 1000 characters) or
+            `urn:awards:problem:no-change` (every field equals the current value)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   # ============== Documents ==============
   /awards/{id}/documents:
@@ -3234,6 +3378,98 @@ components:
           description: Fields that differ from the previous visible version; empty for the first
           items:
             $ref: '#/components/schemas/FieldChange'
+
+    AwardCorrection:
+      type: object
+      description: >
+        Fields of the award form a reviewer may correct (planned, 2.4.1); an absent field is unchanged, `null`
+        clears an optional field. The recipient and documents are not correctable.
+      required: [version, requestVersion, reason]
+      properties:
+        title:
+          type: [string, 'null']
+          maxLength: 500
+        titleUk:
+          type: [string, 'null']
+          maxLength: 500
+        description:
+          type: [string, 'null']
+          maxLength: 4000
+        descriptionUk:
+          type: [string, 'null']
+          maxLength: 4000
+        categoryId:
+          type: integer
+          format: int64
+        awardingOrganization:
+          type: string
+          maxLength: 255
+        awardDate:
+          type: string
+          format: date
+        externalUrl:
+          type: [string, 'null']
+          format: uri
+          maxLength: 2048
+        version:
+          type: integer
+          format: int64
+          description: Version of the award last read
+        requestVersion:
+          type: integer
+          format: int64
+          description: Version of the request last read
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Why the reviewer corrected the award; shown to the owner
+
+    CorrectionOutcome:
+      type: object
+      description: Result of a correction (planned, 2.4.1)
+      properties:
+        award:
+          $ref: '#/components/schemas/Award'
+        requestVersion:
+          type: integer
+          format: int64
+        changedFields:
+          type: array
+          items:
+            type: string
+          description: Snapshot keys of `AwardSnapshot` that changed
+
+    ReviewPeriod:
+      type: object
+      description: Review period of a faculty in working days, Monday to Friday (planned, 4.2.1)
+      properties:
+        organizationId:
+          type: integer
+          format: int64
+        workingDays:
+          type: [integer, 'null']
+          description: The faculty's own value; null when the global default applies
+        effectiveWorkingDays:
+          type: integer
+          description: The value used for new deadlines at the faculty levels
+        defaultWorkingDays:
+          type: integer
+          description: The global default (`app.workflow.review-working-days`), also used at the rector's levels
+        updatable:
+          type: boolean
+          description: Whether the caller may change it
+
+    ReviewPeriodUpdate:
+      type: object
+      required: [workingDays]
+      description: New review period of a faculty (planned, 4.2.1)
+      properties:
+        workingDays:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 20
+          description: Null returns the faculty to the global default
 
     AwardVersionPage:
       allOf:
