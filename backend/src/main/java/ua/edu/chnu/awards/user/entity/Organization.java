@@ -64,6 +64,9 @@ public class Organization {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "review_working_days")
+    private Integer reviewWorkingDays;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -81,6 +84,19 @@ public class Organization {
         Organization current = getParent();
         while (current != null && current.getOrgType() != OrganizationType.FACULTY
             && current.getOrgType() != OrganizationType.COLLEGE) {
+            current = current.getParent();
+        }
+        return current;
+    }
+
+    /**
+     * The faculty this unit belongs to: itself when it is a faculty, otherwise the nearest faculty above it.
+     *
+     * @return the faculty, null for a unit outside every faculty (a college and its units, the university)
+     */
+    public Organization faculty() {
+        Organization current = this;
+        while (current != null && current.getOrgType() != OrganizationType.FACULTY) {
             current = current.getParent();
         }
         return current;

@@ -54,6 +54,7 @@ import {
   DecisionDialogData,
   DecisionInput,
 } from '../decision-dialog/decision-dialog.component';
+import { ReviewPeriodComponent } from '../review-period/review-period.component';
 import {
   BatchItemResult,
   DecisionType,
@@ -121,6 +122,7 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
     MatRowDef,
     MatNoDataRow,
     TranslocoPipe,
+    ReviewPeriodComponent,
   ],
   providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
   templateUrl: './review-list.component.html',

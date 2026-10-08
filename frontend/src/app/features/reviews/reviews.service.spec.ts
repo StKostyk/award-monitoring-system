@@ -113,4 +113,25 @@ describe('ReviewsService', () => {
     expect(request.request.headers.get('Accept-Language')).toBe('en');
     request.flush([]);
   });
+
+  it('ac1_1_reads_the_review_period_of_a_faculty', () => {
+    service.reviewPeriod(9).subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/organizations/9/review-period'));
+    expect(request.request.method).toBe('GET');
+    request.flush({});
+  });
+
+  it('ac1_2_ac1_3_puts_the_period_or_null_for_the_default', () => {
+    service.setReviewPeriod(9, 5).subscribe();
+    service.setReviewPeriod(9, null).subscribe();
+
+    const requests = http.match((r) => r.url.endsWith('/organizations/9/review-period'));
+    expect(requests.map((r) => r.request.method)).toEqual(['PUT', 'PUT']);
+    expect(requests.map((r) => r.request.body)).toEqual([
+      { workingDays: 5 },
+      { workingDays: null },
+    ]);
+    requests.forEach((r) => r.flush({}));
+  });
 });

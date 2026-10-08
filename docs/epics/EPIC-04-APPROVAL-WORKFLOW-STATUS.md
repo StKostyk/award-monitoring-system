@@ -45,8 +45,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 3 | 4.1.2 Review decisions: approve, reject, return, escalate to the dean | 4.1 | 8 | SCRUM-50 | #144 | yes | Done |
 | 4 | 4.1.3 Withdraw an unclaimed request and resubmit a returned award | 4.1 | 3 | SCRUM-51 | #145 | no | Done |
 | 5 | 4.1.4 Batch review with template responses | 4.1 | 5 | SCRUM-52 | #146 | yes | Done |
-| 5a | 4.1.5 Fixes from the Feature 4.1 validation | 4.1 | 3 | SCRUM-58 | #160 | no | In review |
-| 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | To do |
+| 5a | 4.1.5 Fixes from the Feature 4.1 validation | 4.1 | 3 | SCRUM-58 | #160 | no | Done |
+| 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | In review |
 | 7 | 4.2.2 Overdue detection, escalation notice and SLA metrics | 4.2 | 5 | SCRUM-54 | #148 | no | To do |
 | 8 | 2.4.1 Award correction by reviewers | 4.2 | 5 | SCRUM-55 | #149 | no | To do |
 | 8a | 4.2.3 Keep the decision dialog open until the answer | 4.2 | 2 | SCRUM-59 | #162 | no | To do |

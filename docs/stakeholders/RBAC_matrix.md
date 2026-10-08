@@ -61,6 +61,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 ¹³ Feature 4.1.4 (`BatchReview`, `POST /reviews/decisions`): the same decision for up to 50 requests of the queue, each item checked and decided as in note 11 in its own transaction, so items held by a colleague, stale or closed fail alone while the rest are decided. The comment templates (`GET /reviews/templates`) are read under the same permission. A batch is audited once (`REVIEW_BATCH`) besides each item's `REVIEW_DECISION`.
 
+¹⁴ Feature 4.2.1 (`ReviewPeriods`, `GET`/`PUT /organizations/{id}/review-period`): a faculty secretary or dean whose scope, own or delegated, covers the faculty reads its review period; only the dean (own role or a delegation in effect) changes it, to 1–20 working days or back to the default; the system administrator (`system:configure`) reads and changes every faculty. Anyone else with an approving role gets 404 for the faculty, a caller without one 403. The period applies at the faculty levels only; the rector's levels keep the global default.
+
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Approval Workflow** |
@@ -72,6 +74,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Claim, Release and Hand Over a Review¹⁰ | ❌ | Own level | Own level; take over lower | Own level; take over lower | Own level; take over lower | ❌ | ❌ | ❌ | ❌ |
 | Decide at a Level (Own or Lower)¹¹ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
 | Decide Several Requests at Once¹³ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
+| Read the Faculty Review Period¹⁴ | ❌ | Own faculty | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
+| Set the Faculty Review Period¹⁴ | ❌ | ❌ | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
 | Final University Approval | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Reject Award Request | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Request Additional Information | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
@@ -92,7 +96,7 @@ The category's recognition level sets the lowest role that may give the final ap
 | `NATIONAL` | Rector's Secretary | 80 |
 | `INTERNATIONAL` | Rector's Secretary | 100 |
 
-No level requires the rector. The review period of each level is counted in working days (Monday to Friday, default 3, configurable), decided in the same review.
+No level requires the rector. The review period of each level is counted in working days (Monday to Friday, default 3, configurable; since 4.2.1 a dean sets 1–20 days for the faculty levels of the faculty, note 14), decided in the same review.
 
 ## 2. Administrative Permissions Matrix
 

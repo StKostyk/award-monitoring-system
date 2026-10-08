@@ -149,6 +149,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `hierarchy_path` | `LTREE` | YES | - | - | Materialized path for queries |
 | `depth` | `INTEGER` | NO | `0` | - | Hierarchy depth level |
 | `is_active` | `BOOLEAN` | NO | `TRUE` | - | Active status flag |
+| `review_working_days` | `INTEGER` | YES | - | CK 1–20 | A faculty's review period: working days each faculty level (faculty secretary, dean) has for a request of the faculty or its departments; NULL = `app.workflow.review-working-days`. Set by the dean through `PUT /organizations/{id}/review-period` (V032, 4.2.1) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 
@@ -559,8 +560,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 - One-to-one relationship with awards (each award has exactly one request)
 - Workflow levels: Faculty Secretary → Dean → Rector Secretary → Rector
 - Transitions follow the table of ADR-023: a reviewer approves, rejects, returns or escalates at the request's level; an approval below the category's minimum level, or an escalation (any level below the rector), moves the request to the next level not passed over with a fresh deadline and no reviewer; a return gives the award back as a draft without reviewer or deadline; approval and rejection set `completed_at` (4.1.2)
-- `deadline` is the end of the current level's review period: set at submission to `submitted_at` moved by `app.workflow.review-working-days` working days (Monday to Friday, default 3, same Kyiv time of day, so a clock change does not move it; a weekend start counts from Monday 00:00) and reset at every level change by the Epic 4 workflow; requests submitted before V024 were back-filled with `submitted_at` + 3 days, and deadlines stored before 2.1.8 (SCRUM-43) keep their calendar-day value
-- Expected completion is computed on read, never stored: the deadline plus one review period for every level still ahead on the approval path (faculty secretary up to the higher of the category's minimum approval level and the current level); a level past its deadline gets a fresh period from now
+- `deadline` is the end of the current level's review period: set at submission to `submitted_at` moved by the level's working days (Monday to Friday, same Kyiv time of day, so a clock change does not move it; a weekend start counts from Monday 00:00) and reset at every level change and resubmission by the Epic 4 workflow. The faculty levels use the faculty's `organizations.review_working_days` when set (4.2.1), the rector's levels and a faculty without its own value `app.workflow.review-working-days` (default 3); a period change leaves stored deadlines as they are; requests submitted before V024 were back-filled with `submitted_at` + 3 days, and deadlines stored before 2.1.8 (SCRUM-43) keep their calendar-day value
+- Expected completion is computed on read, never stored: the deadline plus each level's review period for every level still ahead on the approval path (faculty secretary up to the higher of the category's minimum approval level and the current level); a level past its deadline gets a fresh period from now
 - A request past its deadline is marked overdue and explained; it is never escalated or expired automatically (`EXPIRED` stays in the check constraint, unused)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
@@ -739,6 +740,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
 - `DOCUMENT_REJECTED` - the malware scanner refused an upload (`entity_type` = `documents`, `entity_id` null since nothing was stored, `user_id` = the uploader; `new_values` = `awardId` and the `signature` ClamAV found; never the file name) (Feature 3.1.3)
 - `REVIEW_BATCH` - a reviewer applied one decision to several awards with `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = the reviewer; `new_values` = `decision`, `items`, `done`, `failed`); every decided item also has its own `REVIEW_DECISION` row (4.1.4)
+- `REVIEW_PERIOD_CHANGED` - a dean (own role or a delegation) or a system administrator changed a faculty's review period with `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = the faculty, `user_id` = the caller; `old_values`/`new_values` = `workingDays` (own value, null for the default) and `effectiveWorkingDays`; `new_values.delegatorId` under a delegation); an unchanged value writes no row (4.2.1)
 - `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 

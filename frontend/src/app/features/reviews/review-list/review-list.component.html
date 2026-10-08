@@ -1,4 +1,5 @@
 <h1 class="reviews__title">{{ 'reviews.title' | transloco }}</h1>
+<app-review-period />
 @if (notice(); as notice) {
   <p class="reviews__notice" role="status" data-testid="reviews-notice">{{ notice | transloco }}</p>
 }

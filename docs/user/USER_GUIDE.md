@@ -187,6 +187,17 @@ delegation.
 3. Filter by review level or by faculty or department. Overdue awards come first and carry an **Overdue** chip.
 4. Click a row to open the award.
 
+### The faculty review period
+
+Above the tabs, faculty secretaries and deans see how many working days each faculty level has for a request,
+for example **"Review period: 3 working days (default)"**.
+
+1. As the dean (or by the dean's delegation), click **"Change"**.
+2. Enter 1 to 20 working days and click **"Save"**, or click **"Default period"** to return to the university
+   default.
+3. The new period applies to deadlines set from now on (a new submission, a resubmission or a move to the dean);
+   deadlines already set stay. The rector's levels always keep the default.
+
 ### Working on an award
 
 The **Review** panel of the award page shows who reviews it and the deadline.

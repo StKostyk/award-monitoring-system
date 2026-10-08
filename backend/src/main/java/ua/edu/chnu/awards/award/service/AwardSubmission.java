@@ -16,6 +16,7 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.DuplicateMatch;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
@@ -105,13 +106,14 @@ public class AwardSubmission {
 
     private AwardRequest newRequest(Award award) {
         Instant now = clock.instant();
+        ApprovalLevel level = startLevel.of(award.getOrganization().getId(), award.getOwner().getId());
         return AwardRequest.builder()
             .award(award)
             .submitter(award.getOwner())
             .status(RequestStatus.SUBMITTED)
-            .currentLevel(startLevel.of(award.getOrganization().getId(), award.getOwner().getId()))
+            .currentLevel(level)
             .submittedAt(now)
-            .deadline(estimator.deadline(now))
+            .deadline(estimator.deadline(award, level, now))
             .build();
     }
 
@@ -125,7 +127,7 @@ public class AwardSubmission {
         request.setStatus(RequestStatus.SUBMITTED);
         request.setCurrentReviewer(null);
         request.setSubmittedAt(now);
-        request.setDeadline(estimator.deadline(now));
+        request.setDeadline(estimator.deadline(award, request.getCurrentLevel(), now));
         request.setCompletedAt(null);
         return request;
     }

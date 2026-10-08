@@ -109,6 +109,32 @@ class AwardSubmissionTest {
     }
 
     @Test
+    void ac1_6_ac1_8_aRequestOfAFacultyWithItsOwnPeriodIsDueByThatPeriod() {
+        newDepartment.setParent(facultyWithPeriod());
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().deadline()).isEqualTo(Instant.parse("2026-10-05T09:00:00Z"));
+        assertThat(response.request().estimatedCompletion()).isEqualTo(LocalDate.of(2026, 10, 15));
+    }
+
+    @Test
+    void ac1_6_aRequestStartingAtTheRectorLevelsKeepsTheDefault() {
+        newDepartment.setParent(facultyWithPeriod());
+        when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.RECTOR_SECRETARY);
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().deadline()).isEqualTo(THREE_WORKING_DAYS_LATER);
+    }
+
+    private static Organization facultyWithPeriod() {
+        Organization faculty = TestUsers.organization(9L, OrganizationType.FACULTY);
+        faculty.setReviewWorkingDays(5);
+        return faculty;
+    }
+
+    @Test
     void ac1_3_theSubmissionIsRecordedAsAVersionOfThePendingAward() {
         submission.submit(5L, new SubmitRequest(4L, null));
 

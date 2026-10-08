@@ -78,7 +78,6 @@ class ReviewDecisionsTest {
         when(users.findById(caller.getId())).thenReturn(Optional.of(caller));
         when(rule.grant(request)).thenReturn(Optional.of(new ReviewGrant(ApprovalLevel.FACULTY_SECRETARY, FACULTY,
             null)));
-        when(estimator.deadline(NOW)).thenReturn(NEXT_DEADLINE);
         when(rule.delegatorId(request)).thenReturn(null);
     }
 
@@ -106,6 +105,7 @@ class ReviewDecisionsTest {
         award.setCategory(AwardCategory.builder().level(RecognitionLevel.NATIONAL).build());
         held(caller);
         when(startLevel.from(ApprovalLevel.DEAN, FACULTY, owner.getId())).thenReturn(ApprovalLevel.DEAN);
+        when(estimator.deadline(award, ApprovalLevel.DEAN, NOW)).thenReturn(NEXT_DEADLINE);
 
         service.decide(AWARD, decision(Decision.APPROVE, "Підтверджено"));
 
@@ -164,6 +164,7 @@ class ReviewDecisionsTest {
         request.setCurrentLevel(ApprovalLevel.DEAN);
         when(startLevel.from(ApprovalLevel.RECTOR_SECRETARY, FACULTY, owner.getId()))
             .thenReturn(ApprovalLevel.RECTOR);
+        when(estimator.deadline(award, ApprovalLevel.RECTOR, NOW)).thenReturn(NEXT_DEADLINE);
 
         service.decide(AWARD, decision(Decision.ESCALATE, null));
 

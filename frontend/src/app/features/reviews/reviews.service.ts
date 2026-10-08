@@ -107,6 +107,15 @@ export interface ReviewFilters {
   organizationId: number | null;
 }
 
+/** The working days each faculty level has for a request of the faculty. */
+export interface ReviewPeriod {
+  organizationId: number;
+  workingDays: number | null;
+  effectiveWorkingDays: number;
+  defaultWorkingDays: number;
+  updatable: boolean;
+}
+
 export const NO_REVIEW_FILTERS: ReviewFilters = {
   assigned: null,
   level: null,
@@ -168,6 +177,20 @@ export class ReviewsService {
 
   candidates(awardId: number): Observable<ReviewerCandidate[]> {
     return this.http.get<ReviewerCandidate[]>(`${this.base}/${awardId}/reviewers`);
+  }
+
+  /** The review period of a faculty. */
+  reviewPeriod(facultyId: number): Observable<ReviewPeriod> {
+    return this.http.get<ReviewPeriod>(this.period(facultyId));
+  }
+
+  /** Sets the review period of a faculty; null restores the default. */
+  setReviewPeriod(facultyId: number, workingDays: number | null): Observable<ReviewPeriod> {
+    return this.http.put<ReviewPeriod>(this.period(facultyId), { workingDays });
+  }
+
+  private period(facultyId: number): string {
+    return `${environment.apiUrl}/organizations/${facultyId}/review-period`;
   }
 
   private reviewer(awardId: number): string {

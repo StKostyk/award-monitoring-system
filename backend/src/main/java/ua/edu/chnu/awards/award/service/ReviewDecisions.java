@@ -93,7 +93,7 @@ public class ReviewDecisions {
             request.setCurrentLevel(startLevel.from(transitions.above(request.getCurrentLevel()),
                 award.getOrganization().getId(), request.getSubmitter().getId()));
             request.setCurrentReviewer(null);
-            request.setDeadline(estimator.deadline(now));
+            request.setDeadline(estimator.deadline(award, request.getCurrentLevel(), now));
         } else if (step.isFinal()) {
             request.setCurrentReviewer(caller);
             request.setCompletedAt(now);

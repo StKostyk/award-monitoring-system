@@ -109,6 +109,20 @@ class AwardResubmissionTest {
         assertThat(response.request().currentLevel()).isEqualTo(ApprovalLevel.DEAN);
     }
 
+    @Test
+    void ac1_6_ac1_7_aResubmissionSetsANewDeadlineByTheFacultyPeriodInForceNow() {
+        Organization faculty = TestUsers.organization(9L, OrganizationType.FACULTY);
+        faculty.setReviewWorkingDays(5);
+        department.setParent(faculty);
+        AwardRequest earlier = earlier(RequestStatus.RETURNED, ApprovalLevel.DEAN);
+        earlier.setDeadline(NOW.minusSeconds(60));
+        when(startLevel.from(ApprovalLevel.DEAN, 69L, 21L)).thenReturn(ApprovalLevel.DEAN);
+
+        AwardResponse response = submission.submit(5L, new SubmitRequest(4L, null));
+
+        assertThat(response.request().deadline()).isEqualTo(Instant.parse("2026-10-05T09:00:00Z"));
+    }
+
     private AwardRequest earlier(RequestStatus status, ApprovalLevel level) {
         AwardRequest request = TestAwards.request(draft).status(status).currentLevel(level)
             .submittedAt(NOW.minusSeconds(86_400)).build();
