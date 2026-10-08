@@ -10,5 +10,6 @@ public enum RequestStatus {
     APPROVED,
     REJECTED,
     RETURNED,
-    EXPIRED
+    EXPIRED,
+    WITHDRAWN
 }

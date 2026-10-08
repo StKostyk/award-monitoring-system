@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Owners withdraw a pending award no reviewer has claimed and resubmit returned or withdrawn awards on the same request (4.1.3)
 - Reviewers approve, return, reject or pass an award to the next level from the award page; the owner sees the decision with its comment and gets an e-mail (SCRUM-50).
 - Reviewer queue «На розгляді» with claim, release, hand-over and take-over of review requests (SCRUM-49)
 - Awards of a faculty or department: a faculty secretary or dean (own or delegated role) enters an award for an active faculty or department of the role's scope through «Отримувач» in the award form (`GET /api/v1/awards/recipient-units`, `recipientOrganizationId`; V027 `awards.recipient_org_id`); the award belongs to the unit and is owned by whoever entered it (draft rights, GDPR export with `recipient_unit`), the scope is checked again at submission (422 `recipient-out-of-scope`), duplicates are compared within the unit, and `recipient` in award responses drives a unit chip in «Мої нагороди» and «Отримувач» on the award page. A request now passes over a level whose only reviewer would be the submitter (the only secretary of a faculty submits to the dean)

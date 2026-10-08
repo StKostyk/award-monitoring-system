@@ -24,6 +24,7 @@ import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.delegation.dto.DelegationResponse;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
@@ -144,7 +145,7 @@ class OpenApiContractTest {
         assertThat((List<String>) ((Map<String, Object>) schemas.get("AwardStatus")).get("enum"))
             .containsExactly("DRAFT", "PENDING", "APPROVED", "REJECTED", "ARCHIVED");
         assertThat((List<String>) ((Map<String, Object>) schemas.get("RequestStatus")).get("enum"))
-            .containsExactly("SUBMITTED", "IN_REVIEW", "ESCALATED", "APPROVED", "REJECTED", "RETURNED", "EXPIRED");
+            .containsExactlyElementsOf(Arrays.stream(RequestStatus.values()).map(Enum::name).toList());
     }
 
     @Test

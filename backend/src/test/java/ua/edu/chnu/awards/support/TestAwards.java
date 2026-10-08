@@ -15,7 +15,10 @@ import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.entity.ReviewDecision;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
+import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
+import ua.edu.chnu.awards.award.service.RequestLookup;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.OrganizationRepository;
@@ -90,5 +93,15 @@ public final class TestAwards {
             when(organizations.findById(unit.getId())).thenReturn(Optional.of(unit));
         }
         return new AwardOwnership(awards, users, organizations, access);
+    }
+
+    /**
+     * Request reads over a mocked repository, with no reviewer decisions.
+     *
+     * @param requests the request repository
+     * @return the lookup
+     */
+    public static RequestLookup requestLookup(AwardRequestRepository requests) {
+        return new RequestLookup(requests, mock(ReviewDecisionRepository.class));
     }
 }

@@ -25,6 +25,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Submit Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Submit an Award for a Faculty or Department⁹ | ❌ | Faculty + its departments | Faculty + its departments | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Edit Own Award Request¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Withdraw Own Unclaimed Award¹² | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Upload Scanned Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Delete Own Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Download Award Documents⁶ | Own | Own + Department | Own + Faculty | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
@@ -55,6 +56,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 ¹⁰ Feature 4.1.1 (`ReviewerRule`, `ReviewAssignment`, `GET /reviews`, `PUT`/`DELETE /awards/{id}/reviewer`): any approval role, own or delegated (`award:approve:level1`), reviews requests at its level or below inside its scope, never an award its holder owns or submitted, nor one owned or submitted by the person who lent a delegated role. The queue shows the own level; a lower level is reached through the `level` filter. A claim makes the caller the only reviewer; a higher level, or a peer when the holder may no longer review, takes it over; the holder releases it or hands it to an eligible colleague. Every change is audited (`REVIEW_CLAIMED`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER`, `REVIEW_TAKEN_OVER`).
 
 ¹¹ Feature 4.1.2 (`ReviewDecisions`, `POST /awards/{id}/decisions`): whoever may review a request (note 10) approves, returns, rejects or escalates it; an unclaimed request is claimed by the decision, one held by a colleague answers 409 `request-claimed`. Return and reject need a comment. An approval below the category's minimum level (§ Final approval by recognition level) and an escalation move the request to the next level not passed over; the rector cannot escalate. A delegate's decision is stamped with the delegator (`review_decisions.delegator_id`); a reviewer who also holds the role in their own right decides under it. Every decision is audited (`REVIEW_DECISION`).
+
+¹² Feature 4.1.3 (`AwardWithdrawal`, `POST /awards/{id}/withdraw`): the owner (`award:update:own`) takes a pending award back as a draft while no reviewer has claimed its request (`request-claimed` otherwise); the request becomes `WITHDRAWN` and leaves every queue. A returned or withdrawn draft is edited and resubmitted like any draft but cannot be deleted (`award-has-request`).
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

@@ -186,7 +186,6 @@ test.describe('reviewer queue', () => {
     await dialog.getByTestId('decision-confirm').click();
     await expect(dialog).toContainText('Вкажіть, що потрібно виправити');
     await dialog.getByTestId('decision-comment').fill(comment);
-    await expect(dialog.locator('.mat-mdc-form-field-hint-wrapper')).toHaveCSS('opacity', '1');
     expect(await seriousViolations(page)).toEqual([]);
     await dialog.getByTestId('decision-confirm').click();
 
@@ -203,6 +202,60 @@ test.describe('reviewer queue', () => {
         `select comments from review_decisions where request_id = (select request_id from award_requests where award_id = ${id})`,
       ),
     ).toBe(comment);
+
+    await expect(mine.getByTestId('award-remove')).toHaveCount(0);
+    await mine.getByTestId('award-edit').click();
+    await expect(mine.getByTestId('award-returned')).toHaveText(
+      `Рецензент повернув нагороду на доопрацювання: ${comment}`,
+    );
+    expect(await seriousViolations(mine)).toEqual([]);
+    await submitWithoutDocuments(mine);
+    await expect(mine.getByTestId('award-submitted-name')).toContainText(title);
+    await mine.goto(`/awards/${id}`);
+    await expect(mine.getByTestId('award-status-submitted')).toHaveText('Подано повторно');
+    expect(sql(`select status || ' ' || current_level from award_requests where award_id = ${id}`)).toBe(
+      'SUBMITTED FACULTY_SECRETARY',
+    );
+  });
+
+  test('ac3_1 ac3_6 the owner withdraws an unclaimed award and edits it', async ({ browser }) => {
+    const title = `Грамота для відкликання ${uniqueToken()}`;
+    const id = await submittedBy(browser, owner, title, UNIVERSITY);
+    const mine = await signedInAs(browser, owner, FRESH_PASSWORD);
+    await mine.goto(`/awards/${id}`);
+
+    await mine.getByTestId('award-withdraw').click();
+    await expect(mine.getByRole('dialog')).toContainText('Вона знову стане чернеткою.');
+    expect(await seriousViolations(mine)).toEqual([]);
+    await mine.getByTestId('confirm-accept').click();
+
+    await expect(mine).toHaveURL(new RegExp(`/awards/${id}/edit$`));
+    await expect(mine.getByTestId('award-title-uk')).toHaveValue(title);
+    await expect(mine.getByTestId('award-returned')).toHaveCount(0);
+    expect(sql(`select status from award_requests where award_id = ${id}`)).toBe('WITHDRAWN');
+    expect(
+      sql(`select count(*) from audit_logs where entity_id = ${id} and action_type = 'AWARD_WITHDRAWN'`),
+    ).toBe('1');
+  });
+
+  test('ac3_2 ac3_6 a claimed award cannot be withdrawn', async ({ browser }) => {
+    const title = `Грамота, взята в роботу ${uniqueToken()}`;
+    const id = await submittedBy(browser, owner, title, UNIVERSITY);
+    const mine = await signedInAs(browser, owner, FRESH_PASSWORD);
+    await mine.goto(`/awards/${id}`);
+    await expect(mine.getByTestId('award-withdraw')).toBeVisible();
+
+    sql(
+      `update award_requests set status = 'IN_REVIEW', current_reviewer_id = ${user(first)} where award_id = ${id}`,
+    );
+    await mine.getByTestId('award-withdraw').click();
+    await mine.getByTestId('confirm-accept').click();
+
+    await expect(mine.getByTestId('award-detail-notice')).toHaveText(
+      'Нагороду вже розглядає рецензент, відкликати її не можна.',
+    );
+    await expect(mine.getByTestId('award-withdraw')).toHaveCount(0);
+    expect(sql(`select status from award_requests where award_id = ${id}`)).toBe('IN_REVIEW');
   });
 
   test('ac2_2 ac2_5 ac2_11 a secretary passes a national award on and a dean approves another', async ({

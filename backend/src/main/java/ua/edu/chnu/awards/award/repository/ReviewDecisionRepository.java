@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.award.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.ReviewDecision;
+import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 
 /**
  * Read access to {@link ReviewDecision} rows.
@@ -27,6 +29,16 @@ public interface ReviewDecisionRepository extends JpaRepository<ReviewDecision, 
         order by d.decidedAt, d.id
         """)
     List<ReviewDecision> findByRequestId(@Param("requestId") Long requestId);
+
+    /**
+     * The latest decision of one kind on a request.
+     *
+     * @param requestId the request
+     * @param decision  the kind
+     * @return the decision, empty when there is none
+     */
+    Optional<ReviewDecision> findFirstByRequestIdAndDecisionOrderByDecidedAtDescIdDesc(Long requestId,
+                                                                                     ReviewDecisionType decision);
 
     /**
      * Whether a reviewer decided on the request at one of the given levels.

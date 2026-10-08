@@ -11,6 +11,16 @@
     <mat-progress-bar mode="indeterminate" data-testid="award-form-busy" />
   }
 
+  @if (returned(); as returned) {
+    <p class="award-form__returned" role="status" data-testid="award-returned">
+      @if (returned.comment) {
+        {{ 'awards.returned' | transloco: { comment: returned.comment } }}
+      } @else {
+        {{ 'awards.returnedNoComment' | transloco }}
+      }
+    </p>
+  }
+
   @if (restoreOffer()) {
     <div class="award-form__restore" role="status" data-testid="restore-offer">
       <span>{{ 'awards.restore.question' | transloco }}</span>

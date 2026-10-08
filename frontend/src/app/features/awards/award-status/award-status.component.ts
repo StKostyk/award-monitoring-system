@@ -58,6 +58,15 @@ export class AwardStatusComponent implements OnInit, OnDestroy {
     const view = this.view();
     return view !== null && view.requestStatus === null;
   });
+  /** Submitted again after a return: earlier decisions predate the current submission. */
+  readonly resubmitted = computed(() => {
+    const view = this.view();
+    if (!view?.submittedAt) {
+      return false;
+    }
+    const submittedAt = Date.parse(view.submittedAt);
+    return view.decisions.some((decision) => Date.parse(decision.decidedAt) < submittedAt);
+  });
   readonly pendingReview = computed(() => {
     const status = this.view()?.requestStatus;
     return !!status && !FINAL_REQUEST_STATUSES.includes(status);

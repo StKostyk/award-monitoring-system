@@ -323,7 +323,7 @@
 | Значення | Опис | Переходить До |
 |----------|------|---------------|
 | `DRAFT` | Початковий стан, редагується | PENDING |
-| `PENDING` | Подано, очікує затвердження | APPROVED, REJECTED, DRAFT (повернуто на доопрацювання) |
+| `PENDING` | Подано, очікує затвердження | APPROVED, REJECTED, DRAFT (повернуто на доопрацювання або відкликано власником до взяття в роботу) |
 | `APPROVED` | Затверджено через робочий процес | ARCHIVED |
 | `REJECTED` | Відхилено під час робочого процесу; остаточно | - |
 | `ARCHIVED` | Історичний запис, більше не активний | - |
@@ -338,7 +338,9 @@
 - `ck_awards_date` - перестворено як `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`; версія V005 порівнювала з датою сесії (UTC) і відхиляла нагороди з сьогоднішньою датою між 00:00 і 03:00 за київським часом
 - `fk_awards_organizations` - `organization_id` → `organizations(org_id)`
 
-**Подання** (`POST /awards/{id}/submit`): під блокуванням рядка чернетки `status` стає `PENDING`, `impact_score` — базовим балом рівня, `organization_id` — поточною кафедрою власника, створюється один рядок `award_requests` (`SUBMITTED`, `FACULTY_SECRETARY`) і в `audit_logs` записується рядок `AWARD_SUBMITTED` (`entity_type = 'awards'`, `entity_id` = нагорода). Чернетка, для якої в того самого власника є інша нагорода з тією самою `award_date` і подібністю `pg_trgm` щонайменше 0.6 за `title` або `title_uk` у нижньому регістрі, подається лише після підтвердження власником; тоді рядок аудиту містить `duplicateAcknowledged: true`.
+**Подання** (`POST /awards/{id}/submit`): під блокуванням рядка чернетки `status` стає `PENDING`, `impact_score` — базовим балом рівня, `organization_id` — поточною кафедрою власника, створюється один рядок `award_requests` (`SUBMITTED`, `FACULTY_SECRETARY`) і в `audit_logs` записується рядок `AWARD_SUBMITTED` (`entity_type = 'awards'`, `entity_id` = нагорода). Чернетка, для якої в того самого власника є інша нагорода з тією самою `award_date` і подібністю `pg_trgm` щонайменше 0.6 за `title` або `title_uk` у нижньому регістрі, подається лише після підтвердження власником; тоді рядок аудиту містить `duplicateAcknowledged: true`. Повернута чи відкликана чернетка зберігає свій рядок `award_requests`: подання блокує його раніше за чернетку й використовує повторно (`SUBMITTED` на рівні, що повернув, після повернення; на початковому рівні після відкликання; рецензента знято, нові `submitted_at` і `deadline`), тож її `review_decisions` лишаються на хронології; рядок аудиту містить `resubmittedFrom`. Таку чернетку видалити не можна (409 `award-has-request`).
+
+**Відкликання** (`POST /awards/{id}/withdraw`, V030): власник нагороди `PENDING`, чия заявка `SUBMITTED` чи `ESCALATED` без `current_reviewer_id`, переводить заявку в `WITHDRAWN` (термін null), а нагороду в `DRAFT` під тим самим блокуванням рядка заявки, що й узяття в роботу; до `audit_logs` пишеться `AWARD_WITHDRAWN` з попереднім статусом і рівнем.
 
 **Індекси**:
 - `pk_awards` - Первинний ключ на `award_id`
@@ -576,13 +578,14 @@
 **Значення Статусу Запиту** (`status`):
 | Значення | Опис | Переходить До |
 |----------|------|---------------|
-| `SUBMITTED` | Початкове подання, очікує взяття в роботу | IN_REVIEW (взяти в роботу), ESCALATED, APPROVED, REJECTED, RETURNED (рішення бере запит у роботу в тій самій транзакції) |
+| `SUBMITTED` | Початкове подання, очікує взяття в роботу | IN_REVIEW (взяти в роботу), ESCALATED, APPROVED, REJECTED, RETURNED (рішення бере запит у роботу в тій самій транзакції), WITHDRAWN |
 | `IN_REVIEW` | Взято в роботу `current_reviewer_id` | SUBMITTED чи ESCALATED (звільнити), ESCALATED, APPROVED, REJECTED, RETURNED |
-| `ESCALATED` | Переміщено на вищий рівень рецензентом, очікує взяття в роботу | IN_REVIEW (взяти в роботу), ESCALATED, APPROVED, REJECTED, RETURNED |
+| `ESCALATED` | Переміщено на вищий рівень рецензентом, очікує взяття в роботу | IN_REVIEW (взяти в роботу), ESCALATED, APPROVED, REJECTED, RETURNED, WITHDRAWN |
 | `APPROVED` | Остаточне затвердження надано | - |
 | `REJECTED` | Остаточне відхилення | - |
-| `RETURNED` | Повернуто для виправлень | SUBMITTED |
+| `RETURNED` | Повернуто для виправлень | SUBMITTED (повторне подання на рівень, що повернув) |
 | `EXPIRED` | Не використовується (лишається в обмеженні) | - |
+| `WITHDRAWN` | Відкликано власником до взяття в роботу (V030) | SUBMITTED (повторне подання з початкового рівня) |
 
 **Рівні Затвердження** (`current_level`):
 | Значення | Опис | Наступний Рівень |

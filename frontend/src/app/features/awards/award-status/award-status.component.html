@@ -15,7 +15,10 @@
     @if (view.requestStatus && view.submittedAt) {
       <ol class="award-status__path" data-testid="award-status-path">
         <li class="award-status__step award-status__step--DONE">
-          <span class="award-status__level">{{ 'awards.statusPanel.submitted' | transloco }}</span>
+          <span class="award-status__level" data-testid="award-status-submitted">{{
+            (resubmitted() ? 'awards.statusPanel.resubmitted' : 'awards.statusPanel.submitted')
+              | transloco
+          }}</span>
           <span class="award-status__when">{{ date(view.submittedAt) }}</span>
         </li>
         @for (step of view.path; track step.level) {

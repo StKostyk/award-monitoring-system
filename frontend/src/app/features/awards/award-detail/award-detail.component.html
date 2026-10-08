@@ -82,7 +82,7 @@
           'awards.back' | transloco
         }}</a>
       }
-      @if (ownDraft(award)) {
+      @if (removable(award)) {
         <button
           mat-button
           type="button"
@@ -91,6 +91,11 @@
           data-testid="award-remove"
         >
           {{ 'awards.remove.action' | transloco }}
+        </button>
+      }
+      @if (withdrawable(award)) {
+        <button mat-stroked-button type="button" (click)="withdraw(award)" data-testid="award-withdraw">
+          {{ 'awards.withdraw.action' | transloco }}
         </button>
       }
       @if (editable(award)) {

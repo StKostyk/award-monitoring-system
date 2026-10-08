@@ -30,9 +30,10 @@ import lombok.RequiredArgsConstructor;
 /**
  * Turns a complete draft into a pending award with its approval request at the faculty secretary (or the
  * first level above that the submitter does not hold alone), due by the end of one review period. A personal
- * award moves to the owner's current department; a unit award stays with its unit. The draft row is locked for
- * the whole step, so a repeated submission waits and then
- * finds the award no longer a draft.
+ * award moves to the owner's current department; a unit award stays with its unit. A returned or withdrawn award
+ * reuses its request: after a return it goes back to the level that returned it, after a withdrawal to the start
+ * level. The request row (when there is one) and the draft row are locked for the whole step, in the order a
+ * withdrawal locks them, so a repeated submission waits and then finds the award no longer a draft.
  */
 @Service
 @RequiredArgsConstructor
@@ -61,16 +62,10 @@ public class AwardSubmission {
      */
     @Transactional
     public AwardResponse submit(long id, SubmitRequest request) {
+        AwardRequest earlier = requests.findByAwardIdForUpdate(id).orElse(null);
         Award award = ownership.lockedDraft(id);
-        ownership.requireVersion(award, request == null ? null : request.version());
-        rules.checkComplete(award);
-        List<DuplicateMatch> matches = duplicates.matches(List.of(award.getId()))
-            .getOrDefault(award.getId(), List.of());
-        boolean acknowledged = request != null && request.duplicateAcknowledged();
-        if (!matches.isEmpty() && !acknowledged) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "award-possible-duplicate",
-                "The award looks like one already entered", Map.of("matches", matches));
-        }
+        final List<DuplicateMatch> matches = checked(award, request);
+        final RequestStatus previous = earlier == null ? null : earlier.getStatus();
         if (!award.isUnitAward()) {
             award.setOrganization(award.getOwner().getOrganization());
         }
@@ -78,17 +73,12 @@ public class AwardSubmission {
         award.setImpactScore(award.getCategory().getLevel().baseScore());
         awards.saveAndFlush(award);
         history.submitted(award);
-        Instant now = clock.instant();
-        AwardRequest created = requests.saveAndFlush(AwardRequest.builder()
-            .award(award)
-            .submitter(award.getOwner())
-            .status(RequestStatus.SUBMITTED)
-            .currentLevel(startLevel.of(award.getOrganization().getId(), award.getOwner().getId()))
-            .submittedAt(now)
-            .deadline(estimator.deadline(now))
-            .build());
+        AwardRequest created = requests.saveAndFlush(earlier == null ? newRequest(award) : reopened(award, earlier));
         Map<String, Object> details = new HashMap<>(Map.of("requestId", created.getId(),
             "level", created.getCurrentLevel().name(), "organizationId", award.getOrganization().getId()));
+        if (previous != null) {
+            details.put("resubmittedFrom", previous.name());
+        }
         if (!matches.isEmpty()) {
             details.put("duplicateAcknowledged", true);
         }
@@ -98,5 +88,45 @@ public class AwardSubmission {
         audit.record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, award.getOwner().getId(), award.getId(),
             details);
         return mapper.toResponse(award, created);
+    }
+
+    private List<DuplicateMatch> checked(Award award, SubmitRequest request) {
+        ownership.requireVersion(award, request == null ? null : request.version());
+        rules.checkComplete(award);
+        List<DuplicateMatch> matches = duplicates.matches(List.of(award.getId()))
+            .getOrDefault(award.getId(), List.of());
+        boolean acknowledged = request != null && request.duplicateAcknowledged();
+        if (!matches.isEmpty() && !acknowledged) {
+            throw new ApiProblemException(HttpStatus.CONFLICT, "award-possible-duplicate",
+                "The award looks like one already entered", Map.of("matches", matches));
+        }
+        return matches;
+    }
+
+    private AwardRequest newRequest(Award award) {
+        Instant now = clock.instant();
+        return AwardRequest.builder()
+            .award(award)
+            .submitter(award.getOwner())
+            .status(RequestStatus.SUBMITTED)
+            .currentLevel(startLevel.of(award.getOrganization().getId(), award.getOwner().getId()))
+            .submittedAt(now)
+            .deadline(estimator.deadline(now))
+            .build();
+    }
+
+    private AwardRequest reopened(Award award, AwardRequest request) {
+        long organizationId = award.getOrganization().getId();
+        long submitterId = award.getOwner().getId();
+        Instant now = clock.instant();
+        request.setCurrentLevel(request.getStatus() == RequestStatus.RETURNED
+            ? startLevel.from(request.getCurrentLevel(), organizationId, submitterId)
+            : startLevel.of(organizationId, submitterId));
+        request.setStatus(RequestStatus.SUBMITTED);
+        request.setCurrentReviewer(null);
+        request.setSubmittedAt(now);
+        request.setDeadline(estimator.deadline(now));
+        request.setCompletedAt(null);
+        return request;
     }
 }
