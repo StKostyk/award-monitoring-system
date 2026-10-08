@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { OrganizationRef } from '../../core/auth/user-profile';
+import { LanguageService } from '../../core/i18n/language.service';
 import {
   ApprovalLevel,
   AwardRecipient,
@@ -65,6 +66,38 @@ export interface DecisionOutcome {
   requestVersion: number;
 }
 
+/** One award of a batch decision. */
+export interface BatchItem {
+  awardId: number;
+  requestVersion: number;
+}
+
+/** The same decision for several awards; each item is decided on its own. */
+export interface BatchDecisionRequest {
+  decision: DecisionType;
+  comment?: string;
+  verified?: boolean;
+  items: BatchItem[];
+}
+
+/** What became of one item: `code` is the problem type slug of a failed item. */
+export interface BatchItemResult {
+  awardId: number;
+  outcome: 'DONE' | 'FAILED';
+  code?: string;
+  detail?: string;
+  status?: AwardStatus;
+  level?: ApprovalLevel;
+}
+
+/** A ready-made reviewer comment in the caller's language. */
+export interface ReviewTemplate {
+  id: number;
+  decision: DecisionType;
+  title: string;
+  body: string;
+}
+
 /** Whose requests the queue shows: the caller's, nobody's or everybody's (null). */
 export type ReviewAssignment = 'me' | 'unassigned';
 
@@ -84,6 +117,7 @@ export const NO_REVIEW_FILTERS: ReviewFilters = {
 @Injectable({ providedIn: 'root' })
 export class ReviewsService {
   private readonly http = inject(HttpClient);
+  private readonly language = inject(LanguageService);
   private readonly base = `${environment.apiUrl}/awards`;
 
   list(filters: ReviewFilters, page = 0, size = 20): Observable<Page<ReviewItem>> {
@@ -117,6 +151,19 @@ export class ReviewsService {
   /** Approves, rejects, returns or escalates the request, claiming it first when nobody holds it. */
   decide(awardId: number, request: DecisionRequest): Observable<DecisionOutcome> {
     return this.http.post<DecisionOutcome>(`${this.base}/${awardId}/decisions`, request);
+  }
+
+  /** Applies one decision to up to 50 awards; answers one result per item in the order sent. */
+  decideBatch(request: BatchDecisionRequest): Observable<BatchItemResult[]> {
+    return this.http.post<BatchItemResult[]>(`${environment.apiUrl}/reviews/decisions`, request);
+  }
+
+  /** The comment templates of a decision, in the language the interface shows. */
+  templates(decision: DecisionType): Observable<ReviewTemplate[]> {
+    return this.http.get<ReviewTemplate[]>(`${environment.apiUrl}/reviews/templates`, {
+      params: { decision },
+      headers: { 'Accept-Language': this.language.current() },
+    });
   }
 
   candidates(awardId: number): Observable<ReviewerCandidate[]> {

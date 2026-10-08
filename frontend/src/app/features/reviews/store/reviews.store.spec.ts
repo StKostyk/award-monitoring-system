@@ -6,7 +6,7 @@ import { provideMockStore } from '@ngrx/store/testing';
 import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { NO_REVIEW_FILTERS, ReviewFilters, ReviewsService } from '../reviews.service';
+import { NO_REVIEW_FILTERS, ReviewFilters, ReviewItem, ReviewsService } from '../reviews.service';
 import { ReviewsActions } from './reviews.actions';
 import { ReviewsEffects } from './reviews.effects';
 import { initialState, reviewsFeature } from './reviews.feature';
@@ -30,6 +30,19 @@ describe('reviews feature', () => {
 
     state = reviewsFeature.reducer(state, ReviewsActions.reviewsLoadFailed({ problem: 'network' }));
     expect(state).toMatchObject({ items: [], total: 0, problem: 'network' });
+  });
+
+  it('ac4_7_decided_items_leave_the_page_and_the_total', () => {
+    const items = [5, 6, 7].map((awardId) => ({ awardId }) as ReviewItem);
+    const loaded = { ...initialState, items, total: 12 };
+
+    const state = reviewsFeature.reducer(
+      loaded,
+      ReviewsActions.itemsDecided({ awardIds: [5, 7, 99] }),
+    );
+
+    expect(state.items.map((item) => item.awardId)).toEqual([6]);
+    expect(state.total).toBe(10);
   });
 });
 

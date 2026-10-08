@@ -114,6 +114,17 @@ abstract class AbstractAwardEndpointsTest {
     }
 
     /**
+     * The secretary of faculty 9, who reviews at the first level.
+     *
+     * @return the bearer token to send
+     */
+    protected static RequestPostProcessor secretary() {
+        return jwt().jwt(token -> token.subject("31").claim("role_scopes", List.of("FACULTY_SECRETARY:9")))
+            .authorities(new SimpleGrantedAuthority("award:read:own"),
+                new SimpleGrantedAuthority("award:approve:level1"));
+    }
+
+    /**
      * The system administrator, who reads every award and submits none.
      *
      * @return the bearer token to send

@@ -1,8 +1,18 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { MatButton } from '@angular/material/button';
+import { MatCheckbox } from '@angular/material/checkbox';
 import { MatChip } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -24,8 +34,9 @@ import { MatTabLink, MatTabNav, MatTabNavPanel } from '@angular/material/tabs';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
-import { forkJoin, map } from 'rxjs';
+import { filter as present, forkJoin, map, switchMap } from 'rxjs';
 
+import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { approvalScopes, reviewableLevels } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -38,11 +49,41 @@ import { kyivDate } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import { ApprovalLevel, awardTitle } from '../../awards/awards.service';
-import { ReviewAssignment, ReviewFilters, ReviewItem } from '../reviews.service';
+import {
+  DecisionDialogComponent,
+  DecisionDialogData,
+  DecisionInput,
+} from '../decision-dialog/decision-dialog.component';
+import {
+  BatchItemResult,
+  DecisionType,
+  ReviewAssignment,
+  ReviewFilters,
+  ReviewItem,
+  ReviewsService,
+} from '../reviews.service';
 import { ReviewsActions } from '../store/reviews.actions';
 import { reviewsFeature } from '../store/reviews.feature';
 
 const PAGE_SIZES = [20, 50, 100];
+
+/** Failure reasons the batch summary names; any other code reads as `unknown`. */
+const REASONS = [
+  'request-claimed',
+  'request-stale',
+  'request-closed',
+  'no-higher-level',
+  'validation-failed',
+  'not-found',
+  'try-again',
+];
+
+/** The outcome of the last batch: how many were decided and which awards failed, with the reason key. */
+export interface BatchSummary {
+  done: number;
+  total: number;
+  failed: { awardId: number; title: string; reason: string }[];
+}
 
 /** The tabs of the queue, by the `assigned` filter they set. */
 const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
@@ -56,6 +97,8 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
   imports: [
     FormsModule,
     RouterLink,
+    MatButton,
+    MatCheckbox,
     MatChip,
     MatFormField,
     MatLabel,
@@ -90,11 +133,14 @@ export class ReviewListComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly organizationList = inject(OrganizationsService);
   private readonly language = inject(LanguageService);
+  private readonly dialog = inject(MatDialog);
+  private readonly reviews = inject(ReviewsService);
 
   protected readonly tabs = TABS;
   protected readonly levels = reviewableLevels(this.auth.permissions()) as ApprovalLevel[];
   protected readonly pageSizes = PAGE_SIZES;
   protected readonly columns = [
+    'select',
     'title',
     'recipient',
     'organization',
@@ -122,6 +168,22 @@ export class ReviewListComponent implements OnInit {
   /** A message handed over by the page the reviewer came from. */
   readonly notice = signal<string | null>(null);
 
+  /** Award ids the reviewer ticked; only those on the current page count. */
+  readonly selected = signal<ReadonlySet<number>>(new Set());
+  readonly selection = computed(() =>
+    this.items().filter((item) => this.selected().has(item.awardId)),
+  );
+  readonly allSelected = computed(
+    () => this.items().length > 0 && this.selection().length === this.items().length,
+  );
+  /** «Передати декану» when every selected request waits at the faculty secretary. */
+  readonly escalateTarget = computed<ApprovalLevel | null>(() =>
+    this.selection().every((item) => item.level === 'FACULTY_SECRETARY') ? 'DEAN' : null,
+  );
+  readonly busy = signal(false);
+  readonly summary = signal<BatchSummary | null>(null);
+  readonly batchProblem = signal<string | null>(null);
+
   ngOnInit(): void {
     this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);
     this.store.dispatch(ReviewsActions.opened());
@@ -135,12 +197,14 @@ export class ReviewListComponent implements OnInit {
   }
 
   filter(change: Partial<ReviewFilters>): void {
+    this.selected.set(new Set());
     this.store.dispatch(
       ReviewsActions.filtersChanged({ filters: { ...this.filters(), ...change } }),
     );
   }
 
   page(event: PageEvent): void {
+    this.selected.set(new Set());
     this.store.dispatch(
       ReviewsActions.pageChanged({ pageIndex: event.pageIndex, pageSize: event.pageSize }),
     );
@@ -148,6 +212,72 @@ export class ReviewListComponent implements OnInit {
 
   open(item: ReviewItem): void {
     void this.router.navigate(['/awards', item.awardId]);
+  }
+
+  isSelected(item: ReviewItem): boolean {
+    return this.selected().has(item.awardId);
+  }
+
+  toggle(item: ReviewItem): void {
+    const next = new Set(this.selected());
+    if (!next.delete(item.awardId)) {
+      next.add(item.awardId);
+    }
+    this.selected.set(next);
+  }
+
+  toggleAll(): void {
+    this.selected.set(
+      this.allSelected() ? new Set() : new Set(this.items().map((item) => item.awardId)),
+    );
+  }
+
+  /** Confirms a decision for the selected awards and applies it to each of them. */
+  decide(decision: DecisionType): void {
+    const chosen = this.selection();
+    if (chosen.length === 0 || this.busy()) {
+      return;
+    }
+    const data: DecisionDialogData = {
+      decision,
+      target: decision === 'ESCALATE' ? this.escalateTarget() : null,
+      documents: 0,
+      count: chosen.length,
+    };
+    this.dialog
+      .open<DecisionDialogComponent, DecisionDialogData, DecisionInput>(DecisionDialogComponent, {
+        data,
+        width: '480px',
+      })
+      .afterClosed()
+      .pipe(
+        present((input): input is DecisionInput => !!input),
+        switchMap((input) => {
+          this.busy.set(true);
+          this.summary.set(null);
+          this.batchProblem.set(null);
+          return this.reviews.decideBatch({
+            decision,
+            ...input,
+            items: chosen.map((item) => ({
+              awardId: item.awardId,
+              requestVersion: item.requestVersion,
+            })),
+          });
+        }),
+      )
+      .subscribe({
+        next: (results) => this.decided(chosen, results),
+        error: (error: unknown) => this.batchFailed(error),
+      });
+  }
+
+  clear(): void {
+    this.selected.set(new Set());
+  }
+
+  dismiss(): void {
+    this.summary.set(null);
   }
 
   title(item: ReviewItem): string {
@@ -171,6 +301,39 @@ export class ReviewListComponent implements OnInit {
     return value ? kyivDate(value, this.language.current()) : '—';
   }
 
+  private decided(chosen: ReviewItem[], results: BatchItemResult[]): void {
+    this.busy.set(false);
+    const failed = results.filter((result) => result.outcome === 'FAILED');
+    const titles = new Map(chosen.map((item) => [item.awardId, this.title(item)]));
+    this.summary.set({
+      done: results.length - failed.length,
+      total: results.length,
+      failed: failed.map((result) => ({
+        awardId: result.awardId,
+        title: titles.get(result.awardId) ?? String(result.awardId),
+        reason: reasonOf(result),
+      })),
+    });
+    this.selected.set(new Set(failed.map((result) => result.awardId)));
+    this.store.dispatch(
+      ReviewsActions.itemsDecided({
+        awardIds: results
+          .filter((result) => result.outcome === 'DONE')
+          .map((result) => result.awardId),
+      }),
+    );
+  }
+
+  private batchFailed(error: unknown): void {
+    this.busy.set(false);
+    const type = problemType(error);
+    this.batchProblem.set(type === 'network' || type === 'access-denied' ? type : 'unknown');
+    this.selected.set(new Set());
+    this.store.dispatch(
+      ReviewsActions.pageChanged({ pageIndex: this.pageIndex(), pageSize: this.pageSize() }),
+    );
+  }
+
   /**
    * The faculties and departments inside the caller's approval scopes; a scope that is neither, the university,
    * covers them all.
@@ -189,4 +352,9 @@ export class ReviewListComponent implements OnInit {
       )
       .sort((a, b) => organizationName(a, language).localeCompare(organizationName(b, language)));
   }
+}
+
+function reasonOf(result: BatchItemResult): string {
+  const code = result.code ?? '';
+  return REASONS.includes(code) ? code : 'unknown';
 }

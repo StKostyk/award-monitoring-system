@@ -8,6 +8,7 @@ actor "Reviewer\n(any level)" as reviewer
 actor "Owner" as owner
 participant "Web Application" as webapp
 participant "ReviewController" as api
+participant "BatchReview" as batch
 participant "ReviewAssignment" as assignment
 participant "ReviewDecisions" as decisions
 participant "Transitions" as transitions
@@ -18,7 +19,8 @@ note over webapp, db
     Steps are the same at every level (faculty secretary, dean,
     rector's secretary, rector); the level only changes who may
     review (role or delegation scope) and whether an approval is final.
-    Batch decisions (4.1.4) run the same decision per request.
+    Batch decisions (4.1.4) run the same decision per request,
+    each in its own transaction.
 end note
 
 == Queue and claim (4.1.1) ==
@@ -62,6 +64,26 @@ else open request
     decisions -> mails: decision event, delivered after the commit
     mails -> owner: e-mail: approved, passed on, returned\nwith the comment or rejected with the reason
 end
+
+== Batch decision (4.1.4) ==
+reviewer -> webapp: select rows, «Затвердити (n)» / «Повернути» / …
+webapp -> api: GET /reviews/templates?decision=…
+api --> webapp: templates in the caller's language
+webapp -> webapp: dialog: «Шаблон відповіді» fills the comment
+webapp -> batch: POST /reviews/decisions\n{decision, comment?, items[{awardId, requestVersion}]}
+batch -> batch: 1–50 distinct items (400), comment (422)
+loop every item, in the order sent
+    batch -> decisions: decide (own transaction)
+    alt decided
+        decisions --> batch: DecisionOutcome → DONE
+        decisions -> mails: decision event, after that item's commit
+    else 404 / 409 / 422
+        decisions --> batch: problem → FAILED {code, detail}
+    end
+end
+batch -> db: INSERT audit_logs (REVIEW_BATCH: items, done, failed)
+batch --> webapp: 200 [ {awardId, outcome, code?, status?, level?} ]
+webapp --> reviewer: «Опрацьовано: n з m», failed awards with reasons;\ndecided rows leave the queue, failed stay selected
 
 == Owner ==
 owner -> webapp: Open the award

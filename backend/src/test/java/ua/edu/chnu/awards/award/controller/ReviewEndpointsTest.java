@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -22,9 +21,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import ua.edu.chnu.awards.award.dto.AwardRecipient;
 import ua.edu.chnu.awards.award.dto.ReviewItem;
@@ -151,12 +148,6 @@ class ReviewEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].id").value(6))
             .andExpect(jsonPath("$[0].delegated").value(true));
-    }
-
-    private static RequestPostProcessor secretary() {
-        return jwt().jwt(token -> token.subject("31").claim("role_scopes", List.of("FACULTY_SECRETARY:9")))
-            .authorities(new SimpleGrantedAuthority("award:read:own"),
-                new SimpleGrantedAuthority("award:approve:level1"));
     }
 
     private static ReviewItem item() {

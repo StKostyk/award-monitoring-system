@@ -21,7 +21,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **User Domain** | `users`, `user_roles`, `organizations` | Identity, access control, organizational structure |
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
-| **Workflow Domain** | `award_requests`, `review_decisions` | Multi-level approval workflow tracking |
+| **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
 | **Compliance Domain** | `audit_logs`, `consent_records` | GDPR compliance, audit trails |
 | **Notification Domain** | `notifications`, `notification_preferences` | Communication and user preferences |
 
@@ -666,6 +666,34 @@ The minimum approval level is the lowest role that may give the final approval; 
 - BELONGS TO `users` (N:1) via `reviewer_id`
 - BELONGS TO `users` (N:1) via `delegator_id`
 
+### 3.3 Entity: `review_templates`
+
+**Description**: Ready-made reviewer comments per decision, offered in the decision dialog; the chosen text fills the comment, which the reviewer may still edit (V031, 4.1.4).
+
+**Business Rules**:
+- Reference data maintained by migrations; no API writes them
+- Read by `GET /reviews/templates?decision=` (`award:approve:level1`): active rows of the decision by `sort_order`, title and body in the caller's language, Ukrainian when the English text is empty
+- English title and body are both set or both empty
+- The seed holds three templates for `RETURN`, two for `REJECT`, one each for `ESCALATE` and `APPROVE`
+- No row-audit trigger: the rows change only through migrations
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `template_id` | `BIGSERIAL` | NO | Auto | PK | Unique template identifier |
+| `decision` | `VARCHAR(10)` | NO | - | CK (`APPROVE`, `REJECT`, `RETURN`, `ESCALATE`) | Decision the template is offered for |
+| `title_uk` | `VARCHAR(120)` | NO | - | - | Name in the list, Ukrainian |
+| `title_en` | `VARCHAR(120)` | YES | - | CK (set with `body_en`) | Name in the list, English |
+| `body_uk` | `VARCHAR(2000)` | NO | - | - | Comment text, Ukrainian |
+| `body_en` | `VARCHAR(2000)` | YES | - | CK (set with `title_en`) | Comment text, English |
+| `sort_order` | `INTEGER` | NO | `0` | - | Position in the list, ascending |
+| `active` | `BOOLEAN` | NO | `TRUE` | - | False when no longer offered |
+| `created_at` | `TIMESTAMPTZ` | NO | `now()` | - | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | NO | `now()` | - | Last change (trigger `trg_review_templates_updated_at`) |
+
+**Indexes**:
+- `pk_review_templates` - Primary key on `template_id`
+- `idx_review_templates_decision` - Partial B-tree on `(decision, sort_order)` where `active`
+
 ---
 
 ## 4. Compliance Domain
@@ -710,6 +738,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
 - `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
 - `DOCUMENT_REJECTED` - the malware scanner refused an upload (`entity_type` = `documents`, `entity_id` null since nothing was stored, `user_id` = the uploader; `new_values` = `awardId` and the `signature` ClamAV found; never the file name) (Feature 3.1.3)
+- `REVIEW_BATCH` - a reviewer applied one decision to several awards with `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = the reviewer; `new_values` = `decision`, `items`, `done`, `failed`); every decided item also has its own `REVIEW_DECISION` row (4.1.4)
 - `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 
@@ -881,6 +910,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
 | `review_decisions` | → award_requests (N:1), → users (N:1) |
+| `review_templates` | none (reference data) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |
 | `notifications` | → users (N:1) |

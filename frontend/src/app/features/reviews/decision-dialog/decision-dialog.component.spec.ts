@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
+import { ReviewTemplate, ReviewsService } from '../reviews.service';
 import {
   COMMENT_MAX_LENGTH,
   DecisionDialogComponent,
@@ -25,18 +27,31 @@ const translations = {
         tooLong: 'Не більше 2000 символів',
         verified: 'Документи перевірено',
         confirm: { APPROVE: 'Затвердити', RETURN: 'Повернути', REJECT: 'Відхилити' },
-        to: { DEAN: 'декану' },
+        to: { DEAN: 'декану', higher: 'на вищий рівень' },
+        template: 'Шаблон відповіді',
+        replace: 'Замінити змінений текст коментаря?',
       },
+      batch: { count: 'Нагород: {{count}}' },
     },
   },
 };
 
+const RETURN_TEMPLATES: ReviewTemplate[] = [
+  { id: 1, decision: 'RETURN', title: 'Немає скану', body: 'Додайте скан сертифіката.' },
+  { id: 2, decision: 'RETURN', title: 'Невірна категорія', body: 'Оберіть правильну категорію.' },
+];
+
 describe('DecisionDialogComponent', () => {
   let fixture: ComponentFixture<DecisionDialogComponent>;
   const ref = { close: vi.fn() };
+  const reviews = { templates: vi.fn() };
 
-  async function create(data: DecisionDialogData): Promise<HTMLElement> {
+  async function create(
+    data: DecisionDialogData,
+    templates: ReviewTemplate[] = [],
+  ): Promise<HTMLElement> {
     ref.close.mockReset();
+    reviews.templates.mockReset().mockReturnValue(of(templates));
     await TestBed.configureTestingModule({
       imports: [
         DecisionDialogComponent,
@@ -48,6 +63,7 @@ describe('DecisionDialogComponent', () => {
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: ref },
+        { provide: ReviewsService, useValue: reviews },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(DecisionDialogComponent);
@@ -110,5 +126,84 @@ describe('DecisionDialogComponent', () => {
     find(element, 'decision-confirm')?.click();
 
     expect(ref.close).toHaveBeenCalledWith({});
+  });
+
+  it('ac4_5_ac4_6_a_template_fills_the_comment_which_stays_editable', async () => {
+    const element = await create(
+      { decision: 'RETURN', target: null, documents: 0 },
+      RETURN_TEMPLATES,
+    );
+
+    expect(reviews.templates).toHaveBeenCalledWith('RETURN');
+    expect(find(element, 'decision-template')).not.toBeNull();
+    fixture.componentInstance.pick(1);
+    fixture.detectChanges();
+    const field = find(element, 'decision-comment') as HTMLTextAreaElement;
+    expect(field.value).toBe('Додайте скан сертифіката.');
+
+    type(element, 'Додайте скан сертифіката у PDF.');
+    find(element, 'decision-confirm')?.click();
+
+    expect(ref.close).toHaveBeenCalledWith({ comment: 'Додайте скан сертифіката у PDF.' });
+  });
+
+  it('ac4_6_another_template_replaces_unedited_text_at_once', async () => {
+    const element = await create(
+      { decision: 'RETURN', target: null, documents: 0 },
+      RETURN_TEMPLATES,
+    );
+
+    fixture.componentInstance.pick(1);
+    fixture.componentInstance.pick(2);
+    fixture.detectChanges();
+
+    expect(find(element, 'decision-replace')).toBeNull();
+    expect((find(element, 'decision-comment') as HTMLTextAreaElement).value).toBe(
+      'Оберіть правильну категорію.',
+    );
+  });
+
+  it('ac4_6_the_dialog_asks_before_replacing_edited_text', async () => {
+    const element = await create(
+      { decision: 'RETURN', target: null, documents: 0 },
+      RETURN_TEMPLATES,
+    );
+    fixture.componentInstance.pick(1);
+    type(element, 'Мій власний коментар');
+
+    fixture.componentInstance.pick(2);
+    fixture.detectChanges();
+    expect(find(element, 'decision-replace')?.textContent).toContain('Замінити змінений текст');
+    find(element, 'decision-replace-no')?.click();
+    fixture.detectChanges();
+
+    expect(find(element, 'decision-replace')).toBeNull();
+    expect((find(element, 'decision-comment') as HTMLTextAreaElement).value).toBe(
+      'Мій власний коментар',
+    );
+    expect(fixture.componentInstance.template.value).toBe(1);
+
+    fixture.componentInstance.pick(2);
+    fixture.detectChanges();
+    find(element, 'decision-replace-yes')?.click();
+    fixture.detectChanges();
+
+    expect((find(element, 'decision-comment') as HTMLTextAreaElement).value).toBe(
+      'Оберіть правильну категорію.',
+    );
+  });
+
+  it('ac4_6_a_batch_shows_its_count_and_no_documents_mark', async () => {
+    const element = await create({ decision: 'APPROVE', target: null, documents: 3, count: 4 });
+
+    expect(find(element, 'decision-count')?.textContent?.trim()).toBe('Нагород: 4');
+    expect(find(element, 'decision-verified')).toBeNull();
+    expect(find(element, 'decision-template')).toBeNull();
+  });
+
+  it('ac4_6_a_mixed_level_escalation_goes_to_the_next_level', async () => {
+    const element = await create({ decision: 'ESCALATE', target: null, documents: 0, count: 2 });
+
+    expect(find(element, 'decision-title')?.textContent?.trim()).toBe('Передати на вищий рівень');
   });
 });

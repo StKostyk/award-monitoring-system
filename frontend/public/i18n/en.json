@@ -628,7 +628,38 @@
         "FACULTY_SECRETARY": "faculty secretary",
         "DEAN": "dean",
         "RECTOR_SECRETARY": "rector's secretary",
-        "RECTOR": "rector"
+        "RECTOR": "rector",
+        "higher": "next level"
+      },
+      "template": "Response template",
+      "replace": "Replace your edited comment?",
+      "replaceYes": "Replace",
+      "replaceNo": "Keep my text"
+    },
+    "batch": {
+      "selectAll": "Select all on this page",
+      "selectRow": "Select “{{title}}”",
+      "selected": "Selected: {{count}}",
+      "approve": "Approve ({{count}})",
+      "return": "Return",
+      "reject": "Reject",
+      "escalateTo": "Pass to the {{level}}",
+      "escalate": "Pass to the next level",
+      "clear": "Clear selection",
+      "actions": "Actions on the selected awards",
+      "count": "Awards: {{count}}",
+      "done": "Processed: {{done}} of {{total}}",
+      "failed": "Not processed:",
+      "dismiss": "Close",
+      "reasons": {
+        "request-claimed": "Claimed by another reviewer",
+        "request-stale": "The data changed; open the award again",
+        "request-closed": "The review has already finished",
+        "no-higher-level": "There is no higher review level",
+        "validation-failed": "No documents for the “documents verified” mark",
+        "not-found": "The award was not found or is no longer yours to review",
+        "try-again": "A temporary error; try again",
+        "unknown": "The action failed"
       }
     }
   },

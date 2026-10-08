@@ -541,7 +541,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
         }
         this.show(award);
         this.returned.set(
-          award.request?.status === 'RETURNED' ? { comment: award.request.returnComment ?? null } : null,
+          award.request?.status === 'RETURNED'
+            ? { comment: award.request.returnComment ?? null }
+            : null,
         );
         this.stale.set(false);
         this.problem.set(null);

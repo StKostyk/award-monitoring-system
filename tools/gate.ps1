@@ -64,7 +64,8 @@ function Invoke-FrontendStatic {
     $ok = $ok -and $LASTEXITCODE -eq 0
     Pop-Location
     if (-not $ok) {
-        Select-String -Path $log -Pattern 'error|\[warn\]' | Select-Object -First 20 | ForEach-Object { $_.Line }
+        Select-String -Path $log -Pattern 'error|\[warn\]' | Select-Object -First 20 |
+            ForEach-Object { Write-Host $_.Line }
     }
     return $ok
 }

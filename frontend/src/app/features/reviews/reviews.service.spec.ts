@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { LanguageService } from '../../core/i18n/language.service';
 import { NO_REVIEW_FILTERS, ReviewsService } from './reviews.service';
 
 describe('ReviewsService', () => {
@@ -10,7 +11,11 @@ describe('ReviewsService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: LanguageService, useValue: { current: () => 'en' } },
+      ],
     });
     service = TestBed.inject(ReviewsService);
     http = TestBed.inject(HttpTestingController);
@@ -78,5 +83,34 @@ describe('ReviewsService', () => {
       level: 'FACULTY_SECRETARY',
       requestVersion: 4,
     });
+  });
+
+  it('ac4_1_posts_one_decision_with_every_item', () => {
+    const body = {
+      decision: 'APPROVE' as const,
+      items: [
+        { awardId: 5, requestVersion: 3 },
+        { awardId: 6, requestVersion: 1 },
+      ],
+    };
+    service.decideBatch(body).subscribe((results) => expect(results.length).toBe(2));
+
+    const request = http.expectOne(
+      (r) => r.method === 'POST' && r.url.endsWith('/reviews/decisions'),
+    );
+    expect(request.request.body).toEqual(body);
+    request.flush([
+      { awardId: 5, outcome: 'DONE' },
+      { awardId: 6, outcome: 'FAILED', code: 'request-claimed' },
+    ]);
+  });
+
+  it('ac4_5_asks_for_the_templates_in_the_interface_language', () => {
+    service.templates('RETURN').subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/reviews/templates'));
+    expect(request.request.params.get('decision')).toBe('RETURN');
+    expect(request.request.headers.get('Accept-Language')).toBe('en');
+    request.flush([]);
   });
 });
