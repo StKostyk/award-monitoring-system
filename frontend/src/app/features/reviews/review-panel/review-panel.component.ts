@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,7 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { Observable, filter, switchMap, tap } from 'rxjs';
+import { Observable, catchError, filter, of, switchMap, tap, throwError } from 'rxjs';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -33,6 +33,7 @@ import {
   HandOverDialogComponent,
   HandOverDialogData,
 } from '../hand-over-dialog/hand-over-dialog.component';
+import { reviewerOf } from '../review-problems';
 import {
   DecisionOutcome,
   DecisionType,
@@ -153,35 +154,34 @@ export class ReviewPanelComponent implements OnInit {
   }
 
   decide(item: ReviewItem, decision: DecisionType): void {
-    const data: DecisionDialogData = {
+    const data: DecisionDialogData<DecisionOutcome> = {
       decision,
       target: this.nextLevel(),
       documents: item.documentCount,
+      draft: String(item.awardId),
+      submit: (input: DecisionInput) => {
+        this.notice.set(null);
+        const current = this.item();
+        return this.reviews
+          .decide(item.awardId, {
+            decision,
+            requestVersion:
+              current?.level === item.level ? current.requestVersion : item.requestVersion,
+            ...input,
+          })
+          .pipe(catchError((error: unknown) => this.reloadAfter(error)));
+      },
     };
     this.dialog
-      .open<DecisionDialogComponent, DecisionDialogData, DecisionInput>(DecisionDialogComponent, {
-        data,
-        width: '480px',
-      })
-      .afterClosed()
-      .pipe(
-        filter((input): input is DecisionInput => !!input),
-        tap(() => this.start()),
-        switchMap((input) =>
-          this.reviews.decide(item.awardId, {
-            decision,
-            requestVersion: item.requestVersion,
-            ...input,
-          }),
-        ),
+      .open<DecisionDialogComponent, DecisionDialogData<DecisionOutcome>, DecisionOutcome>(
+        DecisionDialogComponent,
+        { data, width: '480px' },
       )
-      .subscribe({
-        next: (outcome) => {
-          this.busy.set(false);
-          this.item.set(null);
-          this.decided.emit(outcome);
-        },
-        error: (error: unknown) => this.failed(error),
+      .afterClosed()
+      .pipe(filter((outcome): outcome is DecisionOutcome => !!outcome))
+      .subscribe((outcome) => {
+        this.item.set(null);
+        this.decided.emit(outcome);
       });
   }
 
@@ -209,10 +209,20 @@ export class ReviewPanelComponent implements OnInit {
     this.changed.emit();
   }
 
+  private reloadAfter(error: unknown): Observable<never> {
+    if (!reloads(error)) {
+      return throwError(() => error);
+    }
+    return this.reload().pipe(
+      tap(() => this.changed.emit()),
+      switchMap(() => throwError(() => error)),
+    );
+  }
+
   private failed(error: unknown): void {
     this.busy.set(false);
     const type = problemType(error);
-    if (RELOADING.includes(type) || problemStatus(error) === HttpStatusCode.NotFound) {
+    if (reloads(error)) {
       const holder = type === 'request-claimed' ? reviewerOf(error) : null;
       this.notice.set(
         holder && !this.holds(holder)
@@ -227,17 +237,18 @@ export class ReviewPanelComponent implements OnInit {
   }
 
   private load(): void {
+    this.reload().subscribe();
+  }
+
+  private reload(): Observable<ReviewItem | null> {
     this.busy.set(true);
-    this.reviews.item(this.awardId()).subscribe({
-      next: (item) => {
+    return this.reviews.item(this.awardId()).pipe(
+      catchError(() => of(null)),
+      tap((item) => {
         this.item.set(item);
         this.busy.set(false);
-      },
-      error: () => {
-        this.item.set(null);
-        this.busy.set(false);
-      },
-    });
+      }),
+    );
   }
 
   private holds(reviewer: UserRef | null): boolean {
@@ -245,7 +256,6 @@ export class ReviewPanelComponent implements OnInit {
   }
 }
 
-function reviewerOf(error: unknown): UserRef | null {
-  const body = error instanceof HttpErrorResponse ? (error.error as { reviewer?: UserRef }) : null;
-  return body?.reviewer ?? null;
+function reloads(error: unknown): boolean {
+  return RELOADING.includes(problemType(error)) || problemStatus(error) === HttpStatusCode.NotFound;
 }

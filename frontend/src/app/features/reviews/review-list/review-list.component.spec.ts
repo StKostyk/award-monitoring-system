@@ -7,7 +7,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { BehaviorSubject, EMPTY, of, throwError } from 'rxjs';
+import { BehaviorSubject, EMPTY, catchError, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -18,6 +18,7 @@ import {
   OrganizationSummary,
   OrganizationsService,
 } from '../../../core/organizations/organizations.service';
+import { DecisionDialogData } from '../decision-dialog/decision-dialog.component';
 import { BatchItemResult, NO_REVIEW_FILTERS, ReviewItem, ReviewsService } from '../reviews.service';
 import { ReviewsActions } from '../store/reviews.actions';
 import { reviewsFeature } from '../store/reviews.feature';
@@ -171,7 +172,10 @@ describe('ReviewListComponent', () => {
   }
 
   function confirmWith(comment?: string): void {
-    dialog.open.mockReturnValue({ afterClosed: () => of(comment ? { comment } : {}) });
+    dialog.open.mockImplementation((_, config: { data: DecisionDialogData }) => ({
+      afterClosed: () =>
+        config.data.submit(comment ? { comment } : {}).pipe(catchError(() => EMPTY)),
+    }));
   }
 
   it('ac1_10_shows_a_row_per_request_with_deadline_overdue_chip_and_reviewer', async () => {
@@ -364,12 +368,15 @@ describe('ReviewListComponent', () => {
     element().querySelector<HTMLElement>('[data-testid="batch-approve"]')?.click();
     fixture.detectChanges();
 
-    expect(dialog.open.mock.calls[0][1].data).toEqual({
-      decision: 'APPROVE',
-      target: null,
-      documents: 0,
-      count: 3,
-    });
+    expect(dialog.open.mock.calls[0][1].data).toEqual(
+      expect.objectContaining({
+        decision: 'APPROVE',
+        target: null,
+        documents: 0,
+        count: 3,
+        draft: expect.stringMatching(/^batch:\d+(-\d+){2}$/),
+      }),
+    );
     expect(reviews.decideBatch).toHaveBeenCalledWith({
       decision: 'APPROVE',
       items: [
@@ -431,21 +438,26 @@ describe('ReviewListComponent', () => {
     expect(reviews.decideBatch).not.toHaveBeenCalled();
   });
 
-  it('ac4_7_an_unreachable_server_reloads_the_queue', async () => {
-    await create();
-    load([reviewItem()]);
-    reviews.decideBatch.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
-    confirmWith();
-    tick('batch-select');
+  it.each([0, 400, 500])(
+    'ac4_4_a_whole_request_failure_%i_keeps_the_selection_for_the_open_dialog',
+    async (status) => {
+      await create();
+      load([reviewItem()]);
+      reviews.decideBatch.mockReturnValue(throwError(() => new HttpErrorResponse({ status })));
+      confirmWith('Не відповідає положенню');
+      tick('batch-select');
 
-    element().querySelector<HTMLElement>('[data-testid="batch-reject"]')?.click();
-    fixture.detectChanges();
+      element().querySelector<HTMLElement>('[data-testid="batch-reject"]')?.click();
+      fixture.detectChanges();
 
-    expect(element().querySelector('[data-testid="batch-error"]')).not.toBeNull();
-    expect(store.dispatch).toHaveBeenCalledWith(
-      ReviewsActions.pageChanged({ pageIndex: 0, pageSize: 20 }),
-    );
-  });
+      expect(fixture.componentInstance.busy()).toBe(false);
+      expect(fixture.componentInstance.selection().map((item) => item.awardId)).toEqual([5]);
+      expect(text('batch-done')).toBe('');
+      expect(store.dispatch).not.toHaveBeenCalledWith(
+        ReviewsActions.pageChanged({ pageIndex: 0, pageSize: 20 }),
+      );
+    },
+  );
 
   it('ac4_8_cards_offer_the_same_selection_on_a_narrow_screen', async () => {
     wide.next({ matches: false, breakpoints: {} });

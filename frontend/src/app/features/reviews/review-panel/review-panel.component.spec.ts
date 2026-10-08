@@ -10,6 +10,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { DecisionDialogData } from '../decision-dialog/decision-dialog.component';
 import { ReviewItem, ReviewsService } from '../reviews.service';
 import { ReviewPanelComponent } from './review-panel.component';
 
@@ -284,18 +285,18 @@ describe('ReviewPanelComponent', () => {
     };
     service.item.mockReturnValue(of(item({ reviewer: SELF, documentCount: 2 })));
     service.decide.mockReturnValue(of(outcome));
-    dialog.open.mockReturnValue({ afterClosed: () => of({ comment: 'Варто декану' }) });
+    dialog.open.mockImplementation((_, config: { data: DecisionDialogData }) => ({
+      afterClosed: () => config.data.submit({ comment: 'Варто декану' }),
+    }));
     const decided = vi.fn();
     const element = await create();
     fixture.componentInstance.decided.subscribe(decided);
 
     click(element, 'review-escalate');
 
-    expect(dialog.open.mock.calls[0][1].data).toEqual({
-      decision: 'ESCALATE',
-      target: 'DEAN',
-      documents: 2,
-    });
+    expect(dialog.open.mock.calls[0][1].data).toEqual(
+      expect.objectContaining({ decision: 'ESCALATE', target: 'DEAN', documents: 2, draft: '5' }),
+    );
     expect(service.decide).toHaveBeenCalledWith(5, {
       decision: 'ESCALATE',
       requestVersion: 3,
@@ -315,16 +316,82 @@ describe('ReviewPanelComponent', () => {
     expect(service.decide).not.toHaveBeenCalled();
   });
 
-  it('ac2_5_the_top_level_offers_no_escalation_and_a_refusal_is_reported', async () => {
+  it('ac2_5_the_top_level_offers_no_escalation_and_a_refusal_goes_back_to_the_dialog', async () => {
     permissions.set(readPermissions(token({ role_scopes: ['RECTOR:1'] })));
     service.item.mockReturnValue(of(item({ reviewer: SELF, level: 'RECTOR' })));
     service.decide.mockReturnValue(throwError(() => conflict('no-higher-level')));
-    dialog.open.mockReturnValue({ afterClosed: () => of({}) });
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
     const element = await create();
 
     expect(element.querySelector('[data-testid="review-escalate"]')).toBeNull();
     click(element, 'review-approve');
+    const failure = vi.fn();
+    submitOf(0)({}).subscribe({ error: failure });
 
-    expect(text(element, 'review-panel-notice')).toBe('Вищого рівня розгляду немає');
+    expect(failure).toHaveBeenCalled();
+    expect(service.item).toHaveBeenCalledTimes(1);
   });
+
+  it('ac4_2_a_stale_answer_reloads_behind_the_dialog_and_the_retry_uses_the_new_version', async () => {
+    service.item
+      .mockReturnValueOnce(of(item({ reviewer: SELF })))
+      .mockReturnValue(of(item({ reviewer: SELF, requestVersion: 6 })));
+    service.decide
+      .mockReturnValueOnce(throwError(() => conflict('request-stale', { currentVersion: 6 })))
+      .mockReturnValue(of({ awardId: 5 }));
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
+    const changed = vi.fn();
+    const element = await create();
+    fixture.componentInstance.changed.subscribe(changed);
+
+    click(element, 'review-approve');
+    submitOf(0)({}).subscribe({ error: vi.fn() });
+    submitOf(0)({}).subscribe();
+
+    expect(service.item).toHaveBeenCalledTimes(2);
+    expect(changed).toHaveBeenCalled();
+    expect(service.decide).toHaveBeenNthCalledWith(1, 5, {
+      decision: 'APPROVE',
+      requestVersion: 3,
+    });
+    expect(service.decide).toHaveBeenNthCalledWith(2, 5, {
+      decision: 'APPROVE',
+      requestVersion: 6,
+    });
+  });
+
+  it('ac4_2_a_retry_after_the_level_changed_keeps_the_version_it_was_opened_with', async () => {
+    permissions.set(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9', 'DEAN:9'] })));
+    service.item
+      .mockReturnValueOnce(of(item({ reviewer: SELF })))
+      .mockReturnValue(of(item({ reviewer: SELF, level: 'DEAN', requestVersion: 6 })));
+    service.decide.mockReturnValue(throwError(() => conflict('request-stale')));
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
+    const element = await create();
+
+    click(element, 'review-approve');
+    submitOf(0)({}).subscribe({ error: vi.fn() });
+    submitOf(0)({}).subscribe({ error: vi.fn() });
+
+    expect(service.decide).toHaveBeenLastCalledWith(5, { decision: 'APPROVE', requestVersion: 3 });
+  });
+
+  it('ac4_2_a_closed_or_vanished_request_reloads_the_panel', async () => {
+    service.item.mockReturnValueOnce(of(item({ reviewer: SELF }))).mockReturnValue(of(null));
+    service.decide
+      .mockReturnValueOnce(throwError(() => conflict('request-closed')))
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 404 })));
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
+    const element = await create();
+
+    click(element, 'review-approve');
+    submitOf(0)({}).subscribe({ error: vi.fn() });
+    submitOf(0)({}).subscribe({ error: vi.fn() });
+
+    expect(service.item).toHaveBeenCalledTimes(3);
+  });
+
+  function submitOf(call: number): DecisionDialogData['submit'] {
+    return (dialog.open.mock.calls[call][1] as { data: DecisionDialogData }).data.submit;
+  }
 });
