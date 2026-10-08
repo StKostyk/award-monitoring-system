@@ -9,8 +9,10 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
  * @param level          the level the requests wait at; null for the caller's own levels
  * @param organizationId a faculty or department inside the caller's scopes, with its sub-units
  * @param overdue        true for overdue requests only
+ * @param noticed        true for requests whose missed deadline the next level was told about only
  */
-public record ReviewQuery(Assignment assigned, ApprovalLevel level, Long organizationId, boolean overdue) {
+public record ReviewQuery(Assignment assigned, ApprovalLevel level, Long organizationId, boolean overdue,
+                          boolean noticed) {
 
     /**
      * Who holds a request.

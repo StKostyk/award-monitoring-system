@@ -60,6 +60,9 @@ public class ReviewSpecifications {
             if (query.overdue()) {
                 predicates.add(builder.lessThan(root.get("deadline"), now));
             }
+            if (query.noticed()) {
+                predicates.add(builder.isNotNull(root.get("overdueNoticedAt")));
+            }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
     }

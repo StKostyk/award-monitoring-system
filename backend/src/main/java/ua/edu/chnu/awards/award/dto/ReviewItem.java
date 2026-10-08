@@ -24,6 +24,7 @@ import ua.edu.chnu.awards.user.dto.OrganizationRef;
  * @param submittedAt    when it was submitted
  * @param deadline       when the current level is due
  * @param overdue        whether the deadline has passed
+ * @param overdueNoticedAt when the next level was told about the missed deadline, null while not yet
  * @param documentCount  how many documents the award has
  * @param delegatedFrom  the person whose delegation lets the caller review it, null under an own role
  */
@@ -31,5 +32,6 @@ import ua.edu.chnu.awards.user.dto.OrganizationRef;
 public record ReviewItem(Long awardId, Long requestId, Long requestVersion, String title, String titleUk,
                          AwardRecipient recipient, UserRef owner, OrganizationRef organization, CategoryRef category,
                          ApprovalLevel level, RequestStatus status, UserRef reviewer, Instant submittedAt,
-                         Instant deadline, boolean overdue, long documentCount, UserRef delegatedFrom) {
+                         Instant deadline, boolean overdue, Instant overdueNoticedAt, long documentCount,
+                         UserRef delegatedFrom) {
 }

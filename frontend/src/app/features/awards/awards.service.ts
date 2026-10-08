@@ -136,7 +136,7 @@ export interface AwardStatusView {
   overdue: boolean;
   completedAt: string | null;
   rejectionReason: string | null;
-  delay: { reason: DelayReason; since: string | null } | null;
+  delay: { reason: DelayReason; since: string | null; noticedAt: string | null } | null;
   path: PathStep[];
   decisions: ReviewDecision[];
 }

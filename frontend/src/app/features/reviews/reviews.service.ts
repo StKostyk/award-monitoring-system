@@ -38,6 +38,7 @@ export interface ReviewItem {
   submittedAt: string;
   deadline: string | null;
   overdue: boolean;
+  overdueNoticedAt: string | null;
   documentCount: number;
   delegatedFrom: UserRef | null;
 }
@@ -105,6 +106,8 @@ export interface ReviewFilters {
   assigned: ReviewAssignment | null;
   level: ApprovalLevel | null;
   organizationId: number | null;
+  /** True for requests whose missed deadline the next level was told about; null shows all. */
+  noticed: true | null;
 }
 
 /** The working days each faculty level has for a request of the faculty. */
@@ -120,6 +123,7 @@ export const NO_REVIEW_FILTERS: ReviewFilters = {
   assigned: null,
   level: null,
   organizationId: null,
+  noticed: null,
 };
 
 /** The reviewer queue and who works on a request. */

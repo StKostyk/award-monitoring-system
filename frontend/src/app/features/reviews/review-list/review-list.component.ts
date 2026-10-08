@@ -140,6 +140,8 @@ export class ReviewListComponent implements OnInit {
 
   protected readonly tabs = TABS;
   protected readonly levels = reviewableLevels(this.auth.permissions()) as ApprovalLevel[];
+  protected readonly lowerLevel: ApprovalLevel | null =
+    this.levels.at(-1) === 'DEAN' ? 'FACULTY_SECRETARY' : null;
   protected readonly pageSizes = PAGE_SIZES;
   protected readonly columns = [
     'select',

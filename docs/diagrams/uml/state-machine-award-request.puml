@@ -23,6 +23,9 @@ note as AsBuilt
     Decisions are taken in SUBMITTED, ESCALATED or IN_REVIEW;
     an unclaimed request is claimed by the decision itself.
     EXPIRED stays in the check constraint, unused.
+    Overdue: mark only. The hourly job sets overdue_noticed_at
+    once per level and e-mails the next level; status, level
+    and reviewer stay; every new deadline clears the mark (4.2.2).
 end note
 
 [*] --> DRAFT <<draft>> : Owner creates award

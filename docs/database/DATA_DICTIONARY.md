@@ -574,6 +574,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `current_level` | `VARCHAR(30)` | NO | - | CK | Current approval level |
 | `submitted_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Submission timestamp |
 | `deadline` | `TIMESTAMPTZ` | YES | - | - | End of the current level's review period (set at submission since V024) |
+| `overdue_noticed_at` | `TIMESTAMPTZ` | YES | - | CK pair | When the hourly overdue job noticed the passed deadline and e-mailed the next level with a reviewer; cleared with every new deadline (other level, resubmission, return, withdrawal) (V033, 4.2.2) |
+| `overdue_noticed_level` | `VARCHAR(30)` | YES | - | CK as `current_level`; CK pair | Level the request waited at when noticed; set and cleared together with `overdue_noticed_at` (`ck_award_requests_noticed_pair`) (V033) |
 | `completed_at` | `TIMESTAMPTZ` | YES | - | - | Final decision timestamp |
 | `rejection_reason` | `TEXT` | YES | - | - | Reason if rejected |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
@@ -612,6 +614,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `idx_requests_active` - Partial B-tree on `(current_reviewer_id, created_at DESC)` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`
 - `idx_requests_status_level` - B-tree on `(status, current_level)` (V012)
 - `idx_requests_submitted` - B-tree on `submitted_at DESC` (V012)
+- `idx_requests_overdue_unnoticed` - Partial B-tree on `deadline` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED') AND overdue_noticed_at IS NULL` (V033, the overdue job)
 - `idx_requests_open_level` - Partial B-tree on `(current_level, deadline, request_id)` where `status IN ('SUBMITTED', 'IN_REVIEW', 'ESCALATED')`: the reviewer queue (V028)
 
 **Relationships**:
@@ -741,6 +744,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `DOCUMENT_REJECTED` - the malware scanner refused an upload (`entity_type` = `documents`, `entity_id` null since nothing was stored, `user_id` = the uploader; `new_values` = `awardId` and the `signature` ClamAV found; never the file name) (Feature 3.1.3)
 - `REVIEW_BATCH` - a reviewer applied one decision to several awards with `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = the reviewer; `new_values` = `decision`, `items`, `done`, `failed`); every decided item also has its own `REVIEW_DECISION` row (4.1.4)
 - `REVIEW_PERIOD_CHANGED` - a dean (own role or a delegation) or a system administrator changed a faculty's review period with `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = the faculty, `user_id` = the caller; `old_values`/`new_values` = `workingDays` (own value, null for the default) and `effectiveWorkingDays`; `new_values.delegatorId` under a delegation); an unchanged value writes no row (4.2.1)
+- `REVIEW_OVERDUE_NOTICED` - the hourly overdue job marked an open request past its deadline (`entity_type` = `awards`, `entity_id` = the award, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = user ids e-mailed, empty at the rector or without a reviewer above); once per level (4.2.2)
 - `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 

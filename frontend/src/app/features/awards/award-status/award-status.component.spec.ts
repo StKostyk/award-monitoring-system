@@ -75,6 +75,7 @@ const translations = {
         upcomingBy: 'до {{date}}',
         estimate: 'Орієнтовне завершення: {{date}}',
         overdue: 'Розгляд триває довше, ніж зазвичай (з {{since}}). Нова орієнтовна дата: {{date}}',
+        overdueNoticed: 'Термін розгляду минув {{since}}; керівника повідомлено {{noticed}}',
         noReviewer: 'Зараз немає працівника на посаді «{{level}}» для вашого підрозділу.',
         returned: 'Очікує ваших виправлень',
         completed: 'Розгляд завершено: {{date}}',
@@ -225,6 +226,26 @@ describe('AwardStatusComponent', () => {
 
     expect(text(element, 'award-status-delay')).toContain(
       'Розгляд триває довше, ніж зазвичай (з 01.10.2026). Нова орієнтовна дата: 09.10.2026',
+    );
+  });
+
+  it('ac2_5_names_the_notice_to_the_next_level', async () => {
+    service.status.mockReturnValue(
+      of({
+        ...submitted,
+        overdue: true,
+        estimatedCompletion: '2026-10-09',
+        delay: {
+          reason: 'REVIEW_OVERDUE',
+          since: '2026-10-01T09:00:00Z',
+          noticedAt: '2026-10-01T10:05:00Z',
+        },
+      }),
+    );
+    const element = await create();
+
+    expect(text(element, 'award-status-delay')).toContain(
+      'Термін розгляду минув 01.10.2026; керівника повідомлено 01.10.2026',
     );
   });
 

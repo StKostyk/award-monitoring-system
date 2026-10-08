@@ -72,6 +72,7 @@ public class ReviewDecisions {
         Long delegatorId = rule.delegatorId(request);
         String comment = DecisionRules.comment(body);
         Instant now = clock.instant();
+        log.measure(request, decidedAt, step.recorded(), now);
         log.write(request, decidedAt, step.recorded(), caller, comment, delegatorId, now);
         move(request, step, caller, comment, now);
         award.setStatus(step.award());
@@ -93,7 +94,7 @@ public class ReviewDecisions {
             request.setCurrentLevel(startLevel.from(transitions.above(request.getCurrentLevel()),
                 award.getOrganization().getId(), request.getSubmitter().getId()));
             request.setCurrentReviewer(null);
-            request.setDeadline(estimator.deadline(award, request.getCurrentLevel(), now));
+            request.restartPeriod(estimator.deadline(award, request.getCurrentLevel(), now));
         } else if (step.isFinal()) {
             request.setCurrentReviewer(caller);
             request.setCompletedAt(now);
@@ -102,7 +103,7 @@ public class ReviewDecisions {
             }
         } else {
             request.setCurrentReviewer(null);
-            request.setDeadline(null);
+            request.restartPeriod(null);
         }
     }
 

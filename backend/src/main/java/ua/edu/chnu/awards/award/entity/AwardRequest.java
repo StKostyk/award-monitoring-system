@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import ua.edu.chnu.awards.user.entity.User;
@@ -34,6 +35,7 @@ import lombok.ToString;
  */
 @Entity
 @Table(name = "award_requests")
+@DynamicUpdate
 @Getter
 @Setter
 @Builder
@@ -70,8 +72,18 @@ public class AwardRequest {
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt;
 
+    @Setter(AccessLevel.NONE)
     @Column(name = "deadline")
     private Instant deadline;
+
+    @Setter(AccessLevel.NONE)
+    @Column(name = "overdue_noticed_at")
+    private Instant overdueNoticedAt;
+
+    @Setter(AccessLevel.NONE)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "overdue_noticed_level", length = 30)
+    private ApprovalLevel overdueNoticedLevel;
 
     @Column(name = "completed_at")
     private Instant completedAt;
@@ -91,6 +103,17 @@ public class AwardRequest {
     @Version
     @Column(name = "version", nullable = false)
     private Long version = 0L;
+
+    /**
+     * Starts a new review period: sets the deadline and clears the overdue notice of the previous one.
+     *
+     * @param newDeadline the deadline of the new period, null when no review is pending
+     */
+    public void restartPeriod(Instant newDeadline) {
+        deadline = newDeadline;
+        overdueNoticedAt = null;
+        overdueNoticedLevel = null;
+    }
 
     /**
      * Whether the request still waits for a decision.

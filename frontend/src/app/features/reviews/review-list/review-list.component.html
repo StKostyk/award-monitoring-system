@@ -48,6 +48,23 @@
         }
       </mat-select>
     </mat-form-field>
+    <mat-checkbox
+      class="reviews__filter-noticed"
+      [checked]="filters().noticed === true"
+      (change)="filter({ noticed: $event.checked ? true : null })"
+      data-testid="review-filter-noticed"
+      >{{ 'reviews.filters.noticed' | transloco }}</mat-checkbox
+    >
+    @if (lowerLevel) {
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="filter({ level: lowerLevel, noticed: true })"
+        data-testid="review-filter-lower-overdue"
+      >
+        {{ 'reviews.filters.lowerOverdue' | transloco }}
+      </button>
+    }
   </div>
 
   @if (loading()) {
@@ -229,6 +246,11 @@
                 'reviews.overdue' | transloco
               }}</mat-chip>
             }
+            @if (item.overdueNoticedAt) {
+              <mat-chip class="reviews__noticed" data-testid="review-noticed">{{
+                'reviews.noticed' | transloco: { date: day(item.overdueNoticedAt) }
+              }}</mat-chip>
+            }
           </span>
         </td>
       </ng-container>
@@ -304,6 +326,11 @@
               @if (item.overdue) {
                 <mat-chip class="reviews__overdue" data-testid="review-overdue">{{
                   'reviews.overdue' | transloco
+                }}</mat-chip>
+              }
+              @if (item.overdueNoticedAt) {
+                <mat-chip class="reviews__noticed" data-testid="review-noticed">{{
+                  'reviews.noticed' | transloco: { date: day(item.overdueNoticedAt) }
                 }}</mat-chip>
               }
             </dd>

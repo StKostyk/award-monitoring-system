@@ -109,6 +109,11 @@ public class MetricsConfiguration {
 | `document.processing.failures.total` | Counter | Processing failures |
 | `user.registrations.total` | Counter | User registrations |
 | `user.sessions.active` | Gauge | Active user sessions |
+| `awards.review.decisions` | Counter | Reviewer decisions; tags `level`, `decision` (`approved`, `rejected`, `escalated`, `returned`), `on_time` (decided before the deadline); after the commit |
+| `awards.review.decision.duration` | Timer | Time from the request reaching a level (submission or the decision that moved it there) to the decision; tag `level` |
+| `awards.review.open` | Gauge | Open requests per `level`; refreshed by the hourly overdue job, so up to an hour old |
+| `awards.review.overdue` | Gauge | Open requests past their deadline per `level`; refreshed by the overdue job |
+| `awards.review.overdue.notices` | Counter | Overdue notice e-mails the mail server accepted |
 
 **Usage Example**:
 

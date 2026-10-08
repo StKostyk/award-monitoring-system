@@ -132,6 +132,7 @@ app:
     id: ${APP_BRAND:chnu}
   workflow:
     review-working-days: ${APP_REVIEW_WORKING_DAYS:3}
+    overdue-cron: ${APP_WORKFLOW_OVERDUE_CRON:0 5 * * * *}
   documents:
     bucket: ${STORAGE_BUCKET:award-documents}
     max-file-size: 10MB

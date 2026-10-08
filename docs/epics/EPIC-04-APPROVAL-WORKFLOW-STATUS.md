@@ -46,8 +46,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 4 | 4.1.3 Withdraw an unclaimed request and resubmit a returned award | 4.1 | 3 | SCRUM-51 | #145 | no | Done |
 | 5 | 4.1.4 Batch review with template responses | 4.1 | 5 | SCRUM-52 | #146 | yes | Done |
 | 5a | 4.1.5 Fixes from the Feature 4.1 validation | 4.1 | 3 | SCRUM-58 | #160 | no | Done |
-| 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | In review |
-| 7 | 4.2.2 Overdue detection, escalation notice and SLA metrics | 4.2 | 5 | SCRUM-54 | #148 | no | To do |
+| 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | Done |
+| 7 | 4.2.2 Overdue detection, escalation notice and SLA metrics | 4.2 | 5 | SCRUM-54 | #148 | no | In review |
 | 8 | 2.4.1 Award correction by reviewers | 4.2 | 5 | SCRUM-55 | #149 | no | To do |
 | 8a | 4.2.3 Keep the decision dialog open until the answer | 4.2 | 2 | SCRUM-59 | #162 | no | To do |
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | To do |
@@ -61,7 +61,7 @@ Total: 57 points, sprints 4–5.
 |------|----------|-----------|-----------|
 | 2026-10-05 | Workflow engine: a hand-written transition table in the `award` module, not Spring State Machine or Flowable | Seven request states and four levels; a BPMN engine adds its own schema, a second state store and a learning cost the thesis gains nothing from | ADR-023 (with 4.1.1) |
 | 2026-10-05 | Claim model: `current_reviewer_id` plus an optimistic version, 409 on a double claim, release and hand-over to a peer, the dean may take over; a claim never lapses on its own | Two secretaries of one faculty must not review the same request; an automatic lapse would take work away silently | 4.1.1 |
-| 2026-10-05 | Escalation of an overdue request notifies the next level and marks the request «Ескальовано»; it never moves or decides a request. A plain `@Scheduled` job with idempotent SQL; ShedLock waits for Epic 9 | A decision on an award is a person's act; one backend instance in the demo | 4.2.2 |
+| 2026-10-05 | Escalation of an overdue request notifies the next level and marks the request «Керівника повідомлено» (deviation 1 of the Feature 4.2 PRD); it never moves or decides a request. A plain `@Scheduled` job with idempotent SQL; ShedLock waits for Epic 9 | A decision on an award is a person's act; one backend instance in the demo | 4.2.2 |
 | 2026-10-05 | Decision emails go through the existing mail listener; Spring Modulith and the publication registry stay at Epic 7 | ADR-006 addendum and ADR-022 step 2 already place them there | ADR-006, ADR-022 |
 | 2026-10-05 | Organisational awards: the submitter owns the award (`submitted_by`), a nullable `recipient_org_id` names the unit; faculty secretaries and deans submit for their faculty and its departments; the submitter never reviews it; approved unit awards are visible university-wide and counted separately in analytics | Faculties and departments receive awards too; one ownership rule keeps editing and GDPR export unchanged | Design note before 4.1.0 |
 | 2026-10-05 | Per-faculty review period: nullable `organizations.review_working_days`, set by the dean; `app.workflow.review-working-days` (default 3) applies otherwise | Faculties differ in volume; the global default stays the rule | 4.2.1 |

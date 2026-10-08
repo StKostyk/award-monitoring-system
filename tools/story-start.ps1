@@ -72,7 +72,7 @@ if (-not $DryRun) {
     if (git status --porcelain) { throw 'The working tree is not clean; commit or stash first.' }
     git checkout $Base
     if ($LASTEXITCODE) { throw "Cannot check out $Base" }
-    git pull --ff-only
+    git pull --ff-only -q
     if ($LASTEXITCODE) { throw "Cannot update $Base" }
     git checkout -b $branch
     if ($LASTEXITCODE) { throw "Cannot create $branch" }
