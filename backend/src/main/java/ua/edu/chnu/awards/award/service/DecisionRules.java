@@ -35,19 +35,38 @@ public class DecisionRules {
      * @throws ApiProblemException 422 {@code validation-failed} naming every missing or invalid field
      */
     public void check(ReviewDecisionRequest body) {
+        refuse(violations(body.decision(), body.comment(), body.requestVersion() == null));
+    }
+
+    /**
+     * Refuses a decision and comment that no request could take, before any request version is looked at.
+     *
+     * @param decision the decision
+     * @param comment  the comment, may be null
+     * @throws ApiProblemException 422 {@code validation-failed} naming every missing or invalid field
+     */
+    public void checkDecision(Decision decision, String comment) {
+        refuse(violations(decision, comment, false));
+    }
+
+    private static List<FieldViolation> violations(Decision decision, String comment, boolean versionMissing) {
         List<FieldViolation> violations = new ArrayList<>();
-        if (body.decision() == null) {
+        if (decision == null) {
             violations.add(new FieldViolation("decision", "required", "The decision is required"));
         }
-        if (body.requestVersion() == null) {
+        if (versionMissing) {
             violations.add(new FieldViolation("requestVersion", "required", "The version last read is required"));
         }
-        boolean needsComment = body.decision() == Decision.REJECT || body.decision() == Decision.RETURN;
-        if (needsComment && comment(body) == null) {
+        boolean needsComment = decision == Decision.REJECT || decision == Decision.RETURN;
+        if (needsComment && (comment == null || comment.isBlank())) {
             violations.add(new FieldViolation(COMMENT, "required", "A comment is required to return or reject"));
-        } else if (body.comment() != null && body.comment().strip().length() > MAX_COMMENT) {
+        } else if (comment != null && comment.strip().length() > MAX_COMMENT) {
             violations.add(new FieldViolation(COMMENT, "too-long", "The comment is longer than " + MAX_COMMENT));
         }
+        return violations;
+    }
+
+    private static void refuse(List<FieldViolation> violations) {
         if (!violations.isEmpty()) {
             throw ApiProblemException.validationFailed("The decision cannot be applied", violations);
         }

@@ -3,7 +3,7 @@
 > **Epic**: 4 — Approval Workflow Engine (SCRUM-47)
 > **Sprint**: 4–5 (2026-10-06 → 2026-10-18)
 > **Points**: 29 (five stories)
-> **Status**: Approved 2026-10-06
+> **Status**: Done 2026-10-08, pending the manual run of §9 (validation in §12)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 4.1, US-004 (batch review, DoD), US-005 (status for the owner), DATA_DICTIONARY §2.1, §3.1, §3.2, V007, V008, V024, V026, state-machine-award-request.puml, bpmn-approval-workflow.puml, sequence-approval-workflow.puml, RBAC_matrix.md, AUTHENTICATION_AUTHORIZATION §3 (scopes, delegation, "delegated by" stamp), RACI rows 27–29, ADR-006 addendum, ADR-022, openapi.yml `/awards/{id}/approve|reject|return`, `RolePermissions`, `RecognitionLevel`, EPIC-04 tracker (decisions of 2026-10-05, deviations 2, 3, 5, 6)
 
@@ -326,6 +326,13 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 32. As `employee.fmi` try to delete returned award A before resubmitting (`DELETE /api/v1/awards/<A>`). Expected: 409 `award-has-request`; «Видалити» is not offered in the UI for a returned draft. (§5)
 33. Swagger `POST /api/v1/reviews/decisions` with 51 items → 400; with the same award twice → 400; `RETURN` without comment → 422. (AC-4.2)
 34. Reuse a template-filled comment after editing it, then pick another template. Expected: the dialog asks before replacing edited text. (AC-4.6)
+35. As `secretary.fmi` claim and release an award, then send the same `DELETE /api/v1/awards/<id>/reviewer?requestVersion=<n+2>` in Swagger again. Expected: 409 `request-claimed` without `reviewer` (not 500). (AC-1.7, F-1)
+36. Select three awards in `secretary.fmi`'s «Нерозподілені»; in a second browser as `secretary2.fmi` claim and release one of them (its version moves). As `secretary.fmi` «Затвердити (3)». Expected: «Опрацьовано: 2 з 3» with «Дані змінилися…» for that award; the queue reloads, the award stays selected; «Затвердити (1)» now succeeds. (AC-4.7, F-2)
+37. As `secretary.fmi` paste the URL of returned award A (step 8) into the address bar. Expected: «Не знайдено», no «Розгляд» panel, no console error; a repeated decision in Swagger on A → 404 (returned and withdrawn requests are not reviewable; `request-closed` only for approved and rejected ones). (AC-2.4, 2.8)
+38. As `employee.fmi` open `http://localhost:4200/awards/<pending award>/edit` directly. Expected: the read-only award page opens instead of the form. (AC-3.5)
+39. `docker compose stop redis`, decide on a request and run a batch of two. Expected: both succeed (review endpoints do not use Redis). `docker compose start redis`. (§5)
+40. Type a rejection comment on A in one tab after A was decided in another tab, confirm. Expected: «Дані застаріли, сторінку оновлено»; note that the typed comment is gone (F-4). (AC-2.8)
+41. Return award F (category «Державна премія…») at the faculty level; as `employee.fmi` change the category to a faculty-level one and submit. Expected: it is back with the faculty secretaries; their approval is final. (§5 "Category changed to a lower level after a return")
 
 ## 10. Risks
 
@@ -346,3 +353,92 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 - Security review of each story's diff (access rules, migrations, bulk operations)
 - Audit rows for every claim, hand-over, decision, batch and withdrawal (US-004 DoD)
 - §9 manual verification run in the browser after the validation, including the detours
+
+## 12. Validation (2026-10-08, `develop` at 4bdef7b, fixes in SCRUM-58)
+
+Gates on `develop`: `mvn verify` — 832 unit and slice tests, 269 integration and functional, 98.5 % lines, Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 485 Vitest; Playwright `reviews.spec` 7/7 and `unit-awards.spec` 3/3 (full suite: the known `ac1_13` load flake). After SCRUM-58: 833 unit and slice, 270 integration and functional, 98.5 % lines, static analysis 0, 486 Vitest. All ten 4.1 operations of the controllers (`/reviews`, `/reviews/decisions`, `/reviews/templates`, `/awards/{id}/reviewer` GET/PUT/DELETE, `/awards/{id}/reviewers`, `/awards/{id}/decisions`, `/awards/{id}/withdraw`, `/awards/recipient-units`) are in `openapi.yml`; every `*IT` applies V027–V031 to an empty database.
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 0.1 | `RecipientUnitsTest` (3), `RecipientUnitEndpointsTest` (2), `UnitAwardFT#ac0_1_…`; E2E `unit-awards.spec` | pass |
+| 0.2 | `AwardInputRulesTest`, `AwardServiceTest`, `UnitAwardFT#ac0_2_ac0_4_ac0_7_…`; E2E `unit-awards.spec` | pass |
+| 0.3 | `RecipientUnitsTest`, `AwardInputRulesTest`, `award-form.spec#ac0_3_*`, `UnitAwardFT#ac0_3_…` | pass |
+| 0.4 | `AwardSubmissionTest`, `AwardInputRulesTest#ac0_4_*`, `UnitAwardFT#ac0_4_…` (2) | pass |
+| 0.5 | `DuplicateFinderIT` (2) | pass |
+| 0.6 | `StartLevelTest` (4), `ReviewerAvailabilityTest` (2), `ReviewerAvailabilityIT` (2), `AwardFT#ac1_11_ac0_6_…`, `UnitAwardFT#ac0_6_…` | pass |
+| 0.7 | `award-list.spec`, `award-detail.spec` (2), `UnitAwardFT#ac0_2_ac0_4_ac0_7_…`; E2E `unit-awards.spec` | pass |
+| 0.8 | `award-form.spec` (4), `AwardServiceTest#ac0_8_*`; E2E `unit-awards.spec` (3) | pass |
+| 0.9, 0.10 | `UnitAwardFT#ac0_9_…`, `#ac0_10_…` | pass |
+| 1.1 | `ReviewerRuleTest` (7), `ReviewEndpointsTest`, `ReviewFT#ac1_1_*` (2) | pass |
+| 1.2 | `ReviewerRuleTest#ac1_2_*`, `ReviewEndpointsTest#ac1_2_*`, `permissions.spec`, `review-list.spec`, `ReviewFT#ac1_1_ac1_2_…` | pass |
+| 1.3 | `ReviewerRuleTest`, `ReviewEndpointsTest`, `review-list.spec#ac1_3_*`, `ReviewFT` | pass |
+| 1.4, 1.5 | `ReviewAssignmentTest` (6), `ReviewEndpointsTest`, `ReviewFT#ac1_4_ac1_5_ac1_7_…`, `#ac1_5_twoClaimsAtOnceLeaveOneReviewer` | pass |
+| 1.6 | `ReviewAssignmentTest` (5), `ReviewerAvailabilityIT#ac1_6_*`, `ReviewFT`; E2E `reviews.spec#ac1_10 ac1_11` | pass |
+| 1.7 | `ReviewAssignmentTest` (4, incl. `ac1_7_aRequestNobodyHoldsIsNeitherReleasedNorHandedOver`), `ReviewFT#ac1_4_ac1_5_ac1_7_…` | pass after F-1 |
+| 1.8 | `ReviewAssignmentTest` (3), `ReviewerAvailabilityIT#ac1_8_*`, `hand-over-dialog.spec` (3), `ReviewFT#ac1_8_…` | pass |
+| 1.9 | `ReviewAssignmentTest#ac1_9_*` (3), `ReviewEndpointsTest`, `ReviewFT#ac1_9_unknownDraftAndOwnAwardsAnswer404` | pass |
+| 1.10 | `review-list.spec` (3), `reviews.store.spec` (3), `auth.guard.spec`, `permissions.spec`; E2E `reviews.spec#ac1_10 ac1_11` | pass |
+| 1.11 | `review-panel.spec` (8), `award-detail.spec`, `ReviewAssignmentTest` (2); E2E `reviews.spec#ac1_10 ac1_11` | pass |
+| 1.12 | `DevSeedIT#ac05_seedUsersExistWithRolesAndStatuses`, `DemoSeedIT#demoAccountsExistWithRoles` | pass |
+| 1.13 | `review-list.spec#ac1_13_*`; E2E `reviews.spec#ac1_13` (360 px, English, axe) | pass (flaky under full-suite load) |
+| 2.1, 2.2 | `TransitionsTest`, `ReviewDecisionsTest#ac2_1_*`, `#ac2_2_*`, `DecisionFT#ac2_1_ac2_2_ac2_6_aNationalAwardClimbsThreeLevelsToApproval`; E2E `reviews.spec#ac2_2 ac2_5 ac2_11` | pass |
+| 2.3, 2.4 | `ReviewDecisionsTest` (4), `decision-dialog.spec` (3), `DecisionFT#ac2_3_ac2_4_ac2_10_…`; E2E `reviews.spec#ac2_4 ac2_11` | pass |
+| 2.5 | `TransitionsTest` (2), `ReviewDecisionsTest` (2), `review-panel.spec`, `DecisionFT#ac2_5_ac2_12_…` | pass |
+| 2.6 | `ReviewDecisionsTest#ac2_6_*` (2), `decision-dialog.spec`, `DecisionFT#ac2_1_ac2_2_ac2_6_…` | pass |
+| 2.7 | `ReviewDecisionsTest`, `AwardStatusServiceTest`, `award-status.spec`, `DecisionFT#ac2_7_…` | pass |
+| 2.8 | `ReviewDecisionsTest#ac2_8_*` (5), `DecisionEndpointsTest` (2), `DecisionFT#ac2_8_…` (2, incl. `aReturnedAwardIsNoLongerReviewableAndARepeatedDecisionIsClosed`) | pass |
+| 2.9 | `DecisionFT#ac2_1_ac2_2_ac2_6_…` (three `REVIEW_DECISION` rows), `#ac2_7_…` (`delegatorId`), `BatchReviewFT#ac4_1_ac4_2_ac4_3_…` | pass |
+| 2.10 | `DecisionMailsTest` (6), `DecisionFT#ac2_3_ac2_4_ac2_10_…` (Mailpit) | pass with F-3 |
+| 2.11, 2.12 | `review-panel.spec` (3), `award-detail.spec`, `award-status.spec`, `AwardStatusServiceTest`, `DecisionFT#ac2_5_ac2_12_…`; E2E `reviews.spec` | pass |
+| 2.13 | `HistoryContractTest#ac2_13_*`, `puml-check.ps1`, OpenAPI paths above | pass |
+| 3.1, 3.2 | `AwardWithdrawalTest` (8), `WithdrawEndpointsTest` (4), `WithdrawFT` (3, incl. the withdrawal–claim race); E2E `reviews.spec#ac3_1 ac3_6`, `#ac3_2 ac3_6` | pass |
+| 3.3, 3.4 | `AwardResubmissionTest` (3), `award-status.spec` (2), `WithdrawFT#ac3_1_ac3_3_…`, `#ac3_4_ac3_5_…` | pass |
+| 3.5, 3.6 | `ReturnedDraftTest` (2), `award-form.spec` (2), `award-detail.spec` (3), `WithdrawFT#ac3_4_ac3_5_…`; E2E `reviews.spec` | pass |
+| 4.1–4.3 | `BatchReviewTest` (9), `BatchEndpointsTest`, `BatchReviewFT#ac4_1_ac4_2_ac4_3_…`, `#ac4_2_invalidBatchesAreRefusedAsAWhole` | pass |
+| 4.4 | `BatchReviewFT#ac4_4_twentyItemsAreDecidedWithinFiveSeconds` | pass |
+| 4.5 | `ReviewTemplatesTest` (2), `BatchEndpointsTest` (3), `decision-dialog.spec`, `BatchReviewFT#ac4_5_…` | pass |
+| 4.6–4.8 | `review-list.spec` (8, incl. `ac4_7_a_batch_without_failures_does_not_reload_the_queue`), `decision-dialog.spec` (5), `reviews.store.spec`; E2E `reviews.spec#ac4_6 ac4_7 ac4_8` (keyboard, English, axe) | pass after F-2 |
+
+### Edge cases (§5)
+
+| Case | Covered by |
+|------|------------|
+| Two claims at once | `ReviewFT#ac1_5_twoClaimsAtOnceLeaveOneReviewer` |
+| Decision during a take-over | `DecisionFT#ac2_8_conflicts…` (the loser gets `request-claimed`: the holder check runs before the version) |
+| Withdrawal vs claim | `WithdrawFT#ac3_2_aWithdrawalAndAClaimAtOnceLeaveOneWinner` |
+| Reviewer loses the role while holding a claim | `ReviewAssignmentTest#ac1_6_aPeerTakesOverFromAReviewerWhoIsNoLongerEligible`, `ReviewDecisionsTest#ac2_8_aRequestTheCallerMayNotReviewIsNotFound`; §9 step 29 |
+| Delegate and delegator on one faculty | `ReviewerRuleTest#ac1_1_anOwnRoleIsPreferredToADelegationOfTheSameReach`, `DecisionFT#ac2_7_…` |
+| Secretary's own award, only secretary | `StartLevelTest`, `UnitAwardFT#ac0_6_…`, `AwardFT#ac1_11_ac0_6_…` |
+| Dean submits a unit award | `ReviewerRuleTest#ac1_1_nobodyReviewsAnAwardTheyOwn` (owner and submitter excluded) |
+| National award through three levels | `DecisionFT#ac2_1_ac2_2_ac2_6_…` |
+| Category lowered after a return | Open: §9 step 41 (manual) |
+| Vacant level | `StartLevelTest#ac0_6_aVacantLevelIsNotPassedOver` |
+| Delete a returned draft | `ReturnedDraftTest#edge_aReturnedOrWithdrawnDraftKeepsItsHistoryAndIsNotDeleted` |
+| Batch item decided singly | `BatchReviewFT#ac4_1_ac4_2_ac4_3_…` (`request-stale`), `ReviewDecisionsTest#ac2_8_aDecidedRequestAnswersRequestClosed` |
+| Batch interrupted by a restart | §9 step 26 (manual); per-item transactions in `BatchReviewTest#ac4_1_aDatabaseFailureFailsOnlyItsItemAndTheBatchIsStillAudited` (F-6) |
+| Owner deactivated or erased | `DecisionMailsTest#ac2_10_anErasedOwnerGetsNoMessage` |
+| Mail server down | Epic 1 `MailDeliveryTest`; §9 step 31 |
+
+### Security checklist
+
+| Item | Control |
+|------|---------|
+| A01 access control | `@PreAuthorize(CAN_REVIEW)` on `ReviewController` and `ReviewBatchController`, `CAN_UPDATE` plus the owner check on `WithdrawalController`; one `ReviewerRule` (level, scope, owner and submitter excluded, delegation in effect) behind `ReviewGuards.lockedReviewable` for queue, claim, decision and every batch item; 404 for unreviewable and own awards (D-13); unit recipients checked against the caller's scopes on save and again on submit (AC-0.3, 0.4) |
+| A02 cryptography | No new secrets or tokens; JWT and password storage unchanged |
+| A03 injection | Queue filters bound to enums and ids (`ReviewSpecifications`, criteria API), unknown values → 400; comments ≤ 2000 characters; templates read-only from a migration; decision e-mails are plain text (`MailTextHelper`) |
+| A07 authentication failures | Sign-in unchanged; `ReviewerAvailability` excludes blocked accounts and ended roles or delegations from claims, hand-overs and decisions |
+| Concurrency (US-004 bulk DoD) | `PESSIMISTIC_WRITE` on the request row plus `@Version` on `award_requests` and `awards`; one transaction per batch item; `REVIEW_BATCH` audit row with counts |
+
+### Findings
+
+| # | Finding | State |
+|---|---------|-------|
+| F-1 | Releasing or handing over a request nobody holds answered 500 (`Map.copyOf` with a null reviewer) instead of 409 `request-claimed` | Fixed in SCRUM-58 (`ReviewGuards.claimed`; §9 step 35) |
+| F-2 | After a batch with failures the queue kept the old request versions, so a retry of a `request-stale` item failed again | Fixed in SCRUM-58: the queue reloads after a partial failure and keeps the failed items selected (§9 step 36) |
+| F-3 | Decision e-mails are bilingual (uk and en in one message), not in the owner's language as AC-2.10 reads | Open: accept, or a follow-up with notification preferences (Epic 7) |
+| F-4 | A decision that fails on a conflict, network error or ended session loses the typed comment: the dialog closes before the request is sent (panel and batch) | Open: candidate for Feature 4.2 (keep the dialog open until the answer) |
+| F-5 | A returned or withdrawn request answers 404 to a replayed decision, not 409 `request-closed` (AC-2.8 names `request-closed` for final requests only) | As designed; §9 steps 25 and 37 state it |
+| F-6 | A batch cut by a restart keeps its committed items but writes no `REVIEW_BATCH` row (written after the loop); the e-mail of the last committed item may be lost (sent asynchronously after commit) | Accepted; the per-item audit rows remain |
+| F-7 | The panel shows «Дані застаріли» for `request-claimed`, `request-closed` and a 404 after a lost role alike | Minor; with F-4 in Feature 4.2 |

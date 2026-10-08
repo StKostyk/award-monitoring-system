@@ -1,6 +1,5 @@
 package ua.edu.chnu.awards.award.service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -116,8 +115,10 @@ public class ReviewGuards {
      * @return 409 {@code request-claimed} naming the holder
      */
     public ApiProblemException claimed(User holder) {
-        return new ApiProblemException(HttpStatus.CONFLICT, "request-claimed",
-            holder == null ? "Nobody holds the request" : "Another reviewer holds the request",
-            Collections.singletonMap("reviewer", UserRef.of(holder)));
+        if (holder == null) {
+            return new ApiProblemException(HttpStatus.CONFLICT, "request-claimed", "Nobody holds the request");
+        }
+        return new ApiProblemException(HttpStatus.CONFLICT, "request-claimed", "Another reviewer holds the request",
+            Map.of("reviewer", UserRef.of(holder)));
     }
 }

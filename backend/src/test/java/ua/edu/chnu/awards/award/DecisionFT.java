@@ -201,6 +201,22 @@ class DecisionFT extends AbstractFunctionalTest {
             .statusCode(HttpStatus.NOT_FOUND.value());
     }
 
+    @Test
+    void ac2_8_aReturnedAwardIsNoLongerReviewableAndARepeatedDecisionIsClosed() {
+        long returned = submitted(EMPLOYEE, "Відзнака після повернення");
+        String secretary = tokenOf(SECRETARY);
+        decide(secretary, returned, "RETURN", "Додайте скан").then().statusCode(HttpStatus.OK.value());
+
+        decide(secretary, returned, "APPROVE", null).then().statusCode(HttpStatus.NOT_FOUND.value());
+
+        long rejected = submitted(EMPLOYEE, "Відзнака після відхилення");
+        long stale = version(rejected);
+        decide(secretary, rejected, "REJECT", "Не стосується університету").then().statusCode(HttpStatus.OK.value());
+        decide(secretary, rejected, Map.of(DECISION, "REJECT", COMMENT, "Повторно", VERSION, stale)).then()
+            .statusCode(HttpStatus.CONFLICT.value())
+            .body(TYPE, equalTo(PROBLEM + "request-closed"));
+    }
+
     private long submitted(String owner, String title) {
         return AwardApi.submitted(tokenOf(owner), Map.of("titleUk", title,
             "awardDate", LocalDate.now(AwardApi.KYIV).minusMonths(2).toString()));

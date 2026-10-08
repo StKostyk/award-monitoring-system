@@ -162,6 +162,9 @@ class ReviewFT extends AbstractFunctionalTest {
 
         as(secretary).queryParam(VERSION, version + 1).delete(reviewer(id)).then()
             .statusCode(HttpStatus.NO_CONTENT.value());
+        as(secretary).queryParam(VERSION, version + 2).delete(reviewer(id)).then()
+            .statusCode(HttpStatus.CONFLICT.value())
+            .body(TYPE, equalTo(PROBLEM + "request-claimed"));
 
         assertThat(jdbc.queryForMap("select status, current_reviewer_id from award_requests where award_id = ?",
             id)).containsEntry("status", "SUBMITTED").containsEntry("current_reviewer_id", null);

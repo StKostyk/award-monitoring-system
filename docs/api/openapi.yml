@@ -1111,8 +1111,8 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '409':
           description: >
-            `urn:awards:problem:request-claimed` with the holder in `reviewer` (null when a hand-over is sent for
-            a request nobody holds), `request-stale` with `currentVersion`, or `request-closed` with
+            `urn:awards:problem:request-claimed` with the holder in `reviewer` (absent when a hand-over or release
+            is sent for a request nobody holds), `request-stale` with `currentVersion`, or `request-closed` with
             `requestStatus` for a decided request
           content:
             application/problem+json:

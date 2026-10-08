@@ -148,7 +148,7 @@ Draft → Submitted → Under Review → Approved/Rejected → Published
 | **Under Review** | Being evaluated | Wait for decision |
 | **Returned** | Needs revision | Make requested changes |
 | **Approved** | Accepted | None - will be published |
-| **Rejected** | Not accepted | Review reason, may resubmit |
+| **Rejected** | Not accepted | Review the reason; a rejection is final, enter a corrected award as a new one |
 | **Published** | Visible publicly | None - complete |
 
 ### Checking Status
@@ -156,6 +156,14 @@ Draft → Submitted → Under Review → Approved/Rejected → Published
 1. Navigate to **"My Awards"**
 2. View status column or filter by status
 3. Click award for detailed status history
+
+### Withdrawing and Resubmitting
+
+- **Withdraw**: while nobody has claimed your submitted award, the award page offers **Withdraw**. After the
+  confirmation the award is a draft again and the form opens. Once a reviewer has claimed it, the button is gone.
+- **Returned award**: the form shows the reviewer's comment above the fields. Change the award or its documents and
+  submit it again; it goes back to the level that returned it.
+- A withdrawn award, submitted again, starts from the first review level. Earlier decisions stay in its timeline.
 
 ### Review History
 
@@ -206,6 +214,19 @@ a dialog with a comment field:
 
 The owner gets an e-mail about every decision. The status timeline names the reviewer of each decision, adds
 "(on behalf of …)" when the reviewer acted by delegation, and marks a level that was passed over as "skipped".
+
+The **Response template** list in the dialog fills the comment with a prepared text, which you can edit; picking
+another template after editing asks before replacing your text.
+
+### Deciding on several awards
+
+1. In the queue, tick the awards (the header box selects the page; Space toggles a row).
+2. The action bar offers **Approve (n)**, **Return**, **Reject** and **Pass to the dean** (or **Pass to the next
+   level** when the selected awards are at different levels). Up to 50 awards at a time.
+3. The dialog takes one comment for all of them, with the same templates.
+4. Each award is decided on its own: decided awards leave the list, and the summary **Processed: n of m** lists the
+   ones that could not be decided with the reason (for example, claimed by another reviewer) and a link. Only those
+   stay selected.
 
 ---
 
