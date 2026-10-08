@@ -11,7 +11,7 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Done, pending the manual run of PRD §9 ([PRD](../features/epic-04/feature-4.1-workflow-engine-core.md), validation §12) | 2026-10-06 | 2026-10-08 |
-| 4.2 Review Period & Escalation (per-faculty period, overdue notice, reviewer corrections, decision dialog) | PRD approved 2026-10-08 ([PRD](../features/epic-04/feature-4.2-review-period-escalation.md)) | | |
+| 4.2 Review Period & Escalation (per-faculty period, overdue notice, reviewer corrections, decision dialog) | Done, pending the manual run of PRD §10 ([PRD](../features/epic-04/feature-4.2-review-period-escalation.md), validation §13) | 2026-10-08 | 2026-10-08 |
 | 4.3 Achievements (colleague visibility, unit and public pages) | Planned | | |
 
 ## Current focus
@@ -49,7 +49,7 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | Done |
 | 7 | 4.2.2 Overdue detection, escalation notice and SLA metrics | 4.2 | 5 | SCRUM-54 | #148 | no | Done |
 | 8 | 2.4.1 Award correction by reviewers | 4.2 | 5 | SCRUM-55 | #149 | no | Done |
-| 8a | 4.2.3 Keep the decision dialog open until the answer | 4.2 | 2 | SCRUM-59 | #162 | no | In review |
+| 8a | 4.2.3 Keep the decision dialog open until the answer | 4.2 | 2 | SCRUM-59 | #162 | no | Done |
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | To do |
 | 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | To do |
 
@@ -73,6 +73,7 @@ Total: 57 points, sprints 4–5.
 | 2026-10-06 | Story order: organisational award model first, achievement pages last | Changing the award model before the queue and decisions avoids reworking their access rules | This kickoff |
 | 2026-10-08 | Feature 4.1 validated: two fixes (release of an unheld request, batch retry with stale versions) in 4.1.5; bilingual decision e-mails (F-3) and the comment lost on a failed decision (F-4) stay open | Evidence and findings in the PRD §12 | 4.1.5 |
 | 2026-10-08 | Feature 4.2 PRD approved: the overdue mark reads «Керівника повідомлено» next to «Прострочено» («Ескальовано» stays the `ESCALATED` status); one digest e-mail per recipient and run; a faculty period does not move existing deadlines; reviewers correct pending awards only, with a reason and without a second approval; F-4 and F-7 become 4.2.3; F-3 waits for Epic 7 | Deviations 1–7 of the PRD §7 | 4.2.1–4.2.3, 2.4.1 |
+| 2026-10-08 | Feature 4.2 validated: every AC has tests, no fix story; four findings accepted (run-wide rollback of the overdue job on an unexpected error, gauges empty until the first run after a restart, last write wins for the period, 403/429 shown as a send failure); duplication from the sweep in a `refactor(award)` PR | Evidence and findings in the PRD §13 | 4.2 |
 
 ## Documentation deviations to resolve
 
@@ -111,6 +112,10 @@ Each is settled in the Feature 4.1 or 4.2 PRD and applied in the PR of the story
   `ApprovalLevel.below`/`atOrAbove` for `ReviewAssignment.release` and `mayTakeOver`; `AwardWithdrawal` reusing
   `ReviewGuards.claimed`; one `openDecision` helper for the panel and the queue; a `ReviewAssignmentFilter` type
   with `others` in `reviews.service.ts`.
+- Refactor candidates from the 4.2 sweep, left for a story that touches the code: `CorrectionFT` and
+  `OverdueNoticeFT` copy the FT helpers above (`requestVersion`, `claim`, `decide`, `audited`) — one `ReviewApi` in
+  `support/` for all workflow FTs; `CorrectionFT.body` builds current and stale bodies through a sentinel; an 11th
+  copy of the JWT `token(claims)` helper in `review-period.component.spec.ts` — one `testing/token.ts`.
 
 ## Risks
 
