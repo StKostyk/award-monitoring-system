@@ -5,7 +5,8 @@
 
 .DESCRIPTION
     Refuses to ship when build/gate-summary.txt is missing, belongs to another branch or does not report PASS
-    for the backend and the frontend (-SkipGate for documentation-only changes). The tracker row of the story
+    for the backend and the frontend (-SkipGate for documentation-only changes). A skipped backend counts as
+    passed while the branch changes nothing under backend/ or docs/api/openapi.yml compared with -Base. The tracker row of the story
     under docs/epics becomes "In review" and its BACKLOG row "👀 In review (<sprint>)"; -Changelog adds one
     bullet at the top of the -ChangelogSection (default Added) under CHANGELOG.md [Unreleased]. All of these are
     part of the commit. The pull request targets -Base (default develop) with the title "<KEY>: <Title>" and the
@@ -51,8 +52,13 @@ if (-not $SkipGate) {
     if (-not (Test-Path $summary)) { throw 'No gate run found; run .\tools\gate.ps1 first.' }
     $text = Get-Content $summary -Raw
     if ($text -notmatch "Branch:\s+$([regex]::Escape($branch))") { throw 'The last gate run belongs to another branch.' }
-    if ($text -notmatch 'Backend:\s+PASS' -or $text -notmatch 'Frontend:.*lint PASS, tests PASS') {
+    if ($text -notmatch 'Backend:\s+(PASS|SKIPPED)' -or $text -notmatch 'Frontend:.*lint PASS, tests PASS') {
         throw "The last gate run did not pass:`n$text"
+    }
+    $backendChanged = @(git diff --name-only $Base -- backend docs/api/openapi.yml) +
+        @(git status --porcelain -- backend docs/api/openapi.yml)
+    if ($text -match 'Backend:\s+SKIPPED' -and ($backendChanged | Where-Object { $_ })) {
+        throw 'The last gate run skipped the backend, but the branch now changes it; run .\tools\gate.ps1 again.'
     }
 }
 
