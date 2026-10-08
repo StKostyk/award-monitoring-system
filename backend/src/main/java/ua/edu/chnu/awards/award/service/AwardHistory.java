@@ -84,7 +84,22 @@ public class AwardHistory {
         record(award, VersionAction.DECIDED);
     }
 
+    /**
+     * Records a reviewer's correction of a pending award with its reason, inside the caller's transaction.
+     *
+     * @param award  the award, flushed so that its version number is current
+     * @param reason why the reviewer corrected it
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void corrected(Award award, String reason) {
+        record(award, VersionAction.CORRECTED, reason);
+    }
+
     private void record(Award award, VersionAction action) {
+        record(award, action, null);
+    }
+
+    private void record(Award award, VersionAction action, String comment) {
         AwardVersion previous = versions.findFirstByAwardIdOrderByNumberDesc(award.getId()).orElse(null);
         if (previous != null && previous.getNumber() == award.getVersion()) {
             return;
@@ -99,6 +114,7 @@ public class AwardHistory {
             .actor(users.getReferenceById(access.callerId()))
             .snapshot(snapshot)
             .changedFields(changed)
+            .comment(comment)
             .build());
     }
 
@@ -159,6 +175,6 @@ public class AwardHistory {
 
     private static AwardVersionResponse response(AwardVersion version, List<FieldChange> changes) {
         return new AwardVersionResponse(version.getNumber(), version.getAction(), UserRef.of(version.getActor()),
-            version.getCreatedAt(), version.getSnapshot(), changes);
+            version.getCreatedAt(), version.getSnapshot(), changes, version.getComment());
     }
 }

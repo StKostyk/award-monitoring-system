@@ -1341,7 +1341,7 @@ paths:
   /awards/{id}/corrections:
     post:
       tags: [Workflows]
-      summary: Correct a pending award as its reviewer (planned, 2.4.1)
+      summary: Correct a pending award as its reviewer
       description: >
         A reviewer of the request (reviewer rule) changes the title, description, awarding organisation, award
         date, category or external URL of a pending award, with a reason; the recipient and documents stay the
@@ -1350,7 +1350,6 @@ paths:
         status, level and deadline. Writes an award version `CORRECTED` with the reason as `comment`, an audit row
         `AWARD_CORRECTED` (old and new values, reason, `delegatorId` under a delegation) and after the commit one
         e-mail to the owner (`award:approve:level1`, 2.4.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: correctAward
@@ -1391,7 +1390,8 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '422':
           description: >
-            `validation-failed` (a field, or `reason` missing or over 1000 characters) or
+            `validation-failed` (a field, or `reason` missing or over 1000 characters),
+            `urn:awards:problem:award-incomplete` (a field a pending award needs was cleared) or
             `urn:awards:problem:no-change` (every field equals the current value)
           content:
             application/problem+json:
@@ -3301,10 +3301,10 @@ components:
 
     VersionAction:
       type: string
-      enum: [BASELINE, CREATED, UPDATED, SUBMITTED, DECIDED]
+      enum: [BASELINE, CREATED, UPDATED, SUBMITTED, DECIDED, CORRECTED]
       description: >
         What produced the version; `BASELINE` is the state of an award when versioning started, `DECIDED` a
-        reviewer decision that changed the award's status
+        reviewer decision that changed the award's status, `CORRECTED` a reviewer's correction of a pending award
 
     AwardSnapshot:
       type: object
@@ -3385,11 +3385,15 @@ components:
           description: Fields that differ from the previous visible version; empty for the first
           items:
             $ref: '#/components/schemas/FieldChange'
+        comment:
+          type: string
+          nullable: true
+          description: The reviewer's reason for a `CORRECTED` version; null otherwise
 
     AwardCorrection:
       type: object
       description: >
-        Fields of the award form a reviewer may correct (planned, 2.4.1); an absent field is unchanged, `null`
+        Fields of the award form a reviewer may correct (2.4.1); an absent field is unchanged, `null`
         clears an optional field. The recipient and documents are not correctable.
       required: [version, requestVersion, reason]
       properties:
@@ -3434,7 +3438,7 @@ components:
 
     CorrectionOutcome:
       type: object
-      description: Result of a correction (planned, 2.4.1)
+      description: Result of a correction (2.4.1)
       properties:
         award:
           $ref: '#/components/schemas/Award'

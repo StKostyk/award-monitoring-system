@@ -25,6 +25,7 @@ const data: VersionDialogData = {
       organizationId: 64,
     },
     changes: [],
+    comment: null,
   },
   names: {
     categories: new Map(),

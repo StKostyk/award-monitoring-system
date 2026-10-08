@@ -8,5 +8,6 @@ public enum VersionAction {
     CREATED,
     UPDATED,
     SUBMITTED,
-    DECIDED
+    DECIDED,
+    CORRECTED
 }

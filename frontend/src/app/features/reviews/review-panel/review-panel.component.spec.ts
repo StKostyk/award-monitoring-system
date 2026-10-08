@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -65,6 +66,7 @@ const translations = {
         return: 'Повернути на доопрацювання',
         reject: 'Відхилити',
         escalate: 'Передати {{level}}',
+        correct: 'Виправити',
       },
       decide: { to: { DEAN: 'декану', RECTOR_SECRETARY: 'секретарю ректора' } },
       messages: { claimed: 'Нагороду взято в роботу.', released: 'Нагороду повернуто до черги.' },
@@ -100,6 +102,7 @@ describe('ReviewPanelComponent', () => {
         }),
       ],
       providers: [
+        provideRouter([]),
         { provide: ReviewsService, useValue: service },
         { provide: MatDialog, useValue: dialog },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
@@ -151,6 +154,28 @@ describe('ReviewPanelComponent', () => {
     expect(element.querySelector('[data-testid="review-release"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="review-hand-over"]')).not.toBeNull();
     expect(changed).toHaveBeenCalled();
+  });
+
+  it('ac3_1_offers_the_correction_of_an_unclaimed_or_own_request', async () => {
+    service.item.mockReturnValue(of(item()));
+    const element = await create();
+
+    const link = element.querySelector<HTMLAnchorElement>('[data-testid="review-correct"]');
+    expect(link?.textContent?.trim()).toBe('Виправити');
+    expect(link?.getAttribute('href')).toBe('/awards/5/correct');
+
+    TestBed.resetTestingModule();
+    service.item.mockReturnValue(of(item({ reviewer: SELF })));
+    const own = await create();
+    expect(own.querySelector('[data-testid="review-correct"]')).not.toBeNull();
+  });
+
+  it('ac3_1_does_not_offer_the_correction_of_a_request_a_colleague_holds', async () => {
+    service.item.mockReturnValue(of(item({ reviewer: PEER })));
+
+    const element = await create();
+
+    expect(element.querySelector('[data-testid="review-correct"]')).toBeNull();
   });
 
   it('ac1_11_releases_an_own_request_and_reads_it_again', async () => {

@@ -65,6 +65,9 @@ public class AwardVersion {
     @Column(name = "changed_fields")
     private String[] changedFields;
 
+    @Column(name = "comment")
+    private String comment;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

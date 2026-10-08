@@ -231,7 +231,8 @@ export interface Page<T> {
   number: number;
 }
 
-export type VersionAction = 'BASELINE' | 'CREATED' | 'UPDATED' | 'SUBMITTED' | 'DECIDED';
+export type VersionAction =
+  'BASELINE' | 'CREATED' | 'UPDATED' | 'SUBMITTED' | 'DECIDED' | 'CORRECTED';
 
 /** The business fields of an award as saved in one version. */
 export interface AwardSnapshot {
@@ -280,6 +281,25 @@ export interface AwardVersion {
   createdAt: string;
   snapshot: AwardSnapshot;
   changes: FieldChange[];
+  /** The reviewer's reason of a `CORRECTED` version. */
+  comment: string | null;
+}
+
+/** Fields a reviewer may correct; a field left out stays unchanged, null clears it. */
+export type CorrectableField = Exclude<keyof AwardForm, 'recipientOrganizationId'>;
+
+/** A reviewer's correction of a pending award. */
+export type AwardCorrection = Partial<Pick<AwardForm, CorrectableField>> & {
+  version: number;
+  requestVersion: number;
+  reason: string;
+};
+
+/** The corrected award with the request version afterwards. */
+export interface CorrectionOutcome {
+  award: Award;
+  requestVersion: number;
+  changedFields: SnapshotField[];
 }
 
 /** One row of the audit log about an award. */
@@ -342,6 +362,11 @@ export class AwardsService {
   /** Takes a pending award no reviewer has claimed back as a draft. */
   withdraw(id: number, version: number): Observable<Award> {
     return this.http.post<Award>(`${this.base}/${id}/withdraw`, { version });
+  }
+
+  /** A reviewer's correction of a pending award, with the reason shown to its owner. */
+  correct(id: number, correction: AwardCorrection): Observable<CorrectionOutcome> {
+    return this.http.post<CorrectionOutcome>(`${this.base}/${id}/corrections`, correction);
   }
 
   /** The review timeline of an award. */

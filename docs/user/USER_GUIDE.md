@@ -172,6 +172,7 @@ Each award shows complete history:
 - Who reviewed it at each level
 - Comments from reviewers
 - Decision timestamps
+- Corrections by a reviewer, with the changed fields and the reason (you also get an e-mail)
 
 ---
 
@@ -241,6 +242,21 @@ The owner gets an e-mail about every decision. The status timeline names the rev
 
 The **Response template** list in the dialog fills the comment with a prepared text, which you can edit; picking
 another template after editing asks before replacing your text.
+
+### Correcting an award
+
+A small mistake (a typo in the title, a wrong date or category) can be fixed without returning the award.
+
+1. On an award you have claimed, or an unclaimed one, click **Correct** in the Review panel (not offered when a
+   colleague holds the award).
+2. The form shows the current values; the recipient and the documents stay as the owner entered them. Change the
+   fields and enter the **Reason for the correction** (up to 1000 characters).
+3. **Save** becomes active once a field differs; the confirmation lists every change as old → new before sending.
+
+The correction claims an unclaimed award for you. The award keeps its level and deadline; a new category counts from
+the next decision on (a national category needs the rector's secretary). The owner gets an e-mail with the changes,
+the reason and your name, and the award history shows **"Corrected by reviewer: <name>"**. The duplicate check is not
+run again on a correction.
 
 ### Deciding on several awards
 

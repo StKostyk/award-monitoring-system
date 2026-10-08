@@ -69,8 +69,8 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.1.4 | Batch review with template responses (US-004) | 5 | ✅ Done | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |
 | 4.1.5 | Fixes from the Feature 4.1 validation | 3 | ✅ Done | SCRUM-58 | [#160](https://github.com/StKostyk/award-monitoring-system/issues/160) |
 | 4.2.1 | Per-faculty review period set by the dean | 3 | ✅ Done | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
-| 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | 👀 In review (Sprint 5) | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
-| 2.4.1 | Award correction by reviewers | 5 | Sprint 5 | SCRUM-55 | [#149](https://github.com/StKostyk/award-monitoring-system/issues/149) |
+| 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | ✅ Done | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
+| 2.4.1 | Award correction by reviewers | 5 | 👀 In review (Sprint 5) | SCRUM-55 | [#149](https://github.com/StKostyk/award-monitoring-system/issues/149) |
 | 4.2.3 | Keep the decision dialog open until the answer | 2 | Sprint 5 | SCRUM-59 | [#162](https://github.com/StKostyk/award-monitoring-system/issues/162) |
 | 4.3.1 | Colleague visibility and the achievements page | 5 | Sprint 5 | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
 | 4.3.2 | Unit achievement pages and public achievements | 5 | Sprint 5 | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |

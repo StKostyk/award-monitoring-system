@@ -9,10 +9,11 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { MatButton } from '@angular/material/button';
+import { MatAnchor, MatButton } from '@angular/material/button';
 import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Observable, filter, switchMap, tap } from 'rxjs';
 
@@ -53,12 +54,12 @@ const RELOADING = ['request-claimed', 'request-stale', 'request-closed'];
 const KNOWN = ['reviewer-not-eligible', 'no-higher-level', 'validation-failed', 'network'];
 
 /**
- * Who reviews the request of an award and until when, with claim, release, hand-over, take-over and the four
- * decisions; hidden when the caller may not review the request.
+ * Who reviews the request of an award and until when, with claim, release, hand-over, take-over, the four
+ * decisions and the correction of the award; hidden when the caller may not review the request.
  */
 @Component({
   selector: 'app-review-panel',
-  imports: [MatButton, MatChip, MatProgressBar, TranslocoPipe],
+  imports: [MatAnchor, MatButton, MatChip, MatProgressBar, RouterLink, TranslocoPipe],
   templateUrl: './review-panel.component.html',
   styleUrl: './review-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

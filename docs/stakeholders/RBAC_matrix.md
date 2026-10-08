@@ -63,6 +63,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 ¹⁴ Feature 4.2.1 (`ReviewPeriods`, `GET`/`PUT /organizations/{id}/review-period`): a faculty secretary or dean whose scope, own or delegated, covers the faculty reads its review period; only the dean (own role or a delegation in effect) changes it, to 1–20 working days or back to the default; the system administrator (`system:configure`) reads and changes every faculty. Anyone else with an approving role gets 404 for the faculty, a caller without one 403. The period applies at the faculty levels only; the rector's levels keep the global default.
 
+¹⁵ Feature 4.2, story 2.4.1 (`AwardCorrection`, `POST /awards/{id}/corrections`): whoever may review a request (note 10) corrects the title, description, awarding organisation, award date, category or link of the pending award with a reason; the recipient and documents stay the owner's. An unclaimed request is claimed by the correction, one held by a colleague answers 409 `request-claimed`; a draft, returned, withdrawn or decided award answers 404. The request keeps its level and deadline; a changed category sets the minimum approval level from the next decision on. The correction is a `CORRECTED` award version with the reason, audited as `AWARD_CORRECTED` (with the delegator under a delegation) and e-mailed to the owner.
+
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Approval Workflow** |
@@ -74,6 +76,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Claim, Release and Hand Over a Review¹⁰ | ❌ | Own level | Own level; take over lower | Own level; take over lower | Own level; take over lower | ❌ | ❌ | ❌ | ❌ |
 | Decide at a Level (Own or Lower)¹¹ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
 | Decide Several Requests at Once¹³ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
+| Correct a Pending Award¹⁵ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
 | Read the Faculty Review Period¹⁴ | ❌ | Own faculty | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
 | Set the Faculty Review Period¹⁴ | ❌ | ❌ | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
 | Final University Approval | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ | ❌ |

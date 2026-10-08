@@ -60,6 +60,7 @@ function version(number: number, overrides: Partial<AwardVersion> = {}): AwardVe
     createdAt: '2026-09-30T08:05:00Z',
     snapshot: draft,
     changes: [],
+    comment: null,
     ...overrides,
   };
 }
@@ -74,6 +75,8 @@ const translations = {
       fields: { title: 'Назва англійською', category: 'Категорія', organization: 'Підрозділ' },
       history: {
         actions: { CREATED: 'Створено', UPDATED: 'Змінено', BASELINE: 'Початковий стан' },
+        correctedBy: 'Виправлено рецензентом: {{name}}',
+        reason: 'Причина: {{reason}}',
         unknownActor: 'Невідомий користувач',
         system: 'Система',
         problems: {
@@ -147,6 +150,31 @@ describe('AwardHistoryComponent', () => {
     expect(texts(fixture, 'award-history-meta')[0]).toBe('Анастасія Коваль · 30.09.2026, 12:15');
     expect(texts(fixture, 'award-history-change')).toEqual([
       'Назва англійською: Letter → Diploma',
+      'Категорія: — → Відзнака міністерства',
+    ]);
+  });
+
+  it('ac3_6_shows_a_correction_with_the_reviewer_the_changes_and_the_reason', async () => {
+    service.versions.mockReturnValue(
+      of(
+        page([
+          version(3, {
+            action: 'CORRECTED',
+            actor: { id: 31, name: 'Ірина Секретар', email: 'secretary.fmi@chnu.edu.ua' },
+            changes: [{ field: 'categoryId', from: null, to: 13 }],
+            comment: 'Категорію взято з наказу',
+          }),
+          version(1),
+        ]),
+      ),
+    );
+    const fixture = await render();
+
+    expect(texts(fixture, 'award-history-action')[0]).toBe(
+      'Виправлено рецензентом: Ірина Секретар',
+    );
+    expect(texts(fixture, 'award-history-comment')).toEqual(['Причина: Категорію взято з наказу']);
+    expect(texts(fixture, 'award-history-change')).toEqual([
       'Категорія: — → Відзнака міністерства',
     ]);
   });

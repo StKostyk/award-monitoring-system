@@ -53,15 +53,16 @@ class AwardHistoryEndpointsTest extends AbstractAwardEndpointsTest {
     void ac1_8_versionsAnswerThePageWithSnapshotsAndChanges() throws Exception {
         AwardSnapshot snapshot = new AwardSnapshot("Letter", null, null, null, "МОН", LocalDate.of(2025, 5, 1),
             13L, AwardStatus.DRAFT, null, false, null, 64L);
-        AwardVersionResponse version = new AwardVersionResponse(2L, VersionAction.UPDATED,
+        AwardVersionResponse version = new AwardVersionResponse(2L, VersionAction.CORRECTED,
             new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"), Instant.parse("2026-09-30T08:00:00Z"),
-            snapshot, List.of(new FieldChange("categoryId", null, 13L)));
+            snapshot, List.of(new FieldChange("categoryId", null, 13L)), "Дату взято з наказу");
         when(history.versions(5L, 0, 20)).thenReturn(new PageImpl<>(List.of(version)));
 
         mockMvc.perform(get(VERSIONS).with(employee()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content[0].number").value(2))
-            .andExpect(jsonPath("$.content[0].action").value("UPDATED"))
+            .andExpect(jsonPath("$.content[0].action").value("CORRECTED"))
+            .andExpect(jsonPath("$.content[0].comment").value("Дату взято з наказу"))
             .andExpect(jsonPath("$.content[0].actor.name").value("Анастасія Коваль"))
             .andExpect(jsonPath("$.content[0].snapshot.awardDate").value("2025-05-01"))
             .andExpect(jsonPath("$.content[0].changes[0].field").value("categoryId"))

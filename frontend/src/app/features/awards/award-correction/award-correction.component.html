@@ -1,0 +1,203 @@
+<h1 class="award-correction__title">{{ 'awards.correction.title' | transloco }}</h1>
+
+@if (loading() || saving()) {
+  <mat-progress-bar mode="indeterminate" data-testid="correction-busy" />
+}
+
+@if (unavailable()) {
+  <p class="award-correction__problem" role="alert" data-testid="correction-unavailable">
+    {{ 'awards.correction.unavailable' | transloco }}
+  </p>
+  <a mat-button [routerLink]="['/awards', id()]" data-testid="correction-back">
+    {{ 'awards.correction.back' | transloco }}
+  </a>
+} @else if (heldBy(); as holder) {
+  <p class="award-correction__problem" role="alert" data-testid="correction-held">
+    {{ 'awards.correction.heldBy' | transloco: { name: holder.name } }}
+  </p>
+  <a mat-button [routerLink]="['/awards', id()]" data-testid="correction-back">
+    {{ 'awards.correction.back' | transloco }}
+  </a>
+} @else if (award(); as award) {
+  <p class="award-correction__intro">{{ 'awards.correction.intro' | transloco }}</p>
+
+  @if (problem(); as problem) {
+    <p class="award-correction__problem" role="alert" data-testid="correction-error">
+      {{ problem | transloco }}
+      @if (stale()) {
+        <button mat-button type="button" (click)="reload()" data-testid="correction-reload">
+          {{ 'awards.form.reload' | transloco }}
+        </button>
+      }
+    </p>
+  }
+
+  <form class="award-correction" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <dl class="award-correction__fixed">
+      <dt>{{ 'awards.recipient.label' | transloco }}</dt>
+      <dd data-testid="correction-recipient">{{ recipient() }}</dd>
+    </dl>
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.fields.titleUk' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="titleUk"
+        [maxlength]="limits.title"
+        data-testid="award-title-uk"
+      />
+      @if (errorKey('titleUk'); as key) {
+        <mat-error>{{ key | transloco: { max: limits.title } }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.fields.title' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="title"
+        [maxlength]="limits.title"
+        data-testid="award-title"
+      />
+      @if (errorKey('title'); as key) {
+        <mat-error>{{ key | transloco: { max: limits.title } }}</mat-error>
+      }
+    </mat-form-field>
+    @if (
+      form.hasError('titleRequired') &&
+      (form.controls.title.touched || form.controls.titleUk.touched)
+    ) {
+      <p class="award-correction__problem award-correction__inline" role="alert">
+        {{ 'awards.errors.titleRequired' | transloco }}
+      </p>
+    }
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.fields.category' | transloco }}</mat-label>
+      <mat-select formControlName="categoryId" data-testid="award-category">
+        @if (retiredCategory(); as retired) {
+          <mat-option [value]="retired.id">{{ optionName(retired) }}</mat-option>
+        }
+        @for (item of categories(); track item.category.id) {
+          <mat-option
+            [value]="item.category.id"
+            [class.award-correction__child]="item.depth > 0"
+            [attr.data-testid]="'category-option-' + item.category.id"
+          >
+            {{ optionName(item.category) }}
+          </mat-option>
+        }
+      </mat-select>
+      @if (errorKey('categoryId'); as key) {
+        <mat-error>{{ key | transloco }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.fields.awardingOrganization' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="awardingOrganization"
+        [maxlength]="limits.organization"
+        data-testid="award-organization"
+      />
+      @if (errorKey('awardingOrganization'); as key) {
+        <mat-error>{{ key | transloco: { max: limits.organization } }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="award-correction__field" subscriptSizing="dynamic">
+      <mat-label>{{ 'awards.fields.awardDate' | transloco }}</mat-label>
+      <input
+        matInput
+        [matDatepicker]="awardDatePicker"
+        formControlName="awardDate"
+        [min]="oldest"
+        [max]="today"
+        [placeholder]="'app.datePlaceholder' | transloco"
+        data-testid="award-date"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="awardDatePicker" />
+      <mat-datepicker #awardDatePicker />
+      @if (errorKey('awardDate'); as key) {
+        <mat-error>{{ key | transloco }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.fields.descriptionUk' | transloco }}</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="descriptionUk"
+        [maxlength]="limits.description"
+        data-testid="award-description-uk"
+      ></textarea>
+      @if (errorKey('descriptionUk'); as key) {
+        <mat-error>{{ key | transloco: { max: limits.description } }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.fields.description' | transloco }}</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="description"
+        [maxlength]="limits.description"
+        data-testid="award-description"
+      ></textarea>
+      @if (errorKey('description'); as key) {
+        <mat-error>{{ key | transloco: { max: limits.description } }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.fields.externalUrl' | transloco }}</mat-label>
+      <input
+        matInput
+        type="url"
+        formControlName="externalUrl"
+        [maxlength]="limits.url"
+        data-testid="award-url"
+      />
+      @if (errorKey('externalUrl'); as key) {
+        <mat-error>{{ key | transloco: { max: limits.url } }}</mat-error>
+      }
+    </mat-form-field>
+
+    <app-award-documents [awardId]="award.id" [uploads]="false" [removable]="false" />
+
+    <mat-form-field class="award-correction__field">
+      <mat-label>{{ 'awards.correction.reason' | transloco }}</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        required
+        formControlName="reason"
+        [maxlength]="limits.reason"
+        data-testid="correction-reason"
+      ></textarea>
+      <mat-hint align="end"
+        >{{ form.controls.reason.value?.length ?? 0 }} / {{ limits.reason }}</mat-hint
+      >
+      @if (errorKey('reason'); as key) {
+        <mat-error>{{ key | transloco: { max: limits.reason } }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="award-correction__actions">
+      <a mat-button [routerLink]="['/awards', award.id]" data-testid="correction-cancel">
+        {{ 'awards.form.cancel' | transloco }}
+      </a>
+      <button
+        mat-flat-button
+        type="submit"
+        [disabled]="saving() || loading() || changed().length === 0"
+        data-testid="correction-save"
+      >
+        {{ 'awards.correction.save' | transloco }}
+      </button>
+    </div>
+  </form>
+}

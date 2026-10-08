@@ -5,9 +5,17 @@
   @for (version of versions(); track version.number) {
     <li class="award-history__entry" data-testid="award-history-entry">
       <div class="award-history__head">
-        <strong data-testid="award-history-action">{{
-          'awards.history.actions.' + version.action | transloco
-        }}</strong>
+        <strong data-testid="award-history-action">
+          @if (version.action === 'CORRECTED') {
+            {{
+              'awards.history.correctedBy'
+                | transloco
+                  : { name: version.actor?.name ?? ('awards.history.unknownActor' | transloco) }
+            }}
+          } @else {
+            {{ 'awards.history.actions.' + version.action | transloco }}
+          }
+        </strong>
         <span class="award-history__meta" data-testid="award-history-meta">
           @if (version.actor) {
             {{ version.actor.name }}
@@ -19,6 +27,11 @@
           · <time [attr.datetime]="version.createdAt">{{ time(version) }}</time>
         </span>
       </div>
+      @if (version.comment) {
+        <p class="award-history__comment" data-testid="award-history-comment">
+          {{ 'awards.history.reason' | transloco: { reason: version.comment } }}
+        </p>
+      }
       @if (version.changes.length) {
         <ul class="award-history__changes">
           @for (change of version.changes; track change.field) {
