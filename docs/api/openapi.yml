@@ -386,13 +386,12 @@ paths:
         description: A faculty; any other organisation answers 404
     get:
       tags: [Workflows]
-      summary: Review period of a faculty (planned, 4.2.1)
+      summary: Review period of a faculty
       description: >
         Working days (Monday to Friday) each faculty level (`FACULTY_SECRETARY`, `DEAN`) has for a request of the
         faculty or its departments; the rector's levels always use the global default. Readable by holders of a
         `FACULTY_SECRETARY` or `DEAN` role, own or delegated, whose scope covers the faculty, and by
         `SYSTEM_ADMIN` (4.2.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: getReviewPeriod
@@ -415,13 +414,14 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
     put:
       tags: [Workflows]
-      summary: Set or reset the review period of a faculty (planned, 4.2.1)
+      summary: Set or reset the review period of a faculty
       description: >
         The dean of the faculty (own role or a delegation in effect) or `SYSTEM_ADMIN` sets 1–20 working days, or
         `null` for the global default. Deadlines already set stay; the new period applies to the next deadline set
         by a submission, a level change or a resubmission. Writes an audit row `REVIEW_PERIOD_CHANGED` with the old
-        and new value (and `delegatorId` under a delegation) (4.2.1).
-      x-status: planned
+        and new `workingDays` and `effectiveWorkingDays` (and `delegatorId` under a delegation); an unchanged value
+        writes none. A value outside 1–20, a fraction or text answers 422 `validation-failed` on `workingDays` with
+        the code `range`. Callers without an approving role or `system:configure` get 403 (4.2.1).
       security:
         - bearerAuth: []
       operationId: updateReviewPeriod
@@ -3442,7 +3442,7 @@ components:
 
     ReviewPeriod:
       type: object
-      description: Review period of a faculty in working days, Monday to Friday (planned, 4.2.1)
+      description: Review period of a faculty in working days, Monday to Friday
       properties:
         organizationId:
           type: integer
@@ -3463,7 +3463,7 @@ components:
     ReviewPeriodUpdate:
       type: object
       required: [workingDays]
-      description: New review period of a faculty (planned, 4.2.1)
+      description: New review period of a faculty
       properties:
         workingDays:
           type: [integer, 'null']

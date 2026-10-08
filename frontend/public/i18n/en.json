@@ -577,6 +577,31 @@
       "confirm": "Hand over",
       "cancel": "Cancel"
     },
+    "period": {
+      "label": "Review period: {{days}}",
+      "days": {
+        "one": "{{count}} working day",
+        "few": "{{count}} working days",
+        "many": "{{count}} working days",
+        "other": "{{count}} working days"
+      },
+      "default": "(default)",
+      "change": "Change",
+      "dialog": {
+        "title": "Faculty review period",
+        "label": "Working days per faculty level",
+        "hint": "1 to 20. The rector's levels keep the default; deadlines already set stay as they are.",
+        "range": "Enter a whole number from 1 to 20",
+        "reset": "Default period",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "problems": {
+        "validation-failed": "Enter a whole number from 1 to 20",
+        "network": "The server is unreachable. Try again.",
+        "unknown": "The period could not be saved. Try again."
+      }
+    },
     "takeOver": {
       "title": "Take over",
       "text": "{{name}} is reviewing this award. Take it over?",

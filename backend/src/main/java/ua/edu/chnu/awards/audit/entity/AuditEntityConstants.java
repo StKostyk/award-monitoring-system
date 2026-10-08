@@ -16,6 +16,8 @@ public final class AuditEntityConstants {
     public static final String DOCUMENTS = "documents";
     /** Data-subject rights such as the data export. */
     public static final String GDPR = "GDPR";
+    /** Organisation settings such as a faculty's review period. */
+    public static final String ORGANIZATIONS = "organizations";
     /** A person's own account: names and sign-in address. */
     public static final String USER = "USER";
 

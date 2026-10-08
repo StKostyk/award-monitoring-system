@@ -7,7 +7,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, EMPTY, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -97,7 +97,7 @@ describe('ReviewListComponent', () => {
   const permissions = signal(
     readPermissions(token({ role_scopes: ['EMPLOYEE:64', 'FACULTY_SECRETARY:9'] })),
   );
-  const reviews = { decideBatch: vi.fn() };
+  const reviews = { decideBatch: vi.fn(), reviewPeriod: vi.fn(() => EMPTY) };
   const dialog = { open: vi.fn() };
   const organizations = {
     ofType: (type: OrganizationType) =>
