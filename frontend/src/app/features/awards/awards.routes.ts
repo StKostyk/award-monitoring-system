@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideState } from '@ngrx/store';
 
+import { approverGuard } from '../../core/auth/auth.guard';
+import { AwardCorrectionComponent } from './award-correction/award-correction.component';
 import { AwardDetailComponent } from './award-detail/award-detail.component';
 import { AwardFormComponent } from './award-form/award-form.component';
 import { AwardListComponent } from './award-list/award-list.component';
@@ -26,6 +28,12 @@ export const AWARD_ROUTES: Routes = [
         path: ':id/edit',
         component: AwardFormComponent,
         canActivate: [awardEditGuard],
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: ':id/correct',
+        component: AwardCorrectionComponent,
+        canActivate: [approverGuard],
         canDeactivate: [unsavedChangesGuard],
       },
       { path: ':id/submitted', component: AwardSubmittedComponent },

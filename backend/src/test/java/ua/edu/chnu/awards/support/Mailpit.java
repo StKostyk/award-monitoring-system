@@ -110,6 +110,30 @@ public final class Mailpit {
     }
 
     /**
+     * Waits until a message to the recipient with the given subject text mentions the fragment and returns its body;
+     * other matching messages, such as a late one of an earlier test, are skipped.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @param fragment  text the body must contain
+     * @return text body of the newest message mentioning the fragment
+     */
+    public String textMentioning(String recipient, String subject, String fragment) {
+        for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
+            for (Map<String, Object> message : messagesTo(recipient, subject)) {
+                String text = RestAssured.given().get(apiUrl + "/api/v1/message/" + message.get("ID")).jsonPath()
+                    .getString("Text");
+                if (text != null && text.contains(fragment)) {
+                    return text;
+                }
+            }
+            sleep();
+        }
+        throw new IllegalStateException("No message with subject '" + subject + "' to " + recipient
+            + " mentions '" + fragment + "'");
+    }
+
+    /**
      * The first verification-style link (one carrying a {@code token} parameter) in a message body.
      *
      * @param text message text

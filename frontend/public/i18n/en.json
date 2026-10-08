@@ -113,6 +113,31 @@
       "unit": "Faculty or department",
       "unitPicker": "Faculty or department"
     },
+    "correction": {
+      "title": "Correct the award",
+      "intro": "Correct mistakes in the award details. The recipient and documents stay as the owner entered them; the owner gets an e-mail with the changes and the reason.",
+      "reason": "Reason for the correction",
+      "save": "Save",
+      "unavailable": "This award cannot be corrected now: it is not under review or not available to you.",
+      "heldBy": "{{name}} is reviewing this award; only that reviewer can correct it.",
+      "back": "Back to the award",
+      "done": "The award was corrected. The owner gets an e-mail with the changes.",
+      "confirm": {
+        "title": "Send the correction?",
+        "reason": "Reason: {{reason}}",
+        "send": "Send",
+        "cancel": "Cancel"
+      },
+      "problems": {
+        "validation-failed": "Some fields are not valid.",
+        "award-incomplete": "Category, awarding organisation and award date are required for an award under review.",
+        "no-change": "No field was changed.",
+        "award-stale": "The award was changed in another window. Load it again.",
+        "request-stale": "The review changed in another window. Load the award again.",
+        "network": "The server cannot be reached. Try again.",
+        "unknown": "The correction could not be saved."
+      }
+    },
     "history": {
       "title": "Change history",
       "actions": {
@@ -120,8 +145,11 @@
         "CREATED": "Created",
         "UPDATED": "Changed",
         "SUBMITTED": "Submitted",
-        "DECIDED": "Reviewer decision"
+        "DECIDED": "Reviewer decision",
+        "CORRECTED": "Corrected by a reviewer"
       },
+      "correctedBy": "Corrected by reviewer: {{name}}",
+      "reason": "Reason: {{reason}}",
       "unknownActor": "Unknown user",
       "system": "System",
       "view": "View version",
@@ -572,7 +600,8 @@
       "approve": "Approve",
       "return": "Return for corrections",
       "reject": "Reject",
-      "escalate": "Pass to the {{level}}"
+      "escalate": "Pass to the {{level}}",
+      "correct": "Correct"
     },
     "handOver": {
       "title": "Hand over to a colleague",

@@ -72,6 +72,29 @@ describe('AwardsService', () => {
     });
   });
 
+  it('ac3_3_posts_a_correction_with_only_the_changed_fields', () => {
+    service
+      .correct(5, {
+        awardDate: '2025-06-01',
+        externalUrl: null,
+        version: 4,
+        requestVersion: 3,
+        reason: 'Наказ',
+      })
+      .subscribe();
+
+    const request = http.expectOne(
+      (r) => r.method === 'POST' && r.url.endsWith('/awards/5/corrections'),
+    );
+    expect(request.request.body).toEqual({
+      awardDate: '2025-06-01',
+      externalUrl: null,
+      version: 4,
+      requestVersion: 3,
+      reason: 'Наказ',
+    });
+  });
+
   it('ac1_1_creates_gets_and_deletes', () => {
     service.create(form).subscribe();
     service.get(5).subscribe();

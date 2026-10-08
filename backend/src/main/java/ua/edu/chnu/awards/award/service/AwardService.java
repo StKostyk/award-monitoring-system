@@ -134,7 +134,7 @@ public class AwardService {
         return mapper.toResponse(draft, null, warnings.of(draft));
     }
 
-    private static void apply(Award award, AwardForm form, Optional<AwardCategory> category) {
+    static void apply(Award award, AwardForm form, Optional<AwardCategory> category) {
         award.setTitle(form.title());
         award.setTitleUk(form.titleUk());
         award.setDescription(form.description());

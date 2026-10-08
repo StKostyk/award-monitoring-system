@@ -24,6 +24,11 @@
   gap: 4px 12px;
 }
 
+.award-history__comment {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
 .award-history__meta,
 .award-history__field {
   color: var(--mat-sys-on-surface-variant);

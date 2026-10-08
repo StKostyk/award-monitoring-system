@@ -110,6 +110,25 @@ public class AwardInputRules {
      *                             {@code recipient-out-of-scope} for a unit the caller no longer covers
      */
     public void checkComplete(Award award) {
+        requireFilled(award);
+        List<FieldViolation> errors = new ArrayList<>();
+        if (!award.getCategory().isActive()) {
+            errors.add(inactiveCategory());
+        }
+        dates.check(award.getAwardDate()).ifPresent(errors::add);
+        if (!errors.isEmpty()) {
+            throw ApiProblemException.validationFailed("The award has invalid fields", errors);
+        }
+        requireRecipientInScope(award);
+    }
+
+    /**
+     * Checks that the fields a request needs are filled.
+     *
+     * @param award the award
+     * @throws ApiProblemException 422 {@code award-incomplete} naming the empty fields
+     */
+    public void requireFilled(Award award) {
         List<FieldViolation> missing = new ArrayList<>();
         if (award.getCategory() == null) {
             missing.add(required(CATEGORY));
@@ -124,15 +143,6 @@ public class AwardInputRules {
             throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "award-incomplete",
                 "The award is missing fields a submission needs", Map.of("errors", missing));
         }
-        List<FieldViolation> errors = new ArrayList<>();
-        if (!award.getCategory().isActive()) {
-            errors.add(inactiveCategory());
-        }
-        dates.check(award.getAwardDate()).ifPresent(errors::add);
-        if (!errors.isEmpty()) {
-            throw ApiProblemException.validationFailed("The award has invalid fields", errors);
-        }
-        requireRecipientInScope(award);
     }
 
     private void requireRecipientInScope(Award award) {

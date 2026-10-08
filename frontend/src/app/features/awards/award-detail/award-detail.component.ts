@@ -83,9 +83,11 @@ export class AwardDetailComponent implements OnInit {
   readonly canAudit = computed(() => this.auth.permissions().hasPermission('audit:read'));
 
   ngOnInit(): void {
-    const problem = (history.state as { problem?: string } | null)?.problem;
-    if (problem) {
-      this.notice.set(`awards.problems.${problem}`);
+    const state = history.state as { problem?: string; notice?: string } | null;
+    if (state?.problem) {
+      this.notice.set(`awards.problems.${state.problem}`);
+    } else if (state?.notice) {
+      this.notice.set(state.notice);
     }
     const param = this.route.snapshot.paramMap.get('id') ?? '';
     if (!/^\d+$/.test(param)) {

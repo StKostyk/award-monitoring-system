@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
@@ -80,6 +81,26 @@ public class ReviewAssignment {
         }
         guards.requireVersion(request, change.requestVersion());
         User caller = users.findById(callerId).orElseThrow(() -> new IllegalStateException("Caller has no account"));
+        take(request, caller, holder);
+        return mapper.toItem(request);
+    }
+
+    /**
+     * Claims an unclaimed request for the caller as part of another action on it, inside the caller's
+     * transaction, which has locked the request and checked its version.
+     *
+     * @param request the locked request nobody holds
+     * @return the caller, now its holder
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public User claimOnAction(AwardRequest request) {
+        User caller = users.findById(access.callerId())
+            .orElseThrow(() -> new IllegalStateException("Caller has no account"));
+        take(request, caller, null);
+        return caller;
+    }
+
+    private void take(AwardRequest request, User caller, User holder) {
         request.setCurrentReviewer(caller);
         request.setStatus(RequestStatus.IN_REVIEW);
         requests.saveAndFlush(request);
@@ -89,7 +110,6 @@ public class ReviewAssignment {
             details.put(PREVIOUS_REVIEWER, holder.getId());
         }
         record(holder == null ? AuditAction.REVIEW_CLAIMED : AuditAction.REVIEW_TAKEN_OVER, request, details);
-        return mapper.toItem(request);
     }
 
     /**

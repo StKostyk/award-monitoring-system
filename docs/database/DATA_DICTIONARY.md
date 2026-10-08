@@ -518,6 +518,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 **Business Rules**:
 - A version is written after the award is flushed by the draft creation (`CREATED`), a save that moved `awards.version` (`UPDATED`; a save without a change writes none) and the submission (`SUBMITTED`); a failed save writes none, as it rolls back with the change
+- A reviewer's correction of a pending award (4.2, story 2.4.1) writes a `CORRECTED` version with the reviewer as actor and the reason in `comment`, in the transaction of the correction
 - `version_number` is the award's `version` after the change; V023 wrote one `BASELINE` row per existing award with its current state and version and no actor
 - Rows are immutable: `trg_award_versions_immutable` refuses every update except clearing `actor_id` (`ON DELETE SET NULL` when the actor's account is erased)
 - Deleted with the award (`ON DELETE CASCADE`); erasure of submitted awards and their versions is an Epic 6 decision
@@ -528,10 +529,11 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `version_id` | `BIGSERIAL` | NO | Auto | PK | Row identifier |
 | `award_id` | `BIGINT` | NO | - | FK→awards `ON DELETE CASCADE` | The award |
 | `version_number` | `BIGINT` | NO | - | UNIQUE with `award_id` | `awards.version` after the change |
-| `action` | `VARCHAR(20)` | NO | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED`, `DECIDED` (a reviewer decision changed the award's status, V029) |
+| `action` | `VARCHAR(20)` | NO | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED`, `DECIDED` (a reviewer decision changed the award's status, V029), `CORRECTED` (a reviewer corrected a pending award, V034) |
 | `actor_id` | `BIGINT` | YES | - | FK→users `ON DELETE SET NULL` | Who saved the version; NULL for baselines and erased accounts |
 | `snapshot` | `JSONB` | NO | - | - | `title`, `titleUk`, `description`, `descriptionUk`, `awardingOrganization`, `awardDate` (ISO date), `categoryId`, `status`, `impactScore`, `verificationBadge`, `externalUrl`, `organizationId` |
 | `changed_fields` | `TEXT[]` | YES | - | - | Snapshot keys that differ from the previous version; NULL for the first |
+| `comment` | `TEXT` | YES | - | - | The reviewer's reason for a `CORRECTED` version (1–1000 characters, checked by the application); NULL otherwise (V034) |
 | `created_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the version was saved |
 
 **Constraints**:
@@ -745,6 +747,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `REVIEW_BATCH` - a reviewer applied one decision to several awards with `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = the reviewer; `new_values` = `decision`, `items`, `done`, `failed`); every decided item also has its own `REVIEW_DECISION` row (4.1.4)
 - `REVIEW_PERIOD_CHANGED` - a dean (own role or a delegation) or a system administrator changed a faculty's review period with `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = the faculty, `user_id` = the caller; `old_values`/`new_values` = `workingDays` (own value, null for the default) and `effectiveWorkingDays`; `new_values.delegatorId` under a delegation); an unchanged value writes no row (4.2.1)
 - `REVIEW_OVERDUE_NOTICED` - the hourly overdue job marked an open request past its deadline (`entity_type` = `awards`, `entity_id` = the award, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = user ids e-mailed, empty at the rector or without a reviewer above); once per level (4.2.2)
+- `AWARD_CORRECTED` - a reviewer corrected the fields of a pending award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `requestId`, `level`, `changes` = list of `field`, `from`, `to`, `reason`, `delegatorId` under a delegation); preceded by `REVIEW_CLAIMED` when the correction claimed the request (4.2, story 2.4.1)
 - `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 

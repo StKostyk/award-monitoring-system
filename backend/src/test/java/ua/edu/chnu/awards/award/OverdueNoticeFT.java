@@ -93,7 +93,7 @@ class OverdueNoticeFT extends AbstractFunctionalTest {
         assertThat(row).containsEntry("overdue_noticed_level", "FACULTY_SECRETARY")
             .containsEntry("status", "SUBMITTED").containsEntry("current_level", "FACULTY_SECRETARY");
         assertThat(audited(id)).isEqualTo(1);
-        String text = mailpit.latestTextTo(DEAN, SUBJECT);
+        String text = mailpit.textMentioning(DEAN, SUBJECT, "Грамота з простроченим розглядом");
         assertThat(text).contains("Грамота з простроченим розглядом", "не взято", "not taken", "/awards/" + id);
         assertThat(mailpit.messagesTo(SECRETARY, SUBJECT)).isEmpty();
 

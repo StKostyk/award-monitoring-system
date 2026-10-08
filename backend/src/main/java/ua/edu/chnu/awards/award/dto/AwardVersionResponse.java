@@ -15,7 +15,8 @@ import ua.edu.chnu.awards.award.entity.VersionAction;
  * @param createdAt when it was saved
  * @param snapshot  the award's fields at this version
  * @param changes   fields that differ from the previous visible version, empty for the first
+ * @param comment   the reviewer's reason for a correction, null otherwise
  */
 public record AwardVersionResponse(long number, VersionAction action, UserRef actor, Instant createdAt,
-                                   AwardSnapshot snapshot, List<FieldChange> changes) {
+                                   AwardSnapshot snapshot, List<FieldChange> changes, String comment) {
 }

@@ -72,6 +72,13 @@
               }}
             </button>
           }
+          <a
+            mat-stroked-button
+            [routerLink]="['/awards', item.awardId, 'correct']"
+            data-testid="review-correct"
+          >
+            {{ 'reviews.panel.correct' | transloco }}
+          </a>
         </div>
       }
       <div class="review-panel__actions">

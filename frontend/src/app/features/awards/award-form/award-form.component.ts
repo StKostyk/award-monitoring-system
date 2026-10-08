@@ -10,13 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAnchor, MatButton } from '@angular/material/button';
 import {
   MatDatepicker,
@@ -54,6 +48,16 @@ import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { kyivToday, yearsBefore } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
+import {
+  DESCRIPTION_LIMIT,
+  ORGANIZATION_LIMIT,
+  TITLE_LIMIT,
+  URL_LIMIT,
+  WEB_LINK,
+  empty,
+  text,
+  titleInOneLanguage,
+} from '../award-fields';
 import { LeavesUnsavedChanges } from '../awards.guards';
 import {
   Award,
@@ -79,10 +83,6 @@ const COPY_DEBOUNCE = 400;
 const SUGGEST_DEBOUNCE = 400;
 /** Characters of each text sent for suggestions; enough for the rules and short enough for a request line. */
 const SUGGEST_TEXT_LIMIT = 300;
-const TITLE_LIMIT = 500;
-const DESCRIPTION_LIMIT = 4000;
-const ORGANIZATION_LIMIT = 255;
-const URL_LIMIT = 2048;
 const KNOWN_PROBLEMS = [
   'validation-failed',
   'award-incomplete',
@@ -201,7 +201,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       categoryId: [null as number | null],
       awardingOrganization: ['', Validators.maxLength(ORGANIZATION_LIMIT)],
       awardDate: [''],
-      externalUrl: ['', [Validators.maxLength(URL_LIMIT), Validators.pattern(/^https?:\/\/\S+$/i)]],
+      externalUrl: ['', [Validators.maxLength(URL_LIMIT), Validators.pattern(WEB_LINK)]],
     },
     { validators: titleInOneLanguage },
   );
@@ -708,19 +708,4 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private copyName(): string {
     return this.id === null ? 'award-new' : `award-${this.id}`;
   }
-}
-
-function titleInOneLanguage(group: AbstractControl): ValidationErrors | null {
-  const title = group.get('title')?.value as string | null;
-  const titleUk = group.get('titleUk')?.value as string | null;
-  return empty(title) && empty(titleUk) ? { titleRequired: true } : null;
-}
-
-function empty(value: unknown): boolean {
-  return value === null || value === undefined || String(value).trim() === '';
-}
-
-function text(value: string | null | undefined): string | null {
-  const trimmed = value?.trim() ?? '';
-  return trimmed === '' ? null : trimmed;
 }
