@@ -59,6 +59,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 
 ¹² Feature 4.1.3 (`AwardWithdrawal`, `POST /awards/{id}/withdraw`): the owner (`award:update:own`) takes a pending award back as a draft while no reviewer has claimed its request (`request-claimed` otherwise); the request becomes `WITHDRAWN` and leaves every queue. A returned or withdrawn draft is edited and resubmitted like any draft but cannot be deleted (`award-has-request`).
 
+¹³ Feature 4.1.4 (`BatchReview`, `POST /reviews/decisions`): the same decision for up to 50 requests of the queue, each item checked and decided as in note 11 in its own transaction, so items held by a colleague, stale or closed fail alone while the rest are decided. The comment templates (`GET /reviews/templates`) are read under the same permission. A batch is audited once (`REVIEW_BATCH`) besides each item's `REVIEW_DECISION`.
+
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Approval Workflow** |
@@ -69,6 +71,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Escalate to University Level | ❌ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Claim, Release and Hand Over a Review¹⁰ | ❌ | Own level | Own level; take over lower | Own level; take over lower | Own level; take over lower | ❌ | ❌ | ❌ | ❌ |
 | Decide at a Level (Own or Lower)¹¹ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
+| Decide Several Requests at Once¹³ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
 | Final University Approval | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Reject Award Request | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Request Additional Information | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |

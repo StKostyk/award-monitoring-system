@@ -54,6 +54,65 @@
   --mat-chip-label-text-weight: 700;
 }
 
+.reviews__select {
+  width: 40px;
+  padding: 0 0 0 4px;
+}
+
+.reviews__select-all {
+  margin-bottom: 4px;
+}
+
+.reviews__actions {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.reviews__selected {
+  font: var(--mat-sys-title-small);
+  margin-right: auto;
+}
+
+.reviews__summary {
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container);
+}
+
+.reviews__summary-title {
+  margin: 0 0 4px;
+  font: var(--mat-sys-title-medium);
+}
+
+.reviews__summary-failed {
+  margin: 8px 0 4px;
+}
+
+.reviews__summary-list {
+  margin: 0 0 8px;
+  padding-left: 20px;
+
+  li {
+    overflow-wrap: anywhere;
+  }
+}
+
+.reviews__card-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .reviews__cards {
   list-style: none;
   margin: 0;

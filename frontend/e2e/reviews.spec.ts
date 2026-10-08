@@ -213,9 +213,9 @@ test.describe('reviewer queue', () => {
     await expect(mine.getByTestId('award-submitted-name')).toContainText(title);
     await mine.goto(`/awards/${id}`);
     await expect(mine.getByTestId('award-status-submitted')).toHaveText('Подано повторно');
-    expect(sql(`select status || ' ' || current_level from award_requests where award_id = ${id}`)).toBe(
-      'SUBMITTED FACULTY_SECRETARY',
-    );
+    expect(
+      sql(`select status || ' ' || current_level from award_requests where award_id = ${id}`),
+    ).toBe('SUBMITTED FACULTY_SECRETARY');
   });
 
   test('ac3_1 ac3_6 the owner withdraws an unclaimed award and edits it', async ({ browser }) => {
@@ -234,7 +234,9 @@ test.describe('reviewer queue', () => {
     await expect(mine.getByTestId('award-returned')).toHaveCount(0);
     expect(sql(`select status from award_requests where award_id = ${id}`)).toBe('WITHDRAWN');
     expect(
-      sql(`select count(*) from audit_logs where entity_id = ${id} and action_type = 'AWARD_WITHDRAWN'`),
+      sql(
+        `select count(*) from audit_logs where entity_id = ${id} and action_type = 'AWARD_WITHDRAWN'`,
+      ),
     ).toBe('1');
   });
 
@@ -294,5 +296,71 @@ test.describe('reviewer queue', () => {
     await expect(head.getByTestId('award-status-completed')).toBeVisible();
     expect(await seriousViolations(head)).toEqual([]);
     expect(sql(`select status from awards where award_id = ${university}`)).toBe('APPROVED');
+  });
+
+  test('ac4_6 ac4_7 ac4_8 a batch return with a template skips the award a colleague holds', async ({
+    browser,
+  }) => {
+    const token = uniqueToken();
+    const titles = ['перша', 'друга', 'третя'].map((word) => `Пакетна грамота ${word} ${token}`);
+    const ids: string[] = [];
+    for (const title of titles) {
+      ids.push(await submittedBy(browser, owner, title));
+    }
+    sql(
+      `update award_requests set status = 'IN_REVIEW', current_reviewer_id = ${user(second)} where award_id = ${ids[1]}`,
+    );
+    const page = await signedInAs(browser, first, FRESH_PASSWORD);
+    await page.getByTestId('language-toggle').click();
+    await page.goto('/reviews');
+    await page.getByTestId('review-tab-all').click();
+    const rows = titles.map((title) => page.getByTestId('review-item').filter({ hasText: title }));
+    await expect(rows[2]).toBeVisible();
+    await expect(page.getByTestId('reviews-loading')).toHaveCount(0);
+
+    await rows[0].getByRole('checkbox').focus();
+    await page.keyboard.press('Space');
+    await expect(rows[0].getByRole('checkbox')).toBeChecked();
+    await expect(page.getByTestId('batch-selected')).toHaveText('Selected: 1');
+    await rows[1].getByRole('checkbox').check();
+    await rows[2].getByRole('checkbox').check();
+    await expect(page.getByTestId('batch-selected')).toHaveText('Selected: 3');
+    await expect(page.getByTestId('batch-approve')).toHaveText('Approve (3)');
+    await expect(page.getByTestId('batch-escalate')).toHaveText('Pass to the dean');
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.getByTestId('batch-return').focus();
+    await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByTestId('decision-count')).toHaveText('Awards: 3');
+    await dialog.getByTestId('decision-template').click();
+    await page.getByRole('option', { name: 'Certificate scan missing' }).click();
+    await expect(dialog.getByTestId('decision-comment')).toHaveValue(
+      /attach a scan of the certificate/,
+    );
+    await dialog.getByTestId('decision-comment').fill('Please attach a scan of the certificate.');
+    expect(await seriousViolations(page)).toEqual([]);
+    await dialog.getByTestId('decision-confirm').click();
+
+    await expect(page.getByTestId('batch-done')).toHaveText('Processed: 2 of 3');
+    const failed = page.getByTestId('batch-failed');
+    await expect(failed).toHaveCount(1);
+    await expect(failed).toContainText(titles[1]);
+    await expect(failed.getByTestId('batch-reason')).toHaveText('Claimed by another reviewer');
+    await expect(failed.getByRole('link')).toHaveAttribute('href', `/awards/${ids[1]}`);
+    await expect(rows[0]).toHaveCount(0);
+    await expect(rows[2]).toHaveCount(0);
+    await expect(page.getByTestId('batch-selected')).toHaveText('Selected: 1');
+    expect(await seriousViolations(page)).toEqual([]);
+    expect(
+      sql(
+        `select string_agg(status, ',' order by award_id) from award_requests where award_id in (${ids.join(',')})`,
+      ),
+    ).toBe('RETURNED,IN_REVIEW,RETURNED');
+    expect(
+      sql(
+        `select new_values->>'done' || '/' || (new_values->>'failed') from audit_logs where action_type = 'REVIEW_BATCH' and user_id = ${user(first)} order by log_id desc limit 1`,
+      ),
+    ).toBe('2/1');
   });
 });

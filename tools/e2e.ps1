@@ -14,13 +14,18 @@
 .PARAMETER Grep
     Runs only the tests whose title or file matches the pattern (Playwright --grep).
 
+.PARAMETER TimeoutMinutes
+    Stops the Playwright run after this many minutes (Playwright --global-timeout), so a run interrupted
+    by a sleeping machine fails instead of hanging. Default 45.
+
 .EXAMPLE
     .\tools\e2e.ps1
     .\tools\e2e.ps1 -Grep 'award history'
 #>
 [CmdletBinding()]
 param(
-    [string]$Grep
+    [string]$Grep,
+    [int]$TimeoutMinutes = 45
 )
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -78,7 +83,8 @@ if (-not (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction Silent
 }
 
 Push-Location (Join-Path $root 'frontend')
-$arguments = if ($Grep) { @('--grep', $Grep) } else { @() }
+$arguments = @("--global-timeout=$($TimeoutMinutes * 60000)")
+if ($Grep) { $arguments += @('--grep', $Grep) }
 & npx playwright test @arguments
 $exit = $LASTEXITCODE
 Pop-Location

@@ -21,7 +21,7 @@
 | **Домен Користувачів** | `users`, `user_roles`, `organizations` | Ідентичність, контроль доступу, організаційна структура |
 | **Домен Автентифікації** | `one_time_tokens`, `user_devices`, `oauth2_*` | Посилання з листів, відомі браузери, стан сервера авторизації |
 | **Домен Нагород** | `awards`, `award_versions`, `award_categories`, `documents` | Основні бізнес-сутності для управління нагородами |
-| **Домен Робочого Процесу** | `award_requests`, `review_decisions` | Відстеження багаторівневого робочого процесу затвердження |
+| **Домен Робочого Процесу** | `award_requests`, `review_decisions`, `review_templates` | Відстеження багаторівневого робочого процесу затвердження |
 | **Домен Відповідності** | `audit_logs`, `consent_records` | Відповідність GDPR, аудиторські сліди |
 | **Домен Сповіщень** | `notifications`, `notification_preferences` | Комунікація та налаштування користувачів |
 
@@ -662,6 +662,34 @@
 - НАЛЕЖИТЬ ДО `users` (N:1) через `reviewer_id`
 - НАЛЕЖИТЬ ДО `users` (N:1) через `delegator_id`
 
+### 3.3 Сутність: `review_templates`
+
+**Опис**: Готові коментарі рецензента для кожного рішення, які пропонує діалог рішення; обраний текст заповнює коментар, який рецензент ще може змінити (V031, 4.1.4).
+
+**Бізнес-правила**:
+- Довідкові дані, які ведуть міграції; API їх не змінює
+- Читає `GET /reviews/templates?decision=` (`award:approve:level1`): активні рядки рішення за `sort_order`, назва й текст мовою запиту, українською, коли англійський текст порожній
+- Англійські назва й текст задані обидва або порожні обидва
+- Початковий набір: три шаблони для `RETURN`, два для `REJECT`, по одному для `ESCALATE` і `APPROVE`
+- Без тригера аудиту рядків: рядки змінюються лише міграціями
+
+| **Стовпець** | **Тип Даних** | **Nullable** | **За замовчуванням** | **Обмеження** | **Опис** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `template_id` | `BIGSERIAL` | NO | Auto | PK | Унікальний ідентифікатор шаблону |
+| `decision` | `VARCHAR(10)` | NO | - | CK (`APPROVE`, `REJECT`, `RETURN`, `ESCALATE`) | Рішення, для якого пропонується шаблон |
+| `title_uk` | `VARCHAR(120)` | NO | - | - | Назва в списку, українською |
+| `title_en` | `VARCHAR(120)` | YES | - | CK (разом із `body_en`) | Назва в списку, англійською |
+| `body_uk` | `VARCHAR(2000)` | NO | - | - | Текст коментаря, українською |
+| `body_en` | `VARCHAR(2000)` | YES | - | CK (разом із `title_en`) | Текст коментаря, англійською |
+| `sort_order` | `INTEGER` | NO | `0` | - | Позиція в списку, за зростанням |
+| `active` | `BOOLEAN` | NO | `TRUE` | - | False, коли шаблон більше не пропонується |
+| `created_at` | `TIMESTAMPTZ` | NO | `now()` | - | Час створення |
+| `updated_at` | `TIMESTAMPTZ` | NO | `now()` | - | Остання зміна (тригер `trg_review_templates_updated_at`) |
+
+**Індекси**:
+- `pk_review_templates` - Первинний ключ на `template_id`
+- `idx_review_templates_decision` - Частковий B-tree на `(decision, sort_order)` де `active`
+
 ---
 
 ## 4. Домен Відповідності
@@ -706,6 +734,7 @@
 - `AUDIT_EXPORT` - власник `audit:read` завантажив журнал аудиту нагороди у CSV (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = аудитор; `new_values` = записані `rows` і `truncated`, якщо старіші рядки понад 10 000 пропущено)
 - `DOCUMENT_DOWNLOAD` - читач нагороди завантажив документ (`entity_type` = `documents`, `entity_id` = документ, `user_id` = читач; `new_values` = `awardId`); завантаження на сервер і видалення — це рядки тригера `INSERT` і `DELETE` з тим, хто викликав, як виконавцем (функція 3.1)
 - `DOCUMENT_REJECTED` - антивірусний сканер відхилив завантаження (`entity_type` = `documents`, `entity_id` null, бо нічого не збережено, `user_id` = той, хто завантажує; `new_values` = `awardId` і знайдена ClamAV `signature`; ніколи не назва файлу) (функція 3.1.3)
+- `REVIEW_BATCH` - рецензент застосував одне рішення до кількох нагород через `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = рецензент; `new_values` = `decision`, `items`, `done`, `failed`); кожна вирішена нагорода має також власний рядок `REVIEW_DECISION` (4.1.4)
 - `DATA_DELETE` - Права GDPR
 - `APPROVAL`, `REJECTION` - Рішення робочого процесу
 
@@ -877,6 +906,7 @@
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
 | `review_decisions` | → award_requests (N:1), → users (N:1) |
+| `review_templates` | немає (довідкові дані) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |
 | `notifications` | → users (N:1) |

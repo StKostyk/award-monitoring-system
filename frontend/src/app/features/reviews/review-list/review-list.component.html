@@ -59,8 +59,131 @@
     </p>
   }
 
+  @if (batchProblem(); as batchProblem) {
+    <p class="reviews__problem" role="alert" data-testid="batch-error">
+      {{ 'reviews.problems.' + batchProblem | transloco }}
+    </p>
+  }
+
+  @if (summary(); as summary) {
+    <section class="reviews__summary" role="status" data-testid="batch-result">
+      <p class="reviews__summary-title" data-testid="batch-done">
+        {{ 'reviews.batch.done' | transloco: { done: summary.done, total: summary.total } }}
+      </p>
+      @if (summary.failed.length > 0) {
+        <p class="reviews__summary-failed">{{ 'reviews.batch.failed' | transloco }}</p>
+        <ul class="reviews__summary-list">
+          @for (failure of summary.failed; track failure.awardId) {
+            <li data-testid="batch-failed">
+              <a class="reviews__link" [routerLink]="['/awards', failure.awardId]">{{
+                failure.title
+              }}</a>
+              —
+              <span data-testid="batch-reason">{{
+                'reviews.batch.reasons.' + failure.reason | transloco
+              }}</span>
+            </li>
+          }
+        </ul>
+      }
+      <button mat-button type="button" (click)="dismiss()" data-testid="batch-dismiss">
+        {{ 'reviews.batch.dismiss' | transloco }}
+      </button>
+    </section>
+  }
+
+  @if (selection().length > 0) {
+    <div
+      class="reviews__actions"
+      role="toolbar"
+      [attr.aria-label]="'reviews.batch.actions' | transloco"
+      data-testid="batch-actions"
+    >
+      <span class="reviews__selected" data-testid="batch-selected">{{
+        'reviews.batch.selected' | transloco: { count: selection().length }
+      }}</span>
+      <button
+        mat-flat-button
+        type="button"
+        [disabled]="busy()"
+        (click)="decide('APPROVE')"
+        data-testid="batch-approve"
+      >
+        {{ 'reviews.batch.approve' | transloco: { count: selection().length } }}
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="busy()"
+        (click)="decide('RETURN')"
+        data-testid="batch-return"
+      >
+        {{ 'reviews.batch.return' | transloco }}
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="busy()"
+        (click)="decide('REJECT')"
+        data-testid="batch-reject"
+      >
+        {{ 'reviews.batch.reject' | transloco }}
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="busy()"
+        (click)="decide('ESCALATE')"
+        data-testid="batch-escalate"
+      >
+        @if (escalateTarget(); as target) {
+          {{
+            'reviews.batch.escalateTo'
+              | transloco: { level: ('reviews.decide.to.' + target | transloco) }
+          }}
+        } @else {
+          {{ 'reviews.batch.escalate' | transloco }}
+        }
+      </button>
+      <button
+        mat-button
+        type="button"
+        [disabled]="busy()"
+        (click)="clear()"
+        data-testid="batch-clear"
+      >
+        {{ 'reviews.batch.clear' | transloco }}
+      </button>
+    </div>
+  }
+
   @if (wide()) {
     <table mat-table [dataSource]="items()" class="reviews__table" data-testid="review-table">
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef class="reviews__select">
+          <mat-checkbox
+            [checked]="allSelected()"
+            [indeterminate]="selection().length > 0 && !allSelected()"
+            [disabled]="items().length === 0"
+            (change)="toggleAll()"
+            [aria-label]="'reviews.batch.selectAll' | transloco"
+            data-testid="batch-select-all"
+          />
+        </th>
+        <td
+          mat-cell
+          *matCellDef="let item"
+          class="reviews__select"
+          (click)="$event.stopPropagation()"
+        >
+          <mat-checkbox
+            [checked]="isSelected(item)"
+            (change)="toggle(item)"
+            [aria-label]="'reviews.batch.selectRow' | transloco: { title: title(item) }"
+            data-testid="batch-select"
+          />
+        </td>
+      </ng-container>
       <ng-container matColumnDef="title">
         <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.title' | transloco }}</th>
         <td mat-cell *matCellDef="let item">
@@ -132,16 +255,34 @@
       </tr>
     </table>
   } @else {
+    @if (items().length > 0) {
+      <mat-checkbox
+        class="reviews__select-all"
+        [checked]="allSelected()"
+        [indeterminate]="selection().length > 0 && !allSelected()"
+        (change)="toggleAll()"
+        data-testid="batch-select-all"
+        >{{ 'reviews.batch.selectAll' | transloco }}</mat-checkbox
+      >
+    }
     <ul class="reviews__cards" data-testid="review-cards">
       @for (item of items(); track item.requestId) {
         <li class="reviews__card" data-testid="review-item">
-          <a
-            class="reviews__link"
-            [routerLink]="['/awards', item.awardId]"
-            data-testid="review-title"
-          >
-            {{ title(item) }}
-          </a>
+          <div class="reviews__card-head">
+            <mat-checkbox
+              [checked]="isSelected(item)"
+              (change)="toggle(item)"
+              [aria-label]="'reviews.batch.selectRow' | transloco: { title: title(item) }"
+              data-testid="batch-select"
+            />
+            <a
+              class="reviews__link"
+              [routerLink]="['/awards', item.awardId]"
+              data-testid="review-title"
+            >
+              {{ title(item) }}
+            </a>
+          </div>
           <dl class="reviews__card-fields">
             <dt>{{ 'reviews.columns.recipient' | transloco }}</dt>
             <dd>{{ recipient(item) }}</dd>

@@ -11,5 +11,6 @@ export const ReviewsActions = createActionGroup({
     'Page Changed': props<{ pageIndex: number; pageSize: number }>(),
     'Reviews Loaded': props<{ page: Page<ReviewItem> }>(),
     'Reviews Load Failed': props<{ problem: string }>(),
+    'Items Decided': props<{ awardIds: number[] }>(),
   },
 });

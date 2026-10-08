@@ -58,5 +58,9 @@ export const reviewsFeature = createFeature({
       loading: false,
       problem,
     })),
+    on(ReviewsActions.itemsDecided, (state, { awardIds }) => {
+      const items = state.items.filter((item) => !awardIds.includes(item.awardId));
+      return { ...state, items, total: state.total - (state.items.length - items.length) };
+    }),
   ),
 });

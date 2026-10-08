@@ -965,6 +965,84 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /reviews/decisions:
+    post:
+      tags: [Workflows]
+      summary: Apply one decision to several awards
+      description: >
+        Runs the single decision of `POST /awards/{id}/decisions` for every item, each in its own transaction, so a
+        failed item never undoes the others. The answer holds one result per item in the order sent: `DONE` with
+        the award's `status` and `level`, or `FAILED` with the problem type slug of that item (`request-claimed`,
+        `request-stale`, `request-closed`, `no-higher-level`, `validation-failed`, `not-found`, or `try-again` when
+        the database refused the item, e.g. a lock timeout) and a `detail`.
+        One audit row `REVIEW_BATCH` (decision, items, done, failed) besides the per-item rows; every decided owner
+        gets the e-mail of the single decision (`award:approve:level1`, 4.1.4).
+      security:
+        - bearerAuth: []
+      operationId: decideReviewBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchDecision'
+      responses:
+        '200':
+          description: One result per item, in the order sent
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BatchItemResult'
+        '400':
+          description: >
+            `urn:awards:problem:invalid-parameter` with `parameter: items` for no items, more than 50, an item
+            without `awardId` or the same award twice; or an unknown decision
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /reviews/templates:
+    get:
+      tags: [Workflows]
+      summary: Comment templates of a decision
+      description: >
+        The active templates offered in the decision dialog, in list order, title and body in the caller's language
+        (`lang` cookie, then `Accept-Language`) with Ukrainian as fallback (`award:approve:level1`, 4.1.4).
+      security:
+        - bearerAuth: []
+      operationId: listReviewTemplates
+      parameters:
+        - name: decision
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [APPROVE, REJECT, RETURN, ESCALATE]
+      responses:
+        '200':
+          description: The templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewTemplate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /awards/{id}/reviewer:
     get:
       tags: [Workflows]
@@ -3276,6 +3354,74 @@ components:
         requestVersion:
           type: integer
           format: int64
+
+    BatchDecision:
+      type: object
+      required: [decision, items]
+      properties:
+        decision:
+          type: string
+          enum: [APPROVE, REJECT, RETURN, ESCALATE]
+        comment:
+          type: [string, 'null']
+          maxLength: 2000
+          description: Required to return or reject; the same comment for every item
+        verified:
+          type: boolean
+          default: false
+          description: On an approval, the reviewer checked the documents of every item
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Distinct awards
+          items:
+            type: object
+            required: [awardId, requestVersion]
+            properties:
+              awardId:
+                type: integer
+                format: int64
+              requestVersion:
+                type: integer
+                format: int64
+                description: The version of the request the caller last read
+
+    BatchItemResult:
+      type: object
+      required: [awardId, outcome]
+      properties:
+        awardId:
+          type: integer
+          format: int64
+        outcome:
+          type: string
+          enum: [DONE, FAILED]
+        code:
+          type: string
+          description: Problem type slug of a failed item, as the single decision would answer it (404 is `not-found`)
+        detail:
+          type: string
+          description: Why the item failed
+        status:
+          $ref: '#/components/schemas/AwardStatus'
+        level:
+          $ref: '#/components/schemas/ApprovalLevel'
+
+    ReviewTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        decision:
+          type: string
+          enum: [APPROVE, REJECT, RETURN, ESCALATE]
+        title:
+          type: string
+        body:
+          type: string
+          description: The comment the template fills in; the reviewer may still edit it
 
     # Document
     Document:

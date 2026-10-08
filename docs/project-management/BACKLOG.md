@@ -65,8 +65,8 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.1.0 | Organisational awards: unit recipients and submitter | 5 | ✅ Done | SCRUM-48 | [#142](https://github.com/StKostyk/award-monitoring-system/issues/142) |
 | 4.1.1 | Reviewer queue with claim, release and hand-over | 8 | ✅ Done | SCRUM-49 | [#143](https://github.com/StKostyk/award-monitoring-system/issues/143) |
 | 4.1.2 | Review decisions: approve, reject, return, escalate to the dean | 8 | ✅ Done | SCRUM-50 | [#144](https://github.com/StKostyk/award-monitoring-system/issues/144) |
-| 4.1.3 | Withdraw an unclaimed request and resubmit a returned award | 3 | 👀 In review (Sprint 5) | SCRUM-51 | [#145](https://github.com/StKostyk/award-monitoring-system/issues/145) |
-| 4.1.4 | Batch review with template responses (US-004) | 5 | Sprint 5 | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |
+| 4.1.3 | Withdraw an unclaimed request and resubmit a returned award | 3 | ✅ Done | SCRUM-51 | [#145](https://github.com/StKostyk/award-monitoring-system/issues/145) |
+| 4.1.4 | Batch review with template responses (US-004) | 5 | 👀 In review (Sprint 5) | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |
 | 4.2.1 | Per-faculty review period set by the dean | 3 | Sprint 5 | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
 | 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | Sprint 5 | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
 | 2.4.1 | Award correction by reviewers | 5 | Sprint 5 | SCRUM-55 | [#149](https://github.com/StKostyk/award-monitoring-system/issues/149) |
