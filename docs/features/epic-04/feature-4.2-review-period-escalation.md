@@ -3,7 +3,7 @@
 > **Epic**: 4 — Approval Workflow Engine (SCRUM-47)
 > **Sprint**: 5 (2026-10-12 → 2026-10-18)
 > **Points**: 15 (four stories)
-> **Status**: Approved 2026-10-08
+> **Status**: Done 2026-10-08, pending the manual run of §10 (validation §13)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 4.2 (story 4.2.1 "Automatic Escalation") and § Feature 2.4 (story 2.4.1 "Award Error Correction"), US-004, US-005 (delay explanation), DATA_DICTIONARY §1.3, §2.4, §3.1, §4.1, §5.1, V024, V028, V023/V029, `StatusEstimator`, `WorkflowProperties`, `ReviewerAvailability`, `ReviewerRule`, `DecisionMails`, MONITORING_OBSERVABILITY §5, RBAC_matrix.md, ADR-006 addendum, ADR-022, ADR-023, openapi.yml `/reviews`, `/awards/{id}/status`, `/awards/{id}/versions`, EPIC-04 tracker (decisions of 2026-10-05, deviation 1), Feature 4.1 PRD §12 (F-4, F-7)
 
@@ -284,6 +284,10 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 31. End the session in the decision dialog (`/connect/logout` in another tab), confirm a decision with a comment. Expected: sign-in; back on the award, opening the same decision offers the kept comment. (AC-4.3)
 32. As `dean.fmi` delegate the dean role to `secretary2.fmi` for today; as `secretary2.fmi` change the period. Expected: allowed; the audit row has `delegatorId` of the dean. Revoke the delegation; `PUT` again → 404. (AC-1.2, §5)
 33. Swagger `PUT /api/v1/organizations/64/review-period` (a department) as `dean.fmi` → 404; with `workingDays: 21` on 9 → 422. (AC-1.4, 1.5)
+34. During step 29 (Mailpit stopped) as `dean.fmi` open `/reviews` with «Прострочені нижчого рівня». Expected: the marked request is listed with «Керівника повідомлено» although no e-mail went out. (AC-2.4, 2.7)
+35. As `secretary2.fmi` under the dean delegation of step 32 open a pending award's correction form; as `dean.fmi` revoke the delegation; save the correction. Expected: the not-found message, nothing saved (no new entry in «Історія змін»). (AC-3.7)
+36. After step 27 (backend restarted) open `/actuator/prometheus` before the next run. Expected: `awards_review_open` and `awards_review_overdue` read the current counts at the latest after the first run; before it they may be missing or 0 (finding V-2). (AC-2.6)
+37. `docker compose stop redis`; as `secretary.fmi` confirm a decision with a comment. Expected: an error message in the dialog, the comment kept; `docker compose start redis`, confirm again succeeds. (AC-4.2)
 
 ## 11. Risks
 
@@ -304,3 +308,86 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 - Security review of 4.2.1, 4.2.2 and 2.4.1 diffs
 - Audit rows for every period change, notice and correction
 - §10 manual verification run in the browser after the validation, including the detours
+
+## 13. Validation (2026-10-08, `develop` at a8e2b3f)
+
+Gates on `develop`: `mvn verify` — 886 unit and slice tests, 293 integration and functional, 98.6 % lines, Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 541 Vitest; Playwright `review-period.spec`, `overdue-notice.spec`, `award-correction.spec` and the AC-4.2 case of `reviews.spec` with the review queue scenarios: 16/16. All four operations of the feature (`GET`/`PUT /organizations/{id}/review-period`, `GET /reviews?noticed`, `POST /awards/{id}/corrections`) are in `openapi.yml` without `x-status: planned`; every `*IT` applies V032–V034 to an empty database. The browser walk of §10 is left to the manual run; the UI steps are driven by the Playwright specs below.
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 1.1 | `ReviewPeriodsTest#ac1_1_…`, `ReviewPeriodFT#ac1_1_…`, `review-period.component.spec#ac1_1_…`, `reviews.service.spec#ac1_1_…`; E2E `review-period.spec` | pass |
+| 1.2 | `ReviewPeriodsTest#ac1_2_…` (2), `ReviewPeriodFT#ac1_2_ac1_3_…`, `ReviewPeriodFT#ac1_2_aDelegatedDean…`, `review-period-dialog.component.spec#ac1_2_…`; E2E `review-period.spec` | pass |
+| 1.3 | `ReviewPeriodsTest#ac1_3_…`, `ReviewPeriodFT#ac1_2_ac1_3_…`, `review-period-dialog.component.spec#ac1_3_…` (2) | pass |
+| 1.4 | `ReviewPeriodsTest#ac1_4_…` (2), `ReviewPeriodFT#ac1_4_…`, `review-period-dialog.component.spec#ac1_4_…` (2) | pass |
+| 1.5 | `ReviewPeriodsTest#ac1_5_…` (4), `ReviewPeriodFT#ac1_5_…` (4), `review-period.component.spec#ac1_5_…` | pass |
+| 1.6 | `StatusEstimatorTest#ac1_6_…` (3), `AwardSubmissionTest#ac1_6_…` (2), `AwardResubmissionTest#ac1_6_ac1_7_…`, `ReviewPeriodFT#ac1_6_ac1_7_…` | pass |
+| 1.7 | `ReviewPeriodFT#ac1_6_ac1_7_aSubmissionIsDueByThePeriodInForceAndKeepsItsDeadlineAfterAChange`, `AwardResubmissionTest#ac1_6_ac1_7_…` | pass |
+| 1.8 | `StatusEstimatorTest#ac1_8_…` (2), `AwardSubmissionTest#ac1_6_ac1_8_…` | pass |
+| 1.9 | `review-period-dialog.component.spec#ac1_9_…`; E2E `review-period.spec#ac1_9` (English, 360 px, keyboard, axe) | pass |
+| 2.1 | `OverdueJobTest#ac2_1_…` (2), `OverdueNoticesIT#ac2_1_…`, `OverdueNoticeFT#ac2_1_ac2_2_ac2_9_…` | pass |
+| 2.2 | `OverdueNoticesTest#ac2_2_…` (2), `OverdueMailsTest#ac2_2_…` (2), `OverdueNoticeFT#ac2_1_ac2_2_ac2_9_…` | pass |
+| 2.3 | `AwardRequestTest#ac2_3_…`, `OverdueNoticeFT#ac2_3_…`, `OverdueNoticeFT#ac2_1_ac2_2_ac2_9_…` (second run) | pass |
+| 2.4 | `ReviewEndpointsTest#ac2_4_…`, `OverdueNoticeFT#ac2_4_ac2_5_…`, `review-list.component.spec#ac2_4_…` (3); E2E `overdue-notice.spec#ac2_4` | pass |
+| 2.5 | `OverdueNoticeFT#ac2_4_ac2_5_…`, `award-status.component.spec#ac2_5_…` | pass |
+| 2.6 | `ReviewMetricsTest#ac2_6_…` (3), `DecisionLogMeasureTest#ac2_6_…` (2), `OverdueNoticeFT#ac2_6_…` (`/actuator/prometheus`) | pass |
+| 2.7 | `OverdueMailsTest#ac2_7_…`, `OverdueJobTest#ac2_1_aDatabaseFailure…`; detour 29 | pass |
+| 2.8 | `OverdueNoticesIT#ac2_8_twoInstancesAtTheSameMinuteMarkAndAuditARequestOnce` | pass |
+| 2.9 | `OverdueMailsTest#ac2_9_…`, `OverdueNoticeFT#ac2_1_ac2_2_ac2_9_…` (Mailpit) | pass |
+| 3.1 | `review-panel.component.spec#ac3_1_…` (2), `award-correction.component.spec#ac3_1_…` (2); E2E `award-correction.spec` | pass |
+| 3.2 | `award-correction.component.spec#ac3_2_…` (5); E2E `award-correction.spec` | pass |
+| 3.3 | `CorrectionRulesTest#ac3_3_…`, `CorrectionLogTest#ac3_3_…` (2), `CorrectionEndpointsTest#ac3_3_…` (2), `CorrectionFT#ac3_3_…` (2), `awards.service.spec#ac3_3_…` | pass |
+| 3.4 | `CorrectionFT#ac3_3_ac3_4_ac3_5_ac3_6_…` (level and deadline kept; the next approval of a ministry category escalates) | pass |
+| 3.5 | `CorrectionMailsTest#ac3_5_…` (3), `CorrectionLogTest#ac3_5_…` (2), `CorrectionFT#ac3_3_ac3_4_ac3_5_ac3_6_…` (Mailpit) | pass |
+| 3.6 | `award-history.component.spec#ac3_6_…`, `CorrectionFT#ac3_3_ac3_4_ac3_5_ac3_6_…` (owner and dean read `CORRECTED`); E2E `award-correction.spec` | pass |
+| 3.7 | `CorrectionRulesTest#ac3_7_…`, `CorrectionEndpointsTest#ac3_7_…` (3), `CorrectionFT#ac3_7_…` (3), `award-correction.component.spec#ac3_7_…` (3) | pass |
+| 3.8 | E2E `award-correction.spec#ac3_8` (English, 360 px, keyboard, axe) | pass |
+| 4.1 | `decision-dialog.component.spec#ac4_1_…` | pass |
+| 4.2 | `decision-dialog.component.spec#ac4_2_…` (3), `review-panel.component.spec#ac4_2_…` (3); E2E `reviews.spec#ac4_2` (route mocked 409) | pass |
+| 4.3 | `decision-dialog.component.spec#ac4_3_…` (3, incl. another user in the same tab) | pass |
+| 4.4 | `review-list.component.spec#ac4_4_a_whole_request_failure_%i_…` (0, 400, 500) | pass |
+
+### Edge cases (§5)
+
+| Case | Covered by |
+|------|------------|
+| Period changed while requests are open | `ReviewPeriodFT#ac1_6_ac1_7_…` |
+| Delegated dean sets the period | `ReviewPeriodFT#ac1_2_aDelegatedDean…`, `ReviewPeriodsTest#ac1_2_aDelegatedDean…` |
+| Unit award of the faculty itself | `StatusEstimatorTest#ac1_6_aUnitAwardOfTheFacultyUsesTheFacultyPeriod` |
+| College or speciality requests | `StatusEstimatorTest#ac1_6_aUnitOutsideEveryFacultyUsesTheDefault`, `ReviewPeriodFT#ac1_5_aDepartmentOrTheUniversityIsNoFaculty` |
+| Overdue at `FACULTY_SECRETARY` with a vacant dean level | `OverdueNoticesTest#ac2_2_aVacantLevelIsSkippedForTheNextLevelWithAReviewer` |
+| Overdue at `RECTOR` | `OverdueNoticesTest#ac2_2_aRequestAtTheRectorOrWithoutReviewerAboveHasNoRecipient`; §10 step 12 |
+| Recipient is the owner or submitter | `OverdueNotices.recipients` passes both to `ReviewerAvailability.candidates` (reviewer rule tests of 4.1) |
+| Decided between select and update | Claim SQL repeats the conditions under `FOR UPDATE SKIP LOCKED`; `OverdueNoticesIT#ac2_1_aRequestWithoutPassedDeadlineOrNotOpenIsNotMarked` |
+| Escalated after the mark | `OverdueNoticeFT#ac2_3_movingToTheNextLevelClearsTheMarkWithTheNewDeadline` |
+| DST | Working-day tests of 2.1.8; the claim compares instants |
+| Backend down for a day | §10 detour 27 |
+| Owner had the award open during a correction | §10 step 16 (reload) |
+| Category raised to `NATIONAL` at faculty level | `CorrectionFT#ac3_3_ac3_4_ac3_5_ac3_6_…` (approval escalates) |
+| Verification badge pending | By design: the badge is set on approval only; no test |
+| Correction while the owner withdraws | `CorrectionFT#ac3_7_aCorrectionAndAWithdrawalAtOnceLeaveOneWinner` |
+| Two reviewers correct at once | Request row lock and versions (`ReviewGuards`), `CorrectionFT#ac3_7_aRequestHeldByAColleague…` |
+| Duplicate check not re-run | By design; reviewer guide |
+| Delegate corrects | `CorrectionLogTest#ac3_3_theAuditRowCarriesOldAndNewValuesTheReasonAndTheDelegator` |
+| Token expires with the dialog open | `decision-dialog.component.spec#ac4_3_…`; detours 30, 31 |
+
+### Security checklist
+
+| Item | Control |
+|------|---------|
+| A01 access control | `ReviewPeriodController` behind `CAN_READ` plus the dean scope in `ReviewPeriods` (own role or delegation in effect, faculty covered by the scope; other faculties, departments and the university 404); `CorrectionController` behind `CAN_REVIEW` plus the reviewer rule and claim through `ReviewGuards` (held by a colleague 409, own or out-of-scope 404); notice recipients through `ReviewerAvailability` (owner and submitter excluded) |
+| A02 cryptography | No new secrets or tokens |
+| A03 injection | Period bound to an integer 1–20; queue `noticed` bound to a boolean; overdue claim is one parameterised statement; correction fields through the award form validation, reason ≤ 1000; notice and correction e-mails plain text (`MailTextHelper`) |
+| A07 authentication failures | Sign-in unchanged; the decision draft is keyed by user, award and decision and removed when the dialog closes |
+| Concurrency | Overdue claim `UPDATE … FOR UPDATE SKIP LOCKED` (two instances: `OverdueNoticesIT#ac2_8_…`); corrections under the request row lock plus `@Version` on `awards` and `award_requests` |
+
+### Findings
+
+| # | Finding | State |
+|---|---------|-------|
+| V-1 | One runtime exception other than a database error while building a notice (`OverdueNotices.run`, one transaction) rolls back the marks of the whole run; the scheduler logs it and the next run repeats it. No data path leads there today (owner, submitter and organisation are NOT NULL) | Accepted; revisit with ShedLock in Epic 9 |
+| V-2 | `awards.review.open` and `awards.review.overdue` are refreshed only by the job, so after a restart they read nothing until the first run (up to an hour with the default cron) | Accepted for the demo (§11 "Gauges stale between runs"); §10 detour 36 |
+| V-3 | The review period has no version: two deans saving at once is last write wins, each with its own audit row; saving the same value writes no audit row | Accepted: one dean per faculty, the audit keeps both changes |
+| V-4 | A 403 (CSRF from a stale page) or 429 in the decision dialog shows «Не вдалося надіслати, спробуйте ще раз»; the comment is kept | Accepted: AC-4.2 groups them with network failures |
+| V-5 | Refactor sweep: duplicated `reviewerOf`, form error keys, award title fallback, award links in e-mails, known-problem lookup; copied FT helpers and spec token helpers | First group in the `refactor(award)` follow-up; FT and spec helpers in the tracker's technical notes |

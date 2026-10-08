@@ -71,7 +71,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.2.1 | Per-faculty review period set by the dean | 3 | ✅ Done | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
 | 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | ✅ Done | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
 | 2.4.1 | Award correction by reviewers | 5 | ✅ Done | SCRUM-55 | [#149](https://github.com/StKostyk/award-monitoring-system/issues/149) |
-| 4.2.3 | Keep the decision dialog open until the answer | 2 | 👀 In review (Sprint 5) | SCRUM-59 | [#162](https://github.com/StKostyk/award-monitoring-system/issues/162) |
+| 4.2.3 | Keep the decision dialog open until the answer | 2 | ✅ Done | SCRUM-59 | [#162](https://github.com/StKostyk/award-monitoring-system/issues/162) |
 | 4.3.1 | Colleague visibility and the achievements page | 5 | Sprint 5 | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
 | 4.3.2 | Unit achievement pages and public achievements | 5 | Sprint 5 | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 
@@ -96,7 +96,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 167 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3), 3.1.6 (1)
+Total Completed: 167 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3), 3.1.6 (1), Feature 4.1 4.1.0–4.1.5 (32), Feature 4.2 4.2.1–4.2.3 and 2.4.1 (15)
 
 ---
 
