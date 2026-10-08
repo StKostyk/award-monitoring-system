@@ -19,7 +19,6 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.dto.BatchDecisionRequest;
 import ua.edu.chnu.awards.award.dto.BatchItem;
 import ua.edu.chnu.awards.award.dto.BatchItemResult;
-import ua.edu.chnu.awards.award.dto.ReviewDecisionRequest;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 
 import lombok.RequiredArgsConstructor;
@@ -37,8 +36,6 @@ public class BatchReview {
     /** Most awards one batch decides. */
     public static final int MAX_ITEMS = 50;
 
-    private static final long ANY_VERSION = 0L;
-
     private final ReviewDecisions decisions;
     private final DecisionRules rules;
     private final AuditService audit;
@@ -55,7 +52,7 @@ public class BatchReview {
      */
     public List<BatchItemResult> decide(BatchDecisionRequest body) {
         checkItems(body.items());
-        rules.check(new ReviewDecisionRequest(body.decision(), ANY_VERSION, body.comment(), body.verified()));
+        rules.checkDecision(body.decision(), body.comment());
         List<BatchItemResult> results = new ArrayList<>(body.items().size());
         for (BatchItem item : body.items()) {
             results.add(decide(item, body));

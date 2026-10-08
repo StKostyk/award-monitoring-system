@@ -333,6 +333,23 @@ describe('ReviewListComponent', () => {
     );
     expect(element().querySelectorAll('[data-testid="review-item"]').length).toBe(1);
     expect(text('batch-selected')).toBe('Вибрано: 1');
+    expect(store.dispatch).toHaveBeenCalledWith(
+      ReviewsActions.pageChanged({ pageIndex: 0, pageSize: 20 }),
+    );
+  });
+
+  it('ac4_7_a_batch_without_failures_does_not_reload_the_queue', async () => {
+    await create();
+    load([reviewItem()]);
+    reviews.decideBatch.mockReturnValue(of([{ awardId: 5, outcome: 'DONE' }]));
+    confirmWith();
+    tick('batch-select');
+
+    element().querySelector<HTMLElement>('[data-testid="batch-approve"]')?.click();
+
+    expect(store.dispatch).not.toHaveBeenCalledWith(
+      ReviewsActions.pageChanged({ pageIndex: 0, pageSize: 20 }),
+    );
   });
 
   it('ac4_6_a_secretary_level_escalation_names_the_dean_and_sends_the_comment', async () => {

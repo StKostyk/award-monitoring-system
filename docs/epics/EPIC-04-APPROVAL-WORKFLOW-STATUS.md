@@ -10,7 +10,7 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Approved ([PRD](../features/epic-04/feature-4.1-workflow-engine-core.md)) | | |
+| 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Done, pending the manual run of PRD §9 ([PRD](../features/epic-04/feature-4.1-workflow-engine-core.md), validation §12) | 2026-10-06 | 2026-10-08 |
 | 4.2 Review Period & Escalation (per-faculty period, overdue notice, reviewer corrections) | Planned | | |
 | 4.3 Achievements (colleague visibility, unit and public pages) | Planned | | |
 
@@ -44,14 +44,15 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 2 | 4.1.1 Reviewer queue with claim, release and hand-over | 4.1 | 8 | SCRUM-49 | #143 | yes | Done |
 | 3 | 4.1.2 Review decisions: approve, reject, return, escalate to the dean | 4.1 | 8 | SCRUM-50 | #144 | yes | Done |
 | 4 | 4.1.3 Withdraw an unclaimed request and resubmit a returned award | 4.1 | 3 | SCRUM-51 | #145 | no | Done |
-| 5 | 4.1.4 Batch review with template responses | 4.1 | 5 | SCRUM-52 | #146 | yes | In review |
+| 5 | 4.1.4 Batch review with template responses | 4.1 | 5 | SCRUM-52 | #146 | yes | Done |
+| 5a | 4.1.5 Fixes from the Feature 4.1 validation | 4.1 | 3 | SCRUM-58 | #160 | no | In review |
 | 6 | 4.2.1 Per-faculty review period set by the dean | 4.2 | 3 | SCRUM-53 | #147 | no | To do |
 | 7 | 4.2.2 Overdue detection, escalation notice and SLA metrics | 4.2 | 5 | SCRUM-54 | #148 | no | To do |
 | 8 | 2.4.1 Award correction by reviewers | 4.2 | 5 | SCRUM-55 | #149 | no | To do |
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | To do |
 | 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | To do |
 
-Total: 52 points, sprints 4–5.
+Total: 55 points, sprints 4–5.
 
 ## Decisions
 
@@ -69,6 +70,7 @@ Total: 52 points, sprints 4–5.
 | 2026-10-05 | «Відкликати»: the owner withdraws a submitted award back to a draft while the request is unclaimed; no edit window after a claim | Owners noticed mistakes right after submitting (manual run of Feature 2.1) | 4.1.3 |
 | 2026-10-05 | Colleague visibility: the owner opts in per approved award («Показувати колегам»); a separate opt-in publishes it on the public achievements page; unit awards are public once approved | Employees see only their own awards today; publication of personal data needs the owner's choice | 4.3.1, 4.3.2 |
 | 2026-10-06 | Story order: organisational award model first, achievement pages last | Changing the award model before the queue and decisions avoids reworking their access rules | This kickoff |
+| 2026-10-08 | Feature 4.1 validated: two fixes (release of an unheld request, batch retry with stale versions) in 4.1.5; bilingual decision e-mails (F-3) and the comment lost on a failed decision (F-4) stay open | Evidence and findings in the PRD §12 | 4.1.5 |
 
 ## Documentation deviations to resolve
 
@@ -100,6 +102,13 @@ Each is settled in the Feature 4.1 or 4.2 PRD and applied in the PR of the story
 - Approvers may submit their own awards (review 2026-10-04); no one reviews an award they own or submitted.
 - `documents.request_id` exists for documents added during a resubmission (deferred from Epic 3).
 - The mail listener of Epic 1 sends after commit; decision emails reuse it with new templates (uk, en).
+- Refactor candidates from the 4.1 sweep, left for a story that touches the code: shared fixtures for the five
+  workflow FTs (department lookup, cleanup, `submitted`, `requestVersion`, `audited`, claim and decide builders, the
+  two-thread race); one caller lookup for `ReviewDecisions`, `ReviewAssignment` and `AwardOwnership`; problem slug
+  constants (`request-claimed`, `request-stale` …) in the backend and one slug list in `features/reviews`;
+  `ApprovalLevel.below`/`atOrAbove` for `ReviewAssignment.release` and `mayTakeOver`; `AwardWithdrawal` reusing
+  `ReviewGuards.claimed`; one `openDecision` helper for the panel and the queue; a `ReviewAssignmentFilter` type
+  with `others` in `reviews.service.ts`.
 
 ## Risks
 

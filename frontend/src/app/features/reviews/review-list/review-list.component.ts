@@ -322,6 +322,11 @@ export class ReviewListComponent implements OnInit {
           .map((result) => result.awardId),
       }),
     );
+    if (failed.length > 0) {
+      this.store.dispatch(
+        ReviewsActions.pageChanged({ pageIndex: this.pageIndex(), pageSize: this.pageSize() }),
+      );
+    }
   }
 
   private batchFailed(error: unknown): void {

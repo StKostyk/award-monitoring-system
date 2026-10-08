@@ -213,6 +213,17 @@ class ReviewAssignmentTest {
     }
 
     @Test
+    void ac1_7_aRequestNobodyHoldsIsNeitherReleasedNorHandedOver() {
+        held(peer);
+        request.setCurrentReviewer(null);
+        request.setStatus(RequestStatus.SUBMITTED);
+
+        assertProblem(() -> assignment.release(AWARD, VERSION), HttpStatus.CONFLICT, "request-claimed");
+        assertProblem(() -> assignment.assign(AWARD, new ReviewerChange(VERSION, peer.getId(), null)),
+            HttpStatus.CONFLICT, "request-claimed");
+    }
+
+    @Test
     void ac1_8_theCandidatesAreTheEligiblePeersOtherThanTheCaller() {
         held(caller);
         when(availability.candidates(ApprovalLevel.FACULTY_SECRETARY, FACULTY, owner.getId(), owner.getId()))
