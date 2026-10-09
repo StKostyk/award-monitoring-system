@@ -45,6 +45,21 @@
             <span matListItemTitle>{{ 'awards.title' | transloco }}</span>
           </a>
         }
+        @if (auth.isAuthenticated()) {
+          <a
+            mat-list-item
+            (click)="closeDrawer()"
+            routerLink="/achievements"
+            routerLinkActive
+            #achievementsLink="routerLinkActive"
+            [activated]="achievementsLink.isActive"
+            [attr.aria-current]="achievementsLink.isActive ? 'page' : null"
+            data-testid="nav-achievements"
+          >
+            <mat-icon matListItemIcon>emoji_events</mat-icon>
+            <span matListItemTitle>{{ 'achievements.title' | transloco }}</span>
+          </a>
+        }
         @if (canOpenReviews()) {
           <a
             mat-list-item

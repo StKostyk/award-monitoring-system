@@ -74,7 +74,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.2.3 | Keep the decision dialog open until the answer | 2 | ✅ Done | SCRUM-59 | [#162](https://github.com/StKostyk/award-monitoring-system/issues/162) |
 | 4.2.4 | Fixes from the Feature 4.2 walk | 2 | ✅ Done | SCRUM-60 | [#169](https://github.com/StKostyk/award-monitoring-system/issues/169) |
 | 4.2.5 | Refactor from the Feature 4.2 sweep | 3 | ✅ Done | SCRUM-61 | [#171](https://github.com/StKostyk/award-monitoring-system/issues/171) |
-| 4.3.1 | Colleague visibility and the achievements page | 5 | Sprint 5 | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
+| 4.3.1 | Colleague visibility and the achievements page | 5 | 👀 In review (Sprint 5) | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
 | 4.3.2 | Unit achievement pages and public achievements | 5 | Sprint 5 | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 
 ### Later epics

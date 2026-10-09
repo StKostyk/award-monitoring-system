@@ -97,6 +97,12 @@
   --mat-chip-outline-color: var(--mat-sys-outline);
 }
 
+.awards__shared {
+  flex-shrink: 0;
+  --mat-chip-outline-color: var(--mat-sys-outline-variant);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
 .awards__state {
   display: flex;
   flex-direction: column;

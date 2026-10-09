@@ -43,6 +43,7 @@ function award(overrides: Partial<Award> = {}): Award {
       code: 'DAI',
       type: 'DEPARTMENT',
     },
+    visibility: 'PRIVATE',
     request: null,
     warnings: [],
     createdAt: '2026-09-28T08:00:00Z',
@@ -65,7 +66,8 @@ const translations = {
       add: 'Додати нагороду',
       empty: 'Нагород ще немає.',
       messages: { removed: 'Чернетку видалено.' },
-      status: { DRAFT: 'Чернетка', PENDING: 'На розгляді' },
+      status: { DRAFT: 'Чернетка', PENDING: 'На розгляді', APPROVED: 'Затверджено' },
+      visibility: { chips: { UNIVERSITY: 'Колегам', PUBLIC: 'Публічно' } },
     },
   },
 };
@@ -129,6 +131,34 @@ describe('AwardListComponent', () => {
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/awards/5/edit');
     expect(items[1].querySelector('a')?.getAttribute('href')).toBe('/awards/6');
     expect(element.querySelector('[data-testid="award-add"]')).not.toBeNull();
+  });
+
+  it('ac1_9_approved_shared_awards_carry_whom_they_are_shown_to', async () => {
+    await create();
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: {
+          content: [
+            award({ id: 5, status: 'APPROVED', visibility: 'UNIVERSITY' }),
+            award({ id: 6, status: 'APPROVED', visibility: 'PUBLIC' }),
+            award({ id: 7, status: 'APPROVED', visibility: 'PRIVATE' }),
+            award({ id: 8, status: 'DRAFT', visibility: 'PUBLIC' }),
+          ],
+          totalElements: 4,
+          totalPages: 1,
+          size: 20,
+          number: 0,
+        },
+      }),
+    );
+    fixture.detectChanges();
+    const chips = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="award-item"]'),
+    ).map(
+      (item) => item.querySelector('[data-testid="award-visibility"]')?.textContent?.trim() ?? null,
+    );
+
+    expect(chips).toEqual(['Колегам', 'Публічно', null, null]);
   });
 
   it('ac0_7_a_unit_award_carries_the_unit_as_a_chip', async () => {

@@ -46,6 +46,12 @@ export const routes: Routes = [
         loadChildren: () => import('./features/awards/awards.routes').then((m) => m.AWARD_ROUTES),
       },
       {
+        path: 'achievements',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('./features/achievements/achievements.routes').then((m) => m.ACHIEVEMENT_ROUTES),
+      },
+      {
         path: 'reviews',
         canActivate: [authGuard, approverGuard],
         loadChildren: () =>

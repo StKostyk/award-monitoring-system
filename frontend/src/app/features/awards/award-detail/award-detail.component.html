@@ -72,6 +72,17 @@
         <dd>{{ award.impactScore }}</dd>
       }
     </dl>
+    @if (sharable(award)) {
+      <app-visibility-section
+        [award]="award"
+        (changed)="shared($event)"
+        (refused)="refresh(award.id)"
+      />
+    } @else if (award.recipient.organization) {
+      <p class="award-detail__visibility" data-testid="award-unit-visibility">
+        {{ 'awards.visibility.unit' | transloco }}
+      </p>
+    }
     <div class="award-detail__actions">
       @if (reviewable(award)) {
         <a mat-button routerLink="/reviews" data-testid="award-back">{{

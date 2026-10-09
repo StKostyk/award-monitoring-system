@@ -29,6 +29,7 @@ import {
   AWARD_STATUSES,
   Award,
   AwardFilters,
+  AwardVisibility,
   AwardsService,
   CategoryNode,
   UnitRef,
@@ -120,6 +121,11 @@ export class AwardListComponent implements OnInit {
 
   link(award: Award): (string | number)[] {
     return award.status === 'DRAFT' ? ['/awards', award.id, 'edit'] : ['/awards', award.id];
+  }
+
+  /** Whom an approved personal award is shown to besides its owner and reviewers; null when nobody. */
+  sharedWith(award: Award): AwardVisibility | null {
+    return award.status === 'APPROVED' && award.visibility !== 'PRIVATE' ? award.visibility : null;
   }
 
   title(award: Award): string {

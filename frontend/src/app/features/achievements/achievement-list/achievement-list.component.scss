@@ -1,0 +1,52 @@
+:host {
+  display: block;
+}
+
+.achievements__title {
+  margin: 0 0 16px;
+  font: var(--mat-sys-headline-small);
+}
+
+.achievements__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.achievements__filter {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+::ng-deep .achievements__child {
+  padding-left: 32px;
+}
+
+.achievements__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achievements__empty {
+  grid-column: 1 / -1;
+  padding: 24px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.achievements__problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--mat-sys-error);
+}
+
+.achievements__problem p {
+  margin: 0;
+}

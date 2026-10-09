@@ -1,0 +1,49 @@
+@let item = achievement();
+<article class="achievement" data-testid="achievement-card">
+  <h2 class="achievement__title" data-testid="achievement-title">{{ title() }}</h2>
+  <p class="achievement__recipient" data-testid="achievement-recipient">
+    @if (item.recipient.type === 'PERSON') {
+      <span class="achievement__person">{{ item.recipient.personName }}</span>
+      <span data-testid="achievement-unit">{{ unit() }}</span>
+    } @else {
+      <span class="achievement__person" data-testid="achievement-unit">{{ unit() }}</span>
+      <span>{{ 'achievements.unitAward' | transloco }}</span>
+    }
+  </p>
+  <dl class="achievement__fields">
+    <dt>{{ 'awards.fields.category' | transloco }}</dt>
+    <dd data-testid="achievement-category">
+      {{ category() }} · {{ 'categories.levels.' + item.category.level | transloco }}
+    </dd>
+    <dt>{{ 'awards.fields.awardingOrganization' | transloco }}</dt>
+    <dd>{{ item.awardingOrganization }}</dd>
+    <dt>{{ 'awards.fields.awardDate' | transloco }}</dt>
+    <dd data-testid="achievement-date">{{ item.awardDate | kyivDate }}</dd>
+  </dl>
+  @if (description(); as description) {
+    <p class="achievement__description">{{ description }}</p>
+  }
+  @if (item.verified || item.externalUrl) {
+    <div class="achievement__footer">
+      @if (item.verified) {
+        <span class="achievement__verified" data-testid="achievement-verified">
+          <mat-icon aria-hidden="true">verified</mat-icon>
+          {{ 'achievements.verified' | transloco }}
+        </span>
+      }
+      @if (item.externalUrl) {
+        <a
+          class="achievement__link"
+          [href]="item.externalUrl"
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          data-testid="achievement-link"
+        >
+          {{ 'achievements.link' | transloco }}
+          <mat-icon aria-hidden="true">open_in_new</mat-icon>
+          <span class="cdk-visually-hidden">{{ 'achievements.newTab' | transloco }}</span>
+        </a>
+      }
+    </div>
+  }
+</article>

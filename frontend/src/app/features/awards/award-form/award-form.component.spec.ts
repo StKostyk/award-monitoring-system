@@ -64,6 +64,7 @@ function award(overrides: Partial<Award> = {}): Award {
       code: 'DAI',
       type: 'DEPARTMENT',
     },
+    visibility: 'PRIVATE',
     request: null,
     warnings: [],
     createdAt: '2026-09-28T08:00:00Z',
