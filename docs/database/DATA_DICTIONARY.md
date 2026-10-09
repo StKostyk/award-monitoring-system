@@ -23,7 +23,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
 | **Compliance Domain** | `audit_logs`, `consent_records` | GDPR compliance, audit trails |
-| **Notification Domain** | `notifications`, `notification_preferences` | Communication and user preferences |
+| **Notification Domain** | `notifications`, `notification_preferences`, `event_publication` | Communication, user preferences, event publication registry |
 
 ---
 
@@ -910,6 +910,45 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 ---
 
+### 5.3 Entity: `event_publication`
+
+**Description**: Spring Modulith event publication registry (V036, schema of `spring-modulith-events-jdbc` 1.4).
+One row per after-commit listener of a committed application event; the row is deleted when the listener
+completes (ADR-006, Addendum 2026-10-09).
+
+**Business Rules**:
+- Written in the publishing transaction; a rollback leaves no row
+- Deleted when the listener returns normally (`completion-mode: delete`), so `completion_date` stays `NULL`
+- An incomplete row is retried by `PublicationRetry` from 10 minutes to 24 hours after `publication_date`; older
+  rows are reported, not retried
+- Events carrying a one-time link are transient and never written here
+
+**Personal data**: `serialized_event` holds the recipient's email address and first name, and, depending on the
+event, award titles, reviewer and actor names, a decision comment, or the IP address and browser of a data export.
+Legal basis is that of the change that caused the mail.
+
+**Retention**: deleted on completion; an incomplete row is kept at most 30 days for inspection, then deleted by
+`PublicationRetry` (`app.events.keep-failed`).
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `id` | `UUID` | NO | - | PK | Publication identifier, assigned by the registry |
+| `listener_id` | `TEXT` | NO | - | - | Listener method signature (class, method, parameter type) |
+| `event_type` | `TEXT` | NO | - | - | Fully qualified class name of the event |
+| `serialized_event` | `TEXT` | NO | - | - | The event as JSON |
+| `publication_date` | `TIMESTAMPTZ` | NO | - | - | Time the event was published inside the business transaction |
+| `completion_date` | `TIMESTAMPTZ` | YES | `NULL` | - | Not used: completed rows are deleted |
+
+**Indexes**:
+- `pk_event_publication` - Primary key on `id`
+- `event_publication_serialized_event_hash_idx` - Hash on `serialized_event` (registry lookups by event)
+- `event_publication_by_completion_date_idx` - B-tree on `completion_date` (incomplete rows)
+
+**Relationships**:
+- None (no foreign keys; recipients are stored as addresses inside the event)
+
+---
+
 ## 6. Entity Relationship Summary
 
 ### 6.1 Relationship Matrix
@@ -933,6 +972,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `consent_records` | → users (N:1) |
 | `notifications` | → users (N:1) |
 | `notification_preferences` | → users (N:1) |
+| `event_publication` | none (event registry) |
 
 ### 6.2 Cardinality Summary
 

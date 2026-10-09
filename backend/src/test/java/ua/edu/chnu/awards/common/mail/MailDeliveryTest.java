@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.common.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -41,10 +42,14 @@ class MailDeliveryTest {
     }
 
     @Test
-    void retriesTwiceThenGivesUp() {
+    void ac1_3_retriesTwiceThenThrowsWithSubjectAndRecipientsOnly() {
         doThrow(new MailSendException("down")).when(sender).send(any(SimpleMailMessage.class));
 
-        delivery.send("olena@chnu.edu.ua", "Subject", "Text");
+        assertThatThrownBy(() -> delivery.send("olena@chnu.edu.ua", "Subject", "Secret body"))
+            .isInstanceOf(MailNotDeliveredException.class)
+            .hasMessageContaining("Subject")
+            .hasMessageContaining("olena@chnu.edu.ua")
+            .hasMessageNotContaining("Secret body");
 
         verify(sender, times(MailDelivery.ATTEMPTS)).send(any(SimpleMailMessage.class));
         assertThat(pauses).containsExactly(2_000L, 5_000L);

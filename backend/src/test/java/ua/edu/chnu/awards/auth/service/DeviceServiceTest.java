@@ -34,6 +34,7 @@ import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.config.AuthProperties;
@@ -50,6 +51,7 @@ class DeviceServiceTest {
     private final UserDeviceRepository devices = mock(UserDeviceRepository.class);
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final AfterCommit afterCommit = mock(AfterCommit.class);
     private final AuthorizationRevoker authorizations = mock(AuthorizationRevoker.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final AuditService audit = mock(AuditService.class);
@@ -60,7 +62,7 @@ class DeviceServiceTest {
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15),
         Duration.ofDays(7)), new AuthProperties.Jwk("", "", "", ""));
     private final DeviceService service = new DeviceService(devices, new DeviceFingerprint(), tokens, events,
-        authorizations, passwordEncoder, audit, properties, users, Clock.fixed(NOW, ZoneOffset.UTC));
+        afterCommit, authorizations, passwordEncoder, audit, properties, users, Clock.fixed(NOW, ZoneOffset.UTC));
     private final User olena = User.builder().id(7L).emailAddress("olena@chnu.edu.ua").firstName("Олена")
         .passwordHash("$2a$12$old").build();
 
@@ -80,7 +82,7 @@ class DeviceServiceTest {
         assertThat(saved.getValue().getFingerprint()).hasSize(64);
         assertThat(saved.getValue().getLastUsedAt()).isEqualTo(NOW);
         ArgumentCaptor<NewDeviceSignedIn> event = ArgumentCaptor.forClass(NewDeviceSignedIn.class);
-        verify(events).publishEvent(event.capture());
+        verify(afterCommit).publish(event.capture());
         assertThat(event.getValue()).isEqualTo(new NewDeviceSignedIn("olena@chnu.edu.ua", "Олена", "Chrome",
             "Windows", "203.0.113.7", NOW, "http://localhost:4200/security/not-me?token=raw-token"));
     }
@@ -97,6 +99,7 @@ class DeviceServiceTest {
         assertThat(known.getLastUsedAt()).isEqualTo(NOW);
         verify(devices, never()).save(any());
         verify(events, never()).publishEvent(any());
+        verify(afterCommit, never()).publish(any());
         verify(tokens, never()).issue(any(), any(), any());
     }
 
@@ -116,7 +119,7 @@ class DeviceServiceTest {
         verify(tokens).invalidate(olena, TokenPurpose.EMAIL_CHANGE);
         verify(authorizations).revokeAll(olena);
         verify(devices).deleteByUserId(7L);
-        verify(events).publishEvent(new PasswordResetRequested("olena@chnu.edu.ua", "Олена",
+        verify(afterCommit).publish(new PasswordResetRequested("olena@chnu.edu.ua", "Олена",
             "http://localhost:4200/reset-password?token=reset-token"));
         verify(audit).record(AuditAction.SECURITY_REVOKE, 7L, Map.of("authorizations", 2, "devices", 3));
         verify(users, never()).saveAndFlush(any());
@@ -138,7 +141,7 @@ class DeviceServiceTest {
         verify(tokens).invalidate(olena, TokenPurpose.SECURITY_REVOKE);
         verify(authorizations).revokeAll(7L, "olena@chnu.edu.ua");
         verify(events).publishEvent(new EmailRestored("olena@chnu.edu.ua", "olena.old@chnu.edu.ua", "Олена"));
-        verify(events).publishEvent(new PasswordResetRequested("olena.old@chnu.edu.ua", "Олена",
+        verify(afterCommit).publish(new PasswordResetRequested("olena.old@chnu.edu.ua", "Олена",
             "http://localhost:4200/reset-password?token=reset-token"));
         verify(audit).record(AuditAction.SECURITY_REVOKE, 7L, Map.of("authorizations", 1, "devices", 0,
             "restoredEmail", "olena.old@chnu.edu.ua", "replacedEmail", "olena@chnu.edu.ua"));
@@ -161,6 +164,7 @@ class DeviceServiceTest {
         verify(authorizations, never()).revokeAll(any(), any());
         verify(tokens, never()).issue(any(), any(), any());
         verify(events, never()).publishEvent(any());
+        verify(afterCommit, never()).publish(any());
         verify(audit).record(AuditAction.SECURITY_REVOKE, 7L, Map.of("authorizations", 1, "devices", 0,
             "restoreRefused", "olena.old@chnu.edu.ua"));
     }
@@ -175,6 +179,7 @@ class DeviceServiceTest {
         assertThatThrownBy(() -> service.revoke("raw")).isInstanceOfSatisfying(ApiProblemException.class,
             problem -> assertThat(problem.getType()).isEqualTo("email-taken"));
         verify(events, never()).publishEvent(any());
+        verify(afterCommit, never()).publish(any());
     }
 
     private OneTimeToken revokeToken(String address) {
@@ -194,5 +199,6 @@ class DeviceServiceTest {
         verify(tokens, never()).invalidate(any(), any());
         verify(devices, never()).deleteByUserId(any());
         verify(events, never()).publishEvent(any());
+        verify(afterCommit, never()).publish(any());
     }
 }

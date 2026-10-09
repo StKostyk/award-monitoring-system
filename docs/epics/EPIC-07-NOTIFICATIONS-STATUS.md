@@ -39,7 +39,7 @@ fix stories if chosen).
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 7.1.1 Event publication registry for the after-commit mails | 7.1 | 5 | SCRUM-64 | #181 | no | Planned |
+| 1 | 7.1.1 Event publication registry for the after-commit mails | 7.1 | 5 | SCRUM-64 | #181 | no | In review |
 | 2 | 7.1.2 Module boundaries checked by Spring Modulith | 7.1 | 8 | SCRUM-65 | #182 | no | Planned |
 | 3 | 7.2.1 In-app notifications from award and review events | 7.2 | 5 | SCRUM-66 | #183 | no | Planned |
 | 4 | 7.2.2 Notification centre in the toolbar | 7.2 | 5 | SCRUM-67 | #184 | yes | Planned |
@@ -65,7 +65,8 @@ Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
 
 To settle in the Feature 7.1 and 7.2 PRDs; each document is updated in the story that changes it.
 
-1. ADR-006 still names Kafka as the decision; the addendum becomes the decision and the status line changes at 7.1.1.
+1. ~~ADR-006 still names Kafka as the decision~~ Settled in 7.1.1: status line amended, Addendum 2026-10-09 is the
+   decision (at-least-once delivery, transient events).
 2. Roadmap task "Create notification queue with Kafka" and the 3-week, sprint 11 estimate: superseded by the decisions
    above; the roadmap stays as the local original.
 3. BRD §6.2 and US-005 (definition of done "Mobile notifications") promise SMS and push; e-mail and in-app only here.
@@ -85,6 +86,10 @@ To settle in the Feature 7.1 and 7.2 PRDs; each document is updated in the story
   registry a final failure has to propagate so the publication stays incomplete.
 - Spring Modulith's JDBC registry needs the `event_publication` table; Flyway owns the schema, so it comes as a
   `V` migration, with schema initialisation off.
+- Registry retry settings (7.1.1, `app.events.*`): first run 1 min after start, then every 10 min
+  (`APP_EVENTS_RETRY_INTERVAL`); resubmits incomplete publications older than 10 min (`APP_EVENTS_RETRY_AFTER`)
+  and younger than 24 h; older ones log one error per run; deleted after 30 days. Gauges `award.events.incomplete`,
+  `award.events.abandoned`. Spring Modulith 1.4.13, completion mode `delete`.
 - Module boundaries today: about 74 imports of another module's `repository` or `entity` package (gdpr 23, award 14,
   auth 13, delegation 10, authz 6, document 4, audit 2, user 2). `User` and `Organization` are read everywhere; the
   PRD decides between service lookups and a named interface for read-only types.

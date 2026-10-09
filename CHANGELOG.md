@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Event publication registry (Spring Modulith, V036): after-commit mails are retried for 24 hours when the mail server fails; mails with one-time links are never stored
 - Unit achievement pages and public achievement pages without sign-in, with a per-address rate limit on the public API (SCRUM-57)
 - Owners can share approved personal awards with colleagues or the public; signed-in users get an «Досягнення» page with filters by unit, year, level and recipient (SCRUM-56)
 - Reviewers correct the fields of a pending award with a reason; the owner sees the correction in the history and by e-mail (2.4.1)

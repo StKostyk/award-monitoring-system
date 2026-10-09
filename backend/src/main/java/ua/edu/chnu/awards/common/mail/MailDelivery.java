@@ -15,7 +15,8 @@ import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Sends plain-text emails one at a time; a failed send is retried twice before it is logged and dropped.
+ * Sends plain-text emails one at a time; a failed send is retried twice before it is logged and thrown, so that the
+ * event publication of the calling listener stays incomplete.
  */
 @Component
 @Slf4j
@@ -53,10 +54,10 @@ public class MailDelivery {
      * @param to the recipient address
      * @param subject the subject line
      * @param text the plain-text body
-     * @return true when the mail server accepted the message
+     * @throws MailNotDeliveredException when the mail server refused every attempt
      */
-    public boolean send(String to, String subject, String text) {
-        return send(List.of(to), subject, text);
+    public void send(String to, String subject, String text) {
+        send(List.of(to), subject, text);
     }
 
     /**
@@ -65,14 +66,15 @@ public class MailDelivery {
      * @param to the recipient addresses
      * @param subject the subject line
      * @param text the plain-text body
-     * @return true when the mail server accepted the message
+     * @throws MailNotDeliveredException when the mail server refused every attempt
      */
-    public boolean send(List<String> to, String subject, String text) {
+    public void send(List<String> to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(to.toArray(String[]::new));
         message.setSubject(subject);
         message.setText(text);
+        MailException last = null;
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             try {
                 smtp.lock();
@@ -81,8 +83,9 @@ public class MailDelivery {
                 } finally {
                     smtp.unlock();
                 }
-                return true;
+                return;
             } catch (MailException e) {
+                last = e;
                 log.warn("Email '{}' to {} failed (attempt {} of {}): {}", subject, to, attempt, ATTEMPTS,
                     e.getMessage());
                 if (attempt < ATTEMPTS) {
@@ -91,7 +94,7 @@ public class MailDelivery {
             }
         }
         log.error("Email '{}' to {} was not delivered", subject, to);
-        return false;
+        throw new MailNotDeliveredException(subject, to, last);
     }
 
     private static void sleep(long millis) {

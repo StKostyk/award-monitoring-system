@@ -367,6 +367,10 @@ A: No, submitted awards cannot be edited. If changes are needed, a reviewer will
 **Q: How long does the review process take?**  
 A: Typically 3-5 business days for each review level (Department → Faculty → University).
 
+**Q: I received the same email twice. Is something wrong?**  
+A: No. When the mail server is unavailable, the system sends the email again later, and in rare cases one
+arrives twice. Emails with a confirmation or reset link are not resent; if one does not arrive, request a new link.
+
 ### Submission Issues
 
 **Q: My file won't upload. What should I do?**  

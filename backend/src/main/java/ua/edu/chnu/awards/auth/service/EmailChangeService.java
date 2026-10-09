@@ -3,7 +3,6 @@ package ua.edu.chnu.awards.auth.service;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +19,7 @@ import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
 import ua.edu.chnu.awards.auth.event.EmailChanged;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.common.EmailUtils;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
@@ -52,7 +52,7 @@ public class EmailChangeService {
     private final EmailAddressRules addressRules;
     private final AuthProperties properties;
     private final AuditService audit;
-    private final ApplicationEventPublisher events;
+    private final AfterCommit events;
 
     /**
      * Sends a confirmation link to the new address and cancels older links. A wrong password counts as a failed
@@ -90,7 +90,7 @@ public class EmailChangeService {
         String raw = tokens.issue(user, TokenPurpose.EMAIL_CHANGE, properties.emailChangeTtl(), email);
         audit.record(AuditAction.EMAIL_CHANGE_REQUESTED, AuditEntityConstants.USER, userId, userId,
             Map.of("newEmail", email));
-        events.publishEvent(new EmailChangeRequested(email, user.getEmailAddress(), user.getFirstName(),
+        events.publish(new EmailChangeRequested(email, user.getEmailAddress(), user.getFirstName(),
             properties.link("/confirm-email-change", raw), properties.frontendUrl() + "/forgot-password"));
     }
 
@@ -136,7 +136,7 @@ public class EmailChangeService {
         String revoke = tokens.issue(user, TokenPurpose.SECURITY_REVOKE, properties.securityRevokeTtl(), oldEmail);
         audit.record(AuditAction.EMAIL_CHANGED, AuditEntityConstants.USER, user.getId(), user.getId(),
             Map.of("oldEmail", oldEmail, "newEmail", newEmail));
-        events.publishEvent(new EmailChanged(oldEmail, newEmail, user.getFirstName(),
+        events.publish(new EmailChanged(oldEmail, newEmail, user.getFirstName(),
             properties.link("/security/not-me", revoke)));
         return new EmailChangeResponse(user.getId(), newEmail);
     }

@@ -16,7 +16,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -25,6 +24,7 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
@@ -40,7 +40,7 @@ class PasswordResetServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final AfterCommit events = mock(AfterCommit.class);
     private final AuthorizationRevoker revoker = mock(AuthorizationRevoker.class);
     private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
@@ -70,7 +70,7 @@ class PasswordResetServiceTest {
 
         verify(throttle).claimForTransaction("auth:reset:" + EMAIL, Duration.ofMinutes(1));
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
-        verify(events).publishEvent(event.capture());
+        verify(events).publish(event.capture());
         PasswordResetRequested requested = (PasswordResetRequested) event.getValue();
         assertThat(requested.email()).isEqualTo(EMAIL);
         assertThat(requested.firstName()).isEqualTo("Олена");

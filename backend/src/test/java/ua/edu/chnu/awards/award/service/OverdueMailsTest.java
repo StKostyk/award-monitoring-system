@@ -1,9 +1,11 @@
 package ua.edu.chnu.awards.award.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
+import ua.edu.chnu.awards.common.mail.MailNotDeliveredException;
 import ua.edu.chnu.awards.config.AuthProperties;
 
 class OverdueMailsTest {
@@ -52,20 +55,20 @@ class OverdueMailsTest {
 
     @Test
     void ac2_2_ac2_6_aDeliveredDigestIsCounted() {
-        when(delivery.send(eq(DEAN), anyString(), anyString())).thenReturn(true);
-
         mails.onNoticed(digest());
 
+        verify(delivery).send(eq(DEAN), anyString(), anyString());
         verify(metrics).noticeSent();
     }
 
     @Test
-    void ac2_7_aRefusedDigestIsNeitherCountedNorRetried() {
-        when(delivery.send(eq(DEAN), anyString(), anyString())).thenReturn(false);
+    void ac1_9_aRefusedDigestIsNotCountedAndStaysIncomplete() {
+        doThrow(new MailNotDeliveredException("s", List.of(DEAN), null))
+            .when(delivery).send(eq(DEAN), anyString(), anyString());
+        OverdueNoticed digest = digest();
 
-        mails.onNoticed(digest());
+        assertThatThrownBy(() -> mails.onNoticed(digest)).isInstanceOf(MailNotDeliveredException.class);
 
-        verify(delivery).send(eq(DEAN), anyString(), anyString());
         verify(metrics, never()).noticeSent();
     }
 
