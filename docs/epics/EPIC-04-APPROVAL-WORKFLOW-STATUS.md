@@ -133,6 +133,23 @@ Settled in the Feature 4.1 or 4.2 PRD; status at the documentation sync of 2026-
 3. Story 4.3.2 publishes personal data beyond the university; the public page shows only what the owner opted into,
    and the privacy documents are updated with it.
 
+### Epic refactor sweep of 2026-10-09
+
+Applied in `refactor(epic-04)`: one held-by-other check in `ReviewGuards`, `ReviewProblemConstants` for the request and
+award slugs, `ApprovalLevel.below()`. Left for a story that touches the code:
+
+- One `support/ReviewApi` for the workflow FTs (`submitted`, `version`, `claim`, `decide`, `audited`, the two-thread race),
+  replacing the copies in `ReviewFT`, `DecisionFT`, `WithdrawFT`, `CorrectionFT`, `BatchReviewFT`, `OverdueNoticeFT`,
+  `AwardStatusFT` and `AwardHistoryFT`.
+- One caller lookup instead of `users.findById(access.callerId())` in `ReviewDecisions`, `ReviewAssignment` (twice) and
+  `AwardOwnership`; `StatusEstimator.FACULTY_LEVELS` onto `ApprovalLevel`.
+- Frontend: `isStale`/`RELOADING` in `review-problems.ts` for the decision dialog, review panel, review list and
+  correction form; `createDraft`, `submitAward` and `openAward` in `e2e/helpers.ts`; one `testing/token.ts` for the 13
+  unit specs that build a JWT; one anonymous `HttpClient` for `achievements.service` and `organizations.service`.
+- `award-correction` repeats the field group and validators of `award-form` (controls, `titleInOneLanguage`, error keys);
+  extract `award-fields.ts`.
+- `AchievementController` and `PublicAchievementController` differ only in the set they read.
+
 ### Findings of the documentation sync of 2026-10-09
 
 Documentation behind the code was corrected in the sync. Where the code is what falls short, the documents keep their
