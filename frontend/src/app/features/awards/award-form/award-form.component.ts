@@ -42,7 +42,7 @@ import {
   throwError,
 } from 'rxjs';
 
-import { fieldProblems, problemStatus, problemType } from '../../../core/api/problem';
+import { fieldProblems, knownProblem, problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
@@ -57,6 +57,7 @@ import {
   URL_LIMIT,
   WEB_LINK,
   empty,
+  fieldErrorKey,
   text,
   titleInOneLanguage,
 } from '../award-fields';
@@ -419,29 +420,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   }
 
   errorKey(field: FieldName): string | null {
-    const errors = this.form.controls[field].errors;
-    if (!errors) {
-      return null;
-    }
-    if (errors['server']) {
-      return `awards.errors.${errors['server']}`;
-    }
-    if (errors['required']) {
-      return 'awards.errors.required';
-    }
-    if (errors['maxlength']) {
-      return 'awards.errors.too-long';
-    }
-    if (errors['matDatepickerParse']) {
-      return 'app.dateInvalid';
-    }
-    if (errors['matDatepickerMax']) {
-      return 'awards.errors.future';
-    }
-    if (errors['matDatepickerMin']) {
-      return 'awards.errors.too-old';
-    }
-    return errors['pattern'] ? 'awards.errors.invalid' : null;
+    return fieldErrorKey(this.form.controls[field].errors);
   }
 
   choose(suggestion: CategorySuggestion): void {
@@ -652,8 +631,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   }
 
   private problemKey(error: unknown): string {
-    const type = problemType(error);
-    return `awards.problems.${KNOWN_PROBLEMS.includes(type) ? type : 'unknown'}`;
+    return `awards.problems.${knownProblem(problemType(error), KNOWN_PROBLEMS)}`;
   }
 
   private clearMarkedErrors(): void {

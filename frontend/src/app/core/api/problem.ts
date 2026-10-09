@@ -36,6 +36,18 @@ export function problemType(error: unknown): string {
   return 'unknown';
 }
 
+/**
+ * A problem type when it has a message of its own, otherwise the fallback.
+ *
+ * @param type the problem type, from `problemType`
+ * @param known the types with their own message
+ * @param fallback the type to show for every other one
+ * @returns the type, or the fallback when it is not known
+ */
+export function knownProblem(type: string, known: readonly string[], fallback = 'unknown'): string {
+  return known.includes(type) ? type : fallback;
+}
+
 /** HTTP status of an API error, or 0 when the request never reached the server. */
 export function problemStatus(error: unknown): number {
   return error instanceof HttpErrorResponse ? error.status : 0;

@@ -12,7 +12,7 @@ import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/for
 import { MatInput } from '@angular/material/input';
 import { TranslocoPipe } from '@jsverse/transloco';
 
-import { problemType } from '../../../core/api/problem';
+import { knownProblem, problemType } from '../../../core/api/problem';
 import { ProfileService } from '../profile.service';
 
 const KNOWN_PROBLEMS = [
@@ -86,7 +86,7 @@ export class EmailChangeDialogComponent {
         this.error.set(
           type === 'validation-failed'
             ? 'emailChange.errors.unchanged'
-            : `emailChange.errors.${KNOWN_PROBLEMS.includes(type) ? type : 'failed'}`,
+            : `emailChange.errors.${knownProblem(type, KNOWN_PROBLEMS, 'failed')}`,
         );
         this.form.controls.currentPassword.reset();
         this.submitting.set(false);

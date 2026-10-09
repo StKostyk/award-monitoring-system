@@ -36,6 +36,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import { filter as present, forkJoin, map, tap } from 'rxjs';
 
+import { knownProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { approvalScopes, reviewableLevels } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -44,7 +45,7 @@ import {
   OrganizationSummary,
   OrganizationsService,
 } from '../../../core/organizations/organizations.service';
-import { kyivDate } from '../../../shared/date-format';
+import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import { ApprovalLevel, awardTitle } from '../../awards/awards.service';
@@ -121,6 +122,7 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
     MatRowDef,
     MatNoDataRow,
     TranslocoPipe,
+    KyivDatePipe,
     ReviewPeriodComponent,
   ],
   providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
@@ -296,10 +298,6 @@ export class ReviewListComponent implements OnInit {
     return organizationName(unit, this.language.current());
   }
 
-  day(value: string | null): string {
-    return value ? kyivDate(value, this.language.current()) : '—';
-  }
-
   private decided(chosen: ReviewItem[], results: BatchItemResult[]): void {
     this.busy.set(false);
     const failed = results.filter((result) => result.outcome === 'FAILED');
@@ -349,6 +347,5 @@ export class ReviewListComponent implements OnInit {
 }
 
 function reasonOf(result: BatchItemResult): string {
-  const code = result.code ?? '';
-  return REASONS.includes(code) ? code : 'unknown';
+  return knownProblem(result.code ?? '', REASONS);
 }

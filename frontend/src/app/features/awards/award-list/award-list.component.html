@@ -94,7 +94,7 @@
             <span>{{ category(award) }}</span>
           }
           @if (award.awardDate) {
-            <span>{{ day(award.awardDate) }}</span>
+            <span>{{ award.awardDate | kyivDate }}</span>
           }
         </span>
       </a>

@@ -113,12 +113,16 @@ public class ReviewPeriods {
             return Optional.of(new Authority(null));
         }
         Stream<Authority> held = access.heldScopes().stream()
-            .filter(scope -> scope.role() == RoleType.DEAN && tree.covers(scope.organizationId(), facultyId))
+            .filter(scope -> deanOf(scope.role(), scope.organizationId(), facultyId))
             .map(scope -> new Authority(null));
         Stream<Authority> borrowed = access.delegations().stream()
-            .filter(scope -> scope.role() == RoleType.DEAN && tree.covers(scope.organizationId(), facultyId))
+            .filter(scope -> deanOf(scope.role(), scope.organizationId(), facultyId))
             .map(scope -> new Authority(scope.delegatorId()));
         return Stream.concat(held, borrowed).findFirst();
+    }
+
+    private boolean deanOf(RoleType role, long organizationId, long facultyId) {
+        return role == RoleType.DEAN && tree.covers(organizationId, facultyId);
     }
 
     private static Integer checked(BigDecimal days) {

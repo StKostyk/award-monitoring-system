@@ -111,7 +111,7 @@ class StatusEstimatorTest {
         assertThat(timeline.estimatedCompletion()).isNull();
         assertThat(timeline.overdue()).isFalse();
         assertThat(timeline.due()).isEmpty();
-        assertThat(estimator.isActive(request(status, ApprovalLevel.DEAN, NOW))).isFalse();
+        assertThat(request(status, ApprovalLevel.DEAN, NOW).isOpen()).isFalse();
     }
 
     @Test

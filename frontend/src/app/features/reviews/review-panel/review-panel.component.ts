@@ -20,8 +20,7 @@ import { Observable, catchError, filter, of, switchMap, tap, throwError } from '
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { reviewableLevels } from '../../../core/auth/permissions';
-import { LanguageService } from '../../../core/i18n/language.service';
-import { kyivDate } from '../../../shared/date-format';
+import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { APPROVAL_LEVELS, ApprovalLevel } from '../../awards/awards.service';
 import { confirmAction } from '../../awards/confirm-dialog/confirm-dialog.component';
 import {
@@ -33,7 +32,7 @@ import {
   HandOverDialogComponent,
   HandOverDialogData,
 } from '../hand-over-dialog/hand-over-dialog.component';
-import { reviewerOf } from '../review-problems';
+import { reviewProblemKey, reviewerOf } from '../review-problems';
 import {
   DecisionOutcome,
   DecisionType,
@@ -51,8 +50,6 @@ interface Notice {
 
 /** Conflicts after which the request is read again. */
 const RELOADING = ['request-claimed', 'request-stale', 'request-closed'];
-/** Problem types with a message of their own. */
-const KNOWN = ['reviewer-not-eligible', 'no-higher-level', 'validation-failed', 'network'];
 
 /**
  * Who reviews the request of an award and until when, with claim, release, hand-over, take-over, the four
@@ -60,7 +57,7 @@ const KNOWN = ['reviewer-not-eligible', 'no-higher-level', 'validation-failed', 
  */
 @Component({
   selector: 'app-review-panel',
-  imports: [MatAnchor, MatButton, MatChip, MatProgressBar, RouterLink, TranslocoPipe],
+  imports: [MatAnchor, MatButton, MatChip, MatProgressBar, RouterLink, TranslocoPipe, KyivDatePipe],
   templateUrl: './review-panel.component.html',
   styleUrl: './review-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,7 +72,6 @@ export class ReviewPanelComponent implements OnInit {
   private readonly reviews = inject(ReviewsService);
   private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
-  private readonly language = inject(LanguageService);
   private readonly levels = reviewableLevels(this.auth.permissions());
 
   readonly item = signal<ReviewItem | null>(null);
@@ -185,10 +181,6 @@ export class ReviewPanelComponent implements OnInit {
       });
   }
 
-  day(value: string | null): string {
-    return value ? kyivDate(value, this.language.current()) : '—';
-  }
-
   private assign(call: Observable<ReviewItem>): void {
     this.start();
     call.subscribe({
@@ -232,7 +224,7 @@ export class ReviewPanelComponent implements OnInit {
       this.load();
       this.changed.emit();
     } else {
-      this.notice.set({ key: `reviews.problems.${KNOWN.includes(type) ? type : 'unknown'}` });
+      this.notice.set({ key: reviewProblemKey(type) });
     }
   }
 

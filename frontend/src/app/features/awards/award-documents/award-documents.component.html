@@ -157,7 +157,9 @@
           <span class="documents__meta" data-testid="document-size">
             {{ sizeUnit(document.size) | transloco: { size: sizeValue(document.size) } }}
           </span>
-          <span class="documents__meta" data-testid="document-date">{{ date(document) }}</span>
+          <span class="documents__meta" data-testid="document-date">{{
+            document.uploadedAt | kyivDate
+          }}</span>
           <span class="documents__actions">
             @if (isImage(document)) {
               <button

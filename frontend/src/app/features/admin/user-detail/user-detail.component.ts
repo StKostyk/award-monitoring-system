@@ -20,7 +20,8 @@ import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
 import { UserDetail, UsersService } from '../users.service';
-import { kyivDate, kyivDateTime, kyivToday } from '../../../shared/date-format';
+import { kyivDateTime, kyivToday } from '../../../shared/date-format';
+import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 
 @Component({
   selector: 'app-user-detail',
@@ -34,6 +35,7 @@ import { kyivDate, kyivDateTime, kyivToday } from '../../../shared/date-format';
     MatIcon,
     RouterLink,
     TranslocoPipe,
+    KyivDatePipe,
   ],
   templateUrl: './user-detail.component.html',
   styleUrl: './user-detail.component.scss',
@@ -93,10 +95,6 @@ export class UserDetailComponent implements OnInit {
 
   ended(assignment: RoleAssignment): boolean {
     return !!assignment.validTo && assignment.validTo < kyivToday();
-  }
-
-  day(value: string): string {
-    return kyivDate(value, this.language.current());
   }
 
   moment(value: string): string {

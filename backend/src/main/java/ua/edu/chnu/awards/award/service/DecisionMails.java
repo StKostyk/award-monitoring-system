@@ -50,8 +50,7 @@ public class DecisionMails {
         if (event.email() == null) {
             return;
         }
-        delivery.send(event.email(), subject(event), body(event, properties.frontendUrl() + "/awards/"
-            + event.awardId()));
+        delivery.send(event.email(), subject(event), body(event, properties.awardLink(event.awardId())));
     }
 
     static String subject(AwardDecided event) {

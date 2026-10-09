@@ -7,6 +7,7 @@ import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloUk;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.function.LongFunction;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -52,8 +53,7 @@ public class OverdueMails {
     @Async
     @TransactionalEventListener
     public void onNoticed(OverdueNoticed event) {
-        if (event.email() != null && delivery.send(event.email(), subject(event), body(event,
-            properties.frontendUrl() + "/awards/"))) {
+        if (event.email() != null && delivery.send(event.email(), subject(event), body(event, properties::awardLink))) {
             metrics.noticeSent();
         }
     }
@@ -63,14 +63,14 @@ public class OverdueMails {
         return "Прострочені заявки: " + count + " / Overdue requests: " + count;
     }
 
-    static String body(OverdueNoticed event, String linkPrefix) {
+    static String body(OverdueNoticed event, LongFunction<String> awardLink) {
         StringBuilder uk = new StringBuilder(helloUk(event.name()))
             .append("Термін розгляду цих заявок минув на нижчому рівні:\n\n");
         StringBuilder en = new StringBuilder(helloEn(event.name()))
             .append("The review period of these requests has passed at the level below:\n\n");
         for (OverdueNoticed.Item item : event.requests()) {
             String deadline = DATE.format(item.deadline());
-            String link = linkPrefix + item.awardId();
+            String link = awardLink.apply(item.awardId());
             uk.append("- «").append(item.titleUk()).append("», ").append(item.owner())
                 .append("; рівень: ").append(LEVEL_UK.get(item.level()))
                 .append("; термін: ").append(deadline)

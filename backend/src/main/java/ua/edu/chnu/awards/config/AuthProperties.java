@@ -47,6 +47,16 @@ public record AuthProperties(
     }
 
     /**
+     * The browser-application page of one award.
+     *
+     * @param awardId the award
+     * @return absolute URL
+     */
+    public String awardLink(long awardId) {
+        return frontendUrl() + "/awards/" + awardId;
+    }
+
+    /**
      * Whether an address belongs to one of the institutional domains.
      *
      * @param email a normalised address

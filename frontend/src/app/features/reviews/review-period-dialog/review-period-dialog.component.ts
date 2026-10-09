@@ -13,7 +13,7 @@ import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/for
 import { MatInput } from '@angular/material/input';
 import { TranslocoPipe } from '@jsverse/transloco';
 
-import { problemType } from '../../../core/api/problem';
+import { knownProblem, problemType } from '../../../core/api/problem';
 import { ReviewPeriod, ReviewsService } from '../reviews.service';
 
 export const MIN_WORKING_DAYS = 1;
@@ -140,7 +140,7 @@ export class ReviewPeriodDialogComponent {
       error: (error: unknown) => {
         const type = problemType(error);
         this.busy.set(false);
-        this.problem.set(KNOWN_PROBLEMS.includes(type) ? type : 'unknown');
+        this.problem.set(knownProblem(type, KNOWN_PROBLEMS));
       },
     });
   }
