@@ -15,7 +15,18 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect, MatSelectTrigger } from '@angular/material/select';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { Observable, catchError, combineLatest, filter, map, of, switchMap, tap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  combineLatest,
+  filter,
+  map,
+  of,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 
 import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -78,6 +89,7 @@ export class AchievementListComponent implements OnInit {
   private readonly language = inject(LanguageService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly retries = new Subject<void>();
 
   protected readonly levels = RECOGNITION_LEVELS;
   protected readonly recipients = RECIPIENT_TYPES;
@@ -129,7 +141,12 @@ export class AchievementListComponent implements OnInit {
           return unit === null ? query : { ...query, filters: { ...query.filters, unit } };
         }),
         tap((query) => this.query.set(query)),
-        switchMap((query) => this.fetch(query)),
+        switchMap((query) =>
+          this.retries.pipe(
+            startWith(undefined),
+            switchMap(() => this.fetch(query)),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((page) => this.show(page));
@@ -151,7 +168,7 @@ export class AchievementListComponent implements OnInit {
 
   /** Loads the same page again after a failure. */
   retry(): void {
-    this.fetch(this.query()).subscribe((page) => this.show(page));
+    this.retries.next();
   }
 
   unitName(option: UnitOption): string {

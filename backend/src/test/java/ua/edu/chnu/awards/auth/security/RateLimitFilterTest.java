@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -147,6 +148,20 @@ class RateLimitFilterTest {
         filter.doFilter(request("application/json"), new MockHttpServletResponse(), chain);
 
         assertThat(chain.getRequest()).isNotNull();
+    }
+
+    @Test
+    void ac2_3_aRedisOutageKeepsThePublicApiReadable() throws ServletException, IOException {
+        RateLimitFilter publicLimit = new RateLimitFilter(counter, RateLimitFilter.PUBLIC_KEY_PREFIX, 120,
+            request -> allowedOrigins(), Jackson2ObjectMapperBuilder.json().build());
+        when(values.increment(anyString())).thenThrow(new QueryTimeoutException("down"));
+        MockFilterChain chain = new MockFilterChain();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        publicLimit.doFilter(request("application/json"), response, chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
     }
 
     private static MockHttpServletRequest request(String accept) {

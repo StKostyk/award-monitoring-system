@@ -75,7 +75,8 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.2.4 | Fixes from the Feature 4.2 walk | 2 | ✅ Done | SCRUM-60 | [#169](https://github.com/StKostyk/award-monitoring-system/issues/169) |
 | 4.2.5 | Refactor from the Feature 4.2 sweep | 3 | ✅ Done | SCRUM-61 | [#171](https://github.com/StKostyk/award-monitoring-system/issues/171) |
 | 4.3.1 | Colleague visibility and the achievements page | 5 | ✅ Done | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
-| 4.3.2 | Unit achievement pages and public achievements | 5 | 👀 In review (Sprint 5) | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
+| 4.3.2 | Unit achievement pages and public achievements | 5 | ✅ Done | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
+| 4.3.3 | Fixes from the Feature 4.3 validation | 2 | 👀 In review | SCRUM-62 | [#176](https://github.com/StKostyk/award-monitoring-system/issues/176) |
 
 ### Later epics
 | ID | Story | Points | Epic |
@@ -98,7 +99,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 167 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3), 3.1.6 (1), Feature 4.1 4.1.0–4.1.5 (32), Feature 4.2 4.2.1–4.2.3 and 2.4.1 (15)
+Total Completed: 167 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3), 3.1.6 (1), Feature 4.1 4.1.0–4.1.5 (32), Feature 4.2 4.2.1–4.2.3 and 2.4.1 (15), Feature 4.3 4.3.1–4.3.2 (10)
 
 ---
 

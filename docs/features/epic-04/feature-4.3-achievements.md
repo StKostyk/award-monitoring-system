@@ -3,7 +3,7 @@
 > **Epic**: 4 — Approval Workflow Engine (SCRUM-47)
 > **Sprint**: 5 (2026-10-12 → 2026-10-18)
 > **Points**: 10 (two stories)
-> **Status**: Approved 2026-10-09
+> **Status**: Done 2026-10-09, pending the manual run of §10 (validation §13)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-04 tracker (decisions of 2026-10-05 on colleague visibility and organisational awards, risk 3), design review §I (colleague visibility options b + d), roadmap § Feature 2.3 ("know when my achievements will be publicly visible") and § Feature 5.1 ("shareable achievement summaries"), BRD §2 (public transparency), DATA_DICTIONARY §1.1, §1.3, §2.1, §2.2, §4.1, §4.2, PRIVACY_IMPACT (R001, visibility controls), DATA_GOVERNANCE §2 (classification), AUTHENTICATION_AUTHORIZATION (`/api/public/**`), RBAC_matrix.md, openapi.yml `/awards`, `/awards/{id}`, `/organizations`, `Award`, `AwardRecipient`, `UnitRef`, `RateLimitFilter`, `ProtectionProperties`, `AwardOwnership`, `PersonalDataAssembler`
 
@@ -226,6 +226,9 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 21. Stop the backend, reload `/public/achievements`. Expected: an error message with «Спробувати знову»; start the backend, retry works. (§5)
 22. psql `update users set account_status = 'DELETED' where email_address = 'employee.fmi@chnu.edu.ua';` (restore afterwards with `'ACTIVE'`). Expected: P1 and P2 gone from both pages; U (owned by `secretary.fmi`) unaffected. (§5)
 23. As `employee.fmi` set P2 public, then press Back and reload P2's page. Expected: «Публічно» shown; no duplicate audit row. (AC-1.2)
+24. After step 19, while the address is still refused, open `/public/achievements` in the anonymous browser. Expected: the error message with «Спробувати знову»; press it, then change the year before the minute ends. Expected: the list follows the year filter, not the retried request. (AC-2.3, §5)
+25. `docker compose stop redis`, then reload `/public/achievements` a few times. Expected: the list loads (the limit lets requests through while Redis is down); `docker compose start redis`. (AC-2.3)
+26. In DevTools set the network to offline right after choosing «Показувати колегам» on P1, then back online and reload. Expected: the error notice, and after the reload the radio shows the value stored on the server. (§5)
 
 ## 11. Risks
 
@@ -246,3 +249,70 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 - Security review of the 4.3.1 and 4.3.2 diffs
 - Audit row for every effective visibility change
 - §10 manual verification run in the browser after the validation, including the detours
+
+## 13. Validation (2026-10-09, `develop` at 76e7e0c)
+
+Gates on `develop`: `mvn verify` — 932 unit and slice tests, 305 integration and functional, 98.6 % lines, Checkstyle 0, PMD 0, SpotBugs 0; frontend lint clean, 597 Vitest, production build 980.96 kB. Playwright on CI: 82/83; the failure (`achievements.spec#ac1_1 … colleagues find it`) waited for any card after the only shared award was hidden, which an empty CI database never shows — fixed in 4.3.3 (V-1). `docker compose up -d --build` starts clean; every `*IT` applies V001–V035 to an empty database. `GET /achievements`, `GET /public/achievements` and `PUT /awards/{id}/visibility` match `/v3/api-docs` without `x-status: planned`; the live stack answers the public list 200 with `Cache-Control: no-store`, 200 with `Authorization: Bearer x`, and the signed-in list 401 without a token.
+
+### AC evidence
+
+| AC | Evidence | Result |
+|----|----------|--------|
+| 1.1 | `AwardSharingTest#ac1_1_aUnitAwardShowsNoVisibility`, `AwardSchemaIT#ac1_1_aUnitAwardCannotBeShared`, `visibility-section.component.spec#ac1_1_…` (3), `award-detail.component.spec#ac1_1_…`; E2E `achievements.spec#ac1_1 … colleagues find it`, `#ac1_1 a draft shows no visibility choice` | pass |
+| 1.2 | `AwardSharingTest#ac1_2_…` (2), `VisibilityEndpointsTest#ac1_2_…`, `AwardSchemaIT#ac1_2_aVisibilityChangeLeavesTheVersionAlone`, `AchievementsFT#ac1_2_theOwnerSharesAnAwardOnceWithoutANewVersion`, `visibility-section.component.spec#ac1_2_…` (2) | pass |
+| 1.3 | `visibility-section.component.spec#ac1_3_…` (3); E2E `achievements.spec#ac1_1 … colleagues find it` (dialog, cancel, confirm) | pass |
+| 1.4 | `AwardSharingTest#ac1_4_…` (4), `VisibilityEndpointsTest#ac1_4_…` (4), `AwardSchemaIT#ac1_4_anUnknownVisibilityIsRefused`, `AchievementsFT#ac1_4_noOneElseAndNoOtherStatusMayChoose`, `visibility-section.component.spec#ac1_4_…` (2) | pass |
+| 1.5 | `AchievementsTest#ac1_5_…` (2), `AchievementEndpointsTest#ac1_5_…` (2), `AchievementsFT#ac1_5_ac1_7_…` (field set, `no-store`, order), `achievements.service.spec#ac1_5_…` | pass |
+| 1.6 | `AchievementsTest#ac1_6_…` (4), `AchievementEndpointsTest#ac1_6_…` (2), `AchievementsFT#ac1_6_filtersNarrowTheListAndAFacultyIncludesItsDepartments`, `achievement-list.component.spec#ac1_6_…` (3) | pass |
+| 1.7 | `AchievementsFT#ac1_5_ac1_7_…`; E2E `achievements.spec#ac1_1 … colleagues find it` | pass |
+| 1.8 | `achievement-list.component.spec#ac1_8_…`, `achievement-card.component.spec#ac1_8_…`; E2E `achievements.spec#ac1_1 …` (filters in the URL, reload, empty message), `#ac1_8 … English at 360 px` (axe, keyboard) | pass |
+| 1.9 | `award-list.component.spec#ac1_9_approved_shared_awards_carry_whom_they_are_shown_to`; E2E `achievements.spec#ac1_1 …` (chip «Публічно») | pass |
+| 1.10 | `AchievementsFT#ac1_10_theExportCarriesTheVisibility` | pass |
+| 2.1 | `AchievementsTest#ac2_1_…`, `PublicAchievementEndpointsTest#ac2_1_…` (3), `AchievementsFT#ac2_1_anAnonymousVisitorSeesPublicAndUnitAwardsOnly` | pass |
+| 2.2 | `PublicAchievementEndpointsTest#ac2_2_…` (3), `AchievementsFT#ac2_2_aBrokenTokenReadsThePublicListLikeAnAnonymousVisitor`; live stack `Bearer x` → 200 | pass |
+| 2.3 | `RateLimitFilterTest#ac2_3_…` (2, Redis outage added in 4.3.3), `AchievementsFT#ac2_3_aBurstFromOneAddressIsRefusedWhileOthersAndSignInKeepTheirBudget` | pass |
+| 2.4 | `unit-header.component.spec#ac2_4_…` (2), `achievement-list.component.spec#ac2_4_…` (3), `not-found.component.spec#ac2_4_…`; E2E `achievements.spec#ac2_1 ac2_4 ac2_5 ac2_8 …` (unit and faculty pages, unknown unit) | pass |
+| 2.5 | `achievement-list.component.spec#ac2_5_…`, `shell.component.spec#ac2_5_…`; E2E `achievements.spec#ac2_1 ac2_4 ac2_5 ac2_8 …` | pass |
+| 2.6 | `achievement-list.component.spec#ac2_6_…`, `achievement-card.component.spec#ac2_6_…`; E2E `achievements.spec#ac2_6 staff and public pages lead to each other with the same filters` | pass |
+| 2.7 | `AchievementsFT#ac2_7_reducingToUniversityRemovesTheAwardFromThePublicListAtOnce` | pass |
+| 2.8 | `achievements.service.spec#ac2_8_…` (2), `organizations.service.spec#ac2_8_…`, `unit-header.component.spec#ac2_8_…`; E2E `achievements.spec#ac2_1 …` and `#ac2_8 a public unit page works in English at 360 px` (axe, no console errors) | pass |
+
+### Edge cases (§5)
+
+| Case | Evidence |
+|------|----------|
+| Owner `DELETED` | `AchievementsFT` set-up: an erased owner's `UNIVERSITY` award never appears (`ac1_5_ac1_7_…` lists exactly the unit and the shared award); §10 detour 22 |
+| Owner `SUSPENDED`, `RETIRED`, `MEMORIAL` | Query excludes only `DELETED` (`AwardSpecifications`); no dedicated test |
+| Owner transferred | `organization_id` kept on the award; `AchievementsFT#ac1_6_…` filters by it |
+| Award not `APPROVED` | `AchievementsFT#ac1_4_…` (pending → 409); `ac1_5_ac1_7_…` (pending award absent) |
+| Two tabs at once | Row lock in `AwardSharing.update`; last write wins, an audit row per effective change; §10 detour 16 |
+| Delegate or scoped reader | `AchievementsFT#ac1_4_…` (secretary → 404), `AwardSharingTest#ac1_4_anAwardOfSomeoneElseIsNotFound` |
+| Inactive unit, header fallback | `unit-header.component.spec#ac2_4_…` |
+| University, college or speciality id | `AchievementsTest#ac1_6_aUnitThatIsNeitherFacultyNorDepartmentIsNotFound`, `AchievementsFT#ac1_6_…` (university → 404); E2E `/public/units/1` → not found |
+| Title in one language | `achievement-list.component.spec#ac1_8_falls_back_to_the_ukrainian_title_in_english` |
+| `externalUrl` | `achievement-card.component.spec#ac1_8_opens_the_link_in_a_new_tab_without_passing_the_page_on` |
+| Page size, equal dates | `SizeParam` clamp (shared); `AchievementsFT#ac1_5_ac1_7_…` orders two awards of one date by id |
+| Anonymous language | E2E `achievements.spec#ac2_8 …` |
+| Expired token on a public page | `achievements.service.spec#ac2_8_…`, `organizations.service.spec#ac2_8_…`; §10 detour 20 |
+| Rate limit behind the proxy | `ClientRequest.from`, shared with the sign-in limit (`RateLimitFilterTest`) |
+| Redis down | `RateLimitFilterTest#ac2_3_aRedisOutageKeepsThePublicApiReadable` (4.3.3); §10 detour 25 |
+
+### Security checklist
+
+| Item | Control |
+|------|---------|
+| A01 access control | `PUT /awards/{id}/visibility` behind `award:update:own` plus the owner check (anyone else → 404, delegations never carry it); `/achievements` any signed-in user; `PublicApiSecurityConfig` matches only `GET /api/v1/public/**`, every other method or path stays on the API chain (`PublicAchievementEndpointsTest#ac2_2_onlyReadsArePublic`) |
+| A02 cryptography | No new secrets; the public chain ignores bearer tokens instead of validating them |
+| A03 injection | Filters bound to typed parameters (`AchievementQuery`, enums, integer year and unit) and a JPA `Specification`; visibility an enum checked by the database constraint |
+| A07 authentication failures | Public list limited per address (120/min, own Redis prefix, sign-in budget untouched); public requests carry no token, so no refresh attempt |
+| Data minimisation | `Achievement` projection without e-mail, person id, documents, request, reviewers or impact score (`AchievementsFT#ac1_5_ac1_7_…` checks the body); `no-store` on both lists |
+
+### Findings
+
+| # | Finding | State |
+|---|---------|-------|
+| V-1 | E2E `ac1_1 … colleagues find it` relied on other shared awards in the database and failed on CI | Fixed in 4.3.3 (waits for the list response, accepts an empty list) |
+| V-2 | «Спробувати знову» bypassed the list's `switchMap`: a slow retry could replace the list of a later filter change | Fixed in 4.3.3 (`achievement-list.component.spec#edge_a_filter_change_cancels_a_pending_retry`) |
+| V-3 | A 429 on the public page shows the generic error with an immediate retry | Accepted (as V-4 of Feature 4.2); §10 detour 24 |
+| V-4 | With Redis down the public limit lets every request through and logs an error per request; a hanging Redis adds the command timeout to each request | Accepted for the demo; production hardening (Epic 9) |
+| V-5 | Refactor sweep: the award-submission E2E flow copied in three specs, `new HttpClient(inject(HttpBackend))` in two services, near-identical achievement controllers, seed unit ids in the spec | Tracker technical notes; no refactor story now |

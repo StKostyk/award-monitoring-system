@@ -12,7 +12,7 @@
 |---------|--------|---------|------|
 | 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Done, pending the manual run of PRD §9 ([PRD](../features/epic-04/feature-4.1-workflow-engine-core.md), validation §12) | 2026-10-06 | 2026-10-08 |
 | 4.2 Review Period & Escalation (per-faculty period, overdue notice, reviewer corrections, decision dialog) | Done, pending the manual run of PRD §10 ([PRD](../features/epic-04/feature-4.2-review-period-escalation.md), validation §13) | 2026-10-08 | 2026-10-08 |
-| 4.3 Achievements (colleague visibility, unit and public pages) | Approved 2026-10-09 | | |
+| 4.3 Achievements (colleague visibility, unit and public pages) | Done, pending the manual run of PRD §10 ([PRD](../features/epic-04/feature-4.3-achievements.md), validation §13) | 2026-10-09 | 2026-10-09 |
 
 ## Current focus
 
@@ -53,7 +53,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 8b | 4.2.4 Fixes from the Feature 4.2 walk | 4.2 | 2 | SCRUM-60 | #169 | no | Done |
 | 8c | 4.2.5 Refactor from the Feature 4.2 sweep | 4.2 | 3 | SCRUM-61 | #171 | no | Done |
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | Done |
-| 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | In review |
+| 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | Done |
+| 10a | 4.3.3 Fixes from the Feature 4.3 validation | 4.3 | 2 | SCRUM-62 | #176 | no | In review |
 
 Total: 57 points, sprints 4–5.
 
@@ -76,6 +77,7 @@ Total: 57 points, sprints 4–5.
 | 2026-10-08 | Feature 4.1 validated: two fixes (release of an unheld request, batch retry with stale versions) in 4.1.5; bilingual decision e-mails (F-3) and the comment lost on a failed decision (F-4) stay open | Evidence and findings in the PRD §12 | 4.1.5 |
 | 2026-10-08 | Feature 4.2 PRD approved: the overdue mark reads «Керівника повідомлено» next to «Прострочено» («Ескальовано» stays the `ESCALATED` status); one digest e-mail per recipient and run; a faculty period does not move existing deadlines; reviewers correct pending awards only, with a reason and without a second approval; F-4 and F-7 become 4.2.3; F-3 waits for Epic 7 | Deviations 1–7 of the PRD §7 | 4.2.1–4.2.3, 2.4.1 |
 | 2026-10-08 | Feature 4.2 validated: every AC has tests, no fix story; four findings accepted (run-wide rollback of the overdue job on an unexpected error, gauges empty until the first run after a restart, last write wins for the period, 403/429 shown as a send failure); duplication from the sweep in a `refactor(award)` PR | Evidence and findings in the PRD §13 | 4.2 |
+| 2026-10-09 | Feature 4.3 validated: every AC has tests; the CI-only E2E failure (test relied on other shared awards) and the retry race on the achievements list fixed in 4.3.3; 429 shown as a generic error and the fail-open public limit while Redis is down accepted | Evidence and findings in the PRD §13 | 4.3.3 |
 
 ## Documentation deviations to resolve
 
@@ -118,6 +120,11 @@ Each is settled in the Feature 4.1 or 4.2 PRD and applied in the PR of the story
   `OverdueNoticeFT` copy the FT helpers above (`requestVersion`, `claim`, `decide`, `audited`) — one `ReviewApi` in
   `support/` for all workflow FTs; `CorrectionFT.body` builds current and stale bodies through a sentinel; an 11th
   copy of the JWT `token(claims)` helper in `review-period.component.spec.ts` — one `testing/token.ts`.
+- Refactor candidates from the 4.3 sweep, left for a story that touches the code: the create-and-submit award
+  flow copied in `achievements.spec.ts`, `award-status.spec.ts` and `award-correction.spec.ts` — `createDraft` and
+  `submitAward` in `e2e/helpers.ts`; `new HttpClient(inject(HttpBackend))` in `AchievementsService` and
+  `OrganizationsService` — one anonymous client in `core/`; the response building shared by
+  `AchievementController` and `PublicAchievementController`; seed unit ids 1 and 9 as named constants in the spec.
 
 ## Risks
 

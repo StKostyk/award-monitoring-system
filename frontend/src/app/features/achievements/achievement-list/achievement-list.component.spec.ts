@@ -9,7 +9,7 @@ import {
 } from '@angular/router';
 import { signal } from '@angular/core';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { MockInstance, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -187,6 +187,22 @@ describe('AchievementListComponent', () => {
     expect(service.list).toHaveBeenCalledTimes(2);
     expect(element(fixture, 'achievements-error')).toBeNull();
     expect(element(fixture, 'achievement-card')).not.toBeNull();
+  });
+
+  it('edge_a_filter_change_cancels_a_pending_retry', async () => {
+    const pending = new Subject<Page<Achievement>>();
+    service.list
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })))
+      .mockReturnValueOnce(pending)
+      .mockReturnValueOnce(of(page([])));
+    const fixture = await open();
+
+    (element(fixture, 'achievements-retry') as HTMLButtonElement).click();
+    params.next(convertToParamMap({ year: '2025' }));
+    fixture.detectChanges();
+
+    expect(pending.observed).toBe(false);
+    expect(element(fixture, 'achievements-empty')).not.toBeNull();
   });
 
   it('ac2_4_a_unit_page_lists_the_unit_with_the_other_filters_and_no_unit_filter', async () => {
