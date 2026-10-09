@@ -2,6 +2,7 @@ app:
   auth:
     protection:
       requests-per-minute: 200
+      public-requests-per-minute: 60
   workflow:
     overdue-cron: "-"
   documents:

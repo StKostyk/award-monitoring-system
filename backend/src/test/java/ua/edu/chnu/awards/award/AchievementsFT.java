@@ -5,8 +5,10 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -17,14 +19,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 
+import ua.edu.chnu.awards.auth.security.RateLimitFilter;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardApi;
 import ua.edu.chnu.awards.support.AwardRows;
@@ -43,6 +49,8 @@ class AchievementsFT extends AbstractFunctionalTest {
     private static final String DELETED = "ft.share.deleted@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(OWNER, COLLEAGUE, SECRETARY, DELETED);
     private static final String ACHIEVEMENTS = "/api/v1/achievements";
+    private static final String PUBLIC_ACHIEVEMENTS = "/api/v1/public/achievements";
+    private static final String BURST_IP = "10.98.0.7";
     private static final String PROBLEM = "urn:awards:problem:";
     private static final int YEAR = 1991;
     private static final long OTHER_FACULTY_ID = 10L;
@@ -55,6 +63,12 @@ class AchievementsFT extends AbstractFunctionalTest {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Autowired
+    private StringRedisTemplate redis;
+
+    @Value("${app.auth.protection.public-requests-per-minute}")
+    private int publicRequestsPerMinute;
 
     private long ownerId;
     private long approvedId;
@@ -168,6 +182,66 @@ class AchievementsFT extends AbstractFunctionalTest {
     }
 
     @Test
+    void ac2_1_anAnonymousVisitorSeesPublicAndUnitAwardsOnly() {
+        share(OWNER, approvedId, "UNIVERSITY").then().statusCode(HttpStatus.OK.value());
+        published(Map.of("year", YEAR)).body("content.awardId", contains((int) unitAwardId));
+
+        share(OWNER, approvedId, "PUBLIC").then().statusCode(HttpStatus.OK.value());
+        String body = published(Map.of("year", YEAR))
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .body("content.awardId", contains((int) unitAwardId, (int) approvedId))
+            .body("content[1].recipient.unit.id", equalTo((int) TestUsers.DAI_DEPARTMENT_ID))
+            .extract().asString();
+        assertThat(body).doesNotContain(OWNER, "impactScore", "owner", "request");
+        published(Map.of("year", YEAR, "unit", TestUsers.DAI_DEPARTMENT_ID))
+            .body("content.awardId", contains((int) approvedId));
+        RestAssured.given().queryParam("unit", TestUsers.UNIVERSITY_ID).get(PUBLIC_ACHIEVEMENTS).then()
+            .statusCode(HttpStatus.NOT_FOUND.value());
+        RestAssured.given().queryParam("year", "nineteen").get(PUBLIC_ACHIEVEMENTS).then()
+            .statusCode(HttpStatus.BAD_REQUEST.value()).body("type", equalTo(PROBLEM + "invalid-parameter"));
+    }
+
+    @Test
+    void ac2_2_aBrokenTokenReadsThePublicListLikeAnAnonymousVisitor() {
+        share(OWNER, approvedId, "PUBLIC").then().statusCode(HttpStatus.OK.value());
+
+        as("not.a.token").queryParam("year", YEAR).get(PUBLIC_ACHIEVEMENTS).then()
+            .statusCode(HttpStatus.OK.value()).body("content.awardId", contains((int) unitAwardId, (int) approvedId));
+        as("not.a.token").get(ACHIEVEMENTS).then().statusCode(HttpStatus.UNAUTHORIZED.value());
+    }
+
+    @Test
+    void ac2_3_aBurstFromOneAddressIsRefusedWhileOthersAndSignInKeepTheirBudget() {
+        long window = Instant.now().getEpochSecond() / 60;
+        String used = String.valueOf(publicRequestsPerMinute);
+        redis.opsForValue().set(RateLimitFilter.PUBLIC_KEY_PREFIX + BURST_IP + ":" + window, used);
+        redis.opsForValue().set(RateLimitFilter.PUBLIC_KEY_PREFIX + BURST_IP + ":" + (window + 1), used);
+
+        Response refused = RestAssured.given().header("X-Forwarded-For", BURST_IP).get(PUBLIC_ACHIEVEMENTS);
+        refused.then().statusCode(HttpStatus.TOO_MANY_REQUESTS.value())
+            .header(HttpHeaders.RETRY_AFTER, notNullValue())
+            .contentType("application/problem+json")
+            .body("type", equalTo(PROBLEM + "too-many-requests"));
+        assertThat(Integer.parseInt(refused.getHeader(HttpHeaders.RETRY_AFTER))).isBetween(1, 60);
+
+        RestAssured.given().header("X-Forwarded-For", "10.98.0.8").get(PUBLIC_ACHIEVEMENTS).then()
+            .statusCode(HttpStatus.OK.value());
+        RestAssured.given().header("X-Forwarded-For", BURST_IP).accept("text/html").get("/login").then()
+            .statusCode(HttpStatus.OK.value());
+    }
+
+    @Test
+    void ac2_7_reducingToUniversityRemovesTheAwardFromThePublicListAtOnce() {
+        share(OWNER, approvedId, "PUBLIC").then().statusCode(HttpStatus.OK.value());
+        published(Map.of("year", YEAR)).body("content.awardId", contains((int) unitAwardId, (int) approvedId));
+
+        share(OWNER, approvedId, "UNIVERSITY").then().statusCode(HttpStatus.OK.value());
+
+        published(Map.of("year", YEAR)).body("content.awardId", contains((int) unitAwardId));
+        list(Map.of("year", YEAR)).body("content.awardId", contains((int) unitAwardId, (int) approvedId));
+    }
+
+    @Test
     void ac1_10_theExportCarriesTheVisibility() {
         share(OWNER, approvedId, "PUBLIC").then().statusCode(HttpStatus.OK.value());
 
@@ -185,6 +259,11 @@ class AchievementsFT extends AbstractFunctionalTest {
 
     private ValidatableResponse list(Map<String, Object> filters) {
         return as(tokenOf(COLLEAGUE)).queryParams(filters).get(ACHIEVEMENTS).then()
+            .statusCode(HttpStatus.OK.value());
+    }
+
+    private static ValidatableResponse published(Map<String, Object> filters) {
+        return RestAssured.given().queryParams(filters).get(PUBLIC_ACHIEVEMENTS).then()
             .statusCode(HttpStatus.OK.value());
     }
 

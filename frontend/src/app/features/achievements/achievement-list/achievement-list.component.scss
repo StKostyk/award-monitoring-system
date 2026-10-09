@@ -7,6 +7,12 @@
   font: var(--mat-sys-headline-small);
 }
 
+.achievements__counterpart {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--mat-sys-primary);
+}
+
 .achievements__filters {
   display: flex;
   flex-wrap: wrap;

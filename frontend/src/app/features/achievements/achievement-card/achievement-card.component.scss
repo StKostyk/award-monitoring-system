@@ -33,6 +33,15 @@
   font-weight: 500;
 }
 
+.achievement__unit {
+  align-self: flex-start;
+  color: var(--mat-sys-primary);
+}
+
+.achievement__person.achievement__unit {
+  color: var(--mat-sys-primary);
+}
+
 .achievement__fields {
   display: grid;
   grid-template-columns: auto 1fr;

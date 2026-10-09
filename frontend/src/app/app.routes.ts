@@ -17,8 +17,14 @@ import { NotMeComponent } from './features/auth/security/not-me/not-me.component
 import { VerifyEmailComponent } from './features/auth/verify-email/verify-email.component';
 import { ForbiddenComponent } from './features/forbidden/forbidden.component';
 import { HomeComponent } from './features/home/home.component';
+import { NotFoundComponent } from './features/not-found/not-found.component';
 import { ConfirmEmailChangeComponent } from './features/profile/confirm-email-change/confirm-email-change.component';
 import { ProfileComponent } from './features/profile/profile/profile.component';
+
+const achievementList = () =>
+  import('./features/achievements/achievement-list/achievement-list.component').then(
+    (m) => m.AchievementListComponent,
+  );
 
 export const routes: Routes = [
   { path: 'callback', component: CallbackComponent },
@@ -51,6 +57,18 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/achievements/achievements.routes').then((m) => m.ACHIEVEMENT_ROUTES),
       },
+      {
+        path: 'units/:id/achievements',
+        canActivate: [authGuard],
+        loadComponent: achievementList,
+      },
+      { path: 'public/achievements', loadComponent: achievementList, data: { scope: 'public' } },
+      {
+        path: 'public/units/:id/achievements',
+        loadComponent: achievementList,
+        data: { scope: 'public' },
+      },
+      { path: 'not-found', component: NotFoundComponent },
       {
         path: 'reviews',
         canActivate: [authGuard, approverGuard],

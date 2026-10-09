@@ -18,6 +18,7 @@ import ua.edu.chnu.awards.auth.security.RateLimitFilter;
 public abstract class AbstractIntegrationTest {
 
     private static final String RATE_LIMIT_KEYS = RateLimitFilter.KEY_PREFIX + "*";
+    private static final String PUBLIC_RATE_LIMIT_KEYS = RateLimitFilter.PUBLIC_KEY_PREFIX + "*";
 
     @Autowired
     private StringRedisTemplate rateLimitRedis;
@@ -28,5 +29,6 @@ public abstract class AbstractIntegrationTest {
     @BeforeEach
     void resetRateLimitWindows() {
         rateLimitRedis.delete(rateLimitRedis.keys(RATE_LIMIT_KEYS));
+        rateLimitRedis.delete(rateLimitRedis.keys(PUBLIC_RATE_LIMIT_KEYS));
     }
 }

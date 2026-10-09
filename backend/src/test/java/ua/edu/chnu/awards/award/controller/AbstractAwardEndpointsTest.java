@@ -48,6 +48,7 @@ import ua.edu.chnu.awards.award.service.AwardSubmission;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.config.InfrastructureConfig;
 import ua.edu.chnu.awards.config.LoginSessionConfig;
+import ua.edu.chnu.awards.config.PublicApiSecurityConfig;
 import ua.edu.chnu.awards.config.SecurityConfig;
 import ua.edu.chnu.awards.user.dto.OrganizationRef;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
@@ -55,10 +56,10 @@ import ua.edu.chnu.awards.user.entity.OrganizationType;
 /**
  * The real security chain of {@code /api/v1/awards} with the services behind it mocked.
  */
-@Import({SecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class, JwtAuthorityConverter.class,
-    ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class, ApiExceptionHandler.class, AccessScope.class,
-    RoleLevels.class, RolePermissions.class, AccessDenials.class, ProblemDetailsAccessDeniedHandler.class,
-    AwardBodyProblems.class})
+@Import({SecurityConfig.class, PublicApiSecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class,
+    JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class,
+    ApiExceptionHandler.class, AccessScope.class, RoleLevels.class, RolePermissions.class, AccessDenials.class,
+    ProblemDetailsAccessDeniedHandler.class, AwardBodyProblems.class})
 abstract class AbstractAwardEndpointsTest {
 
     @Autowired

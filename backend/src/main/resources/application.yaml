@@ -165,6 +165,7 @@ app:
       failure-window: 15m
       lock-duration: 30m
       requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:20}
+      public-requests-per-minute: ${PUBLIC_RATE_LIMIT_PER_MINUTE:120}
     resend-interval: 1m
     allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200,http://localhost,http://localhost:8080}
     client:

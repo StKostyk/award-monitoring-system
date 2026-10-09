@@ -32,6 +32,13 @@ This Data Governance Framework establishes comprehensive policies and procedures
 | **Confidential** | Sensitive information requiring protection | Personal contact details, consent records, audit logs | Authorized roles only | User-controlled/3-7 years |
 | **Restricted** | Highly sensitive requiring special handling | Scanned certificates, assessment documents, appeals | Specific permissions | User-defined (1-10 years) |
 
+As built (Feature 4.3): an award is **Public** only when its owner chose «Показувати публічно» for the approved award
+(`awards.visibility = PUBLIC`) or it is an approved unit award; it is then readable without an account through
+`GET /api/v1/public/achievements`. «Показувати колегам» makes it **Internal** (signed-in users); every other award
+stays with its owner and the reviewers whose scope covers it. The public projection carries the name, department,
+titles, descriptions, category, awarding organisation, date, link and verification mark, never the e-mail address,
+documents, reviewers or comments.
+
 ### **1.2 Data Category Mapping**
 
 ```yaml

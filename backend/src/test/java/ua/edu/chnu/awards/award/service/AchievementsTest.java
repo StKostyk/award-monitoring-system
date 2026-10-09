@@ -94,6 +94,17 @@ class AchievementsTest {
         assertThat(achievement.recipient().personName()).isNull();
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac2_1_thePublishedListValidatesTheFiltersLikeTheSignedInOne() {
+        when(organizations.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> achievements.published(new AchievementQuery(99L, null, null, null), 0, 20))
+            .isInstanceOf(UnitNotFoundException.class);
+        assertThat(achievements.published(ANY, 0, 20)).isEmpty();
+        verify(awards).findAll(any(Specification.class), any(Pageable.class));
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {1949, 2101})
     @SuppressWarnings("unchecked")

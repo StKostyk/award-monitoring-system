@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpBackend, HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ParamMap, Params } from '@angular/router';
 import { Observable, forkJoin, map } from 'rxjs';
@@ -10,6 +10,9 @@ import {
 } from '../../core/organizations/organizations.service';
 import { organizationName } from '../../shared/organization-name';
 import { CategoryRef, Page, RecognitionLevel, UnitRef } from '../awards/awards.service';
+
+/** Which set a page lists: awards shared with colleagues, or the public ones without sign-in. */
+export type AchievementScope = 'signed-in' | 'public';
 
 /** Who received a shared award: a person, named with the department at submission, or a unit. */
 export type RecipientType = 'PERSON' | 'UNIT';
@@ -85,17 +88,32 @@ const NUMBER = /^\d{1,9}$/;
 @Injectable({ providedIn: 'root' })
 export class AchievementsService {
   private readonly http = inject(HttpClient);
+  private readonly anonymous = new HttpClient(inject(HttpBackend));
   private readonly organizations = inject(OrganizationsService);
 
-  /** One page of the awards shared with colleagues, newest first. */
-  list(query: AchievementQuery): Observable<Page<Achievement>> {
+  /**
+   * One page of shared awards, newest first. The public set is fetched without the session: no token is sent
+   * and a refused request starts no token refresh.
+   *
+   * @param query the filters, page and size
+   * @param scope the awards shared with colleagues, or the public ones
+   * @returns the page
+   */
+  list(
+    query: AchievementQuery,
+    scope: AchievementScope = 'signed-in',
+  ): Observable<Page<Achievement>> {
     let params = new HttpParams().set('page', query.page).set('size', query.size);
     for (const [key, value] of Object.entries(query.filters)) {
       if (value !== null) {
         params = params.set(key, String(value));
       }
     }
-    return this.http.get<Page<Achievement>>(`${environment.apiUrl}/achievements`, { params });
+    return scope === 'public'
+      ? this.anonymous.get<Page<Achievement>>(`${environment.apiUrl}/public/achievements`, {
+          params,
+        })
+      : this.http.get<Page<Achievement>>(`${environment.apiUrl}/achievements`, { params });
   }
 
   /** Active faculties in the interface language, each followed by its departments. */

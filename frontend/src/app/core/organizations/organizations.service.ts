@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpBackend, HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, shareReplay, throwError } from 'rxjs';
 
@@ -15,10 +15,13 @@ export interface OrganizationSummary {
   parent: OrganizationRef | null;
 }
 
-/** Active organisations by type, fetched once per type while the app is open. */
+/**
+ * Active organisations by type, fetched once per type while the app is open. The list is public, so it is fetched
+ * without the session and works on the pages open without sign-in.
+ */
 @Injectable({ providedIn: 'root' })
 export class OrganizationsService {
-  private readonly http = inject(HttpClient);
+  private readonly http = new HttpClient(inject(HttpBackend));
   private readonly lists = new Map<OrganizationType, Observable<OrganizationSummary[]>>();
 
   /** The active organisations of one type; a failed fetch is tried again next time. */

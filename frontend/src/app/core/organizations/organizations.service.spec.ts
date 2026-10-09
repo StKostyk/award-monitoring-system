@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpInterceptorFn, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
@@ -14,13 +14,16 @@ const algebra: OrganizationSummary = {
   parent: null,
 };
 
+const session: HttpInterceptorFn = (request, next) =>
+  next(request.clone({ setHeaders: { Authorization: 'Bearer session' } }));
+
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(withInterceptors([session])), provideHttpClientTesting()],
     });
     service = TestBed.inject(OrganizationsService);
     http = TestBed.inject(HttpTestingController);
@@ -47,5 +50,13 @@ describe('OrganizationsService', () => {
 
     http.expectOne(`${environment.apiUrl}/organizations?type=DEPARTMENT`).flush([]);
     http.expectOne(`${environment.apiUrl}/organizations?type=FACULTY`).flush([]);
+  });
+
+  it('ac2_8_fetches_the_public_list_without_the_session', () => {
+    service.ofType('FACULTY').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/organizations?type=FACULTY`);
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush([]);
   });
 });

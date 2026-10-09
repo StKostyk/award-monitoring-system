@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.auth.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -28,7 +29,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.cors.CorsConfiguration;
 
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
-import ua.edu.chnu.awards.config.ProtectionProperties;
 
 class RateLimitFilterTest {
 
@@ -37,10 +37,9 @@ class RateLimitFilterTest {
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
-    private final RateLimitFilter filter = new RateLimitFilter(
-        new FixedWindowCounter(redis, Clock.fixed(NOW, ZoneOffset.UTC)),
-        new ProtectionProperties(5, Duration.ofMinutes(15), Duration.ofMinutes(30), 20), request -> allowedOrigins(),
-        Jackson2ObjectMapperBuilder.json().build());
+    private final FixedWindowCounter counter = new FixedWindowCounter(redis, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final RateLimitFilter filter = new RateLimitFilter(counter, RateLimitFilter.KEY_PREFIX, 20,
+        request -> allowedOrigins(), Jackson2ObjectMapperBuilder.json().build());
 
     @BeforeEach
     void setUp() {
@@ -120,6 +119,24 @@ class RateLimitFilterTest {
 
         assertThat(chain.getRequest()).isNotNull();
         verify(values, never()).increment(anyString());
+    }
+
+    @Test
+    void ac2_3_thePublicApiCountsInItsOwnWindowWithItsOwnBudget() throws ServletException, IOException {
+        RateLimitFilter publicLimit = new RateLimitFilter(counter, RateLimitFilter.PUBLIC_KEY_PREFIX, 120,
+            request -> allowedOrigins(), Jackson2ObjectMapperBuilder.json().build());
+        String key = "public:rate:203.0.113.7:" + NOW.getEpochSecond() / 60;
+        when(values.increment(key)).thenReturn(120L, 121L);
+        MockFilterChain within = new MockFilterChain();
+        MockHttpServletResponse refused = new MockHttpServletResponse();
+
+        publicLimit.doFilter(request("application/json"), new MockHttpServletResponse(), within);
+        publicLimit.doFilter(request("application/json"), refused, new MockFilterChain());
+
+        assertThat(within.getRequest()).isNotNull();
+        assertThat(refused.getStatus()).isEqualTo(429);
+        assertThat(refused.getHeader("Retry-After")).isEqualTo("45");
+        verify(values, never()).increment(startsWith(RateLimitFilter.KEY_PREFIX));
     }
 
     @Test

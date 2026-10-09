@@ -7,7 +7,7 @@ import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@ang
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatToolbar } from '@angular/material/toolbar';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { map } from 'rxjs';
 
@@ -47,6 +47,7 @@ export const WIDE_LAYOUT = '(min-width: 960px)';
 })
 export class ShellComponent {
   private readonly delegations = inject(DelegationsService);
+  private readonly router = inject(Router);
   private readonly drawer = viewChild<MatSidenav>('drawer');
 
   protected readonly auth = inject(AuthService);
@@ -86,6 +87,11 @@ export class ShellComponent {
 
   logout(): void {
     void this.auth.logout();
+  }
+
+  /** Signs in and comes back to the page the visitor is on. */
+  login(): void {
+    this.auth.login(this.router.url);
   }
 
   protected closeDrawer(): void {

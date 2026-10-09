@@ -20,6 +20,8 @@ const PUBLIC_ROUTES = [
   '/security/not-me',
   '/confirm-email-change',
   '/callback',
+  '/public/',
+  '/not-found',
 ];
 
 @Injectable({ providedIn: 'root' })

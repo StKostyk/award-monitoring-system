@@ -1,7 +1,7 @@
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { BehaviorSubject, of } from 'rxjs';
 import { vi } from 'vitest';
@@ -52,6 +52,7 @@ describe('ShellComponent', () => {
     fullName: computed(() => 'Martyn Martyniuk'),
     permissions: signal(NO_PERMISSIONS),
     logout: vi.fn().mockResolvedValue(undefined),
+    login: vi.fn(),
   };
   const language = { toggle: vi.fn(), current: () => 'uk' };
   const delegations = { list: vi.fn().mockReturnValue(of({ given: [], received: [] })) };
@@ -217,6 +218,28 @@ describe('ShellComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="logout"]')).toBeNull();
+  });
+
+  it('ac2_5_offers_an_anonymous_visitor_to_sign_in_and_come_back', () => {
+    auth.isAuthenticated.set(false);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'url', 'get').mockReturnValue('/public/achievements?year=2025');
+
+    (fixture.nativeElement.querySelector('[data-testid="login"]') as HTMLButtonElement).click();
+
+    expect(auth.login).toHaveBeenCalledWith('/public/achievements?year=2025');
+    expect(fixture.nativeElement.querySelector('[data-testid="language-toggle"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="nav-achievements"]')).toBeNull();
+  });
+
+  it('ac2_5_a_signed_in_user_gets_no_sign_in_button', () => {
+    auth.isAuthenticated.set(true);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="login"]')).toBeNull();
   });
 
   it('ac3_shows_the_brand_name_organization_and_logo_in_the_side_menu', () => {

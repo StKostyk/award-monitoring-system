@@ -29,7 +29,8 @@ import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 
 /**
  * The sign-in path: password checking with lock and status checks, login sessions tracked so a password reset
- * can end them everywhere, the request cache, and a per-address request limit on the authentication endpoints.
+ * can end them everywhere, the request cache, and per-address request limits on the authentication endpoints and
+ * the public API.
  */
 @Configuration
 @EnableConfigurationProperties(ProtectionProperties.class)
@@ -101,9 +102,22 @@ public class LoginSessionConfig {
                                                             @Qualifier("corsConfigurationSource")
                                                             CorsConfigurationSource cors,
                                                             ObjectMapper objectMapper) {
-        FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(
-            new RateLimitFilter(counter, properties, cors, objectMapper));
+        FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(new RateLimitFilter(
+            counter, RateLimitFilter.KEY_PREFIX, properties.requestsPerMinute(), cors, objectMapper));
         registration.addUrlPatterns("/oauth2/token", "/login", "/api/v1/auth/*");
+        registration.setOrder(BEFORE_SESSION_FILTER);
+        return registration;
+    }
+
+    @Bean
+    FilterRegistrationBean<RateLimitFilter> publicRateLimitFilter(FixedWindowCounter counter,
+                                                                  ProtectionProperties properties,
+                                                                  @Qualifier("corsConfigurationSource")
+                                                                  CorsConfigurationSource cors,
+                                                                  ObjectMapper objectMapper) {
+        FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(new RateLimitFilter(
+            counter, RateLimitFilter.PUBLIC_KEY_PREFIX, properties.publicRequestsPerMinute(), cors, objectMapper));
+        registration.addUrlPatterns("/api/v1/public/*");
         registration.setOrder(BEFORE_SESSION_FILTER);
         return registration;
     }

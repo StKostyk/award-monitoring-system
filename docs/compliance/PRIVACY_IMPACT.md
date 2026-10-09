@@ -451,6 +451,16 @@ export class PrivacyControlsComponent {
 }
 ```
 
+**As built (Feature 4.3).** Visibility is chosen per approved personal award, not per person, with three levels:
+«Лише мені та рецензентам» (`PRIVATE`, the default), «Показувати колегам» (`UNIVERSITY`, every signed-in user) and
+«Показувати публічно» (`PUBLIC`, anyone without sign-in on `/public/achievements`). A departmental level is not
+offered: the department's reviewers already see its awards. Choosing «Показувати публічно» first lists what is
+published (name, department, title, description, category, awarding organisation, date, link, verification mark)
+and what is not (e-mail, documents, reviewers, comments). The record of consent is the stored choice with its
+`AWARD_VISIBILITY_CHANGED` audit row (who, when, old and new value), not a `consent_records` row; a withdrawn choice
+takes effect at the next request (`Cache-Control: no-store`). Approved unit awards are shared without a choice, and
+personal awards of an erased account are never listed.
+
 ### **4.4 Automated Privacy Protection**
 
 ```yaml

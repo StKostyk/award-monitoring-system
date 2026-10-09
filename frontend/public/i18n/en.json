@@ -12,6 +12,7 @@
       "dark": "Dark"
     },
     "logout": "Sign out",
+    "login": "Sign in",
     "loading": "Loading…",
     "datePlaceholder": "dd/mm/yyyy",
     "dateInvalid": "Enter the date as dd/mm/yyyy",
@@ -423,6 +424,10 @@
   },
   "achievements": {
     "title": "Achievements",
+    "publicTitle": "University achievements",
+    "publicPage": "Public page",
+    "viewAsStaff": "View as staff",
+    "departments": "Departments",
     "filters": {
       "unit": "Unit",
       "year": "Year",
@@ -445,6 +450,11 @@
       "gone": "There is no such unit.",
       "denied": "You have no access to this page."
     }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "There is no such page, or the address is mistyped.",
+    "publicAchievements": "University achievements"
   },
   "categories": {
     "suggestions": "Suggested categories",
