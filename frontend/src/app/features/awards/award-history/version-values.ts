@@ -1,3 +1,4 @@
+import { kyivDate } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import {
   AwardVersion,
@@ -37,6 +38,7 @@ export interface ValueNames {
 }
 
 const EMPTY = '—';
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** A snapshot value with categories and organisations by name and empty values as a dash. */
 export function shownValue(field: SnapshotField, value: unknown, names: ValueNames): ShownValue {
@@ -56,6 +58,10 @@ export function shownValue(field: SnapshotField, value: unknown, names: ValueNam
     }
     case 'status':
       return { key: `awards.status.${String(value)}` };
+    case 'awardDate':
+      return {
+        text: ISO_DAY.test(String(value)) ? kyivDate(String(value), names.language) : String(value),
+      };
     case 'verificationBadge':
       return { key: value ? 'awards.history.yes' : 'awards.history.no' };
     default:

@@ -15,6 +15,7 @@ import { MatAnchor, MatButton } from '@angular/material/button';
 import {
   MatDatepicker,
   MatDatepickerInput,
+  MatDatepickerIntl,
   MatDatepickerToggle,
 } from '@angular/material/datepicker';
 import { MatDialog } from '@angular/material/dialog';
@@ -47,6 +48,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { kyivToday, yearsBefore } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
+import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import {
   DESCRIPTION_LIMIT,
@@ -122,6 +124,7 @@ type RecipientChoice = 'PERSON' | 'UNIT';
     TranslocoPipe,
     AwardDocumentsComponent,
   ],
+  providers: [{ provide: MatDatepickerIntl, useClass: TranslatedDatepickerIntl }],
   templateUrl: './award-form.component.html',
   styleUrl: './award-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

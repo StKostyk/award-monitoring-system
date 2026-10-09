@@ -6,6 +6,7 @@ import { DateAdapter } from '@angular/material/core';
 import {
   MatDatepicker,
   MatDatepickerInput,
+  MatDatepickerIntl,
   MatDatepickerToggle,
 } from '@angular/material/datepicker';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
@@ -22,6 +23,7 @@ import { canCreateAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
+import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import {
   AWARD_STATUSES,
@@ -61,7 +63,10 @@ const PAGE_SIZES = [20, 50, 100];
     MatPaginator,
     TranslocoPipe,
   ],
-  providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
+  providers: [
+    { provide: MatDatepickerIntl, useClass: TranslatedDatepickerIntl },
+    { provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl },
+  ],
   templateUrl: './award-list.component.html',
   styleUrl: './award-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

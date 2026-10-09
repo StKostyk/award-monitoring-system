@@ -82,6 +82,19 @@ class CorrectionLogTest {
     }
 
     @Test
+    void theEventShowsTheAwardDateDayFirst() {
+        Award award = award(null);
+
+        log.announce(award, owner, "Дата", List.of(new FieldChange("awardDate", LocalDate.of(2026, 9, 1),
+            LocalDate.of(2026, 9, 2))), null);
+
+        ArgumentCaptor<AwardCorrected> event = ArgumentCaptor.forClass(AwardCorrected.class);
+        verify(events).publishEvent(event.capture());
+        assertThat(event.getValue().changes()).containsExactly(
+            new AwardCorrected.Change("awardDate", "01.09.2026", "02.09.2026", "01.09.2026", "02.09.2026"));
+    }
+
+    @Test
     void ac3_5_aClearedCategoryHasNoName() {
         Award award = award(null);
 

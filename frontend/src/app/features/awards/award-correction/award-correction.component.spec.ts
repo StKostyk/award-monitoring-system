@@ -200,7 +200,14 @@ describe('AwardCorrectionComponent', () => {
     component.save();
 
     expect(dialog.open).not.toHaveBeenCalled();
-    expect(component.errorKey('reason')).toBe('awards.errors.required');
+    expect(component.errorKey('reason')).toBe('awards.correction.reasonRequired');
+    expect(component.errorKey('titleUk')).toBeNull();
+
+    type('reason', '   ');
+    component.save();
+
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(component.errorKey('reason')).toBe('awards.correction.reasonRequired');
   });
 
   it('ac3_2_ac3_3_confirms_the_changes_and_sends_only_the_changed_fields', async () => {
@@ -235,6 +242,7 @@ describe('AwardCorrectionComponent', () => {
       reason: 'Категорія з наказу',
     });
     expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], {
+      replaceUrl: true,
       state: { notice: 'awards.correction.done' },
     });
     expect(component.confirmLeave()).toBe(true);

@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -113,7 +114,7 @@ class CorrectionFT extends AbstractFunctionalTest {
             .body("content[0].action", equalTo("CORRECTED"));
         assertThat(mailpit.latestTextTo(OWNER, SUBJECT)).contains("Причина: Дату взято з наказу")
             .contains("Reason: Дату взято з наказу").contains("Відзнака міністерства").contains("Ministry Recognition")
-            .contains(date.toString()).contains("/awards/" + id);
+            .contains(date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))).contains("/awards/" + id);
 
         decide(tokenOf(SECRETARY), id, "APPROVE").then().statusCode(HttpStatus.OK.value())
             .body("requestStatus", equalTo("ESCALATED"));
