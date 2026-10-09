@@ -10,11 +10,14 @@
     "Done", the BACKLOG row "✅ Done" and the local branch is deleted; these row edits are left in the new branch.
     Then Jira and GitHub of the story move to In Progress, its tracker row is marked and the PRD section of the
     story (the "### ... (<KEY>)" heading up to the next heading) is printed.
+    For an unplanned story (-Summary, -Points, -Epic, -GitHub) the tracker and BACKLOG rows are added on the new
+    branch, numbered after the last started story of the epic. A rerun on the story branch skips the checkout.
 
 .EXAMPLE
     .\tools\story-start.ps1 SCRUM-49
     .\tools\story-start.ps1 SCRUM-49 -Base docs/epic-04-kickoff -Slug reviewer-queue
     .\tools\story-start.ps1 SCRUM-49 -DryRun    # prints branch, merged stories and PRD section only
+    .\tools\story-start.ps1 SCRUM-61 -Summary "Refactor from the Feature 4.2 sweep" -Points 3 -Epic SCRUM-47 -GitHub 171
 #>
 [CmdletBinding()]
 param(
@@ -23,6 +26,11 @@ param(
     [string]$Key,
     [string]$Base = 'develop',
     [string]$Slug,
+    [string]$Summary,
+    [int]$Points = 3,
+    [ValidatePattern('^[A-Z]+-\d+$')]
+    [string]$Epic,
+    [int]$GitHub,
     [switch]$NoTracker,
     [switch]$NoClose,
     [switch]$DryRun
@@ -63,22 +71,31 @@ function Close-Story($story) {
 }
 
 $row = Find-StoryRow $Key
-if (-not $row) { throw "No tracker row for $Key in docs/epics" }
-if (-not $Slug) { $Slug = New-Slug $row.Title }
+if ($Summary -and -not ($Epic -and $GitHub)) { throw '-Summary needs -Epic and -GitHub' }
+if (-not ($row -or $Summary)) { throw "No tracker row for $Key in docs/epics" }
+if (-not $Slug) { $Slug = New-Slug $(if ($row) { $row.Title } else { $Summary }) }
 $branch = "feature/$Key-$Slug"
 $closing = if ($NoClose) { @() } else { @(Find-MergedStories) }
 
-if (-not $DryRun) {
-    if (git status --porcelain) { throw 'The working tree is not clean; commit or stash first.' }
-    git checkout $Base
-    if ($LASTEXITCODE) { throw "Cannot check out $Base" }
-    git pull --ff-only -q
-    if ($LASTEXITCODE) { throw "Cannot update $Base" }
-    git checkout -b $branch
-    if ($LASTEXITCODE) { throw "Cannot create $branch" }
-    $closing | ForEach-Object { Close-Story $_ }
-} else {
+if ($DryRun) {
     $closing | ForEach-Object { Write-Host "Would close: $($_.Key) (PR #$($_.Pr) merged)" }
+    if (-not $row) { $row = [pscustomobject]@{ Title = "(new) $Summary"; Issue = $GitHub } }
+} else {
+    if ((git branch --show-current) -ne $branch) {
+        if (git status --porcelain) { throw 'The working tree is not clean; commit or stash first.' }
+        git checkout $Base
+        if ($LASTEXITCODE) { throw "Cannot check out $Base" }
+        git pull --ff-only -q
+        if ($LASTEXITCODE) { throw "Cannot update $Base" }
+        git checkout -b $branch
+        if ($LASTEXITCODE) { throw "Cannot create $branch" }
+    }
+    $closing | ForEach-Object { Close-Story $_ }
+    if (-not $row) {
+        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub
+        Write-Host "Rows:    $id added to the epic tracker and BACKLOG"
+        $row = Find-StoryRow $Key
+    }
 }
 
 if (-not ($NoTracker -or $DryRun)) {

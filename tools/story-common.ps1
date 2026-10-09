@@ -38,6 +38,44 @@ function Find-StoryRow([string]$key) {
     return $null
 }
 
+function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$epic, [int]$issue) {
+    $tracker = Get-ChildItem docs/epics -Filter 'EPIC-*.md' |
+        Where-Object { Select-String -Path $_.FullName -Pattern "Jira epic\*\*:\s*$epic\b" -Quiet } |
+        Select-Object -First 1
+    if (-not $tracker) { throw "No epic tracker for $epic in docs/epics" }
+    $lines = [Collections.Generic.List[string]][IO.File]::ReadAllLines($tracker.FullName, $script:Utf8)
+    $rowPattern = '^\|\s*(\d+[a-z]?)\s*\|\s*(\d+\.\d+)\.(\d+)\s.*\|\s*[A-Z]+-\d+\s*\|\s*#\d+\s*\|'
+    $last = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match $rowPattern -and $lines[$i] -notmatch '\|\s*To do\s*\|\s*$') { $last = $i }
+    }
+    if ($last -lt 0) { throw "No started story in $($tracker.Name)" }
+    $null = $lines[$last] -match $rowPattern
+    $previous, $feature, $number = $Matches[1], $Matches[2], [int]$Matches[3]
+    $order = if ($previous -match '[a-y]$') {
+        $previous.Substring(0, $previous.Length - 1) + [char]([int][char]$previous[-1] + 1)
+    } else { "$($previous)a" }
+    $id = "$feature.$($number + 1)"
+    $lines.Insert($last + 1, "| $order | $id $summary | $feature | $points | $key | #$issue | no | To do |")
+    Write-Lines $tracker.FullName $lines.ToArray()
+
+    if (-not (Test-Path $script:Backlog)) { return $id }
+    $path = (Resolve-Path $script:Backlog).Path
+    $backlog = [Collections.Generic.List[string]][IO.File]::ReadAllLines($path, $script:Utf8)
+    $after = -1
+    for ($i = 0; $i -lt $backlog.Count; $i++) {
+        if ($backlog[$i] -match "^\|\s*$([regex]::Escape($feature))\.\d+\s*\|") { $after = $i }
+    }
+    if ($after -lt 0) { throw "No BACKLOG row of feature $feature" }
+    $sprint = if ($backlog[$after] -match '\((Sprint \d+)\)\s*\|') { $Matches[1] }
+        elseif ($backlog[$after + 1] -match '\|\s*(Sprint \d+)\s*\|') { $Matches[1] }
+        else { '' }
+    $repo = gh repo view --json url -q .url
+    $backlog.Insert($after + 1, "| $id | $summary | $points | $sprint | $key | [#$issue]($repo/issues/$issue) |")
+    Write-Lines $path $backlog.ToArray()
+    return $id
+}
+
 function Find-StoriesWithStatus([string]$status) {
     foreach ($file in Get-ChildItem docs/epics -Filter 'EPIC-*.md') {
         foreach ($line in [IO.File]::ReadAllLines($file.FullName, $script:Utf8)) {
@@ -81,12 +119,22 @@ function Add-ChangelogLine([string]$section, [string]$text) {
     while ($next -lt $lines.Count -and $lines[$next] -notmatch '^## ') { $next++ }
     $heading = $lines.IndexOf("### $section", $top)
     $bullet = '- ' + ($text -replace '^-\s*', '')
+    $existing = $lines.IndexOf($bullet, $top)
+    if ($existing -gt $top -and $existing -lt $next) { return }
     if ($heading -gt $top -and $heading -lt $next) {
         $lines.Insert($heading + 1, $bullet)
     } else {
         $lines.InsertRange($top + 1, [string[]]@('', "### $section", $bullet))
     }
     Write-Lines $path $lines.ToArray()
+}
+
+function Remove-StaleGitLock {
+    $lock = Join-Path (git rev-parse --git-dir) 'index.lock'
+    if ((Test-Path $lock) -and -not (Get-Process git -ErrorAction SilentlyContinue)) {
+        Remove-Item $lock -Force
+        Write-Host 'Removed a stale .git/index.lock'
+    }
 }
 
 function Get-PrdSection([string]$key) {
