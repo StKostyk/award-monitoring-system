@@ -27,7 +27,8 @@ interface MessageSummary {
 }
 
 async function messagesTo(email: string, subject = ''): Promise<MessageSummary[]> {
-  const list = await (await fetch(`${mailpit}/api/v1/messages?limit=100`)).json();
+  const query = encodeURIComponent(`to:${email}`);
+  const list = await (await fetch(`${mailpit}/api/v1/search?query=${query}&limit=100`)).json();
   return ((list.messages ?? []) as MessageSummary[]).filter(
     (m) =>
       m.To?.some((to) => to.Address.toLowerCase() === email.toLowerCase()) &&
