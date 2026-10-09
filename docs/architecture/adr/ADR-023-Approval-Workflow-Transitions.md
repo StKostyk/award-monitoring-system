@@ -1,6 +1,6 @@
 # ADR-023: Approval Workflow Transitions and Review Claims
 
-**Status**: Proposed  
+**Status**: Accepted  
 **Date**: 2026-10-06  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Faculty secretaries, deans, rector's office, Thesis Supervisor
@@ -10,7 +10,8 @@
 ## Context
 
 A submitted award travels through up to four review levels (faculty secretary, dean, rector's secretary, rector).
-The request has seven statuses (`award_requests.status`) and the award four of its own. The original state machine
+The request has eight statuses (`award_requests.status`, `EXPIRED` unused) and the award five of its own
+(`ARCHIVED` unused until Epic 6). The original state machine
 diagram included states the university does not use (appeal window, automatic expiry during review, a document/OCR
 branch) and gave no rule for two reviewers of the same level opening the same request at the same time.
 
@@ -111,3 +112,20 @@ branch) and gave no rule for two reviewers of the same level opening the same re
 ## Related Decisions
 - ADR-004 (PostgreSQL row locks), ADR-009 (permissions and scopes).
 - Feature 4.1 PRD §7 (D-1 to D-4, D-12, D-13).
+
+---
+
+## Addendum 2026-10-09: Features 4.2 and 4.3 as built
+
+Accepted with Epic 4; the transition table of Feature 4.1 shipped unchanged. Three later decisions sit next to it
+without adding transitions:
+
+- **Overdue is a mark, not a move.** The hourly job (`OverdueJob`, `OverdueNotices`) sets
+  `award_requests.overdue_noticed_at` and `overdue_noticed_level` once per level and e-mails the next level; status,
+  level and reviewer stay, and every new deadline clears the mark. A review period set per faculty
+  (`organizations.review_working_days`) applies to deadlines set from then on.
+- **A correction is not a transition.** A reviewer corrects a pending award with a reason; the request keeps its
+  status, level and deadline, an unclaimed request is claimed by the correction, and the change is a `CORRECTED`
+  award version.
+- **Withdrawal** returns an unclaimed request to a draft (`WITHDRAWN`, audit `AWARD_WITHDRAWN`); batch decisions run
+  the single decision per item in its own transaction (audit `REVIEW_BATCH`).

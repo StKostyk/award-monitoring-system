@@ -177,9 +177,9 @@ Our solution provides a **transparent, automated platform** with unique differen
 - **AI Capabilities**: OCR, natural language processing, confidence scoring
 
 #### **Epic 4: Workflow Engine & Approvals**
-- **Description**: Configurable multi-level approval processes with escalation
+- **Description**: Multi-level approval processes; a missed deadline marks the request and notifies the next level, and never moves or decides it
 - **Business Value**: Automated routing and decision tracking
-- **Workflow Types**: Standard, expedited, appeal, and exception handling
+- **Workflow Types**: Standard (delivered in Epic 4); expedited, appeal and exception handling are deferred
 
 #### **Epic 5: Analytics & Reporting Platform**
 - **Description**: Real-time insights and customizable reporting capabilities

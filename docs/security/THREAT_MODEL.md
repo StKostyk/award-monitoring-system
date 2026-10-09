@@ -198,6 +198,20 @@ Award evidence uploaded by employees (certificates, diplomas, photos) and kept i
 | **DoS** | D-DOC-02 | Orphaned objects | Failures between storage and database | Storage growth | Object written before the row and removed on rollback; removal after commit on deletion; daily sweep of objects older than 24 h without a row |
 | **Elevation** | E-DOC-01 | Malicious content | Infected PDF or image | Malware on reviewers' machines | `clamd` (INSTREAM over the Compose network, signatures updated by `freshclam`) scans every file after the size check and before the type check and before anything is stored; a finding answers 422 `malware-detected` and writes `DOCUMENT_REJECTED` with the signature; no answer within 30 s or an error answers 503 `scanner-unavailable` (fail closed); `clamav` in the actuator health. Residual: signatures only, no detection of new or targeted payloads |
 
+#### 2.2.6 Review Workflow and Public Achievements (Epic 4)
+
+Reviewers decide on submitted awards; owners may publish approved awards to colleagues or to anyone without an account.
+
+| **Threat Category** | **Threat ID** | **Threat Description** | **Attack Vector** | **Impact** | **Control** |
+|---------------------|---------------|------------------------|-------------------|------------|-------------|
+| **Tampering** | T-WF-01 | Two reviewers decide on the same request | Parallel claims and decisions, a stale page | Contradicting decisions, a lost update | Row lock and optimistic `requestVersion`; the second caller answers 409 `request-claimed` or `request-stale`; a decided request answers 409 `request-closed` |
+| **Elevation** | E-WF-01 | Deciding outside one's scope or level | Guessed award ids, a lower-level role deciding higher, lending a role without the right | Unauthorised approval | One reviewer rule from role and delegation scopes (own or lower level), owner and submitter excluded; a request outside the scope answers 404, not 403; a delegation is stamped on the decision (`delegator_id`) |
+| **DoS** | D-WF-01 | Oversized batch | `POST /reviews/decisions` with thousands of items | Long transactions, lock contention | 1–50 distinct items per call, each in its own transaction, failures reported per item |
+| **Info Disclosure** | I-PUB-01 | Scraping of the public achievements | Scripted `GET /api/v1/public/achievements` without an account | Bulk collection of names and awards | Only awards the owner published and approved unit awards; projection without e-mail, documents, reviewers and comments; 120 requests a minute per address; `Cache-Control: no-store` |
+| **DoS** | D-PUB-01 | Exhausting the public endpoint | High request rate from many addresses, or Redis down | Load on the database | The per-address limit lives in Redis and fails open while Redis is down (an error is logged); residual risk accepted for the demo |
+| **Info Disclosure** | I-WF-01 | Reviewer comments and decisions exposed | Reading a decision of an award that is not one's own | Disclosure of internal remarks | Comments only to the owner and to reviewers whose scope covers the award; withdrawn choices of visibility take effect at the next request |
+| **Repudiation** | R-WF-01 | Denied review action | A reviewer disputes a claim, decision or correction | Accountability gap | Audit rows `REVIEW_CLAIMED`, `REVIEW_RELEASED`, `REVIEW_TAKEN_OVER`, `REVIEW_HANDED_OVER`, `REVIEW_DECISION`, `REVIEW_BATCH`, `AWARD_CORRECTED`, `AWARD_VISIBILITY_CHANGED`, with the delegator under a delegation |
+
 ---
 
 ## 3. Detailed Threat Scenarios

@@ -115,6 +115,8 @@ public class MetricsConfiguration {
 | `awards.review.overdue` | Gauge | Open requests past their deadline per `level`; refreshed by the overdue job |
 | `awards.review.overdue.notices` | Counter | Overdue notice e-mails the mail server accepted |
 
+The two gauges read 0 after a start of the application until the next run of the overdue job (minute 5 of the hour), so they can be wrong for up to an hour.
+
 **Usage Example**:
 
 ```java

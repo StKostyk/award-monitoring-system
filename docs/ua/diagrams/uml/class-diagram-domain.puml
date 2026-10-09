@@ -3,7 +3,7 @@
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіку 3)
+title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіку 4)
 
 ' Сутності JPA пакета ua.edu.chnu.awards; класи з позначкою <<planned>> існують лише як таблиці
 
@@ -65,6 +65,7 @@ package "user" <<Rectangle>> {
         -orgType: OrganizationType
         -parent: Organization
         -depth: int
+        -reviewWorkingDays: Integer
         -active: boolean
         +enclosingFaculty(): Organization
     }
@@ -109,6 +110,7 @@ package "award" <<Rectangle>> {
         -id: Long
         -owner: User
         -organization: Organization
+        -recipientOrganizationId: Long
         -category: AwardCategory
         -title: String
         -titleUk: String
@@ -118,6 +120,7 @@ package "award" <<Rectangle>> {
         -awardDate: LocalDate
         -status: AwardStatus
         -verificationBadge: boolean
+        -visibility: AwardVisibility
         -impactScore: Integer
         -externalUrl: String
         -createdAt: Instant
@@ -177,6 +180,14 @@ package "award" <<Rectangle>> {
         CREATED
         UPDATED
         SUBMITTED
+        DECIDED
+        CORRECTED
+    }
+
+    enum AwardVisibility {
+        PRIVATE
+        UNIVERSITY
+        PUBLIC
     }
 
     class AwardSnapshot <<record>> {
@@ -190,12 +201,16 @@ package "award" <<Rectangle>> {
         -id: Long
         -award: Award
         -submitter: User
+        -currentReviewer: User
         -status: RequestStatus
         -currentLevel: ApprovalLevel
         -submittedAt: Instant
         -deadline: Instant
+        -overdueNoticedAt: Instant
+        -overdueNoticedLevel: ApprovalLevel
         -completedAt: Instant
         -rejectionReason: String
+        -version: Long
     }
 
     enum RequestStatus {
@@ -206,6 +221,7 @@ package "award" <<Rectangle>> {
         REJECTED
         RETURNED
         EXPIRED
+        WITHDRAWN
     }
 
     enum ApprovalLevel {
@@ -222,7 +238,19 @@ package "award" <<Rectangle>> {
         -decision: ReviewDecisionType
         -level: ApprovalLevel
         -comments: String
+        -delegator: User
         -decidedAt: Instant
+    }
+
+    class ReviewTemplate {
+        -id: Long
+        -decision: ReviewDecisionType
+        -titleUk: String
+        -titleEn: String
+        -bodyUk: String
+        -bodyEn: String
+        -sortOrder: int
+        -active: boolean
     }
 
     enum ReviewDecisionType {
@@ -322,6 +350,8 @@ Award "*" --> "1" User : власник
 Award "*" --> "1" Organization : подано в
 Award "*" --> "0..1" AwardCategory : категорія
 Award --> AwardStatus
+Award --> AwardVisibility
+Award "*" --> "0..1" Organization : отримує
 AwardCategory --> RecognitionLevel
 AwardCategory "0..1" <-- "*" AwardCategory : батьківська
 RecognitionLevel --> ApprovalLevel : мінімальне затвердження
@@ -334,6 +364,8 @@ AwardRequest --> ApprovalLevel : поточний рівень
 AwardRequest "1" <-- "*" ReviewDecision : рішення
 ReviewDecision --> ReviewDecisionType
 ReviewDecision "*" --> "1" User : рецензент
+ReviewDecision "*" --> "0..1" User : делегант
+AwardRequest "*" --> "0..1" User : поточний рецензент
 
 Award "1" <-- "*" Document : докази
 Document "*" --> "1" User : завантажив

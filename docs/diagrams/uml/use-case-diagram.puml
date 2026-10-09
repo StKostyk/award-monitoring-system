@@ -32,7 +32,10 @@ rectangle "Award Monitoring & Tracking System" {
         usecase "Track Award Status" as UC_TRACK
         usecase "View Public Awards" as UC_VIEW_PUBLIC
         usecase "View Own Awards" as UC_VIEW_OWN
-        usecase "Resubmit Rejected Award" as UC_RESUBMIT
+        usecase "Resubmit Returned Award" as UC_RESUBMIT
+        usecase "Withdraw Unclaimed Award" as UC_WITHDRAW
+        usecase "Choose Who Sees an Award" as UC_VISIBILITY
+        usecase "View Achievements" as UC_ACHIEVEMENTS
     }
     
     ' Review & Approval Use Cases
@@ -44,6 +47,9 @@ rectangle "Award Monitoring & Tracking System" {
         usecase "Return for Corrections" as UC_RETURN
         usecase "Batch Approve Awards" as UC_BATCH
         usecase "View Review Queue" as UC_QUEUE
+        usecase "Claim, Release or Hand Over a Review" as UC_CLAIM
+        usecase "Correct Pending Award" as UC_CORRECT
+        usecase "Set Faculty Review Period" as UC_PERIOD
     }
     
     ' User Management Use Cases
@@ -91,6 +97,9 @@ employee --> UC_TRACK
 employee --> UC_VIEW_PUBLIC
 employee --> UC_VIEW_OWN
 employee --> UC_RESUBMIT
+employee --> UC_WITHDRAW
+employee --> UC_VISIBILITY
+employee --> UC_ACHIEVEMENTS
 employee --> UC_REGISTER
 employee --> UC_LOGIN
 employee --> UC_PROFILE
@@ -103,6 +112,8 @@ employee --> UC_FLAG
 ' Faculty Secretary relationships
 fac_sec --> UC_VIEW_PUBLIC
 fac_sec --> UC_QUEUE
+fac_sec --> UC_CLAIM
+fac_sec --> UC_CORRECT
 fac_sec --> UC_REVIEW
 fac_sec --> UC_APPROVE
 fac_sec --> UC_REJECT
@@ -116,6 +127,10 @@ fac_sec --> UC_VERIFY
 ' Dean relationships
 dean --> UC_VIEW_PUBLIC
 dean --> UC_QUEUE
+dean --> UC_CLAIM
+dean --> UC_CORRECT
+dean --> UC_PERIOD
+admin --> UC_PERIOD
 dean --> UC_REVIEW
 dean --> UC_APPROVE
 dean --> UC_REJECT
@@ -128,6 +143,10 @@ dean --> UC_EXPORT
 ' Rector's Secretary relationships
 rec_sec --> UC_VIEW_PUBLIC
 rec_sec --> UC_QUEUE
+rec_sec --> UC_CLAIM
+rec_sec --> UC_CORRECT
+rector --> UC_CLAIM
+rector --> UC_CORRECT
 rec_sec --> UC_REVIEW
 rec_sec --> UC_APPROVE
 rec_sec --> UC_REJECT

@@ -136,6 +136,10 @@ Direction after the design review of 2026-10-04, to be confirmed at the Epic 7 k
   without changing the publishers.
 - Audit rows and award versions stay synchronous, in the transaction of the change.
 
+As built through Epic 4: the mails of decisions, corrections and overdue notices (`DecisionMails`, `CorrectionMails`,
+`OverdueMails`) use after-commit listeners like those of Epics 1 and 2, without the registry; a crash between the
+commit and the send loses that mail. The registry is still to be confirmed at the Epic 7 kickoff.
+
 ---
 
 ## Revision History
@@ -145,6 +149,7 @@ Direction after the design review of 2026-10-04, to be confirmed at the Epic 7 k
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 | 2026-10-05 | Stefan Kostyk | Addendum: Spring events with a publication registry, Kafka for external consumers | Design review of 2026-10-04 |
+| 2026-10-09 | Stefan Kostyk | Epic 4 mails use after-commit listeners without the registry | Documentation sync after Epic 4 |
 
 ---
 

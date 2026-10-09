@@ -2,7 +2,7 @@
 !theme plain
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок (реалізація, V026)
+title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок (реалізація, V035)
 
 ' * обов'язкове (NOT NULL); усі мітки часу — TIMESTAMPTZ
 
@@ -32,6 +32,7 @@ entity "organizations\n(підрозділи)" as organizations {
     parent_org_id : BIGINT <<FK>>
     hierarchy_path : LTREE
     * depth : INTEGER
+    review_working_days : INTEGER
     * is_active : BOOLEAN
     * created_at : TIMESTAMPTZ
     * updated_at : TIMESTAMPTZ
@@ -95,6 +96,7 @@ entity "awards\n(нагороди)" as awards {
     --
     * user_id : BIGINT <<FK>>
     * organization_id : BIGINT <<FK>>
+    recipient_org_id : BIGINT <<FK>>
     category_id : BIGINT <<FK>>
     title : VARCHAR(500)
     title_uk : VARCHAR(500)
@@ -105,6 +107,7 @@ entity "awards\n(нагороди)" as awards {
     external_url : VARCHAR(2048)
     * status : VARCHAR(20)
     * verification_badge : BOOLEAN
+    * visibility : VARCHAR(20)
     impact_score : INTEGER
     * created_at : TIMESTAMPTZ
     * updated_at : TIMESTAMPTZ
@@ -136,6 +139,7 @@ entity "award_versions\n(версії нагород)" as versions {
     actor_id : BIGINT <<FK>>
     * snapshot : JSONB
     changed_fields : TEXT[]
+    comment : TEXT
     * created_at : TIMESTAMPTZ
 }
 
@@ -176,8 +180,11 @@ entity "award_requests\n(запити на нагороди)" as requests {
     deadline : TIMESTAMPTZ
     completed_at : TIMESTAMPTZ
     rejection_reason : TEXT
+    overdue_noticed_at : TIMESTAMPTZ
+    overdue_noticed_level : VARCHAR(30)
     * created_at : TIMESTAMPTZ
     * updated_at : TIMESTAMPTZ
+    * version : BIGINT
 }
 
 entity "review_decisions\n(рішення рецензентів)" as decisions {
@@ -188,7 +195,22 @@ entity "review_decisions\n(рішення рецензентів)" as decisions 
     * decision : VARCHAR(20)
     * level : VARCHAR(30)
     comments : TEXT
+    delegator_id : BIGINT <<FK>>
     * decided_at : TIMESTAMPTZ
+}
+
+entity "review_templates\n(шаблони відповідей)" as templates {
+    * template_id : BIGINT <<PK>>
+    --
+    * decision : VARCHAR(10)
+    * title_uk : VARCHAR(120)
+    title_en : VARCHAR(120)
+    * body_uk : VARCHAR(2000)
+    body_en : VARCHAR(2000)
+    * sort_order : INTEGER
+    * active : BOOLEAN
+    * created_at : TIMESTAMPTZ
+    * updated_at : TIMESTAMPTZ
 }
 }
 
@@ -267,6 +289,7 @@ users ||--o{ devices : "входить з"
 
 users ||--o{ awards : "володіє"
 awards }o--|| organizations : "подано в"
+awards }o--o| organizations : "отримує"
 awards }o--o| categories : "категоризована"
 categories |o--o{ categories : "батьківська"
 awards ||--o{ versions : "версії"
@@ -279,6 +302,7 @@ users ||--o{ requests : "подає"
 users |o--o{ requests : "рецензує"
 requests ||--o{ decisions : "має"
 users ||--o{ decisions : "приймає"
+users |o--o{ decisions : "делегує"
 requests |o--o{ documents : "має"
 
 users ||--o{ consent_records : "надає"
@@ -292,6 +316,7 @@ note bottom of audit_logs
 end note
 
 note bottom of versions
+    Дії містять DECIDED (V029) і CORRECTED (V034).
     Унікальні (award_id, version_number);
     рядки незмінні й видаляються
     разом із нагородою (V023).
@@ -312,7 +337,8 @@ end note
 
 note right of requests
     deadline: кінець періоду розгляду
-    на поточному рівні (V024).
+    на поточному рівні (V024); overdue_noticed_*
+    позначають сповіщення для рівня (V033).
     Індекси: DATA_DICTIONARY_ua.md 3.1
 end note
 

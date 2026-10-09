@@ -2,6 +2,9 @@
 
 > Award Monitoring & Tracking System - Phase 16 Documentation
 
+> **Not used for the defense.** The demo runs on Docker Compose on a single server (ADR-021); the Kubernetes material below is kept as the
+> alternative described in ADR-018 and is neither deployed nor tested.
+
 ## Overview
 
 This document defines the environment promotion flow and gates for deploying changes from development to production.

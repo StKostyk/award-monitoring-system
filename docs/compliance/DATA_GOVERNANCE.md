@@ -27,7 +27,7 @@ This Data Governance Framework establishes comprehensive policies and procedures
 
 | **Classification** | **Definition** | **Examples** | **Access Level** | **Retention** |
 |-------------------|----------------|--------------|------------------|---------------|
-| **Public** | Information approved for public disclosure | Published awards, public profiles, achievement records | Anyone who is registered | Permanent |
+| **Public** | Information approved for public disclosure | Published awards, public profiles, achievement records | Anyone, no sign-in required | Permanent |
 | **Internal** | Information for internal university use | Department structures, workflow states, system configurations | Authenticated users | 7 years |
 | **Confidential** | Sensitive information requiring protection | Personal contact details, consent records, audit logs | Authorized roles only | User-controlled/3-7 years |
 | **Restricted** | Highly sensitive requiring special handling | Scanned certificates, assessment documents, appeals | Specific permissions | User-defined (1-10 years) |

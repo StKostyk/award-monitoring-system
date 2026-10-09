@@ -8,7 +8,7 @@ start
 :Submit the award\n(category, organisation, date set);
 |System|
 :Open a request at the start level\n(levels the submitter alone would review are passed over);
-:Set the deadline and notify the level's reviewers;
+:Set the deadline of the level;
 
 repeat
     |Reviewer|

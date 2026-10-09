@@ -25,7 +25,7 @@
 |-----------------|---------------------------|----------------------|-------------------------------|------------|-------------------|-------------------|------------------|
 | **Submit award requests** | I | R | I | I | I | I | I |
 | **Review & approve award requests** | I | I | A/R | I | I | I | I |
-| **Escalate approval decisions** | I | I | A/R | I | I | I | I |
+| **Escalate approval decisions** (the dean decides on a request the faculty secretary escalated; an overdue request only notifies the next level) | I | I | A/R | I | I | I | I |
 | **Configure approval workflows** | C | C | R | I | A | C | C |
 | **Manage user accounts & roles** | C | I | C | R | C | I | A |
 | **Monitor system performance** | I | I | I | A/R | I | I | C |

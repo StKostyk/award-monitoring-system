@@ -32,7 +32,10 @@ rectangle "Система Моніторингу та Відстеження Н�
         usecase "Відстежити Статус Нагороди" as UC_TRACK
         usecase "Переглянути Публічні Нагороди" as UC_VIEW_PUBLIC
         usecase "Переглянути Власні Нагороди" as UC_VIEW_OWN
-        usecase "Повторно Подати Відхилену Нагороду" as UC_RESUBMIT
+        usecase "Повторно Подати Повернуту Нагороду" as UC_RESUBMIT
+        usecase "Відкликати Непризначену Заявку" as UC_WITHDRAW
+        usecase "Обрати, Хто Бачить Нагороду" as UC_VISIBILITY
+        usecase "Переглянути Досягнення" as UC_ACHIEVEMENTS
     }
     
     ' Варіанти Використання Рецензування та Схвалення
@@ -44,6 +47,9 @@ rectangle "Система Моніторингу та Відстеження Н�
         usecase "Повернути на Виправлення" as UC_RETURN
         usecase "Пакетне Схвалення Нагород" as UC_BATCH
         usecase "Переглянути Чергу Рецензування" as UC_QUEUE
+        usecase "Взяти в Роботу, Звільнити чи Передати Розгляд" as UC_CLAIM
+        usecase "Виправити Нагороду на Розгляді" as UC_CORRECT
+        usecase "Встановити Термін Розгляду Факультету" as UC_PERIOD
     }
     
     ' Варіанти Використання Управління Користувачами
@@ -91,6 +97,9 @@ employee --> UC_TRACK
 employee --> UC_VIEW_PUBLIC
 employee --> UC_VIEW_OWN
 employee --> UC_RESUBMIT
+employee --> UC_WITHDRAW
+employee --> UC_VISIBILITY
+employee --> UC_ACHIEVEMENTS
 employee --> UC_REGISTER
 employee --> UC_LOGIN
 employee --> UC_PROFILE
@@ -103,6 +112,8 @@ employee --> UC_FLAG
 ' Зв'язки Секретаря Факультету
 fac_sec --> UC_VIEW_PUBLIC
 fac_sec --> UC_QUEUE
+fac_sec --> UC_CLAIM
+fac_sec --> UC_CORRECT
 fac_sec --> UC_REVIEW
 fac_sec --> UC_APPROVE
 fac_sec --> UC_REJECT
@@ -116,6 +127,10 @@ fac_sec --> UC_VERIFY
 ' Зв'язки Декана
 dean --> UC_VIEW_PUBLIC
 dean --> UC_QUEUE
+dean --> UC_CLAIM
+dean --> UC_CORRECT
+dean --> UC_PERIOD
+admin --> UC_PERIOD
 dean --> UC_REVIEW
 dean --> UC_APPROVE
 dean --> UC_REJECT
@@ -128,6 +143,10 @@ dean --> UC_EXPORT
 ' Зв'язки Секретаря Ректора
 rec_sec --> UC_VIEW_PUBLIC
 rec_sec --> UC_QUEUE
+rec_sec --> UC_CLAIM
+rec_sec --> UC_CORRECT
+rector --> UC_CLAIM
+rector --> UC_CORRECT
 rec_sec --> UC_REVIEW
 rec_sec --> UC_APPROVE
 rec_sec --> UC_REJECT
