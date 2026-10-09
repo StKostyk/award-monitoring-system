@@ -151,8 +151,10 @@ describe('UserDetailComponent', () => {
       'Працівник · Кафедра алгебри',
     );
     expect(element.querySelector('[data-testid="current-roles"]')?.textContent).toContain(
-      'діє з 2026-09-01',
+      'діє з 01.09.2026',
     );
+    expect(element.textContent).toContain('01.09.2026, 03:00');
+    expect(element.textContent).not.toContain('2026-09-01T00:00:00Z');
     const history = Array.from(
       element.querySelectorAll<HTMLElement>('[data-testid="role-history"] li'),
     );
@@ -160,7 +162,7 @@ describe('UserDetailComponent', () => {
     expect(history).toHaveLength(2);
     expect(history[0].classList).not.toContain('admin__role--ended');
     expect(history[1].classList).toContain('admin__role--ended');
-    expect(history[1].textContent).toContain('діє з 2025-01-01 до 2025-12-31');
+    expect(history[1].textContent).toContain('діє з 01.01.2025 до 31.12.2025');
   });
 
   it('ac2_10_shows_a_not_found_state_for_an_unknown_user_without_an_error_loop', () => {

@@ -13,6 +13,7 @@ import { MatAnchor, MatButton } from '@angular/material/button';
 import {
   MatDatepicker,
   MatDatepickerInput,
+  MatDatepickerIntl,
   MatDatepickerToggle,
 } from '@angular/material/datepicker';
 import { MatDialog } from '@angular/material/dialog';
@@ -29,6 +30,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivToday, yearsBefore } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
+import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 import { ReviewItem, ReviewsService, UserRef } from '../../reviews/reviews.service';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import {
@@ -111,6 +113,7 @@ type Values = Pick<AwardForm, CorrectableField>;
     TranslocoPipe,
     AwardDocumentsComponent,
   ],
+  providers: [{ provide: MatDatepickerIntl, useClass: TranslatedDatepickerIntl }],
   templateUrl: './award-correction.component.html',
   styleUrl: './award-correction.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -156,7 +159,10 @@ export class AwardCorrectionComponent implements OnInit, LeavesUnsavedChanges {
       awardingOrganization: ['', Validators.maxLength(ORGANIZATION_LIMIT)],
       awardDate: [''],
       externalUrl: ['', [Validators.maxLength(URL_LIMIT), Validators.pattern(WEB_LINK)]],
-      reason: ['', [Validators.required, Validators.maxLength(REASON_LIMIT)]],
+      reason: [
+        '',
+        [Validators.required, Validators.pattern(/\S/), Validators.maxLength(REASON_LIMIT)],
+      ],
     },
     { validators: titleInOneLanguage },
   );
@@ -258,6 +264,7 @@ export class AwardCorrectionComponent implements OnInit, LeavesUnsavedChanges {
           this.saving.set(false);
           this.leaving = true;
           void this.router.navigate(['/awards', outcome.award.id], {
+            replaceUrl: true,
             state: { notice: 'awards.correction.done' },
           });
         },
@@ -274,7 +281,10 @@ export class AwardCorrectionComponent implements OnInit, LeavesUnsavedChanges {
       return `awards.errors.${errors['server']}`;
     }
     if (errors['required']) {
-      return 'awards.errors.required';
+      return field === 'reason' ? 'awards.correction.reasonRequired' : 'awards.errors.required';
+    }
+    if (field === 'reason' && errors['pattern']) {
+      return 'awards.correction.reasonRequired';
     }
     if (errors['maxlength']) {
       return 'awards.errors.too-long';

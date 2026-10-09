@@ -6,6 +6,7 @@ import { MatButton } from '@angular/material/button';
 import {
   MatDatepicker,
   MatDatepickerInput,
+  MatDatepickerIntl,
   MatDatepickerToggle,
 } from '@angular/material/datepicker';
 import {
@@ -31,6 +32,7 @@ import { UserSummary, UsersService } from '../../admin/users.service';
 import { OrganizationSummary } from '../../../core/organizations/organizations.service';
 import { Delegation, DelegationsService } from '../delegations.service';
 import { kyivToday } from '../../../shared/date-format';
+import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 
 const DEBOUNCE = 300;
 const MINIMUM_QUERY = 2;
@@ -59,6 +61,7 @@ const REASON_LIMIT = 500;
     MatButton,
     TranslocoPipe,
   ],
+  providers: [{ provide: MatDatepickerIntl, useClass: TranslatedDatepickerIntl }],
   templateUrl: './delegate-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `

@@ -5,8 +5,10 @@ import {
   SEED,
   countMessages,
   freshEmployee,
+  kyivDay,
   pastDay,
   seriousViolations,
+  shownDay,
   signedIn,
   signedInAs,
   submitWithoutDocuments,
@@ -15,7 +17,12 @@ import {
 
 const SUBJECT = 'Рецензент виправив нагороду';
 
-async function submittedBy(browser: Browser, owner: string, title: string): Promise<string> {
+async function submittedBy(
+  browser: Browser,
+  owner: string,
+  title: string,
+  date = pastDay(),
+): Promise<string> {
   const page = await signedInAs(browser, owner, FRESH_PASSWORD);
   await page.getByTestId('nav-awards').click();
   await page.getByTestId('award-add').click();
@@ -26,7 +33,7 @@ async function submittedBy(browser: Browser, owner: string, title: string): Prom
   await page.getByTestId('award-category').click();
   await page.getByTestId('category-option-13').click();
   await page.getByTestId('award-organization').fill('Міністерство освіти і науки України');
-  await page.getByTestId('award-date').fill(pastDay());
+  await page.getByTestId('award-date').fill(date);
   await submitWithoutDocuments(page);
   await expect(page.getByTestId('award-submitted-name')).toContainText(title);
   await page.context().close();
@@ -106,5 +113,37 @@ test.describe('award correction by a reviewer', () => {
     await expect(page.getByTestId('award-history-action').first()).toContainText(
       'Corrected by reviewer:',
     );
+  });
+
+  test('ac1 ac2 ac3 ac4 reason message, day-first dates, translated calendar toggle, Back skips the form', async ({
+    browser,
+  }) => {
+    const owner = await freshEmployee(browser, 'correct-walk');
+    const before = kyivDay(-400);
+    const after = kyivDay(-300);
+    const id = await submittedBy(browser, owner, `Грамота з датою ${uniqueToken()}`, before);
+    const secretary = await signedIn(browser, SEED.secretary);
+    await secretary.goto(`/awards/${id}`);
+    await secretary.getByTestId('review-correct').click();
+    await expect(secretary).toHaveURL(new RegExp(`/awards/${id}/correct$`));
+
+    await expect(secretary.getByRole('button', { name: 'Відкрити календар' })).toBeVisible();
+    await secretary.getByTestId('award-date').fill(shownDay(after));
+    await secretary.getByTestId('correction-save').click();
+    await expect(secretary.getByText('Вкажіть причину виправлення')).toBeVisible();
+
+    await secretary.getByTestId('correction-reason').fill('Дата за сертифікатом');
+    await secretary.getByTestId('correction-save').click();
+    await expect(secretary.getByTestId('correction-change')).toHaveText([
+      new RegExp(`${shownDay(before)}\\s+→\\s+${shownDay(after)}`),
+    ]);
+    await secretary.getByTestId('confirm-accept').click();
+    await expect(secretary).toHaveURL(new RegExp(`/awards/${id}$`));
+    await expect(secretary.getByTestId('award-history-change').first()).toContainText(
+      shownDay(after),
+    );
+
+    await secretary.goBack();
+    await expect(secretary).not.toHaveURL(/\/correct$/);
   });
 });

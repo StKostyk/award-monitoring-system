@@ -5,6 +5,7 @@ import { MatButton } from '@angular/material/button';
 import {
   MatDatepicker,
   MatDatepickerInput,
+  MatDatepickerIntl,
   MatDatepickerToggle,
 } from '@angular/material/datepicker';
 import {
@@ -32,6 +33,7 @@ import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { UserSummary, UsersService } from '../users.service';
 import { kyivToday } from '../../../shared/date-format';
+import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 
 @Component({
   selector: 'app-assign-role-dialog',
@@ -53,6 +55,7 @@ import { kyivToday } from '../../../shared/date-format';
     MatButton,
     TranslocoPipe,
   ],
+  providers: [{ provide: MatDatepickerIntl, useClass: TranslatedDatepickerIntl }],
   templateUrl: './assign-role-dialog.component.html',
   styles: `
     .admin__form {

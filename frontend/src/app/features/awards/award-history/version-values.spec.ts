@@ -22,8 +22,15 @@ describe('version values', () => {
     expect(shownValue('organizationId', 70, names)).toEqual({ text: '#70' });
     expect(shownValue('title', null, names)).toEqual({ text: '—' });
     expect(shownValue('title', '', names)).toEqual({ text: '—' });
-    expect(shownValue('awardDate', '2025-05-01', names)).toEqual({ text: '2025-05-01' });
     expect(shownValue('impactScore', 80, names)).toEqual({ text: '80' });
+  });
+
+  it('shows_the_award_date_day_first_in_the_interface_language', () => {
+    expect(shownValue('awardDate', '2025-05-01', { ...names, language: 'uk' })).toEqual({
+      text: '01.05.2025',
+    });
+    expect(shownValue('awardDate', '2025-05-01', names)).toEqual({ text: '01/05/2025' });
+    expect(shownValue('awardDate', '2025-5-1', names)).toEqual({ text: '2025-5-1' });
   });
 
   it('ac2_8_translates_status_and_badge', () => {

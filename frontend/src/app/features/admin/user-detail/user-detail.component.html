@@ -34,9 +34,11 @@
         <dt>{{ 'admin.detail.status' | transloco }}</dt>
         <dd>{{ 'admin.status.' + user.status | transloco }}</dd>
         <dt>{{ 'admin.detail.created' | transloco }}</dt>
-        <dd>{{ user.createdAt }}</dd>
+        <dd>{{ moment(user.createdAt) }}</dd>
         <dt>{{ 'admin.detail.lastLogin' | transloco }}</dt>
-        <dd>{{ user.lastLoginAt ?? ('admin.detail.never' | transloco) }}</dd>
+        <dd>
+          {{ user.lastLoginAt ? moment(user.lastLoginAt) : ('admin.detail.never' | transloco) }}
+        </dd>
       </dl>
     </mat-card-content>
   </mat-card>
@@ -72,8 +74,8 @@
                 {{
                   assignment.validTo
                     ? ('admin.detail.validityUntil'
-                      | transloco: { from: assignment.validFrom, to: assignment.validTo })
-                    : ('admin.detail.validity' | transloco: { from: assignment.validFrom })
+                      | transloco: { from: day(assignment.validFrom), to: day(assignment.validTo) })
+                    : ('admin.detail.validity' | transloco: { from: day(assignment.validFrom) })
                 }}
               </span>
               @if (canRevoke(assignment)) {
@@ -116,8 +118,8 @@
                 {{
                   assignment.validTo
                     ? ('admin.detail.validityUntil'
-                      | transloco: { from: assignment.validFrom, to: assignment.validTo })
-                    : ('admin.detail.validity' | transloco: { from: assignment.validFrom })
+                      | transloco: { from: day(assignment.validFrom), to: day(assignment.validTo) })
+                    : ('admin.detail.validity' | transloco: { from: day(assignment.validFrom) })
                 }}
               </span>
               @if (ended(assignment)) {

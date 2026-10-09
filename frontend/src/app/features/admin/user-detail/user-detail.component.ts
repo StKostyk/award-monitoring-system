@@ -20,7 +20,7 @@ import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
 import { UserDetail, UsersService } from '../users.service';
-import { kyivToday } from '../../../shared/date-format';
+import { kyivDate, kyivDateTime, kyivToday } from '../../../shared/date-format';
 
 @Component({
   selector: 'app-user-detail',
@@ -93,6 +93,14 @@ export class UserDetailComponent implements OnInit {
 
   ended(assignment: RoleAssignment): boolean {
     return !!assignment.validTo && assignment.validTo < kyivToday();
+  }
+
+  day(value: string): string {
+    return kyivDate(value, this.language.current());
+  }
+
+  moment(value: string): string {
+    return kyivDateTime(value, this.language.current());
   }
 
   name(organization: OrganizationRef): string {

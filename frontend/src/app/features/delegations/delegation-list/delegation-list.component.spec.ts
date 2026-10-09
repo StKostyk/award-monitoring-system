@@ -139,7 +139,7 @@ describe('DelegationListComponent', () => {
     expect(givenRow?.textContent).toContain('Декан');
     expect(givenRow?.textContent).toContain('Факультет математики');
     expect(givenRow?.textContent).toContain('Секретар Аліна');
-    expect(givenRow?.textContent).toContain('2026-09-24 — 2026-10-08');
+    expect(givenRow?.textContent).toContain('24.09.2026 — 08.10.2026');
     expect(givenRow?.querySelector('[data-testid="given-state"]')?.textContent).toContain(
       'Активне',
     );

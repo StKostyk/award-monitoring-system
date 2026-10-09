@@ -22,6 +22,19 @@
       "next": "Next page",
       "last": "Last page",
       "range": "{{from}}–{{to}} of {{total}}"
+    },
+    "datepicker": {
+      "calendar": "Calendar",
+      "open": "Open calendar",
+      "close": "Close calendar",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "prevYear": "Previous year",
+      "nextYear": "Next year",
+      "prevYears": "Previous 24 years",
+      "nextYears": "Next 24 years",
+      "chooseDate": "Choose date",
+      "chooseYear": "Choose month and year"
     }
   },
   "home": {
@@ -117,6 +130,7 @@
       "title": "Correct the award",
       "intro": "Correct mistakes in the award details. The recipient and documents stay as the owner entered them; the owner gets an e-mail with the changes and the reason.",
       "reason": "Reason for the correction",
+      "reasonRequired": "Enter the reason for the correction",
       "save": "Save",
       "unavailable": "This award cannot be corrected now: it is not under review or not available to you.",
       "heldBy": "{{name}} is reviewing this award; only that reviewer can correct it.",
