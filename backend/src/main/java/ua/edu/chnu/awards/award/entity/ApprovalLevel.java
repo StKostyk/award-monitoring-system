@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.award.entity;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import ua.edu.chnu.awards.user.entity.RoleType;
@@ -37,6 +38,15 @@ public enum ApprovalLevel {
      */
     public static Optional<ApprovalLevel> of(RoleType role) {
         return Arrays.stream(values()).filter(level -> level.role == role).findFirst();
+    }
+
+    /**
+     * The levels under this one.
+     *
+     * @return the lower levels in climbing order, empty for the first level
+     */
+    public List<ApprovalLevel> below() {
+        return Arrays.stream(values()).filter(level -> covers(level) && level != this).toList();
     }
 
     /**

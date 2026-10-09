@@ -127,8 +127,7 @@ public class ReviewAssignment {
         guards.requirePresent(requestVersion);
         guards.requireHeldByCaller(request);
         guards.requireVersion(request, requestVersion);
-        List<ApprovalLevel> below = Arrays.stream(ApprovalLevel.values())
-            .filter(level -> level.compareTo(request.getCurrentLevel()) < 0).toList();
+        List<ApprovalLevel> below = request.getCurrentLevel().below();
         boolean decidedBelow = !below.isEmpty() && decisions.existsByRequestIdAndLevelIn(request.getId(), below);
         request.setCurrentReviewer(null);
         request.setStatus(decidedBelow ? RequestStatus.ESCALATED : RequestStatus.SUBMITTED);
@@ -201,13 +200,13 @@ public class ReviewAssignment {
 
     private boolean mayTakeOver(AwardRequest request, User holder) {
         Optional<ApprovalLevel> holderLevel = Arrays.stream(ApprovalLevel.values())
-            .filter(level -> level.compareTo(request.getCurrentLevel()) >= 0)
+            .filter(level -> level.covers(request.getCurrentLevel()))
             .filter(level -> availability.isEligible(holder.getId(), level,
                 request.getAward().getOrganization().getId(), request.getAward().getOwner().getId(),
                 request.getSubmitter().getId()))
             .reduce((lower, higher) -> higher);
         return holderLevel.isEmpty() || rule.highestLevel(request)
-            .filter(level -> level.compareTo(holderLevel.get()) > 0).isPresent();
+            .filter(level -> !holderLevel.get().covers(level)).isPresent();
     }
 
     private static Map<String, Object> details(AwardRequest request) {

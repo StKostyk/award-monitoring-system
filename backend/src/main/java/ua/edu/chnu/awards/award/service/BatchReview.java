@@ -70,7 +70,8 @@ public class BatchReview {
         } catch (AwardNotFoundException missing) {
             return BatchItemResult.failed(awardId, "not-found", "The award was not found or is not reviewable");
         } catch (OptimisticLockingFailureException changed) {
-            return BatchItemResult.failed(awardId, "request-stale", "The request changed meanwhile");
+            return BatchItemResult.failed(awardId, ReviewProblemConstants.REQUEST_STALE,
+                "The request changed meanwhile");
         } catch (DataAccessException failure) {
             log.warn("Batch decision on award {} failed in the database: {}", awardId, failure.getMessage());
             return BatchItemResult.failed(awardId, "try-again", "The award could not be decided now; try again");

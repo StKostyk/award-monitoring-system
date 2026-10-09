@@ -76,7 +76,7 @@ public class AwardWithdrawal {
             throw notPending(award, request);
         }
         if (request.getStatus() == RequestStatus.IN_REVIEW || request.getCurrentReviewer() != null) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "request-claimed",
+            throw new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.REQUEST_CLAIMED,
                 "A reviewer is already reviewing the award, so it can no longer be withdrawn", Map.of());
         }
         if (!WITHDRAWABLE.contains(request.getStatus())) {

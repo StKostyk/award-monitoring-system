@@ -35,7 +35,7 @@ public class Transitions {
                 : new Step(ReviewDecisionType.APPROVED, RequestStatus.ESCALATED, AwardStatus.PENDING, true);
             case ESCALATE -> {
                 if (current == ApprovalLevel.RECTOR) {
-                    throw new ApiProblemException(HttpStatus.CONFLICT, "no-higher-level",
+                    throw new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.NO_HIGHER_LEVEL,
                         "The rector is the highest level", Map.of("level", current.name()));
                 }
                 yield new Step(ReviewDecisionType.ESCALATED, RequestStatus.ESCALATED, AwardStatus.PENDING, true);

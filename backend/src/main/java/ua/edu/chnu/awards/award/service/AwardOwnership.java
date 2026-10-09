@@ -131,8 +131,8 @@ public class AwardOwnership {
                 List.of(new FieldViolation("version", "required", "The version last read is required")));
         }
         if (!version.equals(award.getVersion())) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "award-stale", "The award was changed in the meantime",
-                Map.of("currentVersion", award.getVersion()));
+            throw new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.AWARD_STALE,
+                "The award was changed in the meantime", Map.of("currentVersion", award.getVersion()));
         }
     }
 }
