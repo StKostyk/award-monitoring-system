@@ -150,6 +150,12 @@
       >
         {{ 'app.language' | transloco }}
       </button>
+      @if (!auth.isAuthenticated()) {
+        <button mat-button type="button" (click)="login()" data-testid="login">
+          <mat-icon>login</mat-icon>
+          {{ 'app.login' | transloco }}
+        </button>
+      }
       @if (auth.isAuthenticated()) {
         <button
           mat-button

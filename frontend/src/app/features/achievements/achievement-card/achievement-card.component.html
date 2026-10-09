@@ -4,9 +4,19 @@
   <p class="achievement__recipient" data-testid="achievement-recipient">
     @if (item.recipient.type === 'PERSON') {
       <span class="achievement__person">{{ item.recipient.personName }}</span>
-      <span data-testid="achievement-unit">{{ unit() }}</span>
+      <a
+        class="achievement__unit"
+        [routerLink]="[unitPages(), item.recipient.unit.id, 'achievements']"
+        data-testid="achievement-unit"
+        >{{ unit() }}</a
+      >
     } @else {
-      <span class="achievement__person" data-testid="achievement-unit">{{ unit() }}</span>
+      <a
+        class="achievement__person achievement__unit"
+        [routerLink]="[unitPages(), item.recipient.unit.id, 'achievements']"
+        data-testid="achievement-unit"
+        >{{ unit() }}</a
+      >
       <span>{{ 'achievements.unitAward' | transloco }}</span>
     }
   </p>

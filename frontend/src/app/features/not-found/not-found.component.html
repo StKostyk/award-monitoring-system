@@ -1,0 +1,13 @@
+<mat-card class="not-found__card" data-testid="not-found-card">
+  <mat-card-header>
+    <mat-card-title>
+      <h1 class="not-found__title">{{ 'notFound.title' | transloco }}</h1>
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <p>{{ 'notFound.text' | transloco }}</p>
+    <a mat-flat-button routerLink="/public/achievements" data-testid="not-found-public">
+      {{ 'notFound.publicAchievements' | transloco }}
+    </a>
+  </mat-card-content>
+</mat-card>

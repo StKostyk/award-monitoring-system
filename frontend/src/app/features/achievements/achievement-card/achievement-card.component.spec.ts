@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -48,7 +49,7 @@ const translations = {
 describe('AchievementCardComponent', () => {
   let language: string;
 
-  async function render(achievement: Achievement): Promise<HTMLElement> {
+  async function render(achievement: Achievement, unitPages?: string): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
       imports: [
         AchievementCardComponent,
@@ -57,11 +58,17 @@ describe('AchievementCardComponent', () => {
           translocoConfig: { availableLangs: ['uk', 'en'], defaultLang: 'uk' },
         }),
       ],
-      providers: [{ provide: LanguageService, useValue: { current: () => language } }],
+      providers: [
+        provideRouter([]),
+        { provide: LanguageService, useValue: { current: () => language } },
+      ],
     }).compileComponents();
     const fixture: ComponentFixture<AchievementCardComponent> =
       TestBed.createComponent(AchievementCardComponent);
     fixture.componentRef.setInput('achievement', achievement);
+    if (unitPages) {
+      fixture.componentRef.setInput('unitPages', unitPages);
+    }
     fixture.detectChanges();
     return fixture.nativeElement;
   }
@@ -108,5 +115,21 @@ describe('AchievementCardComponent', () => {
     expect(text(element, 'achievement-recipient')).toContain('Нагорода підрозділу');
     expect(element.querySelector('[data-testid="achievement-verified"]')).toBeNull();
     expect(element.querySelector('[data-testid="achievement-link"]')).toBeNull();
+  });
+
+  it('ac2_6_the_unit_name_leads_to_the_unit_page', async () => {
+    const element = await render(personal);
+
+    expect(element.querySelector('[data-testid="achievement-unit"]')?.getAttribute('href')).toBe(
+      '/units/64/achievements',
+    );
+  });
+
+  it('ac2_5_on_a_public_page_the_unit_name_leads_to_the_public_unit_page', async () => {
+    const element = await render(unitAward, '/public/units');
+
+    expect(element.querySelector('[data-testid="achievement-unit"]')?.getAttribute('href')).toBe(
+      '/public/units/64/achievements',
+    );
   });
 });

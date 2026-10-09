@@ -1,22 +1,40 @@
 @let filters = query().filters;
-<h1 class="achievements__title">{{ 'achievements.title' | transloco }}</h1>
+@if (fixedUnit(); as unit) {
+  <app-unit-header [unitId]="unit" [scope]="scope" [fallback]="unitFallback()" />
+} @else {
+  <h1 class="achievements__title" data-testid="achievements-title">
+    {{ (scope === 'public' ? 'achievements.publicTitle' : 'achievements.title') | transloco }}
+  </h1>
+}
+@if (counterpart(); as link) {
+  <a
+    class="achievements__counterpart"
+    [routerLink]="link.path"
+    [queryParams]="link.queryParams"
+    data-testid="achievements-counterpart"
+  >
+    {{ 'achievements.' + link.label | transloco }}
+  </a>
+}
 
 <div class="achievements__filters">
-  <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'achievements.filters.unit' | transloco }}</mat-label>
-    <mat-select
-      [value]="filters.unit"
-      (selectionChange)="filter({ unit: $event.value })"
-      data-testid="filter-unit"
-    >
-      <mat-option [value]="null">{{ 'achievements.filters.all' | transloco }}</mat-option>
-      @for (option of units(); track option.unit.id) {
-        <mat-option [value]="option.unit.id" [class.achievements__child]="option.depth > 0">
-          {{ unitName(option) }}
-        </mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
+  @if (fixedUnit() === null) {
+    <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'achievements.filters.unit' | transloco }}</mat-label>
+      <mat-select
+        [value]="filters.unit"
+        (selectionChange)="filter({ unit: $event.value })"
+        data-testid="filter-unit"
+      >
+        <mat-option [value]="null">{{ 'achievements.filters.all' | transloco }}</mat-option>
+        @for (option of units(); track option.unit.id) {
+          <mat-option [value]="option.unit.id" [class.achievements__child]="option.depth > 0">
+            {{ unitName(option) }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
   <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
     <mat-label>{{ 'achievements.filters.year' | transloco }}</mat-label>
     <mat-select
@@ -84,7 +102,7 @@
 <ul class="achievements__list" data-testid="achievement-list">
   @for (achievement of achievements(); track achievement.awardId) {
     <li>
-      <app-achievement-card [achievement]="achievement" />
+      <app-achievement-card [achievement]="achievement" [unitPages]="unitPages" />
     </li>
   } @empty {
     @if (!loading() && !problem()) {

@@ -15,9 +15,10 @@
 3. [Document Management](#document-management)
 4. [Tracking Award Status](#tracking-award-status)
 5. [Reviewing Awards](#reviewing-awards)
-6. [Managing Your Profile](#managing-your-profile)
-7. [Notifications](#notifications)
-8. [FAQ](#faq)
+6. [Achievements and Visibility](#achievements-and-visibility)
+7. [Managing Your Profile](#managing-your-profile)
+8. [Notifications](#notifications)
+9. [FAQ](#faq)
 
 ---
 
@@ -270,6 +271,36 @@ run again on a correction.
 
 ---
 
+## Achievements and Visibility
+
+### Who sees your approved award
+
+An approved award is seen by you and the reviewers whose scope covers it. On its page, the **Visibility** section
+offers three choices:
+
+| Choice | Who sees the award |
+|--------|--------------------|
+| «Лише мені та рецензентам» (default) | You and the reviewers |
+| «Показувати колегам» | Every signed-in user, on the achievements page |
+| «Показувати публічно» | Anyone, also without an account, on the public achievements page |
+
+Before an award goes public, a dialog lists what is published (your name, department, title, description, category,
+awarding organisation, date, link and the verification mark) and what never is (your e-mail, documents, reviewers,
+comments). You can switch back at any time; the award leaves the pages at once. Your awards list marks shared
+awards with «Колегам» or «Публічно». A unit award is visible to everyone once approved, with no choice.
+
+### The achievements pages
+
+- **Досягнення** in the navigation lists the awards shared with colleagues, newest first, with filters for unit,
+  year, level and recipient. The filters stay in the address, so a filtered page can be bookmarked or sent.
+- A unit name on a card opens that unit's page (`/units/<id>/achievements`): a department page links to its
+  faculty, a faculty page to its departments, and the faculty page includes its departments' awards.
+- **Публічна сторінка** opens the same list as the public sees it (`/public/achievements`); on a public page,
+  **Переглянути як співробітник** leads back. Public pages need no sign-in and offer **Увійти** and the language
+  switch.
+
+---
+
 ## Managing Your Profile
 
 ### Updating Personal Information
@@ -326,7 +357,8 @@ Customize how you receive updates:
 ### General
 
 **Q: Who can see my submitted awards?**  
-A: Awards in "Published" status are visible publicly. Draft and pending awards are visible only to you and reviewers.
+A: You and the reviewers whose scope covers the award. Once it is approved, you decide whether colleagues or the
+public see it too (see [Achievements and Visibility](#achievements-and-visibility)).
 
 **Q: Can I edit an award after submission?**  
 A: No, submitted awards cannot be edited. If changes are needed, a reviewer will return it for revision.

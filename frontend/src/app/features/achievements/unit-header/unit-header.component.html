@@ -1,0 +1,30 @@
+<header class="unit-header" data-testid="unit-header">
+  @if (faculty(); as faculty) {
+    <a
+      class="unit-header__faculty"
+      [routerLink]="[base(), faculty.id, 'achievements']"
+      data-testid="unit-faculty"
+    >
+      {{ faculty.name }}
+    </a>
+  }
+  <h1 class="unit-header__name" data-testid="unit-name">
+    {{ name() ?? ('achievements.title' | transloco) }}
+  </h1>
+  @if (departments().length > 0) {
+    <nav
+      class="unit-header__departments"
+      [attr.aria-label]="'achievements.departments' | transloco"
+    >
+      <ul>
+        @for (department of departments(); track department.id) {
+          <li>
+            <a [routerLink]="[base(), department.id, 'achievements']" data-testid="unit-department">
+              {{ department.name }}
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+  }
+</header>

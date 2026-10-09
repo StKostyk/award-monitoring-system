@@ -142,3 +142,115 @@ test.describe('colleague visibility and the achievements page', () => {
     await page.keyboard.press('Escape');
   });
 });
+
+/** A public and a colleagues-only award of a fresh owner, both approved today. */
+async function publicAndShared(
+  browser: Browser,
+  name: string,
+): Promise<{ published: string; shared: string; unit: string }> {
+  const owner = await freshEmployee(browser, name);
+  const published = `Публічна грамота ${uniqueToken()}`;
+  const shared = `Грамота для колег ${uniqueToken()}`;
+  const publishedId = await approvedBy(browser, owner, published);
+  const sharedId = await approvedBy(browser, owner, shared);
+  sql(`update awards set visibility = 'PUBLIC' where award_id = ${publishedId}`);
+  sql(`update awards set visibility = 'UNIVERSITY' where award_id = ${sharedId}`);
+  const unit = sql(`select organization_id from awards where award_id = ${publishedId}`).trim();
+  return { published, shared, unit };
+}
+
+/** A page without a session that records every console error. */
+async function anonymous(browser: Browser): Promise<{ page: Page; errors: string[] }> {
+  const page = await (await browser.newContext()).newPage();
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      errors.push(message.text());
+    }
+  });
+  return { page, errors };
+}
+
+test.describe('unit achievement pages and public achievements', () => {
+  test('ac2_1 ac2_4 ac2_5 ac2_8 a visitor without an account browses the public pages', async ({
+    browser,
+  }) => {
+    const { published, shared, unit } = await publicAndShared(browser, 'public');
+    const { page, errors } = await anonymous(browser);
+
+    await page.goto('/public/achievements');
+    await expect(
+      page.getByRole('heading', { name: 'Досягнення університету', level: 1 }),
+    ).toBeVisible();
+    await expect(card(page, published)).toBeVisible();
+    await expect(card(page, shared)).toHaveCount(0);
+    await expect(page.getByTestId('login')).toBeVisible();
+    await expect(page.getByTestId('language-toggle')).toBeVisible();
+    await expect(page.getByTestId('nav-achievements')).toHaveCount(0);
+    await expect(page.getByTestId('achievements-counterpart')).toHaveCount(0);
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await card(page, published).getByTestId('achievement-unit').click();
+    await expect(page).toHaveURL(new RegExp(`/public/units/${unit}/achievements$`));
+    await expect(page.getByTestId('unit-name')).not.toBeEmpty();
+    await expect(card(page, published)).toBeVisible();
+    await expect(page.getByTestId('filter-unit')).toHaveCount(0);
+
+    await page.getByTestId('unit-faculty').click();
+    await expect(page).toHaveURL(/\/public\/units\/9\/achievements$/);
+    await expect(page.getByTestId('unit-department').first()).toBeVisible();
+    await expect(card(page, published)).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
+    expect(errors).toEqual([]);
+
+    await page.goto('/public/units/1/achievements');
+    await expect(page.getByTestId('not-found-card')).toBeVisible();
+    await expect(page).toHaveURL(/\/public\/units\/1\/achievements$/);
+  });
+
+  test('ac2_6 staff and public pages lead to each other with the same filters', async ({
+    browser,
+  }) => {
+    const { published, shared, unit } = await publicAndShared(browser, 'links');
+    const year = new Date().getFullYear();
+    const page = await signedIn(browser, SEED.employee);
+
+    await page.goto(`/achievements?year=${year}`);
+    await card(page, shared).getByTestId('achievement-unit').click();
+    await expect(page).toHaveURL(new RegExp(`/units/${unit}/achievements`));
+    await expect(card(page, shared)).toBeVisible();
+    await expect(card(page, published)).toBeVisible();
+
+    await page.goto(`/achievements?year=${year}`);
+    await page.getByTestId('achievements-counterpart').click();
+    await expect(page).toHaveURL(new RegExp(`/public/achievements\\?year=${year}$`));
+    await expect(card(page, published)).toBeVisible();
+    await expect(card(page, shared)).toHaveCount(0);
+
+    await expect(page.getByTestId('achievements-counterpart')).toHaveText(
+      'Переглянути як співробітник',
+    );
+    await page.getByTestId('achievements-counterpart').click();
+    await expect(page).toHaveURL(new RegExp(`/achievements\\?year=${year}$`));
+    expect(page.url()).not.toContain('/public/');
+    await expect(card(page, shared)).toBeVisible();
+  });
+
+  test('ac2_8 a public unit page works in English at 360 px', async ({ browser }) => {
+    const { published } = await publicAndShared(browser, 'public-en');
+    const { page, errors } = await anonymous(browser);
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.goto('/public/achievements');
+    await page.getByTestId('language-toggle').click();
+
+    await page.goto('/public/units/9/achievements');
+    await expect(page.getByTestId('login')).toHaveText(/Sign in/);
+    await expect(page.getByTestId('unit-name')).not.toHaveText(/[а-яіїєґ]/i);
+    await expect(card(page, published).getByTestId('achievement-title')).toHaveText(published);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360,
+    );
+    expect(await seriousViolations(page)).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+});
