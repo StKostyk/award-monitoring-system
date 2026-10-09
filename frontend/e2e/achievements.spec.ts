@@ -99,8 +99,17 @@ test.describe('colleague visibility and the achievements page', () => {
     await openAward(page, id);
     await page.getByRole('radio', { name: 'Лише мені та рецензентам' }).check();
     await expect(page.getByTestId('visibility-notice')).toHaveText('Видимість збережено.');
+    const listed = colleague.waitForResponse(
+      (response) => response.url().includes('/api/v1/achievements') && response.ok(),
+    );
     await colleague.goto('/achievements');
-    await expect(colleague.getByTestId('achievement-card').first()).toBeVisible();
+    await listed;
+    await expect(
+      colleague
+        .getByTestId('achievement-card')
+        .or(colleague.getByTestId('achievements-empty'))
+        .first(),
+    ).toBeVisible();
     await expect(card(colleague, title)).toHaveCount(0);
   });
 
