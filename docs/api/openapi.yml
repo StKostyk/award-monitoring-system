@@ -55,6 +55,8 @@ tags:
     description: Document upload and management
   - name: Reports
     description: Analytics and reporting endpoints
+  - name: Achievements
+    description: Approved awards shared with colleagues or published (Feature 4.3)
 
 paths:
   # ============== Authentication ==============
@@ -2093,6 +2095,153 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+  # ============== Achievements ==============
+  /awards/{id}/visibility:
+    put:
+      tags: [Achievements]
+      summary: Choose who sees an own approved personal award (planned, 4.3.1)
+      description: >
+        The owner of an `APPROVED` personal award chooses `PRIVATE` (owner and scoped readers), `UNIVERSITY`
+        (also every signed-in colleague on the achievements page) or `PUBLIC` (also the public page), with
+        `award:update:own`. An effective change writes an `AWARD_VISIBILITY_CHANGED` audit row with the old and
+        new value; the same value again changes nothing. The award `version` and its version history are not
+        touched. Unit awards have no choice: they are shared once approved. Story 4.3.1.
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: updateAwardVisibility
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AwardVisibilityUpdate'
+      responses:
+        '200':
+          description: The award with its visibility
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Not the caller's award (scoped readers included), or no such award
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: >
+            `urn:awards:problem:visibility-fixed`: the award is not `APPROVED` (with `awardStatus`) or is a unit
+            award (without `awardStatus`); nothing is changed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: "`urn:awards:problem:validation-failed`: `visibility` missing or unknown"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /achievements:
+    get:
+      tags: [Achievements]
+      summary: Shared achievements for signed-in users (planned, 4.3.1)
+      description: >
+        Approved personal awards with visibility `UNIVERSITY` or `PUBLIC` whose owner's account is not `DELETED`,
+        and approved unit awards; newest award date first, then highest award id. Any signed-in user. A personal
+        award belongs to the unit of its organisation (the owner's department at submission); a faculty includes
+        its departments. Answered with `Cache-Control: no-store`. Story 4.3.1.
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listAchievements
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/AchievementUnitParam'
+        - $ref: '#/components/parameters/AchievementYearParam'
+        - $ref: '#/components/parameters/AchievementLevelParam'
+        - $ref: '#/components/parameters/AchievementRecipientParam'
+      responses:
+        '200':
+          description: A page of achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementPage'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter`: a malformed filter"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: "`unit` is not an existing faculty or department"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /public/achievements:
+    get:
+      tags: [Achievements]
+      summary: Public achievements without sign-in (planned, 4.3.2)
+      description: >
+        As `GET /achievements`, limited to personal awards with visibility `PUBLIC` and approved unit awards.
+        Anonymous; a bearer token, valid or not, is ignored. At most `app.protection.public-requests-per-minute`
+        (default 120) requests per client address and minute. Answered with `Cache-Control: no-store`.
+        Story 4.3.2.
+      x-status: planned
+      security: []
+      operationId: listPublicAchievements
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/AchievementUnitParam'
+        - $ref: '#/components/parameters/AchievementYearParam'
+        - $ref: '#/components/parameters/AchievementLevelParam'
+        - $ref: '#/components/parameters/AchievementRecipientParam'
+      responses:
+        '200':
+          description: A page of public achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementPage'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter`: a malformed filter"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: "`unit` is not an existing faculty or department"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '429':
+          description: "`urn:awards:problem:too-many-requests` with a `Retry-After` header"
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until the next request is accepted
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
   # ============== Reports ==============
   /reports/awards/summary:
     get:
@@ -2195,6 +2344,38 @@ components:
         default: 20
         minimum: 1
         maximum: 100
+
+    AchievementUnitParam:
+      name: unit
+      in: query
+      description: A faculty (its departments included) or a department
+      schema:
+        type: integer
+        format: int64
+
+    AchievementYearParam:
+      name: year
+      in: query
+      description: Calendar year of the award date
+      schema:
+        type: integer
+        minimum: 1950
+        maximum: 2100
+
+    AchievementLevelParam:
+      name: level
+      in: query
+      description: Recognition level of the award's category
+      schema:
+        $ref: '#/components/schemas/RecognitionLevel'
+
+    AchievementRecipientParam:
+      name: recipient
+      in: query
+      description: Personal awards or unit awards only
+      schema:
+        type: string
+        enum: [PERSON, UNIT]
 
     SortParam:
       name: sort
@@ -3183,6 +3364,78 @@ components:
           type: integer
           format: int64
           description: Version of the award last read
+
+    AwardVisibility:
+      type: string
+      description: >
+        Who sees an approved personal award beyond its owner and scoped readers: nobody (`PRIVATE`), every
+        signed-in colleague (`UNIVERSITY`), or also the public page (`PUBLIC`) (V035, 4.3.1)
+      enum: [PRIVATE, UNIVERSITY, PUBLIC]
+
+    AwardVisibilityUpdate:
+      type: object
+      required: [visibility]
+      properties:
+        visibility:
+          $ref: '#/components/schemas/AwardVisibility'
+
+    Achievement:
+      type: object
+      description: >
+        The shared projection of an approved award (4.3.1); never carries an e-mail, a person id, documents, the
+        request, reviewers, comments or the impact score
+      properties:
+        awardId:
+          type: integer
+          format: int64
+        title:
+          type: [string, 'null']
+        titleUk:
+          type: [string, 'null']
+        description:
+          type: [string, 'null']
+        descriptionUk:
+          type: [string, 'null']
+        category:
+          $ref: '#/components/schemas/AwardCategoryRef'
+        awardingOrganization:
+          type: string
+        awardDate:
+          type: string
+          format: date
+        externalUrl:
+          type: [string, 'null']
+          format: uri
+        verified:
+          type: boolean
+          description: The reviewer approved with «Документи перевірено»
+        recipient:
+          $ref: '#/components/schemas/AchievementRecipient'
+
+    AchievementRecipient:
+      type: object
+      required: [type, unit]
+      properties:
+        type:
+          type: string
+          enum: [PERSON, UNIT]
+        personName:
+          type: [string, 'null']
+          description: First and last name of the owner of a personal award; null for a unit award
+        unit:
+          allOf:
+            - $ref: '#/components/schemas/UnitRef'
+          description: The recipient unit, or the person's department at submission
+
+    AchievementPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Achievement'
 
     AwardPage:
       allOf:
