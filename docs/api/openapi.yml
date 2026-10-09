@@ -2193,13 +2193,13 @@ paths:
   /public/achievements:
     get:
       tags: [Achievements]
-      summary: Public achievements without sign-in (planned, 4.3.2)
+      summary: Public achievements without sign-in
       description: >
         As `GET /achievements`, limited to personal awards with visibility `PUBLIC` and approved unit awards.
-        Anonymous; a bearer token, valid or not, is ignored. At most `app.protection.public-requests-per-minute`
-        (default 120) requests per client address and minute. Answered with `Cache-Control: no-store`.
-        Story 4.3.2.
-      x-status: planned
+        Anonymous; a bearer token, valid or not, is ignored. At most
+        `app.auth.protection.public-requests-per-minute` (default 120, `PUBLIC_RATE_LIMIT_PER_MINUTE`) requests per
+        client address and minute, counted apart from the authentication endpoints. Answered with
+        `Cache-Control: no-store`. Story 4.3.2.
       security: []
       operationId: listPublicAchievements
       parameters:

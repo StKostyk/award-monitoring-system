@@ -49,7 +49,7 @@ class LoginAttemptServiceTest {
     private final AuditService audit = mock(AuditService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final ProtectionProperties properties = new ProtectionProperties(5, Duration.ofMinutes(15),
-        Duration.ofMinutes(30), 20);
+        Duration.ofMinutes(30), 20, 120);
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final LoginAttemptService service = new LoginAttemptService(redis, properties, userRepository,
         userRoleRepository, tokens, audit, events, Clock.fixed(NOW, ZoneOffset.UTC));

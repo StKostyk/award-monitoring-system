@@ -36,6 +36,7 @@ public class Achievements {
 
     private static final Set<AwardVisibility> COLLEAGUES = EnumSet.of(AwardVisibility.UNIVERSITY,
         AwardVisibility.PUBLIC);
+    private static final Set<AwardVisibility> EVERYONE = EnumSet.of(AwardVisibility.PUBLIC);
     private static final int FIRST_YEAR = 1950;
     private static final int LAST_YEAR = 2100;
 
@@ -55,10 +56,29 @@ public class Achievements {
      */
     @Transactional(readOnly = true)
     public Page<Achievement> shared(AchievementQuery query, int page, int size) {
+        return page(COLLEAGUES, query, page, size);
+    }
+
+    /**
+     * A page of the achievements anyone may see: public personal awards and unit awards, newest award date first.
+     *
+     * @param query filters
+     * @param page  0-based page
+     * @param size  page size, capped at 100
+     * @return the page
+     * @throws UnitNotFoundException when the unit is not a faculty or department
+     * @throws ApiProblemException   400 {@code invalid-parameter} for a year outside 1950..2100
+     */
+    @Transactional(readOnly = true)
+    public Page<Achievement> published(AchievementQuery query, int page, int size) {
+        return page(EVERYONE, query, page, size);
+    }
+
+    private Page<Achievement> page(Set<AwardVisibility> visibilities, AchievementQuery query, int page, int size) {
         requireValid(query);
         PageRequest pageable = PageResponse.request(page, size,
             Sort.by(Sort.Order.desc("awardDate"), Sort.Order.desc("id")));
-        return awards.findAll(specifications.shared(COLLEAGUES, query), pageable).map(Achievements::of);
+        return awards.findAll(specifications.shared(visibilities, query), pageable).map(Achievements::of);
     }
 
     private void requireValid(AchievementQuery query) {
