@@ -61,8 +61,8 @@ public class ReviewGuards {
      */
     public void requireOpen(AwardRequest request) {
         if (request.isFinal()) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "request-closed", "The request was already decided",
-                Map.of("requestStatus", request.getStatus().name()));
+            throw new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.REQUEST_CLOSED,
+                "The request was already decided", Map.of("requestStatus", request.getStatus().name()));
         }
     }
 
@@ -76,6 +76,21 @@ public class ReviewGuards {
     public User requireHeldByCaller(AwardRequest request) {
         User holder = request.getCurrentReviewer();
         if (holder == null || holder.getId() != access.callerId()) {
+            throw claimed(holder);
+        }
+        return holder;
+    }
+
+    /**
+     * Refuses a request a colleague holds; an unclaimed request passes.
+     *
+     * @param request the request
+     * @return the holder, the caller or null when nobody holds the request
+     * @throws ApiProblemException 409 {@code request-claimed}
+     */
+    public User requireNotHeldByOther(AwardRequest request) {
+        User holder = request.getCurrentReviewer();
+        if (holder != null && holder.getId() != access.callerId()) {
             throw claimed(holder);
         }
         return holder;
@@ -103,7 +118,7 @@ public class ReviewGuards {
      */
     public void requireVersion(AwardRequest request, long requestVersion) {
         if (requestVersion != request.getVersion()) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "request-stale",
+            throw new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.REQUEST_STALE,
                 "The request was changed in the meantime", Map.of("currentVersion", request.getVersion()));
         }
     }
@@ -116,9 +131,10 @@ public class ReviewGuards {
      */
     public ApiProblemException claimed(User holder) {
         if (holder == null) {
-            return new ApiProblemException(HttpStatus.CONFLICT, "request-claimed", "Nobody holds the request");
+            return new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.REQUEST_CLAIMED,
+                "Nobody holds the request");
         }
-        return new ApiProblemException(HttpStatus.CONFLICT, "request-claimed", "Another reviewer holds the request",
-            Map.of("reviewer", UserRef.of(holder)));
+        return new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.REQUEST_CLAIMED,
+            "Another reviewer holds the request", Map.of("reviewer", UserRef.of(holder)));
     }
 }

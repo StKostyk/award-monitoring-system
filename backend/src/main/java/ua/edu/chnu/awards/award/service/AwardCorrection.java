@@ -65,11 +65,8 @@ public class AwardCorrection {
             .filter(guards::isReviewable)
             .orElseThrow(() -> new AwardNotFoundException(awardId));
         guards.requirePresent(body.getRequestVersion());
-        User holder = request.getCurrentReviewer();
-        long callerId = access.callerId();
-        if (holder != null && holder.getId() != callerId) {
-            throw guards.claimed(holder);
-        }
+        final User holder = guards.requireNotHeldByOther(request);
+        final long callerId = access.callerId();
         guards.requireVersion(request, body.getRequestVersion());
         Award award = awards.findForUpdate(awardId).orElseThrow(() -> new AwardNotFoundException(awardId));
         ownership.requireVersion(award, body.getVersion());

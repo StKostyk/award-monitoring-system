@@ -58,11 +58,8 @@ public class ReviewDecisions {
     public DecisionOutcome decide(long awardId, ReviewDecisionRequest body) {
         AwardRequest request = guards.lockedReviewable(awardId);
         rules.check(body);
-        User holder = request.getCurrentReviewer();
+        guards.requireNotHeldByOther(request);
         long callerId = access.callerId();
-        if (holder != null && holder.getId() != callerId) {
-            throw guards.claimed(holder);
-        }
         guards.requireVersion(request, body.requestVersion());
         Award award = request.getAward();
         rules.checkVerified(awardId, body);
