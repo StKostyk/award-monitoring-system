@@ -12,7 +12,7 @@
 |---------|--------|---------|------|
 | 4.1 Workflow Engine Core (organisational awards, queue, decisions, withdrawal, batch review) | Done, pending the manual run of PRD §9 ([PRD](../features/epic-04/feature-4.1-workflow-engine-core.md), validation §12) | 2026-10-06 | 2026-10-08 |
 | 4.2 Review Period & Escalation (per-faculty period, overdue notice, reviewer corrections, decision dialog) | Done, pending the manual run of PRD §10 ([PRD](../features/epic-04/feature-4.2-review-period-escalation.md), validation §13) | 2026-10-08 | 2026-10-08 |
-| 4.3 Achievements (colleague visibility, unit and public pages) | Planned | | |
+| 4.3 Achievements (colleague visibility, unit and public pages) | Approved 2026-10-09 | | |
 
 ## Current focus
 
