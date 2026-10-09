@@ -1,9 +1,7 @@
 package ua.edu.chnu.awards.auth.service;
 
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Base64;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -14,6 +12,7 @@ import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.repository.OneTimeTokenRepository;
 import ua.edu.chnu.awards.common.HashUtils;
+import ua.edu.chnu.awards.common.SecretUtils;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.user.entity.User;
 
@@ -27,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 public class OneTimeTokenService {
 
     private static final int TOKEN_BYTES = 32;
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final OneTimeTokenRepository repository;
     private final Clock clock;
@@ -56,9 +54,7 @@ public class OneTimeTokenService {
      */
     @Transactional
     public String issue(User user, TokenPurpose purpose, Duration ttl, String newEmailAddress) {
-        byte[] bytes = new byte[TOKEN_BYTES];
-        RANDOM.nextBytes(bytes);
-        String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String raw = SecretUtils.randomSecret(TOKEN_BYTES);
         repository.save(OneTimeToken.builder()
             .user(user)
             .tokenHash(hash(raw))

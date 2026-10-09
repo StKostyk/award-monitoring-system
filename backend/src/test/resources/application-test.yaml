@@ -5,6 +5,8 @@ app:
       public-requests-per-minute: 60
   workflow:
     overdue-cron: "-"
+  events:
+    first-run: PT24H
   documents:
     upload-rate: 200
     scan:

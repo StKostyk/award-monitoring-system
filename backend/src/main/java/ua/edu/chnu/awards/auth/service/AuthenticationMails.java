@@ -22,8 +22,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Sends the account emails (verification, password reset, address change, new device, lockout) after the requesting
- * transaction commits.
+ * Sends the account emails. The mails with a one-time link (verification, password reset, address change, new
+ * device) listen to transient events published after the commit; the address restore mail is a registry
+ * publication and is retried; the lockout mail follows a failed sign-in, which has no transaction.
  */
 @Component
 @RequiredArgsConstructor
@@ -35,10 +36,10 @@ public class AuthenticationMails {
     /**
      * Sends the address confirmation link.
      *
-     * @param event the committed registration or resend
+     * @param event the registration or resend, published after its commit
      */
     @Async
-    @TransactionalEventListener
+    @EventListener
     public void onVerificationRequested(VerificationRequested event) {
         delivery.send(event.email(), "Підтвердження адреси / Confirm your address", verificationBody(event));
     }
@@ -46,10 +47,10 @@ public class AuthenticationMails {
     /**
      * Sends the password reset link.
      *
-     * @param event the committed reset request
+     * @param event the reset request, published after its commit
      */
     @Async
-    @TransactionalEventListener
+    @EventListener
     public void onPasswordResetRequested(PasswordResetRequested event) {
         delivery.send(event.email(), "Скидання пароля / Password reset", resetBody(event));
     }
@@ -57,10 +58,10 @@ public class AuthenticationMails {
     /**
      * Sends the confirmation link of a sign-in address change to the new address and a warning to the current one.
      *
-     * @param event the committed change request
+     * @param event the change request, published after its commit
      */
     @Async
-    @TransactionalEventListener
+    @EventListener
     public void onEmailChangeRequested(EmailChangeRequested event) {
         delivery.send(event.email(), "Підтвердження нової адреси / Confirm your new address",
             emailChangeBody(event));
@@ -71,10 +72,10 @@ public class AuthenticationMails {
     /**
      * Tells the previous address that the account now signs in with another one.
      *
-     * @param event the committed change
+     * @param event the change, published after its commit
      */
     @Async
-    @TransactionalEventListener
+    @EventListener
     public void onEmailChanged(EmailChanged event) {
         delivery.send(event.oldEmail(), "Адресу для входу змінено / Your sign-in address was changed",
             emailChangedBody(event));
@@ -95,10 +96,10 @@ public class AuthenticationMails {
     /**
      * Announces a sign-in from an unknown device with the "not me" link.
      *
-     * @param event the committed device record
+     * @param event the device record, published after its commit
      */
     @Async
-    @TransactionalEventListener
+    @EventListener
     public void onNewDeviceSignedIn(NewDeviceSignedIn event) {
         delivery.send(event.email(), "Новий вхід до облікового запису / New sign-in to your account",
             deviceBody(event));

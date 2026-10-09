@@ -18,7 +18,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +28,7 @@ import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
@@ -53,7 +53,7 @@ class RegistrationServiceTest {
     private final OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final AfterCommit events = mock(AfterCommit.class);
     private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
@@ -93,7 +93,7 @@ class RegistrationServiceTest {
         assertThat(user.getValue().getPasswordHash()).isEqualTo("$2a$12$hash");
         assertThat(user.getValue().getOrganization()).isSameAs(department);
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
-        verify(events).publishEvent(event.capture());
+        verify(events).publish(event.capture());
         VerificationRequested requested = (VerificationRequested) event.getValue();
         assertThat(requested.link()).isEqualTo("http://localhost:4200/verify-email?token=raw-token");
         assertThat(requested.firstName()).isEqualTo("Олена");
@@ -289,7 +289,7 @@ class RegistrationServiceTest {
         when(userRepository.findByEmailAddressIgnoreCase("x@chnu.edu.ua")).thenReturn(Optional.of(pending));
 
         service.resend("x@chnu.edu.ua");
-        verify(events).publishEvent(any(VerificationRequested.class));
+        verify(events).publish(any(VerificationRequested.class));
 
         assertThatThrownBy(() -> service.resend("x@chnu.edu.ua"))
             .isInstanceOfSatisfying(ApiProblemException.class,
@@ -298,6 +298,6 @@ class RegistrationServiceTest {
         when(throttle.claimForTransaction("auth:resend:ghost@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true);
         when(userRepository.findByEmailAddressIgnoreCase("ghost@chnu.edu.ua")).thenReturn(Optional.empty());
         service.resend("ghost@chnu.edu.ua");
-        verify(events).publishEvent(any(VerificationRequested.class));
+        verify(events).publish(any(VerificationRequested.class));
     }
 }

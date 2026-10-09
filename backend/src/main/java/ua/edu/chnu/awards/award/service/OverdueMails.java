@@ -46,14 +46,15 @@ public class OverdueMails {
     private final ReviewMetrics metrics;
 
     /**
-     * Sends the digest and counts it when the mail server accepts it.
+     * Sends the digest and counts it once the mail server accepted it.
      *
      * @param event the committed digest
      */
     @Async
     @TransactionalEventListener
     public void onNoticed(OverdueNoticed event) {
-        if (event.email() != null && delivery.send(event.email(), subject(event), body(event, properties::awardLink))) {
+        if (event.email() != null) {
+            delivery.send(event.email(), subject(event), body(event, properties::awardLink));
             metrics.noticeSent();
         }
     }

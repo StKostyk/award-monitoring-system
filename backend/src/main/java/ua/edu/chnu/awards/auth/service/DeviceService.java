@@ -1,9 +1,7 @@
 package ua.edu.chnu.awards.auth.service;
 
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +23,8 @@ import ua.edu.chnu.awards.auth.event.NewDeviceSignedIn;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
+import ua.edu.chnu.awards.common.SecretUtils;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.config.AuthProperties;
@@ -42,12 +42,12 @@ import lombok.RequiredArgsConstructor;
 public class DeviceService {
 
     private static final int SECRET_BYTES = 32;
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserDeviceRepository devices;
     private final DeviceFingerprint fingerprints;
     private final OneTimeTokenService tokens;
     private final ApplicationEventPublisher events;
+    private final AfterCommit afterCommit;
     private final AuthorizationRevoker authorizations;
     private final PasswordEncoder passwordEncoder;
     private final AuditService audit;
@@ -81,7 +81,7 @@ public class DeviceService {
                 .lastUsedAt(now)
                 .build());
             String raw = tokens.issue(user, TokenPurpose.SECURITY_REVOKE, properties.securityRevokeTtl());
-            events.publishEvent(new NewDeviceSignedIn(user.getEmailAddress(), user.getFirstName(),
+            afterCommit.publish(new NewDeviceSignedIn(user.getEmailAddress(), user.getFirstName(),
                 device.browser(), device.operatingSystem(), client.ip(), now,
                 properties.link("/security/not-me", raw)));
         });
@@ -111,9 +111,7 @@ public class DeviceService {
             tokens.invalidate(user, TokenPurpose.SECURITY_REVOKE);
         }
         tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
-        byte[] secret = new byte[SECRET_BYTES];
-        RANDOM.nextBytes(secret);
-        user.setPasswordHash(passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)));
+        user.setPasswordHash(passwordEncoder.encode(SecretUtils.randomSecret(SECRET_BYTES)));
         final String current = user.getEmailAddress();
         final Restore outcome = restore(user, bound);
         int revoked = outcome == Restore.RESTORED ? authorizations.revokeAll(user.getId(), current) : 0;
@@ -124,7 +122,7 @@ public class DeviceService {
             details.put("restoreRefused", bound);
         } else {
             String raw = tokens.issue(user, TokenPurpose.PASSWORD_RESET, properties.passwordResetTtl());
-            events.publishEvent(new PasswordResetRequested(user.getEmailAddress(), user.getFirstName(),
+            afterCommit.publish(new PasswordResetRequested(user.getEmailAddress(), user.getFirstName(),
                 properties.link("/reset-password", raw)));
         }
         if (outcome == Restore.RESTORED) {
