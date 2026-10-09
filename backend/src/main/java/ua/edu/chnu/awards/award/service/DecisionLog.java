@@ -118,9 +118,8 @@ public class DecisionLog {
     public void announce(AwardRequest request, User reviewer, String comment) {
         Award award = request.getAward();
         User owner = award.getOwner();
-        String title = award.getTitle() == null ? award.getTitleUk() : award.getTitle();
-        String titleUk = award.getTitleUk() == null ? award.getTitle() : award.getTitleUk();
-        events.publishEvent(new AwardDecided(owner.getEmailAddress(), owner.getFirstName(), award.getId(), title,
-            titleUk, request.getStatus(), request.getCurrentLevel(), reviewer.getFullName(), comment));
+        events.publishEvent(new AwardDecided(owner.getEmailAddress(), owner.getFirstName(), award.getId(),
+            award.titleInEnglish(), award.titleInUkrainian(), request.getStatus(), request.getCurrentLevel(),
+            reviewer.getFullName(), comment));
     }
 }

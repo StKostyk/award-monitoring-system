@@ -25,7 +25,7 @@ class DecisionMailsTest {
 
     @Test
     void ac2_10_theOwnerGetsOneMessageWithALinkToTheAward() {
-        when(properties.frontendUrl()).thenReturn("http://localhost:4200");
+        when(properties.awardLink(5L)).thenReturn(LINK);
 
         mails.onDecided(event(RequestStatus.APPROVED, ApprovalLevel.DEAN, null));
 

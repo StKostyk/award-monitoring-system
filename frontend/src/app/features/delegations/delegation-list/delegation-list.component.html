@@ -45,7 +45,8 @@
     <td mat-cell *matCellDef="let delegation">
       {{
         'delegations.period'
-          | transloco: { from: day(delegation.validFrom), to: day(delegation.validTo) }
+          | transloco
+            : { from: (delegation.validFrom | kyivDate), to: (delegation.validTo | kyivDate) }
       }}
     </td>
   </ng-container>
@@ -116,7 +117,8 @@
     <td mat-cell *matCellDef="let delegation">
       {{
         'delegations.period'
-          | transloco: { from: day(delegation.validFrom), to: day(delegation.validTo) }
+          | transloco
+            : { from: (delegation.validFrom | kyivDate), to: (delegation.validTo | kyivDate) }
       }}
     </td>
   </ng-container>

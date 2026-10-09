@@ -52,7 +52,8 @@ if (-not $SkipGate) {
     if (-not (Test-Path $summary)) { throw 'No gate run found; run .\tools\gate.ps1 first.' }
     $text = Get-Content $summary -Raw
     if ($text -notmatch "Branch:\s+$([regex]::Escape($branch))") { throw 'The last gate run belongs to another branch.' }
-    if ($text -notmatch 'Backend:\s+(PASS|SKIPPED)' -or $text -notmatch 'Frontend:.*lint PASS, tests PASS') {
+    if ($text -notmatch 'Backend:\s+(PASS|SKIPPED)' -or
+            $text -notmatch 'Frontend:.*lint PASS, tests PASS.*, prod build PASS') {
         throw "The last gate run did not pass:`n$text"
     }
     $backendChanged = @(git diff --name-only $Base -- backend docs/api/openapi.yml) +
@@ -68,6 +69,7 @@ $null = Set-TrackerStatus $Key 'In review'
 $null = Set-BacklogStatus $Key 'In review'
 if ($Changelog) { Add-ChangelogLine $ChangelogSection $Changelog }
 
+Remove-StaleGitLock
 git add -A
 if ($CommitBody) { git commit -q -m $Commit -m $CommitBody } else { git commit -q -m $Commit }
 if ($LASTEXITCODE) { throw 'Commit failed (hook or nothing to commit).' }

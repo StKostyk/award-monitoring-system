@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.award.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -31,21 +32,21 @@ class OverdueMailsTest {
 
     @BeforeEach
     void setUp() {
-        when(properties.frontendUrl()).thenReturn("http://localhost:4200");
+        when(properties.awardLink(anyLong())).thenReturn("http://localhost:4200/awards/5");
     }
 
     @Test
     void ac2_9_theDigestListsEveryRequestInUkrainianAndEnglish() {
         OverdueNoticed event = digest();
 
-        String body = OverdueMails.body(event, "http://localhost:4200/awards/");
+        String body = OverdueMails.body(event, awardId -> "link-" + awardId);
 
         assertThat(OverdueMails.subject(event)).isEqualTo("Прострочені заявки: 2 / Overdue requests: 2");
         assertThat(body).contains("Ірина Бойко", "«Грамота», Анастасія Коваль; рівень: секретар факультету;"
-                + " термін: 06.10.2026 12:00; розглядає: не взято", "http://localhost:4200/awards/5",
+                + " термін: 06.10.2026 12:00; розглядає: не взято", "link-5",
             "\"Certificate\", Анастасія Коваль; level: faculty secretary; deadline: 06.10.2026 12:00;"
                 + " reviewer: not taken", "розглядає: Олег Шевчук", "reviewer: Олег Шевчук",
-            "http://localhost:4200/awards/7")
+            "link-7")
             .containsSubsequence("Термін розгляду", "---", "The review period");
     }
 

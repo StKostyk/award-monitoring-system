@@ -127,4 +127,22 @@ public class Award {
     public boolean isUnitAward() {
         return recipientOrganizationId != null;
     }
+
+    /**
+     * The English title for messages, the Ukrainian one when no English title was given.
+     *
+     * @return the title to show in English
+     */
+    public String titleInEnglish() {
+        return title == null ? titleUk : title;
+    }
+
+    /**
+     * The Ukrainian title for messages, the English one when no Ukrainian title was given.
+     *
+     * @return the title to show in Ukrainian
+     */
+    public String titleInUkrainian() {
+        return titleUk == null ? title : titleUk;
+    }
 }

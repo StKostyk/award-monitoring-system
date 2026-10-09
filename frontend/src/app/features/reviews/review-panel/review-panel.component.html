@@ -19,7 +19,7 @@
         </dd>
         <dt>{{ 'reviews.columns.deadline' | transloco }}</dt>
         <dd class="review-panel__deadline" data-testid="review-panel-deadline">
-          {{ day(item.deadline) }}
+          {{ item.deadline | kyivDate }}
           @if (item.overdue) {
             <mat-chip class="review-panel__overdue">{{ 'reviews.overdue' | transloco }}</mat-chip>
           }

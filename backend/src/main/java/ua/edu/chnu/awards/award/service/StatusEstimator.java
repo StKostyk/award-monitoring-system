@@ -18,7 +18,6 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
-import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.config.WorkflowProperties;
 import ua.edu.chnu.awards.user.entity.Organization;
 
@@ -35,8 +34,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StatusEstimator {
 
-    private static final Set<RequestStatus> ACTIVE =
-        EnumSet.of(RequestStatus.SUBMITTED, RequestStatus.IN_REVIEW, RequestStatus.ESCALATED);
     private static final Set<ApprovalLevel> FACULTY_LEVELS =
         EnumSet.of(ApprovalLevel.FACULTY_SECRETARY, ApprovalLevel.DEAN);
 
@@ -127,16 +124,6 @@ public class StatusEstimator {
     }
 
     /**
-     * Whether a request is waiting for a reviewer: neither final nor returned to its owner.
-     *
-     * @param request the request
-     * @return true while a level has to review it
-     */
-    public boolean isActive(AwardRequest request) {
-        return ACTIVE.contains(request.getStatus());
-    }
-
-    /**
      * The levels of the request of an award, by the recognition level of the award's category, with the due date
      * of every level still ahead by that level's review period and the expected completion.
      *
@@ -148,7 +135,7 @@ public class StatusEstimator {
         RecognitionLevel category = award.getCategory() == null ? null : award.getCategory().getLevel();
         ApprovalLevel current = request.getCurrentLevel();
         List<ApprovalLevel> levels = approvalPath.levels(category, current);
-        if (!isActive(request)) {
+        if (!request.isOpen()) {
             return new Timeline(levels, Map.of(), request.getDeadline(), null, false);
         }
         Instant deadline = request.getDeadline() == null ? deadline(award, current, request.getSubmittedAt())

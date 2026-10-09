@@ -50,7 +50,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 7 | 4.2.2 Overdue detection, escalation notice and SLA metrics | 4.2 | 5 | SCRUM-54 | #148 | no | Done |
 | 8 | 2.4.1 Award correction by reviewers | 4.2 | 5 | SCRUM-55 | #149 | no | Done |
 | 8a | 4.2.3 Keep the decision dialog open until the answer | 4.2 | 2 | SCRUM-59 | #162 | no | Done |
-| 8b | 4.2.4 Fixes from the Feature 4.2 walk | 4.2 | 2 | SCRUM-60 | #169 | no | In review |
+| 8b | 4.2.4 Fixes from the Feature 4.2 walk | 4.2 | 2 | SCRUM-60 | #169 | no | Done |
+| 8c | 4.2.5 Refactor from the Feature 4.2 sweep | 4.2 | 3 | SCRUM-61 | #171 | no | In review |
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | To do |
 | 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | To do |
 

@@ -228,13 +228,13 @@
       </ng-container>
       <ng-container matColumnDef="submitted">
         <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.submitted' | transloco }}</th>
-        <td mat-cell *matCellDef="let item">{{ day(item.submittedAt) }}</td>
+        <td mat-cell *matCellDef="let item">{{ item.submittedAt | kyivDate }}</td>
       </ng-container>
       <ng-container matColumnDef="deadline">
         <th mat-header-cell *matHeaderCellDef>{{ 'reviews.columns.deadline' | transloco }}</th>
         <td mat-cell *matCellDef="let item">
           <span class="reviews__deadline">
-            {{ day(item.deadline) }}
+            {{ item.deadline | kyivDate }}
             @if (item.overdue) {
               <mat-chip class="reviews__overdue" data-testid="review-overdue">{{
                 'reviews.overdue' | transloco
@@ -242,7 +242,7 @@
             }
             @if (item.overdueNoticedAt) {
               <mat-chip class="reviews__noticed" data-testid="review-noticed">{{
-                'reviews.noticed' | transloco: { date: day(item.overdueNoticedAt) }
+                'reviews.noticed' | transloco: { date: (item.overdueNoticedAt | kyivDate) }
               }}</mat-chip>
             }
           </span>
@@ -313,10 +313,10 @@
               }
             </dd>
             <dt>{{ 'reviews.columns.submitted' | transloco }}</dt>
-            <dd>{{ day(item.submittedAt) }}</dd>
+            <dd>{{ item.submittedAt | kyivDate }}</dd>
             <dt>{{ 'reviews.columns.deadline' | transloco }}</dt>
             <dd class="reviews__deadline">
-              {{ day(item.deadline) }}
+              {{ item.deadline | kyivDate }}
               @if (item.overdue) {
                 <mat-chip class="reviews__overdue" data-testid="review-overdue">{{
                   'reviews.overdue' | transloco
@@ -324,7 +324,7 @@
               }
               @if (item.overdueNoticedAt) {
                 <mat-chip class="reviews__noticed" data-testid="review-noticed">{{
-                  'reviews.noticed' | transloco: { date: day(item.overdueNoticedAt) }
+                  'reviews.noticed' | transloco: { date: (item.overdueNoticedAt | kyivDate) }
                 }}</mat-chip>
               }
             </dd>

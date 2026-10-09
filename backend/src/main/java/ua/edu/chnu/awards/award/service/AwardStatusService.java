@@ -66,7 +66,7 @@ public class AwardStatusService {
     }
 
     private StatusDelay delay(Award award, AwardRequest request, StatusEstimator.Timeline timeline) {
-        if (!estimator.isActive(request)) {
+        if (!request.isOpen()) {
             return null;
         }
         if (!reviewers.hasReviewer(request.getCurrentLevel(), award.getOrganization().getId(),

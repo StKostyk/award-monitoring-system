@@ -60,7 +60,7 @@ public class CorrectionMails {
         if (event.email() == null) {
             return;
         }
-        delivery.send(event.email(), SUBJECT, body(event, properties.frontendUrl() + "/awards/" + event.awardId()));
+        delivery.send(event.email(), SUBJECT, body(event, properties.awardLink(event.awardId())));
     }
 
     static String body(AwardCorrected event, String link) {

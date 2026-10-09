@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -25,12 +25,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Observable, filter, forkJoin, map, startWith, switchMap, tap } from 'rxjs';
 
-import { fieldProblems, problemStatus, problemType } from '../../../core/api/problem';
+import { fieldProblems, knownProblem, problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivToday, yearsBefore } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
+import { reviewerOf } from '../../reviews/review-problems';
 import { ReviewItem, ReviewsService, UserRef } from '../../reviews/reviews.service';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import {
@@ -39,6 +40,7 @@ import {
   TITLE_LIMIT,
   URL_LIMIT,
   WEB_LINK,
+  fieldErrorKey,
   text,
   titleInOneLanguage,
 } from '../award-fields';
@@ -274,31 +276,9 @@ export class AwardCorrectionComponent implements OnInit, LeavesUnsavedChanges {
 
   errorKey(field: CorrectableField | 'reason'): string | null {
     const errors = this.form.controls[field].errors;
-    if (!errors) {
-      return null;
-    }
-    if (errors['server']) {
-      return `awards.errors.${errors['server']}`;
-    }
-    if (errors['required']) {
-      return field === 'reason' ? 'awards.correction.reasonRequired' : 'awards.errors.required';
-    }
-    if (field === 'reason' && errors['pattern']) {
-      return 'awards.correction.reasonRequired';
-    }
-    if (errors['maxlength']) {
-      return 'awards.errors.too-long';
-    }
-    if (errors['matDatepickerParse']) {
-      return 'app.dateInvalid';
-    }
-    if (errors['matDatepickerMax']) {
-      return 'awards.errors.future';
-    }
-    if (errors['matDatepickerMin']) {
-      return 'awards.errors.too-old';
-    }
-    return errors['pattern'] ? 'awards.errors.invalid' : null;
+    const blankReason =
+      field === 'reason' && !errors?.['server'] && (errors?.['required'] || errors?.['pattern']);
+    return blankReason ? 'awards.correction.reasonRequired' : fieldErrorKey(errors);
   }
 
   optionName(category: CategoryRef): string {
@@ -423,17 +403,10 @@ export class AwardCorrectionComponent implements OnInit, LeavesUnsavedChanges {
       control?.setErrors({ server: problem.code });
       control?.markAsTouched();
     }
-    this.problem.set(
-      `awards.correction.problems.${KNOWN_PROBLEMS.includes(type) ? type : 'unknown'}`,
-    );
+    this.problem.set(`awards.correction.problems.${knownProblem(type, KNOWN_PROBLEMS)}`);
   }
 
   private holds(reviewer: UserRef): boolean {
     return String(reviewer.id) === this.auth.userId();
   }
-}
-
-function reviewerOf(error: unknown): UserRef | null {
-  const body = error instanceof HttpErrorResponse ? (error.error as { reviewer?: UserRef }) : null;
-  return body?.reviewer ?? null;
 }

@@ -74,8 +74,13 @@
                 {{
                   assignment.validTo
                     ? ('admin.detail.validityUntil'
-                      | transloco: { from: day(assignment.validFrom), to: day(assignment.validTo) })
-                    : ('admin.detail.validity' | transloco: { from: day(assignment.validFrom) })
+                      | transloco
+                        : {
+                            from: (assignment.validFrom | kyivDate),
+                            to: (assignment.validTo | kyivDate),
+                          })
+                    : ('admin.detail.validity'
+                      | transloco: { from: (assignment.validFrom | kyivDate) })
                 }}
               </span>
               @if (canRevoke(assignment)) {
@@ -118,8 +123,13 @@
                 {{
                   assignment.validTo
                     ? ('admin.detail.validityUntil'
-                      | transloco: { from: day(assignment.validFrom), to: day(assignment.validTo) })
-                    : ('admin.detail.validity' | transloco: { from: day(assignment.validFrom) })
+                      | transloco
+                        : {
+                            from: (assignment.validFrom | kyivDate),
+                            to: (assignment.validTo | kyivDate),
+                          })
+                    : ('admin.detail.validity'
+                      | transloco: { from: (assignment.validFrom | kyivDate) })
                 }}
               </span>
               @if (ended(assignment)) {

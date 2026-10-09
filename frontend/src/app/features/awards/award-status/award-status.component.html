@@ -19,7 +19,7 @@
             (resubmitted() ? 'awards.statusPanel.resubmitted' : 'awards.statusPanel.submitted')
               | transloco
           }}</span>
-          <span class="award-status__when">{{ date(view.submittedAt) }}</span>
+          <span class="award-status__when">{{ view.submittedAt | kyivDate }}</span>
         </li>
         @for (step of view.path; track step.level) {
           <li
@@ -37,14 +37,14 @@
                 'awards.statusPanel.skipped' | transloco
               }}</span>
             } @else if (step.state === 'DONE' && step.completedAt) {
-              <span class="award-status__when">{{ date(step.completedAt) }}</span>
+              <span class="award-status__when">{{ step.completedAt | kyivDate }}</span>
             } @else if (step.state === 'CURRENT' && step.dueDate) {
               <span class="award-status__when" data-testid="award-status-due">{{
-                'awards.timing.expected' | transloco: { date: date(step.dueDate) }
+                'awards.timing.expected' | transloco: { date: (step.dueDate | kyivDate) }
               }}</span>
             } @else if (step.dueDate) {
               <span class="award-status__when">{{
-                'awards.statusPanel.upcomingBy' | transloco: { date: date(step.dueDate) }
+                'awards.statusPanel.upcomingBy' | transloco: { date: (step.dueDate | kyivDate) }
               }}</span>
             }
           </li>
@@ -61,12 +61,14 @@
           } @else if (delay.since && delay.noticedAt) {
             {{
               'awards.statusPanel.overdueNoticed'
-                | transloco: { since: date(delay.since), noticed: date(delay.noticedAt) }
+                | transloco
+                  : { since: (delay.since | kyivDate), noticed: (delay.noticedAt | kyivDate) }
             }}
           } @else if (delay.since && view.estimatedCompletion) {
             {{
               'awards.statusPanel.overdue'
-                | transloco: { since: date(delay.since), date: date(view.estimatedCompletion) }
+                | transloco
+                  : { since: (delay.since | kyivDate), date: (view.estimatedCompletion | kyivDate) }
             }}
           }
         </p>
@@ -78,12 +80,15 @@
         </p>
       } @else if (view.estimatedCompletion) {
         <p class="award-status__summary" data-testid="award-status-estimate">
-          {{ 'awards.statusPanel.estimate' | transloco: { date: date(view.estimatedCompletion) } }}
+          {{
+            'awards.statusPanel.estimate'
+              | transloco: { date: (view.estimatedCompletion | kyivDate) }
+          }}
         </p>
       }
       @if (view.completedAt) {
         <p class="award-status__summary" data-testid="award-status-completed">
-          {{ 'awards.statusPanel.completed' | transloco: { date: date(view.completedAt) } }}
+          {{ 'awards.statusPanel.completed' | transloco: { date: (view.completedAt | kyivDate) } }}
         </p>
       }
       @if (view.rejectionReason) {

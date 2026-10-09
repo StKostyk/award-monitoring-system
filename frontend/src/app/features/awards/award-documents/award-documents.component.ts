@@ -33,7 +33,7 @@ import {
 
 import { problemType, readProblem } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { kyivDate } from '../../../shared/date-format';
+import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { saveFile } from '../../../shared/file-download';
 import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
 import { DocumentPreviewDialogComponent } from './document-preview-dialog.component';
@@ -90,6 +90,7 @@ export interface QueuedFile {
     MatOption,
     MatProgressBar,
     TranslocoPipe,
+    KyivDatePipe,
   ],
   templateUrl: './award-documents.component.html',
   styleUrl: './award-documents.component.scss',
@@ -283,10 +284,6 @@ export class AwardDocumentsComponent {
   /** Translation key of the unit of `sizeValue`. */
   sizeUnit(bytes: number): string {
     return bytes < MEGABYTE ? 'awards.documents.kilobytes' : 'awards.documents.megabytes';
-  }
-
-  date(document: AwardDocument): string {
-    return kyivDate(document.uploadedAt, this.language.current());
   }
 
   /** The content of a document, dropped when the section is left before it arrives. */

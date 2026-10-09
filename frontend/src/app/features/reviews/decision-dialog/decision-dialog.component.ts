@@ -36,15 +36,12 @@ import { Observable, catchError, of } from 'rxjs';
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ApprovalLevel } from '../../awards/awards.service';
-import { reviewerOf } from '../review-problems';
+import { reviewProblemKey, reviewerOf } from '../review-problems';
 import { DecisionType, ReviewTemplate, ReviewsService } from '../reviews.service';
 import { clearDraft, readDraft, writeDraft } from './decision-draft';
 
 /** Longest comment the server accepts. */
 export const COMMENT_MAX_LENGTH = 2000;
-
-/** Problem types with a message of their own when no dialog-specific one applies. */
-const KNOWN = ['reviewer-not-eligible', 'no-higher-level', 'validation-failed', 'access-denied'];
 
 /**
  * The decision to confirm, the level an escalation goes to (null: the next level of each award) and whether the
@@ -370,5 +367,5 @@ function explain(error: unknown, self: string | null): DecisionProblem {
   if (type === 'network' || status >= HttpStatusCode.InternalServerError) {
     return { key: 'reviews.decide.errors.network' };
   }
-  return { key: `reviews.problems.${KNOWN.includes(type) ? type : 'unknown'}` };
+  return { key: reviewProblemKey(type) };
 }

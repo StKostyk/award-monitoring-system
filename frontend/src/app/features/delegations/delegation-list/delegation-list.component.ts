@@ -11,7 +11,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { canDelegate } from '../../../core/auth/permissions';
 import { OrganizationRef } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { kyivDate } from '../../../shared/date-format';
+import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { Delegation, UserBrief } from '../delegations.service';
 import { DelegateDialogComponent } from '../delegate-dialog/delegate-dialog.component';
@@ -21,7 +21,7 @@ import { delegationsFeature } from '../store/delegations.feature';
 
 @Component({
   selector: 'app-delegation-list',
-  imports: [MatTableModule, MatChip, MatProgressBar, MatButton, TranslocoPipe],
+  imports: [MatTableModule, MatChip, MatProgressBar, MatButton, TranslocoPipe, KyivDatePipe],
   templateUrl: './delegation-list.component.html',
   styleUrl: './delegation-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,10 +82,6 @@ export class DelegationListComponent implements OnInit {
     return problem && problem.id === delegation.id
       ? `delegations.problems.${problem.problem}`
       : null;
-  }
-
-  day(value: string): string {
-    return kyivDate(value, this.language.current());
   }
 
   person(user: UserBrief): string {

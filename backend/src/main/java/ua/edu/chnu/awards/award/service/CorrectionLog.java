@@ -72,8 +72,6 @@ public class CorrectionLog {
     public void announce(Award award, User reviewer, String reason, List<FieldChange> changes,
                          AwardCategory before) {
         User owner = award.getOwner();
-        String title = award.getTitle() == null ? award.getTitleUk() : award.getTitle();
-        String titleUk = award.getTitleUk() == null ? award.getTitle() : award.getTitleUk();
         List<AwardCorrected.Change> mailed = changes.stream()
             .filter(change -> !IMPACT_SCORE.equals(change.field()))
             .map(change -> CATEGORY.equals(change.field())
@@ -82,8 +80,8 @@ public class CorrectionLog {
                 : new AwardCorrected.Change(change.field(), shown(change.from()), shown(change.to()),
                     shown(change.from()), shown(change.to())))
             .toList();
-        events.publishEvent(new AwardCorrected(owner.getEmailAddress(), owner.getFirstName(), award.getId(), title,
-            titleUk, reviewer.getFullName(), reason, mailed));
+        events.publishEvent(new AwardCorrected(owner.getEmailAddress(), owner.getFirstName(), award.getId(),
+            award.titleInEnglish(), award.titleInUkrainian(), reviewer.getFullName(), reason, mailed));
     }
 
     private static String name(AwardCategory category, boolean ukrainian) {

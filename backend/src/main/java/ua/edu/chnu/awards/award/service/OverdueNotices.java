@@ -102,11 +102,9 @@ public class OverdueNotices {
 
     private static OverdueNoticed.Item item(AwardRequest request) {
         Award award = request.getAward();
-        String title = award.getTitle() == null ? award.getTitleUk() : award.getTitle();
-        String titleUk = award.getTitleUk() == null ? award.getTitle() : award.getTitleUk();
         String reviewer = request.getCurrentReviewer() == null ? null : request.getCurrentReviewer().getFullName();
-        return new OverdueNoticed.Item(award.getId(), title, titleUk, award.getOwner().getFullName(),
-            request.getCurrentLevel(), request.getDeadline(), reviewer);
+        return new OverdueNoticed.Item(award.getId(), award.titleInEnglish(), award.titleInUkrainian(),
+            award.getOwner().getFullName(), request.getCurrentLevel(), request.getDeadline(), reviewer);
     }
 
     private void refreshGauges(Timestamp at) {

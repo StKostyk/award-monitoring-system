@@ -21,7 +21,7 @@ import { problemStatus, problemType, readProblem } from '../../../core/api/probl
 import { AuthService } from '../../../core/auth/auth.service';
 import { canEditOwnAwards, canReview } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { kyivDate } from '../../../shared/date-format';
+import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { ReviewPanelComponent } from '../../reviews/review-panel/review-panel.component';
 import { DecisionOutcome } from '../../reviews/reviews.service';
@@ -58,6 +58,7 @@ import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
     AwardDocumentsComponent,
     ReviewPanelComponent,
     TranslocoPipe,
+    KyivDatePipe,
   ],
   templateUrl: './award-detail.component.html',
   styleUrl: './award-detail.component.scss',
@@ -229,10 +230,6 @@ export class AwardDetailComponent implements OnInit {
   /** An own draft the caller may also change. */
   editable(award: Award): boolean {
     return this.ownDraft(award) && canEditOwnAwards(this.auth.permissions());
-  }
-
-  day(value: string): string {
-    return kyivDate(value, this.language.current());
   }
 
   title(award: Award): string {

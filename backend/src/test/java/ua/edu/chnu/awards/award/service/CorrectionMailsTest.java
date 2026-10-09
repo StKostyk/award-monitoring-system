@@ -25,7 +25,7 @@ class CorrectionMailsTest {
 
     @Test
     void ac3_5_theOwnerGetsOneMessageWithALinkToTheAward() {
-        when(properties.frontendUrl()).thenReturn("http://localhost:4200");
+        when(properties.awardLink(5L)).thenReturn(LINK);
 
         mails.onCorrected(event("employee@chnu.edu.ua"));
 

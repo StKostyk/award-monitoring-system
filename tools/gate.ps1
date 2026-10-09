@@ -5,7 +5,8 @@
 .DESCRIPTION
     Static analysis first (about half a minute), then the full build with tests and coverage, so a style
     violation never costs a five-minute run. -StaticOnly stops after the static checks (backend, then the
-    frontend ESLint and Prettier check); -SkipFrontend leaves the Angular checks and unit tests out. The backend
+    frontend ESLint and Prettier check); -SkipFrontend leaves the Angular checks, unit tests and the production
+    build (bundle budgets) out. The backend
     verify runs only when the branch changes something under backend/ compared with develop (develop passed it
     when it was merged); -Full runs it regardless.
 
@@ -130,8 +131,20 @@ if (-not $SkipFrontend) {
     Pop-Location
     $plain = (Get-Content (Join-Path $logDir 'gate-frontend.log') -Raw) -replace '\x1b\[[0-9;]*m', ''
     $tests = if ($plain -match '(?s).*Tests\s+(\d+) passed') { $Matches[1] } else { '?' }
-    $frontend = "lint $(if ($lintOk) { 'PASS' } else { 'FAIL' }), tests $(if ($testOk) { "PASS ($tests)" } else { 'FAIL' })"
-    $frontendOk = $lintOk -and $testOk
+    $buildLog = Join-Path $logDir 'gate-frontend-build.log'
+    Push-Location (Join-Path $root 'frontend')
+    & npm run build:prod *> $buildLog
+    $buildOk = $LASTEXITCODE -eq 0
+    Pop-Location
+    $plain = (Get-Content $buildLog -Raw) -replace '\x1b\[[0-9;]*m', ''
+    $initial = if ($plain -match 'Initial total\s*\|\s*([\d.]+ [kM]B)') { $Matches[1] } else { '?' }
+    if (-not $buildOk) {
+        Select-String -Path $buildLog -Pattern 'ERROR|budget' | Select-Object -First 10 | ForEach-Object { $_.Line }
+    }
+    $frontend = "lint $(if ($lintOk) { 'PASS' } else { 'FAIL' })" +
+        ", tests $(if ($testOk) { "PASS ($tests)" } else { 'FAIL' })" +
+        ", prod build $(if ($buildOk) { "PASS ($initial initial)" } else { 'FAIL' })"
+    $frontendOk = $lintOk -and $testOk -and $buildOk
 }
 
 $summary = @"

@@ -18,7 +18,8 @@ import { Subscription } from 'rxjs';
 
 import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { kyivDate, kyivDateTime } from '../../../shared/date-format';
+import { kyivDateTime } from '../../../shared/date-format';
+import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { AwardStatusView, AwardsService, FINAL_REQUEST_STATUSES } from '../awards.service';
 
 /** How often an open award page reloads the review status. */
@@ -31,7 +32,7 @@ export const STATUS_POLL_MS = new InjectionToken<number>('STATUS_POLL_MS', {
  */
 @Component({
   selector: 'app-award-status',
-  imports: [MatButton, MatProgressBar, TranslocoPipe],
+  imports: [MatButton, MatProgressBar, TranslocoPipe, KyivDatePipe],
   templateUrl: './award-status.component.html',
   styleUrl: './award-status.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -119,10 +120,6 @@ export class AwardStatusComponent implements OnInit, OnDestroy {
         }
       },
     });
-  }
-
-  date(value: string): string {
-    return kyivDate(value, this.language.current());
   }
 
   time(value: string): string {
