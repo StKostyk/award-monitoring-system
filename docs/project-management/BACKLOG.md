@@ -2,9 +2,9 @@
 ## Award Monitoring & Tracking System
 
 > **Last Updated**: October 2026  
-> **Story Points**: 167 delivered, 104 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
+> **Story Points**: 167 delivered, 133 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
-> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47
+> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47, Epic 7 = SCRUM-63
 
 Every story is tracked twice: a Jira issue for the sprint board and a GitHub issue that the pull request closes.
 
@@ -78,12 +78,24 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.3.2 | Unit achievement pages and public achievements | 5 | ✅ Done | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 | 4.3.3 | Fixes from the Feature 4.3 validation | 2 | ✅ Done | SCRUM-62 | [#176](https://github.com/StKostyk/award-monitoring-system/issues/176) |
 
+### Epic 7 — Notification & Communication System (Jira epic SCRUM-63)
+Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS.md). Kickoff 2026-10-09; Spring events on the Spring Modulith publication registry (no Kafka), e-mail and in-app channels (SMS out of scope, push with Epic 8). Story 1.3.2 from Epic 1 belongs here.
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 7.1.1 | Event publication registry for the after-commit mails | 5 | Sprint 5 | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
+| 7.1.2 | Module boundaries checked by Spring Modulith | 8 | Sprint 5 | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
+| 7.2.1 | In-app notifications from award and review events | 5 | Sprint 5 | SCRUM-66 | [#183](https://github.com/StKostyk/award-monitoring-system/issues/183) |
+| 7.2.2 | Notification centre in the toolbar | 5 | Sprint 5 | SCRUM-67 | [#184](https://github.com/StKostyk/award-monitoring-system/issues/184) |
+| 1.3.2 | Notification preferences | 3 | Sprint 5 | SCRUM-16 | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |
+| 7.2.3 | Delivery log and notifications in the personal data export | 3 | Sprint 5 | SCRUM-68 | [#185](https://github.com/StKostyk/award-monitoring-system/issues/185) |
+| 7.2.4 | HTML e-mail templates in the university brand | 3 | Sprint 5 | SCRUM-69 | [#186](https://github.com/StKostyk/award-monitoring-system/issues/186) |
+
 ### Later epics
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
 | US-006 | AI-Powered Document Parsing (deferred) | 21 | Documents |
 | US-007 | Confidence Score Display (deferred) | 8 | Documents |
-| 1.3.2 | Notification preferences (SCRUM-16, [#39](https://github.com/StKostyk/award-monitoring-system/issues/39)) | 3 | Notifications |
 | 2.4.2 | GDPR-compliant award deletion | 5 | Compliance |
 | US-008 | Personal Dashboard | 13 | Analytics |
 | US-010 | Executive Dashboard | 21 | Analytics |
