@@ -67,6 +67,7 @@ class DataExportFT extends AbstractFunctionalTest {
             .body("personal_data.profile.email", equalTo(EXPORTER))
             .body("awards", hasSize(1))
             .body("awards[0].status", equalTo("DRAFT"))
+            .body("awards[0].visibility", equalTo("PRIVATE"))
             .body("roles", hasSize(0))
             .body("activity_log.action", hasItem("LOGIN_SUCCESS"));
         assertThat(export.asString()).doesNotContain("password", "$2a$", "token");

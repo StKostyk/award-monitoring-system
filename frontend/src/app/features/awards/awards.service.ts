@@ -170,6 +170,12 @@ export interface UnitRef extends OrganizationName {
 export type AwardRecipient =
   { type: 'PERSON'; organization: null } | { type: 'UNIT'; organization: UnitRef };
 
+/** Who besides the owner and the reviewers may see an approved personal award. */
+export type AwardVisibility = 'PRIVATE' | 'UNIVERSITY' | 'PUBLIC';
+
+/** The visibility choices, narrowest first. */
+export const VISIBILITIES: AwardVisibility[] = ['PRIVATE', 'UNIVERSITY', 'PUBLIC'];
+
 export interface Award {
   id: number;
   title: string | null;
@@ -185,6 +191,8 @@ export interface Award {
   owner: { id: number; name: string; email: string };
   recipient: AwardRecipient;
   organization: OrganizationRef;
+  /** Null for a unit award, which is shown to everybody once approved. */
+  visibility: AwardVisibility | null;
   request: AwardRequestSummary | null;
   warnings: AwardWarning[];
   createdAt: string;
@@ -362,6 +370,11 @@ export class AwardsService {
   /** Takes a pending award no reviewer has claimed back as a draft. */
   withdraw(id: number, version: number): Observable<Award> {
     return this.http.post<Award>(`${this.base}/${id}/withdraw`, { version });
+  }
+
+  /** Shares the caller's approved personal award with colleagues or the public, or makes it private again. */
+  updateVisibility(id: number, visibility: AwardVisibility): Observable<Award> {
+    return this.http.put<Award>(`${this.base}/${id}/visibility`, { visibility });
   }
 
   /** A reviewer's correction of a pending award, with the reason shown to its owner. */

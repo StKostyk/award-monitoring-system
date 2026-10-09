@@ -342,7 +342,8 @@
       "recipient-out-of-scope": "You can no longer submit awards for this faculty or department. Choose “Me” or another unit.",
       "request-claimed": "A reviewer is already reviewing the award, so it can no longer be withdrawn.",
       "award-not-pending": "The award is no longer under review, so it cannot be withdrawn.",
-      "award-has-request": "The award was submitted before, so it cannot be deleted: its request and decisions stay in the history."
+      "award-has-request": "The award was submitted before, so it cannot be deleted: its request and decisions stay in the history.",
+      "visibility-fixed": "Visibility can be changed only for an approved personal award."
     },
     "statusPanel": {
       "title": "Review status",
@@ -376,6 +377,73 @@
     "timing": {
       "expected": "Expected by {{date}}",
       "delayed": "Delayed"
+    },
+    "visibility": {
+      "title": "Visibility",
+      "options": {
+        "PRIVATE": "Only me and reviewers",
+        "UNIVERSITY": "Show to colleagues",
+        "PUBLIC": "Show publicly"
+      },
+      "hints": {
+        "PRIVATE": "You and those who review the award can see it.",
+        "UNIVERSITY": "The award is on the Achievements page for all university staff.",
+        "PUBLIC": "The award is on the Achievements page and on the university’s public page, open without signing in."
+      },
+      "chips": {
+        "UNIVERSITY": "Colleagues",
+        "PUBLIC": "Public"
+      },
+      "saved": "Visibility saved.",
+      "unit": "Unit award: visible to everyone once approved.",
+      "publish": {
+        "title": "Show the award publicly?",
+        "text": "Anyone who opens the public achievements page will see the award, without signing in.",
+        "shown": "Shown",
+        "kept": "Not shown",
+        "items": {
+          "name": "your first and last name",
+          "department": "department",
+          "title": "award title",
+          "description": "description",
+          "category": "category and level",
+          "awardingOrganization": "awarding organisation",
+          "date": "award date",
+          "link": "link",
+          "verified": "the “Documents verified” mark",
+          "email": "e-mail",
+          "documents": "documents",
+          "reviewers": "who reviewed the award",
+          "comments": "reviewers’ comments"
+        },
+        "confirm": "Show publicly",
+        "cancel": "Cancel"
+      }
+    }
+  },
+  "achievements": {
+    "title": "Achievements",
+    "filters": {
+      "unit": "Unit",
+      "year": "Year",
+      "level": "Level",
+      "recipient": "Recipient",
+      "all": "All"
+    },
+    "recipients": {
+      "PERSON": "Staff",
+      "UNIT": "Units"
+    },
+    "unitAward": "Unit award",
+    "verified": "Documents verified",
+    "link": "Link",
+    "newTab": "(opens in a new tab)",
+    "empty": "No achievements match these filters yet.",
+    "retry": "Try again",
+    "problems": {
+      "failed": "The achievements could not be loaded.",
+      "gone": "There is no such unit.",
+      "denied": "You have no access to this page."
     }
   },
   "categories": {

@@ -66,7 +66,8 @@ public class AwardMapper {
             award.getDescriptionUk(), categoryRef(award.getCategory()), award.getAwardingOrganization(),
             award.getAwardDate(), award.getExternalUrl(), award.getStatus(), award.getImpactScore(),
             UserRef.of(award.getOwner()), recipient(award), organizationRef(award.getOrganization()),
-            toSummary(award, request, returnComment), List.copyOf(warnings), award.getCreatedAt(), award.getUpdatedAt(),
+            toSummary(award, request, returnComment), List.copyOf(warnings),
+            award.isUnitAward() ? null : award.getVisibility(), award.getCreatedAt(), award.getUpdatedAt(),
             award.getVersion());
     }
 
@@ -74,7 +75,13 @@ public class AwardMapper {
         return award.isUnitAward() ? AwardRecipient.unit(award.getOrganization()) : AwardRecipient.PERSON;
     }
 
-    static CategoryRef categoryRef(AwardCategory category) {
+    /**
+     * The reference of a category.
+     *
+     * @param category the category, null while not chosen
+     * @return reference, null without a category
+     */
+    public static CategoryRef categoryRef(AwardCategory category) {
         return category == null ? null
             : new CategoryRef(category.getId(), category.getName(), category.getNameUk(), category.getLevel());
     }

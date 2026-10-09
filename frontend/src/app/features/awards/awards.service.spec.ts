@@ -47,6 +47,15 @@ describe('AwardsService', () => {
     request.flush({ content: [], totalElements: 0, totalPages: 0, size: 100, number: 0 });
   });
 
+  it('ac1_2_puts_the_chosen_visibility', () => {
+    service.updateVisibility(5, 'UNIVERSITY').subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/awards/5/visibility'));
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ visibility: 'UNIVERSITY' });
+    request.flush({});
+  });
+
   it('ac1_3_sends_the_version_with_an_update_and_a_submission', () => {
     service.update(5, form, 3).subscribe();
     service.submit(5, 4).subscribe();

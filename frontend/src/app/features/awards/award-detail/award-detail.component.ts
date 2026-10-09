@@ -40,6 +40,7 @@ import {
   isOwnAward,
 } from '../awards.service';
 import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
+import { VisibilitySectionComponent } from './visibility-section.component';
 
 @Component({
   selector: 'app-award-detail',
@@ -57,6 +58,7 @@ import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
     AwardStatusComponent,
     AwardDocumentsComponent,
     ReviewPanelComponent,
+    VisibilitySectionComponent,
     TranslocoPipe,
     KyivDatePipe,
   ],
@@ -225,6 +227,20 @@ export class AwardDetailComponent implements OnInit {
           this.refresh(award.id);
         },
       });
+  }
+
+  /** The caller's approved personal award, which the caller may share. */
+  sharable(award: Award): boolean {
+    return (
+      award.status === 'APPROVED' &&
+      award.recipient.type === 'PERSON' &&
+      isOwnAward(award, this.auth.userId())
+    );
+  }
+
+  /** Shows the award as saved with its new visibility. */
+  shared(award: Award): void {
+    this.award.set(award);
   }
 
   /** An own draft the caller may also change. */

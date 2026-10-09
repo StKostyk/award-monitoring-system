@@ -2099,14 +2099,13 @@ paths:
   /awards/{id}/visibility:
     put:
       tags: [Achievements]
-      summary: Choose who sees an own approved personal award (planned, 4.3.1)
+      summary: Choose who sees an own approved personal award
       description: >
         The owner of an `APPROVED` personal award chooses `PRIVATE` (owner and scoped readers), `UNIVERSITY`
         (also every signed-in colleague on the achievements page) or `PUBLIC` (also the public page), with
         `award:update:own`. An effective change writes an `AWARD_VISIBILITY_CHANGED` audit row with the old and
         new value; the same value again changes nothing. The award `version` and its version history are not
         touched. Unit awards have no choice: they are shared once approved. Story 4.3.1.
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: updateAwardVisibility
@@ -2153,13 +2152,12 @@ paths:
   /achievements:
     get:
       tags: [Achievements]
-      summary: Shared achievements for signed-in users (planned, 4.3.1)
+      summary: Shared achievements for signed-in users
       description: >
         Approved personal awards with visibility `UNIVERSITY` or `PUBLIC` whose owner's account is not `DELETED`,
         and approved unit awards; newest award date first, then highest award id. Any signed-in user. A personal
         award belongs to the unit of its organisation (the owner's department at submission); a faculty includes
         its departments. Answered with `Cache-Control: no-store`. Story 4.3.1.
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: listAchievements
@@ -2686,8 +2684,8 @@ components:
           description: |
             Every own award in every status, the awards entered for a faculty or department included:
             `award_id`, `title`, `title_uk`, `description`, `description_uk`, `category`, `awarding_organization`,
-            `award_date`, `status`, `external_url`, `organization`, `recipient_unit` (null for a personal award),
-            `created_at`, `updated_at`
+            `award_date`, `status`, `visibility` (null for a unit award), `external_url`, `organization`,
+            `recipient_unit` (null for a personal award), `created_at`, `updated_at`
           items:
             type: object
         award_versions:
@@ -3006,6 +3004,13 @@ components:
             title similarity of at least 0.6
           items:
             $ref: '#/components/schemas/AwardWarning'
+        visibility:
+          oneOf:
+            - $ref: '#/components/schemas/AwardVisibility'
+            - type: 'null'
+          description: >
+            Who sees the award beyond its owner and scoped readers; `PRIVATE` by default, chosen by the owner once
+            the award is approved (4.3.1); null for a unit award, which is shared once approved
         createdAt:
           type: string
           format: date-time

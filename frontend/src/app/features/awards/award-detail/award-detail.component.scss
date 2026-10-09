@@ -37,6 +37,15 @@
   white-space: pre-line;
 }
 
+.award-detail__visibility {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+app-visibility-section {
+  display: block;
+}
+
 .award-detail__actions {
   display: flex;
   flex-wrap: wrap;

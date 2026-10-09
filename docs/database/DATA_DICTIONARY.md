@@ -299,7 +299,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - Award status follows defined workflow progression
 - Verified awards display a verification badge
 - Impact score calculated based on category level and awarding organization
-- Awards are publicly visible (core system feature for transparency)
+- An award is seen by its owner and the reviewers whose scope covers it; beyond them only by the owner's choice for an approved personal award (`visibility`, V035, 4.3.1), while an approved unit award is shared with every signed-in user without a stored choice. Personal awards of a `DELETED` account are never shared; the erasure function resets `visibility` to `PRIVATE` when the erasure story is built
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -318,6 +318,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `verification_badge` | `BOOLEAN` | NO | `FALSE` | - | Set when a reviewer approves with «Документи перевірено» (the award has at least one document, 4.1.2) |
 | `impact_score` | `INTEGER` | YES | - | CK: 0-100 | Calculated significance score |
 | `external_url` | `VARCHAR(2048)` | YES | - | - | Link to external verification |
+| `visibility` | `VARCHAR(20)` | NO | `'PRIVATE'` | CK: `PRIVATE`, `UNIVERSITY`, `PUBLIC` | Owner's choice for an approved personal award: `PRIVATE` (owner and scoped reviewers), `UNIVERSITY` (also signed-in colleagues on the achievements page), `PUBLIC` (also the public page, 4.3.2); written only by `PUT /awards/{id}/visibility`, without a new `version` or award version (V035) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 | `version` | `BIGINT` | NO | `1` | - | Optimistic locking version; a new draft starts at 1 and every save that changes a field adds 1 (`award_versions.version_number`) |
@@ -338,6 +339,8 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Constraints added by V020**:
 - `ck_awards_title` - `title IS NOT NULL OR title_uk IS NOT NULL`
 - `ck_awards_complete` - `status = 'DRAFT'` or category, awarding organization and award date all present
+- `ck_awards_visibility` - `visibility IN ('PRIVATE', 'UNIVERSITY', 'PUBLIC')` (V035)
+- `ck_awards_visibility_personal` - `recipient_org_id IS NULL OR visibility = 'PRIVATE'`: a unit award has no stored choice (V035)
 - `ck_awards_date` - recreated as `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`; the V005 version compared with the session date (UTC) and refused awards dated today between 00:00 and 03:00 Kyiv time
 - `fk_awards_organizations` - `organization_id` → `organizations(org_id)`
 
@@ -748,6 +751,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `REVIEW_PERIOD_CHANGED` - a dean (own role or a delegation) or a system administrator changed a faculty's review period with `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = the faculty, `user_id` = the caller; `old_values`/`new_values` = `workingDays` (own value, null for the default) and `effectiveWorkingDays`; `new_values.delegatorId` under a delegation); an unchanged value writes no row (4.2.1)
 - `REVIEW_OVERDUE_NOTICED` - the hourly overdue job marked an open request past its deadline (`entity_type` = `awards`, `entity_id` = the award, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = user ids e-mailed, empty at the rector or without a reviewer above); once per level (4.2.2)
 - `AWARD_CORRECTED` - a reviewer corrected the fields of a pending award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `requestId`, `level`, `changes` = list of `field`, `from`, `to`, `reason`, `delegatorId` under a delegation); preceded by `REVIEW_CLAIMED` when the correction claimed the request (4.2, story 2.4.1)
+- `AWARD_VISIBILITY_CHANGED` - the owner changed who sees an approved personal award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` = `from`, `to`); written only for an effective change and the record of the owner's consent to show the award (4.3.1)
 - `DATA_DELETE` - GDPR rights
 - `APPROVAL`, `REJECTION` - Workflow decisions
 
@@ -795,7 +799,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | Value | Description | Required |
 |-------|-------------|----------|
 | `DATA_PROCESSING` | General data processing agreement | Yes |
-| `PUBLIC_VISIBILITY` | Allow public display of awards | Yes |
+| `PUBLIC_VISIBILITY` | Not used: the choice is per award (`awards.visibility`, recorded by `AWARD_VISIBILITY_CHANGED`, 4.3.1) | - |
 | `EMAIL_NOTIFICATIONS` | Receive email notifications | No |
 | `SMS_NOTIFICATIONS` | Receive SMS notifications | No |
 | `ANALYTICS` | Allow usage analytics | No |

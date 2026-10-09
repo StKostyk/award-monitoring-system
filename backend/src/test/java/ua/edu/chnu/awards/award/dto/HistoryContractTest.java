@@ -17,6 +17,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import ua.edu.chnu.awards.audit.dto.AuditTrailEntry;
 import ua.edu.chnu.awards.award.entity.AwardSnapshot;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 
 class HistoryContractTest {
@@ -45,6 +46,20 @@ class HistoryContractTest {
             names(ReviewDecisionRequest.class.getRecordComponents()));
         assertThat(properties(schemas, "DecisionOutcome")).containsExactlyInAnyOrderElementsOf(
             names(DecisionOutcome.class.getRecordComponents()));
+    }
+
+    @Test
+    void ac1_5_achievementSchemasMatchTheProjection() throws IOException {
+        Map<String, Object> schemas = schemas();
+
+        assertThat(properties(schemas, "Achievement")).containsExactlyInAnyOrderElementsOf(
+            names(Achievement.class.getRecordComponents()));
+        assertThat(properties(schemas, "AchievementRecipient")).containsExactlyInAnyOrderElementsOf(
+            names(AchievementRecipient.class.getRecordComponents()));
+        assertThat(properties(schemas, "AwardVisibilityUpdate")).containsExactlyInAnyOrderElementsOf(
+            names(AwardVisibilityUpdate.class.getRecordComponents()));
+        assertThat(node(schemas, "AwardVisibility").get("enum")).isEqualTo(
+            Arrays.stream(AwardVisibility.values()).map(Enum::name).toList());
     }
 
     @Test

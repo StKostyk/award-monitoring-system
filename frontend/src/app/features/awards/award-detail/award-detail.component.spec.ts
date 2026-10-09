@@ -42,6 +42,7 @@ const pending: Award = {
     code: 'DAI',
     type: 'DEPARTMENT',
   },
+  visibility: 'PRIVATE',
   request: {
     status: 'SUBMITTED',
     currentLevel: 'FACULTY_SECRETARY',
@@ -235,6 +236,62 @@ describe('AwardDetailComponent', () => {
     );
     expect(element.textContent).toContain('Анастасія Коваль');
     expect(element.textContent?.split('Кафедра алгебри').length).toBe(2);
+  });
+
+  it('ac1_1_the_owner_of_an_approved_personal_award_chooses_its_visibility', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'APPROVED', request: null }));
+    const fixture = await open(AwardDetailComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-visibility"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-unit-visibility"]')).toBeNull();
+  });
+
+  it('ac1_1_a_pending_award_or_somebody_elses_approved_award_has_no_visibility', async () => {
+    service.get.mockReturnValueOnce(of(pending));
+    const pendingView = await open(AwardDetailComponent, '5');
+
+    expect(
+      (pendingView.nativeElement as HTMLElement).querySelector('[data-testid="award-visibility"]'),
+    ).toBeNull();
+
+    service.get.mockReturnValue(
+      of({ ...pending, status: 'APPROVED', owner: { ...pending.owner, id: 99 } }),
+    );
+    const other = TestBed.createComponent(AwardDetailComponent);
+    other.detectChanges();
+
+    expect(
+      (other.nativeElement as HTMLElement).querySelector('[data-testid="award-visibility"]'),
+    ).toBeNull();
+  });
+
+  it('ac1_1_a_unit_award_is_shown_to_everybody_once_approved', async () => {
+    service.get.mockReturnValue(
+      of({
+        ...pending,
+        status: 'APPROVED',
+        visibility: null,
+        recipient: {
+          type: 'UNIT',
+          organization: { id: 64, name: 'Algebra', nameUk: 'Кафедра алгебри', type: 'DEPARTMENT' },
+        },
+      }),
+    );
+    const fixture = await open(AwardDetailComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-visibility"]')).toBeNull();
+    expect(element.querySelector('[data-testid="award-unit-visibility"]')).not.toBeNull();
+  });
+
+  it('ac1_2_a_saved_visibility_replaces_the_award_shown', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'APPROVED', request: null }));
+    const fixture = await open(AwardDetailComponent, '5');
+
+    fixture.componentInstance.shared({ ...pending, status: 'APPROVED', visibility: 'PUBLIC' });
+
+    expect(fixture.componentInstance.award()?.visibility).toBe('PUBLIC');
   });
 
   it('ac0_7_a_personal_award_shows_no_unit_recipient', async () => {
