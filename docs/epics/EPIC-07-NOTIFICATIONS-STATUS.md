@@ -10,7 +10,7 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 7.1 Reliable events and module boundaries (publication registry, Spring Modulith verification) | Not started, PRD next | - | - |
+| 7.1 Reliable events and module boundaries (publication registry, Spring Modulith verification) | PRD approved ([feature-7.1](../features/epic-07/feature-7.1-reliable-events-module-boundaries.md)) | - | - |
 | 7.2 Notification centre and preferences (in-app notifications, preferences, delivery log, HTML mails) | Not started | - | - |
 
 ## Current focus
