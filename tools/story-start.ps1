@@ -72,6 +72,7 @@ function Close-Story($story) {
 
 $row = Find-StoryRow $Key
 if ($Summary -and -not ($Epic -and $GitHub)) { throw '-Summary needs -Epic and -GitHub' }
+if ($Summary) { $Summary = $Summary -replace '^\s*\d+\.\d+\.\d+\s+', '' }
 if (-not ($row -or $Summary)) { throw "No tracker row for $Key in docs/epics" }
 if (-not $Slug) { $Slug = New-Slug $(if ($row) { $row.Title } else { $Summary }) }
 $branch = "feature/$Key-$Slug"
