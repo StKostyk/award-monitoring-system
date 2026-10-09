@@ -39,6 +39,7 @@ import ua.edu.chnu.awards.award.dto.RequestSummary;
 import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.service.AwardHistory;
@@ -150,7 +151,7 @@ abstract class AbstractAwardEndpointsTest {
             "МОН України", LocalDate.of(2025, 5, 1), null, status, request == null ? null : 80,
             new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"), AwardRecipient.PERSON,
             new OrganizationRef(64L, "Algebra and Informatics", "Кафедра алгебри та інформатики", "DAI",
-                OrganizationType.DEPARTMENT), request, List.of(), Instant.parse("2026-09-28T08:00:00Z"),
-            Instant.parse("2026-09-28T08:30:00Z"), 3L);
+                OrganizationType.DEPARTMENT), request, List.of(), AwardVisibility.PRIVATE,
+            Instant.parse("2026-09-28T08:00:00Z"), Instant.parse("2026-09-28T08:30:00Z"), 3L);
     }
 }

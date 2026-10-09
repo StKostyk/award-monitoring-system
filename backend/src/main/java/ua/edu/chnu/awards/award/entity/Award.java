@@ -97,6 +97,11 @@ public class Award {
     @Column(name = "external_url", length = 2048)
     private String externalUrl;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility", nullable = false, updatable = false, length = 20)
+    private AwardVisibility visibility = AwardVisibility.PRIVATE;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

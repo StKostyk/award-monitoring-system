@@ -20,7 +20,7 @@ import ua.edu.chnu.awards.common.web.FieldViolation;
  * A form body the award endpoints cannot read (a date that does not exist, text where a number belongs) is
  * answered like any other refused field: 422 {@code validation-failed} naming the field.
  */
-@RestControllerAdvice(assignableTypes = AwardController.class)
+@RestControllerAdvice(assignableTypes = {AwardController.class, SharingController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class AwardBodyProblems {
 

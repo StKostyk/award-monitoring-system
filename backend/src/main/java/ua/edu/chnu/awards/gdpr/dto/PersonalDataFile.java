@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -164,6 +165,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
      * @param awardingOrganization who granted it
      * @param awardDate            when it was granted
      * @param status               workflow status
+     * @param visibility           who sees an approved personal award, null for a unit award
      * @param externalUrl          link to an external record
      * @param organization         the unit it is recorded for
      * @param recipientUnit        the faculty or department that received it, null for a personal award
@@ -173,8 +175,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record AwardEntry(long awardId, String title, String titleUk, String description, String descriptionUk,
                              NamedRef category, String awardingOrganization, LocalDate awardDate, AwardStatus status,
-                             String externalUrl, NamedRef organization, NamedRef recipientUnit, Instant createdAt,
-                             Instant updatedAt) {
+                             AwardVisibility visibility, String externalUrl, NamedRef organization,
+                             NamedRef recipientUnit, Instant createdAt, Instant updatedAt) {
     }
 
     /**

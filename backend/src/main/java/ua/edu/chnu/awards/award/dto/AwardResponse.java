@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.user.dto.OrganizationRef;
 
 /**
@@ -26,6 +27,7 @@ import ua.edu.chnu.awards.user.dto.OrganizationRef;
  * @param organization         the owner's department at submission, or the recipient unit
  * @param request              approval request, null for a draft
  * @param warnings             hints about the data that do not block saving
+ * @param visibility           who sees an own personal award beyond the owner and reviewers, null for a unit award
  * @param createdAt            when it was created
  * @param updatedAt            when it was last changed
  * @param version              optimistic-lock version
@@ -35,5 +37,6 @@ public record AwardResponse(Long id, String title, String titleUk, String descri
                             CategoryRef category, String awardingOrganization, LocalDate awardDate,
                             String externalUrl, AwardStatus status, Integer impactScore, UserRef owner,
                             AwardRecipient recipient, OrganizationRef organization, RequestSummary request,
-                            List<AwardWarning> warnings, Instant createdAt, Instant updatedAt, Long version) {
+                            List<AwardWarning> warnings, AwardVisibility visibility,
+                            Instant createdAt, Instant updatedAt, Long version) {
 }

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ua.edu.chnu.awards.authz.AccessDenials;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.FacultyNotFoundException;
+import ua.edu.chnu.awards.award.service.UnitNotFoundException;
 import ua.edu.chnu.awards.delegation.service.DelegationNotFoundException;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
@@ -36,7 +37,7 @@ public class ApiExceptionHandler {
     private final AccessDenials denials;
 
     @ExceptionHandler({UserNotFoundException.class, DelegationNotFoundException.class,
-        AwardNotFoundException.class, FacultyNotFoundException.class})
+        AwardNotFoundException.class, FacultyNotFoundException.class, UnitNotFoundException.class})
     ProblemDetail notFound(RuntimeException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
         problem.setTitle("Not found");

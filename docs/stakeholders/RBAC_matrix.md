@@ -30,7 +30,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Delete Own Document (own draft)⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Download Award Documents⁶ | Own | Own + Department | Own + Faculty | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
 | View Submitted Awards of Others⁵ | ❌ | Department | Faculty | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
-| View Approved University Awards (public pages, planned after Epic 4) | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Choose Who Sees Own Approved Award¹⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Shared Achievements¹⁶ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | View Own Awards⁵ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View Award Change History² | ✓ | ✓ | ✓ | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
 | View Award Review Status and Reviewer Comments⁴ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌⁷ | ✓ | ❌ | ❌ |
@@ -64,6 +65,8 @@ This matrix defines granular permissions for each role within the Award Monitori
 ¹⁴ Feature 4.2.1 (`ReviewPeriods`, `GET`/`PUT /organizations/{id}/review-period`): a faculty secretary or dean whose scope, own or delegated, covers the faculty reads its review period; only the dean (own role or a delegation in effect) changes it, to 1–20 working days or back to the default; the system administrator (`system:configure`) reads and changes every faculty. Anyone else with an approving role gets 404 for the faculty, a caller without one 403. The period applies at the faculty levels only; the rector's levels keep the global default.
 
 ¹⁵ Feature 4.2, story 2.4.1 (`AwardCorrection`, `POST /awards/{id}/corrections`): whoever may review a request (note 10) corrects the title, description, awarding organisation, award date, category or link of the pending award with a reason; the recipient and documents stay the owner's. An unclaimed request is claimed by the correction, one held by a colleague answers 409 `request-claimed`; a draft, returned, withdrawn or decided award answers 404. The request keeps its level and deadline; a changed category sets the minimum approval level from the next decision on. The correction is a `CORRECTED` award version with the reason, audited as `AWARD_CORRECTED` (with the delegator under a delegation) and e-mailed to the owner.
+
+¹⁶ Feature 4.3.1 (`AwardSharing`, `PUT /awards/{id}/visibility`; `Achievements`, `GET /achievements`): the owner (`award:update:own`) of an approved personal award chooses «Лише мені та рецензентам» (`PRIVATE`), «Показувати колегам» (`UNIVERSITY`) or «Показувати публічно» (`PUBLIC`); anyone else, scoped readers included, gets 404, an award that is not approved or a unit award 409 `visibility-fixed`. Every signed-in user reads the achievements page: shared personal awards of accounts that are not deleted and approved unit awards, without e-mail, documents, reviewers or comments. Each effective change is audited as `AWARD_VISIBILITY_CHANGED`.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

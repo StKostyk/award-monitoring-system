@@ -125,4 +125,33 @@ class AwardSchemaIT extends AbstractJpaSliceTest {
         assertThat(awards.findWithDetailsById(draft.getId())).get()
             .extracting(award -> award.getOrganization().getId()).isEqualTo(64L);
     }
+
+    @Test
+    void ac1_2_aVisibilityChangeLeavesTheVersionAlone() {
+        long id = award(jdbc, owner.getId()).status("APPROVED").insert();
+        Long version = jdbc.queryForObject("select version from awards where award_id = ?", Long.class, id);
+
+        awards.updateVisibility(id, "PUBLIC");
+
+        assertThat(jdbc.queryForMap("select visibility, version from awards where award_id = ?", id))
+            .containsEntry("visibility", "PUBLIC").containsEntry("version", version);
+    }
+
+    @Test
+    void ac1_1_aUnitAwardCannotBeShared() {
+        long unitAward = award(jdbc, owner.getId()).unit(TestUsers.DAI_DEPARTMENT_ID).insert();
+
+        assertThatThrownBy(() -> jdbc.update("update awards set visibility = 'UNIVERSITY' where award_id = ?",
+            unitAward))
+            .isInstanceOf(DataIntegrityViolationException.class).hasMessageContaining("ck_awards_visibility_personal");
+    }
+
+    @Test
+    void ac1_4_anUnknownVisibilityIsRefused() {
+        long personal = award(jdbc, owner.getId()).insert();
+
+        assertThatThrownBy(() -> jdbc.update("update awards set visibility = 'FRIENDS' where award_id = ?",
+            personal))
+            .isInstanceOf(DataIntegrityViolationException.class).hasMessageContaining("ck_awards_visibility");
+    }
 }
