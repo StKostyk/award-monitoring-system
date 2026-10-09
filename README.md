@@ -30,7 +30,7 @@ Development runs in one-week sprints. Delivered so far:
 | 1 User management | Registration, sign-in on the embedded authorization server, roles scoped to organisational units, delegation, profile, GDPR data export | Done |
 | 2 Award lifecycle | Drafts, validation, categories, duplicate detection, version history, review status | Done |
 | 3 Documents | Certificate upload with malware scanning and per-user limits; production configuration; university brand and dark theme | Done (OCR deferred) |
-| 4 Review workflow | Decisions of reviewers, escalation, deadlines | Next |
+| 4 Approval workflow | Reviewer queue with claim and hand-over, decisions and batch review with template answers, withdrawal and resubmission, per-faculty review period, overdue notice to the next level, corrections by reviewers, achievements pages shared with colleagues or the public | Done |
 
 Detailed progress: [backlog](docs/project-management/BACKLOG.md), [epic trackers](docs/epics/),
 [change log](CHANGELOG.md).

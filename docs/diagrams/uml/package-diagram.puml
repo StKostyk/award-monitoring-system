@@ -7,7 +7,7 @@ skinparam package {
     BackgroundColor<<config>> LightGray
 }
 
-title Award Monitoring & Tracking System - Package Diagram (Java backend, as built after Epic 3)
+title Award Monitoring & Tracking System - Package Diagram (Java backend, as built after Epic 4)
 
 ' Package by domain: each domain has controller, dto, entity, event, mapper, repository, service as needed
 
@@ -74,6 +74,15 @@ package "ua.edu.chnu.awards" {
             class AwardController
             class AwardCategoryController
             class AwardHistoryController
+            class ReviewController
+            class ReviewBatchController
+            class CorrectionController
+            class WithdrawalController
+            class SharingController
+            class AchievementController
+            class PublicAchievementController
+            class ReviewPeriodController
+            class RecipientUnitController
         }
         package "service" as award_service {
             class AwardService
@@ -85,12 +94,26 @@ package "ua.edu.chnu.awards" {
             class AwardHistory
             class AwardStatusService
             class StatusEstimator
+            class Transitions
+            class ReviewerRule
+            class ReviewQueue
+            class ReviewAssignment
+            class ReviewDecisions
+            class BatchReview
+            class AwardWithdrawal
+            class AwardCorrection
+            class ReviewPeriods
+            class OverdueJob
+            class OverdueNotices
+            class AwardSharing
+            class Achievements
         }
         package "entity" as award_entity {
             class Award
             class AwardCategory
             class AwardRequest
             class ReviewDecision
+            class ReviewTemplate
             class AwardVersion
         }
         package "repository" as award_repository {
@@ -169,7 +192,9 @@ package "ua.edu.chnu.awards" {
 ' Dependencies between top-level packages
 award ..> user : owner, organisation
 award ..> authz : readable scope
-award ..> audit : AWARD_* rows
+award ..> audit : AWARD_* and REVIEW_* rows
+award ..> delegation : delegated review scopes
+award ..> config : workflow properties
 award ..> document : drafts deleted with their objects
 document ..> award : owner draft, read rule
 document ..> authz
@@ -190,8 +215,8 @@ user ..> common
 
 note bottom of award
     Mappers are hand-written @Component classes;
-    no MapStruct. Planned domains: parsing (OCR, deferred),
-    workflow (Epic 4), analytics (Epic 5),
+    no MapStruct. The review workflow lives in award (ADR-023).
+    Planned domains: parsing (OCR, deferred), analytics (Epic 5),
     compliance (Epic 6), notification (Epic 7).
 end note
 

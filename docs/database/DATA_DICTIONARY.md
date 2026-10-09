@@ -5,7 +5,7 @@
 > **Document Version**: 1.1  
 > **Last Updated**: October 2026  
 > **Author**: Stefan Kostyk  
-> **Total Entities**: 16, plus 3 authorization-server tables  
+> **Total Entities**: 17, plus 3 authorization-server tables  
 > **Classification**: Internal
 
 ---
@@ -18,7 +18,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 | **Domain** | **Entities** | **Purpose** |
 |------------|--------------|-------------|
-| **User Domain** | `users`, `user_roles`, `organizations` | Identity, access control, organizational structure |
+| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations` | Identity, access control, approval authority lent to a colleague, organizational structure |
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
@@ -747,13 +747,16 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
 - `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
 - `DOCUMENT_REJECTED` - the malware scanner refused an upload (`entity_type` = `documents`, `entity_id` null since nothing was stored, `user_id` = the uploader; `new_values` = `awardId` and the `signature` ClamAV found; never the file name) (Feature 3.1.3)
+- `AWARD_SUBMITTED`, `AWARD_WITHDRAWN` - the owner submitted a draft or took an unclaimed request back to a draft (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` carries `requestId` and `level`, `from` the status left on a withdrawal, `recipientOrganizationId` for a unit award on submission)
+- `REVIEW_CLAIMED`, `REVIEW_TAKEN_OVER`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER` - the claim of a request changed (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the acting reviewer; `new_values` carries `requestId`, `level`, `previousReviewerId` on a take-over, `reviewerId` and `delegated` on a hand-over, `delegatorId` under a delegation)
+- `REVIEW_DECISION` - one decision on a request (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `level`, `decision`, `requestStatus`, `newLevel`, and `delegatorId` under a delegation)
 - `REVIEW_BATCH` - a reviewer applied one decision to several awards with `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = the reviewer; `new_values` = `decision`, `items`, `done`, `failed`); every decided item also has its own `REVIEW_DECISION` row (4.1.4)
 - `REVIEW_PERIOD_CHANGED` - a dean (own role or a delegation) or a system administrator changed a faculty's review period with `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = the faculty, `user_id` = the caller; `old_values`/`new_values` = `workingDays` (own value, null for the default) and `effectiveWorkingDays`; `new_values.delegatorId` under a delegation); an unchanged value writes no row (4.2.1)
 - `REVIEW_OVERDUE_NOTICED` - the hourly overdue job marked an open request past its deadline (`entity_type` = `awards`, `entity_id` = the award, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = user ids e-mailed, empty at the rector or without a reviewer above); once per level (4.2.2)
 - `AWARD_CORRECTED` - a reviewer corrected the fields of a pending award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `requestId`, `level`, `changes` = list of `field`, `from`, `to`, `reason`, `delegatorId` under a delegation); preceded by `REVIEW_CLAIMED` when the correction claimed the request (4.2, story 2.4.1)
 - `AWARD_VISIBILITY_CHANGED` - the owner changed who sees an approved personal award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` = `from`, `to`); written only for an effective change and the record of the owner's consent to show the award (4.3.1)
 - `DATA_DELETE` - GDPR rights
-- `APPROVAL`, `REJECTION` - Workflow decisions
+- `APPROVAL`, `REJECTION` - reserved and unused; decisions are written as `REVIEW_DECISION`
 
 **Indexes**:
 - `pk_audit_logs` - Primary key on `(log_id, created_at)` (partitioned)
@@ -843,7 +846,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `read_at` | `TIMESTAMPTZ` | YES | - | - | When marked as read |
 | `expires_at` | `TIMESTAMPTZ` | YES | - | - | Notification expiry |
 
-**Notification Types** (`type`):
+**Notification Types** (`type`): no application code writes this table yet; decisions, corrections and overdue notices of Epic 4 are sent as e-mail only, and the in-app centre arrives with Epic 7.
+
 | Value | Description | Trigger Event |
 |-------|-------------|---------------|
 | `AWARD_SUBMITTED` | New award submitted | Award submission |
@@ -914,15 +918,16 @@ The minimum approval level is the lowest role that may give the final approval; 
 |------------|-------------------|
 | `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
 | `user_roles` | → users (N:1), → organizations (N:1) |
-| `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N) |
+| `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N), ← awards (1:N, as recipient) |
 | `one_time_tokens` | → users (N:1) |
 | `user_devices` | → users (N:1) |
-| `awards` | → users (N:1), → award_categories (N:1), → organizations (N:1), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
+| `awards` | → users (N:1), → award_categories (N:1), → organizations (N:1), → organizations (N:1, recipient unit, optional), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
 | `award_versions` | → awards (N:1), → users (N:1, actor) |
 | `award_categories` | → award_categories (N:1, self), ← award_categories (1:N), ← awards (1:N) |
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
-| `review_decisions` | → award_requests (N:1), → users (N:1) |
+| `review_decisions` | → award_requests (N:1), → users (N:1), → users (N:1, delegator, optional) |
+| `role_delegations` | → users (N:1, delegator), → users (N:1, delegate), → organizations (N:1) |
 | `review_templates` | none (reference data) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |

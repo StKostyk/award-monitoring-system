@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "award-monitoring-api-v1",
     "name": "Award Monitoring & Tracking System API",
-    "description": "Requests for the implemented endpoints of the Award Monitoring System (Epics 1 to 3). The contract is docs/api/openapi.yml; planned endpoints (approval, reports) are not included.\n\n## Authentication\nThe application is its own OAuth 2.1 provider. The collection uses Postman's OAuth 2.0 helper with the authorization code flow and PKCE for the public client `award-web`:\n1. Open the collection, tab Authorization, and click *Get New Access Token*.\n2. Sign in with a seed account (for example `employee.fmi@chnu.edu.ua`) in the Postman window.\n3. Click *Use Token*. Access tokens live 15 minutes; request a new one when it expires.\n\nThe callback URL `http://localhost:4200/callback` is a registered redirect URI; Postman captures the redirect, so the frontend does not need to run. Leave *Authorize using browser* off.\n\n## Variables\n`baseUrl` (backend, default http://localhost:8080/api/v1), `authBase` (http://localhost:8080), `awardId`, `awardVersion` (saved from award responses), `categoryId`, `userId`, `delegationId`, `documentId` (saved from an upload).",
+    "description": "Requests for the implemented endpoints of the Award Monitoring System (Epics 1 to 4). The contract is docs/api/openapi.yml; planned endpoints (approval, reports) are not included.\n\n## Authentication\nThe application is its own OAuth 2.1 provider. The collection uses Postman's OAuth 2.0 helper with the authorization code flow and PKCE for the public client `award-web`:\n1. Open the collection, tab Authorization, and click *Get New Access Token*.\n2. Sign in with a seed account (for example `employee.fmi@chnu.edu.ua`) in the Postman window.\n3. Click *Use Token*. Access tokens live 15 minutes; request a new one when it expires.\n\nThe callback URL `http://localhost:4200/callback` is a registered redirect URI; Postman captures the redirect, so the frontend does not need to run. Leave *Authorize using browser* off.\n\n## Variables\n`baseUrl` (backend, default http://localhost:8080/api/v1), `authBase` (http://localhost:8080), `awardId`, `awardVersion` (saved from award responses), `categoryId`, `userId`, `delegationId`, `documentId` (saved from an upload).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -96,6 +96,10 @@
     },
     {
       "key": "documentId",
+      "value": ""
+    },
+    {
+      "key": "organizationId",
       "value": ""
     }
   ],
@@ -1222,6 +1226,510 @@
               ]
             },
             "description": "Audited as AUDIT_EXPORT."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Review workflow",
+      "description": "Epic 4: queue, claims, decisions, batch review, corrections, withdrawal and the review period.",
+      "item": [
+        {
+          "name": "Review queue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews?assigned=me&level=DEAN&organizationId=&noticed=true&overdue=true&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "assigned",
+                  "value": "me",
+                  "disabled": true
+                },
+                {
+                  "key": "level",
+                  "value": "DEAN",
+                  "disabled": true
+                },
+                {
+                  "key": "organizationId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "noticed",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "overdue",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Open requests the caller may review, oldest deadline first."
+          }
+        },
+        {
+          "name": "Review item",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/reviewer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "reviewer"
+              ]
+            },
+            "description": "The request of one award with its reviewer, level, deadline and version."
+          }
+        },
+        {
+          "name": "Reviewer candidates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/reviewers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "reviewers"
+              ]
+            },
+            "description": "Colleagues a request can be handed to."
+          }
+        },
+        {
+          "name": "Claim, take over or hand over",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/reviewer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "reviewer"
+              ]
+            },
+            "description": "Claims an unclaimed request; takeOver true takes it from a lower level; reviewerId hands it to a colleague. 409 request-claimed or request-stale.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestVersion\": 0,\n  \"reviewerId\": null,\n  \"takeOver\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Release a claim",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/reviewer?requestVersion=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "reviewer"
+              ],
+              "query": [
+                {
+                  "key": "requestVersion",
+                  "value": "0",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Gives the request back to the queue."
+          }
+        },
+        {
+          "name": "Decide",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/decisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "decisions"
+              ]
+            },
+            "description": "Approve, reject, return or escalate one request. Reject and return need a comment.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVE\",\n  \"requestVersion\": 0,\n  \"comment\": null,\n  \"verified\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Review templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/templates?decision=RETURN",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "templates"
+              ],
+              "query": [
+                {
+                  "key": "decision",
+                  "value": "RETURN",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Ready-made comments per decision, in the caller's language."
+          }
+        },
+        {
+          "name": "Decide several",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/decisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "decisions"
+              ]
+            },
+            "description": "One decision for 1 to 50 requests; each item has its own outcome.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"RETURN\",\n  \"comment\": \"Please attach the certificate.\",\n  \"verified\": false,\n  \"items\": [\n    {\n      \"awardId\": 1,\n      \"requestVersion\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Correct a pending award",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/corrections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "corrections"
+              ]
+            },
+            "description": "Changes fields of a pending award with a reason; the version numbers are those last read.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Corrected title\",\n  \"version\": 1,\n  \"requestVersion\": 0,\n  \"reason\": \"Typo in the title\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Withdraw an unclaimed request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/withdraw",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "withdraw"
+              ]
+            },
+            "description": "The owner takes the request back to a draft while nobody has claimed it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Read a faculty review period",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/review-period",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organizations",
+                "{{organizationId}}",
+                "review-period"
+              ]
+            },
+            "description": "Working days of a faculty and the global default."
+          }
+        },
+        {
+          "name": "Set a faculty review period",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organizations/{{organizationId}}/review-period",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organizations",
+                "{{organizationId}}",
+                "review-period"
+              ]
+            },
+            "description": "Dean or system administrator; null returns the faculty to the default.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workingDays\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Recipient units",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/awards/recipient-units",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "recipient-units"
+              ]
+            },
+            "description": "Faculties and departments the caller may submit an award for."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Achievements",
+      "description": "Feature 4.3: who sees an approved award, and the signed-in and public lists.",
+      "item": [
+        {
+          "name": "Choose who sees an approved award",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/awards/{{awardId}}/visibility",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "awards",
+                "{{awardId}}",
+                "visibility"
+              ]
+            },
+            "description": "PRIVATE, UNIVERSITY or PUBLIC; the owner of an approved personal award only.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visibility\": \"UNIVERSITY\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Achievements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/achievements?unit=&year=&level=&recipient=&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "achievements"
+              ],
+              "query": [
+                {
+                  "key": "unit",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "year",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "level",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "recipient",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Shared personal awards and approved unit awards for signed-in users."
+          }
+        },
+        {
+          "name": "Public achievements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/achievements?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "achievements"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "The public set, without a token; 120 requests a minute per address.",
+            "auth": {
+              "type": "noauth"
+            }
           }
         }
       ]

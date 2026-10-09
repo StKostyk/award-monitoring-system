@@ -1,6 +1,7 @@
 # =============================================================================
 # Award Monitoring & Tracking System - Kubernetes Deployment
 # =============================================================================
+# Not used for the defense (ADR-021: Docker Compose on one server); kept as the alternative of ADR-018.
 # Production-grade Kubernetes manifests for backend and frontend services
 # Supports: Blue-Green deployment, health checks, resource limits, secrets
 # =============================================================================

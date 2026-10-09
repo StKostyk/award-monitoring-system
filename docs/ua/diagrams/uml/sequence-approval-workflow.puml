@@ -8,6 +8,7 @@ actor "Рецензент\n(будь-який рівень)" as reviewer
 actor "Власник" as owner
 participant "Вебзастосунок" as webapp
 participant "ReviewController" as api
+participant "BatchReview" as batch
 participant "ReviewAssignment" as assignment
 participant "ReviewDecisions" as decisions
 participant "Transitions" as transitions
@@ -18,7 +19,8 @@ note over webapp, db
     Кроки однакові на кожному рівні (секретар факультету, декан,
     секретар ректора, ректор); рівень визначає лише, хто може
     розглядати (область ролі чи делегування) і чи затвердження остаточне.
-    Пакетні рішення (4.1.4) виконують те саме рішення для кожної заявки.
+    Пакетні рішення (4.1.4) виконують те саме рішення для кожної заявки,
+    кожне в окремій транзакції.
 end note
 
 == Черга і взяття в роботу (4.1.1) ==
@@ -62,6 +64,26 @@ else відкрита заявка
     decisions -> mails: подія рішення, доставляється після фіксації
     mails -> owner: лист: затверджено, передано далі, повернуто\nз коментарем або відхилено з причиною
 end
+
+== Пакетне рішення (4.1.4) ==
+reviewer -> webapp: вибрати рядки, «Затвердити (n)» / «Повернути» / …
+webapp -> api: GET /reviews/templates?decision=…
+api --> webapp: шаблони мовою користувача
+webapp -> webapp: діалог: «Шаблон відповіді» заповнює коментар
+webapp -> batch: POST /reviews/decisions\n{decision, comment?, items[{awardId, requestVersion}]}
+batch -> batch: 1–50 різних елементів (400), коментар (422)
+loop кожен елемент у порядку надсилання
+    batch -> decisions: ухвалити (окрема транзакція)
+    alt ухвалено
+        decisions --> batch: DecisionOutcome → DONE
+        decisions -> mails: подія рішення, після фіксації цього елемента
+    else 404 / 409 / 422
+        decisions --> batch: проблема → FAILED {code, detail}
+    end
+end
+batch -> db: INSERT audit_logs (REVIEW_BATCH: елементів, виконано, невдало)
+batch --> webapp: 200 [ {awardId, outcome, code?, status?, level?} ]
+webapp --> reviewer: «Опрацьовано: n з m», невдалі нагороди з причинами;\nухвалені рядки залишають чергу, невдалі лишаються вибраними
 
 == Власник ==
 owner -> webapp: Відкрити нагороду

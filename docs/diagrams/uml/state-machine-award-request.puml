@@ -62,7 +62,7 @@ WITHDRAWN --> SUBMITTED : resubmit\n/ start level, award PENDING (4.1.3)
 state APPROVED <<approved>> : final; verification badge when\nthe reviewer checked the documents
 state REJECTED <<rejected>> : final; reason shown to the owner
 
-APPROVED --> ARCHIVED <<archived>> : retention period elapsed (award status)
+APPROVED --> ARCHIVED <<archived>> : retention period elapsed (award status; planned, Epic 6)
 REJECTED --> [*]
 ARCHIVED --> [*]
 

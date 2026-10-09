@@ -72,10 +72,10 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Approval Workflow** |
-| Review Department Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Approve Department Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Review Faculty Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Approve Faculty Awards | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Review Department Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Approve Department Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Review Faculty Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Approve Faculty Awards | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Escalate to University Level | ❌ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Claim, Release and Hand Over a Review¹⁰ | ❌ | Own level | Own level; take over lower | Own level; take over lower | Own level; take over lower | ❌ | ❌ | ❌ | ❌ |
 | Decide at a Level (Own or Lower)¹¹ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
@@ -83,7 +83,7 @@ This matrix defines granular permissions for each role within the Award Monitori
 | Correct a Pending Award¹⁵ | ❌ | Own level | Own or lower | Own or lower | Own or lower | ❌ | ❌ | ❌ | ❌ |
 | Read the Faculty Review Period¹⁴ | ❌ | Own faculty | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
 | Set the Faculty Review Period¹⁴ | ❌ | ❌ | Own faculty | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ |
-| Final University Approval | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| Final Approval of National and International Awards | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Reject Award Request | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Request Additional Information | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 
@@ -190,14 +190,10 @@ No level requires the rector. The review period of each level is counted in work
 - **Faculty Secretary** inherits all Employee permissions
 - **Dean** inherits all Faculty Secretary permissions for their faculty
 - **Rector** inherits all Dean permissions for the entire university
-- **Rector's Secretary** can act on behalf of Rector for administrative tasks (not approval decisions)
+- **Rector's Secretary** can act on behalf of Rector for administrative tasks and decides at the levels up to their own (note 11)
 
 ### Temporary Delegation Rules
-| Delegating Role | Can Delegate To | Duration Limit | Approval Required |
-|-----------------|----------------|----------------|-------------------|
-| Faculty Secretary | Another Faculty Secretary | 30 days | Dean approval |
-| Dean | Another Dean or Senior Faculty Secretary | 60 days | Rector approval |
-| Rector | Dean (acting capacity) | 90 days | Board notification |
+An approval role is lent to a colleague for at most 90 days, for any of the four approval roles and without a second approval; the delegation is stamped on every decision it enables (`review_decisions.delegator_id`). The rules as built are in the "Approval delegation" row of [AUTHENTICATION_AUTHORIZATION.md](../security/AUTHENTICATION_AUTHORIZATION.md).
 
 ### Emergency Access Procedures
 - **Technical Emergency:** Dev Team can temporarily escalate to System Ops level for critical issues

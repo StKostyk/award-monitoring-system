@@ -5,7 +5,7 @@
 > **Версія Документа**: 1.1  
 > **Останнє Оновлення**: Жовтень 2026  
 > **Автор**: Стефан Костик  
-> **Загальна Кількість Сутностей**: 16, а також 3 таблиці сервера авторизації  
+> **Загальна Кількість Сутностей**: 17, а також 3 таблиці сервера авторизації  
 > **Класифікація**: Внутрішній
 
 ---
@@ -18,7 +18,7 @@
 
 | **Домен** | **Сутності** | **Призначення** |
 |-----------|--------------|-----------------|
-| **Домен Користувачів** | `users`, `user_roles`, `organizations` | Ідентичність, контроль доступу, організаційна структура |
+| **Домен Користувачів** | `users`, `user_roles`, `role_delegations`, `organizations` | Ідентичність, контроль доступу, передача повноважень затвердження колезі, організаційна структура |
 | **Домен Автентифікації** | `one_time_tokens`, `user_devices`, `oauth2_*` | Посилання з листів, відомі браузери, стан сервера авторизації |
 | **Домен Нагород** | `awards`, `award_versions`, `award_categories`, `documents` | Основні бізнес-сутності для управління нагородами |
 | **Домен Робочого Процесу** | `award_requests`, `review_decisions`, `review_templates` | Відстеження багаторівневого робочого процесу затвердження |
@@ -297,7 +297,7 @@
 - Статус нагороди слідує визначеній прогресії робочого процесу
 - Перевірені нагороди відображають бейдж верифікації
 - Бал впливу розраховується на основі рівня категорії та організації що нагороджує
-- Нагороди публічно видимі (основна функція системи для прозорості)
+- Нагороду бачать її власник і рецензенти, чия область її охоплює; поза ними — лише за вибором власника для схваленої особистої нагороди (`visibility`, V035, 4.3.1), тоді як схвалену нагороду підрозділу бачать усі користувачі, що увійшли, без збереженого вибору. Особисті нагороди облікового запису `DELETED` ніколи не показуються; функція видалення скидає `visibility` до `PRIVATE`, коли історію видалення буде реалізовано
 
 | **Колонка** | **Тип Даних** | **Nullable** | **За Замовч.** | **Обмеження** | **Опис** |
 |-------------|---------------|--------------|----------------|---------------|----------|
@@ -316,6 +316,7 @@
 | `verification_badge` | `BOOLEAN` | НІ | `FALSE` | - | Встановлюється, коли рецензент затверджує з позначкою «Документи перевірено» (нагорода має хоча б один документ, 4.1.2) |
 | `impact_score` | `INTEGER` | ТАК | - | CK: 0-100 | Розрахований бал значущості |
 | `external_url` | `VARCHAR(2048)` | ТАК | - | - | Посилання на зовнішню верифікацію |
+| `visibility` | `VARCHAR(20)` | НІ | `'PRIVATE'` | CK: `PRIVATE`, `UNIVERSITY`, `PUBLIC` | Вибір власника для схваленої особистої нагороди: `PRIVATE` (власник і рецензенти в області), `UNIVERSITY` (також колеги, що увійшли, на сторінці досягнень), `PUBLIC` (також публічна сторінка, 4.3.2); записується лише `PUT /awards/{id}/visibility`, без нової `version` чи версії нагороди (V035) |
 | `created_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу створення запису |
 | `updated_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу останньої модифікації |
 | `version` | `BIGINT` | НІ | `1` | - | Версія оптимістичного блокування; нова чернетка починає з 1, а кожне збереження, що змінює поле, додає 1 (`award_versions.version_number`) |
@@ -336,6 +337,8 @@
 **Обмеження, додані V020**:
 - `ck_awards_title` - `title IS NOT NULL OR title_uk IS NOT NULL`
 - `ck_awards_complete` - `status = 'DRAFT'` або присутні категорія, організація, що нагороджує, і дата нагороди
+- `ck_awards_visibility` - `visibility IN ('PRIVATE', 'UNIVERSITY', 'PUBLIC')` (V035)
+- `ck_awards_visibility_personal` - `recipient_org_id IS NULL OR visibility = 'PRIVATE'`: нагорода підрозділу не має збереженого вибору (V035)
 - `ck_awards_date` - перестворено як `award_date <= (now() AT TIME ZONE 'Europe/Kyiv')::date`; версія V005 порівнювала з датою сесії (UTC) і відхиляла нагороди з сьогоднішньою датою між 00:00 і 03:00 за київським часом
 - `fk_awards_organizations` - `organization_id` → `organizations(org_id)`
 
@@ -514,6 +517,7 @@
 
 **Бізнес-Правила**:
 - Версія записується після збереження нагороди при створенні чернетки (`CREATED`), збереженні, що змінило `awards.version` (`UPDATED`; збереження без змін версії не пише), і поданні (`SUBMITTED`); невдале збереження версії не пише, бо відкочується разом зі зміною
+- Виправлення нагороди на розгляді рецензентом (4.2, історія 2.4.1) записує версію `CORRECTED` з рецензентом як виконавцем і причиною в `comment`, у транзакції виправлення
 - `version_number` — це `version` нагороди після зміни; V023 записала по одному рядку `BASELINE` для кожної наявної нагороди з її поточним станом і версією, без виконавця
 - Рядки незмінні: `trg_award_versions_immutable` відхиляє будь-яке оновлення, окрім очищення `actor_id` (`ON DELETE SET NULL`, коли обліковий запис виконавця стирається)
 - Видаляються разом із нагородою (`ON DELETE CASCADE`); стирання поданих нагород і їхніх версій вирішується в епіку 6
@@ -524,11 +528,12 @@
 | `version_id` | `BIGSERIAL` | НІ | Авто | PK | Ідентифікатор рядка |
 | `award_id` | `BIGINT` | НІ | - | FK→awards `ON DELETE CASCADE` | Нагорода |
 | `version_number` | `BIGINT` | НІ | - | UNIQUE з `award_id` | `awards.version` після зміни |
-| `action` | `VARCHAR(20)` | НІ | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED`, `DECIDED` (рішення рецензента змінило статус нагороди, V029) |
+| `action` | `VARCHAR(20)` | НІ | - | CHECK | `BASELINE`, `CREATED`, `UPDATED`, `SUBMITTED`, `DECIDED` (рішення рецензента змінило статус нагороди, V029), `CORRECTED` (рецензент виправив нагороду на розгляді, V034) |
 | `actor_id` | `BIGINT` | ТАК | - | FK→users `ON DELETE SET NULL` | Хто зберіг версію; NULL для базових версій і стертих облікових записів |
 | `snapshot` | `JSONB` | НІ | - | - | `title`, `titleUk`, `description`, `descriptionUk`, `awardingOrganization`, `awardDate` (дата ISO), `categoryId`, `status`, `impactScore`, `verificationBadge`, `externalUrl`, `organizationId` |
 | `changed_fields` | `TEXT[]` | ТАК | - | - | Ключі знімка, що відрізняються від попередньої версії; NULL для першої |
 | `created_at` | `TIMESTAMPTZ` | НІ | `now()` | - | Коли версію збережено |
+| `comment` | `TEXT` | ТАК | - | - | Причина рецензента для версії `CORRECTED` (1–1000 символів, перевіряє застосунок); інакше NULL (V034) |
 
 **Обмеження**:
 - `uk_award_versions_number` - `UNIQUE (award_id, version_number)`
@@ -738,11 +743,16 @@
 - `AUDIT_EXPORT` - власник `audit:read` завантажив журнал аудиту нагороди у CSV (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = аудитор; `new_values` = записані `rows` і `truncated`, якщо старіші рядки понад 10 000 пропущено)
 - `DOCUMENT_DOWNLOAD` - читач нагороди завантажив документ (`entity_type` = `documents`, `entity_id` = документ, `user_id` = читач; `new_values` = `awardId`); завантаження на сервер і видалення — це рядки тригера `INSERT` і `DELETE` з тим, хто викликав, як виконавцем (функція 3.1)
 - `DOCUMENT_REJECTED` - антивірусний сканер відхилив завантаження (`entity_type` = `documents`, `entity_id` null, бо нічого не збережено, `user_id` = той, хто завантажує; `new_values` = `awardId` і знайдена ClamAV `signature`; ніколи не назва файлу) (функція 3.1.3)
+- `AWARD_SUBMITTED`, `AWARD_WITHDRAWN` - власник подав чернетку або повернув непризначену заявку до чернетки (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = власник; `new_values` містить `requestId` і `level`, `from` — статус, який залишено при відкликанні, `recipientOrganizationId` для нагороди підрозділу при поданні)
+- `REVIEW_CLAIMED`, `REVIEW_TAKEN_OVER`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER` - змінилося взяття заявки в роботу (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = рецензент-виконавець; `new_values` містить `requestId`, `level`, `previousReviewerId` при перехопленні, `reviewerId` і `delegated` при передачі, `delegatorId` за делегування)
+- `REVIEW_DECISION` - одне рішення щодо заявки (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = рецензент; `new_values` = `level`, `decision`, `requestStatus`, `newLevel`, а за делегування `delegatorId`)
 - `REVIEW_BATCH` - рецензент застосував одне рішення до кількох нагород через `POST /reviews/decisions` (`entity_type` = `awards`, `entity_id` null, `user_id` = рецензент; `new_values` = `decision`, `items`, `done`, `failed`); кожна вирішена нагорода має також власний рядок `REVIEW_DECISION` (4.1.4)
 - `REVIEW_PERIOD_CHANGED` - декан (власна роль або доручення) чи системний адміністратор змінив термін розгляду факультету через `PUT /organizations/{id}/review-period` (`entity_type` = `organizations`, `entity_id` = факультет, `user_id` = виконавець; `old_values`/`new_values` = `workingDays` (власне значення, null для типового) і `effectiveWorkingDays`; `new_values.delegatorId` за дорученням); незмінене значення рядка не пише (4.2.1)
 - `REVIEW_OVERDUE_NOTICED` - щогодинне завдання позначило відкритий запит із минулим терміном (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = id адресатів листа, порожньо на рівні ректора чи без рецензента вище); один раз на рівень (4.2.2)
+- `AWARD_CORRECTED` - рецензент виправив поля нагороди на розгляді (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = рецензент; `new_values` = `requestId`, `level`, `changes` = список `field`, `from`, `to`, `reason`, а за делегування `delegatorId`); якщо виправлення взяло заявку в роботу, йому передує `REVIEW_CLAIMED` (4.2, історія 2.4.1)
+- `AWARD_VISIBILITY_CHANGED` - власник змінив, хто бачить схвалену особисту нагороду (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = власник; `new_values` = `from`, `to`); записується лише для дійсної зміни й є записом про згоду власника показувати нагороду (4.3.1)
 - `DATA_DELETE` - Права GDPR
-- `APPROVAL`, `REJECTION` - Рішення робочого процесу
+- `APPROVAL`, `REJECTION` - зарезервовані й не використовуються; рішення записуються як `REVIEW_DECISION`
 
 **Індекси**:
 - `pk_audit_logs` - Первинний ключ на `(log_id, created_at)` (партиціонований)
@@ -788,7 +798,7 @@
 | Значення | Опис | Обов'язковий |
 |----------|------|--------------|
 | `DATA_PROCESSING` | Загальна угода обробки даних | Так |
-| `PUBLIC_VISIBILITY` | Дозволити публічне відображення нагород | Так |
+| `PUBLIC_VISIBILITY` | Не використовується: вибір робиться для кожної нагороди (`awards.visibility`, фіксується `AWARD_VISIBILITY_CHANGED`, 4.3.1) | - |
 | `EMAIL_NOTIFICATIONS` | Отримувати email сповіщення | Ні |
 | `SMS_NOTIFICATIONS` | Отримувати SMS сповіщення | Ні |
 | `ANALYTICS` | Дозволити аналітику використання | Ні |
@@ -832,7 +842,8 @@
 | `read_at` | `TIMESTAMPTZ` | ТАК | - | - | Коли позначено як прочитане |
 | `expires_at` | `TIMESTAMPTZ` | ТАК | - | - | Закінчення терміну сповіщення |
 
-**Типи Сповіщень** (`type`):
+**Типи Сповіщень** (`type`): жоден код застосунку поки не записує цю таблицю; рішення, виправлення й повідомлення про прострочення епіку 4 надсилаються лише електронною поштою, а центр сповіщень у застосунку з'явиться в епіку 7.
+
 | Значення | Опис | Тригер Події |
 |----------|------|--------------|
 | `AWARD_SUBMITTED` | Нова нагорода подана | Подання нагороди |
@@ -903,15 +914,16 @@
 |--------------|-------------|
 | `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
 | `user_roles` | → users (N:1), → organizations (N:1) |
-| `organizations` | → organizations (N:1, само), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N) |
+| `organizations` | → organizations (N:1, само), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N), ← awards (1:N, як отримувач) |
 | `one_time_tokens` | → users (N:1) |
 | `user_devices` | → users (N:1) |
-| `awards` | → users (N:1), → award_categories (N:1), → organizations (N:1), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
+| `awards` | → users (N:1), → award_categories (N:1), → organizations (N:1), → organizations (N:1, підрозділ-отримувач, необов'язково), ← documents (1:N), ← award_versions (1:N), ← award_requests (1:1) |
 | `award_versions` | → awards (N:1), → users (N:1, виконавець) |
 | `award_categories` | → award_categories (N:1, само), ← award_categories (1:N), ← awards (1:N) |
 | `documents` | → awards (N:1), → award_requests (N:1), → users (N:1) |
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
-| `review_decisions` | → award_requests (N:1), → users (N:1) |
+| `review_decisions` | → award_requests (N:1), → users (N:1), → users (N:1, делегатор, необов'язково) |
+| `role_delegations` | → users (N:1, делегатор), → users (N:1, делегат), → organizations (N:1) |
 | `review_templates` | немає (довідкові дані) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |

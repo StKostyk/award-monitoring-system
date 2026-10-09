@@ -35,13 +35,13 @@ Base package `ua.edu.chnu.awards`. Code is organised by domain, each domain owni
 ```
 ua.edu.chnu.awards
 ├── AwardMonitoringSystemApplication      entry point
-├── config/                                cross-cutting Spring configuration (security chains, authorization server, tokens, locale, metrics)
+├── config/                                cross-cutting Spring configuration (security chains including the anonymous public API chain with its own rate limit, authorization server, tokens, locale, metrics, workflow properties)
 ├── common/                                Problem Details exception handling, paging, correlation id (web/), mail delivery (mail/), Redis rate limits and one-per-interval throttles (limit/)
 ├── metrics/                               Micrometer business metrics
 ├── auth/                                  authorization server pieces: user lookup, status checks, claims, refresh-token guard, login page
 ├── authz/                                 organisation scopes, role levels, delegated scopes, access-denied auditing
 ├── audit/                                 audit_logs writer and the per-award audit trail
-└── <domain>/                              user, delegation, award, document, gdpr (workflow, notification, compliance follow in later epics)
+└── <domain>/                              user, delegation, award (submission, review workflow, shared achievements), document, gdpr (notification and compliance follow in later epics; a separate workflow package is not planned, ADR-023)
     ├── controller/                        REST endpoints (thin, validation and mapping only)
     ├── service/                           business logic, transactions
     ├── repository/                        Spring Data JPA
@@ -50,6 +50,11 @@ ua.edu.chnu.awards
     ├── event/                             application events handled after commit (emails)
     └── mapper/                            hand-written mapper components
 ```
+
+Review workflow (Epic 4) lives in `award`: entry points `ReviewController`, `ReviewBatchController`, `CorrectionController`,
+`WithdrawalController`, `SharingController`, `AchievementController`, `PublicAchievementController`,
+`ReviewPeriodController` and `RecipientUnitController`; `Transitions` and `ApprovalPath` hold the ADR-023 table,
+`ReviewerRule` decides who may review, and `OverdueJob` is the hourly `@Scheduled` job.
 
 Conventions:
 
@@ -75,7 +80,7 @@ Conventions:
 src/app
 ├── core/        singletons: auth, http interceptors, guards, layout shell
 ├── shared/      reusable components, pipes, directives, Material re-exports
-└── features/    one folder per domain with routes, components and NgRx state
+└── features/    one folder per domain with routes, components and NgRx state (review queue in `reviews`; shared and public achievements in `achievements`)
 ```
 
 - Standalone components, signals for local state, NgRx for cross-feature state.

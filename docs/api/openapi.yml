@@ -16,6 +16,7 @@ info:
     ## Rate Limiting
     Counters in Redis, answered with 429 and `Retry-After`: the authentication endpoints (sign-in, token, `/auth`)
     are limited per client address (20 requests a minute by default), document uploads per user (20 a minute).
+    The public API (`/public/**`) is limited per client address too (120 requests a minute by default).
     Other operations have no request quota.
     
     ## Response Formats
@@ -1062,6 +1063,8 @@ paths:
         the database refused the item, e.g. a lock timeout) and a `detail`.
         One audit row `REVIEW_BATCH` (decision, items, done, failed) besides the per-item rows; every decided owner
         gets the e-mail of the single decision (`award:approve:level1`, 4.1.4).
+        The 422 codes of a single decision (`comment` `too-long`, `verified` `no-documents`) are returned per item as
+        `validation-failed`.
       security:
         - bearerAuth: []
       operationId: decideReviewBatch
@@ -1299,6 +1302,8 @@ paths:
         `review_decisions` row at the deciding level (with `delegator_id` under a delegated role), an award version
         `DECIDED` when the award's status changes, an audit row `REVIEW_DECISION`, and after the commit one e-mail
         to the owner (`award:approve:level1`, reviewer rule, 4.1.2).
+        422 names the field: `comment` `too-long` above 2000 characters, `verified` `no-documents` when an approval
+        confirms the documents of an award that has none.
       security:
         - bearerAuth: []
       operationId: decideReview

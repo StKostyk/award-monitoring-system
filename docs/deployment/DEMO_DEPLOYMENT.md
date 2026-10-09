@@ -116,6 +116,8 @@ Afterwards: `$P down -v` (removes only the rehearsal volumes), then `docker comp
 5. Run the manual verification below against the public address.
 6. Schedule the nightly `pg_dump` and MinIO mirror to a target outside the server, with a copy of
    `MINIO_KMS_SECRET_KEY` stored apart from them; restore once to test it.
+7. Run one backend instance: the hourly overdue job is a plain `@Scheduled` task without a lock (ShedLock arrives with
+   Epic 9), so a second instance would send the overdue notices twice.
 
 ---
 
@@ -138,4 +140,7 @@ Rehearsal on a workstation, `.env.prod` as in section 2 with the demo seed enabl
    disabled in production).
 8. `docker logs award-backend | grep -c '"level":"DEBUG"'`. Expected: `0`.
 9. `docker exec award-redis redis-cli ping`. Expected: `NOAUTH Authentication required.`
-10. Clean up as in section 2. Expected: `docker compose up -d` brings the development stack back with its data.
+10. `curl -k https://localhost/api/v1/public/achievements` without a token. Expected: 200 and a JSON page; the answer
+    carries `Cache-Control: no-store`. The public limit counts requests per client address in Redis (120 a minute
+    by default); it is not applied while Redis is down.
+11. Clean up as in section 2. Expected: `docker compose up -d` brings the development stack back with its data.

@@ -291,6 +291,15 @@ Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](.
   Epic 8; the BRD parsing metric stays unproven until then.
 - **Next**: Epic 4 (review workflow).
 
+## Addendum 2026-10-09: After Epic 4
+
+- **Velocity**: Epic 4 delivered 64 points within sprint 4 (2026-10-05 – 2026-10-11): feature 4.1 (reviewer queue, decisions,
+  withdrawal, batch review), feature 4.2 (per-faculty review period, overdue notice, reviewer corrections) and feature 4.3
+  (achievements pages), with a fix story after each validation. With the 166 points before it, about 230 points are delivered.
+- **Delivered scope**: standard workflow only; a missed deadline marks the request and notifies the next level and never
+  moves or decides it (ADR-023). Expedited, appeal and exception workflows are deferred.
+- **Next**: manual runs of the Epic 4 scenarios, then Epic 7 (notifications) and Epic 6.
+
 ---
 
 ## Summary

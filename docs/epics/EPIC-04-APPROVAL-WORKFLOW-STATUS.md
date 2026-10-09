@@ -1,7 +1,7 @@
 # Epic 4: Approval Workflow Engine — Status
 
 > **Started**: 2026-10-06
-> **Done**: —
+> **Done**: 2026-10-09 (manual runs of PRD §9 and §10 pending)
 > **Author**: Stefan Kostyk
 > **Jira epic**: SCRUM-47
 > **Roadmap**: DEVELOPMENT_ROADMAP.md § Epic 4 (local planning document)
@@ -16,9 +16,10 @@
 
 ## Current focus
 
-Epic kickoff 2026-10-06: stories created in Jira and GitHub, order approved. Feature 4.1 PRD approved 2026-10-06,
-including the organisational award design (§7.1), the transition table (§7.2) and the settlement of deviations 2,
-3, 5 and 6 (§7). Story status lives in the table below.
+Epic delivered 2026-10-09: features 4.1 to 4.3 are merged, each validated against its PRD. What remains is the manual
+run of the three scenarios (4.1 PRD §9, 4.2 §10, 4.3 §10) and the findings they produce. Story status lives in the table
+below; the documentation sync of 2026-10-09 (`docs/sync-epic-04`) brought the contract documents and the Ukrainian
+copies up to date.
 
 ## Scope
 
@@ -54,9 +55,9 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 8c | 4.2.5 Refactor from the Feature 4.2 sweep | 4.2 | 3 | SCRUM-61 | #171 | no | Done |
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | Done |
 | 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | Done |
-| 10a | 4.3.3 Fixes from the Feature 4.3 validation | 4.3 | 2 | SCRUM-62 | #176 | no | In review |
+| 10a | 4.3.3 Fixes from the Feature 4.3 validation | 4.3 | 2 | SCRUM-62 | #176 | no | Done |
 
-Total: 57 points, sprints 4–5.
+Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 
 ## Decisions
 
@@ -79,23 +80,20 @@ Total: 57 points, sprints 4–5.
 | 2026-10-08 | Feature 4.2 validated: every AC has tests, no fix story; four findings accepted (run-wide rollback of the overdue job on an unexpected error, gauges empty until the first run after a restart, last write wins for the period, 403/429 shown as a send failure); duplication from the sweep in a `refactor(award)` PR | Evidence and findings in the PRD §13 | 4.2 |
 | 2026-10-09 | Feature 4.3 validated: every AC has tests; the CI-only E2E failure (test relied on other shared awards) and the retry race on the achievements list fixed in 4.3.3; 429 shown as a generic error and the fail-open public limit while Redis is down accepted | Evidence and findings in the PRD §13 | 4.3.3 |
 
-## Documentation deviations to resolve
+## Documentation deviations
 
-Each is settled in the Feature 4.1 or 4.2 PRD and applied in the PR of the story that touches it.
+Settled in the Feature 4.1 or 4.2 PRD; status at the documentation sync of 2026-10-09.
 
-1. The roadmap and BRD describe automatic escalation; decided: a notice and a mark, never a move. The roadmap's
-   Feature 4.2 and the BRD wording are updated with 4.2.2.
-2. `state-machine-award-request.puml` has `IN_REVIEW → EXPIRED`, `REJECTED → DRAFT`, an appeal window and a
-   document and OCR branch; the data dictionary lists `EXPIRED`. Without automatic expiry or appeals, `EXPIRED`
-   stays unused; the diagram is redrawn from the transition table of ADR-023.
-3. `openapi.yml` plans `POST /awards/{id}/approve|reject|return` returning `Award`; claim, release, hand-over,
-   escalate, withdraw, the queue and batch decisions have no paths yet. Contract settled in the Feature 4.1 PRD.
-4. The roadmap estimates 13 points ("included in US-004") for sprints 6–8; the planned scope is 52 points in
-   sprints 4–5 (calendar weeks).
-5. `review_decisions` has no column for a delegated decision; the authorization document promises a "delegated by"
-   stamp in Epic 4.
-6. The RACI matrix gives "Escalate approval decisions" to the project lead (A) and reviewers (R); the system's
-   escalation is the dean's decision on a request the faculty secretary escalated.
+1. Automatic escalation (roadmap, BRD): decided as a notice and a mark, never a move. Resolved in the state diagram,
+   the BPMN, ADR-023 and the BRD; the roadmap, a local planning document, keeps the original wording.
+2. `state-machine-award-request.puml`: redrawn from the transition table of ADR-023 (resolved); `EXPIRED` stays in
+   the constraint, unused.
+3. `openapi.yml`: every Epic 4 path is documented (resolved).
+4. The roadmap's estimate of 13 points in sprints 6–8 became 64 points in sprint 4 (calendar weeks); recorded in the
+   PROJECT_PLAN addendum, the roadmap stays as the local original.
+5. `review_decisions.delegator_id` (V028) stamps a delegated decision (resolved).
+6. RACI "Escalate approval decisions": the row names the dean's decision on a request the faculty secretary escalated and
+   the overdue notice to the next level (resolved).
 
 ## Technical notes
 
@@ -134,6 +132,23 @@ Each is settled in the Feature 4.1 or 4.2 PRD and applied in the PR of the story
    indexes of V012 and a plan check with the seed data.
 3. Story 4.3.2 publishes personal data beyond the university; the public page shows only what the owner opted into,
    and the privacy documents are updated with it.
+
+### Findings of the documentation sync of 2026-10-09
+
+Documentation behind the code was corrected in the sync. Where the code is what falls short, the documents keep their
+promise and the gap is listed here for a fix story:
+
+- Review decisions are not part of the personal data export (`PersonalDataFile`): the decisions a person made as a
+  reviewer (`reviewer_id`, `delegator_id`, comments) and the decisions on their own awards are missing; the export
+  section of PRIVACY_BY_DESIGN promises awards, versions and activity.
+- `BusinessMetricsService` (`award.submissions.total`, `award.approvals.total`, `user.sessions.active` …) is never
+  called outside its test; only the `awards.review.*` meters are live. MONITORING_OBSERVABILITY still lists the old ones.
+- `GET /api/v1/organizations` is anonymous but outside the public chain, so the public rate limit does not cover it.
+- The `awards.review.open` and `awards.review.overdue` gauges read 0 until the first run of the overdue job after a
+  start (already accepted at the validation of 4.2; documented in MONITORING_OBSERVABILITY).
+- Open for a decision: TRACEABILITY_MATRIX rows FR-001 to FR-005 are all "Pending" and USER_STORIES US-004 and US-005 have
+  unticked checklists; keep them current or freeze them as the plan. `DFD level 1` still draws assignment notifications
+  that were never built (target view).
 
 ## Quick links
 

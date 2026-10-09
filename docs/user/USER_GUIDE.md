@@ -135,9 +135,9 @@ Supported Formats:
 ### Status Flow
 
 ```
-Draft → Submitted → Under Review → Approved/Rejected → Published
-                         ↓
-                    Returned for Revision
+Draft → Submitted → Under Review → Approved/Rejected
+  ↑                    ↓
+  └── Returned for Revision (or Withdrawn by you while nobody has claimed it)
 ```
 
 ### Status Meanings
@@ -148,9 +148,8 @@ Draft → Submitted → Under Review → Approved/Rejected → Published
 | **Submitted** | Awaiting review | Wait for reviewer |
 | **Under Review** | Being evaluated | Wait for decision |
 | **Returned** | Needs revision | Make requested changes |
-| **Approved** | Accepted | None - will be published |
+| **Approved** | Accepted | None; you decide who else sees it (see Achievements and Visibility) |
 | **Rejected** | Not accepted | Review the reason; a rejection is final, enter a corrected award as a new one |
-| **Published** | Visible publicly | None - complete |
 
 ### Checking Status
 
@@ -334,6 +333,8 @@ Customize how you receive updates:
 
 ## Notifications
 
+In this release, decisions, corrections and overdue notices reach you by e-mail only; the notifications below, in the application and in the browser, arrive in a later release.
+
 ### Types of Notifications
 
 | Type | Description | Default |
@@ -390,7 +391,7 @@ A: Click "Forgot Password" on the login page and follow the email instructions.
 A: After 5 failed login attempts, accounts are locked for 30 minutes. Contact IT support if you need immediate access.
 
 **Q: I'm leaving the university. What happens to my awards?**  
-A: Published awards remain in the system. Contact administration about data export if needed.
+A: Approved awards remain in the system. Contact administration about data export if needed.
 
 ### Data & Privacy
 
