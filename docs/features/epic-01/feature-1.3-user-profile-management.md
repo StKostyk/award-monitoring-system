@@ -181,9 +181,40 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 19. Press Back after the confirm page and reload it → 410 page, the address unchanged a second time. (AC-1.5)
 20. Export in two tabs at once → one download, the other «Забагато запитів». (AC-3.4)
 21. Request a change as the mover, then type a wrong password five times on the login page for the current address, then open the link. Expected: «Посилання недійсне або прострочене», the account keeps its address and stays locked; the new address does not sign in. (F-1, SCRUM-29)
-22. Sign in as the mover from a new browser so «Новий пристрій» reaches the current address, confirm an address change, then press «Це був не я» in that older email. Expected: «Посилання недійсне»; the moved account still signs in with the new address. (F-2, SCRUM-29)
+22. Sign in as the mover from a new browser so «Новий пристрій» reaches the current address, confirm an address change, then press «Це був не я» in that older email. Expected: the link is bound to the old address by the move and moves the account back: `SECURITY_REVOKE` with `restoredEmail` is audited, Mailpit has «Скидання пароля» at the old address and «Адресу для входу повернуто» at the new one, the new address no longer signs in, and the old address signs in only after the password reset. Pressing the link a second time → «Посилання недійсне». (F-2, SCRUM-29)
 23. Sign in as `employee.fmi` in one browser and open another user's address-change link there. Expected: the change is confirmed and `employee.fmi` stays signed in in that browser. (F-3, SCRUM-29)
 24. Send a link, then press «Надіслати посилання» again within a minute. Expected: «Забагато запитів» and no second email. A request that fails between the claim and the commit cannot be caused reliably by hand; that it gives its minute back is covered by `RequestThrottleTest`. (F-4, SCRUM-29)
+
+### Run 2026-10-11
+
+container stack (develop image of 2026-10-11, default settings), Mailpit, Playwright MCP; steps 1-24 incl. 18a. Result: 24 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | /profile shows address, dept+faculty, EMPLOYEE from 11.10.2026, Членство підтверджено, created/last login |
+| 2 | PASS | UI save of «Петренко-Коваль»: header shows the new name without reload; (second save after the outage) snackbar «Збережено»; PROFILE_UPDATED row changed_fields {last_name}, old/new values, ip 172.25.0.1 |
+| 3 | PASS | UI: Петренко1 and blanks disable save with field messages; PATCH X1 -> 422 lastName, email -> 422 not-allowed, repeat same name 200 and audit rows stay 1 |
+| 4 | PASS | new_values ? password_hash = f |
+| 5 | PASS | wrong password -> «Невірний пароль» and no mail; right password -> 202, link mail to mover13.new 19:10:20, warning to mover13 names the new address + /forgot-password link (first attempt was made in the wrong browser context, its token removed) |
+| 6 | PASS | confirm page «Адресу змінено. Увійдіть з новою адресою mover13.new@…»; notice mail 19:10:40; old tab to /login on reload; old address BAD_CREDENTIALS, new signs in; /profile shows it; EMAIL_CHANGE_REQUESTED + EMAIL_CHANGED rows |
+| 7 | PASS | employee.fmi -> 409 email-taken; @gmail.com -> 422 institutional-email-required; valid 202 then valid again 429 too-many-requests |
+| 8 | PASS | EN: profile page, address dialog, confirm page success «The address was changed. Sign in with …» and invalid-link page all English |
+| 9 | PASS | UI download award-monitoring-export-2026-10-11.json; sections profile, roles 5, delegations, awards 85 incl drafts, devices (browser, IP), activity_log with LOGIN_SUCCESS + PROFILE_UPDATED; no 'password' or '$2a$'; 'token' appears only inside award titles from earlier runs (MR31 token, Token expiry 69) - scenario wording to tighten |
+| 10 | PASS | mail 19:15:03 «Your data was exported» with time, IP, browser; DATA_EXPORT new_values counts (roles 5, awards 85, devices 3...); immediate second click «Забагато запитів. Спробуйте пізніше.» |
+| 11 | PASS | dean export: delegations GIVEN active (valid_from/to, reason) with other_party name only, no address anywhere; unconfirmed mr13a export roles [], awards [], delegations []; delegation revoked afterwards |
+| 12 | PASS | signed out /profile -> /login, after sign-in back on /profile |
+| 13 | PASS | used link and older-than-newest link -> 410; token expired via SQL (own user) then link -> 410; EN page «The link is invalid or expired» |
+| 14 | PASS | race13 change requested, race13 registered, link -> 409 email-taken; mr13r keeps its address |
+| 15 | PASS | link opened in a new browser context without a session -> «Адресу змінено…mr13s.new»; mr13s.new now in users |
+| 16 | PASS | save with the backend stopped -> «Сервер недоступний. Спробуйте пізніше.», input kept, button enabled; after start save -> «Збережено», last_name Працівник (seed restored) |
+| 17 | PASS | employee.fmi tab signed in 19:07, save at 19:26 (> 15 min, plus a backend restart) -> 200 without a sign-in prompt (silent refresh) |
+| 18 | PASS | mr13y: 5 wrong passwords in the address request -> 5x 403, then LOCKED on sign-in and the API session gone; «Обліковий запис заблоковано» mail to admin@chnu.edu.ua 19:23 (done through the API, not the dialog) | 18a: mr13u: change requested, password reset via emailed token (204), then change link -> 410, address stays mr13u (first try on mr13t used wrong reset field names, confirmed that account by mistake - not evidence) |
+| 19 | PASS | Back/forward + reload of the confirm page -> «Посилання недійсне або прострочене», address stays mr13s.new (observation: while the per-IP auth throttle answered 429 the page showed the generic «Не вдалося змінити адресу», link stayed valid) |
+| 20 | PASS | two concurrent exports as employee.fmi: one 200 (145 KB), the other 429 (done through the API; the UI shows the same 429 as step 10) |
+| 21 | PASS | mr13x: change requested, 5 wrong passwords on the login form -> LOCKED, link -> 410, address stays mr13x, new address BAD_CREDENTIALS (login form throttles per IP at 429, attempts spread over a minute) |
+| 22 | PASS | step text corrected (bound links move the account back by design, AUTH §9): mr13w new-device link after the move -> 204, SECURITY_REVOKE restoredEmail mr13w@, mails «Скидання пароля» to old, «Адресу…повернуто» to mr13w.new, new address refused, old address refused until reset, second press 410 |
+| 23 | PASS | employee.fmi signed in; link of mr13v opened in the same browser context -> confirmed (mr13v.new); employee.fmi page reloads on /profile, still signed in |
+| 24 | PASS | UI dialog second send within a minute -> «Too many requests. Try again later.», Mailpit unchanged (no mail for mover13.c) |
 
 ## 10. Risks
 
