@@ -77,11 +77,15 @@ test.describe('overdue notice', () => {
     const noticed = row.getByTestId('review-noticed');
     await expect(noticed).toBeVisible();
 
-    const overflow = await deanPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    const overflow = await deanPage.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
     expect(overflow).toBeLessThanOrEqual(0);
     const clipped = await noticed.evaluate((chip) => {
       const label = chip.querySelector('.mdc-evolution-chip__text-label') ?? chip;
-      return label.scrollWidth > label.clientWidth + 1 || label.scrollHeight > label.clientHeight + 1;
+      return (
+        label.scrollWidth > label.clientWidth + 1 || label.scrollHeight > label.clientHeight + 1
+      );
     });
     expect(clipped).toBe(false);
     const box = await deanPage.getByTestId('review-table').boundingBox();
