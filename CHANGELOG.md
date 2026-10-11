@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- The review list stacks the deadline chips and lets «Керівника повідомлено …» wrap, so every column fits at 1280 px without a horizontal scrollbar (#202).
 - Anonymous calls to the organisation list count against the public rate limit of the client address (4.3.6).
 - A retry on the achievements pages no longer replaces the list of a later filter change (SCRUM-62)
 - Correction form, history, delegations and the admin user page show dates day first; datepicker labels are translated; translation files are revalidated after a release (SCRUM-60)
