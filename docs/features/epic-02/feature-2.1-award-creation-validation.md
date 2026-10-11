@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3 (2026-09-28 → 2026-10-04)
 > **Points**: 17 (four stories)
-> **Status**: Done — validated 2026-09-29 (§12); findings F-1…F-11 fixed in 2.1.4 (SCRUM-28), pending the manual run of §9
+> **Status**: Done — validated 2026-09-29 (§12); findings F-1…F-11 fixed in 2.1.4 (SCRUM-28); manual run of §9 2026-10-05 (findings fixed in SCRUM-42), steps 33–43 passed 2026-10-11
 > **Author**: Stefan Kostyk
 > **Governing docs**: US-003, roadmap § Feature 2.1, DATA_DICTIONARY §2.1–§2.2 and §3.1, appendix B, BRD §7.3, AUTH §3.3, RBAC_matrix.md, ADR-004, ADR-005, ADR-009, ADR-013, openapi.yml `/awards`, state-machine-award-request.puml, sequence-award-submission.puml, EPIC-02 tracker (decisions and deviations 1–5)
 

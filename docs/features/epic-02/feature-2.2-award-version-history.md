@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3–4 (2026-09-30 → 2026-10-11)
 > **Points**: 10 (two stories)
-> **Status**: Done 2026-09-30 (validated, §12; the manual run of §9 pending)
+> **Status**: Done 2026-09-30 (validated, §12; manual run of §9 2026-10-05 (findings fixed in SCRUM-42), step 15 passed 2026-10-11)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 2.2, DATA_GOVERNANCE §2 and §4, PRIVACY_IMPACT §4, DATABASE_DESIGN_STANDARDS §3.2, DATA_DICTIONARY §2.1 and §4.1, AUTH §3.3 and §7, RBAC_matrix.md, ADR-004, ADR-009, ADR-014, openapi.yml `/awards`, EPIC-02 tracker (decision 2026-09-28 on version-history storage, technical notes)
 
