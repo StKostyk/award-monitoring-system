@@ -121,4 +121,18 @@ public class LoginSessionConfig {
         registration.setOrder(BEFORE_SESSION_FILTER);
         return registration;
     }
+
+    @Bean
+    FilterRegistrationBean<RateLimitFilter> organizationListRateLimitFilter(FixedWindowCounter counter,
+                                                                            ProtectionProperties properties,
+                                                                            @Qualifier("corsConfigurationSource")
+                                                                            CorsConfigurationSource cors,
+                                                                            ObjectMapper objectMapper) {
+        FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(new RateLimitFilter(
+            counter, RateLimitFilter.PUBLIC_KEY_PREFIX, properties.publicRequestsPerMinute(), cors, objectMapper,
+            true));
+        registration.addUrlPatterns("/api/v1/organizations");
+        registration.setOrder(BEFORE_SESSION_FILTER);
+        return registration;
+    }
 }

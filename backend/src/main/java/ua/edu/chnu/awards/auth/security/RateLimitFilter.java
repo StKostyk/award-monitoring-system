@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,12 +34,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
     public static final String KEY_PREFIX = "auth:rate:";
     /** Redis key prefix of the per-address request windows of the public API. */
     public static final String PUBLIC_KEY_PREFIX = "public:rate:";
+    private static final String BEARER = "Bearer ";
     private final FixedWindowCounter counter;
     private final String keyPrefix;
     private final int requestsPerMinute;
     private final CorsConfigurationSource cors;
     private final ObjectMapper objectMapper;
     private final CorsProcessor corsProcessor = new DefaultCorsProcessor();
+    private final boolean anonymousOnly;
 
     /**
      * Creates a limit over one group of endpoints.
@@ -51,16 +54,37 @@ public class RateLimitFilter extends OncePerRequestFilter {
      */
     public RateLimitFilter(FixedWindowCounter counter, String keyPrefix, int requestsPerMinute,
                            CorsConfigurationSource cors, ObjectMapper objectMapper) {
+        this(counter, keyPrefix, requestsPerMinute, cors, objectMapper, false);
+    }
+
+    /**
+     * Creates a limit over one group of endpoints, optionally only for calls without a bearer token.
+     *
+     * @param counter           the shared window counter
+     * @param keyPrefix         Redis key prefix of this group's windows
+     * @param requestsPerMinute requests one client address may send per minute
+     * @param cors              CORS rules applied to the refusal
+     * @param objectMapper      writes the Problem Details body
+     * @param anonymousOnly     whether calls carrying a bearer token pass uncounted; the resource server judges them
+     */
+    public RateLimitFilter(FixedWindowCounter counter, String keyPrefix, int requestsPerMinute,
+                           CorsConfigurationSource cors, ObjectMapper objectMapper, boolean anonymousOnly) {
         this.counter = counter;
         this.keyPrefix = keyPrefix;
         this.requestsPerMinute = requestsPerMinute;
         this.cors = cors;
         this.objectMapper = objectMapper;
+        this.anonymousOnly = anonymousOnly;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return HttpMethod.OPTIONS.matches(request.getMethod());
+        return HttpMethod.OPTIONS.matches(request.getMethod()) || anonymousOnly && hasBearerToken(request);
+    }
+
+    private static boolean hasBearerToken(HttpServletRequest request) {
+        String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+        return authorization != null && authorization.regionMatches(true, 0, BEARER, 0, BEARER.length());
     }
 
     @Override

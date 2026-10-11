@@ -77,13 +77,14 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.3.1 | Colleague visibility and the achievements page | 5 | ✅ Done | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
 | 4.3.2 | Unit achievement pages and public achievements | 5 | ✅ Done | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 | 4.3.3 | Fixes from the Feature 4.3 validation | 2 | ✅ Done | SCRUM-62 | [#176](https://github.com/StKostyk/award-monitoring-system/issues/176) |
+| 4.3.6 | Public rate limit for the organisation list | 1 | 👀 In review (Sprint 5) | SCRUM-72 | [#192](https://github.com/StKostyk/award-monitoring-system/issues/192) |
 
 ### Epic 7 — Notification & Communication System (Jira epic SCRUM-63)
 Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS.md). Kickoff 2026-10-09; Spring events on the Spring Modulith publication registry (no Kafka), e-mail and in-app channels (SMS out of scope, push with Epic 8). Story 1.3.2 from Epic 1 belongs here.
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
-| 7.1.1 | Event publication registry for the after-commit mails | 5 | 👀 In review (Sprint 5) | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
+| 7.1.1 | Event publication registry for the after-commit mails | 5 | ✅ Done | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
 | 7.1.2 | Module boundaries checked by Spring Modulith | 8 | Sprint 5 | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
 | 7.2.1 | In-app notifications from award and review events | 5 | Sprint 5 | SCRUM-66 | [#183](https://github.com/StKostyk/award-monitoring-system/issues/183) |
 | 7.2.2 | Notification centre in the toolbar | 5 | Sprint 5 | SCRUM-67 | [#184](https://github.com/StKostyk/award-monitoring-system/issues/184) |

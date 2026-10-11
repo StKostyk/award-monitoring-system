@@ -39,7 +39,7 @@ fix stories if chosen).
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 7.1.1 Event publication registry for the after-commit mails | 7.1 | 5 | SCRUM-64 | #181 | no | In review |
+| 1 | 7.1.1 Event publication registry for the after-commit mails | 7.1 | 5 | SCRUM-64 | #181 | no | Done |
 | 2 | 7.1.2 Module boundaries checked by Spring Modulith | 7.1 | 8 | SCRUM-65 | #182 | no | Planned |
 | 3 | 7.2.1 In-app notifications from award and review events | 7.2 | 5 | SCRUM-66 | #183 | no | Planned |
 | 4 | 7.2.2 Notification centre in the toolbar | 7.2 | 5 | SCRUM-67 | #184 | yes | Planned |

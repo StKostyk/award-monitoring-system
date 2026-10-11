@@ -164,6 +164,25 @@ class RateLimitFilterTest {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
     }
 
+    @Test
+    void ac2_anAnonymousOnlyLimitSkipsBearerCallsAndCountsTheRest() throws ServletException, IOException {
+        RateLimitFilter anonymousLimit = new RateLimitFilter(counter, RateLimitFilter.PUBLIC_KEY_PREFIX, 120,
+            request -> allowedOrigins(), Jackson2ObjectMapperBuilder.json().build(), true);
+        String key = "public:rate:203.0.113.7:" + NOW.getEpochSecond() / 60;
+        when(values.increment(key)).thenReturn(121L);
+        MockHttpServletRequest signedIn = request("application/json");
+        signedIn.addHeader("Authorization", "Bearer some.access.token");
+        MockFilterChain passed = new MockFilterChain();
+        MockHttpServletResponse refused = new MockHttpServletResponse();
+
+        anonymousLimit.doFilter(signedIn, new MockHttpServletResponse(), passed);
+        anonymousLimit.doFilter(request("application/json"), refused, new MockFilterChain());
+
+        assertThat(passed.getRequest()).isNotNull();
+        assertThat(refused.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+        verify(values).increment(key);
+    }
+
     private static MockHttpServletRequest request(String accept) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
         request.setRemoteAddr("203.0.113.7");

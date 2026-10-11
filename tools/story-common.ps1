@@ -38,7 +38,7 @@ function Find-StoryRow([string]$key) {
     return $null
 }
 
-function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$epic, [int]$issue) {
+function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$epic, [int]$issue, [string]$id = '') {
     $tracker = Get-ChildItem docs/epics -Filter 'EPIC-*.md' |
         Where-Object { Select-String -Path $_.FullName -Pattern "Jira epic\*\*:\s*$epic\b" -Quiet } |
         Select-Object -First 1
@@ -55,7 +55,7 @@ function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$ep
     $order = if ($previous -match '[a-y]$') {
         $previous.Substring(0, $previous.Length - 1) + [char]([int][char]$previous[-1] + 1)
     } else { "$($previous)a" }
-    $id = "$feature.$($number + 1)"
+    if ($id) { $feature = $id -replace '\.\d+$', '' } else { $id = "$feature.$($number + 1)" }
     $lines.Insert($last + 1, "| $order | $id $summary | $feature | $points | $key | #$issue | no | To do |")
     Write-Lines $tracker.FullName $lines.ToArray()
 
