@@ -255,7 +255,49 @@ Preconditions: `docker compose up -d postgres redis mailpit minio` (plus `clamav
 32. On `http://localhost:4200/awards/new` add a file (the draft is saved), then delete that draft from «Мої нагороди» in a second tab; back in the first tab add another file. Expected: the form says the draft was deleted elsewhere and the address turns to `/awards/new`, the old documents disappear from the list, and the file is marked «Чернетку видалено в іншому вікні»; «Спробувати ще раз» (or the next file) saves a new draft at a new address and uploads it. (AC-2.2, validation finding 1)
 33. Queue three files on a draft and submit the same draft in a second tab while the first file uploads. Expected: the remaining files are refused with «нагороду вже подано» and the tab moves to the award page without «Видалити». (§5, validation finding 2)
 34. `docker compose stop redis`, upload a file. Expected: 201 within a second (uploads are not limited without Redis) and an `ERROR` log line; `docker compose start redis`. (AC-3.6)
-35. `docker compose stop minio`, download and then delete a document of a draft. Expected: the download shows «Не вдалося завантажити файл» and writes no `DOCUMENT_DOWNLOAD` row; the deletion answers 204 and the object is removed by the sweep later; `docker compose start minio`. (AC-1.11)
+35. `docker compose stop minio`, download and then delete a document of a draft. Expected: the download shows «Не вдалося отримати документ» and writes no `DOCUMENT_DOWNLOAD` row; the deletion answers 204 and the object is removed by the sweep later; `docker compose start minio`. (AC-1.11)
+
+### Run 2026-10-11
+
+Compose stack (app, postgres, redis, minio, clamav, mailpit), default settings except step 23 (sweep cron every minute, age PT1M via override file, restored); commit aa7646d on docs/4.3-manual-run; uploads with generated PDFs/images; step 17 in a touch context. Result: 35 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | UI /awards/new → /awards/80/edit, progress bar, list row 'Скан сертифіката.pdf' Сертифікат 2 МБ 11.10.2026; first upload after backend restart failed once, 'Спробувати ще раз' succeeded (201); later API uploads 201 in 3-8 s |
+| 2 | PASS | one object awards/80/461cd459-… (UUID, no name), bucket private (anon GET 403, mc anonymous=private); row: PDF, application/pdf, CERTIFICATE, sha256 93080f69… matches the file, PENDING, storage_url null |
+| 3 | PASS | photo.jpg + image.png in one drop → both uploaded in order (2 POSTs), type 'Додатковий документ', live region «Завантажено: image.png» |
+| 4 | PASS | 12 MB PDF «Файл більший за 10 МБ», .docx «Непідтримуваний формат файлу», no POST sent |
+| 5 | PASS | API: big12 413 file-too-large; fake.pdf 400 content-mismatch; doc.docx 400 unsupported-type; same PDF 409 duplicate-document documentId 4 |
+| 6 | PASS | preview dialog shows photo.jpg (img naturalWidth 80); PDF download saved as «Скан сертифіката.pdf», no failure |
+| 7 | PASS | image.png deleted via confirm «Видалити документ «image.png»?»; MinIO awards/80 3→2 objects; audit: INSERT rows + DELETE user_id 8 |
+| 8 | PASS | award 80 (2 documents) submitted without notice; award 81 without documents: dialog «Ви не додали жодного документа…», submit → /awards/81/submitted |
+| 9 | PASS | award page lists 2 files with Завантажити/Переглянути, no Видалити; DELETE /documents/4 → 409 award-not-editable (PENDING); POST …/80/documents → 409 |
+| 10 | PASS | dean.fmi lists awards/80/documents (ids 4, 5) and downloads both 200; audit DOCUMENT_DOWNLOAD rows user 4 (dean, awardId 80) and user 8 (employee, step 6) |
+| 11 | PASS | headers on dean download: Content-Disposition attachment + filename*=UTF-8''…, nosniff, Cache-Control no-store, private, CSP sandbox; URL /api/v1/documents/4 has no token (Bearer header). Note: legacy filename= uses RFC 2047 encoding next to filename* |
+| 12 | PASS | GET /users/me/export 200 lists 3 documents with api_path (/api/v1/documents/1 …); GET api_path of doc 4 → 200 2 097 110 B, doc 1 → 200 |
+| 13 | PASS | draft 82 with photo.jpg + image.png (MinIO 2 objects) → DELETE /awards/82 204; awards/82 folder gone, 0 rows |
+| 14 | PASS | UI «Файл містить шкідливий код і не був завантажений»; no object (awards/83 absent), 0 rows; audit DOCUMENT_REJECTED {awardId 83, signature Eicar-Test-Signature} |
+| 15 | PASS | EN: labels all English; nine5.pdf row «Certificate 9.5 MB 11/10/2026 Download Delete», live «Uploaded: nine5.pdf»; big12 «The file is larger than 10 MB», docx «Unsupported file format» (draft 84) |
+| 16 | PASS | Enter on focused drop zone opens the file chooser; Tab order: type select → Dismiss → Download nine5.pdf → Delete nine5.pdf → Delete draft → Cancel → Save draft |
+| 17 | PASS | touch context (coarse pointer, 390 px): «Сфотографувати» shown, opens chooser (input capture=environment), photo.jpg stored as JPEG image/jpeg; button hidden on a fine pointer by design |
+| 18 | PASS | secretary.fpp: GET awards/80/documents 404, GET documents/4 404; employee.fmi upload to secretary's draft 85 → 404, list 404; admin POST to draft 84 → 403 access-denied; GET documents/abc → 400 |
+| 19 | PASS | dean on /awards/80, admin DELETE /users/4/roles/4 (204) → click «Завантажити» ends on /login (role change signs the dean out); role re-granted (POST roles DEAN org 9), dean lists docs 200 again. Without a role the documents list answers 403 (not 404) |
+| 20 | PASS | MinIO stopped: UI «The file could not be uploaded» + «Try again»; API 503 storage-unavailable; rows unchanged (5); after start+healthy «Try again» stored image.png (draft 84 has 3 rows) |
+| 21 | PASS | clamav stopped: upload → 503 scanner-unavailable, UI «The file could not be uploaded», rows unchanged (6); /actuator/health 503 DOWN, clamav DOWN listed for admin token. Restart + retry below |
+| 22 | PASS | object of doc 11 removed with mc; download → 404 document-content-missing, ERROR «Object awards/84/… of document 11 is missing from the storage»; UI «…no longer available». One first request after the removal ended in a connection reset (not reproduced in 5 repeats) |
+| 23 | PASS | orphan awards/999/orphan + override (cron every minute, age PT1M): 1st sweep «removed 75 orphaned objects» (leftovers of earlier runs without rows), 2nd «removed 1 orphaned objects» = the orphan; all document rows' objects intact (doc 11 missing by step 22); settings restored (no SWEEP env) |
+| 24 | PASS | reload 120 ms after dropping nine5.pdf on draft 86: only the earlier photo.jpg row/object (1+1), nothing partial; same file uploaded afterwards 201 (2 rows, 2 objects). Note: the upload had to be re-signed after the backend restart (401) |
+| 25 | PASS | two browsers (same account), same PDF dropped at once on draft 86: one row/object stored, the other tab «Цей файл уже додано» |
+| 26 | PASS | employee.fmi used 26.2 MB; two 10 MB files stored (47.2 MB), third → API 409 storage-quota quota 52428800 used 47209830; UI «Ваші документи вже займають 50 МБ. Більше файлів додати не можна»; draft 87 deleted |
+| 27 | PASS | redis key documents:rate:8:<minute>=100: API 429 too-many-requests Retry-After 28; UI «Забагато завантажень. Спробуйте ще раз за хвилину» + «Спробувати ще раз»; after the minute the retry stored q3.pdf (1 row) |
+| 28 | PASS | upload (q5.pdf, 10 MB) started 0.4 s before POST submit: submit 200 PENDING, upload 201, award 90 has 1 row + 1 object (file in the submitted award); first attempts hit the 50 MB quota (47.2 MB used), cleaned up and repeated |
+| 29 | PASS | award 80 page open as employee, backend restarted (compose restart app, up), «Завантажити photo.jpg» → file photo.jpg downloaded, still on the page, no sign-in |
+| 30 | PASS | form signed in 15:00:15Z (access-token-ttl 15m); at 15:16:40Z adding image.png → 201 on draft 91; backend log shows a token issuance at 15:15:12Z (silent refresh), no sign-in shown |
+| 31 | PASS | draft 86: deleted photo.jpg → Мої нагороди → Back: edit route lists only nine5.pdf and Скан сертифіката.pdf |
+| 32 | PASS | draft 92 with image.png deleted (API DELETE, as the second tab does); next file in tab 1: address → /awards/new, old document gone, row «Чернетку видалено в іншому вікні. Спробуйте ще раз, щоб зберегти нову чернетку»; «Спробувати ще раз» → /awards/93/edit with photo.jpg stored |
+| 33 | PASS | 3 files queued (throttled upload 300 KB/s), award 95 submitted via API 1.5 s in: tab moved to /awards/95 with «Нагороду вже подано, змінити її не можна», no Видалити, documents «не додано», 0 rows, no MinIO object. First attempt without throttle finished all uploads before the submit (not a race) |
+| 34 | PASS | redis stopped: upload 201 in 0.65 s (incl. client start-up), ERROR logs «Redis unavailable; documents:rate:* is not rate limited» and «token revocation not checked»; redis started |
+| 35 | PASS | step text corrected (download message is «Не вдалося отримати документ»): MinIO stopped → UI message, DOCUMENT_DOWNLOAD count unchanged (9); DELETE /documents/28 → 204, row gone, object left in MinIO until the sweep (after start: awards/96 has 2 objects, 1 orphan) |
 
 ## 10. Risks
 
