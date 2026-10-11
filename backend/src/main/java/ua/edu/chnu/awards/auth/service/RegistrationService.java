@@ -2,7 +2,6 @@ package ua.edu.chnu.awards.auth.service;
 
 import java.util.Map;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +15,7 @@ import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
 import ua.edu.chnu.awards.common.EmailUtils;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
@@ -45,7 +45,7 @@ public class RegistrationService {
     private final OneTimeTokenService tokens;
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;
-    private final ApplicationEventPublisher events;
+    private final AfterCommit events;
     private final RequestThrottle throttle;
     private final EmailAddressRules addressRules;
     private final AuthProperties properties;
@@ -160,6 +160,6 @@ public class RegistrationService {
     private void sendVerification(User user) {
         String raw = tokens.issue(user, TokenPurpose.EMAIL_VERIFICATION, properties.verificationTtl());
         String link = properties.link("/verify-email", raw);
-        events.publishEvent(new VerificationRequested(user.getEmailAddress(), user.getFirstName(), link));
+        events.publish(new VerificationRequested(user.getEmailAddress(), user.getFirstName(), link));
     }
 }

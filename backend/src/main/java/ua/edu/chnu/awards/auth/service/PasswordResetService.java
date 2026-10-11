@@ -1,6 +1,5 @@
 package ua.edu.chnu.awards.auth.service;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,6 +11,7 @@ import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.common.EmailUtils;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
@@ -35,7 +35,7 @@ public class PasswordResetService {
     private final OneTimeTokenService tokens;
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;
-    private final ApplicationEventPublisher events;
+    private final AfterCommit events;
     private final AuthorizationRevoker authorizations;
     private final RequestThrottle throttle;
     private final AuthProperties properties;
@@ -59,7 +59,7 @@ public class PasswordResetService {
                 String raw = tokens.issue(user, TokenPurpose.PASSWORD_RESET, properties.passwordResetTtl());
                 String link = properties.link("/reset-password", raw);
                 audit.record(AuditAction.PASSWORD_RESET_REQUESTED, user.getId());
-                events.publishEvent(new PasswordResetRequested(user.getEmailAddress(), user.getFirstName(), link));
+                events.publish(new PasswordResetRequested(user.getEmailAddress(), user.getFirstName(), link));
             });
     }
 

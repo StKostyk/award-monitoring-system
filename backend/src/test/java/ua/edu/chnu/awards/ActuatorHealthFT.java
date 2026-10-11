@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,15 @@ class ActuatorHealthFT extends AbstractIntegrationTest {
             .body("status", equalTo("UP"))
             .body("components.db.status", equalTo("UP"))
             .body("components.redis.status", equalTo("UP"));
+    }
+
+    @Test
+    void ac1_6_prometheusListsTheEventPublicationGauges() {
+        RestAssured.get("/actuator/prometheus")
+            .then()
+            .statusCode(200)
+            .body(containsString("award_events_incomplete "))
+            .body(containsString("award_events_abandoned "));
     }
 
     @Test

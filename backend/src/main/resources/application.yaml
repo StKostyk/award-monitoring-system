@@ -108,6 +108,15 @@ spring:
   thymeleaf:
     cache: true
 
+  # Event publication registry: after-commit listeners are recorded in event_publication (V036) and retried
+  modulith:
+    events:
+      completion-mode: delete
+      republish-outstanding-events-on-restart: false
+      jdbc:
+        schema-initialization:
+          enabled: false
+
   mail:
     host: ${SPRING_MAIL_HOST:localhost}
     port: ${SPRING_MAIL_PORT:1025}
@@ -150,6 +159,12 @@ app:
       endpoint: ${STORAGE_S3_ENDPOINT:http://localhost:9000}
       access-key: ${STORAGE_S3_ACCESS_KEY:minioadmin}
       secret-key: ${STORAGE_S3_SECRET_KEY:minioadmin}
+  events:
+    first-run: ${APP_EVENTS_FIRST_RUN:PT1M}
+    retry-interval: ${APP_EVENTS_RETRY_INTERVAL:PT10M}
+    retry-after: ${APP_EVENTS_RETRY_AFTER:PT10M}
+    give-up-after: PT24H
+    keep-failed: P30D
   mail:
     from: ${APP_MAIL_FROM:awards@chnu.edu.ua}
   auth:

@@ -1,6 +1,6 @@
 # ADR-006: Message Queue Selection
 
-**Status**: Accepted (implementation deferred to Epic 7; Spring events first, see Addendum 2026-10-05)  
+**Status**: Accepted as amended: Spring application events with the Spring Modulith event publication registry (Addendum 2026-10-09); Kafka only for a consumer outside the application  
 **Date**: 2025-08-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team, Operations Team
@@ -20,6 +20,10 @@ The Award Monitoring & Tracking System requires a message queue for event-driven
 ---
 
 ## Decision
+
+> Amended by the Addendum 2026-10-09: inside the application, events are Spring application events recorded in
+> the Spring Modulith event publication registry. Kafka, as described below, remains the option for a consumer
+> outside the application.
 
 **Apache Kafka** has been selected as the message queue solution for the Award Monitoring & Tracking System.
 
@@ -125,7 +129,7 @@ kickoff, when the first asynchronous consumer appears. The decision above remain
 
 ## Addendum 2026-10-05: Spring events with a publication registry
 
-Direction after the design review of 2026-10-04, to be confirmed at the Epic 7 kickoff:
+Direction after the design review of 2026-10-04, confirmed at the Epic 7 kickoff (see Addendum 2026-10-09):
 
 - Inside the application, events stay in-process Spring application events. Spring Modulith's event
   publication registry stores each event in PostgreSQL in the publishing transaction and marks it complete when
@@ -136,9 +140,38 @@ Direction after the design review of 2026-10-04, to be confirmed at the Epic 7 k
   without changing the publishers.
 - Audit rows and award versions stay synchronous, in the transaction of the change.
 
-As built through Epic 4: the mails of decisions, corrections and overdue notices (`DecisionMails`, `CorrectionMails`,
-`OverdueMails`) use after-commit listeners like those of Epics 1 and 2, without the registry; a crash between the
-commit and the send loses that mail. The registry is still to be confirmed at the Epic 7 kickoff.
+Through Epic 4 the after-commit mails ran without the registry; a crash between the commit and the send lost
+that mail. Story 7.1.1 introduced the registry (Addendum 2026-10-09).
+
+---
+
+## Addendum 2026-10-09: Decision, event publication registry
+
+**Decision.** Events inside the application are Spring application events. Every `@TransactionalEventListener`
+running after the commit is recorded by the Spring Modulith event publication registry (`spring-modulith-starter-jdbc`
+1.4, table `event_publication`, migration V036): one row per listener is written in the publishing transaction and
+deleted when the listener returns normally (`spring.modulith.events.completion-mode: delete`). A rollback leaves no
+row and runs no listener.
+
+**Delivery is at least once.** `MailDelivery` tries a mail three times and then throws `MailNotDeliveredException`,
+so the publication stays incomplete. The job `PublicationRetry` runs every 10 minutes (first run 1 minute after the
+start) and resubmits incomplete publications older than 10 minutes and younger than 24 hours; a restart needs no
+other step, because the first run picks up what an earlier process left. Older publications are no longer
+resubmitted and are reported by one error line per run; after 30 days they are deleted with a warning. A crash
+after the send but before the row is deleted sends the mail a second time; that duplicate is accepted.
+Settings: `app.events.retry-interval`, `retry-after`, `give-up-after`, `keep-failed`, `first-run`. Gauges
+`award.events.incomplete` and `award.events.abandoned` in `/actuator/prometheus`.
+
+**Transient events.** Events carrying a one-time link (`VerificationRequested`, `PasswordResetRequested`,
+`EmailChangeRequested`, `EmailChanged`, `NewDeviceSignedIn`) are never stored: a link at rest would be a usable
+credential. They are published through `AfterCommit` once the transaction commits and handled by plain
+`@EventListener`s; a failed send is logged and the user requests a new link. `AccountLocked` is published outside a
+transaction and stays a plain listener. `ObjectStored` keeps its after-rollback listener, which the registry does
+not record.
+
+**Rules for new events.** A registry event must serialise to JSON and back with the application's `ObjectMapper`
+(one test per type) and must not carry a secret. Listener class and method names are the registry key: renaming
+or moving a listener with incomplete rows orphans them, so such a change ships when the table is empty.
 
 ---
 
@@ -150,6 +183,7 @@ commit and the send loses that mail. The registry is still to be confirmed at th
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 | 2026-10-05 | Stefan Kostyk | Addendum: Spring events with a publication registry, Kafka for external consumers | Design review of 2026-10-04 |
 | 2026-10-09 | Stefan Kostyk | Epic 4 mails use after-commit listeners without the registry | Documentation sync after Epic 4 |
+| 2026-10-09 | Stefan Kostyk | Addendum: decision for the event publication registry, at-least-once delivery, transient events | Story 7.1.1 |
 
 ---
 

@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -33,6 +32,7 @@ import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.EmailChangeRequested;
 import ua.edu.chnu.awards.auth.event.EmailChanged;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
+import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.AuthProperties;
@@ -53,7 +53,7 @@ class EmailChangeServiceTest {
     private final AuthorizationRevoker revoker = mock(AuthorizationRevoker.class);
     private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
-    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final AfterCommit events = mock(AfterCommit.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofHours(1), Duration.ofMinutes(1),
@@ -84,7 +84,7 @@ class EmailChangeServiceTest {
         verify(audit).record(AuditAction.EMAIL_CHANGE_REQUESTED, AuditEntityConstants.USER, 12L, 12L,
             Map.of("newEmail", NEW));
         ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
-        verify(events).publishEvent(event.capture());
+        verify(events).publish(event.capture());
         assertThat(event.getValue()).isEqualTo(new EmailChangeRequested(NEW, OLD, "Петро",
             "http://localhost:4200/confirm-email-change?token=raw", "http://localhost:4200/forgot-password"));
     }
@@ -161,7 +161,7 @@ class EmailChangeServiceTest {
         verify(tokens).invalidate(user, TokenPurpose.PASSWORD_RESET);
         verify(audit).record(AuditAction.EMAIL_CHANGED, AuditEntityConstants.USER, 12L, 12L,
             Map.of("oldEmail", OLD, "newEmail", NEW));
-        verify(events).publishEvent(new EmailChanged(OLD, NEW, "Петро",
+        verify(events).publish(new EmailChanged(OLD, NEW, "Петро",
             "http://localhost:4200/security/not-me?token=back"));
     }
 

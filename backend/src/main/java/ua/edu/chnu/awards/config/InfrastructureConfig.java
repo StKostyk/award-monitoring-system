@@ -14,15 +14,16 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.TimeoutOptions;
 
+import ua.edu.chnu.awards.common.event.EventProperties;
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 
 /**
- * Shared clock (injectable for tests), workflow timing, asynchronous execution for listeners, Redis client
- * behaviour and the request windows.
+ * Shared clock (injectable for tests), workflow timing, event publication retry, asynchronous execution for
+ * listeners, Redis client behaviour and the request windows.
  */
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties(WorkflowProperties.class)
+@EnableConfigurationProperties({WorkflowProperties.class, EventProperties.class})
 @EnableScheduling
 public class InfrastructureConfig {
 
