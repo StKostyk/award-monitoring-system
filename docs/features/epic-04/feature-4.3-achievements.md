@@ -222,13 +222,46 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 17. Anonymous: open `http://localhost:4200/units/64/achievements` (signed-in route) directly. Expected: sign-in; `http://localhost:4200/public/units/1/achievements` → the not-found page. (AC-2.4)
 18. Anonymous: `curl -H "Authorization: Bearer x" http://localhost:8080/api/v1/public/achievements`. Expected: 200. (AC-2.2)
 19. Anonymous: send 125 requests in a loop (`for i in $(seq 125); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/v1/public/achievements; done | sort | uniq -c`). Expected: 120 × 200, then 429 with `Retry-After`; sign-in still works from the same address. (AC-2.3)
-20. Signed in as `secretary2.fmi`, in DevTools run `sessionStorage.setItem('access_token', 'x'); sessionStorage.setItem('refresh_token', 'x')`, then open `/public/achievements`. Expected: the page loads, no redirect to sign-in; the `public/achievements` and `organizations` requests carry no `Authorization` header (the app's own start-up check of the stored session may try one refresh, which fails quietly). Open `/achievements`. Expected: sign-in. (§5, AC-2.8)
-21. Stop the backend, reload `/public/achievements`. Expected: an error message with «Спробувати знову»; start the backend, retry works. (§5)
+20. Signed in as `secretary2.fmi`, in DevTools run `sessionStorage.setItem('access_token', 'x'); sessionStorage.setItem('refresh_token', 'x')`, then open `/public/achievements`. Expected: the page loads, no redirect to sign-in; the `public/achievements` and `organizations` requests carry no `Authorization` header (the app's own start-up check of the stored session may try one refresh, which fails quietly). Open `/achievements`. Expected: the stored tokens are rejected and sign-in starts (it completes silently while the identity-provider session is alive). (§5, AC-2.8)
+21. With `/public/achievements` open, stop the backend and change the year. Expected: after the gateway answers 502 (about 15 s) an error message with «Спробувати знову»; start the backend, retry works. A reload with the backend stopped shows a blank page, because start-up reads `/.well-known/openid-configuration`. (§5)
 22. psql `update users set account_status = 'DELETED' where email_address = 'employee.fmi@chnu.edu.ua';` (restore afterwards with `'ACTIVE'`). Expected: P1 and P2 gone from both pages; U (owned by `secretary.fmi`) unaffected. (§5)
 23. As `employee.fmi` set P2 public, then press Back and reload P2's page. Expected: «Публічно» shown; no duplicate audit row. (AC-1.2)
 24. After step 19, while the address is still refused, open `/public/achievements` in the anonymous browser. Expected: the error message with «Спробувати знову»; press it, then change the year before the minute ends. Expected: the list follows the year filter, not the retried request. (AC-2.3, §5)
 25. `docker compose stop redis`, then reload `/public/achievements` a few times. Expected: the list loads (the limit lets requests through while Redis is down); `docker compose start redis`. (AC-2.3)
 26. In DevTools set the network to offline right after choosing «Показувати колегам» on P1, then back online and reload. Expected: the error notice, and after the reload the radio shows the value stored on the server. (§5)
+
+### Run 2026-10-11
+
+Compose stack on 967a30f (develop line incl. SCRUM-56/57/59), default settings; preparation P1=75, P2=76, U=77, draft 78, pending 79. Result: 25 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | P1=75: radio with 3 options on approved award; draft 78 has no «Видимість» |
+| 2 | PASS | P1 → «Колегам», inline «Видимість збережено.»; audit PRIVATE→UNIVERSITY; awards.version 3 before/after; history top entry unchanged |
+| 3 | PASS | P2=76: dialog lists shown/not-shown; Скасувати keeps «Лише мені…»; confirm → «Публічно» |
+| 4 | PASS | /awards chips: P2 «Публічно», P1 «Колегам» |
+| 5 | PASS | secretary2 /achievements: U (15.05), P2 (26.03), P1 (08.01) newest first; P1 link target=_blank; U shows department as recipient |
+| 6 | PASS | unit=9 → year=2026 → recipient=UNIT in URL, reload keeps; only U; year 2025 shows «Поки що немає досягнень…» |
+| 7 | PASS | 200 no-store; body has no email/personId/impactScore/request; unit=1 → 404; year=abc → 400 |
+| 8 | PASS | anonymous /public/achievements: P2 and U, no P1; «Увійти» + EN switch, no signed-in nav; console 0 errors |
+| 9 | PASS | U's department → /public/units/64/achievements (faculty link; U, P2 only) → faculty → /public/units/9/achievements with department links 64–68 |
+| 10 | PASS | secretary2: department → /units/64/achievements with U, P2, P1; «Публічна сторінка» → /public/units/64/achievements (U, P2) with «Переглянути як співробітник» |
+| 11 | PASS | P2→UNIVERSITY: gone from public page, still on /achievements; P1→PRIVATE: gone from secretary2 /achievements (API 200 both) |
+| 12 | PASS | export: 74 awards all with visibility (75 UNIVERSITY, 76 PUBLIC, 78 PRIVATE); first call 429 from the 1/min export limit, retried after 62 s |
+| 13 | FAIL | texts, 360 px (no overflow) and Tab order OK, but card title/unit/category names keep the previous language after a live switch (EN→UK shows «Faculty Teaching Award», UK→EN «Кафедра…») until reload; computed() reads LanguageService.current(), a plain method |
+| 14 | PASS | secretary.fmi on 75 → 404; pending 79 as owner → 409 visibility-fixed awardStatus=PENDING; unit award 77 → 409 visibility-fixed; FRIENDS → 422; audit count 6 before/after |
+| 15 | PASS | 75 PRIVATE→PUBLIC twice: 200 and 200, audit 6→7 (one row) |
+| 16 | PASS | two tabs on 75: Колегам and Публічно both applied, reload shows Публічно, audit 8→10, version 3 |
+| 17 | PASS | anonymous /units/64/achievements → /login; /public/units/1/achievements → «Сторінку не знайдено» |
+| 18 | PASS | Bearer x on /api/v1/public/achievements → 200 |
+| 19 | PASS | 125 requests: 120×200 then 5×429, Retry-After: 15; dean.fmi sign-in still works from the same address |
+| 20 | PASS | bogus tokens: /public/achievements loads without redirect; public/achievements and organizations requests auth=false; /achievements then signs in silently through the live IdP session (tokens replaced by real ones) — step text corrected |
+| 21 | PASS | backend stopped with page open: year change shows the error + «Спробувати знову» after the proxy 502 (~15 s); backend started, retry loads the list (empty for 2024) — step text corrected (a fresh reload stays blank: start-up needs /.well-known/openid-configuration) |
+| 22 | PASS | employee.fmi DELETED: public list and secretary2 /achievements show only U (P1, P2 gone); restored to ACTIVE |
+| 23 | PASS | 76 UNIVERSITY→Публічно via UI, Back to /awards, reload shows «Публічно»; audit 11→12 (one row) |
+| 24 | PASS | while refused: public page shows «Не вдалося завантажити…» + «Спробувати знову»; after retry and year 2025 the URL and list follow the filter (empty message), not the retried request |
+| 25 | PASS | redis stopped: 4 requests to /api/v1/public/achievements → 200 each (limit lets requests through); redis started again |
+| 26 | PASS | offline click on «Колегам» (P1=75 was PUBLIC): radio stayed, notice «Сервер недоступний. Введені дані збережено, спробуйте ще раз.»; after online + reload radio shows server value Публічно |
 
 ## 11. Risks
 
