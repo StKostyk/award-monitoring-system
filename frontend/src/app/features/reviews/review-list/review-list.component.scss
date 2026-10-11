@@ -46,12 +46,23 @@
   align-items: flex-start;
   max-width: 100%;
   gap: 4px;
+  padding-block: 8px;
 
   mat-chip {
     max-width: 100%;
+    height: auto;
+    min-height: 32px;
+  }
+
+  ::ng-deep .mdc-evolution-chip__cell--primary,
+  ::ng-deep .mdc-evolution-chip__action--primary {
+    height: auto;
   }
 
   ::ng-deep .mdc-evolution-chip__text-label {
+    padding-block: 4px;
+    overflow: visible;
+    line-height: 1.3;
     white-space: normal;
   }
 }

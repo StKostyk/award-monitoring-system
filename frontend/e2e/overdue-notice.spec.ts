@@ -58,4 +58,33 @@ test.describe('overdue notice', () => {
       /Керівника повідомлено \d{2}\.\d{2}\.\d{4}/,
     );
   });
+
+  test('scrum78 the noticed row fits the review table at 1280 px', async ({ page, browser }) => {
+    page.on('dialog', (dialog) => void dialog.accept());
+    await signIn(page, employee, DEMO_PASSWORD);
+    const title = `Грамота з нагадуванням ${uniqueToken()}`;
+    const id = await submitted(page, title);
+    sql(
+      `update award_requests set deadline = (select min(deadline) from award_requests) - interval '1 minute', ` +
+        `overdue_noticed_at = now(), overdue_noticed_level = current_level where award_id = ${id}`,
+    );
+
+    const deanPage = await signedIn(browser, dean);
+    await deanPage.setViewportSize({ width: 1280, height: 900 });
+    await deanPage.goto('/reviews');
+    await deanPage.getByTestId('review-filter-lower-overdue').click();
+    const row = deanPage.getByTestId('review-item').filter({ hasText: title });
+    const noticed = row.getByTestId('review-noticed');
+    await expect(noticed).toBeVisible();
+
+    const overflow = await deanPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    const clipped = await noticed.evaluate((chip) => {
+      const label = chip.querySelector('.mdc-evolution-chip__text-label') ?? chip;
+      return label.scrollWidth > label.clientWidth + 1 || label.scrollHeight > label.clientHeight + 1;
+    });
+    expect(clipped).toBe(false);
+    const box = await deanPage.getByTestId('review-table').boundingBox();
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(1280);
+  });
 });
