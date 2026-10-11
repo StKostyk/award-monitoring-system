@@ -62,11 +62,23 @@ function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$ep
     if (-not (Test-Path $script:Backlog)) { return $id }
     $path = (Resolve-Path $script:Backlog).Path
     $backlog = [Collections.Generic.List[string]][IO.File]::ReadAllLines($path, $script:Utf8)
+    $featureRow = "^\|\s*$([regex]::Escape($feature))\.\d+\s*\|"
     $after = -1
-    for ($i = 0; $i -lt $backlog.Count; $i++) {
-        if ($backlog[$i] -match "^\|\s*$([regex]::Escape($feature))\.\d+\s*\|") { $after = $i }
+    $start = $backlog.FindIndex({ param($l) $l -match "^### Epic $($feature.Split('.')[0]) " })
+    if ($start -ge 0) {
+        $tableEnd = -1
+        for ($i = $start + 1; $i -lt $backlog.Count -and $backlog[$i] -notmatch '^#'; $i++) {
+            if ($backlog[$i] -match $featureRow) { $after = $i }
+            if ($backlog[$i] -match '^\|') { $tableEnd = $i }
+        }
+        if ($after -lt 0) { $after = $tableEnd }
     }
-    if ($after -lt 0) { throw "No BACKLOG row of feature $feature" }
+    if ($after -lt 0) {
+        for ($i = 0; $i -lt $backlog.Count; $i++) {
+            if ($backlog[$i] -match $featureRow) { $after = $i }
+        }
+    }
+    if ($after -lt 0) { throw "No BACKLOG row of feature $feature and no Epic table to add it to" }
     $sprint = if ($backlog[$after] -match '\((Sprint \d+)\)\s*\|') { $Matches[1] }
         elseif ($backlog[$after + 1] -match '\|\s*(Sprint \d+)\s*\|') { $Matches[1] }
         else { '' }

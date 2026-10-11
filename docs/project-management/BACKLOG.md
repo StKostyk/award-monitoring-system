@@ -39,6 +39,12 @@ Completed Points: 91 (these stories plus 3.0.2–3.0.4, 3.1.1 and 3.1.2 from Epi
 
 ## Backlog (Prioritized)
 
+### Epic 1 — User Management fixes (Jira epic SCRUM-5)
+Features 1.1–1.3 done (Sprints 2–3); this table holds the fixes found in their later manual runs. Tracker: [EPIC-01-USER-MANAGEMENT-STATUS.md](../epics/EPIC-01-USER-MANAGEMENT-STATUS.md).
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+
 ### Epic 2 — done (Jira epic SCRUM-20)
 Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) were fixed in 2.1.5 (Sprint 3). Epic 2 done 2026-10-01.
 
