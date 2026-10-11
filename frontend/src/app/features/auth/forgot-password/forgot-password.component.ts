@@ -6,9 +6,11 @@ import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { TranslocoPipe } from '@jsverse/transloco';
 
-import { problemType } from '../../../core/api/problem';
+import { knownProblem, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { RegistrationService } from '../registration.service';
+
+const KNOWN_PROBLEMS = ['network', 'too-many-requests'];
 
 @Component({
   selector: 'app-forgot-password',
@@ -50,7 +52,7 @@ export class ForgotPasswordComponent {
     this.api.requestPasswordReset(this.email.value.trim()).subscribe({
       next: () => this.sent.set(true),
       error: (err) => {
-        this.error.set(`forgot.errors.${problemType(err)}`);
+        this.error.set(`forgot.errors.${knownProblem(problemType(err), KNOWN_PROBLEMS)}`);
         this.submitting.set(false);
       },
     });

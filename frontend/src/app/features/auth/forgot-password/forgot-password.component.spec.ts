@@ -23,7 +23,14 @@ describe('ForgotPasswordComponent', () => {
         TranslocoTestingModule.forRoot({
           langs: {
             uk: {
-              forgot: { sent: 'Надіслано на {{email}}', errors: { network: 'Немає звʼязку' } },
+              forgot: {
+                sent: 'Надіслано на {{email}}',
+                errors: {
+                  network: 'Немає звʼязку',
+                  'too-many-requests': 'Забагато запитів',
+                  unknown: 'Не вдалося',
+                },
+              },
             },
           },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
@@ -91,5 +98,36 @@ describe('ForgotPasswordComponent', () => {
     expect(
       fixture.nativeElement.querySelector('[data-testid="forgot-error"]').textContent,
     ).toContain('звʼязку');
+  });
+
+  it('ac2 shows a retry-later message when the request is rate limited', () => {
+    fixture.componentInstance.email.setValue('olena@chnu.edu.ua');
+    fixture.componentInstance.submit();
+    http
+      .expectOne(`${environment.apiUrl}/auth/password-reset/request`)
+      .flush(
+        { type: 'urn:awards:problem:too-many-requests', status: 429 },
+        { status: 429, statusText: 'Too Many Requests' },
+      );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.error()).toBe('forgot.errors.too-many-requests');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="forgot-error"]').textContent,
+    ).toContain('Забагато запитів');
+    expect(fixture.componentInstance.submitting()).toBe(false);
+  });
+
+  it('shows the generic message for a problem type without a text of its own', () => {
+    fixture.componentInstance.email.setValue('olena@chnu.edu.ua');
+    fixture.componentInstance.submit();
+    http
+      .expectOne(`${environment.apiUrl}/auth/password-reset/request`)
+      .flush(
+        { type: 'urn:awards:problem:validation-error', status: 400 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+
+    expect(fixture.componentInstance.error()).toBe('forgot.errors.unknown');
   });
 });
