@@ -47,8 +47,9 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     private static final String GONE = "ft.roles.gone@chnu.edu.ua";
     private static final String OFFICE = "ft.roles.office@chnu.edu.ua";
     private static final String JOINER = "ft.roles.joiner@chnu.edu.ua";
+    private static final String MOVER = "ft.roles.mover@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(ADMIN, RECTOR, DEAN, SECRETARY, PROMOTED, SCHEDULED,
-        SENIOR, RULES, REVOKED, NEWCOMER, GONE, OFFICE, JOINER);
+        SENIOR, RULES, REVOKED, NEWCOMER, GONE, OFFICE, JOINER, MOVER);
     private static final long OTHER_DEPARTMENT_ID = 65L;
 
     @Autowired
@@ -69,6 +70,7 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     private long revokedId;
     private long newcomerId;
     private long joinerId;
+    private long moverId;
 
     @BeforeAll
     void createUsers() {
@@ -84,6 +86,7 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
         seniorId = withRole(SENIOR, faculty, RoleType.FACULTY_SECRETARY, faculty);
         rulesId = withRole(RULES, department, RoleType.EMPLOYEE, department);
         revokedId = withRole(REVOKED, department, RoleType.EMPLOYEE, department);
+        moverId = withRole(MOVER, department, RoleType.EMPLOYEE, department);
         newcomerId = userRepository.save(TestUsers.user(NEWCOMER, department)).getId();
         joinerId = userRepository.save(TestUsers.user(JOINER, department)).getId();
         withRole(OFFICE, university, RoleType.RECTOR_SECRETARY, university);
@@ -284,5 +287,20 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
         @SuppressWarnings("unchecked")
         List<String> permissions = (List<String>) claims(tokenOf(NEWCOMER)).get("permissions");
         assertThat(permissions).contains("award:create");
+    }
+
+    @Test
+    void ac4_1_aRepeatedDepartmentMoveIsAStaleMembershipChange() {
+        String secretaryToken = tokenOf(SECRETARY);
+        Map<String, Object> move = Map.of("role", "EMPLOYEE", "organizationId", OTHER_DEPARTMENT_ID,
+            "updateOrganization", true, "fromOrganizationId", TestUsers.DAI_DEPARTMENT_ID);
+        as(secretaryToken).contentType(ContentType.JSON).body(move)
+            .post("/api/v1/users/" + moverId + "/roles").then().statusCode(201);
+
+        as(secretaryToken).contentType(ContentType.JSON).body(move)
+            .post("/api/v1/users/" + moverId + "/roles").then().statusCode(409)
+            .body("type", equalTo("urn:awards:problem:membership-already-confirmed"));
+        as(secretaryToken).get("/api/v1/users/" + moverId).then().statusCode(200)
+            .body("organization.id", equalTo((int) OTHER_DEPARTMENT_ID));
     }
 }
