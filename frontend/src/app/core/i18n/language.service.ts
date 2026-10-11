@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { DateAdapter } from '@angular/material/core';
 import { TranslocoService } from '@jsverse/transloco';
 
@@ -12,13 +12,14 @@ const STORAGE_KEY = 'lang';
 export class LanguageService {
   private readonly transloco = inject(TranslocoService);
   private readonly dates = inject(DateAdapter, { optional: true });
+  private readonly active = signal(this.transloco.getActiveLang() as AppLanguage);
 
   init(): void {
     this.activate(this.stored() ?? 'uk');
   }
 
   current(): AppLanguage {
-    return this.transloco.getActiveLang() as AppLanguage;
+    return this.active();
   }
 
   toggle(): void {
@@ -36,6 +37,7 @@ export class LanguageService {
 
   private activate(lang: AppLanguage): void {
     this.transloco.setActiveLang(lang);
+    this.active.set(lang);
     this.dates?.setLocale(DATE_LOCALES[lang]);
   }
 
