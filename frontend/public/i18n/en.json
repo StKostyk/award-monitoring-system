@@ -888,6 +888,7 @@
     "signIn": "Back to sign in",
     "errors": {
       "network": "The server is unreachable. Try again later.",
+      "too-many-requests": "Too many requests. Try again in a minute.",
       "unknown": "The request failed. Try again later."
     }
   },
