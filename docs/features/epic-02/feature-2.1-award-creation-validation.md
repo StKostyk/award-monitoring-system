@@ -257,6 +257,24 @@ Preconditions: the container stack rebuilt from the branch (`docker compose up -
 42. Make sure `employee.fmi` has more than 20 awards (repeat drafts or earlier runs), open «Мої нагороди». Expected: a paginator «1–20 з N», 20/50/100 per page; the next page shows the rest; choosing a status filter returns to the first page; no «Показано перші…» line. (AC-8)
 43. psql `select count(*) from audit_logs where entity_type = 'users' and (old_values ? 'password_hash' or new_values ? 'password_hash');` → 0. (AC-6)
 
+### Run 2026-10-11
+
+Compose stack (award-backend healthy), default settings, develop-based branch docs/1.3-manual-run at cb22ff3; steps 33–43 only; API/psql/Mailpit plus Playwright for UI steps. Result: 11 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 33 | PASS | id 101: three «Потрібно для подання» marks on Подати with title only; Зберегти чернетку → /awards/101/edit, marks gone, «Чернетку збережено» seen on a changed re-save |
+| 34 | PASS | Скасувати on draft 101 → /awards/101 (no dialog); new form with title → «Є незбережені зміни», «Вийти без збереження» → /awards «Мої нагороди» (Скасувати is a link) |
+| 35 | PASS | Swagger at http://localhost/swagger-ui/index.html: authorization-code+PKCE sign-in as employee.fmi (token sub 8) → Authorized, server http://localhost, GET /api/v1/awards → 200 |
+| 36 | PASS | cat 21 award 99: one level Секретар факультету, impact 50; cat 12 award 98: Секретар факультету, Декан, Секретар ректора, impact 80, completion 23.10 |
+| 37 | PASS | Sunday submit 19:45 → deadline Thu 2026-10-15 00:00 (weekend rolls to Monday 00:00 + 3 working days, StatusEstimator.deadline); page shows до 15.10 / 20.10 / 23.10; Thu/Fri cases not reachable on a Sunday |
+| 38 | PASS | admin GET /awards/99 → 404, audit-trail → 200 (4 rows); gdpr at /awards/99 sees the award with tabs «Історія змін» and «Журнал аудиту» |
+| 39 | PASS | role dialog for employee.fmi (/admin/users/8): rector → Декан, Секретар ректора; dean.fmi → Працівник, Секретар факультету; secretary.fmi → Працівник |
+| 40 | PASS | fresh user 30 test.mover.211 → .new confirmed (API for the change request/confirm); old address got «Адресу для входу змінено» with /security/not-me link; «Це був не я» → «Доступ відкликано…»; old address «Скидання пароля», new address «Адресу для входу повернуто»; sign-in with old address after reset OK, new address fails; same link again → «Посилання недійсне…» |
+| 41 | PASS | export format_version 1.1, award_versions for 97/98/99 (CREATED v1, SUBMITTED v2), no reviewer/secretary text in versions |
+| 42 | PASS | paginator «1–20 з 90», sizes 20/50/100, next «21–40 з 90», status filter «На розгляді» → «1–20 з 38», no «Показано перші» line |
+| 43 | PASS | count = 0 |
+
 ## 10. Risks
 
 | Risk | Impact | Mitigation |

@@ -196,6 +196,14 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 26. Repeat step 14 in Firefox. Expected: the file is saved and opens with its rows. (F-4)
 27. Open `/awards/<id of the draft deleted in step 10>` as `admin`. Expected: «Не знайдено» and no tab; Swagger `GET /api/v1/awards/<id>/audit-trail` as `admin` → 200 with the `DELETE` row. The trail of a deleted award is read through the API until the audit search of Epic 6. (AC-1.10)
 
+### Run 2026-10-11
+
+Compose stack, default settings, cb22ff3; step 15 only (admin audit-trail export of award 100). Result: 1 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 15 | PASS | award 100 title =HYPERLINK(...): admin export (csv, ';' separated) has the title only inside old/new_values JSON cells starting with {; 0 cells start with = + - @ |
+
 ## 10. Risks
 
 | Risk | Impact | Mitigation |
