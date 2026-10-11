@@ -70,6 +70,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The forgot-password form shows a retry-later message instead of a raw key when the request is rate limited.
+- The edit form of a returned or withdrawn draft no longer offers «Видалити чернетку», which could only end in an error (#199).
+- The review list stacks the deadline chips and lets «Керівника повідомлено …» wrap, so every column fits at 1280 px without a horizontal scrollbar (#202).
+- Achievement cards switch the title, unit and category to the new language at once instead of after a reload (#204).
 - Anonymous calls to the organisation list count against the public rate limit of the client address (4.3.6).
 - A retry on the achievements pages no longer replaces the list of a later filter change (SCRUM-62)
 - Correction form, history, delegations and the admin user page show dates day first; datepicker labels are translated; translation files are revalidated after a release (SCRUM-60)
