@@ -129,6 +129,16 @@ function Add-ChangelogLine([string]$section, [string]$text) {
     Write-Lines $path $lines.ToArray()
 }
 
+function Invoke-TrackerSync {
+    try {
+        & "$PSScriptRoot\tracker-sync.ps1" @args
+    } catch {
+        Write-Warning "tracker-sync failed ($($_.Exception.Message)); retrying once in 5 s"
+        Start-Sleep -Seconds 5
+        & "$PSScriptRoot\tracker-sync.ps1" @args
+    }
+}
+
 function Remove-StaleGitLock {
     $lock = Join-Path (git rev-parse --git-dir) 'index.lock'
     if ((Test-Path $lock) -and -not (Get-Process git -ErrorAction SilentlyContinue)) {

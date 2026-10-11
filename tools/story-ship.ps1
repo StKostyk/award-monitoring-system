@@ -17,6 +17,8 @@
         -Commit "feat(reviews): add the reviewer queue" -BodyFile build/pr-scrum-49.md `
         -Changelog "Reviewer queue «На розгляді» ..."
 #>
+#Requires -Version 7
+
 [CmdletBinding()]
 param(
     [Parameter(Position = 0, Mandatory = $true)]
@@ -87,9 +89,9 @@ if ($LASTEXITCODE) { throw 'Pull request was not created.' }
 
 if (-not $NoTracker) {
     if ($issue) {
-        & "$PSScriptRoot\tracker-sync.ps1" status -Jira $Key -GitHub $issue -Status InReview
+        Invoke-TrackerSync status -Jira $Key -GitHub $issue -Status InReview
     } else {
-        & "$PSScriptRoot\tracker-sync.ps1" status -Jira $Key -Status InReview
+        Invoke-TrackerSync status -Jira $Key -Status InReview
     }
 }
 Write-Host "PR: $url"

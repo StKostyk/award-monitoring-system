@@ -43,10 +43,13 @@ try {
     }
 
     $broken = @()
+    $out = Join-Path ([IO.Path]::GetTempPath()) 'puml-syntax.txt'
     foreach ($file in $files) {
-        $report = Get-Content -Raw -Encoding UTF8 $file | & java -jar $jar -syntax -charset UTF-8 2>&1
-        if ($report -and ($report | Select-Object -First 1) -eq 'ERROR') {
-            $line = $report | Select-Object -Skip 1 -First 1
+        Start-Process java -ArgumentList '-jar', "`"$jar`"", '-syntax', '-charset', 'UTF-8' `
+            -RedirectStandardInput $file -RedirectStandardOutput $out -NoNewWindow -Wait
+        $report = @(Get-Content -Encoding UTF8 $out)
+        if ($report.Count -gt 0 -and $report[0] -eq 'ERROR') {
+            $line = "line $($report[1]): $($report[2])"
             $broken += [pscustomobject]@{ Diagram = $file; Line = $line }
         }
     }

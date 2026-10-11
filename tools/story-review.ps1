@@ -13,6 +13,8 @@
 .EXAMPLE
     .\tools\story-review.ps1 SCRUM-49
 #>
+#Requires -Version 7
+
 [CmdletBinding()]
 param(
     [Parameter(Position = 0, Mandatory = $true)]
