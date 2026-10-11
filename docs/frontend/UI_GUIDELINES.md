@@ -76,10 +76,28 @@ The authorization server renders the sign-in, error and 429 pages itself (Thymel
 2. Click «EN». Expected: the tab title becomes «ChNU Awards», the menu and the name switch to English. Switch back.
 3. Open the user menu → «Тема» → «Темна». Expected: dark surfaces (`#1F1F1F`), readable text and status chips; reload keeps the dark scheme. Choose «Як на пристрої» and change the system setting: the app follows it.
 4. Narrow the window below 960 px (or use the phone view of the developer tools at 360 px). Expected: the side menu disappears, a menu button opens it as a drawer, choosing «Мої нагороди» opens the list and closes the drawer; no sideways scrolling.
-5. Open «Мої нагороди». Expected: status chips coloured by status (grey draft, amber pending, green approved, red rejected, outlined archived) in both schemes.
+5. Open «Мої нагороди» and use the «Статус» filter for the rejected and archived chips (no screen archives an award yet: set one with `update awards set status='ARCHIVED' where award_id=<id>`). Expected: status chips coloured by status (grey draft, amber pending, green approved, red rejected, outlined archived) in both schemes.
 6. In the developer tools, Network tab, reload. Expected: no request to `fonts.googleapis.com` or `fonts.gstatic.com`.
 7. Replace the brand: `docker compose exec frontend sh -c "echo '{\"id\":\"neutral\",\"name\":{\"uk\":\"Облік нагород\",\"en\":\"Award Registry\"},\"organization\":{\"uk\":\"Університет\",\"en\":\"University\"},\"logo\":\"brand/neutral/logo.svg\"}' > /usr/share/nginx/html/brand/brand.json"` and reload. Expected: green neutral theme in IBM Plex Sans with the neutral logo. Restore with `docker compose up -d --build --force-recreate frontend`.
-8. Sign out and open `http://localhost`. Expected: the sign-in page has the navy brand panel with the logo, «Облік нагород ЧНУ» and the university name beside the form (a strip above it below 760 px), Nunito text, a cobalt «Увійти» button; «English» switches the page and the brand name to English.
+8. Sign out and open `http://localhost` with the browser language set to Ukrainian (the sign-in page follows the browser language, not the choice made in the app). Expected: the sign-in page has the navy brand panel with the logo, «Облік нагород ЧНУ» and the university name beside the form (a strip above it below 760 px), Nunito text, a cobalt «Увійти» button; «English» switches the page and the brand name to English.
 9. In the app choose «Темна», sign out. Expected: the sign-in page is dark as well (`#1F1F1F`); with «Як на пристрої» it follows the system setting.
 10. Enter a wrong password. Expected: the error appears in a red box inside the card, readable in both schemes; at 360 px nothing scrolls sideways.
 11. Set `APP_BRAND=neutral` (for example `APP_BRAND=neutral docker compose up -d app`) and reload the sign-in page. Expected: green neutral panel, IBM Plex Sans, «Облік нагород» and «Університет». Restore with `docker compose up -d app`.
+
+### Run 2026-10-11
+
+docker compose stack, default settings (brand swap and APP_BRAND=neutral per steps 7/11, restored), commit fc2f1b3, browser contexts uk-UA for the sign-in steps. Result: 11 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | employee.fmi signed in; sidenav rgb(0,50,120) with chnu logo, «Облік нагород ЧНУ» + university name; title «Облік нагород ЧНУ»; body font Nunito |
+| 2 | PASS | EN: title «ChNU Awards», menu English; UK toggle back restores «Облік нагород ЧНУ» |
+| 3 | PASS | Темна: body rgb(31,31,31); reload keeps dark; Як на пристрої follows emulated system dark (31,31,31) / light (249,248,255) |
+| 4 | PASS | 360 px: sidenav hidden (right edge 0), menu button opens drawer (right 264), «Мої нагороди» → /awards and drawer closes (0); scrollWidth 360 = viewport |
+| 5 | PASS | light/dark chips (status filter): Чернетка grey 230,233,238/58,64,72; На розгляді amber 255,231,176/90,67,0; Затверджено green 205,239,217/15,77,44; Відхилено red 255,218,213/107,29,22; В архіві transparent with outline (award 102 set ARCHIVED via psql, no archive action yet) |
+| 6 | PASS | reload: 32 requests, all to localhost; 0 to fonts.googleapis/gstatic; fonts self-hosted (nunito woff2, material-icons) |
+| 7 | PASS | brand.json → neutral: html.brand-neutral, title «Облік нагород», IBM Plex Sans, sidenav rgb(30,61,48) with /brand/neutral/logo.svg, «Університет», primary button rgb(45,106,79); restored with --force-recreate |
+| 8 | PASS | locale uk-UA: /login navy panel rgb(0,50,120) with chnu logo, «Облік нагород ЧНУ» + university, Nunito, «Увійти» rgb(0,71,171); strip above form at 700 px; «English» → ?lang=en, «ChNU Awards»/«Sign in». Note: page language follows browser locale (en locale shows English) |
+| 9 | PASS | after «Темна» + sign-out /login body rgb(31,31,31) data-color-scheme=dark; with «Як на пристрої» light 249,248,255 / emulated dark 31,31,31 |
+| 10 | PASS | wrong password: «Невірна адреса або пароль.» in box bg 147,0,10 on dark and 255,218,214/text 186,26,26 on light; 360 px scrollWidth 360 |
+| 11 | PASS | APP_BRAND=neutral on app: /login panel rgb(30,61,48), IBM Plex Sans, «Облік нагород» + «Університет», /login-assets/neutral/logo.svg, button rgb(45,106,79); restored with docker compose up -d app |
