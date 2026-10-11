@@ -74,6 +74,8 @@ function Close-Story($story) {
 
 $row = Find-StoryRow $Key
 if ($Summary -and -not ($Epic -and $GitHub)) { throw '-Summary needs -Epic and -GitHub' }
+$number = ''
+if ($Summary -match '^\s*(\d+\.\d+\.\d+)\s+') { $number = $Matches[1] }
 if ($Summary) { $Summary = $Summary -replace '^\s*\d+\.\d+\.\d+\s+', '' }
 if (-not ($row -or $Summary)) { throw "No tracker row for $Key in docs/epics" }
 if (-not $Slug) { $Slug = New-Slug $(if ($row) { $row.Title } else { $Summary }) }
@@ -95,7 +97,7 @@ if ($DryRun) {
     }
     $closing | ForEach-Object { Close-Story $_ }
     if (-not $row) {
-        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub
+        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number
         Write-Host "Rows:    $id added to the epic tracker and BACKLOG"
         $row = Find-StoryRow $Key
     }

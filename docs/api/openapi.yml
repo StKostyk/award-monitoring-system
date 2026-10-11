@@ -16,7 +16,8 @@ info:
     ## Rate Limiting
     Counters in Redis, answered with 429 and `Retry-After`: the authentication endpoints (sign-in, token, `/auth`)
     are limited per client address (20 requests a minute by default), document uploads per user (20 a minute).
-    The public API (`/public/**`) is limited per client address too (120 requests a minute by default).
+    The public API (`/public/**`) is limited per client address too (120 requests a minute by default); anonymous
+    calls of `GET /organizations` count against the same budget.
     Other operations have no request quota.
     
     ## Response Formats
@@ -359,7 +360,9 @@ paths:
     get:
       tags: [Users]
       summary: List active organisations of one level with their parent
-      description: Open endpoint, used by the registration form to pick a department.
+      description: >
+        Open endpoint, used by the registration form to pick a department. Calls without a bearer token count
+        against the public rate limit of the client address; calls with one are not counted (4.3.6).
       operationId: listOrganizations
       parameters:
         - name: type
@@ -377,6 +380,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrganizationSummary'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /organizations/{id}/review-period:
     parameters:

@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- Anonymous calls to the organisation list count against the public rate limit of the client address (4.3.6).
 - A retry on the achievements pages no longer replaces the list of a later filter change (SCRUM-62)
 - Correction form, history, delegations and the admin user page show dates day first; datepicker labels are translated; translation files are revalidated after a release (SCRUM-60)
 - Releasing or handing over a review nobody holds answers 409 instead of 500; after a batch with failed items the queue reloads so a retry uses current versions (Feature 4.1 validation)

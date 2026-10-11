@@ -56,6 +56,7 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | Done |
 | 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | Done |
 | 10a | 4.3.3 Fixes from the Feature 4.3 validation | 4.3 | 2 | SCRUM-62 | #176 | no | Done |
+| 10b | 4.3.6 Public rate limit for the organisation list | 4.3 | 1 | SCRUM-72 | #192 | no | In review |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 
@@ -160,7 +161,8 @@ promise and the gap is listed here for a fix story:
   section of PRIVACY_BY_DESIGN promises awards, versions and activity.
 - `BusinessMetricsService` (`award.submissions.total`, `award.approvals.total`, `user.sessions.active` …) is never
   called outside its test; only the `awards.review.*` meters are live. MONITORING_OBSERVABILITY still lists the old ones.
-- `GET /api/v1/organizations` is anonymous but outside the public chain, so the public rate limit does not cover it.
+- `GET /api/v1/organizations` is anonymous but outside the public chain, so the public rate limit does not cover it
+  (closed by 4.3.6: anonymous calls count against the public budget).
 - The `awards.review.open` and `awards.review.overdue` gauges read 0 until the first run of the overdue job after a
   start (already accepted at the validation of 4.2; documented in MONITORING_OBSERVABILITY).
 - Open for a decision: TRACEABILITY_MATRIX rows FR-001 to FR-005 are all "Pending" and USER_STORIES US-004 and US-005 have
