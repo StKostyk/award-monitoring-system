@@ -7,6 +7,8 @@
       status       move a story: -Jira SCRUM-nn and/or -GitHub nn, -Status Ready|InProgress|InReview|Done
       create-epic  create a Jira epic: -Summary
       create-story create a Jira story: -Summary, -Points, -Epic SCRUM-nn, optional -GitHub nn (link added to the description)
+      rename       change the summary: -Summary, -Jira SCRUM-nn and/or -GitHub nn
+      points       set the Jira estimate: -Jira SCRUM-nn -Points n
       set-epic     attach a story to an epic: -Jira SCRUM-nn -Epic SCRUM-nn
       describe     replace the description: -BodyFile file, -Jira SCRUM-nn and/or -GitHub nn; lines starting
                    with "- " become a bullet list in Jira, other non-empty lines paragraphs; GitHub gets the file as is;
@@ -24,10 +26,12 @@
     .\tools\tracker-sync.ps1 describe -Jira SCRUM-21 -GitHub 43 -BodyFile story.md
     .\tools\tracker-sync.ps1 create-story -Summary "1.1.0 User domain entities and auth schema" -Points 3 -Epic SCRUM-1 -GitHub 42
 #>
+#Requires -Version 7
+
 [CmdletBinding()]
 param(
     [Parameter(Position = 0, Mandatory = $true)]
-    [ValidateSet('status', 'create-epic', 'create-story', 'set-epic', 'describe', 'fields')]
+    [ValidateSet('status', 'create-epic', 'create-story', 'rename', 'points', 'set-epic', 'describe', 'fields')]
     [string]$Action,
     [string]$Jira,
     [int]$GitHub,
@@ -99,10 +103,16 @@ switch ($Action) {
         if (-not $Status) { throw '-Status is required' }
         if ($Jira) {
             $target = $jiraStatus[$Status]
-            $t = (Jira-Get "/issue/$Jira/transitions").transitions | Where-Object { $_.to.name -eq $target } | Select-Object -First 1
-            if (-not $t) { throw "No transition to '$target' from the current status of $Jira" }
-            Jira-Post "/issue/$Jira/transitions" @{ transition = @{ id = $t.id } } | Out-Null
-            Write-Host "$Jira -> $target"
+            $current = (Jira-Get "/issue/$($Jira)?fields=status").fields.status.name
+            if ($current -eq $target) {
+                Write-Host "$Jira already $target"
+            } else {
+                $t = (Jira-Get "/issue/$Jira/transitions").transitions |
+                    Where-Object { $_.to.name -eq $target } | Select-Object -First 1
+                if (-not $t) { throw "No transition to '$target' from the current status of $Jira" }
+                Jira-Post "/issue/$Jira/transitions" @{ transition = @{ id = $t.id } } | Out-Null
+                Write-Host "$Jira -> $target"
+            }
         }
         if ($GitHub) {
             $remove = ($ghStatus.Values | Where-Object { $_ -ne $ghStatus[$Status] }) -join ','
@@ -110,6 +120,22 @@ switch ($Action) {
             if ($Status -eq 'Done') { & gh issue close $GitHub --repo $Repo | Out-Null }
             Write-Host "#$GitHub -> $($ghStatus[$Status])"
         }
+    }
+    'rename' {
+        if (-not $Summary) { throw '-Summary is required' }
+        if ($Jira) {
+            Jira-Put "/issue/$Jira" @{ fields = @{ summary = $Summary } } | Out-Null
+            Write-Host "$Jira renamed"
+        }
+        if ($GitHub) {
+            & gh issue edit $GitHub --repo $Repo --title $Summary | Out-Null
+            Write-Host "#$GitHub renamed"
+        }
+    }
+    'points' {
+        if (-not $Jira -or -not $Points) { throw '-Jira and -Points are required' }
+        Jira-Put "/issue/$Jira" @{ fields = @{ (Story-Points-Field) = $Points } } | Out-Null
+        Write-Host "$Jira -> $Points points"
     }
     'set-epic' {
         if (-not $Jira -or -not $Epic) { throw '-Jira and -Epic are required' }

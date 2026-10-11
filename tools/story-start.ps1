@@ -19,6 +19,8 @@
     .\tools\story-start.ps1 SCRUM-49 -DryRun    # prints branch, merged stories and PRD section only
     .\tools\story-start.ps1 SCRUM-61 -Summary "Refactor from the Feature 4.2 sweep" -Points 3 -Epic SCRUM-47 -GitHub 171
 #>
+#Requires -Version 7
+
 [CmdletBinding()]
 param(
     [Parameter(Position = 0, Mandatory = $true)]
@@ -59,7 +61,7 @@ function Find-MergedStories {
 
 function Close-Story($story) {
     if (-not $NoTracker) {
-        & "$PSScriptRoot\tracker-sync.ps1" status -Jira $story.Key -GitHub $story.Issue -Status Done
+        Invoke-TrackerSync status -Jira $story.Key -GitHub $story.Issue -Status Done
     }
     $null = Set-TrackerStatus $story.Key 'Done'
     $null = Set-BacklogStatus $story.Key 'Done'
@@ -100,7 +102,7 @@ if ($DryRun) {
 }
 
 if (-not ($NoTracker -or $DryRun)) {
-    & "$PSScriptRoot\tracker-sync.ps1" status -Jira $Key -GitHub $row.Issue -Status InProgress
+    Invoke-TrackerSync status -Jira $Key -GitHub $row.Issue -Status InProgress
     $null = Set-TrackerStatus $Key 'In progress'
 }
 
