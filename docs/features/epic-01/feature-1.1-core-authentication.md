@@ -267,7 +267,7 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 ### After 1.1.5 (SCRUM-11)
 
 27. Sign in as `dean.fmi@chnu.edu.ua` at `http://localhost:4200` in Chrome (first sign-in from this browser since the feature; to repeat later run `docker compose exec postgres psql -U postgres award_monitoring -c "delete from user_devices"`). Expected: Mailpit shows «Новий вхід до облікового запису / New sign-in to your account» with `Browser: Chrome`, `Operating system: Windows`, `IP: 127.0.0.1` (or `0:0:0:0:0:0:0:1`), the time and a link `http://localhost:4200/security/not-me?token=…`. Sign out and in again → no second email; psql `select browser, last_used_at from user_devices` shows one row with a fresh `last_used_at`. (AC-5.1, 5.2)
-28. Sign in as the same user from Firefox or Edge (or in Chrome DevTools → Network conditions → untick "Use browser default" user agent and pick Firefox). Expected: a second email naming the other browser. Open its link. Expected: page «Це був ваш вхід?» with the button «Це був не я»; the language toggle switches it to "Was this sign-in yours?" / "This was not me". Click the button. Expected: «Доступ відкликано…»; opening the link again and clicking → «Посилання недійсне…» with a "Reset password" link. In the first browser: reload the app → still open (the access token lives up to 15 minutes), then open a new tab on `http://localhost:4200` after closing the old one → login page instead of an automatic sign-in; the old password answers «Невірна адреса або пароль»; Mailpit shows «Скидання пароля / Password reset»; its link sets a new password and the login works again. psql: `select action_type from audit_logs where action_type = 'SECURITY_REVOKE'` → one row; `user_devices` is empty for the user until the next sign-in. (AC-5.3, 5.4)
+28. Sign in as the same user from Firefox or Edge (or in Chrome DevTools → Network conditions → untick "Use browser default" user agent and pick Firefox). Expected: a second email naming the other browser. Open its link. Expected: page «Це був ваш вхід?» with the button «Це був не я»; the language toggle switches it to "Was this sign-in yours?" / "This was not me". Click the button. Expected: «Доступ відкликано…»; opening the link again and clicking → «Посилання недійсне…» with a "Reset password" link. In the first browser: reload the app → login page (the access token lives in memory only and the refresh token is revoked), and a new tab on `http://localhost:4200` after closing the old one → login page as well; the old password answers «Невірна адреса або пароль»; Mailpit shows «Скидання пароля / Password reset»; its link sets a new password and the login works again. psql: `select action_type from audit_logs where action_type = 'SECURITY_REVOKE'` → one row; `user_devices` is empty for the user until the next sign-in. (AC-5.3, 5.4)
 
 ### After 1.1.6 (SCRUM-18)
 
@@ -275,6 +275,21 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 30. Open `http://localhost:8080/login`, restart the backend (Ctrl+C in its window, `.\tools\dev-up.ps1`), then submit the stale form. Expected: the form again with «Сторінка застаріла. Спробуйте ще раз.»; signing in from that form lands on `http://localhost:4200` with the app open. Open `http://localhost:8080/login` and `http://localhost:8080/` while signed in → both redirect to the app. (AC-6.2, 6.3)
 31. In the browser app, exhaust the limit (step 25) and then submit the "forgot password" form within the same minute. Expected: «Не вдалося… Спробуйте пізніше» (the 429 reaches the app with its CORS headers), not «Сервер недоступний». (AC-6.2)
 32. With the dev backend running, `docker compose exec redis redis-cli KEYS 'auth:*'` after a lock-out shows the `auth:lock:` key — the backend and the container are the same Redis; `.\tools\dev-up.ps1` prints a warning when they are not. (AC-6.6)
+
+### Run 2026-10-11
+
+container stack (develop 214a619), default settings; fresh accounts mr11a–c; steps 21, 24, 27–32. Result: 7 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 21 | PASS | fresh mr11a: 2nd browser reload after reset -> /login; wrong pw -> 'Wrong address or password' (EN locale of that context); staple-battery-horse -> app opens (/) |
+| 24 | PASS | fresh mr11b locked (5th attempt LOCKED); docker restart award-backend -> correct pw still LOCKED; redis DEL auth:lock:… -> sign-in opens app, audit LOGIN_SUCCESS then LOGOUT after sign-out |
+| 27 | PASS | mr11c Chrome/Windows UA: 1 mail 'Новий вхід…' Browser Chrome, OS Windows, IP 172.25.0.1, link /security/not-me?token; sign out+in -> no 2nd mail; user_devices 1 row, last_used_at refreshed |
+| 28 | PASS | mr11c Firefox UA -> 2nd mail (Browser: Firefox); link page «Це були ви?»/EN toggle; click -> access revoked; reuse -> 'link invalid' + Reset password link; Chrome reload -> /login (step text corrected: no 'still open'); old pw BAD_CREDENTIALS; reset mail -> new pw works; SECURITY_REVOKE 1 row; user_devices 0 until next sign-in |
+| 29 | PASS | reset page: old pw -> 'Новий пароль має відрізнятися від поточного'; short/password123 messages ok; token then used; 2nd browser reload at once -> /login, not an empty shell |
+| 30 | PASS | container stack: stale form after restart -> ?error=EXPIRED 'The page has expired. Try again.'; sign-in from it -> /callback -> app; /login and :8080/ while signed in -> http://localhost/ |
+| 31 | FAIL | 25 token requests: 14x400 then 429; forgot-password submit in same minute -> 429 reaches the app (not 'Сервер недоступний') but the form shows raw key 'forgot.errors.too-many-requests'; key missing in uk.json/en.json forgot.errors |
+| 32 | PASS | container stack: redis KEYS 'auth:lock:*' after the step 24 lock-out listed auth:lock:mr11b@chnu.edu.ua (backend and container share Redis) |
 
 ## 10. Risks
 
