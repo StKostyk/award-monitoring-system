@@ -56,7 +56,7 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 9 | 4.3.1 Colleague visibility and the achievements page | 4.3 | 5 | SCRUM-56 | #150 | yes | Done |
 | 10 | 4.3.2 Unit achievement pages and public achievements | 4.3 | 5 | SCRUM-57 | #151 | yes | Done |
 | 10a | 4.3.3 Fixes from the Feature 4.3 validation | 4.3 | 2 | SCRUM-62 | #176 | no | Done |
-| 10b | 4.3.6 Public rate limit for the organisation list | 4.3 | 1 | SCRUM-72 | #192 | no | In review |
+| 10b | 4.3.6 Public rate limit for the organisation list | 4.3 | 1 | SCRUM-72 | #192 | no | Done |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 
