@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- The edit form of a returned or withdrawn draft no longer offers «Видалити чернетку», which could only end in an error (#199).
 - The review list stacks the deadline chips and lets «Керівника повідомлено …» wrap, so every column fits at 1280 px without a horizontal scrollbar (#202).
 - Achievement cards switch the title, unit and category to the new language at once instead of after a reload (#204).
 - Anonymous calls to the organisation list count against the public rate limit of the client address (4.3.6).

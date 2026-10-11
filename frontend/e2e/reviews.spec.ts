@@ -208,6 +208,7 @@ test.describe('reviewer queue', () => {
     await expect(mine.getByTestId('award-returned')).toHaveText(
       `Рецензент повернув нагороду на доопрацювання: ${comment}`,
     );
+    await expect(mine.getByTestId('award-remove')).toHaveCount(0);
     expect(await seriousViolations(mine)).toEqual([]);
     await submitWithoutDocuments(mine);
     await expect(mine.getByTestId('award-submitted-name')).toContainText(title);

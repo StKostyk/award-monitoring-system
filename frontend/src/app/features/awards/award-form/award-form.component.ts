@@ -178,6 +178,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       : this.units();
   });
   readonly editing = computed(() => this.current() !== null);
+  readonly removable = computed(() => {
+    const award = this.current();
+    return award !== null && award.request === null;
+  });
   readonly cancelLink = computed(() => {
     const award = this.current();
     return award ? ['/awards', award.id] : ['/awards'];
@@ -404,7 +408,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   remove(): void {
     const id = this.id;
-    if (id === null || this.saving()) {
+    if (id === null || !this.removable() || this.saving()) {
       return;
     }
     confirmAction(this.dialog, 'awards.remove')
