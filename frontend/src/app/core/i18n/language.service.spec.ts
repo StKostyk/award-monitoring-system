@@ -1,3 +1,4 @@
+import { computed } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 
@@ -19,6 +20,16 @@ describe('LanguageService', () => {
     });
     service = TestBed.inject(LanguageService);
     transloco = TestBed.inject(TranslocoService);
+  });
+
+  it('scrum79 lets a computed value follow a language switch', () => {
+    service.init();
+    const label = computed(() => service.current());
+    expect(label()).toBe('uk');
+
+    service.use('en');
+
+    expect(label()).toBe('en');
   });
 
   it('ac17 starts in Ukrainian and toggles to English, remembering the choice', () => {
