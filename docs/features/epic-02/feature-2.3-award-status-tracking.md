@@ -3,7 +3,7 @@
 > **Epic**: 2 — Award Lifecycle Management (SCRUM-20)
 > **Sprint**: 3–4 (2026-10-01 → 2026-10-11)
 > **Points**: 5 (one story)
-> **Status**: Validated 2026-10-01 (§12, passed with notes; fixes in 2.3.2; the manual run of §9 pending)
+> **Status**: Validated 2026-10-01 (§12, passed with notes; fixes in 2.3.2; manual run of §9 2026-10-05, findings fixed in SCRUM-42)
 > **Author**: Stefan Kostyk
 > **Governing docs**: roadmap § Feature 2.3, US-005, DATA_DICTIONARY §2.1, §3.1 and §3.2, state-machine-award-request.puml, bpmn-approval-workflow.puml, USER_RESEARCH §"user journeys" (approval targets), SUCCESS_METRICS (time to approval), AUTH §3.3, RBAC_matrix.md, ADR-006, ADR-015, openapi.yml `/awards`, EPIC-02 tracker (decision 2026-09-28 on polling)
 

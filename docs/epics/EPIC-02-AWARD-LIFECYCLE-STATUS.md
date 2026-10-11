@@ -10,14 +10,14 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 2.1 Award Creation & Validation | Done (validated, PRD §12; fixes 2.1.4 merged; manual run of §9 pending) ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | 2026-09-29 |
-| 2.2 Award Version History & Audit Trail | Done (validated, PRD §12; fixes 2.2.3 merged; manual run of §9 pending) ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | 2026-09-30 |
-| 2.3 Award Status Tracking | Done (validated, PRD §12; fixes 2.3.2 merged; manual run of §9 pending) ([feature-2.3](../features/epic-02/feature-2.3-award-status-tracking.md)) | 2026-10-01 | 2026-10-01 |
+| 2.1 Award Creation & Validation | Done (validated, PRD §12; fixes 2.1.4 merged; manual run of §9 2026-10-05, findings fixed in SCRUM-42, after-merge steps passed 2026-10-11) ([feature-2.1](../features/epic-02/feature-2.1-award-creation-validation.md)) | 2026-09-28 | 2026-09-29 |
+| 2.2 Award Version History & Audit Trail | Done (validated, PRD §12; fixes 2.2.3 merged; manual run of §9 2026-10-05, findings fixed in SCRUM-42, after-merge steps passed 2026-10-11) ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | 2026-09-30 |
+| 2.3 Award Status Tracking | Done (validated, PRD §12; fixes 2.3.2 merged; manual run of §9 2026-10-05, findings fixed in SCRUM-42) ([feature-2.3](../features/epic-02/feature-2.3-award-status-tracking.md)) | 2026-10-01 | 2026-10-01 |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
 
 ## Current focus
 
-Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the manual run of PRD §9 is pending. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) done 2026-09-30 (#96); validated 2026-09-30 (PRD §12, passed with notes F-1…F-4), fixes and refactor sweep in 2.2.3 (SCRUM-30), merged 2026-10-01 (#98). Feature 2.3 PRD approved 2026-10-01; 2.3.1 (SCRUM-27) done 2026-10-01 (#100); validated 2026-10-01 (PRD §12, passed with notes F-1…F-6), fixes and refactor sweep in 2.3.2 (SCRUM-31), merged 2026-10-01 (#102). Epic documentation sync 2026-10-01: docs reconciled with the code; three unused database objects disagree with the award model and are fixed in 2.1.5 (SCRUM-32), merged 2026-10-01 (#106). Epic 2 done 2026-10-01; the manual runs of PRD §9 for Features 2.1–2.3 are pending.
+Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the manual run of PRD §9 walked 2026-10-05. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) done 2026-09-30 (#96); validated 2026-09-30 (PRD §12, passed with notes F-1…F-4), fixes and refactor sweep in 2.2.3 (SCRUM-30), merged 2026-10-01 (#98). Feature 2.3 PRD approved 2026-10-01; 2.3.1 (SCRUM-27) done 2026-10-01 (#100); validated 2026-10-01 (PRD §12, passed with notes F-1…F-6), fixes and refactor sweep in 2.3.2 (SCRUM-31), merged 2026-10-01 (#102). Epic documentation sync 2026-10-01: docs reconciled with the code; three unused database objects disagree with the award model and are fixed in 2.1.5 (SCRUM-32), merged 2026-10-01 (#106). Epic 2 done 2026-10-01; the manual runs of PRD §9 for Features 2.1–2.3 were walked 2026-10-05, their findings fixed in SCRUM-42 (#128); the steps added by SCRUM-42 (2.1 steps 33–43, 2.2 step 15) passed 2026-10-11.
 
 ## Scope
 
