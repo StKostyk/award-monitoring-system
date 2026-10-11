@@ -687,6 +687,30 @@ describe('AwardFormComponent', () => {
     expect(component.confirmLeave()).toBe(true);
   });
 
+  it('f9_a_returned_draft_offers_no_delete', async () => {
+    service.get.mockReturnValue(
+      of(
+        award({
+          request: {
+            status: 'RETURNED',
+            currentLevel: 'DEAN',
+            submittedAt: '2026-09-28T09:00:00Z',
+            deadline: null,
+            estimatedCompletion: null,
+            overdue: false,
+            returnComment: 'Додайте номер наказу',
+          },
+        }),
+      ),
+    );
+    await open('5');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-remove"]')).toBeNull();
+    component.remove();
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
   it('f9_a_new_form_has_nothing_to_delete', async () => {
     await open(null);
     fixture.detectChanges();
