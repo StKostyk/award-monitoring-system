@@ -58,6 +58,7 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 10a | 4.3.3 Fixes from the Feature 4.3 validation | 4.3 | 2 | SCRUM-62 | #176 | no | Done |
 | 10b | 4.3.6 Public rate limit for the organisation list | 4.3 | 1 | SCRUM-72 | #192 | no | Done |
 | 10c | 4.2.6 Review list: overdue notice chip clipped at 1280 px | 4.2 | 1 | SCRUM-78 | #202 | no | In review |
+| 10c | 4.3.9 Achievement card names do not follow a language switch | 4.3 | 1 | SCRUM-79 | #204 | no | In review |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 
