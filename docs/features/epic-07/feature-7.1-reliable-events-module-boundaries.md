@@ -238,6 +238,29 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 18. Add `private final ua.edu.chnu.awards.user.repository.UserRepository users;` to any `award` service locally and run `ModularityTest`. Expected: it fails, naming the `award` class and `UserRepository`; revert. (AC-2.3, 2.4)
 19. `docker compose stop postgres` while a row is incomplete and the backend runs, then start it. Expected: the retry job logs a failure and recovers on the next run; the mail arrives. (AC-1.4)
 
+### Run 2026-10-11
+
+Container stack at b841665 with APP_EVENTS_RETRY_INTERVAL=PT1M and APP_EVENTS_RETRY_AFTER=PT1M; steps 9, 10 and 18 belong to 7.1.2 and wait for SCRUM-65; detours 12 and 16 through the API with two accounts and the same request version. Result: 15 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | 6 columns as §8.2 (completion_date nullable), hash + completion_date indexes; count 0 |
+| 2 | PASS | award 4 approved 15:17:47; mail 'Нагороду затверджено / Award approved' to employee.fmi 15:17:48; count 0 |
+| 3 | FAIL | row AwardDecided 12:18:28Z, gauge 1.0, 3 WARN + ERROR naming subject/recipient, no body text; but a 2nd ERROR from SimpleAsyncUncaughtExceptionHandler with the full MailConnectException stack |
+| 4 | PASS | Mailpit up 15:19:21; return mail to employee.fmi once at 15:20:07; row gone after 46 s; gauge 0.0 |
+| 5 | PASS | C approved, app stopped at once with row incomplete; app started 15:20:49, mail 'Award approved' 15:21:47, row gone |
+| 6 | PASS | Mailpit down: reset request 15:22:15 → 202, 3 attempts failed, registry count 0, token/reset ilike 0; no reset mail in 140 s after start; 2nd request 15:25:20 → mail 15:25:21, link token redeemed (confirm reached password-same-as-current, password kept) |
+| 7 | PASS | Mailpit down: admin assigned EMPLOYEE/DAI to secretary2.fmi 15:26:20 → one RoleAssigned row; Mailpit up 15:26:42, 'Роль призначено / Role assigned' 15:27:35, row gone |
+| 8 | PASS | GET /users/me/export as employee.fmi → 200, 13 KB JSON; mail 'Ваші дані експортовано / Your data was exported' 15:27:47; count 0 |
+| 11 | PASS | E (id 8) approved with Mailpit down after 3 failed attempts, row aged 25 h: no mail in 130 s, ERROR '1 event publications ... no longer retried' at 12:31:27 and 12:32:25Z, abandoned 1.0; aged 31 days: WARN 'Deleted 1 ... PT720H' 12:33:23Z, row gone, abandoned 0.0 |
+| 12 | PASS | F (id 9): secretary.fmi APPROVE v0 → 200; secretary2.fmi REJECT v0 → 409 request-closed; count 0; one mail 15:33:37 (API with the same requestVersion as two tabs) |
+| 13 | PASS | A (id 4) APPROVE again with v0 and v1 → 409 request-closed both; count 0; no new mail |
+| 14 | PASS | browser: G (id 10) approved via dialog 15:34:32, then reload and Back → buttons gone, 1 decision row, count 0, exactly 1 mail |
+| 15 | PASS | browser: H (id 11) approved with Mailpit down 12:34:57Z, signed out (→ /login), row incomplete; Mailpit up 15:35:44, mail 15:36:17, row gone |
+| 16 | PASS | Mailpit down 15:36:37: secretary.fmi approved I (12), secretary2.fmi returned J (13) → 2 AwardDecided rows; Mailpit up 15:37:20, both mails once at 15:38:13, rows gone, none duplicated 30 s later |
+| 17 | PASS | Mailpit down: change request 15:39:14 → 202, 3 attempts failed, registry 0; Mailpit up, 2nd request 15:40:44 → link 15:40:45 confirmed (200); earlier token 11 marked used, registry 0; address reverted the same way |
+| 19 | PASS | K (id 14) row incomplete, postgres stopped 15:43:2x: retry job ERROR 'Unexpected error occurred in scheduled task' 12:44:21Z; postgres started 15:44:49, next run 12:45:19Z sent the mail (15:45:19), row gone |
+
 ## 11. Risks
 
 | Risk | Impact | Mitigation |
