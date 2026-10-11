@@ -262,8 +262,8 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 12. Repeat step 8 for a request at `RECTOR` level (escalate C up to the rector as in 4.1 §9 step 13). Expected: marked, no e-mail. (AC-2.2)
 13. Open `http://localhost:8080/actuator/prometheus` (as today's access allows) and search `awards_review`. Expected: `awards_review_open`, `awards_review_overdue`, `awards_review_decisions_total{decision,level,on_time}`, `awards_review_decision_duration_seconds`, `awards_review_overdue_notices_total`. (AC-2.6)
 14. As `employee.fmi` submit award B with date 2026-09-01 and a typo in the title. As `secretary.fmi` open B. Expected: «Виправити» on the panel. Click it. Expected: the form with the values, recipient and documents read-only, «Зберегти» disabled. (AC-3.1, 3.2)
-15. Fix the title and set the date to 2026-09-02; leave the reason empty. Expected: refused. Type «Дата за сертифікатом», save. Expected: the confirmation lists two fields old → new; confirm. Expected: back on the award page; B is claimed by `secretary.fmi`; the request still at faculty level, same deadline. (AC-3.2, 3.3, 3.4)
-16. Mailpit: e-mail to `employee.fmi` with both changes, the reason and Alina's name. As `employee.fmi` open B → «Історія змін». Expected: «Виправлено рецензентом: Аліна Секретаренко», the two fields, the reason. psql `select action_type, new_values from audit_logs where action_type in ('AWARD_CORRECTED','REVIEW_CLAIMED') order by created_at desc limit 2;` (AC-3.5, 3.6, 3.3)
+15. Fix the title and set the date to 2026-09-02; leave the reason empty. Expected: refused. Type «Дата за сертифікатом», save. Expected: the confirmation lists the changed fields old → new (title in both languages and the date); confirm. Expected: back on the award page; B is claimed by `secretary.fmi`; the request still at faculty level, same deadline. (AC-3.2, 3.3, 3.4)
+16. Mailpit: e-mail to `employee.fmi` with the changes, the reason and Alina's name. As `employee.fmi` open B → «Історія змін». Expected: «Виправлено рецензентом: Аліна Секретаренко», the two fields, the reason. psql `select action_type, new_values from audit_logs where action_type in ('AWARD_CORRECTED','REVIEW_CLAIMED') order by created_at desc limit 2;` (AC-3.5, 3.6, 3.3)
 17. As `secretary2.fmi` open B (held by Alina). Expected: no «Виправити». Swagger `POST /api/v1/awards/<B>/corrections` → 409 `request-claimed` with `reviewer`. (AC-3.1, 3.7)
 18. As `secretary.fmi` correct B's category to a `NATIONAL` one with a reason, then approve. Expected: «Передано декану.» (AC-3.4)
 19. As `secretary.fmi` open a pending unclaimed award, «Відхилити», type a comment. In another browser as `secretary2.fmi` claim that award. Back in the dialog, «Підтвердити». Expected: the dialog stays open, «Нагороду вже взяв у роботу …», the comment still there. (AC-4.1, 4.2)
@@ -288,6 +288,50 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 35. As `secretary2.fmi` under the dean delegation of step 32 open a pending award's correction form; as `dean.fmi` revoke the delegation; save the correction. Expected: the sign-in page (the revocation ends the delegate's sessions), nothing saved (no new entry in «Історія змін»). (AC-3.7)
 36. After step 27 (backend restarted) open `/actuator/prometheus` before the next run. Expected: `awards_review_open` and `awards_review_overdue` read the current counts at the latest after the first run; before it they may be missing or 0 (finding V-2). (AC-2.6)
 37. Stop the backend (Ctrl+C, or `docker compose stop app` on the Compose stack); as `secretary.fmi` confirm a decision with a comment. Expected: an error message in the dialog (behind the Compose proxy after up to about a minute), the comment kept; start the backend, confirm again succeeds. Stopping Redis does not reproduce this: the revoked-token check fails open by design. (AC-4.2)
+
+### Run 2026-10-11
+
+Container stack, APP_WORKFLOW_OVERDUE_CRON every minute, develop 214a619, second backend on :8081 for step 28. Result: 36 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | dean.fmi /reviews: «Термін розгляду: 3 робочі дні (типовий)» + «Змінити» |
+| 2 | PASS | 0 refused («від 1 до 20»); 5 saved → «5 робочих днів»; audit REVIEW_PERIOD_CHANGED 3→5 |
+| 3 | PASS | secretary.fmi /reviews «5 робочих днів», 0 «Змінити»; PUT /organizations/9/review-period as secretary → 404 |
+| 4 | PASS | award 64: deadline 2026-10-18T21:00Z = submitted (Sun→Mon 00:00 start)+5 working days; status estimate 2026-10-19 = faculty due date |
+| 5 | PASS | award 65 (cat 12): due 10-19 → 10-26 → 10-29 = 5+5+3 working days |
+| 6 | PASS | 65: after secretary approve at DEAN deadline 10-18T21:00Z (5 d); after dean approve at RECTOR_SECRETARY deadline 10-14T21:00Z (3 d) |
+| 7 | PASS | «Типовий термін» → «3 робочі дні (типовий)»; org 9 period null; 64 deadline unchanged 10-18T21:00Z |
+| 8 | PASS | award 64 marked 13:56:58Z level FACULTY_SECRETARY after 41 s, status SUBMITTED; 1 mail to dean.fmi «Прострочені заявки: 1» with «не взято» + /awards/64; none to employee.fmi |
+| 9 | PASS | 2+ min later still 1 mail, overdue_noticed_at unchanged 13:56:58Z |
+| 10 | FAIL | functional clauses OK (A «Прострочено» + «Керівника повідомлено 11.10.2026»; dean page «Взяти в роботу»; employee status «Термін розгляду минув 11.10.2026; керівника повідомлено 11.10.2026»), but at 1280 px the notice chip is clipped and «Рецензент» is pushed off-screen → SCRUM-78 #202 |
+| 11 | PASS | 64 escalated by secretary: notice cols empty, deadline 10-14T21Z (3 d); after past deadline: 1 mail to rector.secretary «Прострочені заявки: 1», overdue_noticed_level DEAN (57 s) |
+| 12 | PASS | 65 escalated to RECTOR, deadline past: marked level RECTOR after 46 s, 0 mails |
+| 13 | PASS | prometheus: awards_review_open/overdue (per level), decisions_total{decision,level,on_time}, decision_duration_seconds_count, overdue_notices_total=2 |
+| 14 | PASS | secretary.fmi on 66: «Виправити» → /awards/66/correct, values prefilled, recipient as text, category read-only, no document controls, «Зберегти» disabled |
+| 15 | PASS | empty reason refused («Вкажіть причину виправлення»); with reason dialog lists changes old→new (title uk/en + date: 3 fields, step text said two); confirmed → /awards/66 «Нагороду виправлено»; 66 IN_REVIEW claimed by user 5, level FACULTY_SECRETARY, deadline unchanged |
+| 16 | PASS | mail to employee.fmi 17:02 «Рецензент виправив нагороду» with 3 changes, reason, Аліна Секретаренко; history «Виправлено рецензентом: Аліна Секретаренко» + fields + reason; audit AWARD_CORRECTED + REVIEW_CLAIMED |
+| 17 | PASS | secretary2.fmi: no «Виправити» on 66; POST /awards/66/corrections → 409 request-claimed with reviewer Аліна Секретаренко (id 5) |
+| 18 | PASS | 66 category → State Prize (NATIONAL) with reason, secretary approve → «Передано декану.», request «Передано вище · декан» |
+| 19 | PASS | secretary.fmi dialog «Відхилити» with comment open on 62; secretary2 claimed via PUT /reviewer; «Підтвердити» → dialog stays open, «Нагороду вже взяв у роботу Олена Петрук», comment kept |
+| 20 | PASS | EN: step 1 «Review period: 3 working days (default)»; step 10 list «Overdue», «Manager notified 11/10/2026», filter «Overdue at the level below»; step 14 «Correct the award» form at 360 px no horizontal overflow; period dialog 328 px wide at 360 px, Tab reaches Cancel. Note: <html lang> stays uk after switching to EN |
+| 21 | PASS | employee.fmi /awards/66/correct → /forbidden «Доступ заборонено»; POST corrections as employee → 403 (award:approve:level1 required); secretary.fmi own award 67 → 404 |
+| 22 | PASS | secretary.fmi on approved award 44: POST corrections → 404; /awards/43/correct page «Цю нагороду зараз не можна виправити: вона не на розгляді або недоступна вам» |
+| 23 | PASS | 2 secretary.fmi contexts on 68 (claimed): second save «Нагороду змінено в іншому вікні. Завантажте її знову.» + «Завантажити поточну версію», typed values kept until reload (then «First save 68»); on unclaimed 69 «Розгляд змінився в іншому вікні…»; API old version → 409 award-stale (currentVersion 3) |
+| 24 | PASS | correction saved; Back → /awards/68 (not the form), reload keeps award page with «Back test 68» (db); same body in API → 409 award-stale |
+| 25 | PASS | unchanged fields via API → 422 urn:awards:problem:no-change |
+| 26 | PASS | 70: POST withdraw (employee) and POST corrections (secretary) in parallel → correction 200 (title «race 70», claimed), withdraw 409 request-claimed |
+| 27 | PASS | app stopped 17:07:01, started 17:08:43 (cron ticks missed); after start 71 marked once 14:09:58Z, 1 mail to dean.fmi, no second after +70 s |
+| 28 | PASS | 2nd backend :8081 (mvn spring-boot:run, same cron, same db) alongside the container: 73 and 74 marked once (14:16:57Z, same instant), exactly 1 digest to dean.fmi «Прострочені заявки: 2», no second mail after 2 more ticks; 8081 stopped afterwards |
+| 29 | PASS | mailpit stopped, 72 overdue: marked (FACULTY_SECRETARY 14:11:58Z), log «Email 'Прострочені заявки: 1 …' to [dean.fmi…] was not delivered»; mailpit started: 0 mails within 75 s, no resend by the job |
+| 30 | PASS | form on 69 filled, access_token set to x, save → silent refresh, «Нагороду виправлено», title «Token expiry 69» in db |
+| 31 | PASS | dialog with comment on 72, both tokens set to x, confirm → returned to /awards/72 via the identity provider's session (no form shown), reopened «Відхилити» offers «Збережений коментар 31»; 72 not decided |
+| 32 | PASS | dean delegated DEAN/org 9 to secretary2 (id 6, 11–12.10); secretary2 PUT period 4 → 200, audit REVIEW_PERIOD_CHANGED delegatorId 4; revoked (204): old token PUT → 401, UI back to sign-in; signed in again /reviews «4 робочі дні», no «Змінити»; period reset to default |
+| 33 | PASS | dean.fmi PUT /organizations/64/review-period → 404; /organizations/9 with 21 → 422 «review period is out of range» |
+| 34 | PASS | mailpit stopped: dean.fmi list «Прострочені нижчого рівня» shows MR42 F29 (72) «Прострочено» + «Керівника повідомлено 11.10.2026», no mail sent |
+| 35 | PASS | secretary2.fmi (dean delegation) on /awards/74/correct, form filled; delegation revoked by dean; save → /login, title in db unchanged (MR42 P28b) |
+| 36 | PASS | right after restart awards_review_open all 0.0; after first run (17:09:58) FACULTY_SECRETARY 21, DEAN 3, overdue_notices_total 1 |
+| 37 | PASS | backend stopped: «Відхилити» with comment → after ~90 s «Не вдалося надіслати, спробуйте ще раз», dialog open, comment kept; backend started, confirm again → «Нагороду відхилено.», 68 REJECTED |
 
 ## 11. Risks
 
