@@ -13,11 +13,26 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
+import ua.edu.chnu.awards.award.event.SubmissionMeasured;
 
 class ReviewMetricsTest {
 
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private final ReviewMetrics metrics = new ReviewMetrics(registry);
+
+    @Test
+    void ac1_submissionsAreCountedByStartLevelAndResubmission() {
+        metrics.onSubmitted(new SubmissionMeasured(ApprovalLevel.FACULTY_SECRETARY, false));
+        metrics.onSubmitted(new SubmissionMeasured(ApprovalLevel.FACULTY_SECRETARY, false));
+        metrics.onSubmitted(new SubmissionMeasured(ApprovalLevel.DEAN, true));
+
+        assertThat(registry.get(ReviewMetrics.SUBMISSIONS).tags("level", "FACULTY_SECRETARY", "resubmitted", "false")
+            .counter().count()).isEqualTo(2.0);
+        assertThat(registry.get(ReviewMetrics.SUBMISSIONS).tags("level", "DEAN", "resubmitted", "true")
+            .counter().count()).isEqualTo(1.0);
+        assertThat(registry.get(ReviewMetrics.SUBMISSIONS).tags("level", "RECTOR", "resubmitted", "false")
+            .counter().count()).isZero();
+    }
 
     @Test
     void ac2_6_aDecisionIsCountedByLevelOutcomeAndPunctualityWithItsDuration() {

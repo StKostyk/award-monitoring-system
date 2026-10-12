@@ -15,14 +15,16 @@ import io.micrometer.core.instrument.Timer;
 
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
+import ua.edu.chnu.awards.award.event.SubmissionMeasured;
 
 /**
- * Review service-level meters: decisions per level and outcome, time to decide, open and overdue requests per
- * level, and overdue notices sent.
+ * Award workflow meters: submissions per start level, decisions per level and outcome, time to decide, open and
+ * overdue requests per level, and overdue notices sent.
  */
 @Component
 public class ReviewMetrics {
 
+    static final String SUBMISSIONS = "awards.submissions";
     static final String DECISIONS = "awards.review.decisions";
     static final String DURATION = "awards.review.decision.duration";
     static final String OPEN = "awards.review.open";
@@ -47,6 +49,20 @@ public class ReviewMetrics {
             overdue.put(level, gauge(OVERDUE, "Open review requests past their deadline", level));
         }
         notices = Counter.builder(NOTICES).description("Overdue notice e-mails sent").register(registry);
+        for (ApprovalLevel level : ApprovalLevel.values()) {
+            submissions(level, false);
+            submissions(level, true);
+        }
+    }
+
+    /**
+     * Counts one committed submission at the level its request starts at.
+     *
+     * @param event the submission
+     */
+    @TransactionalEventListener
+    public void onSubmitted(SubmissionMeasured event) {
+        submissions(event.level(), event.resubmitted()).increment();
     }
 
     /**
@@ -87,6 +103,14 @@ public class ReviewMetrics {
      */
     public void noticeSent() {
         notices.increment();
+    }
+
+    private Counter submissions(ApprovalLevel level, boolean resubmitted) {
+        return Counter.builder(SUBMISSIONS)
+            .description("Award submissions")
+            .tag(LEVEL, level.name())
+            .tag("resubmitted", String.valueOf(resubmitted))
+            .register(registry);
     }
 
     private AtomicLong gauge(String name, String description, ApprovalLevel level) {

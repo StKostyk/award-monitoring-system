@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
@@ -28,6 +29,7 @@ import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.event.SubmissionMeasured;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
@@ -49,10 +51,11 @@ class AwardResubmissionTest {
     private final DuplicateFinder duplicates = mock(DuplicateFinder.class);
     private final StartLevel startLevel = mock(StartLevel.class);
     private final Clock clock = Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"));
+    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final StatusEstimator estimator = TestWorkflow.estimator(clock);
     private final AwardSubmission submission = new AwardSubmission(mock(AwardRepository.class), requests, ownership,
         mock(AwardInputRules.class), duplicates, new AwardMapper(estimator), audit, mock(AwardHistory.class),
-        estimator, startLevel, clock);
+        estimator, startLevel, clock, events);
     private final Organization department = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
     private Award draft;
@@ -97,6 +100,7 @@ class AwardResubmissionTest {
         assertThat(earlier.getCurrentReviewer()).isNull();
         assertThat(earlier.getCompletedAt()).isNull();
         verify(startLevel, never()).of(anyLong(), anyLong());
+        verify(events).publishEvent(new SubmissionMeasured(ApprovalLevel.DEAN, true));
     }
 
     @Test

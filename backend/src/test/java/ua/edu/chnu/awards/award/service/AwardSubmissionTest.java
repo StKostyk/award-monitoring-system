@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,7 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.event.SubmissionMeasured;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
@@ -61,9 +63,10 @@ class AwardSubmissionTest {
     private final AwardHistory history = mock(AwardHistory.class);
     private final StartLevel startLevel = mock(StartLevel.class);
     private final Clock clock = Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"));
+    private final List<Object> published = new ArrayList<>();
     private final StatusEstimator estimator = TestWorkflow.estimator(clock);
     private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules, duplicates,
-        new AwardMapper(estimator), audit, history, estimator, startLevel, clock);
+        new AwardMapper(estimator), audit, history, estimator, startLevel, clock, published::add);
     private final Organization oldDepartment = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final Organization newDepartment = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", newDepartment);
@@ -96,6 +99,7 @@ class AwardSubmissionTest {
         verify(awards).saveAndFlush(draft);
         verify(audit).record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, 21L, 5L,
             Map.of("requestId", 40L, "level", "FACULTY_SECRETARY", "organizationId", 69L));
+        assertThat(published).containsExactly(new SubmissionMeasured(ApprovalLevel.FACULTY_SECRETARY, false));
     }
 
     @Test

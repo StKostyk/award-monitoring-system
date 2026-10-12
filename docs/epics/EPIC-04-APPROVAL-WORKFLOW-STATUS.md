@@ -62,7 +62,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 10c | 4.3.9 Achievement card names do not follow a language switch | 4.3 | 1 | SCRUM-79 | #204 | no | Done |
 | 10d | 4.1.6 Take over a request whose holder lost the role | 4.1 | 3 | SCRUM-77 | #200 | no | Done |
 | 10e | 4.3.7 Peer take-over of overdue requests and no self-escalation for deans | 4.1 | 3 | SCRUM-73 | #193 | no | Done |
-| 10f | 4.3.4 Review decisions in the personal data export | 4.3 | 3 | SCRUM-70 | #190 | no | In review |
+| 10f | 4.3.4 Review decisions in the personal data export | 4.3 | 3 | SCRUM-70 | #190 | no | Done |
+| 10g | 4.3.5 Wire the business metrics to the award workflow | 4.3 | 2 | SCRUM-71 | #191 | no | In review |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 
@@ -168,6 +169,8 @@ promise and the gap is listed here for a fix story:
   `review_decisions` and `decisions_made`, other people by name only).
 - `BusinessMetricsService` (`award.submissions.total`, `award.approvals.total`, `user.sessions.active` …) is never
   called outside its test; only the `awards.review.*` meters are live. MONITORING_OBSERVABILITY still lists the old ones.
+  (closed by 4.3.5: `awards.submissions` counted after the commit, the unused service removed, the doc lists the
+  live meters).
 - `GET /api/v1/organizations` is anonymous but outside the public chain, so the public rate limit does not cover it
   (closed by 4.3.6: anonymous calls count against the public budget).
 - The `awards.review.open` and `awards.review.overdue` gauges read 0 until the first run of the overdue job after a

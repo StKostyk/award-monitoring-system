@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.event.SubmissionMeasured;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
@@ -51,6 +53,7 @@ public class AwardSubmission {
     private final StatusEstimator estimator;
     private final StartLevel startLevel;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     /**
      * Submits the caller's draft.
@@ -66,7 +69,7 @@ public class AwardSubmission {
         AwardRequest earlier = requests.findByAwardIdForUpdate(id).orElse(null);
         Award award = ownership.lockedDraft(id);
         final List<DuplicateMatch> matches = checked(award, request);
-        final RequestStatus previous = earlier == null ? null : earlier.getStatus();
+        final String previous = earlier == null ? null : earlier.getStatus().name();
         if (!award.isUnitAward()) {
             award.setOrganization(award.getOwner().getOrganization());
         }
@@ -78,7 +81,7 @@ public class AwardSubmission {
         Map<String, Object> details = new HashMap<>(Map.of("requestId", created.getId(),
             "level", created.getCurrentLevel().name(), "organizationId", award.getOrganization().getId()));
         if (previous != null) {
-            details.put("resubmittedFrom", previous.name());
+            details.put("resubmittedFrom", previous);
         }
         if (!matches.isEmpty()) {
             details.put("duplicateAcknowledged", true);
@@ -88,6 +91,7 @@ public class AwardSubmission {
         }
         audit.record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, award.getOwner().getId(), award.getId(),
             details);
+        events.publishEvent(new SubmissionMeasured(created.getCurrentLevel(), previous != null));
         return mapper.toResponse(award, created);
     }
 

@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Award submissions are counted in Prometheus (awards.submissions by start level and resubmission); the review queue gauges are filled at startup, and the business meters that nothing recorded were removed.
 - Shared helpers for award titles and links, problem messages, field errors and Kyiv dates; the gate runs the production build.
 - The decision dialog (panel and batch) stays open until the answer, names the cause of a failure and keeps the typed comment, also across a sign-in.
 - Every throttled request answers the same 429 `too-many-requests` problem with `Retry-After` and `retryAfter` (verification and confirmation emails, data export, sign-in endpoints, uploads); a multipart body over the limit answers 413 with `maxSize`; `RequestThrottle` moved to `common/limit`; shared document helpers in the backend tests, seed accounts exported from the E2E helpers and the document E2E tests run on fresh accounts; `tools/puml-check.ps1` checks that every diagram parses

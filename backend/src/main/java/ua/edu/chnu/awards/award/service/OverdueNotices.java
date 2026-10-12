@@ -107,6 +107,16 @@ public class OverdueNotices {
             award.getOwner().getFullName(), request.getCurrentLevel(), request.getDeadline(), reviewer);
     }
 
+    /**
+     * Sets the open and overdue gauges from the queue as it stands, without marking anything.
+     *
+     * @param now the count time
+     */
+    @Transactional(readOnly = true)
+    public void refreshGauges(Instant now) {
+        refreshGauges(Timestamp.from(now));
+    }
+
     private void refreshGauges(Timestamp at) {
         Map<ApprovalLevel, Long> open = new EnumMap<>(ApprovalLevel.class);
         Map<ApprovalLevel, Long> overdue = new EnumMap<>(ApprovalLevel.class);
