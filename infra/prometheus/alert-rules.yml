@@ -174,42 +174,14 @@ groups:
       # Award Processing Backlog
       - alert: AwardProcessingBacklog
         expr: |
-          award_requests_pending_total > 100
+          sum(awards_review_open) > 100
         for: 15m
         labels:
           severity: warning
           team: business
         annotations:
           summary: "Award processing backlog growing"
-          description: "{{ $value }} pending award requests"
-
-      # Failed Award Submissions
-      - alert: HighAwardSubmissionFailures
-        expr: |
-          (
-            sum(rate(award_submissions_total{status="failed"}[1h]))
-            /
-            sum(rate(award_submissions_total[1h]))
-          ) > 0.05
-        for: 30m
-        labels:
-          severity: warning
-          team: business
-        annotations:
-          summary: "High award submission failure rate"
-          description: "{{ $value | humanizePercentage }} of submissions failing"
-
-      # Document Processing Failures
-      - alert: DocumentProcessingFailures
-        expr: |
-          rate(document_processing_failures_total[15m]) > 0.1
-        for: 15m
-        labels:
-          severity: warning
-          team: backend
-        annotations:
-          summary: "Document processing failures detected"
-          description: "{{ $value }} failures per second"
+          description: "{{ $value }} open review requests"
 
   # ===========================================================================
   # Security Alerts

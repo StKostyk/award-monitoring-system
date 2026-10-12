@@ -102,40 +102,18 @@ public class MetricsConfiguration {
 
 | Metric | Type | Description |
 |--------|------|-------------|
-| `award.submissions.total` | Counter | Total award submissions by status |
-| `award.approvals.total` | Counter | Approvals by level and decision |
-| `award.requests.pending.total` | Gauge | Current pending requests |
-| `document.processing.time` | Timer | Document processing duration |
-| `document.processing.failures.total` | Counter | Processing failures |
-| `user.registrations.total` | Counter | User registrations |
-| `user.sessions.active` | Gauge | Active user sessions |
+| `award.events.incomplete` | Gauge | Event publications whose listener has not completed (`event_publication`), read at each scrape |
+| `award.events.abandoned` | Gauge | Incomplete event publications past their last retry, no longer retried |
+| `awards.submissions` | Counter | Award submissions; tags `level` (where the request starts), `resubmitted` (after a return or a withdrawal); after the commit |
 | `awards.review.decisions` | Counter | Reviewer decisions; tags `level`, `decision` (`approved`, `rejected`, `escalated`, `returned`), `on_time` (decided before the deadline); after the commit |
 | `awards.review.decision.duration` | Timer | Time from the request reaching a level (submission or the decision that moved it there) to the decision; tag `level` |
 | `awards.review.open` | Gauge | Open requests per `level`; refreshed by the hourly overdue job, so up to an hour old |
 | `awards.review.overdue` | Gauge | Open requests past their deadline per `level`; refreshed by the overdue job |
 | `awards.review.overdue.notices` | Counter | Overdue notice e-mails the mail server accepted |
 
-The two gauges read 0 after a start of the application until the next run of the overdue job (minute 5 of the hour), so they can be wrong for up to an hour.
+The two gauges are counted once when the application is ready and then by each run of the overdue job (minute 5 of the hour), so they can be up to an hour old. The submission counters are registered for every level at startup, so each series starts at 0.
 
-**Usage Example**:
-
-```java
-@Service
-public class AwardService {
-    private final BusinessMetricsService metrics;
-
-    public void submitAward(AwardRequest request) {
-        try {
-            // Process submission
-            metrics.recordAwardSubmissionSuccess();
-            metrics.incrementPendingAwardRequests();
-        } catch (Exception e) {
-            metrics.recordAwardSubmissionFailure();
-            throw e;
-        }
-    }
-}
-```
+The two event gauges come from `PublicationRetry`; all workflow meters are registered by `ReviewMetrics` from events the workflow publishes; the counters listen after the commit, so a rolled-back submission or decision is not counted. The `AwardProcessingBacklog` alert (`infra/prometheus/alert-rules.yml`) fires on `sum(awards_review_open) > 100`.
 
 ### 2.3 HTTP Metrics
 

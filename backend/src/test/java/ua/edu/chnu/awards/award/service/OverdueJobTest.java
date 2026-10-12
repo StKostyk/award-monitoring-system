@@ -1,7 +1,9 @@
 package ua.edu.chnu.awards.award.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -30,5 +32,21 @@ class OverdueJobTest {
         when(notices.run(NOW)).thenThrow(new QueryTimeoutException("timeout"));
 
         assertThat(job.run()).isZero();
+    }
+
+    @Test
+    void ac2_6_theGaugesAreCountedAtStartup() {
+        job.countAtStart();
+
+        verify(notices).refreshGauges(NOW);
+    }
+
+    @Test
+    void ac2_6_aFailedStartupCountIsLoggedAndLeftToTheNextRun() {
+        doThrow(new QueryTimeoutException("timeout")).when(notices).refreshGauges(NOW);
+
+        job.countAtStart();
+
+        verify(notices).refreshGauges(NOW);
     }
 }

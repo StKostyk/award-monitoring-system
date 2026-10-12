@@ -174,10 +174,6 @@ package "ua.edu.chnu.awards" {
         }
     }
 
-    package "metrics" <<shared>> {
-        class BusinessMetricsService
-    }
-
     package "config" <<config>> {
         class SecurityConfig
         class AuthorizationServerConfig

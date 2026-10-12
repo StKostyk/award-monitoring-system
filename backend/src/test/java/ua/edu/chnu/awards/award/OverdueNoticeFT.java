@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -150,6 +151,25 @@ class OverdueNoticeFT extends AbstractFunctionalTest {
             .body(containsString("awards_review_open{"))
             .body(containsString("awards_review_overdue{"))
             .body(containsString("awards_review_overdue_notices_total"));
+    }
+
+    @Test
+    void ac3_aSubmissionAndAnApprovalAppearAtThePrometheusEndpoint() {
+        long id = AwardApi.submitted(tokenOf(EMPLOYEE), fields("Грамота для лічильника подань"));
+        as(tokenOf(SECRETARY)).contentType(ContentType.JSON)
+            .body(Map.of("decision", "APPROVE", "requestVersion", version(id)))
+            .post(AwardApi.AWARDS + "/" + id + "/decisions").then().statusCode(HttpStatus.OK.value());
+
+        RestAssured.get("/actuator/prometheus").then().statusCode(HttpStatus.OK.value())
+            .body(matchesPattern("(?s).*\nawards_submissions_total\\{[^}]*level=\"FACULTY_SECRETARY\","
+                + "resubmitted=\"false\"} [1-9].*"))
+            .body(matchesPattern("(?s).*\nawards_review_decisions_total\\{[^}]*decision=\"approved\","
+                + "[^}]*level=\"FACULTY_SECRETARY\"[^}]*} [1-9].*"))
+            .body(not(containsString("\naward_submissions_total")))
+            .body(not(containsString("\naward_approvals_total")))
+            .body(not(containsString("\naward_requests_pending")))
+            .body(not(containsString("\nuser_sessions_active")))
+            .body(not(containsString("\ndocument_processing")));
     }
 
     private long overdue(String title) {
