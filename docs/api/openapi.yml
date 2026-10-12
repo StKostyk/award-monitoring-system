@@ -1560,8 +1560,9 @@ paths:
       tags: [Documents]
       summary: Download a document
       description: >
-        Streams the content of a document of an award the caller may read (same rule as the list) and records a
-        `DOCUMENT_DOWNLOAD` audit row. The response is an attachment that is neither rendered inline nor cached:
+        Streams the content of a document of an award the caller may read (same rule as the list), or of a document
+        its owner shows to colleagues on an approved personal award shared at `UNIVERSITY` or `PUBLIC` (any
+        signed-in user, 4.3.8), and records a `DOCUMENT_DOWNLOAD` audit row (`via: colleague` for the latter). The response is an attachment that is neither rendered inline nor cached:
         `Content-Disposition: attachment; filename*=UTF-8''<encoded name>`, `X-Content-Type-Options: nosniff`,
         `Cache-Control: no-store, private`, `Content-Security-Policy: sandbox`. There is no pre-signed storage
         URL (`award:read:own`).
@@ -1596,7 +1597,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           description: >
-            `urn:awards:problem:document-not-found` (unknown, or its award is not readable by the caller) or
+            `urn:awards:problem:document-not-found` (unknown, or its award is not readable by the caller and it is
+            not shown on a shared award) or
             `document-content-missing` (the row exists, its object is gone; logged as an error)
           content:
             application/problem+json:
@@ -1637,6 +1639,60 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '409':
           description: "`urn:awards:problem:award-not-editable`: the award was submitted"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /documents/{id}/sharing:
+    put:
+      tags: [Documents]
+      summary: Show or hide a document of an own shared award to colleagues
+      description: >
+        The owner of an `APPROVED` personal award shared at `UNIVERSITY` or `PUBLIC` shows a document to signed-in
+        colleagues or hides it again (`award:update:own`). An effective change writes a `DOCUMENT_SHARING_CHANGED`
+        audit row (`awardId`, `from`, `to`); the same value again changes nothing. Setting the award back to
+        `PRIVATE` clears every choice with one such row each. Story 4.3.8.
+      security:
+        - bearerAuth: []
+      operationId: updateDocumentSharing
+      parameters:
+        - $ref: '#/components/parameters/DocumentIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentSharingUpdate'
+      responses:
+        '200':
+          description: The document with its choice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: "`urn:awards:problem:document-not-found`: unknown, or its award is not the caller's"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: >
+            `urn:awards:problem:sharing-fixed` (with `awardStatus` and `visibility`): the award is not `APPROVED`,
+            is a unit award or is `PRIVATE`; nothing is changed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: "`urn:awards:problem:validation-failed`: `shownToColleagues` missing"
           content:
             application/problem+json:
               schema:
@@ -2200,6 +2256,38 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           description: "`unit` is not an existing faculty or department"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /achievements/{id}:
+    get:
+      tags: [Achievements]
+      summary: One shared achievement with the documents shown to colleagues
+      description: >
+        An award of the `/achievements` list (same rule: approved, shared personal award of an account that is not
+        `DELETED`, or approved unit award) with the documents its owner shows to colleagues. Any signed-in user;
+        answered with `Cache-Control: no-store`, so a withdrawn choice takes effect at once. There is no public
+        counterpart. Story 4.3.8.
+      security:
+        - bearerAuth: []
+      operationId: getAchievement
+      parameters:
+        - $ref: '#/components/parameters/AwardIdParam'
+      responses:
+        '200':
+          description: The achievement and its shown documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Unknown award, or not shared with colleagues
           content:
             application/problem+json:
               schema:
@@ -3465,6 +3553,21 @@ components:
             - $ref: '#/components/schemas/UnitRef'
           description: The recipient unit, or the person's department at submission
 
+    AchievementDetail:
+      type: object
+      description: >
+        One shared award as a signed-in colleague sees it (4.3.8): the achievement card and the documents its owner
+        shows to colleagues. Never the review history, comments, versions or other documents
+      required: [achievement, documents]
+      properties:
+        achievement:
+          $ref: '#/components/schemas/Achievement'
+        documents:
+          type: array
+          description: Oldest first; always empty for a unit award
+          items:
+            $ref: '#/components/schemas/SharedDocument'
+
     AchievementPage:
       allOf:
         - $ref: '#/components/schemas/Page'
@@ -3976,7 +4079,7 @@ components:
     # Document
     Document:
       type: object
-      required: [id, awardId, fileName, type, mimeType, size, uploadedAt, uploadedBy]
+      required: [id, awardId, fileName, type, mimeType, size, uploadedAt, uploadedBy, shownToColleagues]
       properties:
         id:
           type: integer
@@ -4007,6 +4110,42 @@ components:
           format: date-time
         uploadedBy:
           $ref: '#/components/schemas/UserRef'
+        shownToColleagues:
+          type: boolean
+          description: >
+            The owner's choice to show the document to signed-in colleagues while the approved personal award is
+            shared (4.3.8); false by default and after the award returns to `PRIVATE`
+
+    DocumentSharingUpdate:
+      type: object
+      required: [shownToColleagues]
+      properties:
+        shownToColleagues:
+          type: boolean
+
+    SharedDocument:
+      type: object
+      description: A document its owner shows to colleagues; downloaded through `GET /documents/{id}` (4.3.8)
+      required: [id, fileName, type, mimeType, size]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+          maxLength: 255
+        type:
+          $ref: '#/components/schemas/DocumentType'
+        mimeType:
+          type: string
+          enum: [application/pdf, image/jpeg, image/png, image/webp]
+        size:
+          type: integer
+          format: int64
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
 
     DocumentType:
       type: string

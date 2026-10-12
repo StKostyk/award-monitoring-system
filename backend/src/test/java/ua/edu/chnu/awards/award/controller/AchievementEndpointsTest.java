@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import ua.edu.chnu.awards.award.dto.Achievement;
+import ua.edu.chnu.awards.award.dto.AchievementDetail;
 import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.AchievementRecipient;
 import ua.edu.chnu.awards.award.dto.CategoryRef;
@@ -27,6 +28,8 @@ import ua.edu.chnu.awards.award.dto.UnitRef;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.service.Achievements;
 import ua.edu.chnu.awards.award.service.UnitNotFoundException;
+import ua.edu.chnu.awards.document.dto.SharedDocument;
+import ua.edu.chnu.awards.document.entity.DocumentType;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 
 @WebMvcTest(AchievementController.class)
@@ -72,6 +75,24 @@ class AchievementEndpointsTest extends AbstractAwardEndpointsTest {
 
         mockMvc.perform(get(ACHIEVEMENTS).with(employee()).param("unit", "99"))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void ac2_aSignedInUserGetsOneSharedAwardWithItsShownDocumentsUncached() throws Exception {
+        Achievement achievement = new Achievement(5L, null, "Грамота МОН", null, null,
+            new CategoryRef(13L, "Ministry Recognition", "Відзнака міністерства", RecognitionLevel.NATIONAL),
+            "МОН України", LocalDate.of(2025, 5, 1), null, true, new AchievementRecipient(RecipientType.PERSON,
+            "Анастасія Коваль", new UnitRef(64L, "Algebra", "Кафедра алгебри", OrganizationType.DEPARTMENT)));
+        when(achievements.detail(5L)).thenReturn(new AchievementDetail(achievement, List.of(
+            new SharedDocument(7L, "диплом.pdf", DocumentType.DIPLOMA, "application/pdf", 3L, null))));
+
+        mockMvc.perform(get(ACHIEVEMENTS + "/5").with(employee()))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+            .andExpect(jsonPath("$.achievement.awardId").value(5))
+            .andExpect(jsonPath("$.documents[0].id").value(7))
+            .andExpect(jsonPath("$.documents[0].storageKey").doesNotExist());
+        mockMvc.perform(get(ACHIEVEMENTS + "/5")).andExpect(status().isUnauthorized());
     }
 
     @Test

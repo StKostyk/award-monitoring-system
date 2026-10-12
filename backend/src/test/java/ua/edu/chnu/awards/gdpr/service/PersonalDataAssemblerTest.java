@@ -76,7 +76,7 @@ class PersonalDataAssemblerTest {
     void ac32_theMetadataAndProfileDescribeThePersonWithDepartmentAndFaculty() {
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.2",
+        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.3",
             "Article 20 - Right to Data Portability"));
         PersonalDataFile.Profile profile = file.personalData().profile();
         assertThat(profile.email()).isEqualTo("employee.fmi@chnu.edu.ua");

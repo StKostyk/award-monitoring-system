@@ -243,10 +243,11 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
      * @param fileSize   size in bytes
      * @param uploadedAt upload moment
      * @param apiPath    where the file can be downloaded
+     * @param shownToColleagues whether the owner shows it to colleagues while the award is shared
      */
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record DocumentEntry(long documentId, Long awardId, String fileName, String fileType, String mimeType,
-                                long fileSize, Instant uploadedAt, String apiPath) {
+                                long fileSize, Instant uploadedAt, String apiPath, boolean shownToColleagues) {
     }
 
     /**

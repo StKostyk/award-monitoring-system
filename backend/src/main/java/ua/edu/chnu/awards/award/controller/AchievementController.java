@@ -3,11 +3,13 @@ package ua.edu.chnu.awards.award.controller;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ua.edu.chnu.awards.award.dto.Achievement;
+import ua.edu.chnu.awards.award.dto.AchievementDetail;
 import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.RecipientType;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
@@ -48,5 +50,16 @@ public class AchievementController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
             .body(PageResponse.of(achievements.shared(new AchievementQuery(unit, year, level, recipient), page,
                 size)));
+    }
+
+    /**
+     * One shared award with the documents its owner shows to colleagues; never cached.
+     *
+     * @param id the award
+     * @return the achievement and its shown documents
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<AchievementDetail> detail(@PathVariable long id) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(achievements.detail(id));
     }
 }

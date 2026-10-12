@@ -448,6 +448,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - Object key `awards/<award_id>/<random UUID>`: no file name or personal data in the key (Feature 3.1 D-1)
 - The object is written before the row and removed when the transaction rolls back; objects of deleted rows are removed after the commit; a daily sweep removes objects older than 24 h that no row refers to
 - Readers of a document are the readers of its award; every download writes a `DOCUMENT_DOWNLOAD` row to `audit_logs`
+- The owner of an approved personal award shared at `UNIVERSITY` or `PUBLIC` may show chosen documents to colleagues (`shown_to_colleagues`, V037, 4.3.8): any signed-in user then lists them on `GET /achievements/{id}` and downloads them (`DOCUMENT_DOWNLOAD` with `via: colleague`) while the award stays shared and the owner's account is not `DELETED`. The public page never serves a document. Going back to `PRIVATE` clears every flag of the award; `PUBLIC` ↔ `UNIVERSITY` keeps them
 - AI parsing (deferred) extracts metadata from scanned certificates; a confidence score below 0.7 triggers manual review
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
@@ -471,6 +472,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `uploaded_by` | `BIGINT` | NO | - | FK→users | Uploader user ID |
 | `document_type` | `VARCHAR(30)` | NO | `'SUPPORTING_DOCUMENT'` | CK | Chosen by the uploader: `CERTIFICATE`, `DIPLOMA`, `SUPPORTING_DOCUMENT`, `PHOTO` (V025) |
 | `description` | `VARCHAR(500)` | YES | - | - | Optional note of the uploader (V025) |
+| `shown_to_colleagues` | `BOOLEAN` | NO | `FALSE` | - | Owner's choice to show the document to signed-in colleagues while its approved personal award is shared; written only by `PUT /documents/{id}/sharing` and cleared when the award returns to `PRIVATE` (V037) |
 
 **Processing Status Values** (`processing_status`):
 | Value | Description | Next States |
@@ -507,6 +509,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `gin_documents_metadata` - GIN on `parsed_metadata`
 - `gin_documents_metadata_path` - GIN on `parsed_metadata jsonb_path_ops`
 - `uq_documents_award_checksum` - Unique B-tree on `(award_id, checksum_sha256)` (V025)
+- `idx_documents_shown` - Partial B-tree on `award_id` where `shown_to_colleagues` (V037)
 
 **Relationships**:
 - BELONGS TO `awards` (N:1) via `award_id`
@@ -746,7 +749,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
 - `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
 - `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
-- `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
+- `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`, and `via: colleague` when a colleague opened a document shown on a shared award, 4.3.8); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
+- `DOCUMENT_SHARING_CHANGED` - a document was shown to or hidden from colleagues (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the award owner; `new_values` = `awardId`, `from`, `to` as booleans); written for an effective change by the owner and for each flag cleared when the award returns to `PRIVATE`; the record of the owner's consent (4.3.8)
 - `DOCUMENT_REJECTED` - the malware scanner refused an upload (`entity_type` = `documents`, `entity_id` null since nothing was stored, `user_id` = the uploader; `new_values` = `awardId` and the `signature` ClamAV found; never the file name) (Feature 3.1.3)
 - `AWARD_SUBMITTED`, `AWARD_WITHDRAWN` - the owner submitted a draft or took an unclaimed request back to a draft (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` carries `requestId` and `level`, `from` the status left on a withdrawal, `recipientOrganizationId` for a unit award on submission)
 - `REVIEW_CLAIMED`, `REVIEW_TAKEN_OVER`, `REVIEW_RELEASED`, `REVIEW_HANDED_OVER` - the claim of a request changed (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the acting reviewer; `new_values` carries `requestId`, `level`, `previousReviewerId` on a take-over, `reviewerId` and `delegated` on a hand-over, `delegatorId` under a delegation)

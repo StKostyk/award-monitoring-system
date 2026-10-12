@@ -158,6 +158,7 @@ entity "documents" as documents {
     checksum_sha256 : VARCHAR(64)
     * document_type : VARCHAR(30)
     description : VARCHAR(500)
+    * shown_to_colleagues : BOOLEAN
     parsed_metadata : JSONB
     confidence_score : NUMERIC(5,4)
     * processing_status : VARCHAR(20)
@@ -332,7 +333,8 @@ end note
 note bottom of documents
     Metadata only; the file is an object in MinIO.
     Unique (award_id, checksum_sha256);
-    document_type and description since V025.
+    document_type and description since V025;
+    shown_to_colleagues since V037.
 end note
 
 note right of requests

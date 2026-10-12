@@ -83,6 +83,23 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     Optional<Document> findWithAwardById(long id);
 
     /**
+     * The award a document belongs to.
+     *
+     * @param id the document
+     * @return the award identifier, if the document exists
+     */
+    @Query("select d.award.id from Document d where d.id = :id")
+    Optional<Long> awardIdOf(@Param("id") long id);
+
+    /**
+     * The documents of an award its owner shows to colleagues, oldest first.
+     *
+     * @param awardId the award
+     * @return the shown documents
+     */
+    List<Document> findByAwardIdAndShownToColleaguesTrueOrderByUploadedAtAscIdAsc(long awardId);
+
+    /**
      * Object keys of the documents of an award.
      *
      * @param awardId the award
