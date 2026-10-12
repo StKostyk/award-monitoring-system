@@ -26,6 +26,7 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
@@ -38,6 +39,7 @@ import ua.edu.chnu.awards.document.event.ObjectsReleased;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
+import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
@@ -118,6 +120,35 @@ class DocumentServiceTest {
     }
 
     @Test
+    void ac3_aColleagueOpensADocumentShownOnASharedAwardAndTheDownloadIsMarked() {
+        when(access.callerId()).thenReturn(READER_ID);
+        Document document = shown(shared(AwardVisibility.UNIVERSITY), true);
+        when(documents.findWithAwardById(DOCUMENT_ID)).thenReturn(Optional.of(document));
+        when(storage.get(KEY)).thenReturn(Optional.of(new ByteArrayInputStream(new byte[] {1})));
+
+        assertThat(service.open(DOCUMENT_ID).fileName()).isEqualTo("диплом.pdf");
+        verify(audit).record(AuditAction.DOCUMENT_DOWNLOAD, AuditEntityConstants.DOCUMENTS, READER_ID, DOCUMENT_ID,
+            Map.of("awardId", AWARD_ID, "via", "colleague"));
+    }
+
+    @Test
+    void ac3_aColleagueFindsNoDocumentThatIsNotShownOrWhoseAwardIsNotShared() {
+        when(access.callerId()).thenReturn(READER_ID);
+        Award ofDeletedAccount = shared(AwardVisibility.PUBLIC);
+        ofDeletedAccount.setOwner(TestUsers.person(OWNER_ID, "gone@chnu.edu.ua", department));
+        ofDeletedAccount.getOwner().setAccountStatus(AccountStatus.DELETED);
+        Award unitAward = shared(AwardVisibility.PRIVATE);
+        unitAward.setRecipientOrganizationId(department.getId());
+
+        for (Document document : List.of(shown(shared(AwardVisibility.UNIVERSITY), false),
+            shown(shared(AwardVisibility.PRIVATE), true), shown(ofDeletedAccount, true), shown(unitAward, true))) {
+            when(documents.findWithAwardById(DOCUMENT_ID)).thenReturn(Optional.of(document));
+            assertThatThrownBy(() -> service.open(DOCUMENT_ID)).isInstanceOf(DocumentNotFoundException.class);
+        }
+        verifyNoInteractions(audit, storage);
+    }
+
+    @Test
     void aMissingObjectIsReportedAsMissingContent() {
         when(documents.findWithAwardById(DOCUMENT_ID)).thenReturn(Optional.of(document(award(AwardStatus.DRAFT))));
         when(storage.get(KEY)).thenReturn(Optional.empty());
@@ -169,10 +200,20 @@ class DocumentServiceTest {
         return TestAwards.award(owner, department).status(status).build();
     }
 
+    private Award shared(AwardVisibility visibility) {
+        Award award = award(AwardStatus.APPROVED);
+        award.setVisibility(visibility);
+        return award;
+    }
+
     private Document document(Award award) {
+        return shown(award, false);
+    }
+
+    private Document shown(Award award, boolean shownToColleagues) {
         Document document = Document.builder().award(award).fileName("диплом.pdf").format(DocumentFormat.PDF)
             .mimeType("application/pdf").size(3L).storageBucket("award-documents").storageKey(KEY)
-            .type(DocumentType.CERTIFICATE).uploadedBy(owner).build();
+            .type(DocumentType.CERTIFICATE).uploadedBy(owner).shownToColleagues(shownToColleagues).build();
         ReflectionTestUtils.setField(document, "id", DOCUMENT_ID);
         return document;
     }

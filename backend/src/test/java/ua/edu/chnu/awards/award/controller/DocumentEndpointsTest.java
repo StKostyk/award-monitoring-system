@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -33,15 +35,18 @@ import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.InvalidParameterProblems;
 import ua.edu.chnu.awards.document.controller.DocumentController;
+import ua.edu.chnu.awards.document.controller.DocumentSharingController;
 import ua.edu.chnu.awards.document.dto.DocumentDownload;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
+import ua.edu.chnu.awards.document.dto.DocumentSharingUpdate;
 import ua.edu.chnu.awards.document.entity.DocumentType;
 import ua.edu.chnu.awards.document.service.DocumentNotFoundException;
 import ua.edu.chnu.awards.document.service.DocumentService;
+import ua.edu.chnu.awards.document.service.DocumentSharing;
 import ua.edu.chnu.awards.document.service.DocumentUpload;
 import ua.edu.chnu.awards.support.DocumentTestConstants;
 
-@WebMvcTest(DocumentController.class)
+@WebMvcTest({DocumentController.class, DocumentSharingController.class})
 @Import(InvalidParameterProblems.class)
 class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
 
@@ -52,6 +57,9 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
 
     @MockitoBean
     private DocumentService documentService;
+
+    @MockitoBean
+    private DocumentSharing documentSharing;
 
     @MockitoBean
     private DocumentUpload documentUpload;
@@ -143,6 +151,20 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
     }
 
     @Test
+    void ac1_theSharingChoiceGoesToTheServiceAndAnAdministratorIsRefused() throws Exception {
+        when(documentSharing.update(7L, new DocumentSharingUpdate(true))).thenReturn(document());
+
+        mockMvc.perform(put(DOCUMENT + "/sharing").with(employee()).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"shownToColleagues\":true}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(7))
+            .andExpect(jsonPath("$.shownToColleagues").value(false));
+        mockMvc.perform(put(DOCUMENT + "/sharing").with(administrator()).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"shownToColleagues\":true}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void ac1_9_deletingAnswers204() throws Exception {
         mockMvc.perform(delete(DOCUMENT).with(employee())).andExpect(status().isNoContent());
 
@@ -155,6 +177,7 @@ class DocumentEndpointsTest extends AbstractAwardEndpointsTest {
 
     private static DocumentResponse document() {
         return new DocumentResponse(7L, 5L, NAME, DocumentType.CERTIFICATE, "application/pdf", PDF.length, "Скан",
-            Instant.parse("2026-10-02T09:00:00Z"), new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"));
+            Instant.parse("2026-10-02T09:00:00Z"), new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"),
+            false);
     }
 }

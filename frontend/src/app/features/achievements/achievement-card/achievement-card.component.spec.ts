@@ -49,7 +49,11 @@ const translations = {
 describe('AchievementCardComponent', () => {
   let language: string;
 
-  async function render(achievement: Achievement, unitPages?: string): Promise<HTMLElement> {
+  async function render(
+    achievement: Achievement,
+    unitPages?: string,
+    linked = false,
+  ): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
       imports: [
         AchievementCardComponent,
@@ -69,6 +73,7 @@ describe('AchievementCardComponent', () => {
     if (unitPages) {
       fixture.componentRef.setInput('unitPages', unitPages);
     }
+    fixture.componentRef.setInput('linked', linked);
     fixture.detectChanges();
     return fixture.nativeElement;
   }
@@ -131,5 +136,19 @@ describe('AchievementCardComponent', () => {
     expect(element.querySelector('[data-testid="achievement-unit"]')?.getAttribute('href')).toBe(
       '/public/units/64/achievements',
     );
+  });
+
+  it('ac2_a_colleague_opens_the_award_from_its_title', async () => {
+    const element = await render(personal, undefined, true);
+
+    expect(element.querySelector('[data-testid="achievement-open"]')?.getAttribute('href')).toMatch(
+      /^\/achievements\/\d+$/,
+    );
+  });
+
+  it('ac3_a_public_card_has_no_way_to_the_documents', async () => {
+    const element = await render(unitAward, '/public/units');
+
+    expect(element.querySelector('[data-testid="achievement-open"]')).toBeNull();
   });
 });

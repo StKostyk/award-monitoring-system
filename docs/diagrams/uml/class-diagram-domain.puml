@@ -275,6 +275,7 @@ package "document" <<Rectangle>> {
         -checksum: String
         -type: DocumentType
         -description: String
+        -shownToColleagues: boolean
         -uploadedAt: Instant
         -uploadedBy: User
     }

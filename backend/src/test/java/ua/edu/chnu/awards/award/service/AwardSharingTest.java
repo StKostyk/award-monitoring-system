@@ -32,6 +32,7 @@ import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.document.service.DocumentSharing;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
@@ -45,9 +46,10 @@ class AwardSharingTest {
     private final AwardOwnership ownership = mock(AwardOwnership.class);
     private final RequestLookup requests = mock(RequestLookup.class);
     private final AuditService audit = mock(AuditService.class);
+    private final DocumentSharing documents = mock(DocumentSharing.class);
     private final Clock clock = Clock.fixed(TestAwards.SUBMITTED_AT, ZoneId.of("Europe/Kyiv"));
     private final AwardSharing sharing = new AwardSharing(awards, ownership, requests,
-        new AwardMapper(TestWorkflow.estimator(clock)), audit);
+        new AwardMapper(TestWorkflow.estimator(clock)), audit, documents);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
     private Award award;
@@ -83,6 +85,25 @@ class AwardSharingTest {
         assertThat(response.visibility()).isEqualTo(AwardVisibility.PUBLIC);
         verify(awards, never()).updateVisibility(anyLong(), any());
         verify(audit, never()).record(any(), any(), anyLong(), anyLong(), anyMap());
+    }
+
+    @Test
+    void ac3_goingBackToPrivateHidesTheShownDocuments() {
+        award.setVisibility(AwardVisibility.UNIVERSITY);
+
+        sharing.update(TestAwards.AWARD_ID, new AwardVisibilityUpdate(AwardVisibility.PRIVATE));
+
+        verify(documents).clear(award);
+    }
+
+    @Test
+    void ac3_movingBetweenSharedLevelsKeepsTheShownDocuments() {
+        award.setVisibility(AwardVisibility.PUBLIC);
+
+        sharing.update(TestAwards.AWARD_ID, new AwardVisibilityUpdate(AwardVisibility.UNIVERSITY));
+        sharing.update(TestAwards.AWARD_ID, new AwardVisibilityUpdate(AwardVisibility.PUBLIC));
+
+        verify(documents, never()).clear(any());
     }
 
     @Test

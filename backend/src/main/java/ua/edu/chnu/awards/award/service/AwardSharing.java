@@ -19,12 +19,14 @@ import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
+import ua.edu.chnu.awards.document.service.DocumentSharing;
 
 import lombok.RequiredArgsConstructor;
 
 /**
  * The owner's choice of who sees an approved personal award. The choice is not award content: it leaves the
- * version and the version history alone, and the audit row of an effective change is the record of consent.
+ * version and the version history alone, and the audit row of an effective change is the record of consent. Going
+ * back to private hides the documents shown to colleagues.
  */
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class AwardSharing {
     private final RequestLookup requests;
     private final AwardMapper mapper;
     private final AuditService audit;
+    private final DocumentSharing documents;
 
     /**
      * Sets the visibility of the caller's approved personal award.
@@ -64,6 +67,9 @@ public class AwardSharing {
             award.setVisibility(visibility);
             audit.record(AuditAction.AWARD_VISIBILITY_CHANGED, AuditEntityConstants.AWARDS, award.getOwner().getId(),
                 award.getId(), Map.of("from", from.name(), "to", visibility.name()));
+            if (visibility == AwardVisibility.PRIVATE) {
+                documents.clear(award);
+            }
         }
         return mapper.toResponse(award, requests.of(id).orElse(null));
     }

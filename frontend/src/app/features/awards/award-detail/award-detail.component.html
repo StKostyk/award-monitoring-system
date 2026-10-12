@@ -133,7 +133,11 @@
       {{ decision.key | transloco: { level: ('reviews.decide.to.' + decision.level | transloco) } }}
     </p>
   }
-  <app-award-documents [awardId]="award.id" [removable]="editable(award)" />
+  <app-award-documents
+    [awardId]="award.id"
+    [removable]="editable(award)"
+    [sharing]="documentSharing(award)"
+  />
   @if (award.status !== 'DRAFT') {
     <app-award-status
       [awardId]="award.id"

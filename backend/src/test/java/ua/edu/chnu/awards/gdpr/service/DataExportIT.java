@@ -105,8 +105,10 @@ class DataExportIT extends AbstractIntegrationTest {
         });
         assertThat(file.awards()).hasSize(2).extracting(award -> award.status().name())
             .containsExactlyInAnyOrder("DRAFT", "PENDING");
-        assertThat(file.documents()).singleElement().satisfies(document ->
-            assertThat(document.apiPath()).isEqualTo("/api/v1/documents/" + document.documentId()));
+        assertThat(file.documents()).singleElement().satisfies(document -> {
+            assertThat(document.apiPath()).isEqualTo("/api/v1/documents/" + document.documentId());
+            assertThat(document.shownToColleagues()).isTrue();
+        });
         assertThat(file.consentHistory()).singleElement()
             .satisfies(consent -> assertThat(consent.ipAddress()).isEqualTo("10.0.0.7"));
         assertThat(file.devices()).singleElement()
@@ -239,7 +241,8 @@ class DataExportIT extends AbstractIntegrationTest {
         AwardRows.award(jdbc, user.getId()).title("Submitted").status("PENDING").insert();
         AwardRows.award(jdbc, dean.getId()).title("Dean's own").insert();
         jdbc.update("insert into documents (award_id, file_name, file_type, file_size, storage_bucket, storage_key,"
-            + " uploaded_by) values (?, 'letter.pdf', 'PDF', 1024, 'awards', 'secret/key.pdf', ?)",
+            + " uploaded_by, shown_to_colleagues)"
+            + " values (?, 'letter.pdf', 'PDF', 1024, 'awards', 'secret/key.pdf', ?, true)",
             draft, user.getId());
         jdbc.update("insert into consent_records (user_id, consent_type, consent_version, is_granted, granted_at,"
             + " ip_address) values (?, 'DATA_PROCESSING', '1.0', true, now(), '10.0.0.7')", user.getId());

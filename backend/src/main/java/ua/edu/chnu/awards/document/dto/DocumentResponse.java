@@ -18,9 +18,11 @@ import ua.edu.chnu.awards.document.entity.DocumentType;
  * @param description the uploader's note, null when none
  * @param uploadedAt  when it was uploaded
  * @param uploadedBy  who uploaded it
+ * @param shownToColleagues whether signed-in colleagues may open it while the award is shared
  */
 public record DocumentResponse(long id, long awardId, String fileName, DocumentType type, String mimeType,
-                               long size, String description, Instant uploadedAt, UserRef uploadedBy) {
+                               long size, String description, Instant uploadedAt, UserRef uploadedBy,
+                               boolean shownToColleagues) {
 
     /**
      * The response of a stored document.
@@ -31,6 +33,6 @@ public record DocumentResponse(long id, long awardId, String fileName, DocumentT
     public static DocumentResponse of(Document document) {
         return new DocumentResponse(document.getId(), document.getAward().getId(), document.getFileName(),
             document.getType(), document.getMimeType(), document.getSize(), document.getDescription(),
-            document.getUploadedAt(), UserRef.of(document.getUploadedBy()));
+            document.getUploadedAt(), UserRef.of(document.getUploadedBy()), document.isShownToColleagues());
     }
 }

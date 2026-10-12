@@ -26,7 +26,10 @@ import { organizationName } from '../../../shared/organization-name';
 import { ReviewPanelComponent } from '../../reviews/review-panel/review-panel.component';
 import { DecisionOutcome } from '../../reviews/reviews.service';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
-import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
+import {
+  AwardDocumentsComponent,
+  DocumentSharing,
+} from '../award-documents/award-documents.component';
 import { AwardHistoryComponent } from '../award-history/award-history.component';
 import { AwardStatusComponent } from '../award-status/award-status.component';
 import {
@@ -236,6 +239,14 @@ export class AwardDetailComponent implements OnInit {
       award.recipient.type === 'PERSON' &&
       isOwnAward(award, this.auth.userId())
     );
+  }
+
+  /** Whether the owner can show the documents to colleagues: only while the award is shared. */
+  documentSharing(award: Award): DocumentSharing {
+    if (!this.sharable(award)) {
+      return 'none';
+    }
+    return award.visibility === 'UNIVERSITY' || award.visibility === 'PUBLIC' ? 'open' : 'locked';
   }
 
   /** Shows the award as saved with its new visibility. */

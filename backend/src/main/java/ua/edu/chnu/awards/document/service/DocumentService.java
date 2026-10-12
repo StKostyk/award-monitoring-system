@@ -55,20 +55,29 @@ public class DocumentService {
     }
 
     /**
-     * Opens a document of an award the caller may read and records the download.
+     * Opens a document of an award the caller may read, or a document its owner shows to colleagues on a shared
+     * award, and records the download.
      *
      * @param id the document
      * @return the name, type, size and content stream
-     * @throws DocumentNotFoundException   when it does not exist or its award is not readable by the caller
+     * @throws DocumentNotFoundException   when it does not exist, or its award is not readable by the caller and it
+     *                                     is not open to colleagues
      * @throws ApiProblemException         404 {@code document-content-missing} when its object is gone
      * @throws StorageUnavailableException when the storage cannot be reached
      */
     @Transactional
     public DocumentDownload open(long id) {
-        Document document = documents.findWithAwardById(id).filter(found -> ownership.isReadable(found.getAward()))
-            .orElseThrow(() -> new DocumentNotFoundException(id));
-        audit.record(AuditAction.DOCUMENT_DOWNLOAD, AuditEntityConstants.DOCUMENTS, access.callerId(), id,
-            Map.of("awardId", document.getAward().getId()));
+        Document document = documents.findWithAwardById(id).orElseThrow(() -> new DocumentNotFoundException(id));
+        Long awardId = document.getAward().getId();
+        if (ownership.isReadable(document.getAward())) {
+            audit.record(AuditAction.DOCUMENT_DOWNLOAD, AuditEntityConstants.DOCUMENTS, access.callerId(), id,
+                Map.of("awardId", awardId));
+        } else if (document.isOpenToColleagues()) {
+            audit.record(AuditAction.DOCUMENT_DOWNLOAD, AuditEntityConstants.DOCUMENTS, access.callerId(), id,
+                Map.of("awardId", awardId, "via", "colleague"));
+        } else {
+            throw new DocumentNotFoundException(id);
+        }
         return storage.get(document.getStorageKey())
             .map(stream -> new DocumentDownload(document.getFileName(), document.getMimeType(), document.getSize(),
                 stream))

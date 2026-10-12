@@ -13,8 +13,25 @@ import {
   uniqueToken,
 } from './helpers';
 
-/** Submits an award as the owner and approves it in the database, dated today so it heads the list. */
-async function approvedBy(browser: Browser, owner: string, title: string): Promise<string> {
+/** A small PDF that differs from every other one, so that no upload is refused as a duplicate. */
+function pdf(): Buffer {
+  const content = Buffer.alloc(2048, 0x20);
+  content.write(`%PDF-1.4
+% ${uniqueToken()}
+`);
+  return content;
+}
+
+/**
+ * Submits an award as the owner, with the given PDF documents, and approves it in the database, dated today so
+ * it heads the list.
+ */
+async function approvedBy(
+  browser: Browser,
+  owner: string,
+  title: string,
+  documents: string[] = [],
+): Promise<string> {
   const page = await signedInAs(browser, owner, FRESH_PASSWORD);
   await page.getByTestId('nav-awards').click();
   await page.getByTestId('award-add').click();
@@ -26,7 +43,17 @@ async function approvedBy(browser: Browser, owner: string, title: string): Promi
   await page.getByTestId('category-option-13').click();
   await page.getByTestId('award-organization').fill('Міністерство освіти і науки України');
   await page.getByTestId('award-date').fill(pastDay());
-  await submitWithoutDocuments(page);
+  for (const name of documents) {
+    await page
+      .getByTestId('documents-input')
+      .setInputFiles({ name, mimeType: 'application/pdf', buffer: pdf() });
+    await expect(page.getByTestId('documents-list')).toContainText(name, { timeout: 30_000 });
+  }
+  if (documents.length) {
+    await page.getByTestId('award-submit').click();
+  } else {
+    await submitWithoutDocuments(page);
+  }
   await expect(page.getByTestId('award-submitted-name')).toContainText(title);
   await page.context().close();
   sql(
@@ -261,5 +288,68 @@ test.describe('unit achievement pages and public achievements', () => {
     );
     expect(await seriousViolations(page)).toEqual([]);
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe('documents shown to colleagues', () => {
+  test('ac1 ac2 ac3 the owner shows a document and a colleague downloads it until the award is private', async ({
+    browser,
+  }) => {
+    test.slow();
+    const owner = await freshEmployee(browser, 'shown');
+    const title = `Грамота з документами для колег ${uniqueToken()}`;
+    const id = await approvedBy(browser, owner, title, ['диплом.pdf', 'довідка.pdf']);
+    const page = await signedInAs(browser, owner, FRESH_PASSWORD);
+    const shown = page.getByRole('switch', { name: 'Показувати колегам: диплом.pdf' });
+
+    await openAward(page, id);
+    await expect(page.getByTestId('documents-sharing-hint')).toHaveText(
+      'Відкрийте нагороду для колег, щоб показати їм її документи.',
+    );
+    await expect(page.getByTestId('document-share')).toHaveCount(0);
+
+    await page.getByRole('radio', { name: 'Показувати колегам' }).check();
+    await expect(page.getByTestId('visibility-notice')).toHaveText('Видимість збережено.');
+    await expect(page.getByTestId('document-share')).toHaveCount(2);
+    await expect(shown).not.toBeChecked();
+    await shown.focus();
+    await page.keyboard.press('Space');
+    await expect(shown).toBeChecked();
+    await page.reload();
+    await expect(shown).toBeChecked();
+    await expect(
+      page.getByRole('switch', { name: 'Показувати колегам: довідка.pdf' }),
+    ).not.toBeChecked();
+
+    const colleague = await signedIn(browser, SEED.employee);
+    await colleague.setViewportSize({ width: 360, height: 780 });
+    await colleague.goto('/achievements');
+    await card(colleague, title).getByTestId('achievement-open').click();
+    await expect(colleague).toHaveURL(new RegExp(`/achievements/${id}$`));
+    await expect(colleague.getByTestId('achievement-detail-title')).toHaveText(title);
+    await expect(colleague.getByTestId('shared-documents')).toContainText('диплом.pdf');
+    await expect(colleague.getByTestId('shared-documents')).not.toContainText('довідка.pdf');
+    await expect(colleague.getByTestId('award-history-tabs')).toHaveCount(0);
+    expect(
+      await colleague.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(360);
+    expect(await seriousViolations(colleague)).toEqual([]);
+
+    const download = colleague.waitForEvent('download');
+    await colleague.getByRole('button', { name: 'Завантажити диплом.pdf' }).click();
+    expect((await download).suggestedFilename()).toBe('диплом.pdf');
+
+    await openAward(page, id);
+    await page.getByRole('radio', { name: 'Лише мені та рецензентам' }).check();
+    await expect(page.getByTestId('visibility-notice')).toHaveText('Видимість збережено.');
+    await expect(page.getByTestId('document-share')).toHaveCount(0);
+    expect(
+      sql(`select count(*) from documents where award_id = ${id} and shown_to_colleagues`).trim(),
+    ).toBe('0');
+
+    await colleague.reload();
+    await expect(colleague.getByTestId('achievement-detail-error')).toHaveText(
+      'Це досягнення недоступне. Можливо, його більше не показують колегам.',
+    );
   });
 });

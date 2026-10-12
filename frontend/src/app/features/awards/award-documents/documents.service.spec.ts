@@ -53,6 +53,13 @@ describe('DocumentsService', () => {
     request.flush(new Blob(['x']));
   });
 
+  it('ac1_shows_or_hides_a_document_to_colleagues', () => {
+    service.share(7, true).subscribe();
+    const request = http.expectOne((call) => call.url.endsWith('/api/v1/documents/7/sharing'));
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ shownToColleagues: true });
+  });
+
   it('removes_a_document', () => {
     service.remove(7).subscribe();
     expect(http.expectOne((call) => call.url.endsWith('/api/v1/documents/7')).request.method).toBe(

@@ -333,6 +333,9 @@ public class NotificationService {
 | `SMS_NOTIFICATIONS` | SMS alerts | No | Binary | No SMS sent |
 | `DOCUMENT_AI_PROCESSING` | AI metadata extraction | No | Per-document | Manual entry only |
 | `ANALYTICS` | Usage analytics | No | Binary | Excluded from analytics |
+| Document shown to colleagues (`documents.shown_to_colleagues`) | A chosen document of a shared award opened by signed-in colleagues | No | Per-document | Document hidden at once |
+
+Showing documents to colleagues (4.3.8) follows the award's visibility choice (4.3.1): every document starts hidden, including those uploaded before the choice existed, and only the owner of an approved personal award shared at `UNIVERSITY` or `PUBLIC` can show one. Colleagues see the shown documents on the read-only achievement view and download them while signed in; the public page and anonymous visitors never receive a document. Returning the award to `PRIVATE` clears every choice, so sharing it again does not reopen documents silently. Each effective change is a `DOCUMENT_SHARING_CHANGED` audit row (the record of consent), each colleague download a `DOCUMENT_DOWNLOAD` row marked `via: colleague`, and the export lists the choice per document.
 
 ### 4.3 Technical Implementation
 
@@ -678,14 +681,14 @@ public class AnonymizationService {
 
 ### 6.2 Export Data Structure
 
-Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.1` since 2.1.8 (SCRUM-43): `award_versions` added; `1.2` since 4.3.4 (SCRUM-70): `review_decisions` and `decisions_made` added). Property names are snake_case; every list section is present, possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file. Preferences join the file with Epic 7.
+Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.1` since 2.1.8 (SCRUM-43): `award_versions` added; `1.2` since 4.3.4 (SCRUM-70): `review_decisions` and `decisions_made` added; `1.3` since 4.3.8 (SCRUM-74): `shown_to_colleagues` per document). Property names are snake_case; every list section is present, possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file. Preferences join the file with Epic 7.
 
 ```json
 {
   "export_metadata": {
     "export_date": "2026-09-30T09:00:00Z",
     "user_id": 5,
-    "format_version": "1.2",
+    "format_version": "1.3",
     "gdpr_article": "Article 20 - Right to Data Portability"
   },
   "personal_data": {
@@ -723,7 +726,8 @@ Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format versi
   ],
   "documents": [
     { "document_id": 7, "award_id": 21, "file_name": "certificate.pdf", "file_type": "PDF", "mime_type": "application/pdf",
-      "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7" }
+      "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7",
+      "shown_to_colleagues": false }
   ],
   "review_decisions": [
     { "award_id": 21, "award_title": "Letter of gratitude", "award_title_uk": "Подяка", "decision": "RETURNED",

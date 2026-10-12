@@ -19,6 +19,7 @@ import jakarta.persistence.Version;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
 
@@ -131,6 +132,17 @@ public class Award {
      */
     public boolean isUnitAward() {
         return recipientOrganizationId != null;
+    }
+
+    /**
+     * Whether colleagues see this personal award: approved, shared at {@code UNIVERSITY} or {@code PUBLIC}, and
+     * its owner's account is not deleted. A unit award is shared without a choice and answers false.
+     *
+     * @return true for a personal award shared with colleagues
+     */
+    public boolean isSharedWithColleagues() {
+        return status == AwardStatus.APPROVED && !isUnitAward() && visibility != AwardVisibility.PRIVATE
+            && owner.getAccountStatus() != AccountStatus.DELETED;
     }
 
     /**

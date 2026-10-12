@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -24,8 +25,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import ua.edu.chnu.awards.award.dto.Achievement;
+import ua.edu.chnu.awards.award.dto.AchievementDetail;
 import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.RecipientType;
 import ua.edu.chnu.awards.award.entity.Award;
@@ -34,6 +37,10 @@ import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.document.dto.SharedDocument;
+import ua.edu.chnu.awards.document.entity.Document;
+import ua.edu.chnu.awards.document.entity.DocumentType;
+import ua.edu.chnu.awards.document.repository.DocumentRepository;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
@@ -47,7 +54,9 @@ class AchievementsTest {
 
     private final AwardRepository awards = mock(AwardRepository.class);
     private final OrganizationRepository organizations = mock(OrganizationRepository.class);
-    private final Achievements achievements = new Achievements(awards, organizations, new AwardSpecifications());
+    private final DocumentRepository documents = mock(DocumentRepository.class);
+    private final Achievements achievements = new Achievements(awards, organizations, new AwardSpecifications(),
+        documents);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
 
@@ -55,6 +64,48 @@ class AchievementsTest {
     @SuppressWarnings("unchecked")
     void setUp() {
         when(awards.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
+    }
+
+    @Test
+    void ac2_aSharedPersonalAwardShowsWithTheDocumentsItsOwnerShows() {
+        Award award = TestAwards.award(owner, department).status(AwardStatus.APPROVED)
+            .visibility(AwardVisibility.PUBLIC).build();
+        Document shown = Document.builder().award(award).fileName("диплом.pdf").type(DocumentType.DIPLOMA)
+            .mimeType("application/pdf").size(3L).shownToColleagues(true).build();
+        ReflectionTestUtils.setField(shown, "id", 7L);
+        when(awards.findWithDetailsById(TestAwards.AWARD_ID)).thenReturn(Optional.of(award));
+        when(documents.findByAwardIdAndShownToColleaguesTrueOrderByUploadedAtAscIdAsc(TestAwards.AWARD_ID))
+            .thenReturn(List.of(shown));
+
+        AchievementDetail detail = achievements.detail(TestAwards.AWARD_ID);
+
+        assertThat(detail.achievement().awardId()).isEqualTo(TestAwards.AWARD_ID);
+        assertThat(detail.documents()).extracting(SharedDocument::fileName).containsExactly("диплом.pdf");
+    }
+
+    @Test
+    void ac2_anApprovedUnitAwardShowsWithoutDocuments() {
+        Award award = TestAwards.award(owner, department).status(AwardStatus.APPROVED)
+            .recipientOrganizationId(department.getId()).build();
+        when(awards.findWithDetailsById(TestAwards.AWARD_ID)).thenReturn(Optional.of(award));
+
+        assertThat(achievements.detail(TestAwards.AWARD_ID).documents()).isEmpty();
+        verifyNoInteractions(documents);
+    }
+
+    @Test
+    void ac2_anAwardThatIsNotSharedIsNotFound() {
+        Award privateAward = TestAwards.award(owner, department).status(AwardStatus.APPROVED).build();
+        Award pendingUnit = TestAwards.award(owner, department).status(AwardStatus.PENDING)
+            .recipientOrganizationId(department.getId()).build();
+
+        for (Award award : List.of(privateAward, pendingUnit)) {
+            when(awards.findWithDetailsById(TestAwards.AWARD_ID)).thenReturn(Optional.of(award));
+            assertThatThrownBy(() -> achievements.detail(TestAwards.AWARD_ID))
+                .isInstanceOf(AwardNotFoundException.class);
+        }
+        assertThatThrownBy(() -> achievements.detail(99L)).isInstanceOf(AwardNotFoundException.class);
+        verifyNoInteractions(documents);
     }
 
     @Test

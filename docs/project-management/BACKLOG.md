@@ -92,7 +92,8 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.3.7 | Peer take-over of overdue requests and no self-escalation for deans | 3 | ✅ Done | SCRUM-73 | [#193](https://github.com/StKostyk/award-monitoring-system/issues/193) |
 | 4.3.9 | Achievement card names do not follow a language switch | 1 | ✅ Done | SCRUM-79 | [#204](https://github.com/StKostyk/award-monitoring-system/issues/204) |
 | 4.3.4 | Review decisions in the personal data export | 3 | ✅ Done | SCRUM-70 | [#190](https://github.com/StKostyk/award-monitoring-system/issues/190) |
-| 4.3.5 | Wire the business metrics to the award workflow | 2 | 👀 In review | SCRUM-71 | [#191](https://github.com/StKostyk/award-monitoring-system/issues/191) |
+| 4.3.5 | Wire the business metrics to the award workflow | 2 | ✅ Done | SCRUM-71 | [#191](https://github.com/StKostyk/award-monitoring-system/issues/191) |
+| 4.3.8 | Documents shown to colleagues on a shared award | 5 | 👀 In review | SCRUM-74 | [#194](https://github.com/StKostyk/award-monitoring-system/issues/194) |
 
 ### Epic 7 — Notification & Communication System (Jira epic SCRUM-63)
 Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS.md). Kickoff 2026-10-09; Spring events on the Spring Modulith publication registry (no Kafka), e-mail and in-app channels (SMS out of scope, push with Epic 8). Story 1.3.2 from Epic 1 belongs here.

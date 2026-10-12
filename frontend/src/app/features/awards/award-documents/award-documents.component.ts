@@ -17,6 +17,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect, MatSelectTrigger } from '@angular/material/select';
+import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import {
   EMPTY,
@@ -46,6 +47,8 @@ import {
   MAX_DOCUMENTS,
   MAX_DOCUMENT_SIZE,
   isAcceptedFile,
+  sizeUnit,
+  sizeValue,
 } from './documents.service';
 
 /** Server refusals a second attempt cannot change. */
@@ -63,10 +66,14 @@ const FINAL_PROBLEMS = [
 /** Server refusals that pass after a wait: they can be retried and show their own reason. */
 const WAIT_PROBLEMS = ['too-many-requests'];
 const PERCENT = 100;
-const KILOBYTE = 1024;
-const MEGABYTE = KILOBYTE * KILOBYTE;
 
 type QueueState = 'waiting' | 'uploading' | 'failed' | 'refused';
+
+/**
+ * Whether the owner can show documents to colleagues: `open` while the approved personal award is shared,
+ * `locked` while it is private, `none` otherwise.
+ */
+export type DocumentSharing = 'none' | 'locked' | 'open';
 
 /** A file chosen for upload that is not stored yet. */
 export interface QueuedFile {
@@ -89,6 +96,7 @@ export interface QueuedFile {
     MatSelectTrigger,
     MatOption,
     MatProgressBar,
+    MatSlideToggle,
     TranslocoPipe,
     KyivDatePipe,
   ],
@@ -115,6 +123,8 @@ export class AwardDocumentsComponent {
   readonly uploads = input(false);
   /** Whether documents can be removed. */
   readonly removable = input(false);
+  /** Whether the owner can show documents to colleagues. */
+  readonly sharing = input<DocumentSharing>('none');
   /** Saves the new award and answers its id; called before the first upload when `awardId` is null. */
   readonly prepare = input<(() => Observable<number>) | null>(null);
   /** The number of stored documents, after every load and change. */
@@ -145,6 +155,17 @@ export class AwardDocumentsComponent {
         } else if (id !== null && id !== this.loadedFor) {
           this.load(id);
         }
+      });
+    });
+    let sharedBefore: DocumentSharing | null = null;
+    effect(() => {
+      const sharing = this.sharing();
+      untracked(() => {
+        const id = this.currentId();
+        if (sharedBefore !== null && sharing !== sharedBefore && id !== null) {
+          this.load(id);
+        }
+        sharedBefore = sharing;
       });
     });
     this.pending
@@ -248,6 +269,37 @@ export class AwardDocumentsComponent {
     });
   }
 
+  /**
+   * Shows a document to colleagues or hides it again; a refused choice shows the saved one again.
+   *
+   * @param document the document
+   * @param change the switch and whether colleagues see it
+   */
+  share(document: AwardDocument, change: MatSlideToggleChange): void {
+    this.notice.set(null);
+    this.service
+      .share(document.id, change.checked)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (saved) => this.replace(saved),
+        error: (error: unknown) => {
+          change.source.checked = document.shownToColleagues;
+          const type = problemType(error);
+          this.notice.set(
+            type === 'sharing-fixed'
+              ? 'awards.documents.problems.sharing-fixed'
+              : readProblem(error) === 'gone'
+                ? 'awards.documents.problems.gone'
+                : 'awards.documents.problems.sharing-failed',
+          );
+          const id = this.currentId();
+          if (id !== null && (type === 'sharing-fixed' || readProblem(error) === 'gone')) {
+            this.load(id);
+          }
+        },
+      });
+  }
+
   /** Asks before removing a document from the draft. */
   remove(document: AwardDocument): void {
     confirmAction(this.dialog, 'awards.documents.remove', { name: document.fileName })
@@ -274,16 +326,12 @@ export class AwardDocumentsComponent {
 
   /** The size in kilobytes below a megabyte, in megabytes from there on, in the interface language. */
   sizeValue(bytes: number): string {
-    const locale = this.language.current() === 'en' ? 'en-GB' : 'uk-UA';
-    const format = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-    return bytes < MEGABYTE
-      ? format.format(Math.max(1, Math.round(bytes / KILOBYTE)))
-      : format.format(bytes / MEGABYTE);
+    return sizeValue(bytes, this.language.current());
   }
 
   /** Translation key of the unit of `sizeValue`. */
   sizeUnit(bytes: number): string {
-    return bytes < MEGABYTE ? 'awards.documents.kilobytes' : 'awards.documents.megabytes';
+    return sizeUnit(bytes);
   }
 
   /** The content of a document, dropped when the section is left before it arrives. */
@@ -428,6 +476,12 @@ export class AwardDocumentsComponent {
         error: () => this.show([]),
       });
     }
+  }
+
+  private replace(saved: AwardDocument): void {
+    this.documents.update((documents) =>
+      documents.map((document) => (document.id === saved.id ? saved : document)),
+    );
   }
 
   private show(documents: AwardDocument[]): void {

@@ -76,6 +76,9 @@ public class Document {
     @Column(name = "description", length = 500)
     private String description;
 
+    @Column(name = "shown_to_colleagues", nullable = false)
+    private boolean shownToColleagues;
+
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;
@@ -83,4 +86,22 @@ public class Document {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "uploaded_by", nullable = false, updatable = false)
     private User uploadedBy;
+
+    /**
+     * Records the owner's choice to show the document to colleagues.
+     *
+     * @param shown true to show it on the shared award
+     */
+    public void showToColleagues(boolean shown) {
+        shownToColleagues = shown;
+    }
+
+    /**
+     * Whether a signed-in colleague may open the document: it is shown and its award is shared with colleagues.
+     *
+     * @return true when open to colleagues
+     */
+    public boolean isOpenToColleagues() {
+        return shownToColleagues && award.isSharedWithColleagues();
+    }
 }

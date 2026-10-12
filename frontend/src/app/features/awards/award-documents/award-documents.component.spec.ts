@@ -22,6 +22,7 @@ function document(overrides: Partial<AwardDocument> = {}): AwardDocument {
     description: null,
     uploadedAt: '2026-10-01T22:30:00Z',
     uploadedBy: { id: 21, name: 'Анастасія Коваль' },
+    shownToColleagues: false,
     ...overrides,
   };
 }
@@ -53,6 +54,7 @@ describe('AwardDocumentsComponent', () => {
     upload: vi.fn(),
     download: vi.fn(),
     remove: vi.fn(),
+    share: vi.fn(),
   };
   const dialog = { open: vi.fn() };
   const language = { current: vi.fn(() => 'uk') };
@@ -591,5 +593,88 @@ describe('AwardDocumentsComponent', () => {
     component.add([file('a.pdf')]);
 
     expect(component.queue()[0].state).toBe('failed');
+  });
+
+  function shareSwitch(): HTMLButtonElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="document-share"] button[role="switch"]',
+    );
+  }
+
+  it('ac1_switch_is_shown_only_while_the_award_is_shared', async () => {
+    service.list.mockReturnValue(of([document()]));
+    await render({ awardId: 5, sharing: 'open' });
+
+    expect(shareSwitch()?.getAttribute('aria-checked')).toBe('false');
+    expect(byTestId('documents-sharing-hint')?.textContent).toContain(
+      'awards.documents.sharing.hint',
+    );
+
+    fixture.componentRef.setInput('sharing', 'locked');
+    fixture.detectChanges();
+    expect(shareSwitch()).toBeNull();
+    expect(byTestId('documents-sharing-hint')?.textContent).toContain(
+      'awards.documents.sharing.locked',
+    );
+
+    fixture.componentRef.setInput('sharing', 'none');
+    fixture.detectChanges();
+    expect(shareSwitch()).toBeNull();
+    expect(byTestId('documents-sharing-hint')).toBeNull();
+  });
+
+  it('ac1_switch_saves_the_choice_and_shows_the_answer', async () => {
+    service.list.mockReturnValue(of([document()]));
+    service.share.mockReturnValue(of(document({ shownToColleagues: true })));
+    await render({ awardId: 5, sharing: 'open' });
+
+    shareSwitch()?.click();
+    fixture.detectChanges();
+
+    expect(service.share).toHaveBeenCalledWith(1, true);
+    expect(component.documents()[0].shownToColleagues).toBe(true);
+    expect(shareSwitch()?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('ac1_refused_switch_keeps_the_saved_choice_and_explains', async () => {
+    service.list.mockReturnValue(of([document()]));
+    service.share.mockReturnValue(throwError(() => problem('sharing-fixed', 409)));
+    await render({ awardId: 5, sharing: 'open' });
+
+    shareSwitch()?.click();
+    fixture.detectChanges();
+
+    expect(component.documents()[0].shownToColleagues).toBe(false);
+    expect(shareSwitch()?.getAttribute('aria-checked')).toBe('false');
+    expect(byTestId('documents-notice')?.textContent).toContain(
+      'awards.documents.problems.sharing-fixed',
+    );
+    expect(service.list).toHaveBeenCalledTimes(2);
+  });
+
+  it('ac1_other_switch_failures_keep_the_saved_choice', async () => {
+    service.list.mockReturnValue(of([document()]));
+    service.share.mockReturnValue(throwError(() => problem('unknown', 500)));
+    await render({ awardId: 5, sharing: 'open' });
+
+    shareSwitch()?.click();
+    fixture.detectChanges();
+
+    expect(shareSwitch()?.getAttribute('aria-checked')).toBe('false');
+    expect(byTestId('documents-notice')?.textContent).toContain(
+      'awards.documents.problems.sharing-failed',
+    );
+  });
+
+  it('ac3_sharing_turned_off_reads_the_cleared_choices_again', async () => {
+    service.list.mockReturnValue(of([document({ shownToColleagues: true })]));
+    await render({ awardId: 5, sharing: 'open' });
+    service.list.mockReturnValue(of([document()]));
+
+    fixture.componentRef.setInput('sharing', 'locked');
+    fixture.detectChanges();
+
+    expect(service.list).toHaveBeenCalledTimes(2);
+    expect(component.documents()[0].shownToColleagues).toBe(false);
   });
 });

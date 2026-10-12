@@ -20,6 +20,10 @@
   overflow-wrap: anywhere;
 }
 
+.achievement__open {
+  color: inherit;
+}
+
 .achievement__recipient {
   display: flex;
   flex-direction: column;

@@ -35,7 +35,8 @@ public class PersonalDataQueries {
     private static final String USER_ID = "userId";
 
     private static final String DOCUMENTS = """
-        select d.document_id, d.award_id, d.file_name, d.file_type, d.mime_type, d.file_size, d.uploaded_at
+        select d.document_id, d.award_id, d.file_name, d.file_type, d.mime_type, d.file_size, d.uploaded_at,
+               d.shown_to_colleagues
           from documents d
           join awards a on a.award_id = d.award_id
          where a.user_id = :userId
@@ -94,7 +95,8 @@ public class PersonalDataQueries {
         return jdbc.query(DOCUMENTS, Map.of(USER_ID, userId), (row, index) -> new DocumentEntry(
             row.getLong("document_id"), row.getObject("award_id", Long.class), row.getString("file_name"),
             row.getString("file_type"), row.getString("mime_type"), row.getLong("file_size"),
-            instant(row, "uploaded_at"), DOCUMENT_PATH + row.getLong("document_id")));
+            instant(row, "uploaded_at"), DOCUMENT_PATH + row.getLong("document_id"),
+            row.getBoolean("shown_to_colleagues")));
     }
 
     /**
