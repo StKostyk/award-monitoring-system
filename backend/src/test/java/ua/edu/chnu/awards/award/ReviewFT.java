@@ -29,6 +29,7 @@ import io.restassured.response.Response;
 
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardApi;
+import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.repository.OrganizationRepository;
@@ -42,11 +43,14 @@ class ReviewFT extends AbstractFunctionalTest {
     private static final String DEAN = "ft.review.dean@chnu.edu.ua";
     private static final String EMPLOYEE = "ft.review.employee@chnu.edu.ua";
     private static final String DEPUTY = "ft.review.deputy@chnu.edu.ua";
-    private static final List<String> ACCOUNTS = List.of(SECRETARY, COLLEAGUE, DEAN, EMPLOYEE, DEPUTY);
+    private static final String FORMER = "ft.review.former@chnu.edu.ua";
+    private static final String ADMIN = "ft.review.admin@chnu.edu.ua";
+    private static final List<String> ACCOUNTS = List.of(SECRETARY, COLLEAGUE, DEAN, EMPLOYEE, DEPUTY, FORMER, ADMIN);
     private static final String REVIEWS = "/api/v1/reviews";
     private static final String VERSION = "requestVersion";
     private static final String TYPE = "type";
     private static final String PROBLEM = "urn:awards:problem:";
+    private static final String CAN_TAKE_OVER = "canTakeOver";
     private static final long FACULTY_ID = 10L;
     private static final long OTHER_FACULTY_ID = 9L;
 
@@ -63,6 +67,7 @@ class ReviewFT extends AbstractFunctionalTest {
     private long colleagueId;
     private long deanId;
     private long deputyId;
+    private long formerId;
 
     @BeforeAll
     void createUsers() {
@@ -75,6 +80,9 @@ class ReviewFT extends AbstractFunctionalTest {
         deanId = withRole(DEAN, faculty, RoleType.DEAN, faculty);
         withRole(EMPLOYEE, department, RoleType.EMPLOYEE, department);
         deputyId = withRole(DEPUTY, department, RoleType.EMPLOYEE, department);
+        formerId = withRole(FORMER, faculty, RoleType.FACULTY_SECRETARY, faculty);
+        Organization university = organizationRepository.findById(TestUsers.UNIVERSITY_ID).orElseThrow();
+        withRole(ADMIN, university, RoleType.SYSTEM_ADMIN, university);
         jdbc.update("insert into role_delegations (delegator_id, delegate_id, organization_id, role_type, valid_from,"
             + " valid_to, reason) values (?, ?, ?, 'FACULTY_SECRETARY', ?, ?, 'Leave')", secretaryId, deputyId,
             FACULTY_ID, Date.valueOf(LocalDate.now().minusDays(1)),
@@ -180,6 +188,8 @@ class ReviewFT extends AbstractFunctionalTest {
         claim(secretary, id, Map.of(VERSION, version)).then().statusCode(HttpStatus.OK.value());
         String dean = tokenOf(DEAN);
 
+        as(dean).get(reviewer(id)).then().statusCode(HttpStatus.OK.value()).body(CAN_TAKE_OVER, equalTo(true));
+        as(tokenOf(COLLEAGUE)).get(reviewer(id)).then().body(CAN_TAKE_OVER, equalTo(false));
         claim(dean, id, Map.of(VERSION, version + 1)).then().statusCode(HttpStatus.CONFLICT.value());
         claim(tokenOf(COLLEAGUE), id, Map.of(VERSION, version + 1, "takeOver", true)).then()
             .statusCode(HttpStatus.CONFLICT.value());
@@ -188,6 +198,29 @@ class ReviewFT extends AbstractFunctionalTest {
 
         assertThat(jdbc.queryForObject("select (new_values->>'previousReviewerId')::bigint from audit_logs"
             + " where action_type = 'REVIEW_TAKEN_OVER' and entity_id = ?", Long.class, id)).isEqualTo(secretaryId);
+    }
+
+    @Test
+    void ac1_ac2_aPeerTakesOverFromAHolderWhoseRoleWasRevoked() {
+        long id = submitted("Грамота від колишнього секретаря");
+        String former = tokenOf(FORMER);
+        long version = versionOf(former, id);
+        claim(former, id, Map.of(VERSION, version)).then().statusCode(HttpStatus.OK.value());
+        long role = jdbc.queryForObject("select user_role_id from user_roles where user_id = ?", Long.class, formerId);
+        as(tokenOf(ADMIN)).delete("/api/v1/users/" + formerId + "/roles/" + role).then()
+            .statusCode(HttpStatus.NO_CONTENT.value());
+        String colleague = tokenOf(COLLEAGUE);
+
+        as(colleague).get(reviewer(id)).then().statusCode(HttpStatus.OK.value()).body(CAN_TAKE_OVER, equalTo(true));
+        claim(colleague, id, Map.of(VERSION, version + 1)).then().statusCode(HttpStatus.CONFLICT.value())
+            .body(TYPE, equalTo(PROBLEM + "request-claimed"));
+        claim(colleague, id, Map.of(VERSION, version + 1, "takeOver", true)).then()
+            .statusCode(HttpStatus.OK.value())
+            .body("reviewer.id", equalTo((int) colleagueId))
+            .body(CAN_TAKE_OVER, nullValue());
+
+        assertThat(jdbc.queryForObject("select (new_values->>'previousReviewerId')::bigint from audit_logs"
+            + " where action_type = 'REVIEW_TAKEN_OVER' and entity_id = ?", Long.class, id)).isEqualTo(formerId);
     }
 
     @Test

@@ -76,6 +76,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.1.3 | Withdraw an unclaimed request and resubmit a returned award | 3 | ✅ Done | SCRUM-51 | [#145](https://github.com/StKostyk/award-monitoring-system/issues/145) |
 | 4.1.4 | Batch review with template responses (US-004) | 5 | ✅ Done | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |
 | 4.1.5 | Fixes from the Feature 4.1 validation | 3 | ✅ Done | SCRUM-58 | [#160](https://github.com/StKostyk/award-monitoring-system/issues/160) |
+| 4.1.6 | Take over a request whose holder lost the role | 3 | 👀 In review (Sprint 5) | SCRUM-77 | [#200](https://github.com/StKostyk/award-monitoring-system/issues/200) |
 | 4.1.7 | Hide delete on the edit form of a returned draft | 1 | ✅ Done | SCRUM-76 | [#199](https://github.com/StKostyk/award-monitoring-system/issues/199) |
 | 4.2.1 | Per-faculty review period set by the dean | 3 | ✅ Done | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
 | 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | ✅ Done | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
@@ -97,7 +98,7 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 |----|-------|--------|--------|------|-------|
 | 7.1.1 | Event publication registry for the after-commit mails | 5 | ✅ Done | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
 | 7.1.2 | Module boundaries checked by Spring Modulith | 8 | Sprint 5 | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
-| 7.1.3 | Drop the duplicate async error log for undelivered mails | 1 | 👀 In review (Sprint 5) | SCRUM-75 | [#197](https://github.com/StKostyk/award-monitoring-system/issues/197) |
+| 7.1.3 | Drop the duplicate async error log for undelivered mails | 1 | ✅ Done | SCRUM-75 | [#197](https://github.com/StKostyk/award-monitoring-system/issues/197) |
 | 7.2.1 | In-app notifications from award and review events | 5 | Sprint 5 | SCRUM-66 | [#183](https://github.com/StKostyk/award-monitoring-system/issues/183) |
 | 7.2.2 | Notification centre in the toolbar | 5 | Sprint 5 | SCRUM-67 | [#184](https://github.com/StKostyk/award-monitoring-system/issues/184) |
 | 1.3.2 | Notification preferences | 3 | Sprint 5 | SCRUM-16 | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |

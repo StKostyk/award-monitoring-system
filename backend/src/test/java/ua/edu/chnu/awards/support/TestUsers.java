@@ -51,6 +51,10 @@ public final class TestUsers {
             .accountStatus(AccountStatus.ACTIVE).organization(organization).build();
     }
 
+    public static Organization faculty(long id) {
+        return organization(id, OrganizationType.FACULTY);
+    }
+
     public static Organization organization(long id, OrganizationType type) {
         return organization(id, type, "Org " + id);
     }

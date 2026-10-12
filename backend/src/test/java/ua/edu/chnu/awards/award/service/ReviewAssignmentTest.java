@@ -39,7 +39,6 @@ import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
@@ -59,9 +58,10 @@ class ReviewAssignmentTest {
     private final ReviewItemMapper mapper = mock(ReviewItemMapper.class);
     private final AccessScope access = mock(AccessScope.class);
     private final ReviewAssignment assignment = new ReviewAssignment(requests, decisions, rule, availability, users,
-        audit, mapper, access, new ReviewGuards(requests, rule, access));
+        audit, mapper, access, new ReviewGuards(requests, rule, access),
+        new TakeOverRule(rule, availability, access));
 
-    private final Organization faculty = TestUsers.organization(FACULTY, OrganizationType.FACULTY);
+    private final Organization faculty = TestUsers.faculty(FACULTY);
     private final User owner = TestUsers.person(7L, "employee@chnu.edu.ua", faculty);
     private final User caller = TestUsers.person(5L, "secretary@chnu.edu.ua", faculty);
     private final User peer = TestUsers.person(6L, "secretary2@chnu.edu.ua", faculty);
@@ -277,10 +277,12 @@ class ReviewAssignmentTest {
 
     @Test
     void ac1_11_theItemOfAnOpenRequestTheCallerMayReview() {
-        ReviewItem item = mock(ReviewItem.class);
+        var item = mock(ReviewItem.class);
+        var offered = mock(ReviewItem.class);
         when(mapper.toItem(request)).thenReturn(item);
+        when(item.withCanTakeOver(false)).thenReturn(offered);
 
-        assertThat(assignment.item(AWARD)).isSameAs(item);
+        assertThat(assignment.item(AWARD)).isSameAs(offered);
     }
 
     @Test

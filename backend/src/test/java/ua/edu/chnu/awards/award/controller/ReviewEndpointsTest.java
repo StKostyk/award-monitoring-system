@@ -165,6 +165,6 @@ class ReviewEndpointsTest extends AbstractAwardEndpointsTest {
         return new ReviewItem(5L, 8L, 3L, "Certificate", "Грамота", AwardRecipient.PERSON,
             new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"), null, null,
             ApprovalLevel.FACULTY_SECRETARY, RequestStatus.SUBMITTED, null, Instant.parse("2026-10-01T08:00:00Z"),
-            Instant.parse("2026-10-06T21:00:00Z"), false, Instant.parse("2026-10-07T08:05:00Z"), 2, null);
+            Instant.parse("2026-10-06T21:00:00Z"), false, Instant.parse("2026-10-07T08:05:00Z"), 2, null, false);
     }
 }

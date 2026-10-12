@@ -41,6 +41,8 @@ export interface ReviewItem {
   overdueNoticedAt: string | null;
   documentCount: number;
   delegatedFrom: UserRef | null;
+  /** Set by `item()`, null on queue pages and claim responses. */
+  canTakeOver: boolean | null;
 }
 
 /** A colleague the request can be handed over to. */

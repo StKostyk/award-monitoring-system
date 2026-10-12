@@ -1,10 +1,8 @@
 package ua.edu.chnu.awards.award.service;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -52,6 +50,7 @@ public class ReviewAssignment {
     private final ReviewItemMapper mapper;
     private final AccessScope access;
     private final ReviewGuards guards;
+    private final TakeOverRule takeOver;
 
     /**
      * Claims, takes over or hands over the request of an award.
@@ -76,7 +75,7 @@ public class ReviewAssignment {
         if (holder != null && holder.getId() == callerId) {
             return mapper.toItem(request);
         }
-        if (holder != null && !(change.isTakeOver() && mayTakeOver(request, holder))) {
+        if (holder != null && !(change.isTakeOver() && takeOver.allows(request, holder))) {
             throw guards.claimed(holder);
         }
         guards.requireVersion(request, change.requestVersion());
@@ -156,7 +155,7 @@ public class ReviewAssignment {
     }
 
     /**
-     * The open request of an award as a queue item.
+     * The open request of an award as a queue item, with whether the caller may take it over.
      *
      * @param awardId the award
      * @return the request as a queue item
@@ -167,7 +166,7 @@ public class ReviewAssignment {
         return requests.findByAwardId(awardId)
             .filter(AwardRequest::isOpen)
             .filter(guards::isReviewable)
-            .map(mapper::toItem)
+            .map(request -> mapper.toItem(request).withCanTakeOver(takeOver.offered(request)))
             .orElseThrow(() -> new AwardNotFoundException(awardId));
     }
 
@@ -196,17 +195,6 @@ public class ReviewAssignment {
                 request.getAward().getOwner().getId(), request.getSubmitter().getId()).stream()
             .filter(candidate -> candidate.id() != callerId)
             .toList();
-    }
-
-    private boolean mayTakeOver(AwardRequest request, User holder) {
-        Optional<ApprovalLevel> holderLevel = Arrays.stream(ApprovalLevel.values())
-            .filter(level -> level.covers(request.getCurrentLevel()))
-            .filter(level -> availability.isEligible(holder.getId(), level,
-                request.getAward().getOrganization().getId(), request.getAward().getOwner().getId(),
-                request.getSubmitter().getId()))
-            .reduce((lower, higher) -> higher);
-        return holderLevel.isEmpty() || rule.highestLevel(request)
-            .filter(level -> !holderLevel.get().covers(level)).isPresent();
     }
 
     private static Map<String, Object> details(AwardRequest request) {
