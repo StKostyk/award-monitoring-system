@@ -17,9 +17,12 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailSendException;
@@ -36,6 +39,7 @@ import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 
+@ExtendWith(OutputCaptureExtension.class)
 class EventPublicationRegistryIT extends AbstractIntegrationTest {
 
     private static final long MAIL_WAIT_MS = 30_000;
@@ -124,6 +128,23 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         retry.run();
         verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
+    }
+
+    @Test
+    void scrum75_ac1_anUndeliveredMailIsLoggedOnceWithoutTheAsyncStackTrace(CapturedOutput output)
+            throws InterruptedException {
+        String to = "it.registry.quiet@chnu.edu.ua";
+        doThrow(new MailSendException("down")).when(mailSender)
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+
+        transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
+
+        verify(mailSender, timeout(FAILED_SEND_MS).times(3))
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        assertThat(waitFor(() -> output.getAll().contains(to + "] was not delivered"), true)).isTrue();
+        Thread.sleep(QUIET_MS);
+        assertThat(output.getAll()).doesNotContain("SimpleAsyncUncaughtExceptionHandler");
+        assertThat(incomplete()).isEqualTo(1);
     }
 
     @Test

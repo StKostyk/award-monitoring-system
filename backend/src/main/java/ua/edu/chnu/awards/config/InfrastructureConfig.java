@@ -2,12 +2,17 @@ package ua.edu.chnu.awards.config;
 
 import java.time.Clock;
 import java.time.ZoneId;
+import java.util.concurrent.Executor;
 
+import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.data.redis.LettuceClientConfigurationBuilderCustomizer;
+import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -16,6 +21,7 @@ import io.lettuce.core.TimeoutOptions;
 
 import ua.edu.chnu.awards.common.event.EventProperties;
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
+import ua.edu.chnu.awards.common.mail.UndeliveredMailAsyncHandler;
 
 /**
  * Shared clock (injectable for tests), workflow timing, event publication retry, asynchronous execution for
@@ -31,6 +37,29 @@ public class InfrastructureConfig {
     @Bean
     Clock clock() {
         return Clock.system(ZoneId.of("Europe/Kyiv"));
+    }
+
+    /**
+     * Asynchronous listeners run on the application task executor; an undelivered mail they rethrow is not logged
+     * twice.
+     *
+     * @param executor the executor configured by {@code spring.task.execution}
+     * @return the asynchronous execution settings
+     */
+    @Bean
+    AsyncConfigurer asyncConfigurer(
+            @Qualifier(TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME) Executor executor) {
+        return new AsyncConfigurer() {
+            @Override
+            public Executor getAsyncExecutor() {
+                return executor;
+            }
+
+            @Override
+            public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+                return new UndeliveredMailAsyncHandler();
+            }
+        };
     }
 
     /**
