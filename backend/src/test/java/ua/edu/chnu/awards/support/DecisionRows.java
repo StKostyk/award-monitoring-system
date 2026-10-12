@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public final class DecisionRows {
 
     private static final String INSERT = "insert into review_decisions (request_id, reviewer_id, decision, level, "
-        + "comments, decided_at) values (?, ?, ?, ?, ?, ?)";
+        + "comments, decided_at, delegator_id) values (?, ?, ?, ?, ?, ?, ?)";
 
     private final JdbcTemplate jdbc;
     private final long requestId;
@@ -21,6 +21,7 @@ public final class DecisionRows {
     private String level = "FACULTY_SECRETARY";
     private String comments;
     private Instant decidedAt = Instant.now();
+    private Long delegatorId;
 
     private DecisionRows(JdbcTemplate jdbc, long requestId, long reviewerId) {
         this.jdbc = jdbc;
@@ -85,9 +86,21 @@ public final class DecisionRows {
     }
 
     /**
+     * Records the decision as made under a delegation.
+     *
+     * @param value holder of the borrowed role
+     * @return this row
+     */
+    public DecisionRows delegator(long value) {
+        delegatorId = value;
+        return this;
+    }
+
+    /**
      * Inserts the row.
      */
     public void insert() {
-        jdbc.update(INSERT, requestId, reviewerId, decision, level, comments, Timestamp.from(decidedAt));
+        jdbc.update(INSERT, requestId, reviewerId, decision, level, comments, Timestamp.from(decidedAt),
+            delegatorId);
     }
 }

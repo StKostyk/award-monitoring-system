@@ -18,11 +18,13 @@ import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.auth.entity.UserDevice;
 import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardSnapshot;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVersion;
+import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
@@ -31,7 +33,9 @@ import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ActivityEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DecisionMadeEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ReviewDecisionEntry;
 import ua.edu.chnu.awards.gdpr.mapper.PersonalDataMapper;
 import ua.edu.chnu.awards.gdpr.repository.PersonalDataQueries;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -72,7 +76,7 @@ class PersonalDataAssemblerTest {
     void ac32_theMetadataAndProfileDescribeThePersonWithDepartmentAndFaculty() {
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.1",
+        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.2",
             "Article 20 - Right to Data Portability"));
         PersonalDataFile.Profile profile = file.personalData().profile();
         assertThat(profile.email()).isEqualTo("employee.fmi@chnu.edu.ua");
@@ -95,8 +99,10 @@ class PersonalDataAssemblerTest {
         assertThat(file.devices()).isEmpty();
         assertThat(file.activityLog()).isEmpty();
         assertThat(file.awardVersions()).isEmpty();
+        assertThat(file.reviewDecisions()).isEmpty();
+        assertThat(file.decisionsMade()).isEmpty();
         assertThat(file.sectionCounts()).containsOnlyKeys("roles", "delegations", "awards", "award_versions",
-            "documents", "consent_history", "devices", "activity_log")
+            "documents", "review_decisions", "decisions_made", "consent_history", "devices", "activity_log")
             .allSatisfy((key, count) -> assertThat(count).isEqualTo(0));
     }
 
@@ -183,6 +189,22 @@ class PersonalDataAssemblerTest {
         assertThat(file.awardVersions().get(1).snapshot().impactScore()).isEqualTo(80);
         assertThat(file.awardVersions().toString()).doesNotContain("secretary@chnu.edu.ua", "Мартинюк");
         assertThat(file.sectionCounts()).containsEntry("award_versions", 2);
+    }
+
+    @Test
+    void ac1_ac2_decisionsOnOwnAwardsAndAsReviewerAreCopiedAndCounted() {
+        ReviewDecisionEntry received = new ReviewDecisionEntry(21L, "Letter", "Лист", ReviewDecisionType.RETURNED,
+            ApprovalLevel.FACULTY_SECRETARY, NOW, "Додайте наказ", "Оксана Коваль", null);
+        DecisionMadeEntry made = new DecisionMadeEntry(40L, "Diploma", "Диплом", ReviewDecisionType.APPROVED,
+            ApprovalLevel.DEAN, NOW, null, "Анастасія Петренко", "Петро Мартинюк");
+        when(queries.reviewDecisions(5L)).thenReturn(List.of(received));
+        when(queries.decisionsMade(5L)).thenReturn(List.of(made));
+
+        PersonalDataFile file = assembler.assemble(user);
+
+        assertThat(file.reviewDecisions()).containsExactly(received);
+        assertThat(file.decisionsMade()).containsExactly(made);
+        assertThat(file.sectionCounts()).containsEntry("review_decisions", 1).containsEntry("decisions_made", 1);
     }
 
     private RoleDelegation delegation(User delegator, User delegate, String reason) {

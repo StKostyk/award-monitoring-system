@@ -7,7 +7,8 @@
     Writes build/<key>.diff (committed, staged, unstaged and new files against the merge base with -Base) and
     build/<key>-review.md (diff path, the PRD section of the story, the checklist and the finding limit). Prints
     "security-reviewer" with the paths that trigger it (auth/, authz/, config/*Security*, config/*Authorization*,
-    db/migration/, @PreAuthorize, document upload and storage code) or "code-review" otherwise.
+    db/migration/, @PreAuthorize, document upload and storage code, access rules such as *Rule.java, *Guard(s).java
+    and the delegation, role-assignment, decision and correction rules) or "code-review" otherwise.
     Do not run it while gate.ps1 or e2e.ps1 is running: git leaves a stale index.lock.
 
 .EXAMPLE
@@ -43,6 +44,9 @@ $files = git diff --merge-base $Base --name-only -- . @exclude
 $triggers = @($files | Where-Object {
     $_ -match '/(auth|authz)/|/config/[^/]*(Security|Authorization)[^/]*$|db/migration/|/document/|[Uu]pload|[Ss]torage'
 })
+$triggers += @($files | Where-Object {
+    $_ -match '^backend/src/main/.*/[^/]*(Rule|Guards?|(Delegation|RoleAssignment|Decision|Correction)Rules)\.java$'
+} | ForEach-Object { "$_ (access rule)" })
 $triggers += @(git diff --merge-base $Base -G '@PreAuthorize' --name-only -- '*.java' |
     ForEach-Object { "$_ (@PreAuthorize)" })
 $reviewer = if ($triggers) { 'security-reviewer' } else { 'code-review' }

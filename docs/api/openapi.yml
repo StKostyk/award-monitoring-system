@@ -2670,13 +2670,13 @@ components:
 
     PersonalDataExport:
       type: object
-      description: GDPR Article 20 export, format version 1.1; every list is present, possibly empty
+      description: GDPR Article 20 export, format version 1.2; every list is present, possibly empty
       required: [export_metadata, personal_data, roles, delegations, awards, award_versions, documents,
-                 consent_history, devices, activity_log]
+                 review_decisions, decisions_made, consent_history, devices, activity_log]
       properties:
         export_metadata:
           type: object
-          description: '`export_date` (instant), `user_id`, `format_version` (`1.1`), `gdpr_article`'
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.2`), `gdpr_article`'
         personal_data:
           type: object
           description: |
@@ -2717,6 +2717,24 @@ components:
           description: |
             Metadata of the documents of those awards: `document_id`, `award_id`, `file_name`, `file_type`,
             `mime_type`, `file_size`, `uploaded_at`, `api_path`
+          items:
+            type: object
+        review_decisions:
+          type: array
+          description: |
+            Reviewer decisions on those awards, oldest first (1.2): `award_id`, `award_title`, `award_title_uk`
+            (each falls back to the other language),
+            `decision`, `level`, `decided_at`, `comments`, `reviewer` (full name only), `delegator` (full name of
+            the holder of the role the reviewer borrowed, null under an own role)
+          items:
+            type: object
+        decisions_made:
+          type: array
+          description: |
+            Decisions the person made as a reviewer and decisions a delegate made under a role the person lent,
+            oldest first (1.2): `award_id`, `award_title`, `award_title_uk`, `decision`, `level`, `decided_at`,
+            `comments`, `reviewer` and `delegator` (full names, `delegator` null under an own role); of the award
+            only its titles, nothing of its owner
           items:
             type: object
         consent_history:

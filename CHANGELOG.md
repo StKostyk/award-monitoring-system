@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Personal data export (format 1.2) lists the review decisions on the person's own awards and the decisions made as a reviewer or under a lent role (4.3.4).
 - A peer reviewer can take over an overdue request, the previous holder is mailed, and a reviewer is no longer offered an escalation to a level their role already covers.
 - Event publication registry (Spring Modulith, V036): after-commit mails are retried for 24 hours when the mail server fails; mails with one-time links are never stored
 - Unit achievement pages and public achievement pages without sign-in, with a per-address rate limit on the public API (SCRUM-57)

@@ -9,8 +9,10 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
+import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -20,21 +22,25 @@ import ua.edu.chnu.awards.user.entity.RoleType;
  * Everything the system holds about one person, in the machine-readable form of GDPR Article 20
  * (PRIVACY_BY_DESIGN section 6.2). Sections without entries are empty lists, never absent.
  *
- * @param exportMetadata when, for whom and in which format version the file was made
- * @param personalData   the profile
- * @param roles          role assignments past, present and future
- * @param delegations    delegations given and received
- * @param awards         own awards in every status
- * @param awardVersions  every saved state of those awards, oldest first per award
- * @param documents      metadata of the documents of those awards
- * @param consentHistory every consent record
- * @param devices        browsers the account signed in from
- * @param activityLog    the person's own application events, newest first
+ * @param exportMetadata  when, for whom and in which format version the file was made
+ * @param personalData    the profile
+ * @param roles           role assignments past, present and future
+ * @param delegations     delegations given and received
+ * @param awards          own awards in every status
+ * @param awardVersions   every saved state of those awards, oldest first per award
+ * @param documents       metadata of the documents of those awards
+ * @param reviewDecisions reviewer decisions on those awards, oldest first
+ * @param decisionsMade   decisions the person made as a reviewer or that were made under a role the person
+ *                        lent, oldest first
+ * @param consentHistory  every consent record
+ * @param devices         browsers the account signed in from
+ * @param activityLog     the person's own application events, newest first
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PersonalDataFile(Metadata exportMetadata, PersonalData personalData, List<RoleEntry> roles,
                                List<DelegationEntry> delegations, List<AwardEntry> awards,
                                List<AwardVersionEntry> awardVersions, List<DocumentEntry> documents,
+                               List<ReviewDecisionEntry> reviewDecisions, List<DecisionMadeEntry> decisionsMade,
                                List<ConsentEntry> consentHistory, List<DeviceEntry> devices,
                                List<ActivityEntry> activityLog) {
 
@@ -47,6 +53,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         awards = List.copyOf(awards);
         awardVersions = List.copyOf(awardVersions);
         documents = List.copyOf(documents);
+        reviewDecisions = List.copyOf(reviewDecisions);
+        decisionsMade = List.copyOf(decisionsMade);
         consentHistory = List.copyOf(consentHistory);
         devices = List.copyOf(devices);
         activityLog = List.copyOf(activityLog);
@@ -64,6 +72,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         counts.put("awards", awards.size());
         counts.put("award_versions", awardVersions.size());
         counts.put("documents", documents.size());
+        counts.put("review_decisions", reviewDecisions.size());
+        counts.put("decisions_made", decisionsMade.size());
         counts.put("consent_history", consentHistory.size());
         counts.put("devices", devices.size());
         counts.put("activity_log", activityLog.size());
@@ -237,6 +247,45 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record DocumentEntry(long documentId, Long awardId, String fileName, String fileType, String mimeType,
                                 long fileSize, Instant uploadedAt, String apiPath) {
+    }
+
+    /**
+     * One reviewer decision on an own award; the reviewer and the role holder appear by name only.
+     *
+     * @param awardId      the award
+     * @param awardTitle   English title of the award, the Ukrainian one when it has none
+     * @param awardTitleUk Ukrainian title of the award, the English one when it has none
+     * @param decision     what was decided
+     * @param level        the approval level it was made at
+     * @param decidedAt    when it was made
+     * @param comments     the reviewer comment, null when none
+     * @param reviewer     full name of the reviewer
+     * @param delegator    full name of the holder of the role the reviewer borrowed, null under an own role
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record ReviewDecisionEntry(long awardId, String awardTitle, String awardTitleUk,
+                                      ReviewDecisionType decision, ApprovalLevel level, Instant decidedAt,
+                                      String comments, String reviewer, String delegator) {
+    }
+
+    /**
+     * One decision the person made as a reviewer, or a delegate made under a role the person lent; of the award only
+     * its titles are given.
+     *
+     * @param awardId      the award
+     * @param awardTitle   English title of the award, the Ukrainian one when it has none
+     * @param awardTitleUk Ukrainian title of the award, the English one when it has none
+     * @param decision     what was decided
+     * @param level        the approval level it was made at
+     * @param decidedAt    when it was made
+     * @param comments     the reviewer comment, null when none
+     * @param reviewer     full name of the reviewer
+     * @param delegator    full name of the holder of the borrowed role, null under an own role
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record DecisionMadeEntry(long awardId, String awardTitle, String awardTitleUk, ReviewDecisionType decision,
+                                    ApprovalLevel level, Instant decidedAt, String comments, String reviewer,
+                                    String delegator) {
     }
 
     /**

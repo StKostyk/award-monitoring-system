@@ -643,6 +643,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - Timestamp records exact decision moment
 - Read by the status timeline (`GET /awards/{id}/status`), oldest first with the reviewer's name and, for a delegate, the delegator's, for everybody who may read the award; written by `POST /awards/{id}/decisions` at the level the request stood at (4.1.2)
 - A level the request passed over (its only reviewer submitted the award) has no row; the status page shows it as skipped
+- Part of the GDPR export (format 1.2, 4.3.4): the award owner gets the decisions on their awards (`review_decisions`, with the reviewer's and delegator's full names), the reviewer the decisions they made and the delegator those made under the lent role (`decisions_made`, award titles, comment, reviewer and delegator by name); no other column of another person leaves the database
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|

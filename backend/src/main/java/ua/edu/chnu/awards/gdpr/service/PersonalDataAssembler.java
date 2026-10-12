@@ -27,13 +27,13 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Builds the export file section by section: no password hash, token, authorization-server record, trigger
- * snapshot or other person's data beyond a delegation party's name.
+ * snapshot or other person's data beyond the names of delegation parties and reviewers.
  */
 @Component
 @RequiredArgsConstructor
 public class PersonalDataAssembler {
 
-    static final String FORMAT_VERSION = "1.1";
+    static final String FORMAT_VERSION = "1.2";
     static final String GDPR_ARTICLE = "Article 20 - Right to Data Portability";
     static final String GIVEN = "GIVEN";
     static final String RECEIVED = "RECEIVED";
@@ -72,6 +72,8 @@ public class PersonalDataAssembler {
             awards.findByOwnerIdOrderByCreatedAtDescIdDesc(userId).stream().map(mapper::award).toList(),
             versions.findOfOwner(userId).stream().map(mapper::version).toList(),
             queries.documents(userId),
+            queries.reviewDecisions(userId),
+            queries.decisionsMade(userId),
             queries.consents(userId),
             devices.findByUserIdOrderByLastUsedAtDesc(userId).stream().map(mapper::device).toList(),
             queries.activity(userId, ACTIVITY_AREAS, SELF_ACTIONS));

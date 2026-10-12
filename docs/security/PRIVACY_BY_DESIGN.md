@@ -678,14 +678,14 @@ public class AnonymizationService {
 
 ### 6.2 Export Data Structure
 
-Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.1` since 2.1.8 (SCRUM-43): `award_versions` added). Property names are snake_case; every list section is present, possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file. Preferences join the file with Epic 7.
+Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format version `1.1` since 2.1.8 (SCRUM-43): `award_versions` added; `1.2` since 4.3.4 (SCRUM-70): `review_decisions` and `decisions_made` added). Property names are snake_case; every list section is present, possibly empty. IP addresses are the person's own identifiers (Art. 15 and 20) and are exported unredacted; the activity log keeps the address only for actions the person takes themselves (sign-in, sign-out, verification, password reset, "not me" revocation, profile and address changes, refused requests, exports); events anybody can cause against an account (failed sign-ins, reset requests, lockouts) and events another person caused (roles, delegations) carry `null`, so no stranger's or administrator's address reaches the file. Preferences join the file with Epic 7.
 
 ```json
 {
   "export_metadata": {
     "export_date": "2026-09-30T09:00:00Z",
     "user_id": 5,
-    "format_version": "1.1",
+    "format_version": "1.2",
     "gdpr_article": "Article 20 - Right to Data Portability"
   },
   "personal_data": {
@@ -725,6 +725,16 @@ Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format versi
     { "document_id": 7, "award_id": 21, "file_name": "certificate.pdf", "file_type": "PDF", "mime_type": "application/pdf",
       "file_size": 184320, "uploaded_at": "2026-09-20T09:05:00Z", "api_path": "/api/v1/documents/7" }
   ],
+  "review_decisions": [
+    { "award_id": 21, "award_title": "Letter of gratitude", "award_title_uk": "Подяка", "decision": "RETURNED",
+      "level": "FACULTY_SECRETARY", "decided_at": "2026-10-01T09:00:00Z", "comments": "Додайте наказ",
+      "reviewer": "Оксана Коваль", "delegator": null }
+  ],
+  "decisions_made": [
+    { "award_id": 40, "award_title": "Diploma", "award_title_uk": "Диплом", "decision": "APPROVED", "level": "DEAN",
+      "decided_at": "2026-10-02T10:00:00Z", "comments": "Погоджено", "reviewer": "Анастасія Петренко",
+      "delegator": "Петро Мартинюк" }
+  ],
   "consent_history": [
     { "consent_type": "DATA_PROCESSING", "consent_version": "1.0", "granted": true, "granted_at": "2026-09-01T08:00:00Z",
       "withdrawn_at": null, "ip_address": "10.0.0.7", "created_at": "2026-09-01T08:00:00Z" }
@@ -740,7 +750,7 @@ Implemented for JSON by `GET /api/v1/users/me/export` (Feature 1.3, format versi
 }
 ```
 
-Award versions leave out who saved them, since a later reviewer is another person. The file never contains the password hash, one-time tokens or their hashes, authorization-server records, the audit triggers' row snapshots, device fingerprints, storage keys, or other people's data beyond the name of a delegation's other party.
+Award versions leave out who saved them, since a later reviewer is another person. Review decisions, oldest first, appear twice: `review_decisions` holds the decisions on the person's own awards with the reviewer's comment and full name (and the delegator's, when the reviewer acted under a delegation); `decisions_made` holds the decisions the person made as a reviewer, and those a delegate made under a role the person lent, with the comment, the award titles and the reviewer's and delegator's names; of the award only its titles are given (free text that may name its owner), nothing else of the award or its owner. The file never contains the password hash, one-time tokens or their hashes, authorization-server records, the audit triggers' row snapshots, device fingerprints, storage keys, or other people's data beyond the names of a delegation's other party, reviewers and delegators.
 
 ### 6.3 Technical Implementation
 

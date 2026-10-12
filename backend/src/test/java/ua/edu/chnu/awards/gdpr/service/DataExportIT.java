@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -21,8 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ua.edu.chnu.awards.gdpr.dto.DataExport;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ActivityEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ReviewDecisionEntry;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
+import ua.edu.chnu.awards.support.DecisionRows;
+import ua.edu.chnu.awards.support.RequestRows;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
@@ -63,8 +67,14 @@ class DataExportIT extends AbstractIntegrationTest {
     void createUsers() {
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         user = userRepository.save(TestUsers.user(EMAIL, department));
-        dean = userRepository.save(TestUsers.user(DEAN, department));
-        admin = userRepository.save(TestUsers.user(ADMIN, department));
+        dean = TestUsers.user(DEAN, department);
+        dean.setFirstName("Петро");
+        dean.setLastName("Мартинюк");
+        dean = userRepository.save(dean);
+        admin = TestUsers.user(ADMIN, department);
+        admin.setFirstName("Оксана");
+        admin.setLastName("Коваль");
+        admin = userRepository.save(admin);
         redis.delete(DataExportService.THROTTLE_KEY_PREFIX + user.getId());
     }
 
@@ -91,7 +101,7 @@ class DataExportIT extends AbstractIntegrationTest {
         assertThat(file.roles()).singleElement().satisfies(role -> assertThat(role.current()).isTrue());
         assertThat(file.delegations()).singleElement().satisfies(delegation -> {
             assertThat(delegation.direction()).isEqualTo("RECEIVED");
-            assertThat(delegation.otherParty()).isEqualTo("Test User");
+            assertThat(delegation.otherParty()).isEqualTo("Петро Мартинюк");
         });
         assertThat(file.awards()).hasSize(2).extracting(award -> award.status().name())
             .containsExactlyInAnyOrder("DRAFT", "PENDING");
@@ -140,6 +150,83 @@ class DataExportIT extends AbstractIntegrationTest {
 
         assertThat(file.awards()).hasSize(MANY_AWARDS);
         assertThat(took).isLessThan(TARGET);
+    }
+
+    @Test
+    void ac1_ac2_ac3_decisionsOnOwnAwardsAndAsReviewerUnderADelegationAreExported() throws JsonProcessingException {
+        seedSections();
+        Instant returned = Instant.parse("2026-10-01T09:00:00Z");
+        long ownAward = AwardRows.award(jdbc, user.getId()).title("Gratitude").titleUk("Подяка").status("PENDING")
+            .insert();
+        long ownRequest = RequestRows.request(jdbc, ownAward, user.getId()).status("IN_REVIEW").level("DEAN")
+            .insert();
+        DecisionRows.decision(jdbc, ownRequest, admin.getId()).comments("Додайте наказ").decidedAt(returned)
+            .insert();
+        DecisionRows.decision(jdbc, ownRequest, admin.getId()).type("ESCALATED")
+            .decidedAt(returned.plusSeconds(3600)).insert();
+        long othersAward = AwardRows.award(jdbc, admin.getId()).title("Diploma").titleUk("Диплом").status("PENDING")
+            .insert();
+        long othersRequest = RequestRows.request(jdbc, othersAward, admin.getId()).status("IN_REVIEW").level("DEAN")
+            .insert();
+        DecisionRows.decision(jdbc, othersRequest, user.getId()).type("APPROVED").level("DEAN").comments("Погоджено")
+            .delegator(dean.getId()).decidedAt(returned).insert();
+
+        PersonalDataFile file = exportService.export(user.getId()).content();
+
+        assertThat(file.reviewDecisions()).extracting(ReviewDecisionEntry::awardId, ReviewDecisionEntry::awardTitleUk,
+                entry -> entry.decision().name(), entry -> entry.level().name(), ReviewDecisionEntry::comments,
+                ReviewDecisionEntry::reviewer, ReviewDecisionEntry::delegator)
+            .containsExactly(
+                tuple(ownAward, "Подяка", "RETURNED", "FACULTY_SECRETARY", "Додайте наказ", "Оксана Коваль", null),
+                tuple(ownAward, "Подяка", "ESCALATED", "FACULTY_SECRETARY", null, "Оксана Коваль", null));
+        assertThat(file.reviewDecisions().get(0).decidedAt()).isEqualTo(returned);
+        assertThat(file.decisionsMade()).singleElement().satisfies(entry -> {
+            assertThat(entry.awardId()).isEqualTo(othersAward);
+            assertThat(entry.awardTitle()).isEqualTo("Diploma");
+            assertThat(entry.awardTitleUk()).isEqualTo("Диплом");
+            assertThat(entry.decision().name()).isEqualTo("APPROVED");
+            assertThat(entry.level().name()).isEqualTo("DEAN");
+            assertThat(entry.decidedAt()).isEqualTo(returned);
+            assertThat(entry.comments()).isEqualTo("Погоджено");
+            assertThat(entry.reviewer()).isEqualTo("Test User");
+            assertThat(entry.delegator()).isEqualTo("Петро Мартинюк");
+        });
+        assertThat(file.sectionCounts()).containsEntry("review_decisions", 2).containsEntry("decisions_made", 1);
+
+        String json = objectMapper.writeValueAsString(file);
+        assertThat(json).contains("\"review_decisions\"", "\"decisions_made\"", "\"award_title_uk\"")
+            .doesNotContain(DEAN, ADMIN, "reviewer_id", "delegator_id", "submitter");
+    }
+
+    @Test
+    void ac2_decisionsADelegateMadeUnderTheLentRoleAreExportedWithTitleFallback() {
+        long othersAward = AwardRows.award(jdbc, admin.getId()).title(null).titleUk("Грамота").status("PENDING")
+            .insert();
+        long othersRequest = RequestRows.request(jdbc, othersAward, admin.getId()).insert();
+        DecisionRows.decision(jdbc, othersRequest, dean.getId()).type("APPROVED").delegator(user.getId()).insert();
+
+        PersonalDataFile file = exportService.export(user.getId()).content();
+
+        assertThat(file.reviewDecisions()).isEmpty();
+        assertThat(file.decisionsMade()).singleElement().satisfies(entry -> {
+            assertThat(entry.awardTitle()).isEqualTo("Грамота");
+            assertThat(entry.awardTitleUk()).isEqualTo("Грамота");
+            assertThat(entry.reviewer()).isEqualTo("Петро Мартинюк");
+            assertThat(entry.delegator()).isEqualTo("Test User");
+        });
+    }
+
+    @Test
+    void ac3_aPersonWithoutDecisionsGetsEmptyDecisionSections() {
+        long othersAward = AwardRows.award(jdbc, admin.getId()).status("PENDING").insert();
+        long othersRequest = RequestRows.request(jdbc, othersAward, admin.getId()).insert();
+        DecisionRows.decision(jdbc, othersRequest, dean.getId()).type("APPROVED").delegator(admin.getId()).insert();
+
+        PersonalDataFile file = exportService.export(user.getId()).content();
+
+        assertThat(file.reviewDecisions()).isEmpty();
+        assertThat(file.decisionsMade()).isEmpty();
+        assertThat(file.sectionCounts()).containsEntry("review_decisions", 0).containsEntry("decisions_made", 0);
     }
 
     private void seedSections() {
