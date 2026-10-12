@@ -48,6 +48,7 @@ An approved award is seen by its owner and by the reviewers whose scope covers i
 |-----|-------|--------|----------|------------|
 | SCRUM-56 (#150) | 4.3.1 Colleague visibility and the achievements page | 5 | yes | — |
 | SCRUM-57 (#151) | 4.3.2 Unit achievement pages and public achievements | 5 | yes | 4.3.1 (projection, query, page component) |
+| SCRUM-74 (#194) | 4.3.8 Documents shown to colleagues on a shared award (fix, review of 2026-10-11) | 5 | no | 4.3.1 |
 
 Both split at the green backend gate; the UI lane may start from the stubs of §8.1.
 
@@ -229,6 +230,17 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 24. After step 19, while the address is still refused, open `/public/achievements` in the anonymous browser. Expected: the error message with «Спробувати знову»; press it, then change the year before the minute ends. Expected: the list follows the year filter, not the retried request. (AC-2.3, §5)
 25. `docker compose stop redis`, then reload `/public/achievements` a few times. Expected: the list loads (the limit lets requests through while Redis is down); `docker compose start redis`. (AC-2.3)
 26. In DevTools set the network to offline right after choosing «Показувати колегам» on P1, then back online and reload. Expected: the error notice, and after the reload the radio shows the value stored on the server. (§5)
+
+### 4.3.8 Documents shown to colleagues (SCRUM-74)
+
+Preparation: as `employee.fmi` create P3 with two PDFs (`диплом.pdf`, `довідка.pdf`), submit it, approve it as `secretary.fmi`. Document ids: `select document_id, file_name from documents where award_id = <P3>;`.
+
+27. As `employee.fmi` open P3 (still «Лише мені та рецензентам»). Expected: the documents section says «Відкрийте нагороду для колег, щоб показати їм її документи.»; no switch. (AC1)
+28. Choose «Показувати колегам». Expected: a «Показувати колегам» switch on each document, both off. Turn it on for `диплом.pdf` with the keyboard (Tab, Space); reload. Expected: still on; psql `select action_type, new_values from audit_logs where action_type = 'DOCUMENT_SHARING_CHANGED' order by created_at desc limit 1;` shows `awardId`, `from: false`, `to: true`. (AC1, AC4)
+29. As `secretary2.fmi` open `/achievements`, click the title of P3. Expected: `/achievements/<P3>` with title, owner, department, category · level, date, description, and only `диплом.pdf`; no history, comments or other documents. «Завантажити» saves `диплом.pdf`. Repeat at 360 px and in English. (AC2, AC3, AC5)
+30. Swagger as `secretary2.fmi`: `GET /api/v1/documents/<довідка>` → 404; `GET /api/v1/documents/<диплом>` → 200; `GET /api/v1/achievements/<P1 private award>` → 404. Anonymous `curl -i http://localhost:8080/api/v1/documents/<диплом>` → 401; the public page offers no link to P3's view. (AC2, AC3)
+31. As `employee.fmi` set P3 to «Лише мені та рецензентам». Expected: the switches disappear; psql `select count(*) from documents where award_id = <P3> and shown_to_colleagues;` → 0 and one `DOCUMENT_SHARING_CHANGED` row (`true` → `false`). `secretary2.fmi` reloads the view: «Це досягнення недоступне…»; the download → 404. Set P3 back to «Показувати колегам». Expected: both switches off. (AC1, AC3)
+32. Swagger as `employee.fmi`: `PUT /api/v1/documents/<диплом>/sharing` `{"shownToColleagues":true}` while P3 is private → 409 `sharing-fixed` with `awardStatus` and `visibility`; `{}` → 422; as `secretary2.fmi` → 404. `GET /api/v1/users/me/export` lists `shown_to_colleagues` per document. (AC1, AC4)
 
 ### Run 2026-10-11
 

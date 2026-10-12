@@ -22,6 +22,8 @@ export class AchievementCardComponent {
   readonly achievement = input.required<Achievement>();
   /** Where unit pages live: the signed-in ones or the public ones. */
   readonly unitPages = input('/units');
+  /** Whether the title opens the colleague view of the award. */
+  readonly linked = input(false);
 
   protected readonly title = computed(() =>
     awardTitle(this.achievement(), this.language.current()),

@@ -102,7 +102,11 @@
 <ul class="achievements__list" data-testid="achievement-list">
   @for (achievement of achievements(); track achievement.awardId) {
     <li>
-      <app-achievement-card [achievement]="achievement" [unitPages]="unitPages" />
+      <app-achievement-card
+        [achievement]="achievement"
+        [unitPages]="unitPages"
+        [linked]="scope === 'signed-in'"
+      />
     </li>
   } @empty {
     @if (!loading() && !problem()) {

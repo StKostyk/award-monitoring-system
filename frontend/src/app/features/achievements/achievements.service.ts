@@ -9,6 +9,7 @@ import {
   OrganizationSummary,
 } from '../../core/organizations/organizations.service';
 import { organizationName } from '../../shared/organization-name';
+import { DocumentType } from '../awards/award-documents/documents.service';
 import { CategoryRef, Page, RecognitionLevel, UnitRef } from '../awards/awards.service';
 
 /** Which set a page lists: awards shared with colleagues, or the public ones without sign-in. */
@@ -38,6 +39,22 @@ export interface Achievement {
   /** A reviewer approved it with the documents checked. */
   verified: boolean;
   recipient: AchievementRecipient;
+}
+
+/** A document its owner shows to colleagues. */
+export interface SharedDocument {
+  id: number;
+  fileName: string;
+  type: DocumentType;
+  mimeType: string;
+  size: number;
+  description: string | null;
+}
+
+/** One shared award with the documents shown to colleagues. */
+export interface AchievementDetail {
+  achievement: Achievement;
+  documents: SharedDocument[];
 }
 
 export interface AchievementFilters {
@@ -114,6 +131,16 @@ export class AchievementsService {
           params,
         })
       : this.http.get<Page<Achievement>>(`${environment.apiUrl}/achievements`, { params });
+  }
+
+  /**
+   * One shared award with the documents its owner shows to colleagues.
+   *
+   * @param id the award
+   * @returns the achievement and its documents
+   */
+  detail(id: number): Observable<AchievementDetail> {
+    return this.http.get<AchievementDetail>(`${environment.apiUrl}/achievements/${id}`);
   }
 
   /** Active faculties in the interface language, each followed by its departments. */

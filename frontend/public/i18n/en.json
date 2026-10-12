@@ -265,7 +265,15 @@
         "failed": "The file could not be uploaded",
         "gone": "The document is no longer available",
         "list-failed": "The documents could not be loaded",
-        "download-failed": "The document could not be loaded"
+        "download-failed": "The document could not be loaded",
+        "sharing-fixed": "The award is no longer shared with colleagues; the choice was not saved",
+        "sharing-failed": "The choice could not be saved. Try again"
+      },
+      "sharing": {
+        "switch": "Show to colleagues",
+        "switchOf": "Show to colleagues: {{name}}",
+        "hint": "Signed-in colleagues can open and download the documents you show on the achievement page.",
+        "locked": "Share the award with colleagues to show them its documents."
       }
     },
     "submitWithout": {
@@ -449,6 +457,12 @@
       "failed": "The achievements could not be loaded.",
       "gone": "There is no such unit.",
       "denied": "You have no access to this page."
+    },
+    "detail": {
+      "documents": "Documents",
+      "noDocuments": "The owner shows no documents of this award.",
+      "back": "Back to achievements",
+      "gone": "This achievement is not available. It may no longer be shared."
     }
   },
   "notFound": {

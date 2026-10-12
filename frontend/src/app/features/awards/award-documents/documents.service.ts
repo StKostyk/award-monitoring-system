@@ -13,6 +13,9 @@ export const DOCUMENT_TYPES: DocumentType[] = [
   'PHOTO',
 ];
 
+const KILOBYTE = 1024;
+const MEGABYTE = KILOBYTE * KILOBYTE;
+
 /** Largest file the server accepts, in bytes. */
 export const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
 /** Most documents one award can have. */
@@ -36,6 +39,8 @@ export interface AwardDocument {
   description: string | null;
   uploadedAt: string;
   uploadedBy: { id: number; name: string };
+  /** The owner shows it to signed-in colleagues while the award is shared. */
+  shownToColleagues: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -82,6 +87,19 @@ export class DocumentsService {
   }
 
   /**
+   * Shows a document of an own shared award to colleagues, or hides it again.
+   *
+   * @param id the document
+   * @param shown whether colleagues see it
+   * @returns the document with its choice
+   */
+  share(id: number, shown: boolean): Observable<AwardDocument> {
+    return this.http.put<AwardDocument>(`${this.base}/documents/${id}/sharing`, {
+      shownToColleagues: shown,
+    });
+  }
+
+  /**
    * Removes a document from a draft.
    *
    * @param id the document
@@ -90,6 +108,27 @@ export class DocumentsService {
   remove(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/documents/${id}`);
   }
+}
+
+/**
+ * A file size in kilobytes below a megabyte, in megabytes from there on.
+ *
+ * @param bytes the size
+ * @param language the interface language
+ * @returns the number in the language's format
+ */
+export function sizeValue(bytes: number, language: string): string {
+  const format = new Intl.NumberFormat(language === 'en' ? 'en-GB' : 'uk-UA', {
+    maximumFractionDigits: 1,
+  });
+  return bytes < MEGABYTE
+    ? format.format(Math.max(1, Math.round(bytes / KILOBYTE)))
+    : format.format(bytes / MEGABYTE);
+}
+
+/** Translation key of the unit of `sizeValue`. */
+export function sizeUnit(bytes: number): string {
+  return bytes < MEGABYTE ? 'awards.documents.kilobytes' : 'awards.documents.megabytes';
 }
 
 /** The extension of a file name in lower case, empty when it has none. */

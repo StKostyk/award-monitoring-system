@@ -1,0 +1,127 @@
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" data-testid="achievement-detail-loading" />
+}
+
+@if (problem(); as problem) {
+  <div class="detail__problem" role="alert" data-testid="achievement-detail-error">
+    <p>
+      {{
+        (problem === 'failed' ? 'achievements.problems.failed' : 'achievements.detail.gone')
+          | transloco
+      }}
+    </p>
+    @if (problem === 'failed') {
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="retry()"
+        data-testid="achievement-detail-retry"
+      >
+        {{ 'achievements.retry' | transloco }}
+      </button>
+    }
+  </div>
+}
+
+@if (detail(); as detail) {
+  @let item = detail.achievement;
+  <article class="detail" data-testid="achievement-detail">
+    <h1 class="detail__title" data-testid="achievement-detail-title">{{ title() }}</h1>
+    <p class="detail__recipient" data-testid="achievement-detail-recipient">
+      @if (item.recipient.type === 'PERSON') {
+        <span class="detail__person">{{ item.recipient.personName }}</span>
+      } @else {
+        <span class="detail__person">{{ 'achievements.unitAward' | transloco }}</span>
+      }
+      <a
+        class="detail__unit"
+        [routerLink]="['/units', item.recipient.unit.id, 'achievements']"
+        data-testid="achievement-detail-unit"
+        >{{ unit() }}</a
+      >
+    </p>
+    <dl class="detail__fields">
+      <dt>{{ 'awards.fields.category' | transloco }}</dt>
+      <dd data-testid="achievement-detail-category">
+        {{ category() }} · {{ 'categories.levels.' + item.category.level | transloco }}
+      </dd>
+      <dt>{{ 'awards.fields.awardingOrganization' | transloco }}</dt>
+      <dd>{{ item.awardingOrganization }}</dd>
+      <dt>{{ 'awards.fields.awardDate' | transloco }}</dt>
+      <dd data-testid="achievement-detail-date">{{ item.awardDate | kyivDate }}</dd>
+    </dl>
+    @if (description(); as description) {
+      <p class="detail__description" data-testid="achievement-detail-description">
+        {{ description }}
+      </p>
+    }
+    @if (item.verified || item.externalUrl) {
+      <div class="detail__footer">
+        @if (item.verified) {
+          <span class="detail__verified">
+            <mat-icon aria-hidden="true">verified</mat-icon>
+            {{ 'achievements.verified' | transloco }}
+          </span>
+        }
+        @if (item.externalUrl) {
+          <a
+            class="detail__link"
+            [href]="item.externalUrl"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+          >
+            {{ 'achievements.link' | transloco }}
+            <mat-icon aria-hidden="true">open_in_new</mat-icon>
+            <span class="cdk-visually-hidden">{{ 'achievements.newTab' | transloco }}</span>
+          </a>
+        }
+      </div>
+    }
+
+    <section class="detail__documents" aria-labelledby="shared-documents-title">
+      <h2 id="shared-documents-title" class="detail__subtitle">
+        {{ 'achievements.detail.documents' | transloco }}
+      </h2>
+      @if (notice(); as notice) {
+        <p class="detail__notice" role="alert" data-testid="achievement-detail-notice">
+          {{ notice | transloco }}
+        </p>
+      }
+      @if (detail.documents.length) {
+        <ul class="detail__list" data-testid="shared-documents">
+          @for (document of detail.documents; track document.id) {
+            <li class="detail__row" [attr.data-testid]="'shared-document-' + document.id">
+              <span class="detail__name">{{ document.fileName }}</span>
+              <span class="detail__meta">{{
+                'awards.documents.types.' + document.type | transloco
+              }}</span>
+              <span class="detail__meta">
+                {{ sizeUnit(document.size) | transloco: { size: sizeValue(document.size) } }}
+              </span>
+              <button
+                mat-button
+                type="button"
+                class="detail__download"
+                (click)="download(document)"
+                [attr.aria-label]="
+                  'awards.documents.downloadOf' | transloco: { name: document.fileName }
+                "
+                data-testid="shared-document-download"
+              >
+                {{ 'awards.documents.download' | transloco }}
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="detail__meta" data-testid="shared-documents-empty">
+          {{ 'achievements.detail.noDocuments' | transloco }}
+        </p>
+      }
+    </section>
+  </article>
+}
+
+<a mat-button routerLink="/achievements" class="detail__back" data-testid="achievement-detail-back">
+  {{ 'achievements.detail.back' | transloco }}
+</a>

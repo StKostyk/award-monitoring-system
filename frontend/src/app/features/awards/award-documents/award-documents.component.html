@@ -72,6 +72,15 @@
     {{ announcement() }}
   </p>
 
+  @if (sharing() !== 'none' && documents().length) {
+    <p class="documents__hint" data-testid="documents-sharing-hint">
+      {{
+        (sharing() === 'open' ? 'awards.documents.sharing.hint' : 'awards.documents.sharing.locked')
+          | transloco
+      }}
+    </p>
+  }
+
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" />
   }
@@ -160,6 +169,19 @@
           <span class="documents__meta" data-testid="document-date">{{
             document.uploadedAt | kyivDate
           }}</span>
+          @if (sharing() === 'open') {
+            <mat-slide-toggle
+              class="documents__share"
+              [checked]="document.shownToColleagues"
+              (change)="share(document, $event)"
+              [aria-label]="
+                'awards.documents.sharing.switchOf' | transloco: { name: document.fileName }
+              "
+              data-testid="document-share"
+            >
+              {{ 'awards.documents.sharing.switch' | transloco }}
+            </mat-slide-toggle>
+          }
           <span class="documents__actions">
             @if (isImage(document)) {
               <button

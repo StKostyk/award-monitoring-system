@@ -64,7 +64,7 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 10e | 4.3.7 Peer take-over of overdue requests and no self-escalation for deans | 4.1 | 3 | SCRUM-73 | #193 | no | Done |
 | 10f | 4.3.4 Review decisions in the personal data export | 4.3 | 3 | SCRUM-70 | #190 | no | Done |
 | 10g | 4.3.5 Wire the business metrics to the award workflow | 4.3 | 2 | SCRUM-71 | #191 | no | Done |
-| 10h | 4.3.8 Documents shown to colleagues on a shared award | 4.3 | 5 | SCRUM-74 | #194 | no | In progress |
+| 10h | 4.3.8 Documents shown to colleagues on a shared award | 4.3 | 5 | SCRUM-74 | #194 | no | In review |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 

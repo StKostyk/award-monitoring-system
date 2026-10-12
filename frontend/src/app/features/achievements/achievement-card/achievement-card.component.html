@@ -1,6 +1,17 @@
 @let item = achievement();
 <article class="achievement" data-testid="achievement-card">
-  <h2 class="achievement__title" data-testid="achievement-title">{{ title() }}</h2>
+  <h2 class="achievement__title" data-testid="achievement-title">
+    @if (linked()) {
+      <a
+        class="achievement__open"
+        [routerLink]="['/achievements', item.awardId]"
+        data-testid="achievement-open"
+        >{{ title() }}</a
+      >
+    } @else {
+      {{ title() }}
+    }
+  </h2>
   <p class="achievement__recipient" data-testid="achievement-recipient">
     @if (item.recipient.type === 'PERSON') {
       <span class="achievement__person">{{ item.recipient.personName }}</span>

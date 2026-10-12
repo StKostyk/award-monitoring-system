@@ -75,6 +75,14 @@ describe('AchievementsService', () => {
     request.flush({ content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 });
   });
 
+  it('ac2_one_achievement_is_read_with_the_session', () => {
+    service.detail(41).subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/api/v1/achievements/41'));
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer session');
+  });
+
   it('ac2_8_the_public_list_is_sent_without_the_session', () => {
     service
       .list({ filters: { ...NO_ACHIEVEMENT_FILTERS, unit: 64 }, page: 0, size: 20 }, 'public')

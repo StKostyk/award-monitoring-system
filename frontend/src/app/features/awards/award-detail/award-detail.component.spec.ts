@@ -92,6 +92,7 @@ const documentRow: AwardDocument = {
   description: null,
   uploadedAt: '2026-10-01T08:00:00Z',
   uploadedBy: { id: 21, name: 'Анастасія Коваль' },
+  shownToColleagues: false,
 };
 
 const noVersions = { content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 };
@@ -292,6 +293,25 @@ describe('AwardDetailComponent', () => {
     fixture.componentInstance.shared({ ...pending, status: 'APPROVED', visibility: 'PUBLIC' });
 
     expect(fixture.componentInstance.award()?.visibility).toBe('PUBLIC');
+  });
+
+  it('ac1_documents_can_be_shown_only_while_an_own_approved_award_is_shared', async () => {
+    service.get.mockReturnValue(of({ ...pending, status: 'APPROVED', request: null }));
+    const fixture = await open(AwardDetailComponent, '5');
+    const view = fixture.componentInstance;
+    const approved = { ...pending, status: 'APPROVED' as const };
+
+    expect(view.documentSharing({ ...approved, visibility: 'UNIVERSITY' })).toBe('open');
+    expect(view.documentSharing({ ...approved, visibility: 'PUBLIC' })).toBe('open');
+    expect(view.documentSharing({ ...approved, visibility: 'PRIVATE' })).toBe('locked');
+    expect(view.documentSharing({ ...pending, visibility: 'PUBLIC' })).toBe('none');
+    expect(
+      view.documentSharing({
+        ...approved,
+        visibility: 'PUBLIC',
+        owner: { ...pending.owner, id: 99 },
+      }),
+    ).toBe('none');
   });
 
   it('ac0_7_a_personal_award_shows_no_unit_recipient', async () => {

@@ -1,0 +1,138 @@
+:host {
+  display: block;
+  max-width: 840px;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail__title {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+  overflow-wrap: anywhere;
+}
+
+.detail__subtitle {
+  margin: 8px 0 0;
+  font: var(--mat-sys-title-medium);
+}
+
+.detail__recipient {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.detail__person {
+  color: var(--mat-sys-on-surface);
+  font-weight: 500;
+}
+
+.detail__unit {
+  align-self: flex-start;
+  color: var(--mat-sys-primary);
+}
+
+.detail__fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+}
+
+.detail__fields dt {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.detail__fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detail__description {
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.detail__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.detail__verified,
+.detail__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--mat-sys-label-large);
+}
+
+.detail__verified {
+  color: var(--mat-sys-primary);
+}
+
+.detail__verified mat-icon,
+.detail__link mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.detail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.detail__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.detail__name {
+  flex: 1 1 100%;
+  overflow-wrap: anywhere;
+}
+
+.detail__meta {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.detail__download {
+  margin-left: auto;
+}
+
+.detail__notice,
+.detail__problem {
+  color: var(--mat-sys-error);
+}
+
+.detail__back {
+  margin-top: 16px;
+}
+
+@media (max-width: 599.98px) {
+  .detail__fields {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .detail__fields dd + dt {
+    margin-top: 4px;
+  }
+}
