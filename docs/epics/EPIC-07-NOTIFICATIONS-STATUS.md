@@ -41,7 +41,7 @@ fix stories if chosen).
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 7.1.1 Event publication registry for the after-commit mails | 7.1 | 5 | SCRUM-64 | #181 | no | Done |
 | 2 | 7.1.2 Module boundaries checked by Spring Modulith | 7.1 | 8 | SCRUM-65 | #182 | no | Planned |
-| 2a | 7.1.3 Drop the duplicate async error log for undelivered mails | 7.1 | 1 | SCRUM-75 | #197 | no | In review |
+| 2a | 7.1.3 Drop the duplicate async error log for undelivered mails | 7.1 | 1 | SCRUM-75 | #197 | no | Done |
 | 3 | 7.2.1 In-app notifications from award and review events | 7.2 | 5 | SCRUM-66 | #183 | no | Planned |
 | 4 | 7.2.2 Notification centre in the toolbar | 7.2 | 5 | SCRUM-67 | #184 | yes | Planned |
 | 5 | 1.3.2 Notification preferences | 7.2 | 3 | SCRUM-16 | #39 | yes | Planned |

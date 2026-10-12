@@ -19,7 +19,6 @@ import { Observable, catchError, filter, of, switchMap, tap, throwError } from '
 
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
-import { reviewableLevels } from '../../../core/auth/permissions';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { APPROVAL_LEVELS, ApprovalLevel } from '../../awards/awards.service';
 import { confirmAction } from '../../awards/confirm-dialog/confirm-dialog.component';
@@ -72,23 +71,14 @@ export class ReviewPanelComponent implements OnInit {
   private readonly reviews = inject(ReviewsService);
   private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
-  private readonly levels = reviewableLevels(this.auth.permissions());
 
   readonly item = signal<ReviewItem | null>(null);
   readonly busy = signal(false);
   readonly notice = signal<Notice | null>(null);
 
   readonly mine = computed(() => this.holds(this.item()?.reviewer ?? null));
-  /** A request held by a colleague the caller outranks; a peer is refused by the server unless the holder left. */
-  readonly canTakeOver = computed(() => {
-    const item = this.item();
-    return (
-      item !== null &&
-      item.reviewer !== null &&
-      !this.mine() &&
-      this.levels.indexOf(item.level) < this.levels.length - 1
-    );
-  });
+  /** A request held by a colleague the caller outranks, or by one who may no longer review it. */
+  readonly canTakeOver = computed(() => this.item()?.canTakeOver === true && !this.mine());
 
   /** The holder decides; an unclaimed request is claimed by the decision itself. */
   readonly canDecide = computed(() => {

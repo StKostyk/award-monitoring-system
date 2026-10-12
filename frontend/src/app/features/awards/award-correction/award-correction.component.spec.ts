@@ -90,6 +90,7 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
     overdueNoticedAt: null,
     documentCount: 0,
     delegatedFrom: null,
+    canTakeOver: null,
     ...overrides,
   };
 }

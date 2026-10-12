@@ -27,11 +27,24 @@ import ua.edu.chnu.awards.user.dto.OrganizationRef;
  * @param overdueNoticedAt when the next level was told about the missed deadline, null while not yet
  * @param documentCount  how many documents the award has
  * @param delegatedFrom  the person whose delegation lets the caller review it, null under an own role
+ * @param canTakeOver    whether the caller may take the request over from its holder; set only on the item of one award
  */
 @SuppressWarnings("PMD.CommentSize")
 public record ReviewItem(Long awardId, Long requestId, Long requestVersion, String title, String titleUk,
                          AwardRecipient recipient, UserRef owner, OrganizationRef organization, CategoryRef category,
                          ApprovalLevel level, RequestStatus status, UserRef reviewer, Instant submittedAt,
                          Instant deadline, boolean overdue, Instant overdueNoticedAt, long documentCount,
-                         UserRef delegatedFrom) {
+                         UserRef delegatedFrom, Boolean canTakeOver) {
+
+    /**
+     * The same item with the take-over flag set.
+     *
+     * @param offered whether the caller may take the request over
+     * @return the item
+     */
+    public ReviewItem withCanTakeOver(boolean offered) {
+        return new ReviewItem(awardId, requestId, requestVersion, title, titleUk, recipient, owner, organization,
+            category, level, status, reviewer, submittedAt, deadline, overdue, overdueNoticedAt, documentCount,
+            delegatedFrom, offered);
+    }
 }

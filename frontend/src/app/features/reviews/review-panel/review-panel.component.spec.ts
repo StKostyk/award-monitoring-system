@@ -37,6 +37,7 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
     overdueNoticedAt: null,
     documentCount: 0,
     delegatedFrom: null,
+    canTakeOver: false,
     ...overrides,
   };
 }
@@ -210,12 +211,24 @@ describe('ReviewPanelComponent', () => {
 
     TestBed.resetTestingModule();
     permissions.set(readPermissions(token({ role_scopes: ['DEAN:9'] })));
+    service.item.mockReturnValue(of(item({ reviewer: PEER, canTakeOver: true })));
     service.claim.mockReturnValue(of(item({ reviewer: SELF })));
     dialog.open.mockReturnValue({ afterClosed: () => of(true) });
     element = await create();
     click(element, 'review-take-over');
 
     expect(dialog.open.mock.calls[0][1].data.params).toEqual({ name: PEER.name });
+    expect(service.claim).toHaveBeenCalledWith(5, 3, true);
+  });
+
+  it('ac1_a_peer_takes_over_from_a_holder_who_lost_the_role', async () => {
+    service.item.mockReturnValue(of(item({ reviewer: PEER, canTakeOver: true })));
+    service.claim.mockReturnValue(of(item({ reviewer: SELF })));
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    const element = await create();
+
+    click(element, 'review-take-over');
+
     expect(service.claim).toHaveBeenCalledWith(5, 3, true);
   });
 
