@@ -91,6 +91,7 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
     documentCount: 0,
     delegatedFrom: null,
     canTakeOver: null,
+    canEscalate: null,
     ...overrides,
   };
 }

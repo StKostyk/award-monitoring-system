@@ -38,6 +38,7 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
     documentCount: 0,
     delegatedFrom: null,
     canTakeOver: false,
+    canEscalate: true,
     ...overrides,
   };
 }
@@ -343,6 +344,31 @@ describe('ReviewPanelComponent', () => {
 
     expect(failure).toHaveBeenCalled();
     expect(service.item).toHaveBeenCalledTimes(1);
+  });
+
+  it('ac3_a_dean_on_a_secretary_level_request_is_not_offered_the_escalation', async () => {
+    service.item.mockReturnValue(of(item({ reviewer: SELF, canEscalate: false })));
+    const element = await create();
+
+    expect(element.querySelector('[data-testid="review-escalate"]')).toBeNull();
+    expect(element.querySelector('[data-testid="review-approve"]')).not.toBeNull();
+  });
+
+  it('ac3_a_dean_taking_over_keeps_the_escalation_withheld', async () => {
+    service.item.mockReturnValue(
+      of(item({ reviewer: PEER, canTakeOver: true, canEscalate: false })),
+    );
+    service.claim.mockReturnValue(
+      of(item({ reviewer: SELF, canTakeOver: null, canEscalate: null })),
+    );
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    const element = await create();
+
+    click(element, 'review-take-over');
+    fixture.detectChanges();
+
+    expect(element.querySelector('[data-testid="review-approve"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="review-escalate"]')).toBeNull();
   });
 
   it('ac4_2_a_stale_answer_reloads_behind_the_dialog_and_the_retry_uses_the_new_version', async () => {

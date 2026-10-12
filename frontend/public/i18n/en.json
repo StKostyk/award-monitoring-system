@@ -752,6 +752,7 @@
       "unknown": "The action failed. Try again.",
       "request-closed": "The review of this award has already finished",
       "no-higher-level": "There is no higher review level",
+      "escalation-not-upward": "Your role already covers the next level; decide the award yourself",
       "validation-failed": "Check the comment and the documents mark"
     },
     "decide": {
@@ -815,6 +816,7 @@
         "request-stale": "The data changed; open the award again",
         "request-closed": "The review has already finished",
         "no-higher-level": "There is no higher review level",
+        "escalation-not-upward": "Your role covers the next level",
         "validation-failed": "No documents for the “documents verified” mark",
         "not-found": "The award was not found or is no longer yours to review",
         "try-again": "A temporary error; try again",

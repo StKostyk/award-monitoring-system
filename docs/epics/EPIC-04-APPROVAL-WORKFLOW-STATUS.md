@@ -61,7 +61,7 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 10c | 4.2.6 Review list: overdue notice chip clipped at 1280 px | 4.2 | 1 | SCRUM-78 | #202 | no | Done |
 | 10c | 4.3.9 Achievement card names do not follow a language switch | 4.3 | 1 | SCRUM-79 | #204 | no | Done |
 | 10d | 4.1.6 Take over a request whose holder lost the role | 4.1 | 3 | SCRUM-77 | #200 | no | Done |
-| 10e | 4.3.7 Peer take-over of overdue requests and no self-escalation for deans | 4.1 | 3 | SCRUM-73 | #193 | no | In progress |
+| 10e | 4.3.7 Peer take-over of overdue requests and no self-escalation for deans | 4.1 | 3 | SCRUM-73 | #193 | no | In review |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 

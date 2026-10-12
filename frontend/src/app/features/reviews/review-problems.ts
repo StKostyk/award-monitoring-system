@@ -7,6 +7,7 @@ import { UserRef } from './reviews.service';
 export const REVIEW_PROBLEMS: readonly string[] = [
   'reviewer-not-eligible',
   'no-higher-level',
+  'escalation-not-upward',
   'validation-failed',
   'access-denied',
   'network',

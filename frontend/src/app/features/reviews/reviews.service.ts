@@ -43,6 +43,8 @@ export interface ReviewItem {
   delegatedFrom: UserRef | null;
   /** Set by `item()`, null on queue pages and claim responses. */
   canTakeOver: boolean | null;
+  /** Set by `item()`: false when the caller's role already covers the next level. */
+  canEscalate: boolean | null;
 }
 
 /** A colleague the request can be handed over to. */

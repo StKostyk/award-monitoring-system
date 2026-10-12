@@ -85,9 +85,13 @@ export class ReviewPanelComponent implements OnInit {
     const item = this.item();
     return item !== null && (item.reviewer === null || this.mine());
   });
-  /** The level an escalation goes to; null at the top. */
+  /** The level an escalation goes to; null at the top or when the caller's role already covers it. */
   readonly nextLevel = computed<ApprovalLevel | null>(() => {
-    const level = this.item()?.level;
+    const item = this.item();
+    if (item?.canEscalate === false) {
+      return null;
+    }
+    const level = item?.level;
     const index = level ? APPROVAL_LEVELS.indexOf(level) : -1;
     return index >= 0 && index < APPROVAL_LEVELS.length - 1 ? APPROVAL_LEVELS[index + 1] : null;
   });
@@ -186,7 +190,10 @@ export class ReviewPanelComponent implements OnInit {
 
   private done(updated: ReviewItem, message: string): void {
     this.busy.set(false);
-    this.item.set(updated);
+    this.item.set({
+      ...updated,
+      canEscalate: updated.canEscalate ?? this.item()?.canEscalate ?? null,
+    });
     this.notice.set({ key: message });
     this.changed.emit();
   }
