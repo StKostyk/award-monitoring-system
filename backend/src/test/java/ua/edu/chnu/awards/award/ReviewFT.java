@@ -51,6 +51,8 @@ class ReviewFT extends AbstractFunctionalTest {
     private static final String TYPE = "type";
     private static final String PROBLEM = "urn:awards:problem:";
     private static final String CAN_TAKE_OVER = "canTakeOver";
+    private static final String CAN_ESCALATE = "canEscalate";
+    private static final String TAKE_OVER = "takeOver";
     private static final long FACULTY_ID = 10L;
     private static final long OTHER_FACULTY_ID = 9L;
 
@@ -191,9 +193,9 @@ class ReviewFT extends AbstractFunctionalTest {
         as(dean).get(reviewer(id)).then().statusCode(HttpStatus.OK.value()).body(CAN_TAKE_OVER, equalTo(true));
         as(tokenOf(COLLEAGUE)).get(reviewer(id)).then().body(CAN_TAKE_OVER, equalTo(false));
         claim(dean, id, Map.of(VERSION, version + 1)).then().statusCode(HttpStatus.CONFLICT.value());
-        claim(tokenOf(COLLEAGUE), id, Map.of(VERSION, version + 1, "takeOver", true)).then()
+        claim(tokenOf(COLLEAGUE), id, Map.of(VERSION, version + 1, TAKE_OVER, true)).then()
             .statusCode(HttpStatus.CONFLICT.value());
-        claim(dean, id, Map.of(VERSION, version + 1, "takeOver", true)).then().statusCode(HttpStatus.OK.value())
+        claim(dean, id, Map.of(VERSION, version + 1, TAKE_OVER, true)).then().statusCode(HttpStatus.OK.value())
             .body("reviewer.id", equalTo((int) deanId));
 
         assertThat(jdbc.queryForObject("select (new_values->>'previousReviewerId')::bigint from audit_logs"
@@ -214,13 +216,58 @@ class ReviewFT extends AbstractFunctionalTest {
         as(colleague).get(reviewer(id)).then().statusCode(HttpStatus.OK.value()).body(CAN_TAKE_OVER, equalTo(true));
         claim(colleague, id, Map.of(VERSION, version + 1)).then().statusCode(HttpStatus.CONFLICT.value())
             .body(TYPE, equalTo(PROBLEM + "request-claimed"));
-        claim(colleague, id, Map.of(VERSION, version + 1, "takeOver", true)).then()
+        claim(colleague, id, Map.of(VERSION, version + 1, TAKE_OVER, true)).then()
             .statusCode(HttpStatus.OK.value())
             .body("reviewer.id", equalTo((int) colleagueId))
             .body(CAN_TAKE_OVER, nullValue());
 
         assertThat(jdbc.queryForObject("select (new_values->>'previousReviewerId')::bigint from audit_logs"
             + " where action_type = 'REVIEW_TAKEN_OVER' and entity_id = ?", Long.class, id)).isEqualTo(formerId);
+    }
+
+    @Test
+    void ac1_ac2_aPeerTakesOverOnlyOnceTheRequestIsOverdue() {
+        long id = submitted("Грамота з простроченим розглядом");
+        String secretary = tokenOf(SECRETARY);
+        long version = versionOf(secretary, id);
+        claim(secretary, id, Map.of(VERSION, version)).then().statusCode(HttpStatus.OK.value());
+        String colleague = tokenOf(COLLEAGUE);
+        deadline(id, "1 minute");
+
+        as(colleague).get(reviewer(id)).then().statusCode(HttpStatus.OK.value()).body(CAN_TAKE_OVER, equalTo(false));
+        claim(colleague, id, Map.of(VERSION, version + 1, TAKE_OVER, true)).then()
+            .statusCode(HttpStatus.CONFLICT.value())
+            .body(TYPE, equalTo(PROBLEM + "request-claimed"));
+
+        deadline(id, "-1 minute");
+        as(colleague).get(reviewer(id)).then().statusCode(HttpStatus.OK.value()).body(CAN_TAKE_OVER, equalTo(true));
+        claim(colleague, id, Map.of(VERSION, version + 1, TAKE_OVER, true)).then()
+            .statusCode(HttpStatus.OK.value())
+            .body("reviewer.id", equalTo((int) colleagueId));
+
+        assertThat(jdbc.queryForObject("select (new_values->>'previousReviewerId')::bigint from audit_logs"
+            + " where action_type = 'REVIEW_TAKEN_OVER' and entity_id = ?", Long.class, id)).isEqualTo(secretaryId);
+        assertThat(mailpit.latestTextTo(SECRETARY, "Заявку передано іншому рецензенту"))
+            .contains("Грамота з простроченим розглядом").contains("/awards/" + id);
+    }
+
+    @Test
+    void ac3_aDeanIsNotOfferedTheEscalationToTheDeanLevel() {
+        long id = submitted("Грамота без передачі декану");
+        String dean = tokenOf(DEAN);
+
+        long version = as(dean).get(reviewer(id)).then().statusCode(HttpStatus.OK.value())
+            .body(CAN_ESCALATE, equalTo(false)).extract().jsonPath().getLong(VERSION);
+        as(tokenOf(SECRETARY)).get(reviewer(id)).then().statusCode(HttpStatus.OK.value())
+            .body(CAN_ESCALATE, equalTo(true));
+        as(dean).contentType(ContentType.JSON)
+            .body(Map.of("decision", "ESCALATE", VERSION, version))
+            .post(AwardApi.AWARDS + "/" + id + "/decisions").then()
+            .statusCode(HttpStatus.CONFLICT.value())
+            .body(TYPE, equalTo(PROBLEM + "escalation-not-upward"));
+
+        assertThat(jdbc.queryForObject("select current_level from award_requests where award_id = ?", String.class,
+            id)).isEqualTo("FACULTY_SECRETARY");
     }
 
     @Test
@@ -301,6 +348,11 @@ class ReviewFT extends AbstractFunctionalTest {
 
     private static String reviewer(long awardId) {
         return AwardApi.AWARDS + "/" + awardId + "/reviewer";
+    }
+
+    private void deadline(long awardId, String fromNow) {
+        jdbc.update("update award_requests set deadline = now() + cast(? as interval) where award_id = ?", fromNow,
+            awardId);
     }
 
     private int audited(long awardId, String action) {

@@ -1064,7 +1064,8 @@ paths:
         Runs the single decision of `POST /awards/{id}/decisions` for every item, each in its own transaction, so a
         failed item never undoes the others. The answer holds one result per item in the order sent: `DONE` with
         the award's `status` and `level`, or `FAILED` with the problem type slug of that item (`request-claimed`,
-        `request-stale`, `request-closed`, `no-higher-level`, `validation-failed`, `not-found`, or `try-again` when
+        `request-stale`, `request-closed`, `no-higher-level`, `escalation-not-upward`, `validation-failed`,
+        `not-found`, or `try-again` when
         the database refused the item, e.g. a lock timeout) and a `detail`.
         One audit row `REVIEW_BATCH` (decision, items, done, failed) besides the per-item rows; every decided owner
         gets the e-mail of the single decision (`award:approve:level1`, 4.1.4).
@@ -1170,9 +1171,10 @@ paths:
         raised, an audit row `REVIEW_CLAIMED` (with `delegatorId` for a delegate); claiming a request one already
         holds changes nothing. A request held by someone else is taken over with `takeOver: true` by a caller whose
         level is above the holder's highest level on the request, or by anyone eligible when the holder may no longer
-        review it (role ended, delegation over, account blocked, or now the owner's or submitter's delegate);
-        `canTakeOver` on `GET` says whether the caller may
-        (`REVIEW_TAKEN_OVER` with `previousReviewerId`). With `reviewerId` the holder hands the request to a
+        review it (role ended, delegation over, account blocked, or now the owner's or submitter's delegate), or by a
+        peer at the holder's level once the request is past its deadline (`overdue`); `canTakeOver` on `GET` says
+        whether the caller may (`REVIEW_TAKEN_OVER` with `previousReviewerId`; the previous holder gets an e-mail
+        in Ukrainian and English after the commit). With `reviewerId` the holder hands the request to a
         colleague from `GET /awards/{id}/reviewers` (`REVIEW_HANDED_OVER`). The request row is locked, so of two
         claims at once one answers 409 (`award:approve:level1`, reviewer rule, 4.1.1).
       security:
@@ -1301,7 +1303,8 @@ paths:
         Decides the open request at the level it stands at (transition table of ADR-023). `APPROVE` at or above
         the category's minimum level approves the award (`completedAt`, the reviewer kept); below it the request is
         `ESCALATED` to the next level not passed over with a new deadline. `ESCALATE` moves one level up the same
-        way (comment optional; 409 `no-higher-level` at the rector). `RETURN` gives the award back as a draft
+        way (comment optional; 409 `no-higher-level` at the rector, 409 `escalation-not-upward` when the caller
+        already reviews at the next level, e.g. a dean on a secretary-level request). `RETURN` gives the award back as a draft
         (request `RETURNED`, no reviewer, no deadline); `REJECT` ends it (`rejectionReason`); both need a comment.
         `verified: true` on an approval sets the award's verification badge and needs at least one document. A
         decision on an unclaimed request claims it in the same transaction. Every decision writes a
@@ -1343,7 +1346,8 @@ paths:
         '409':
           description: >
             `urn:awards:problem:request-claimed` (another reviewer holds it, with `reviewer`),
-            `request-stale` (with `currentVersion`), `request-closed` (with `requestStatus`) or `no-higher-level`
+            `request-stale` (with `currentVersion`), `request-closed` (with `requestStatus`), `no-higher-level` or
+            `escalation-not-upward` (with `level`)
           content:
             application/problem+json:
               schema:
@@ -3522,8 +3526,15 @@ components:
         canTakeOver:
           type: [boolean, 'null']
           description: >
-            Whether the caller may take the request over from its holder (a higher level, or a holder who may no
-            longer review it); set on `GET /awards/{id}/reviewer`, null on queue pages and on `PUT` responses
+            Whether the caller may take the request over from its holder (a higher level, a holder who may no
+            longer review it, or a peer once the request is overdue); set on `GET /awards/{id}/reviewer`, null on
+            queue pages and on `PUT` responses
+        canEscalate:
+          type: [boolean, 'null']
+          description: >
+            Whether the caller may escalate the request: false at the rector's level and when the caller already
+            reviews at the next level; set on `GET /awards/{id}/reviewer`, null on queue pages and on `PUT`
+            responses
 
     ReviewItemPage:
       allOf:

@@ -89,6 +89,24 @@ class ReviewerRuleTest {
     }
 
     @Test
+    void ac3_aDeanIsNotOfferedTheEscalationOfASecretaryLevelRequestToTheDeanLevel() {
+        held(RoleType.DEAN, FACULTY);
+
+        assertThat(rule.mayEscalate(request(ApprovalLevel.FACULTY_SECRETARY, owner))).isFalse();
+        assertThat(rule.mayEscalate(request(ApprovalLevel.DEAN, owner))).isTrue();
+    }
+
+    @Test
+    void ac3_aSecretaryMayEscalateButNobodyEscalatesFromTheRector() {
+        held(RoleType.FACULTY_SECRETARY, FACULTY);
+        assertThat(rule.mayEscalate(request(ApprovalLevel.FACULTY_SECRETARY, owner))).isTrue();
+
+        held(RoleType.RECTOR, FACULTY);
+        assertThat(rule.mayEscalate(request(ApprovalLevel.DEAN, owner))).isFalse();
+        assertThat(rule.mayEscalate(request(ApprovalLevel.RECTOR, owner))).isFalse();
+    }
+
+    @Test
     void ac1_1_aScopeElsewhereGrantsNothing() {
         held(RoleType.DEAN, OTHER_FACULTY);
 

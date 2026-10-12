@@ -76,7 +76,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.1.3 | Withdraw an unclaimed request and resubmit a returned award | 3 | ✅ Done | SCRUM-51 | [#145](https://github.com/StKostyk/award-monitoring-system/issues/145) |
 | 4.1.4 | Batch review with template responses (US-004) | 5 | ✅ Done | SCRUM-52 | [#146](https://github.com/StKostyk/award-monitoring-system/issues/146) |
 | 4.1.5 | Fixes from the Feature 4.1 validation | 3 | ✅ Done | SCRUM-58 | [#160](https://github.com/StKostyk/award-monitoring-system/issues/160) |
-| 4.1.6 | Take over a request whose holder lost the role | 3 | 👀 In review (Sprint 5) | SCRUM-77 | [#200](https://github.com/StKostyk/award-monitoring-system/issues/200) |
+| 4.1.6 | Take over a request whose holder lost the role | 3 | ✅ Done | SCRUM-77 | [#200](https://github.com/StKostyk/award-monitoring-system/issues/200) |
 | 4.1.7 | Hide delete on the edit form of a returned draft | 1 | ✅ Done | SCRUM-76 | [#199](https://github.com/StKostyk/award-monitoring-system/issues/199) |
 | 4.2.1 | Per-faculty review period set by the dean | 3 | ✅ Done | SCRUM-53 | [#147](https://github.com/StKostyk/award-monitoring-system/issues/147) |
 | 4.2.2 | Overdue detection, escalation notice and SLA metrics | 5 | ✅ Done | SCRUM-54 | [#148](https://github.com/StKostyk/award-monitoring-system/issues/148) |
@@ -89,6 +89,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.3.2 | Unit achievement pages and public achievements | 5 | ✅ Done | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 | 4.3.3 | Fixes from the Feature 4.3 validation | 2 | ✅ Done | SCRUM-62 | [#176](https://github.com/StKostyk/award-monitoring-system/issues/176) |
 | 4.3.6 | Public rate limit for the organisation list | 1 | ✅ Done | SCRUM-72 | [#192](https://github.com/StKostyk/award-monitoring-system/issues/192) |
+| 4.3.7 | Peer take-over of overdue requests and no self-escalation for deans | 3 |  | SCRUM-73 | [#193](https://github.com/StKostyk/award-monitoring-system/issues/193) |
 | 4.3.9 | Achievement card names do not follow a language switch | 1 | ✅ Done | SCRUM-79 | [#204](https://github.com/StKostyk/award-monitoring-system/issues/204) |
 
 ### Epic 7 — Notification & Communication System (Jira epic SCRUM-63)

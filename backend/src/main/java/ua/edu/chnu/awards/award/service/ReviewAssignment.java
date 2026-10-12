@@ -107,6 +107,7 @@ public class ReviewAssignment {
         rule.grant(request).map(ReviewGrant::delegatorId).ifPresent(id -> details.put("delegatorId", id));
         if (holder != null) {
             details.put(PREVIOUS_REVIEWER, holder.getId());
+            takeOver.announce(request, holder, caller);
         }
         record(holder == null ? AuditAction.REVIEW_CLAIMED : AuditAction.REVIEW_TAKEN_OVER, request, details);
     }
@@ -166,7 +167,8 @@ public class ReviewAssignment {
         return requests.findByAwardId(awardId)
             .filter(AwardRequest::isOpen)
             .filter(guards::isReviewable)
-            .map(request -> mapper.toItem(request).withCanTakeOver(takeOver.offered(request)))
+            .map(request -> mapper.toItem(request).withOffers(takeOver.offered(request),
+                rule.mayEscalate(request)))
             .orElseThrow(() -> new AwardNotFoundException(awardId));
     }
 
