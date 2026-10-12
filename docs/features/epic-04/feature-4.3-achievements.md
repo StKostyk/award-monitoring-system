@@ -238,8 +238,8 @@ Preparation: as `employee.fmi` create P3 with two PDFs (`диплом.pdf`, `д�
 27. As `employee.fmi` open P3 (still «Лише мені та рецензентам»). Expected: the documents section says «Відкрийте нагороду для колег, щоб показати їм її документи.»; no switch. (AC1)
 28. Choose «Показувати колегам». Expected: a «Показувати колегам» switch on each document, both off. Turn it on for `диплом.pdf` with the keyboard (Tab, Space); reload. Expected: still on; psql `select action_type, new_values from audit_logs where action_type = 'DOCUMENT_SHARING_CHANGED' order by created_at desc limit 1;` shows `awardId`, `from: false`, `to: true`. (AC1, AC4)
 29. As `secretary2.fmi` open `/achievements`, click the title of P3. Expected: `/achievements/<P3>` with title, owner, department, category · level, date, description, and only `диплом.pdf`; no history, comments or other documents. «Завантажити» saves `диплом.pdf`. Repeat at 360 px and in English. (AC2, AC3, AC5)
-30. Swagger as `secretary2.fmi`: `GET /api/v1/documents/<довідка>` → 404; `GET /api/v1/documents/<диплом>` → 200; `GET /api/v1/achievements/<P1 private award>` → 404. Anonymous `curl -i http://localhost:8080/api/v1/documents/<диплом>` → 401; the public page offers no link to P3's view. (AC2, AC3)
-31. As `employee.fmi` set P3 to «Лише мені та рецензентам». Expected: the switches disappear; psql `select count(*) from documents where award_id = <P3> and shown_to_colleagues;` → 0 and one `DOCUMENT_SHARING_CHANGED` row (`true` → `false`). `secretary2.fmi` reloads the view: «Це досягнення недоступне…»; the download → 404. Set P3 back to «Показувати колегам». Expected: both switches off. (AC1, AC3)
+30. Swagger as a colleague without review rights in FMI (a fresh `EMPLOYEE` of another faculty's department; `secretary2.fmi` reviews FMI awards and so may open every document of them): `GET /api/v1/documents/<довідка>` → 404; `GET /api/v1/documents/<диплом>` → 200; `GET /api/v1/achievements/<P1 private award>` → 404. Anonymous `curl -i http://localhost:8080/api/v1/documents/<диплом>` → 401; the public page offers no link to P3's view. (AC2, AC3)
+31. As `employee.fmi` set P3 to «Лише мені та рецензентам». Expected: the switches disappear; psql `select count(*) from documents where award_id = <P3> and shown_to_colleagues;` → 0 and one `DOCUMENT_SHARING_CHANGED` row (`true` → `false`). `secretary2.fmi` reloads the view: «Це досягнення недоступне…»; the colleague of step 30 downloads `диплом.pdf` → 404. Set P3 back to «Показувати колегам». Expected: both switches off. (AC1, AC3)
 32. Swagger as `employee.fmi`: `PUT /api/v1/documents/<диплом>/sharing` `{"shownToColleagues":true}` while P3 is private → 409 `sharing-fixed` with `awardStatus` and `visibility`; `{}` → 422; as `secretary2.fmi` → 404. `GET /api/v1/users/me/export` lists `shown_to_colleagues` per document. (AC1, AC4)
 
 ### Run 2026-10-11
@@ -274,6 +274,20 @@ Compose stack on 967a30f (develop line incl. SCRUM-56/57/59), default settings; 
 | 24 | PASS | while refused: public page shows «Не вдалося завантажити…» + «Спробувати знову»; after retry and year 2025 the URL and list follow the filter (empty message), not the retried request |
 | 25 | PASS | redis stopped: 4 requests to /api/v1/public/achievements → 200 each (limit lets requests through); redis started again |
 | 26 | PASS | offline click on «Колегам» (P1=75 was PUBLIC): radio stayed, notice «Сервер недоступний. Введені дані збережено, спробуйте ще раз.»; after online + reload radio shows server value Публічно |
+
+### Run 2026-10-12
+
+container stack, develop e82b75b; re-run of step 13 after the fix, first run of steps 27-32 (4.3.8); P3 = award 237. Result: 7 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 13 | PASS | re-run after SCRUM-77: /achievements as secretary2, live UK->EN: card unit «Department of Algebra and Informatics», category «Ministry Recognition · National», labels English, title falls back to Ukrainian; EN->UK: «Кафедра алгебри та інформатики», «Відзнака міністерства · Національний»; 360 px/axe checked on the view in step 29 |
+| 27 | PASS | P3 = award 237 (APPROVED, PRIVATE), docs 46 диплом.pdf / 47 довідка.pdf; documents section shows «Відкрийте нагороду для колег, щоб показати їм її документи.», 0 switches |
+| 28 | PASS | «Показувати колегам» chosen (visibility UNIVERSITY): two switches «Показувати колегам: диплом.pdf/довідка.pdf», both off; диплом switch reached with Shift+Tab/Tab and toggled with Space; after reload диплом=true, довідка=false; audit DOCUMENT_SHARING_CHANGED {awardId 237, from false, to true} |
+| 29 | PASS | secretary2.fmi /achievements -> title link -> /achievements/237: title, owner Анастасія Працівник, department, «Факультетська педагогічна нагорода · Факультетський», date 09.04.2026, description, «Документи перевірено», only диплом.pdf; no history/comments/довідка; «Завантажити» saved диплом.pdf; check.cjs at 360 light/dark and 1280 en: no sideways scroll, axe 0, console 0, English labels |
+| 30 | PASS | colleague = mr12move (EMPLOYEE, department 69): GET /documents/47 довідка -> 404, /documents/46 диплом -> 200 (attachment), GET /achievements/1 (employee.fmi private approved) -> 404; anonymous GET /documents/46 -> 401; public achievements list has no 237. secretary2.fmi gets 200 for 47 by design (faculty secretary reads every non-draft FMI award, DocumentService.open), so the step now names a colleague without review rights; step text corrected |
+| 31 | PASS | employee.fmi set P3 private: switches gone, shown count 0, audit DOCUMENT_SHARING_CHANGED {237, true -> false}; secretary2 reload of /achievements/237 -> «Це досягнення недоступне. Можливо, його більше не показують колегам.»; colleague mr12move download 46 -> 404; back to «Показувати колегам» -> both switches off |
+| 32 | PASS | P3 private (PUT /awards/237/visibility); employee PUT /documents/46/sharing true -> 409 sharing-fixed awardStatus APPROVED, visibility PRIVATE; {} -> 422 validation-failed; secretary2 -> 404 document-not-found; export format 1.3 lists shown_to_colleagues per document (диплом false, довідка false) |
 
 ## 11. Risks
 

@@ -273,7 +273,7 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 
 29. Repeat step 21 with a second browser signed in: after the reset, reload the app in the second browser at once. Expected: the login page (or, within 15 minutes, a reload of an already open page shows the login page instead of a blank screen — never an empty shell). In the reset page, first submit the old password → «Новий пароль має відрізнятися від поточного». (AC-6.1, 6.4, 6.5)
 30. Open `http://localhost:8080/login`, restart the backend (Ctrl+C in its window, `.\tools\dev-up.ps1`), then submit the stale form. Expected: the form again with «Сторінка застаріла. Спробуйте ще раз.»; signing in from that form lands on `http://localhost:4200` with the app open. Open `http://localhost:8080/login` and `http://localhost:8080/` while signed in → both redirect to the app. (AC-6.2, 6.3)
-31. In the browser app, exhaust the limit (step 25) and then submit the "forgot password" form within the same minute. Expected: «Не вдалося… Спробуйте пізніше» (the 429 reaches the app with its CORS headers), not «Сервер недоступний». (AC-6.2)
+31. In the browser app, exhaust the limit (step 25) and then submit the "forgot password" form within the same minute. Expected: «Забагато запитів. Спробуйте ще раз за хвилину.» (en «Too many requests. Try again in a minute.»; the 429 reaches the app with its CORS headers), not «Сервер недоступний» and not a raw translation key. (AC-6.2)
 32. With the dev backend running, `docker compose exec redis redis-cli KEYS 'auth:*'` after a lock-out shows the `auth:lock:` key — the backend and the container are the same Redis; `.\tools\dev-up.ps1` prints a warning when they are not. (AC-6.6)
 
 ### Run 2026-10-11
@@ -290,6 +290,14 @@ container stack (develop 214a619), default settings; fresh accounts mr11a–c; s
 | 30 | PASS | container stack: stale form after restart -> ?error=EXPIRED 'The page has expired. Try again.'; sign-in from it -> /callback -> app; /login and :8080/ while signed in -> http://localhost/ |
 | 31 | FAIL | 25 token requests: 14x400 then 429; forgot-password submit in same minute -> 429 reaches the app (not 'Сервер недоступний') but the form shows raw key 'forgot.errors.too-many-requests'; key missing in uk.json/en.json forgot.errors |
 | 32 | PASS | container stack: redis KEYS 'auth:lock:*' after the step 24 lock-out listed auth:lock:mr11b@chnu.edu.ua (backend and container share Redis) |
+
+### Run 2026-10-12
+
+container stack (rate limit 20/min), develop e82b75b; re-run of step 31 after the fix. Result: 1 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 31 | PASS | 25 refresh-token requests in the browser: 20x400 then 5x429; forgot-password submit in the same minute -> 429, form shows «Забагато запитів. Спробуйте ще раз за хвилину.» (en «Too many requests. Try again in a minute.»), no raw key; step text corrected (SCRUM-76 wording) |
 
 ## 10. Risks
 
