@@ -61,7 +61,8 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 10c | 4.2.6 Review list: overdue notice chip clipped at 1280 px | 4.2 | 1 | SCRUM-78 | #202 | no | Done |
 | 10c | 4.3.9 Achievement card names do not follow a language switch | 4.3 | 1 | SCRUM-79 | #204 | no | Done |
 | 10d | 4.1.6 Take over a request whose holder lost the role | 4.1 | 3 | SCRUM-77 | #200 | no | Done |
-| 10e | 4.3.7 Peer take-over of overdue requests and no self-escalation for deans | 4.1 | 3 | SCRUM-73 | #193 | no | In review |
+| 10e | 4.3.7 Peer take-over of overdue requests and no self-escalation for deans | 4.1 | 3 | SCRUM-73 | #193 | no | Done |
+| 10f | 4.3.4 Review decisions in the personal data export | 4.3 | 3 | SCRUM-70 | #190 | no | In review |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 
@@ -163,7 +164,8 @@ promise and the gap is listed here for a fix story:
 
 - Review decisions are not part of the personal data export (`PersonalDataFile`): the decisions a person made as a
   reviewer (`reviewer_id`, `delegator_id`, comments) and the decisions on their own awards are missing; the export
-  section of PRIVACY_BY_DESIGN promises awards, versions and activity.
+  section of PRIVACY_BY_DESIGN promises awards, versions and activity (closed by 4.3.4: format 1.2 adds
+  `review_decisions` and `decisions_made`, other people by name only).
 - `BusinessMetricsService` (`award.submissions.total`, `award.approvals.total`, `user.sessions.active` …) is never
   called outside its test; only the `awards.review.*` meters are live. MONITORING_OBSERVABILITY still lists the old ones.
 - `GET /api/v1/organizations` is anonymous but outside the public chain, so the public rate limit does not cover it
