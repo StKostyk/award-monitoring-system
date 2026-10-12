@@ -46,6 +46,17 @@ public class Transitions {
     }
 
     /**
+     * The refusal of an escalation to a level the caller already reviews at.
+     *
+     * @param level the level the request stands at
+     * @return 409 {@code escalation-not-upward}
+     */
+    public static ApiProblemException notUpward(ApprovalLevel level) {
+        return new ApiProblemException(HttpStatus.CONFLICT, ReviewProblemConstants.ESCALATION_NOT_UPWARD,
+            "The next level is one the caller already reviews at", Map.of("level", level.name()));
+    }
+
+    /**
      * The level above the given one.
      *
      * @param level a level below the rector

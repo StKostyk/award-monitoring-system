@@ -16,6 +16,7 @@ public final class ReviewProblemConstants {
     public static final String REQUEST_STALE = "request-stale";
     /** The request is at the highest level. */
     public static final String NO_HIGHER_LEVEL = "no-higher-level";
+    public static final String ESCALATION_NOT_UPWARD = "escalation-not-upward";
 
     private ReviewProblemConstants() {
     }

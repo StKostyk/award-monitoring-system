@@ -79,6 +79,7 @@ class ReviewDecisionsTest {
         when(rule.grant(request)).thenReturn(Optional.of(new ReviewGrant(ApprovalLevel.FACULTY_SECRETARY, FACULTY,
             null)));
         when(rule.delegatorId(request)).thenReturn(null);
+        when(rule.mayEscalate(request)).thenReturn(true);
     }
 
     @Test
@@ -180,6 +181,15 @@ class ReviewDecisionsTest {
 
         assertProblem(() -> service.decide(AWARD, decision(Decision.ESCALATE, null)), HttpStatus.CONFLICT,
             "no-higher-level");
+    }
+
+    @Test
+    void ac3_aCallerAlreadyAtTheNextLevelCannotEscalate() {
+        when(rule.mayEscalate(request)).thenReturn(false);
+
+        assertProblem(() -> service.decide(AWARD, decision(Decision.ESCALATE, null)), HttpStatus.CONFLICT,
+            "escalation-not-upward");
+        assertThat(request.getCurrentLevel()).isEqualTo(ApprovalLevel.FACULTY_SECRETARY);
     }
 
     @Test

@@ -219,7 +219,10 @@ The **Review** panel of the award page shows who reviews it and the deadline.
 - **Claim**: you become the reviewer; colleagues see your name in the queue.
 - **Release**: the award goes back to the queue of its level.
 - **Hand over…**: choose a colleague of the same level (colleagues acting by delegation are marked).
-- **Take over**: a dean or a higher level takes an award from the reviewer below, after a confirmation naming them.
+- **Take over**: a dean or a higher level takes an award from the reviewer below, after a confirmation naming them;
+  a colleague of the same level may do so once the review is overdue. The previous reviewer gets an e-mail.
+- **Escalate** is not shown when you already review at the next level (a dean on a secretary-level award decides
+  it directly).
 
 If a colleague claimed the award a moment earlier, the panel names them and shows the current state; if the data
 was out of date, the page refreshes itself.

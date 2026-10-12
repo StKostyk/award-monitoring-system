@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
@@ -59,7 +61,8 @@ class ReviewAssignmentTest {
     private final AccessScope access = mock(AccessScope.class);
     private final ReviewAssignment assignment = new ReviewAssignment(requests, decisions, rule, availability, users,
         audit, mapper, access, new ReviewGuards(requests, rule, access),
-        new TakeOverRule(rule, availability, access));
+        new TakeOverRule(rule, availability, access, mock(StatusEstimator.class, RETURNS_DEEP_STUBS),
+            mock(ApplicationEventPublisher.class)));
 
     private final Organization faculty = TestUsers.faculty(FACULTY);
     private final User owner = TestUsers.person(7L, "employee@chnu.edu.ua", faculty);
@@ -280,7 +283,7 @@ class ReviewAssignmentTest {
         var item = mock(ReviewItem.class);
         var offered = mock(ReviewItem.class);
         when(mapper.toItem(request)).thenReturn(item);
-        when(item.withCanTakeOver(false)).thenReturn(offered);
+        when(item.withOffers(false, false)).thenReturn(offered);
 
         assertThat(assignment.item(AWARD)).isSameAs(offered);
     }

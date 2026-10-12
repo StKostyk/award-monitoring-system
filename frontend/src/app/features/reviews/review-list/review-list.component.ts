@@ -74,6 +74,7 @@ const REASONS = [
   'request-stale',
   'request-closed',
   'no-higher-level',
+  'escalation-not-upward',
   'validation-failed',
   'not-found',
   'try-again',

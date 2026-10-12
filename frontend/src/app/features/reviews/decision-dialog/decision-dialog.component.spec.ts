@@ -41,7 +41,11 @@ const translations = {
           network: 'Не вдалося надіслати, спробуйте ще раз',
         },
       },
-      problems: { 'validation-failed': 'Перевірте коментар', unknown: 'Не вдалося виконати дію' },
+      problems: {
+        'validation-failed': 'Перевірте коментар',
+        'escalation-not-upward': 'Ваша роль уже охоплює наступний рівень',
+        unknown: 'Не вдалося виконати дію',
+      },
       batch: { count: 'Нагород: {{count}}' },
     },
   },
@@ -346,6 +350,20 @@ describe('DecisionDialogComponent', () => {
     fixture.detectChanges();
 
     expect(find(element, 'decision-error')?.textContent).toContain('Дані змінилися');
+  });
+
+  it('ac3_an_escalation_the_role_already_covers_is_refused_in_the_dialog', async () => {
+    const element = await create({ decision: 'ESCALATE', target: 'DEAN', documents: 0 });
+    submit.mockReturnValue(
+      throwError(() =>
+        problem(HttpStatusCode.Conflict, 'escalation-not-upward', { level: 'DEAN' }),
+      ),
+    );
+
+    find(element, 'decision-confirm')?.click();
+    fixture.detectChanges();
+
+    expect(find(element, 'decision-error')?.textContent).toContain('Ваша роль уже охоплює');
   });
 
   it('ac4_3_the_typed_comment_is_kept_for_the_user_award_and_decision', async () => {

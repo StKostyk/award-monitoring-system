@@ -137,6 +137,37 @@ test.describe('reviewer queue', () => {
     ).toBe('REVIEW_CLAIMED,REVIEW_HANDED_OVER,REVIEW_TAKEN_OVER');
   });
 
+  test('ac1 ac2 ac3 a peer takes over an overdue award and a dean is not offered the escalation', async ({
+    browser,
+  }) => {
+    const title = `Грамота прострочена ${uniqueToken()}`;
+    const id = await submittedBy(browser, owner, title);
+    const one = await signedInAs(browser, first, FRESH_PASSWORD);
+    await openAward(one, id);
+    await one.getByTestId('review-claim').click();
+    await expect(one.getByTestId('review-panel-reviewer')).toHaveText('Ірина Перша');
+
+    const two = await signedInAs(browser, second, FRESH_PASSWORD);
+    await openAward(two, id);
+    await expect(two.getByTestId('review-take-over')).toHaveCount(0);
+
+    sql(`update award_requests set deadline = now() - interval '1 minute' where award_id = ${id}`);
+    await openAward(two, id);
+    await two.getByTestId('review-take-over').click();
+    await expect(two.getByRole('dialog')).toContainText('Ірина Перша');
+    await two.getByTestId('confirm-accept').click();
+    await expect(two.getByTestId('review-panel-reviewer')).toHaveText('Ірина Друга');
+    await expect(two.getByTestId('review-escalate')).toBeVisible();
+
+    const head = await signedInAs(browser, dean, FRESH_PASSWORD);
+    await openAward(head, id);
+    await head.getByTestId('review-take-over').click();
+    await head.getByTestId('confirm-accept').click();
+    await expect(head.getByTestId('review-panel-reviewer')).toHaveText('Ірина Деканова');
+    await expect(head.getByTestId('review-approve')).toBeVisible();
+    await expect(head.getByTestId('review-escalate')).toHaveCount(0);
+  });
+
   test('ac1_13 the queue and panel work in English at 360 px', async ({ browser }) => {
     const title = `Грамота для англійської ${uniqueToken()}`;
     const id = await submittedBy(browser, owner, title);

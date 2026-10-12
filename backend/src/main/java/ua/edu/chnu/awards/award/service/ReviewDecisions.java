@@ -50,21 +50,25 @@ public class ReviewDecisions {
      * @param body    the decision, the request version last read and the comment
      * @return where the award and its request stand afterwards
      * @throws AwardNotFoundException when the award has no pending request the caller may review
-     * @throws ApiProblemException    409 {@code request-closed}, {@code request-claimed}, {@code request-stale} or
-     *                                {@code no-higher-level}; 422 {@code validation-failed} without a decision,
-     *                                version or required comment, or for verified documents that do not exist
+     * @throws ApiProblemException    409 {@code request-closed}, {@code request-claimed}, {@code request-stale},
+     *                                {@code no-higher-level} or {@code escalation-not-upward}; 422
+     *                                {@code validation-failed} without a decision, version or required comment, or
+     *                                for verified documents that do not exist
      */
     @Transactional
     public DecisionOutcome decide(long awardId, ReviewDecisionRequest body) {
         AwardRequest request = guards.lockedReviewable(awardId);
         rules.check(body);
         guards.requireNotHeldByOther(request);
-        long callerId = access.callerId();
         guards.requireVersion(request, body.requestVersion());
         Award award = request.getAward();
         rules.checkVerified(awardId, body);
         ApprovalLevel decidedAt = request.getCurrentLevel();
         Transitions.Step step = transitions.of(body.decision(), decidedAt, minimum(award));
+        if (body.decision() == Decision.ESCALATE && !rule.mayEscalate(request)) {
+            throw Transitions.notUpward(decidedAt);
+        }
+        long callerId = access.callerId();
         User caller = users.findById(callerId).orElseThrow(() -> new IllegalStateException("Caller has no account"));
         Long delegatorId = rule.delegatorId(request);
         String comment = DecisionRules.comment(body);

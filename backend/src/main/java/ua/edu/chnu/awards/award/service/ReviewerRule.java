@@ -98,4 +98,17 @@ public class ReviewerRule {
     public Optional<ApprovalLevel> highestLevel(AwardRequest request) {
         return grantsOn(request).stream().map(ReviewGrant::level).max(Comparator.naturalOrder());
     }
+
+    /**
+     * Whether the caller may escalate the request: not from the rector's level, and not to a level the caller
+     * already reviews at.
+     *
+     * @param request the request
+     * @return true when the next level is above every level the caller reviews the request at
+     */
+    public boolean mayEscalate(AwardRequest request) {
+        ApprovalLevel current = request.getCurrentLevel();
+        return current != ApprovalLevel.RECTOR && highestLevel(request)
+            .filter(level -> !level.covers(ApprovalLevel.values()[current.ordinal() + 1])).isPresent();
+    }
 }

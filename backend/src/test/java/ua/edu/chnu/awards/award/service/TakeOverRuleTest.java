@@ -2,18 +2,23 @@ package ua.edu.chnu.awards.award.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
@@ -25,7 +30,9 @@ class TakeOverRuleTest {
     private final ReviewerRule rule = mock(ReviewerRule.class);
     private final ReviewerAvailability availability = mock(ReviewerAvailability.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final TakeOverRule takeOver = new TakeOverRule(rule, availability, access);
+    private final StatusEstimator estimator = mock(StatusEstimator.class);
+    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final TakeOverRule takeOver = new TakeOverRule(rule, availability, access, estimator, events);
 
     private final Organization faculty = TestUsers.faculty(FACULTY);
     private final User owner = TestUsers.person(7L, "employee@chnu.edu.ua", faculty);
@@ -40,6 +47,7 @@ class TakeOverRuleTest {
             .currentLevel(ApprovalLevel.FACULTY_SECRETARY).currentReviewer(holder).build();
         when(access.callerId()).thenReturn(caller.getId());
         when(rule.highestLevel(request)).thenReturn(Optional.of(ApprovalLevel.FACULTY_SECRETARY));
+        overdue(false);
     }
 
     @Test
@@ -49,8 +57,7 @@ class TakeOverRuleTest {
 
     @Test
     void ac2_aPeerIsNotOfferedTheRequestOfAHolderWhoIsStillEligible() {
-        when(availability.isEligible(holder.getId(), ApprovalLevel.FACULTY_SECRETARY, FACULTY, owner.getId(),
-            owner.getId())).thenReturn(true);
+        eligible(ApprovalLevel.FACULTY_SECRETARY);
 
         assertThat(takeOver.offered(request)).isFalse();
     }
@@ -62,5 +69,50 @@ class TakeOverRuleTest {
 
         request.setCurrentReviewer(caller);
         assertThat(takeOver.offered(request)).isFalse();
+    }
+
+    @Test
+    void ac1_aPeerMayTakeOverAnOverdueRequestOfAnEligibleHolder() {
+        eligible(ApprovalLevel.FACULTY_SECRETARY);
+        overdue(true);
+
+        assertThat(takeOver.offered(request)).isTrue();
+        assertThat(takeOver.allows(request, holder)).isTrue();
+    }
+
+    @Test
+    void ac1_aLowerLevelMayNotTakeOverAnOverdueRequestFromAHigherHolder() {
+        eligible(ApprovalLevel.FACULTY_SECRETARY);
+        eligible(ApprovalLevel.DEAN);
+        overdue(true);
+
+        assertThat(takeOver.allows(request, holder)).isFalse();
+    }
+
+    @Test
+    void ac1_aHigherLevelTakesOverBeforeTheDeadline() {
+        eligible(ApprovalLevel.FACULTY_SECRETARY);
+        when(rule.highestLevel(request)).thenReturn(Optional.of(ApprovalLevel.DEAN));
+
+        assertThat(takeOver.allows(request, holder)).isTrue();
+    }
+
+    @Test
+    void ac2_thePreviousHolderIsToldWhoTookTheRequestOver() {
+        request.getAward().setTitleUk("Грамота");
+
+        takeOver.announce(request, holder, caller);
+
+        verify(events).publishEvent(new ReviewTakenOver(holder.getEmailAddress(), holder.getFirstName(), 1L,
+            "Грамота", "Грамота", caller.getFullName()));
+    }
+
+    private void eligible(ApprovalLevel level) {
+        when(availability.isEligible(holder.getId(), level, FACULTY, owner.getId(), owner.getId())).thenReturn(true);
+    }
+
+    private void overdue(boolean overdue) {
+        when(estimator.timeline(request.getAward(), request)).thenReturn(new StatusEstimator.Timeline(
+            List.of(ApprovalLevel.FACULTY_SECRETARY), Map.of(), null, null, overdue));
     }
 }

@@ -67,7 +67,8 @@ branch) and gave no rule for two reviewers of the same level opening the same re
    the other answers 409 `request-claimed` with the holder. A stale version answers 409 `request-stale`.
 3. **No lapse.** A claim is never taken away silently. It ends by release, hand-over to an eligible colleague, a
    decision, or a take-over by a higher level (or by a peer once the holder may no longer review: role ended,
-   delegation over, account blocked). Every change is audited (`REVIEW_CLAIMED`, `REVIEW_RELEASED`,
+   delegation over, account blocked; or by a peer once the request is past its deadline, 4.3.7). The previous
+   holder gets an e-mail after the commit. Every change is audited (`REVIEW_CLAIMED`, `REVIEW_RELEASED`,
    `REVIEW_HANDED_OVER`, `REVIEW_TAKEN_OVER`).
 4. **Higher levels may review lower levels** through the `level` filter of the queue and take-over; the default queue
    shows the caller's own levels.

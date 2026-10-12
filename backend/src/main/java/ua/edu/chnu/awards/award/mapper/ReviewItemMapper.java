@@ -80,6 +80,6 @@ public class ReviewItemMapper {
             request.getCurrentLevel(), request.getStatus(), UserRef.of(request.getCurrentReviewer()),
             request.getSubmittedAt(), timeline.deadline(), timeline.overdue(), request.getOverdueNoticedAt(),
             documentCount,
-            UserRef.of(delegator), null);
+            UserRef.of(delegator), null, null);
     }
 }
