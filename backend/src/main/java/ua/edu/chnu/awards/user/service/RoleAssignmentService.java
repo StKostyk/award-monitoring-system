@@ -64,12 +64,11 @@ public class RoleAssignmentService {
         User actor = caller();
         LocalDate today = LocalDate.now(clock);
         LocalDate validFrom = rules.startDay(request, today);
-        rules.requireFree(userId, request, organization.getId(), validFrom);
-        boolean moved = false;
         if (request.updateOrganization()) {
             rules.requireMembershipChange(request, target);
-            moved = confirmMembership(actor, target, organization, today);
         }
+        rules.requireFree(userId, request, organization.getId(), validFrom);
+        boolean moved = request.updateOrganization() && confirmMembership(actor, target, organization, today);
 
         UserRole assignment = UserRole.builder()
             .user(target)

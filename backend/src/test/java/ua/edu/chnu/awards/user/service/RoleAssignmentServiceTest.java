@@ -337,6 +337,26 @@ class RoleAssignmentServiceTest {
     }
 
     @Test
+    void ac4_1_aRepeatedMoveIsAStaleMembershipChangeBeforeADuplicateRole() {
+        employee.setOrganization(other);
+        when(userRoleRepository.existsByUserId(employee.getId())).thenReturn(true);
+        when(userRoleRepository.findOverlapping(eq(employee.getId()), eq(RoleType.EMPLOYEE),
+            eq(OTHER_DEPARTMENT_ID), any(), any()))
+            .thenReturn(List.of(assignment(employee, RoleType.EMPLOYEE, other, TODAY, null)));
+        RoleAssignmentRequest repeated = new RoleAssignmentRequest(RoleType.EMPLOYEE, OTHER_DEPARTMENT_ID, null,
+            null, true, DEPARTMENT_ID);
+
+        assertThatThrownBy(() -> service.assign(employee.getId(), repeated))
+            .isInstanceOfSatisfying(ApiProblemException.class,
+                e -> assertThat(e.getType()).isEqualTo("membership-already-confirmed"));
+        assertThat(employee.getOrganization()).isSameAs(other);
+        verify(userRoleRepository, never()).saveAndFlush(any());
+        verify(recorder, never()).superseded(any(), any());
+        verify(delegations, never()).revokeForMove(any(), any());
+        verify(revoker, never()).revokeAll(any());
+    }
+
+    @Test
     void ac4_2_aRoleTakenBackBeforeItStartedCannotBeRevokedAgain() {
         UserRole future = assignment(employee, RoleType.FACULTY_SECRETARY, faculty, TODAY.plusDays(7),
             TODAY.plusDays(6));

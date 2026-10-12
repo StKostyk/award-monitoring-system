@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- A repeated department move answers 409 membership-already-confirmed instead of role-already-assigned (SCRUM-81).
 - The forgot-password form shows a retry-later message instead of a raw key when the request is rate limited.
 - The edit form of a returned or withdrawn draft no longer offers «Видалити чернетку», which could only end in an error (#199).
 - The review list stacks the deadline chips and lets «Керівника повідомлено …» wrap, so every column fits at 1280 px without a horizontal scrollbar (#202).
