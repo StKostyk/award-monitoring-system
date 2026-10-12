@@ -154,7 +154,7 @@ Inherited: ADR-006 addendum 2026-10-05 (in-process events, publication registry 
    - `audit` → `user`: actor names come through an `ActorDirectory` interface in `audit`, implemented in `user`.
    - `award` ↔ `document`: `award` defines `AwardDocuments` (counts, release) in its base package, implemented in `document`.
    - `common` → domain modules: their not-found exceptions extend `ApiProblemException`; `ApiExceptionHandler` handles the base type; the `AccessDenials` reference moves to `authz`.
-10. **Estimate.** 7.1.2 stays at 8 points. If the fixes outgrow it, AC-2.7 applies and a follow-up story 7.1.3 is created with `tracker-sync create-story` only then (tracker risk 1).
+10. **Estimate.** 7.1.2 stays at 8 points. If the fixes outgrow it, AC-2.7 applies and a follow-up story 7.1.4 is created (7.1.3 is the undelivered-mail log fix, SCRUM-75) with `tracker-sync create-story` only then (tracker risk 1).
 11. **Single instance.** The retry job has no lock (ADR-021: one backend per university). The lock comes with any second instance (Epic 9).
 12. **Listener ids.** The registry identifies a listener by its method signature, so moving `AuthorityChangeMails` changes its id. With no production data before the demo, rows under an old id are left to the 24-hour / 30-day rule; no migration of ids.
 

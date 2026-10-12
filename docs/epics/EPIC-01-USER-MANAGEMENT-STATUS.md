@@ -39,7 +39,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Done 2026-09-30 |
 | 13 | 1.3.4 Fixes from the Feature 1.3 validation | 1.3 | 3 | SCRUM-29 | #92 | no | Done 2026-09-30 |
 | 13a | 1.1.7 Forgot-password 429 shows a raw translation key | 1.1 | 1 | SCRUM-80 | #207 | no | Done |
-| 13b | 1.2.5 Repeated department move answers role-already-assigned | 1.2 | 1 | SCRUM-81 | #209 | no | In review |
+| 13b | 1.2.5 Repeated department move answers role-already-assigned | 1.2 | 1 | SCRUM-81 | #209 | no | Done |
 
 Total: 62 points, planned across sprints 2–4.
 
