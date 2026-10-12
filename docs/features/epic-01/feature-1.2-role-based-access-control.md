@@ -256,6 +256,14 @@ container stack at http://localhost (docker profile, default settings; steps 18/
 | 27 | PASS | dean /admin/users/abc -> «Користувача не знайдено»; only /api/v1/users/me requested, none for abc |
 | 28 | PASS | container run with AUTH_JWK_DEV_KEY_FILE=/tmp/dev-jwk.json (override file; the container default has no key file): log «generated a development key kept in /tmp/dev-jwk.json», jwks kid identical before/after docker restart; with /admin/users open the «unconfirmed» filter -> 200 users?unconfirmed=true, 3 rows, no login page, no token call (container instead of mvnw spring-boot:run) |
 
+### Run 2026-10-12
+
+container stack, develop e82b75b; re-run of step 26 after the fix, with a fresh account. Result: 1 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 26 | PASS | fresh mr12move (user 124, EMPLOYEE/64) instead of employee.fmi; dean delegation 10 DEAN/9 -> 201; admin move body -> 201 (role 151 EMPLOYEE/69), old role 150 ends 2026-10-11; delegation 10 state revoked at 16:13:30; next token delegations [] , role_scopes EMPLOYEE:69; same body again -> 409 membership-already-confirmed |
+
 ## 10. Risks
 
 | Risk | Impact | Mitigation |

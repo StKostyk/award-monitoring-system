@@ -260,7 +260,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`, backe
 10. As `dean.fmi` open `/reviews`, filter «Прострочені нижчого рівня». Expected: A with «Прострочено» and «Керівника повідомлено <сьогодні>»; A's page offers «Взяти в роботу» (A is unclaimed; «Взяти на себе» appears only while a secretary holds it). As `employee.fmi` open A's status page. Expected: «Термін розгляду минув …; керівника повідомлено …». (AC-2.4, 2.5)
 11. As `secretary.fmi` «Передати декану» on A. psql: notice columns null, new deadline. Set the deadline in the past again and wait a minute. Expected: one e-mail to `rector.secretary`, level `DEAN` in the mark. (AC-2.3, 2.2)
 12. Repeat step 8 for a request at `RECTOR` level (escalate C up to the rector as in 4.1 §9 step 13). Expected: marked, no e-mail. (AC-2.2)
-13. Open `http://localhost:8080/actuator/prometheus` (as today's access allows) and search `awards_review`. Expected: `awards_review_open`, `awards_review_overdue`, `awards_review_decisions_total{decision,level,on_time}`, `awards_review_decision_duration_seconds`, `awards_review_overdue_notices_total`. (AC-2.6)
+13. Open `http://localhost:8080/actuator/prometheus` (as today's access allows) and search `awards_review`. Expected: `awards_review_open`, `awards_review_overdue`, `awards_review_decisions_total{decision,level,on_time}`, `awards_review_decision_duration_seconds`, `awards_review_overdue_notices_total`; the decision meters appear after the first decision since the start. Search `awards_submissions`: `awards_submissions_total{level,resubmitted}` counts a submission with `resubmitted="false"` and a resubmission after a return with `resubmitted="true"`. (AC-2.6, SCRUM-71)
 14. As `employee.fmi` submit award B with date 2026-09-01 and a typo in the title. As `secretary.fmi` open B. Expected: «Виправити» on the panel. Click it. Expected: the form with the values, recipient and documents read-only, «Зберегти» disabled. (AC-3.1, 3.2)
 15. Fix the title and set the date to 2026-09-02; leave the reason empty. Expected: refused. Type «Дата за сертифікатом», save. Expected: the confirmation lists the changed fields old → new (title in both languages and the date); confirm. Expected: back on the award page; B is claimed by `secretary.fmi`; the request still at faculty level, same deadline. (AC-3.2, 3.3, 3.4)
 16. Mailpit: e-mail to `employee.fmi` with the changes, the reason and Alina's name. As `employee.fmi` open B → «Історія змін». Expected: «Виправлено рецензентом: Аліна Секретаренко», the two fields, the reason. psql `select action_type, new_values from audit_logs where action_type in ('AWARD_CORRECTED','REVIEW_CLAIMED') order by created_at desc limit 2;` (AC-3.5, 3.6, 3.3)
@@ -332,6 +332,15 @@ Container stack, APP_WORKFLOW_OVERDUE_CRON every minute, develop 214a619, second
 | 35 | PASS | secretary2.fmi (dean delegation) on /awards/74/correct, form filled; delegation revoked by dean; save → /login, title in db unchanged (MR42 P28b) |
 | 36 | PASS | right after restart awards_review_open all 0.0; after first run (17:09:58) FACULTY_SECRETARY 21, DEAN 3, overdue_notices_total 1 |
 | 37 | PASS | backend stopped: «Відхилити» with comment → after ~90 s «Не вдалося надіслати, спробуйте ще раз», dialog open, comment kept; backend started, confirm again → «Нагороду відхилено.», 68 REJECTED |
+
+### Run 2026-10-12
+
+container stack, develop e82b75b; re-run of step 10 after the fix, step 13 extended for SCRUM-71. Result: 2 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 10 | PASS | dean /reviews «Прострочені нижчого рівня» at 1280 px: 13 rows; award 196 «Прострочено» + «Керівника повідомлено 12.10.2026», notice chip wraps (no clipped chip, page scrollWidth 1280), «Рецензент» column visible (1172-1277 px; the table scrolls a little inside its own container); /awards/196 offers «Взяти в роботу»; owner employee.fmi sees «Термін розгляду минув 10.10.2026; керівника повідомлено 12.10.2026»; re-run after SCRUM-78 |
+| 13 | PASS | container stack (actuator via mr metric): awards_review_open/overdue per level, overdue_notices_total 0.0; award 234 submitted -> awards_submissions_total{FACULTY_SECRETARY,resubmitted=false} 1.0; secretary RETURN -> awards_review_decisions_total{returned,FACULTY_SECRETARY,on_time=true} 1.0 and decision_duration_seconds count 1; resubmit -> {resubmitted=true} 1.0; step extended for SCRUM-71 |
 
 ## 11. Risks
 

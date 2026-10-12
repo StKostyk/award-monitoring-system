@@ -261,6 +261,14 @@ Container stack at b841665 with APP_EVENTS_RETRY_INTERVAL=PT1M and APP_EVENTS_RE
 | 17 | PASS | Mailpit down: change request 15:39:14 → 202, 3 attempts failed, registry 0; Mailpit up, 2nd request 15:40:44 → link 15:40:45 confirmed (200); earlier token 11 marked used, registry 0; address reverted the same way |
 | 19 | PASS | K (id 14) row incomplete, postgres stopped 15:43:2x: retry job ERROR 'Unexpected error occurred in scheduled task' 12:44:21Z; postgres started 15:44:49, next run 12:45:19Z sent the mail (15:45:19), row gone |
 
+### Run 2026-10-12
+
+container stack with APP_EVENTS_RETRY_INTERVAL/AFTER=PT1M, develop e82b75b; re-run of step 3 after the fix; the retry delivered the mail at 19:29:43 local after Mailpit restarted and event_publication ended empty. Result: 1 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 3 | PASS | re-run after the fix, container stack with APP_EVENTS_RETRY_INTERVAL/AFTER=PT1M: Mailpit stopped, secretary.fmi returned award 238 with a comment; log 16:27:13/15/20 three WARN + 16:27:20 one ERROR «Email 'Нагороду повернуто на доопрацювання / Award returned for changes' to [employee.fmi@chnu.edu.ua] was not delivered», no body text, no SimpleAsyncUncaughtExceptionHandler line (UndeliveredMailAsyncHandler at DEBUG only); event_publication one open row …AwardDecided 16:27:09; award_events_incomplete 1.0 |
+
 ## 11. Risks
 
 | Risk | Impact | Mitigation |

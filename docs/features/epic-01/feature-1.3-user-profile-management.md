@@ -166,7 +166,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 
 9. As `employee.fmi` open `/profile` → «Мої дані» → «Завантажити мої дані». Expected: file `award-monitoring-export-2026-…json` downloads; it contains the profile, the `EMPLOYEE` role, the Feature 2.1 awards including drafts, `devices` with the browser and IP, `activity_log` with `LOGIN_SUCCESS` and the `PROFILE_UPDATED` of step 2; searching the file for `password`, `$2a$` and `token` finds nothing. (AC-3.1–3.3, 3.5)
 10. Mailpit has «Ваші дані експортовано / Your data was exported» with time, IP and browser; psql `select new_values from audit_logs where action_type = 'DATA_EXPORT' order by created_at desc limit 1;` → the section counts. Clicking the button again at once → «Забагато запитів». (AC-3.4)
-11. As `dean.fmi` with an active delegation (Feature 1.2 §9 step 12) export → `delegations` lists it with the secretary's name only. As an unconfirmed newcomer export → empty `roles` and `awards` arrays. (AC-3.2, 3.3)
+11. As `dean.fmi` with an active delegation (Feature 1.2 §9 step 12) export → `delegations` lists it with the secretary's name only. As an unconfirmed newcomer export → empty `roles`, `awards`, `review_decisions` and `decisions_made` arrays. As `employee.fmi` the export has `review_decisions` (decisions on own awards) and as `secretary.fmi` `decisions_made` (decisions taken as reviewer): other people appear by name only (`reviewer`, `delegator`), and the `DATA_EXPORT` audit row counts both sections. (AC-3.2, 3.3, SCRUM-70)
 
 ### Detours
 
@@ -215,6 +215,14 @@ container stack (develop image of 2026-10-11, default settings), Mailpit, Playwr
 | 22 | PASS | step text corrected (bound links move the account back by design, AUTH §9): mr13w new-device link after the move -> 204, SECURITY_REVOKE restoredEmail mr13w@, mails «Скидання пароля» to old, «Адресу…повернуто» to mr13w.new, new address refused, old address refused until reset, second press 410 |
 | 23 | PASS | employee.fmi signed in; link of mr13v opened in the same browser context -> confirmed (mr13v.new); employee.fmi page reloads on /profile, still signed in |
 | 24 | PASS | UI dialog second send within a minute -> «Too many requests. Try again later.», Mailpit unchanged (no mail for mover13.c) |
+
+### Run 2026-10-12
+
+container stack, develop e82b75b; step 11 extended and run for the review decisions sections (SCRUM-70). Result: 1 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 11 | PASS | format 1.3; employee.fmi review_decisions 62 (award 21 delegated: reviewer Олена Петрук, delegator Мартин Мартинюк; names only, no ids), decisions_made 0; secretary.fmi decisions_made 52, review_decisions 1; audit DATA_EXPORT counts decisions_made 52, review_decisions 1; mail 19:14 «Ваші дані експортовано»; dean delegations 10 (GIVEN, other_party by name), fresh unconfirmed mr13new: roles/awards/review_decisions/decisions_made all empty; step extended for SCRUM-70 |
 
 ## 10. Risks
 

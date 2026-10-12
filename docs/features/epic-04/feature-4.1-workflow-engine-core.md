@@ -382,6 +382,15 @@ full container stack at 93852c8 (develop b841665 + docs), default settings (retr
 | 40 | PASS | 46: rejection comment typed in dialog, award approved elsewhere, confirm → dialog «Рішення вже ухвалено» [Закрити], typed text still in the textarea until closed, page reloaded to «Затверджено»; step text corrected (closed, not «Дані застаріли»; the comment is not kept after closing) |
 | 41 | PASS | F(59, national «Державна премія») returned at faculty level; employee changed category to 31 (faculty) and resubmitted → SUBMITTED at FACULTY_SECRETARY; secretary APPROVE → APPROVED (final) |
 
+### Run 2026-10-12
+
+container stack, develop e82b75b; re-run of steps 29 and 32 after the fixes. Result: 2 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 29 | PASS | award 235 claimed by secretary.fmi (IN_REVIEW); admin DELETE /users/5/roles/12 -> 204; her decision -> 403 access-denied; secretary2.fmi /awards/235 offers «Взяти на себе», take-over -> reviewer Олена Петрук; dean.fmi on 235 (held by secretary2) also offered «Взяти на себе»; role re-assigned (id 152, from 2026-10-12); re-run after SCRUM-79 |
+| 32 | PASS | award 236 returned by secretary.fmi (DRAFT/RETURNED); DELETE /awards/236 -> 409 award-has-request; /awards/236 and /awards/236/edit offer no «Видалити» (edit form: «Зберегти чернетку», «Подати» only); re-run after the fix |
+
 ## 10. Risks
 
 | Risk | Impact | Mitigation |
