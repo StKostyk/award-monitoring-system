@@ -31,15 +31,16 @@ import ua.edu.chnu.awards.auth.service.DeviceService;
 import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class LoginSuccessListenerTest {
 
-    private final UserRepository userRepository = mock(UserRepository.class);
+    private final UserAccounts userRepository = mock(UserAccounts.class);
     private final LoginAttemptService attempts = mock(LoginAttemptService.class);
     private final AuditService audit = mock(AuditService.class);
     private final DeviceService devices = mock(DeviceService.class);
-    private final LoginSuccessListener listener = new LoginSuccessListener(userRepository, attempts, audit, devices);
+    private final LoginSuccessListener listener = new LoginSuccessListener(userRepository, attempts,
+        audit, devices);
     private final User dean = User.builder().id(5L).emailAddress("dean@chnu.edu.ua").build();
 
     @AfterEach

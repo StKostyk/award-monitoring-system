@@ -29,7 +29,7 @@ import ua.edu.chnu.awards.common.mail.UndeliveredMailAsyncHandler;
  */
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties({WorkflowProperties.class, EventProperties.class})
+@EnableConfigurationProperties(EventProperties.class)
 @EnableScheduling
 public class InfrastructureConfig {
 

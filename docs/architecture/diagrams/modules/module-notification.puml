@@ -1,0 +1,26 @@
+@startuml
+set separator none
+title Notification
+
+top to bottom direction
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+Container_Boundary("AwardMonitoringSystemApplication.AwardMonitoringSystemApplication_boundary", "AwardMonitoringSystemApplication", $tags="") {
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Delegation, "Delegation", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Notification, "Notification", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "Common", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, "User", $techn="Module", $descr="", $tags="", $link="")
+}
+
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "depends on", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Delegation, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "depends on", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Delegation, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Notification, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, "listens to", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Notification, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Delegation, "listens to", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Notification, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "uses", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+@enduml

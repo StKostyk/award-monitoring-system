@@ -8,14 +8,14 @@ import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.RoleLevels;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ public class RoleAssignmentRules {
     private static final LocalDate OPEN_ENDED = LocalDate.of(9999, 12, 31);
 
     private final UserRoleRepository userRoleRepository;
-    private final OrganizationRepository organizationRepository;
+    private final OrganizationLookup organizationRepository;
     private final RoleOrganizations roleOrganizations;
     private final RoleLevels levels;
     private final AccessScope access;

@@ -1,0 +1,55 @@
+package ua.edu.chnu.awards.authz;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+class RolePermissionsTest {
+
+    private final RolePermissions permissions = new RolePermissions();
+
+    @Test
+    void ac14_everyRoleHasPermissionsFromTheDesignMatrix() {
+        for (RoleType role : RoleType.values()) {
+            assertThat(permissions.of(role)).as(role.name()).isNotEmpty();
+        }
+        assertThat(permissions.of(RoleType.EMPLOYEE)).containsExactlyInAnyOrder(
+            "award:read:own", "award:create", "award:update:own");
+        assertThat(permissions.of(RoleType.RECTOR)).contains("award:approve:final");
+        assertThat(permissions.of(RoleType.SYSTEM_ADMIN)).contains("user:manage", "system:configure")
+            .doesNotContain("award:create");
+        assertThat(permissions.of(RoleType.GDPR_OFFICER)).contains("consent:manage")
+            .doesNotContain("user:manage");
+    }
+
+    @Test
+    void ac11_approvalRolesReadAndManageUsersInsideTheirScopeOnly() {
+        for (RoleType role : List.of(RoleType.FACULTY_SECRETARY, RoleType.DEAN, RoleType.RECTOR_SECRETARY,
+            RoleType.RECTOR)) {
+            assertThat(permissions.of(role)).as(role.name()).contains("user:read:scope", "user:manage:scope")
+                .doesNotContain("user:read:all", "user:manage");
+        }
+        assertThat(permissions.of(RoleType.EMPLOYEE)).doesNotContain("user:read:scope", "user:manage:scope");
+        assertThat(permissions.of(RoleType.SYSTEM_ADMIN)).contains("user:read:all", "user:manage")
+            .doesNotContain("user:manage:scope");
+    }
+
+    @Test
+    void ac4_theAdministratorReadsTheAuditTrailButNoAwardsAndTheGdprOfficerReadsBoth() {
+        assertThat(permissions.of(RoleType.SYSTEM_ADMIN)).contains("audit:read", "award:read:own")
+            .doesNotContain("award:read:department", "award:read:faculty", "award:read:all");
+        assertThat(permissions.of(RoleType.GDPR_OFFICER)).contains("audit:read", "award:read:department",
+            "award:read:faculty", "award:read:all");
+    }
+
+    @Test
+    void ac14_unionIsSortedAndDeduplicated() {
+        List<String> union = permissions.union(List.of(RoleType.EMPLOYEE, RoleType.FACULTY_SECRETARY));
+
+        assertThat(union).isSorted().doesNotHaveDuplicates()
+            .contains("award:approve:level1", "award:read:department", "award:read:own");
+        assertThat(permissions.union(List.of())).isEmpty();
+    }
+}

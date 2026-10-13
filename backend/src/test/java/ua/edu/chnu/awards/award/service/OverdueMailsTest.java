@@ -22,20 +22,19 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.common.mail.MailNotDeliveredException;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 class OverdueMailsTest {
 
     private static final String DEAN = "dean.fmi@chnu.edu.ua";
 
     private final MailDelivery delivery = mock(MailDelivery.class);
-    private final AuthProperties properties = mock(AuthProperties.class);
+    private final AwardLinks links = mock(AwardLinks.class);
     private final ReviewMetrics metrics = mock(ReviewMetrics.class);
-    private final OverdueMails mails = new OverdueMails(delivery, properties, metrics);
+    private final OverdueMails mails = new OverdueMails(delivery, links, metrics);
 
     @BeforeEach
     void setUp() {
-        when(properties.awardLink(anyLong())).thenReturn("http://localhost:4200/awards/5");
+        when(links.awardLink(anyLong())).thenReturn("http://localhost:4200/awards/5");
     }
 
     @Test

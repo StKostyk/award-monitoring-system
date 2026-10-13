@@ -17,7 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.auth.entity.UserDevice;
-import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
+import ua.edu.chnu.awards.auth.service.DeviceLookup;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
@@ -26,11 +27,11 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVersion;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.entity.VersionAction;
-import ua.edu.chnu.awards.award.repository.AwardRepository;
-import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
+import ua.edu.chnu.awards.award.service.AwardLookup;
+import ua.edu.chnu.awards.award.service.AwardVersionLookup;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
-import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
+import ua.edu.chnu.awards.delegation.service.DelegationLookup;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ActivityEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DecisionMadeEntry;
@@ -38,25 +39,25 @@ import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ReviewDecisionEntry;
 import ua.edu.chnu.awards.gdpr.mapper.PersonalDataMapper;
 import ua.edu.chnu.awards.gdpr.repository.PersonalDataQueries;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
 
 class PersonalDataAssemblerTest {
 
     private static final Instant NOW = Instant.parse("2026-09-30T09:00:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 9, 30);
 
-    private final UserRoleRepository roles = mock(UserRoleRepository.class);
-    private final RoleDelegationRepository delegations = mock(RoleDelegationRepository.class);
-    private final AwardRepository awards = mock(AwardRepository.class);
-    private final AwardVersionRepository versions = mock(AwardVersionRepository.class);
-    private final UserDeviceRepository devices = mock(UserDeviceRepository.class);
+    private final RoleHolders roles = mock(RoleHolders.class);
+    private final DelegationLookup delegations = mock(DelegationLookup.class);
+    private final AwardLookup awards = mock(AwardLookup.class);
+    private final AwardVersionLookup versions = mock(AwardVersionLookup.class);
+    private final DeviceLookup devices = mock(DeviceLookup.class);
     private final PersonalDataQueries queries = mock(PersonalDataQueries.class);
-    private final PersonalDataAssembler assembler = new PersonalDataAssembler(roles, delegations, awards, versions,
+    private final PersonalDataAssembler assembler = new PersonalDataAssembler(roles,
+        delegations, awards, versions,
         devices, queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
     private Organization faculty;

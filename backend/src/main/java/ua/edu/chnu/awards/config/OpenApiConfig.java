@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,8 +23,7 @@ public class OpenApiConfig {
     static final String BEARER_SCHEME = "bearer";
 
     @Bean
-    OpenAPI awardsOpenApi(AuthProperties properties) {
-        String issuer = properties.issuer();
+    OpenAPI awardsOpenApi(@Value("${app.auth.issuer}") String issuer) {
         SecurityScheme oauth = new SecurityScheme()
             .type(SecurityScheme.Type.OAUTH2)
             .description("Sign in through the authorization server (authorization code with PKCE)")

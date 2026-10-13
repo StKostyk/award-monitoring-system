@@ -1,6 +1,6 @@
 package ua.edu.chnu.awards.award.dto;
 
-import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.Organization;
 
 /**
  * Who received an award: its owner, or a faculty or department.

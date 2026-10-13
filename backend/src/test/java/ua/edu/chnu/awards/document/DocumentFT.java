@@ -37,14 +37,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import io.restassured.response.Response;
 
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.document.service.UploadLimits;
 import ua.edu.chnu.awards.gdpr.service.DataExportService;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardApi;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.RoleType;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

@@ -24,13 +24,12 @@ import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.AchievementRecipient;
 import ua.edu.chnu.awards.award.dto.CategoryRef;
 import ua.edu.chnu.awards.award.dto.RecipientType;
+import ua.edu.chnu.awards.award.dto.SharedDocument;
 import ua.edu.chnu.awards.award.dto.UnitRef;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.service.Achievements;
 import ua.edu.chnu.awards.award.service.UnitNotFoundException;
-import ua.edu.chnu.awards.document.dto.SharedDocument;
-import ua.edu.chnu.awards.document.entity.DocumentType;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 @WebMvcTest(AchievementController.class)
 class AchievementEndpointsTest extends AbstractAwardEndpointsTest {
@@ -84,7 +83,7 @@ class AchievementEndpointsTest extends AbstractAwardEndpointsTest {
             "МОН України", LocalDate.of(2025, 5, 1), null, true, new AchievementRecipient(RecipientType.PERSON,
             "Анастасія Коваль", new UnitRef(64L, "Algebra", "Кафедра алгебри", OrganizationType.DEPARTMENT)));
         when(achievements.detail(5L)).thenReturn(new AchievementDetail(achievement, List.of(
-            new SharedDocument(7L, "диплом.pdf", DocumentType.DIPLOMA, "application/pdf", 3L, null))));
+            new SharedDocument(7L, "диплом.pdf", "DIPLOMA", "application/pdf", 3L, null))));
 
         mockMvc.perform(get(ACHIEVEMENTS + "/5").with(employee()))
             .andExpect(status().isOk())

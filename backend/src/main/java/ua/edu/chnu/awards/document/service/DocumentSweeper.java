@@ -10,7 +10,7 @@ import java.util.Set;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.config.DocumentProperties;
+import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
 
 import lombok.RequiredArgsConstructor;

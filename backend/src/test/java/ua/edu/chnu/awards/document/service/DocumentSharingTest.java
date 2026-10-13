@@ -29,6 +29,7 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.service.AwardLookup;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
@@ -37,10 +38,10 @@ import ua.edu.chnu.awards.document.entity.Document;
 import ua.edu.chnu.awards.document.entity.DocumentFormat;
 import ua.edu.chnu.awards.document.entity.DocumentType;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
 
 class DocumentSharingTest {
@@ -52,7 +53,7 @@ class DocumentSharingTest {
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AwardOwnership ownership = mock(AwardOwnership.class);
     private final AuditService audit = mock(AuditService.class);
-    private final DocumentSharing sharing = new DocumentSharing(documents, awards, ownership, audit);
+    private final DocumentSharing sharing = new DocumentSharing(documents, new AwardLookup(awards), ownership, audit);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
     private Award award;

@@ -8,10 +8,10 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.organization.OrganizationTree;
 
 import lombok.RequiredArgsConstructor;
 

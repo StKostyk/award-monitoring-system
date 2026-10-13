@@ -16,7 +16,7 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import ua.edu.chnu.awards.common.HashUtils;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,12 +32,12 @@ public final class RefreshTokenReuseGuard implements AuthenticationProvider {
 
     private final AuthenticationProvider delegate;
     private final OAuth2AuthorizationService authorizationService;
-    private final UserRepository userRepository;
+    private final UserAccounts userRepository;
     private final StringRedisTemplate redis;
     private final Duration remember;
 
     public RefreshTokenReuseGuard(AuthenticationProvider delegate, OAuth2AuthorizationService authorizationService,
-                                  UserRepository userRepository, StringRedisTemplate redis, Duration remember) {
+                                  UserAccounts userRepository, StringRedisTemplate redis, Duration remember) {
         this.delegate = delegate;
         this.authorizationService = authorizationService;
         this.userRepository = userRepository;

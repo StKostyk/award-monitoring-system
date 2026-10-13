@@ -28,17 +28,19 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
+import ua.edu.chnu.awards.auth.web.EmailChangeController;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.gdpr.controller.DataExportController;
 import ua.edu.chnu.awards.gdpr.dto.DataExport;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.user.dto.UserProfileResponse;
 import ua.edu.chnu.awards.user.dto.UserUpdateRequest;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.service.ProfileNameRules;
 
-@WebMvcTest(UserProfileController.class)
+@WebMvcTest({UserProfileController.class, EmailChangeController.class, DataExportController.class})
 class UserProfileEndpointsTest extends AbstractUserEndpointsTest {
 
     private static final OrganizationRef DEPARTMENT = new OrganizationRef(64L,

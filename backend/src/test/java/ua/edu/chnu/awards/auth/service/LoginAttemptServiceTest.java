@@ -30,11 +30,13 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.AccountLocked;
-import ua.edu.chnu.awards.config.ProtectionProperties;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.common.limit.ProtectionProperties;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class LoginAttemptServiceTest {
 
@@ -51,8 +53,9 @@ class LoginAttemptServiceTest {
     private final ProtectionProperties properties = new ProtectionProperties(5, Duration.ofMinutes(15),
         Duration.ofMinutes(30), 20, 120);
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
-    private final LoginAttemptService service = new LoginAttemptService(redis, properties, userRepository,
-        userRoleRepository, tokens, audit, events, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final LoginAttemptService service = new LoginAttemptService(redis, properties,
+        new UserAccounts(userRepository),
+        new RoleHolders(userRoleRepository), tokens, audit, events, Clock.fixed(NOW, ZoneOffset.UTC));
 
     @BeforeEach
     void setUp() {

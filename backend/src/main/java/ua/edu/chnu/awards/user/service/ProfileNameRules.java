@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
+import ua.edu.chnu.awards.user.dto.NameConstants;
 import ua.edu.chnu.awards.user.dto.UserUpdateRequest;
 
 /**
@@ -20,7 +20,7 @@ import ua.edu.chnu.awards.user.dto.UserUpdateRequest;
 public class ProfileNameRules {
 
     static final int MAX_LENGTH = 100;
-    private static final Pattern NAME = Pattern.compile(RegisterRequest.NAME);
+    private static final Pattern NAME = Pattern.compile(NameConstants.NAME);
 
     /**
      * Cleans the sent names and refuses the request when a name or another property is not acceptable.

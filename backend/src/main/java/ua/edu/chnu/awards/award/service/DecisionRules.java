@@ -5,11 +5,11 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.ReviewDecisionRequest;
 import ua.edu.chnu.awards.award.dto.ReviewDecisionRequest.Decision;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
-import ua.edu.chnu.awards.document.repository.DocumentRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,7 +26,7 @@ public class DecisionRules {
 
     private static final String COMMENT = "comment";
 
-    private final DocumentRepository documents;
+    private final AwardDocuments documents;
 
     /**
      * Refuses an incomplete decision.
@@ -80,7 +80,7 @@ public class DecisionRules {
      * @throws ApiProblemException 422 {@code validation-failed} on {@code verified}
      */
     public void checkVerified(long awardId, ReviewDecisionRequest body) {
-        if (body.isVerified() && documents.countByAwardId(awardId) == 0) {
+        if (body.isVerified() && documents.countOf(awardId) == 0) {
             throw ApiProblemException.validationFailed("The award has no documents to verify",
                 List.of(new FieldViolation("verified", "no-documents", "The award has no documents to verify")));
         }

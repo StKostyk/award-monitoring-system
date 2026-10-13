@@ -1,0 +1,85 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.award`
+|Spring components
+|_Services_
+
+* `u.e.c.a.a.service.Achievements`
+* `u.e.c.a.a.service.AwardCorrection`
+* `u.e.c.a.a.service.AwardHistory`
+* `u.e.c.a.a.service.AwardLookup`
+* `u.e.c.a.a.service.AwardService`
+* `u.e.c.a.a.service.AwardSharing`
+* `u.e.c.a.a.service.AwardStatusService`
+* `u.e.c.a.a.service.AwardSubmission`
+* `u.e.c.a.a.service.AwardVersionLookup`
+* `u.e.c.a.a.service.AwardWithdrawal`
+* `u.e.c.a.a.service.BatchReview`
+* `u.e.c.a.a.service.CategoryCatalogue`
+* `u.e.c.a.a.service.CategorySuggester`
+* `u.e.c.a.a.service.OverdueNotices`
+* `u.e.c.a.a.service.ReviewAssignment`
+* `u.e.c.a.a.service.ReviewDecisions`
+* `u.e.c.a.a.service.ReviewPeriods`
+* `u.e.c.a.a.service.ReviewQueue`
+* `u.e.c.a.a.service.ReviewTemplates`
+
+_Event listeners_
+
+* `u.e.c.a.a.service.CorrectionMails`
+* `u.e.c.a.a.service.DecisionMails`
+* `u.e.c.a.a.service.OverdueJob`
+* `u.e.c.a.a.service.OverdueMails`
+* `u.e.c.a.a.service.ReviewMetrics`
+* `u.e.c.a.a.service.TakeOverMails`
+
+_Others_
+
+* `u.e.c.a.a.service.ApprovalPath`
+* `u.e.c.a.a.service.AwardDateRules`
+* `u.e.c.a.a.service.AwardInputRules`
+* `u.e.c.a.a.service.AwardLinks`
+* `u.e.c.a.a.service.AwardOwnership`
+* `u.e.c.a.a.service.AwardWarnings`
+* `u.e.c.a.a.service.CorrectionLog`
+* `u.e.c.a.a.service.CorrectionRules`
+* `u.e.c.a.a.service.DecisionLog`
+* `u.e.c.a.a.service.DecisionRules`
+* `u.e.c.a.a.service.DuplicateFinder`
+* `u.e.c.a.a.service.OrganizationMatcher`
+* `u.e.c.a.a.service.RecipientUnits`
+* `u.e.c.a.a.service.RequestLookup`
+* `u.e.c.a.a.service.ReviewGuards`
+* `u.e.c.a.a.service.ReviewerAvailability`
+* `u.e.c.a.a.service.ReviewerRule`
+* `u.e.c.a.a.service.StartLevel`
+* `u.e.c.a.a.service.StatusEstimator`
+* `u.e.c.a.a.service.TakeOverRule`
+* `u.e.c.a.a.service.Transitions`
+|Bean references
+|* `u.e.c.a.a.service.AuditTrailService` (in Audit)
+* `u.e.c.a.u.service.UserAccounts` (in User)
+* `u.e.c.a.o.service.OrganizationLookup` (in Organization)
+* `u.e.c.a.a.AccessScope` (in Authz)
+* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.c.mail.MailDelivery` (in Common)
+* `u.e.c.a.o.OrganizationTree` (in Organization)
+* `u.e.c.a.u.service.RoleHolders` (in User)
+* `u.e.c.a.d.service.DelegationLookup` (in Delegation)
+|Aggregate roots
+|* `u.e.c.a.a.entity.Award`
+* `u.e.c.a.a.entity.AwardCategory`
+* `u.e.c.a.a.entity.AwardRequest`
+* `u.e.c.a.a.entity.AwardVersion`
+* `u.e.c.a.a.entity.ReviewDecision`
+* `u.e.c.a.a.entity.ReviewTemplate`
+|Events listened to
+|* `u.e.c.a.a.event.AwardCorrected` (async) 
+* `u.e.c.a.a.event.AwardDecided` (async) 
+* `org.springframework.boot.context.event.ApplicationReadyEvent` 
+* `u.e.c.a.a.event.OverdueNoticed` (async) 
+* `u.e.c.a.a.event.ReviewMeasured` 
+* `u.e.c.a.a.event.SubmissionMeasured` 
+* `u.e.c.a.a.event.ReviewTakenOver` (async) 
+|===

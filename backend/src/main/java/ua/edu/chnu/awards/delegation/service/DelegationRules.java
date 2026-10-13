@@ -11,17 +11,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.delegation.dto.DelegationRequest;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -42,9 +42,9 @@ public class DelegationRules {
     private static final long MAX_DAYS = 90;
 
     private final RoleDelegationRepository delegationRepository;
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final OrganizationRepository organizationRepository;
+    private final UserAccounts userRepository;
+    private final RoleHolders userRoleRepository;
+    private final OrganizationLookup organizationRepository;
     private final AccessScope access;
 
     /**

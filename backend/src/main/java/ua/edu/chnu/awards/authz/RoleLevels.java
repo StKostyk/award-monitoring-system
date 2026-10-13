@@ -6,8 +6,6 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
-
 /**
  * The line of authority, lowest first: {@code EMPLOYEE}, {@code FACULTY_SECRETARY}, {@code DEAN},
  * {@code RECTOR_SECRETARY}, {@code RECTOR}, and the roles each role may grant: the faculty secretary and the

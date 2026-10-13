@@ -37,14 +37,14 @@ import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class AwardStatusServiceTest {
 
@@ -56,8 +56,8 @@ class AwardStatusServiceTest {
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserRepository.class),
-        mock(OrganizationRepository.class), access);
+    private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserAccounts.class),
+        mock(OrganizationLookup.class), access);
     private final ReviewerAvailability reviewers = mock(ReviewerAvailability.class);
     private final AwardStatusService service = new AwardStatusService(requests, decisions, ownership,
         TestWorkflow.estimator(Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"))), reviewers);

@@ -12,16 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
-import ua.edu.chnu.awards.auth.repository.UserDeviceRepository;
-import ua.edu.chnu.awards.award.repository.AwardRepository;
-import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
-import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
+import ua.edu.chnu.awards.auth.service.DeviceLookup;
+import ua.edu.chnu.awards.award.service.AwardLookup;
+import ua.edu.chnu.awards.award.service.AwardVersionLookup;
+import ua.edu.chnu.awards.delegation.service.DelegationLookup;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
 import ua.edu.chnu.awards.gdpr.mapper.PersonalDataMapper;
 import ua.edu.chnu.awards.gdpr.repository.PersonalDataQueries;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,11 +44,11 @@ public class PersonalDataAssembler {
         AuditAction.PROFILE_UPDATED, AuditAction.EMAIL_CHANGE_REQUESTED, AuditAction.EMAIL_CHANGED,
         AuditAction.ACCESS_DENIED, AuditAction.DATA_EXPORT).map(Enum::name).toList();
 
-    private final UserRoleRepository roles;
-    private final RoleDelegationRepository delegations;
-    private final AwardRepository awards;
-    private final AwardVersionRepository versions;
-    private final UserDeviceRepository devices;
+    private final RoleHolders roles;
+    private final DelegationLookup delegations;
+    private final AwardLookup awards;
+    private final AwardVersionLookup versions;
+    private final DeviceLookup devices;
     private final PersonalDataQueries queries;
     private final PersonalDataMapper mapper;
     private final Clock clock;

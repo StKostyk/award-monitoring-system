@@ -18,7 +18,7 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.config.DocumentProperties;
+import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
 import ua.edu.chnu.awards.document.entity.Document;
 import ua.edu.chnu.awards.document.entity.DocumentFormat;

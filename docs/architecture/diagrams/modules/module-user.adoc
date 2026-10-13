@@ -1,0 +1,30 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.user`
+|Spring components
+|_Services_
+
+* `u.e.c.a.u.service.RoleAssignmentService`
+* `u.e.c.a.u.service.RoleHolders`
+* `u.e.c.a.u.service.UserAccounts`
+* `u.e.c.a.u.service.UserDirectoryService`
+* `u.e.c.a.u.service.UserProfileService`
+
+_Others_
+
+* `u.e.c.a.u.service.MembershipConfirmation` (via `u.e.c.a.u.service.ManualConfirmation`)
+* `u.e.c.a.u.service.ProfileNameRules`
+* `u.e.c.a.u.service.RoleAssignmentRules`
+* `u.e.c.a.u.service.RoleChangeRecorder`
+* `u.e.c.a.u.service.RoleOrganizations`
+* `u.e.c.a.u.service.UserActorDirectory`
+|Bean references
+|* `u.e.c.a.o.service.OrganizationLookup` (in Organization)
+* `u.e.c.a.a.RoleLevels` (in Authz)
+* `u.e.c.a.a.AccessScope` (in Authz)
+* `u.e.c.a.a.service.AuditService` (in Audit)
+|Aggregate roots
+|* `u.e.c.a.u.entity.User`
+* `u.e.c.a.u.entity.UserRole`
+|===

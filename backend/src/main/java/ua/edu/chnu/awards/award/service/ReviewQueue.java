@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.award.dto.ReviewItem;
 import ua.edu.chnu.awards.award.dto.ReviewQuery;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
@@ -23,6 +22,7 @@ import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewSpecifications;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.PageResponse;
+import ua.edu.chnu.awards.organization.OrganizationTree;
 
 import lombok.RequiredArgsConstructor;
 

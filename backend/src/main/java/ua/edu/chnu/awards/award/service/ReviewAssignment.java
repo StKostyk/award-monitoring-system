@@ -24,7 +24,7 @@ import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,7 +45,7 @@ public class ReviewAssignment {
     private final ReviewDecisionRepository decisions;
     private final ReviewerRule rule;
     private final ReviewerAvailability availability;
-    private final UserRepository users;
+    private final UserAccounts users;
     private final AuditService audit;
     private final ReviewItemMapper mapper;
     private final AccessScope access;

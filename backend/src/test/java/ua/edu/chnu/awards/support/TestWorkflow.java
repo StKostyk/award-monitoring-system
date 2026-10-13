@@ -3,9 +3,9 @@ package ua.edu.chnu.awards.support;
 import java.time.Clock;
 import java.time.ZoneId;
 
+import ua.edu.chnu.awards.award.config.WorkflowProperties;
 import ua.edu.chnu.awards.award.service.ApprovalPath;
 import ua.edu.chnu.awards.award.service.StatusEstimator;
-import ua.edu.chnu.awards.config.WorkflowProperties;
 
 /**
  * The workflow timing of unit tests: the default review period of three working days.

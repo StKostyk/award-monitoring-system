@@ -18,6 +18,9 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.audit.service.AuditTrailService;
+import ua.edu.chnu.awards.auth.config.LoginSessionConfig;
+import ua.edu.chnu.awards.auth.config.PublicApiSecurityConfig;
+import ua.edu.chnu.awards.auth.config.SecurityConfig;
 import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
 import ua.edu.chnu.awards.auth.security.JpaUserDetailsService;
@@ -26,12 +29,12 @@ import ua.edu.chnu.awards.auth.security.LockedAccountChecker;
 import ua.edu.chnu.awards.auth.security.LoginAccessDeniedHandler;
 import ua.edu.chnu.awards.auth.security.LoginFailureHandler;
 import ua.edu.chnu.awards.auth.security.ProblemDetailsEntryPoint;
-import ua.edu.chnu.awards.auth.security.RolePermissions;
 import ua.edu.chnu.awards.authz.AccessDenials;
+import ua.edu.chnu.awards.authz.AccessDeniedProblems;
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.authz.ProblemDetailsAccessDeniedHandler;
 import ua.edu.chnu.awards.authz.RoleLevels;
+import ua.edu.chnu.awards.authz.RolePermissions;
 import ua.edu.chnu.awards.award.dto.AwardRecipient;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.CategoryRef;
@@ -47,11 +50,9 @@ import ua.edu.chnu.awards.award.service.AwardService;
 import ua.edu.chnu.awards.award.service.AwardSubmission;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.config.InfrastructureConfig;
-import ua.edu.chnu.awards.config.LoginSessionConfig;
-import ua.edu.chnu.awards.config.PublicApiSecurityConfig;
-import ua.edu.chnu.awards.config.SecurityConfig;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 /**
  * The real security chain of {@code /api/v1/awards} with the services behind it mocked.
@@ -59,7 +60,7 @@ import ua.edu.chnu.awards.user.entity.OrganizationType;
 @Import({SecurityConfig.class, PublicApiSecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class,
     JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class,
     ApiExceptionHandler.class, AccessScope.class, RoleLevels.class, RolePermissions.class, AccessDenials.class,
-    ProblemDetailsAccessDeniedHandler.class, AwardBodyProblems.class})
+    AccessDeniedProblems.class, ProblemDetailsAccessDeniedHandler.class, AwardBodyProblems.class})
 abstract class AbstractAwardEndpointsTest {
 
     @Autowired

@@ -1,0 +1,15 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.document`
+|Bean references
+|* `u.e.c.a.a.service.AwardOwnership` (in Award)
+* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.a.AccessScope` (in Authz)
+* `u.e.c.a.a.service.AwardLookup` (in Award)
+* `u.e.c.a.c.limit.FixedWindowCounter` (in Common)
+|Events listened to
+|* `org.springframework.boot.context.event.ApplicationReadyEvent` 
+* `u.e.c.a.d.event.ObjectStored` 
+* `u.e.c.a.d.event.ObjectsReleased` 
+|===

@@ -37,20 +37,20 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
-import ua.edu.chnu.awards.config.DocumentProperties;
+import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
 import ua.edu.chnu.awards.document.entity.Document;
 import ua.edu.chnu.awards.document.entity.DocumentFormat;
 import ua.edu.chnu.awards.document.entity.DocumentType;
 import ua.edu.chnu.awards.document.event.ObjectStored;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class DocumentUploadTest {
 
@@ -71,7 +71,7 @@ class DocumentUploadTest {
     private final DocumentProperties properties = new DocumentProperties("award-documents",
         DataSize.ofMegabytes(10), DOCUMENT_LIMIT, null, DataSize.ofMegabytes(50), UPLOAD_RATE, null, null);
     private final DocumentUpload upload = new DocumentUpload(documents,
-        new AwardOwnership(awards, mock(UserRepository.class), mock(OrganizationRepository.class), access),
+        new AwardOwnership(awards, mock(UserAccounts.class), mock(OrganizationLookup.class), access),
         new DocumentContent(), storage, properties,
         events, new TransactionTemplate(mock(PlatformTransactionManager.class)), malware, limits, access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);

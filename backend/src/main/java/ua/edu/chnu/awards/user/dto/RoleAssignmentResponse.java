@@ -2,7 +2,8 @@ package ua.edu.chnu.awards.user.dto;
 
 import java.time.LocalDate;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
 
 /**
  * A role held within an organisation.

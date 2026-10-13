@@ -23,9 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.RoleScope;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.delegation.dto.DelegationListResponse;
 import ua.edu.chnu.awards.delegation.dto.DelegationRequest;
@@ -34,15 +34,15 @@ import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.mapper.DelegationMapper;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
+import ua.edu.chnu.awards.user.AccountSessions;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 class DelegationServiceTest {
@@ -53,11 +53,11 @@ class DelegationServiceTest {
     private static final long OTHER_FACULTY_ID = 10L;
 
     private final RoleDelegationRepository delegationRepository = mock(RoleDelegationRepository.class);
-    private final UserRepository userRepository = mock(UserRepository.class);
-    private final UserRoleRepository userRoleRepository = mock(UserRoleRepository.class);
-    private final OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
+    private final UserAccounts userRepository = mock(UserAccounts.class);
+    private final RoleHolders userRoleRepository = mock(RoleHolders.class);
+    private final OrganizationLookup organizationRepository = mock(OrganizationLookup.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AuthorizationRevoker revoker = mock(AuthorizationRevoker.class);
+    private final AccountSessions revoker = mock(AccountSessions.class);
     private final DelegationRecorder recorder = mock(DelegationRecorder.class);
 
     private final Organization faculty = organization(FACULTY_ID, OrganizationType.FACULTY);
@@ -70,8 +70,8 @@ class DelegationServiceTest {
     @BeforeEach
     void setUp() {
         service = new DelegationService(delegationRepository, userRepository,
-            new DelegationRules(delegationRepository, userRepository, userRoleRepository,
-                organizationRepository, access),
+            new DelegationRules(delegationRepository, userRepository,
+                userRoleRepository, organizationRepository, access),
             access, revoker, new DelegationMapper(), recorder,
             Clock.fixed(Instant.parse("2026-09-24T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
         when(access.callerId()).thenReturn(dean.getId());
@@ -217,7 +217,7 @@ class DelegationServiceTest {
         assertThat(delegation.getRevokedBy()).isEqualTo(dean);
         assertThat(delegation.stateOn(TODAY)).isEqualTo(DelegationState.REVOKED);
         verify(recorder).revoked(dean, delegation);
-        verify(revoker).revokeAll(secretary);
+        verify(revoker).signOutEverywhere(secretary);
     }
 
     @Test
@@ -240,7 +240,7 @@ class DelegationServiceTest {
         when(access.canManage(RoleType.DEAN, FACULTY_ID)).thenReturn(false);
 
         assertThatThrownBy(() -> service.revoke(5L)).isInstanceOf(DelegationNotFoundException.class);
-        verify(revoker, never()).revokeAll(any());
+        verify(revoker, never()).signOutEverywhere(any());
     }
 
     @Test
@@ -267,7 +267,7 @@ class DelegationServiceTest {
 
         assertThat(received.getRevokedBy()).isEqualTo(dean);
         verify(recorder).revoked(dean, received);
-        verify(revoker).revokeAll(secretary);
+        verify(revoker).signOutEverywhere(secretary);
     }
 
     @Test
@@ -301,7 +301,7 @@ class DelegationServiceTest {
         service.revokeForRole(dean, assignment);
 
         assertThat(received.getRevokedBy()).isEqualTo(dean);
-        verify(revoker).revokeAll(secretary);
+        verify(revoker).signOutEverywhere(secretary);
     }
 
     @Test
@@ -316,7 +316,7 @@ class DelegationServiceTest {
 
         assertThat(delegation.getRevokedBy()).isEqualTo(secretary);
         verify(recorder).revoked(secretary, delegation);
-        verify(revoker).revokeAll(secretary);
+        verify(revoker).signOutEverywhere(secretary);
     }
 
     private String typeOf(Runnable call) {

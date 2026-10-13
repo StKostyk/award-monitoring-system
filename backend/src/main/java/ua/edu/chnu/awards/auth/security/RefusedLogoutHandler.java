@@ -27,7 +27,8 @@ import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 
-import ua.edu.chnu.awards.config.AuthProperties;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
+import ua.edu.chnu.awards.authz.TokenClaimConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -95,9 +96,9 @@ public class RefusedLogoutHandler implements AuthenticationFailureHandler {
         try {
             Jwt token = idTokens.decode(hint);
             return token.getAudience() != null && token.getAudience().contains(clientId)
-                && !TokenClaimsCustomizer.TOKEN_USE_ACCESS.equals(
-                    token.getClaimAsString(TokenClaimsCustomizer.CLAIM_TOKEN_USE))
-                && user.equalsIgnoreCase(token.getClaimAsString(TokenClaimsCustomizer.CLAIM_EMAIL));
+                && !TokenClaimConstants.TOKEN_USE_ACCESS.equals(
+                    token.getClaimAsString(TokenClaimConstants.CLAIM_TOKEN_USE))
+                && user.equalsIgnoreCase(token.getClaimAsString(TokenClaimConstants.CLAIM_EMAIL));
         } catch (JwtException e) {
             return false;
         }

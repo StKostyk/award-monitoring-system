@@ -1,0 +1,24 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.delegation`
+|Spring components
+|_Services_
+
+* `u.e.c.a.d.service.DelegationLookup`
+* `u.e.c.a.d.service.DelegationService`
+
+_Others_
+
+* `u.e.c.a.d.service.DelegationRecorder`
+* `u.e.c.a.d.service.DelegationRules`
+|Bean references
+|* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.u.service.UserAccounts` (in User)
+* `u.e.c.a.u.service.RoleHolders` (in User)
+* `u.e.c.a.o.service.OrganizationLookup` (in Organization)
+* `u.e.c.a.a.AccessScope` (in Authz)
+* `u.e.c.a.u.AccountSessions` (in User)
+|Aggregate roots
+|* `u.e.c.a.d.entity.RoleDelegation`
+|===

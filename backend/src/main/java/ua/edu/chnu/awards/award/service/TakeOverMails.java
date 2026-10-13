@@ -10,7 +10,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +23,7 @@ public class TakeOverMails {
     static final String SUBJECT = "Заявку передано іншому рецензенту / A request was taken over";
 
     private final MailDelivery delivery;
-    private final AuthProperties properties;
+    private final AwardLinks links;
 
     /**
      * Sends the previous holder one message about the take-over.
@@ -37,7 +36,7 @@ public class TakeOverMails {
         if (event.email() == null) {
             return;
         }
-        delivery.send(event.email(), SUBJECT, body(event, properties.awardLink(event.awardId())));
+        delivery.send(event.email(), SUBJECT, body(event, links.awardLink(event.awardId())));
     }
 
     static String body(ReviewTakenOver event, String link) {

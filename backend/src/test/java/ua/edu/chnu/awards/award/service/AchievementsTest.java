@@ -25,28 +25,26 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.util.ReflectionTestUtils;
 
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.Achievement;
 import ua.edu.chnu.awards.award.dto.AchievementDetail;
 import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.RecipientType;
+import ua.edu.chnu.awards.award.dto.SharedDocument;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.document.dto.SharedDocument;
-import ua.edu.chnu.awards.document.entity.Document;
-import ua.edu.chnu.awards.document.entity.DocumentType;
-import ua.edu.chnu.awards.document.repository.DocumentRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 
 class AchievementsTest {
 
@@ -54,8 +52,9 @@ class AchievementsTest {
 
     private final AwardRepository awards = mock(AwardRepository.class);
     private final OrganizationRepository organizations = mock(OrganizationRepository.class);
-    private final DocumentRepository documents = mock(DocumentRepository.class);
-    private final Achievements achievements = new Achievements(awards, organizations, new AwardSpecifications(),
+    private final AwardDocuments documents = mock(AwardDocuments.class);
+    private final Achievements achievements = new Achievements(awards, new OrganizationLookup(organizations),
+        new AwardSpecifications(),
         documents);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
@@ -70,12 +69,9 @@ class AchievementsTest {
     void ac2_aSharedPersonalAwardShowsWithTheDocumentsItsOwnerShows() {
         Award award = TestAwards.award(owner, department).status(AwardStatus.APPROVED)
             .visibility(AwardVisibility.PUBLIC).build();
-        Document shown = Document.builder().award(award).fileName("диплом.pdf").type(DocumentType.DIPLOMA)
-            .mimeType("application/pdf").size(3L).shownToColleagues(true).build();
-        ReflectionTestUtils.setField(shown, "id", 7L);
+        SharedDocument shown = new SharedDocument(7L, "диплом.pdf", "DIPLOMA", "application/pdf", 3L, null);
         when(awards.findWithDetailsById(TestAwards.AWARD_ID)).thenReturn(Optional.of(award));
-        when(documents.findByAwardIdAndShownToColleaguesTrueOrderByUploadedAtAscIdAsc(TestAwards.AWARD_ID))
-            .thenReturn(List.of(shown));
+        when(documents.shownToColleagues(TestAwards.AWARD_ID)).thenReturn(List.of(shown));
 
         AchievementDetail detail = achievements.detail(TestAwards.AWARD_ID);
 

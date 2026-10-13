@@ -13,19 +13,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
-import ua.edu.chnu.awards.authz.OrganizationTree;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
+import ua.edu.chnu.awards.delegation.service.DelegationLookup;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractJpaSliceTest;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
 
 class ReviewerAvailabilityIT extends AbstractJpaSliceTest {
 
@@ -57,7 +59,7 @@ class ReviewerAvailabilityIT extends AbstractJpaSliceTest {
         entityManager.flush();
         OrganizationTree tree = new OrganizationTree(organizations);
         tree.refresh();
-        availability = new ReviewerAvailability(roles, delegations, tree, clock);
+        availability = new ReviewerAvailability(new RoleHolders(roles), new DelegationLookup(delegations), tree, clock);
         owner = person("owner");
     }
 

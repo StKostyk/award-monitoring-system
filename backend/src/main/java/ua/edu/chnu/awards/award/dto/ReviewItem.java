@@ -4,7 +4,7 @@ import java.time.Instant;
 
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
 
 /**
  * One request in a reviewer's queue.

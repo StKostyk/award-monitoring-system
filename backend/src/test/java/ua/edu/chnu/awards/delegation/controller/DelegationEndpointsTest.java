@@ -27,15 +27,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.delegation.dto.DelegationListResponse;
 import ua.edu.chnu.awards.delegation.dto.DelegationResponse;
 import ua.edu.chnu.awards.delegation.dto.UserBrief;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.delegation.service.DelegationNotFoundException;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 @WebMvcTest(DelegationController.class)
 class DelegationEndpointsTest extends AbstractDelegationEndpointsTest {

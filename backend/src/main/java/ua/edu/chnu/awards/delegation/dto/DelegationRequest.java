@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
 
 /**
  * Request to lend an approval role to a colleague.

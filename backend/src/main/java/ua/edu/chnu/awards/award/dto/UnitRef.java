@@ -1,7 +1,7 @@
 package ua.edu.chnu.awards.award.dto;
 
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 /**
  * A faculty or department as a recipient of awards.

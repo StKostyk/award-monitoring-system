@@ -6,8 +6,8 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 /**
  * Which level of the organisation tree each role belongs to. An {@code EMPLOYEE} works in a department, a

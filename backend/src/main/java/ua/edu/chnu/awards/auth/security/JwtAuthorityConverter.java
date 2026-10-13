@@ -11,6 +11,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.authz.TokenClaimConstants;
+
 /**
  * Maps the {@code roles} claim to {@code ROLE_*} authorities and the {@code permissions} claim to plain authorities.
  */
@@ -22,14 +24,14 @@ public class JwtAuthorityConverter implements Converter<Jwt, AbstractAuthenticat
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        List<String> roles = jwt.getClaimAsStringList(TokenClaimsCustomizer.CLAIM_ROLES);
+        List<String> roles = jwt.getClaimAsStringList(TokenClaimConstants.CLAIM_ROLES);
         if (roles != null) {
             roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(ROLE_PREFIX + role)));
         }
-        List<String> permissions = jwt.getClaimAsStringList(TokenClaimsCustomizer.CLAIM_PERMISSIONS);
+        List<String> permissions = jwt.getClaimAsStringList(TokenClaimConstants.CLAIM_PERMISSIONS);
         if (permissions != null) {
             permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
         }
-        return new JwtAuthenticationToken(jwt, authorities, jwt.getClaimAsString(TokenClaimsCustomizer.CLAIM_EMAIL));
+        return new JwtAuthenticationToken(jwt, authorities, jwt.getClaimAsString(TokenClaimConstants.CLAIM_EMAIL));
     }
 }

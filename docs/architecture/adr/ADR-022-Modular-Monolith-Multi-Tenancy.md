@@ -35,9 +35,12 @@ documents also expect a later move to microservices (ADR-006, ADR-008, ADR-018) 
 when a module meets the extraction criteria below.**
 
 ### Chosen Approach
-- **Modules.** Each domain package is a module with a public service API and published events; other modules
-  use only those, never its repositories or entities. At Epic 7 a Spring Modulith `ApplicationModules.verify()`
-  test enforces the boundaries, together with the event publication registry of the ADR-006 addendum.
+- **Modules.** Each top-level package is a module with a public API: its base package and the named interfaces
+  `dto`, `event` and, where listed under Implementation Notes, `service` and `entity`. Other modules use only
+  those, never its `repository`, `controller`, `mapper`, `security` or `web` package; entities they may read are
+  changed only through the owning module's services. Since 7.1.2 the Spring Modulith test `ModularityTest`
+  (`ApplicationModules.verify()`) enforces the boundaries, together with the event publication registry of the
+  ADR-006 addendum.
 - **Tenancy: deployment per university.** The same images run as one Compose stack per university, each with its
   own database, Redis, object storage bucket, signing key, mail sender, brand (`brand.json`, `APP_BRAND`) and
   organisation tree seed. A deployment is the tenant: tables carry no tenant id and no request resolves a tenant.
@@ -109,7 +112,39 @@ when a module meets the extraction criteria below.**
 ### Steps
 1. Now: nothing to build; this decision guides reviews (no new cross-module repository use).
 2. Epic 7 kickoff: add Spring Modulith, the `ApplicationModules.verify()` test and the event publication
-   registry; list and fix the boundary violations it reports.
+   registry; list and fix the boundary violations it reports. **Done**: registry in 7.1.1, modules and test in
+   7.1.2 with no remaining violation or exception.
+
+### Modules (7.1.2)
+
+| Module | Depends on | Exposed to others |
+|--------|------------|-------------------|
+| `common` (open) | — | everything |
+| `audit` | common | base (`ActorDirectory`), `service`, `dto`, `entity` |
+| `organization` | — | base (`OrganizationTree`), `entity`, `dto`, `service` (`OrganizationService`, `OrganizationLookup`) |
+| `authz` | audit, organization | base (`AccessScope`, `RoleLevels`, `RoleType`, `RolePermissions`, `TokenClaimConstants`) |
+| `user` | common, audit, organization, authz | base (`AccountSessions`, `LentAuthority`), `entity`, `dto`, `event`, `service` (`UserAccounts`, `RoleHolders`) |
+| `delegation` | common, audit, organization, authz, user | `entity`, `dto`, `event`, `service` (`DelegationLookup`) |
+| `auth` | common, audit, organization, authz, user, delegation | `entity`, `dto`, `event`, `service` (`DeviceLookup`) |
+| `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`) |
+| `document` | common, audit, authz, user, award | `dto`, `event` |
+| `gdpr` | common, audit, organization, authz, user, delegation, auth, award | `dto`, `event` |
+| `notification` | common, user, delegation | — |
+| `metrics` | — | — |
+| `config` | common, audit | — (depended on by none) |
+
+- Cycles were broken by dependency inversion, with no behaviour change: `audit` names actors through
+  `ActorDirectory` (implemented in `user`); `award` reads documents through `AwardDocuments` (implemented in
+  `document`); `user` signs accounts out through `AccountSessions` (implemented in `auth`) and takes back lent
+  authority through `LentAuthority` (implemented in `delegation`); the not-found exceptions extend
+  `common.web.NotFoundException`, and the 403 handler lives in `authz`. The address-change and export endpoints
+  moved to `auth` and `gdpr` with unchanged paths.
+- Cross-module repository calls go through lookup services of the owning module whose methods keep the
+  repository's names and transaction behaviour.
+- Besides `User` and `Organization`, the entities of `award`, `delegation` and `auth` are readable by other
+  modules (the document mapping and the data export read them); they are changed only by their own module.
+- `ModularityTest` also writes the C4 component diagram and the module canvases; the copies are in
+  `docs/architecture/diagrams/modules/` (`metrics` has no relationship and appears only in its own diagram).
 3. When OCR returns (after Epic 8): evaluate document parsing against the extraction criteria; it is the first
    expected service, fed by document events.
 4. A second university: document the onboarding steps in `docs/deployment/` and parameterise the organisation
@@ -161,6 +196,7 @@ when a module meets the extraction criteria below.**
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2026-10-05 | Stefan Kostyk | Initial version (proposed) | Design review of 2026-10-04 |
+| 2026-10-13 | Stefan Kostyk | Module list, named interfaces, step 2 done | Story 7.1.2 (SCRUM-65) |
 
 ---
 

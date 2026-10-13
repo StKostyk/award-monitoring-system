@@ -6,6 +6,8 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
+import ua.edu.chnu.awards.authz.RoleType;
+
 class UserRoleTest {
 
     private static final LocalDate TODAY = LocalDate.of(2026, 9, 21);

@@ -17,7 +17,7 @@ import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +32,7 @@ public class ReviewDecisions {
 
     private final AwardRequestRepository requests;
     private final DecisionRules rules;
-    private final UserRepository users;
+    private final UserAccounts users;
     private final ReviewGuards guards;
     private final ReviewerRule rule;
     private final Transitions transitions;

@@ -1,0 +1,18 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.gdpr`
+|Bean references
+|* `u.e.c.a.u.service.UserAccounts` (in User)
+* `u.e.c.a.c.limit.RequestThrottle` (in Common)
+* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.a.service.DeviceFingerprint` (in Auth)
+* `u.e.c.a.u.service.RoleHolders` (in User)
+* `u.e.c.a.d.service.DelegationLookup` (in Delegation)
+* `u.e.c.a.a.service.AwardLookup` (in Award)
+* `u.e.c.a.a.service.AwardVersionLookup` (in Award)
+* `u.e.c.a.a.service.DeviceLookup` (in Auth)
+* `u.e.c.a.c.mail.MailDelivery` (in Common)
+|Events listened to
+|* `u.e.c.a.g.event.DataExported` (async) 
+|===

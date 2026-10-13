@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.delegation.dto.DelegationListResponse;
@@ -20,10 +19,12 @@ import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.mapper.DelegationMapper;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
-import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.user.AccountSessions;
+import ua.edu.chnu.awards.user.LentAuthority;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -35,15 +36,15 @@ import lombok.RequiredArgsConstructor;
  */
 @Service
 @RequiredArgsConstructor
-public class DelegationService {
+public class DelegationService implements LentAuthority {
 
     static final String PERMISSION_MANAGE_ALL = "user:manage";
 
     private final RoleDelegationRepository delegationRepository;
-    private final UserRepository userRepository;
+    private final UserAccounts userRepository;
     private final DelegationRules rules;
     private final AccessScope access;
-    private final AuthorizationRevoker revoker;
+    private final AccountSessions sessions;
     private final DelegationMapper mapper;
     private final DelegationRecorder recorder;
     private final Clock clock;
@@ -132,6 +133,7 @@ public class DelegationService {
      * @param actor      who took the role back
      * @param assignment the role assignment that has just ended
      */
+    @Override
     @Transactional
     public void revokeForRole(User actor, UserRole assignment) {
         LocalDate today = LocalDate.now(clock);
@@ -149,6 +151,7 @@ public class DelegationService {
      * @param actor    who moved the person
      * @param delegate the person moved, with their new role already saved
      */
+    @Override
     @Transactional
     public void revokeForMove(User actor, User delegate) {
         rules.borrowedOutsideMembership(delegate, LocalDate.now(clock)).forEach(delegation -> end(delegation, actor));
@@ -158,7 +161,7 @@ public class DelegationService {
         delegation.setRevokedAt(Instant.now(clock));
         delegation.setRevokedBy(actor);
         recorder.revoked(actor, delegation);
-        revoker.revokeAll(delegation.getDelegate());
+        sessions.signOutEverywhere(delegation.getDelegate());
     }
 
     private List<DelegationResponse> page(List<RoleDelegation> delegations, DelegationState state,

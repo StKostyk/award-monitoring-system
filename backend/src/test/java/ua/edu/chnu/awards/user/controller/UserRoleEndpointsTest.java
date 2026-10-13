@@ -23,10 +23,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 
 @WebMvcTest(UserController.class)
 class UserRoleEndpointsTest extends AbstractUserEndpointsTest {

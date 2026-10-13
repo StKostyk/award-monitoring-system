@@ -13,7 +13,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,7 +36,7 @@ public class DecisionMails {
         ApprovalLevel.RECTOR, "the rector");
 
     private final MailDelivery delivery;
-    private final AuthProperties properties;
+    private final AwardLinks links;
 
     /**
      * Sends the owner one message about the decision.
@@ -50,7 +49,7 @@ public class DecisionMails {
         if (event.email() == null) {
             return;
         }
-        delivery.send(event.email(), subject(event), body(event, properties.awardLink(event.awardId())));
+        delivery.send(event.email(), subject(event), body(event, links.awardLink(event.awardId())));
     }
 
     static String subject(AwardDecided event) {

@@ -16,7 +16,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,7 +41,7 @@ public class OverdueMails {
         ApprovalLevel.RECTOR, "rector");
 
     private final MailDelivery delivery;
-    private final AuthProperties properties;
+    private final AwardLinks links;
     private final ReviewMetrics metrics;
 
     /**
@@ -54,7 +53,7 @@ public class OverdueMails {
     @TransactionalEventListener
     public void onNoticed(OverdueNoticed event) {
         if (event.email() != null) {
-            delivery.send(event.email(), subject(event), body(event, properties::awardLink));
+            delivery.send(event.email(), subject(event), body(event, links::awardLink));
             metrics.noticeSent();
         }
     }

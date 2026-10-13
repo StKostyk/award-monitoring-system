@@ -2,7 +2,7 @@ package ua.edu.chnu.awards.delegation.event;
 
 import java.util.List;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
 
 /**
  * Approval authority was taken back before its last day; the delegate is told, and the delegator too when

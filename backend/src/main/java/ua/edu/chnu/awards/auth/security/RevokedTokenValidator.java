@@ -9,6 +9,8 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
 
+import ua.edu.chnu.awards.authz.TokenClaimConstants;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +48,7 @@ public final class RevokedTokenValidator implements OAuth2TokenValidator<Jwt> {
     }
 
     private static long issuedMillis(Jwt token, Instant issuedAt) {
-        String millis = token.getClaimAsString(TokenClaimsCustomizer.CLAIM_ISSUED_AT_MILLIS);
+        String millis = token.getClaimAsString(TokenClaimConstants.CLAIM_ISSUED_AT_MILLIS);
         return millis == null ? issuedAt.toEpochMilli() : Long.parseLong(millis);
     }
 }

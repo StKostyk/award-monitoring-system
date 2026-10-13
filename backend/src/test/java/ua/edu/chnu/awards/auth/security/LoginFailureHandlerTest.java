@@ -24,6 +24,7 @@ import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class LoginFailureHandlerTest {
 
@@ -32,7 +33,8 @@ class LoginFailureHandlerTest {
     private final LoginAttemptService attempts = mock(LoginAttemptService.class);
     private final AuditService audit = mock(AuditService.class);
     private final UserRepository userRepository = mock(UserRepository.class);
-    private final LoginFailureHandler handler = new LoginFailureHandler(attempts, audit, userRepository);
+    private final LoginFailureHandler handler = new LoginFailureHandler(attempts, audit,
+        new UserAccounts(userRepository));
 
     @Test
     void ac16_statusRefusalRedirectsWithTheStatusCode() throws IOException {

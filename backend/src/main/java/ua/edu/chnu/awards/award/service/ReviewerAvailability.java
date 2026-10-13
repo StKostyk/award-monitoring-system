@@ -16,14 +16,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.authz.OrganizationTree;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
-import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
+import ua.edu.chnu.awards.delegation.service.DelegationLookup;
+import ua.edu.chnu.awards.organization.OrganizationTree;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,8 +42,8 @@ public class ReviewerAvailability {
         .filter(AccountStatus::canLogIn)
         .collect(Collectors.toCollection(() -> EnumSet.noneOf(AccountStatus.class)));
 
-    private final UserRoleRepository roles;
-    private final RoleDelegationRepository delegations;
+    private final RoleHolders roles;
+    private final DelegationLookup delegations;
     private final OrganizationTree tree;
     private final Clock clock;
 

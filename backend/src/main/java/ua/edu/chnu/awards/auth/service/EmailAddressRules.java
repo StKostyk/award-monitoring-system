@@ -3,8 +3,8 @@ package ua.edu.chnu.awards.auth.service;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 import lombok.RequiredArgsConstructor;
 

@@ -14,12 +14,12 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.AccountLocked;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.EmailUtils;
-import ua.edu.chnu.awards.config.ProtectionProperties;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.common.limit.ProtectionProperties;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +43,8 @@ public class LoginAttemptService {
 
     private final StringRedisTemplate redis;
     private final ProtectionProperties properties;
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
+    private final UserAccounts userRepository;
+    private final RoleHolders userRoleRepository;
     private final OneTimeTokenService tokens;
     private final AuditService audit;
     private final ApplicationEventPublisher events;

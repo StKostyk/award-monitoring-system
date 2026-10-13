@@ -17,7 +17,7 @@ import ua.edu.chnu.awards.auth.service.DeviceService;
 import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LoginSuccessListener {
 
-    private final UserRepository userRepository;
+    private final UserAccounts userRepository;
     private final LoginAttemptService attempts;
     private final AuditService audit;
     private final DeviceService devices;

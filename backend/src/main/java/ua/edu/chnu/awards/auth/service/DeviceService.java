@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.entity.UserDevice;
@@ -27,9 +28,8 @@ import ua.edu.chnu.awards.common.SecretUtils;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
-import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,7 +52,7 @@ public class DeviceService {
     private final PasswordEncoder passwordEncoder;
     private final AuditService audit;
     private final AuthProperties properties;
-    private final UserRepository users;
+    private final UserAccounts users;
     private final Clock clock;
 
     /**

@@ -21,17 +21,18 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.award.dto.CategorySuggestion;
 import ua.edu.chnu.awards.award.dto.SuggestionReason;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.repository.CategorySuggestionQueries;
 import ua.edu.chnu.awards.award.repository.CategorySuggestionQueries.Candidate;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.support.AbstractJpaSliceTest;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class CategorySuggestionIT extends AbstractJpaSliceTest {
@@ -57,7 +58,8 @@ class CategorySuggestionIT extends AbstractJpaSliceTest {
         queries = new CategorySuggestionQueries(new NamedParameterJdbcTemplate(jdbc));
         OrganizationTree tree = new OrganizationTree(organizationRepository);
         tree.refresh();
-        suggester = new CategorySuggester(queries, new OrganizationMatcher(organizationRepository, tree), access);
+        suggester = new CategorySuggester(queries,
+            new OrganizationMatcher(new OrganizationLookup(organizationRepository), tree), access);
         when(access.callerId()).thenReturn(-1L);
     }
 

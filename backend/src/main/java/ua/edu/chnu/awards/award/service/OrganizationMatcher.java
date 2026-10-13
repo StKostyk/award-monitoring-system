@@ -9,10 +9,10 @@ import java.util.stream.Stream;
 
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,7 +37,7 @@ public class OrganizationMatcher {
     private static final List<String> TYPE_STEMS = List.of("кафедр", "факультет", "інститут", "department",
         "faculty", "institut");
 
-    private final OrganizationRepository repository;
+    private final OrganizationLookup repository;
     private final OrganizationTree tree;
 
     /**

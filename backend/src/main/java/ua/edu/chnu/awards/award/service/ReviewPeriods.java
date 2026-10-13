@@ -16,15 +16,15 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.dto.ReviewPeriodResponse;
 import ua.edu.chnu.awards.award.dto.ReviewPeriodUpdate;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,7 +46,7 @@ public class ReviewPeriods {
     private static final String SYSTEM_CONFIGURE = "system:configure";
     private static final Set<RoleType> READERS = Set.of(RoleType.FACULTY_SECRETARY, RoleType.DEAN);
 
-    private final OrganizationRepository organizations;
+    private final OrganizationLookup organizations;
     private final OrganizationTree tree;
     private final AccessScope access;
     private final StatusEstimator estimator;

@@ -13,7 +13,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.config.DocumentProperties;
+import ua.edu.chnu.awards.document.config.DocumentProperties;
 
 import lombok.extern.slf4j.Slf4j;
 

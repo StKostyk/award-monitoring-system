@@ -1,7 +1,7 @@
 package ua.edu.chnu.awards.user.dto;
 
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.RoleType;
 
 /**
  * Filters of the user directory; every part is optional and they combine with AND.

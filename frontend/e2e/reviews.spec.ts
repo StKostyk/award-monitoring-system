@@ -57,6 +57,9 @@ async function openAward(page: Page, id: string): Promise<void> {
   await item;
 }
 
+const SECOND_SURNAME = `Друга ${Array.from({ length: 5 }, () => 'абвгдежзиклмнопрстуф'[Math.floor(Math.random() * 20)]).join('')}`;
+const SECOND_NAME = `Ірина ${SECOND_SURNAME}`;
+
 test.describe('reviewer queue', () => {
   let first: string;
   let second: string;
@@ -71,7 +74,7 @@ test.describe('reviewer queue', () => {
     sql(`update users set organization_id = ${DEPARTMENT} where user_id = ${user(owner)}`);
     sql(`update user_roles set organization_id = ${DEPARTMENT} where user_id = ${user(owner)}`);
     grant(first, 'FACULTY_SECRETARY', 'Перша');
-    grant(second, 'FACULTY_SECRETARY', 'Друга');
+    grant(second, 'FACULTY_SECRETARY', SECOND_SURNAME);
     grant(dean, 'DEAN', 'Деканова');
   });
 
@@ -116,9 +119,9 @@ test.describe('reviewer queue', () => {
     await expect(two.getByTestId('review-take-over')).toHaveCount(0);
 
     await one.getByTestId('review-hand-over').click();
-    await one.getByRole('radio', { name: 'Ірина Друга' }).check();
+    await one.getByRole('radio', { name: SECOND_NAME }).check();
     await one.getByTestId('hand-over-confirm').click();
-    await expect(one.getByTestId('review-panel-reviewer')).toHaveText('Ірина Друга');
+    await expect(one.getByTestId('review-panel-reviewer')).toHaveText(SECOND_NAME);
 
     await two.getByTestId('nav-reviews').click();
     await two.getByTestId('review-tab-me').click();
@@ -127,7 +130,7 @@ test.describe('reviewer queue', () => {
     const head = await signedInAs(browser, dean, FRESH_PASSWORD);
     await openAward(head, id);
     await head.getByTestId('review-take-over').click();
-    await expect(head.getByRole('dialog')).toContainText('Ірина Друга');
+    await expect(head.getByRole('dialog')).toContainText(SECOND_NAME);
     await head.getByTestId('confirm-accept').click();
     await expect(head.getByTestId('review-panel-reviewer')).toHaveText('Ірина Деканова');
     expect(
@@ -156,7 +159,7 @@ test.describe('reviewer queue', () => {
     await two.getByTestId('review-take-over').click();
     await expect(two.getByRole('dialog')).toContainText('Ірина Перша');
     await two.getByTestId('confirm-accept').click();
-    await expect(two.getByTestId('review-panel-reviewer')).toHaveText('Ірина Друга');
+    await expect(two.getByTestId('review-panel-reviewer')).toHaveText(SECOND_NAME);
     await expect(two.getByTestId('review-escalate')).toBeVisible();
 
     const head = await signedInAs(browser, dean, FRESH_PASSWORD);

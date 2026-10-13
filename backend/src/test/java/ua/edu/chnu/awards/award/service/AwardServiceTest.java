@@ -24,6 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
@@ -37,12 +38,11 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
-import ua.edu.chnu.awards.document.service.DocumentService;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
@@ -61,7 +61,7 @@ class AwardServiceTest {
     private final AccessScope access = mock(AccessScope.class);
     private final AwardOwnership ownership = TestAwards.ownership(awards, users, access, FACULTY);
     private final AwardWarnings warnings = mock(AwardWarnings.class);
-    private final DocumentService documents = mock(DocumentService.class);
+    private final AwardDocuments documents = mock(AwardDocuments.class);
     private final AwardService service = new AwardService(awards, TestAwards.requestLookup(requests),
         specifications, rules, ownership, warnings, new AwardMapper(TestWorkflow.estimator()), access,
         mock(AwardHistory.class), documents);

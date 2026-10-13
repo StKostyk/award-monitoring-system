@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.ReviewItem;
 import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.award.entity.Award;
@@ -16,10 +17,8 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.service.ReviewGrant;
 import ua.edu.chnu.awards.award.service.ReviewerRule;
 import ua.edu.chnu.awards.award.service.StatusEstimator;
-import ua.edu.chnu.awards.document.repository.DocumentCount;
-import ua.edu.chnu.awards.document.repository.DocumentRepository;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,8 +31,8 @@ public class ReviewItemMapper {
 
     private final StatusEstimator estimator;
     private final ReviewerRule rule;
-    private final DocumentRepository documents;
-    private final UserRepository users;
+    private final AwardDocuments documents;
+    private final UserAccounts users;
 
     /**
      * The item of one request.
@@ -56,8 +55,7 @@ public class ReviewItemMapper {
             return List.of();
         }
         Set<Long> awardIds = requests.stream().map(request -> request.getAward().getId()).collect(Collectors.toSet());
-        Map<Long, Long> counts = documents.countByAwardIds(awardIds).stream()
-            .collect(Collectors.toMap(DocumentCount::awardId, DocumentCount::count));
+        Map<Long, Long> counts = documents.countsOf(awardIds);
         Map<Long, Long> delegatorOf = requests.stream()
             .map(request -> Map.entry(request.getId(), rule.grant(request).map(ReviewGrant::delegatorId)))
             .filter(entry -> entry.getValue().isPresent())

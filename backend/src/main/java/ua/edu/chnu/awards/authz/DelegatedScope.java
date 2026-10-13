@@ -2,8 +2,6 @@ package ua.edu.chnu.awards.authz;
 
 import java.util.Optional;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
-
 /**
  * Approval authority borrowed from somebody else, as carried by the {@code delegations} token claim
  * ({@code ROLE:orgId:delegatorId}). It grants the reading and approving permissions of the role and never the

@@ -1,0 +1,16 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.organization`
+|Spring components
+|_Services_
+
+* `u.e.c.a.o.service.OrganizationLookup`
+* `u.e.c.a.o.service.OrganizationService`
+
+_Others_
+
+* `u.e.c.a.o.OrganizationTree`
+|Aggregate roots
+|* `u.e.c.a.o.entity.Organization`
+|===

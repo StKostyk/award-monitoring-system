@@ -12,11 +12,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.Achievement;
 import ua.edu.chnu.awards.award.dto.AchievementDetail;
 import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.AchievementRecipient;
 import ua.edu.chnu.awards.award.dto.RecipientType;
+import ua.edu.chnu.awards.award.dto.SharedDocument;
 import ua.edu.chnu.awards.award.dto.UnitRef;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
@@ -26,9 +28,7 @@ import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.PageResponse;
-import ua.edu.chnu.awards.document.dto.SharedDocument;
-import ua.edu.chnu.awards.document.repository.DocumentRepository;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,9 +46,9 @@ public class Achievements {
     private static final int LAST_YEAR = 2100;
 
     private final AwardRepository awards;
-    private final OrganizationRepository organizations;
+    private final OrganizationLookup organizations;
     private final AwardSpecifications specifications;
-    private final DocumentRepository documents;
+    private final AwardDocuments documents;
 
     /**
      * A page of the achievements colleagues may see, newest award date first.
@@ -94,8 +94,7 @@ public class Achievements {
                 || found.isUnitAward() && found.getStatus() == AwardStatus.APPROVED)
             .orElseThrow(() -> new AwardNotFoundException(id));
         List<SharedDocument> shown = award.isUnitAward() ? List.of()
-            : documents.findByAwardIdAndShownToColleaguesTrueOrderByUploadedAtAscIdAsc(id).stream()
-                .map(SharedDocument::of).toList();
+            : documents.shownToColleagues(id);
         return new AchievementDetail(of(award), shown);
     }
 

@@ -22,6 +22,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.LoginSessionConfig;
+import ua.edu.chnu.awards.auth.config.SecurityConfig;
 import ua.edu.chnu.awards.auth.dto.EmailChangeResponse;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
@@ -38,18 +40,17 @@ import ua.edu.chnu.awards.auth.service.EmailChangeService;
 import ua.edu.chnu.awards.auth.service.PasswordResetService;
 import ua.edu.chnu.awards.auth.service.RegistrationService;
 import ua.edu.chnu.awards.authz.AccessDenials;
+import ua.edu.chnu.awards.authz.AccessDeniedProblems;
 import ua.edu.chnu.awards.authz.ProblemDetailsAccessDeniedHandler;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.config.InfrastructureConfig;
-import ua.edu.chnu.awards.config.LoginSessionConfig;
-import ua.edu.chnu.awards.config.SecurityConfig;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 
 @WebMvcTest(AuthController.class)
 @Import({SecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class, JwtAuthorityConverter.class,
     ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class, ApiExceptionHandler.class, AccessDenials.class,
-    ProblemDetailsAccessDeniedHandler.class})
+    AccessDeniedProblems.class, ProblemDetailsAccessDeniedHandler.class})
 class AuthControllerTest {
 
     private static final String VALID = """

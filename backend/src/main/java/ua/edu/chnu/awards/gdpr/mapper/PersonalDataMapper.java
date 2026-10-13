@@ -20,7 +20,7 @@ import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DeviceEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.NamedRef;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.RoleEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.VersionSnapshot;
-import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 

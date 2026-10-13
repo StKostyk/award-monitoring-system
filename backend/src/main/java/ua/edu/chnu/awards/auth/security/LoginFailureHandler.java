@@ -18,7 +18,7 @@ import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 /**
  * Records a failed login (audit trail, failure counter) and sends the user back to the login page with an
@@ -33,9 +33,9 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     private final LoginAttemptService attempts;
     private final AuditService audit;
-    private final UserRepository userRepository;
+    private final UserAccounts userRepository;
 
-    public LoginFailureHandler(LoginAttemptService attempts, AuditService audit, UserRepository userRepository) {
+    public LoginFailureHandler(LoginAttemptService attempts, AuditService audit, UserAccounts userRepository) {
         this.attempts = attempts;
         this.audit = audit;
         this.userRepository = userRepository;

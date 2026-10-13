@@ -7,14 +7,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.delegation.service.DelegationService;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.user.AccountSessions;
+import ua.edu.chnu.awards.user.LentAuthority;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 import ua.edu.chnu.awards.user.mapper.UserProfileMapper;
@@ -37,10 +37,10 @@ public class RoleAssignmentService {
     private final UserRoleRepository userRoleRepository;
     private final RoleAssignmentRules rules;
     private final AccessScope access;
-    private final AuthorizationRevoker revoker;
+    private final AccountSessions sessions;
     private final UserProfileMapper mapper;
     private final RoleChangeRecorder recorder;
-    private final DelegationService delegations;
+    private final LentAuthority delegations;
     private final Clock clock;
 
     /**
@@ -85,7 +85,7 @@ public class RoleAssignmentService {
         }
         if (moved) {
             delegations.revokeForMove(actor, target);
-            revoker.revokeAll(target);
+            sessions.signOutEverywhere(target);
         }
         recorder.granted(actor, assignment);
         return mapper.toAssignment(assignment);
@@ -115,7 +115,7 @@ public class RoleAssignmentService {
         role.setValidTo(lastDayOf(role, today));
         recorder.revoked(actor, role);
         delegations.revokeForRole(actor, role);
-        revoker.revokeAll(target);
+        sessions.signOutEverywhere(target);
     }
 
     private boolean confirmMembership(User actor, User target, Organization department, LocalDate today) {

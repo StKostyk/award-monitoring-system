@@ -11,13 +11,13 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.authz.RoleScope;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.dto.UnitRef;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,7 +34,7 @@ public class RecipientUnits {
 
     private final AccessScope access;
     private final OrganizationTree tree;
-    private final OrganizationRepository organizations;
+    private final OrganizationLookup organizations;
 
     /**
      * The units, faculties first and each group by Ukrainian name.

@@ -2,7 +2,7 @@ package ua.edu.chnu.awards.user.event;
 
 import java.time.LocalDate;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
 
 /**
  * A role was granted; the holder is told once the surrounding transaction commits.

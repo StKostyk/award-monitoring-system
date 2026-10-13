@@ -28,6 +28,7 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class RefreshTokenReuseGuardTest {
 
@@ -42,7 +43,8 @@ class RefreshTokenReuseGuardTest {
     private final ValueOperations<String, String> values = mock(ValueOperations.class);
     private final Authentication client = mock(Authentication.class);
     private final RefreshTokenReuseGuard guard =
-        new RefreshTokenReuseGuard(delegate, authorizationService, userRepository, redis, Duration.ofDays(7));
+        new RefreshTokenReuseGuard(delegate, authorizationService, new UserAccounts(userRepository), redis,
+        Duration.ofDays(7));
 
     @BeforeEach
     void setUp() {

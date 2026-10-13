@@ -19,7 +19,7 @@ import ua.edu.chnu.awards.gdpr.dto.DataExport;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.event.DataExported;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class DataExportService {
     static final Duration INTERVAL = Duration.ofMinutes(1);
     static final String FILE_PREFIX = "award-monitoring-export-";
 
-    private final UserRepository userRepository;
+    private final UserAccounts userRepository;
     private final PersonalDataAssembler assembler;
     private final RequestThrottle throttle;
     private final AuditService audit;

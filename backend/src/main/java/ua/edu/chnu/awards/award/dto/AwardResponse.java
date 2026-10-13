@@ -6,7 +6,7 @@ import java.util.List;
 
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
 
 /**
  * An award as the API shows it.

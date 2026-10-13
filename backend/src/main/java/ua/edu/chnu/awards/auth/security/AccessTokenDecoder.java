@@ -19,7 +19,8 @@ import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 
-import ua.edu.chnu.awards.config.AuthProperties;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
+import ua.edu.chnu.awards.authz.TokenClaimConstants;
 
 /**
  * Decoder for bearer tokens presented to the API: signature, timestamps, issuer, the {@code token_use} claim (so
@@ -54,8 +55,8 @@ public final class AccessTokenDecoder {
 
     static OAuth2TokenValidator<Jwt> accessTokenOnly() {
         OAuth2Error error = new OAuth2Error("invalid_token", "Not an access token", null);
-        return jwt -> TokenClaimsCustomizer.TOKEN_USE_ACCESS.equals(
-            jwt.getClaimAsString(TokenClaimsCustomizer.CLAIM_TOKEN_USE))
+        return jwt -> TokenClaimConstants.TOKEN_USE_ACCESS.equals(
+            jwt.getClaimAsString(TokenClaimConstants.CLAIM_TOKEN_USE))
             ? OAuth2TokenValidatorResult.success()
             : OAuth2TokenValidatorResult.failure(error);
     }

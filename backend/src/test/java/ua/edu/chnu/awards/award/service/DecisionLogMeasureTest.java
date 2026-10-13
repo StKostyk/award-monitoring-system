@@ -20,7 +20,7 @@ import ua.edu.chnu.awards.award.entity.ReviewDecision;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class DecisionLogMeasureTest {
 
@@ -30,7 +30,7 @@ class DecisionLogMeasureTest {
 
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final DecisionLog log = new DecisionLog(decisions, mock(UserRepository.class), mock(AuditService.class),
+    private final DecisionLog log = new DecisionLog(decisions, mock(UserAccounts.class), mock(AuditService.class),
         events);
 
     @Test

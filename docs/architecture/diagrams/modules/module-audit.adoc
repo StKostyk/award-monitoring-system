@@ -1,0 +1,17 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.audit`
+|Spring components
+|_Services_
+
+* `u.e.c.a.a.service.AuditService`
+* `u.e.c.a.a.service.AuditTrailService`
+
+_Others_
+
+* `u.e.c.a.a.service.AuditContextBinder`
+* `u.e.c.a.a.service.AuditTrailCsv`
+|Aggregate roots
+|* `u.e.c.a.a.entity.AuditLog`
+|===

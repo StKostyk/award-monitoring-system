@@ -14,12 +14,12 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.award.config.WorkflowProperties;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
-import ua.edu.chnu.awards.config.WorkflowProperties;
-import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.Organization;
 
 import lombok.RequiredArgsConstructor;
 

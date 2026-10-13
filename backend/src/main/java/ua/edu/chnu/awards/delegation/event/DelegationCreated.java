@@ -2,7 +2,7 @@ package ua.edu.chnu.awards.delegation.event;
 
 import java.time.LocalDate;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
 
 /**
  * Approval authority was handed over; the delegate is told once the surrounding transaction commits.

@@ -25,7 +25,7 @@ import org.springframework.util.unit.DataSize;
 
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.config.DocumentProperties;
+import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
 
 class UploadLimitsTest {

@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccountStatusChecker implements UserDetailsChecker {
 
-    private final UserRepository userRepository;
+    private final UserAccounts userRepository;
 
     @Override
     @Transactional(readOnly = true)
