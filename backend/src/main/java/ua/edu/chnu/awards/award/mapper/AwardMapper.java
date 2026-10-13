@@ -14,8 +14,8 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.service.StatusEstimator;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
-import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.Organization;
 
 import lombok.RequiredArgsConstructor;
 

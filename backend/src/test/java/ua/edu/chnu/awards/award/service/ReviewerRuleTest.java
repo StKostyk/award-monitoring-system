@@ -12,16 +12,16 @@ import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.DelegatedScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.authz.RoleScope;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 
 class ReviewerRuleTest {

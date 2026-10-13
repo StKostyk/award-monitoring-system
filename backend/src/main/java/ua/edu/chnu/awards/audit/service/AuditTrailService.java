@@ -7,14 +7,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ua.edu.chnu.awards.audit.ActorDirectory;
+import ua.edu.chnu.awards.audit.ActorDirectory.Actor;
 import ua.edu.chnu.awards.audit.dto.AuditTrailEntry;
 import ua.edu.chnu.awards.audit.dto.AuditTrailExport;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
@@ -22,8 +22,6 @@ import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.entity.AuditLog;
 import ua.edu.chnu.awards.audit.repository.AuditLogRepository;
 import ua.edu.chnu.awards.common.web.PageResponse;
-import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,7 +36,7 @@ public class AuditTrailService {
     public static final int MAX_EXPORT_ROWS = 10_000;
 
     private final AuditLogRepository logs;
-    private final UserRepository users;
+    private final ActorDirectory actors;
     private final AuditService audit;
     private final AuditTrailCsv csv;
     private final Clock clock;
@@ -54,8 +52,8 @@ public class AuditTrailService {
     @Transactional(readOnly = true)
     public Page<AuditTrailEntry> aboutAward(long awardId, int page, int size) {
         Page<AuditLog> found = logs.findAboutAward(awardId, PageResponse.request(page, size, Sort.unsorted()));
-        Map<Long, User> actors = actorsOf(found.getContent());
-        return found.map(row -> entry(row, actors.get(row.getUserId())));
+        Map<Long, Actor> named = actorsOf(found.getContent());
+        return found.map(row -> entry(row, named.get(row.getUserId())));
     }
 
     /**
@@ -74,24 +72,24 @@ public class AuditTrailService {
         }
         boolean truncated = found.size() > MAX_EXPORT_ROWS;
         List<AuditLog> rows = truncated ? found.subList(0, MAX_EXPORT_ROWS) : found;
-        Map<Long, User> actors = actorsOf(rows);
-        String content = csv.write(rows.stream().map(row -> entry(row, actors.get(row.getUserId()))).toList());
+        Map<Long, Actor> named = actorsOf(rows);
+        String content = csv.write(rows.stream().map(row -> entry(row, named.get(row.getUserId()))).toList());
         audit.record(AuditAction.AUDIT_EXPORT, AuditEntityConstants.AWARDS, auditorId, awardId,
             Map.of("rows", rows.size(), "truncated", truncated));
         return Optional.of(new AuditTrailExport("award-" + awardId + "-audit-" + LocalDate.now(clock) + ".csv",
             content, truncated));
     }
 
-    private Map<Long, User> actorsOf(List<AuditLog> rows) {
+    private Map<Long, Actor> actorsOf(List<AuditLog> rows) {
         List<Long> actorIds = rows.stream().map(AuditLog::getUserId).filter(Objects::nonNull).distinct().toList();
-        return users.findAllById(actorIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        return actors.actorsOf(actorIds);
     }
 
-    private static AuditTrailEntry entry(AuditLog row, User actor) {
+    private static AuditTrailEntry entry(AuditLog row, Actor actor) {
         InetAddress address = row.getIpAddress();
         String[] changed = row.getChangedFields();
         return new AuditTrailEntry(row.getId(), row.getCreatedAt(), row.getUserId(),
-            actor == null ? null : actor.getFullName(), actor == null ? null : actor.getEmailAddress(),
+            actor == null ? null : actor.fullName(), actor == null ? null : actor.emailAddress(),
             row.getActionType(), row.getEntityType(), row.getEntityId(),
             changed == null ? List.of() : List.of(changed), row.getPrevious(), row.getDetails(),
             address == null ? null : address.getHostAddress(), row.getCorrelationId());

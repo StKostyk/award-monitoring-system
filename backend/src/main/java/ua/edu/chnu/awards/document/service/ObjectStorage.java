@@ -15,7 +15,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.stereotype.Component;
 
-import ua.edu.chnu.awards.config.DocumentProperties;
+import ua.edu.chnu.awards.document.config.DocumentProperties;
 
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.exception.SdkException;

@@ -11,10 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.support.AbstractJpaSliceTest;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
 
 class UserRepositoryIT extends AbstractJpaSliceTest {

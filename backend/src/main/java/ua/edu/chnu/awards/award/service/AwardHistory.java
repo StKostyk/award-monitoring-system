@@ -23,7 +23,7 @@ import ua.edu.chnu.awards.award.entity.AwardVersion;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
 import ua.edu.chnu.awards.common.web.PageResponse;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,7 +40,7 @@ public class AwardHistory {
     public static final int MAX_SIZE = 50;
 
     private final AwardVersionRepository versions;
-    private final UserRepository users;
+    private final UserAccounts users;
     private final AwardOwnership ownership;
     private final AccessScope access;
 

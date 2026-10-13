@@ -1,0 +1,22 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.authz`
+|Spring components
+|_Event listeners_
+
+* `u.e.c.a.a.AccessDenials`
+
+_Others_
+
+* `u.e.c.a.a.AccessDeniedProblems`
+* `u.e.c.a.a.AccessScope`
+* `u.e.c.a.a.ProblemDetailsAccessDeniedHandler`
+* `u.e.c.a.a.RoleLevels`
+* `u.e.c.a.a.RolePermissions`
+|Bean references
+|* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.o.OrganizationTree` (in Organization)
+|Events listened to
+|* `org.springframework.security.authorization.event.AuthorizationDeniedEvent` 
+|===

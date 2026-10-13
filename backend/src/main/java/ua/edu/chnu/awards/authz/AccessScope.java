@@ -12,9 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import ua.edu.chnu.awards.auth.security.RolePermissions;
-import ua.edu.chnu.awards.auth.security.TokenClaimsCustomizer;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.organization.OrganizationTree;
 
 import lombok.RequiredArgsConstructor;
 
@@ -136,7 +134,7 @@ public class AccessScope {
      * @return scopes, empty for an anonymous caller
      */
     public List<RoleScope> scopes() {
-        return claim(TokenClaimsCustomizer.CLAIM_ROLE_SCOPES)
+        return claim(TokenClaimConstants.CLAIM_ROLE_SCOPES)
             .map(claims -> claims.stream().map(RoleScope::parse).flatMap(Optional::stream).toList())
             .orElse(List.of());
     }
@@ -156,7 +154,7 @@ public class AccessScope {
      * @return scopes of the caller's own roles
      */
     public List<RoleScope> heldScopes() {
-        return claim(TokenClaimsCustomizer.CLAIM_HELD_SCOPES)
+        return claim(TokenClaimConstants.CLAIM_HELD_SCOPES)
             .map(claims -> claims.stream().map(RoleScope::parse).flatMap(Optional::stream).toList())
             .orElseGet(this::withoutBorrowed);
     }
@@ -172,7 +170,7 @@ public class AccessScope {
      * @return borrowed authority, empty when none was lent
      */
     public List<DelegatedScope> delegations() {
-        return claim(TokenClaimsCustomizer.CLAIM_DELEGATIONS)
+        return claim(TokenClaimConstants.CLAIM_DELEGATIONS)
             .map(claims -> claims.stream().map(DelegatedScope::parse).flatMap(Optional::stream).toList())
             .orElse(List.of());
     }

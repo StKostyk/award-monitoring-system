@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import ua.edu.chnu.awards.config.AuthProperties;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
+import ua.edu.chnu.awards.user.AccountSessions;
 import ua.edu.chnu.awards.user.entity.User;
 
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class AuthorizationRevoker {
+public class AuthorizationRevoker implements AccountSessions {
 
     static final String NOT_BEFORE_KEY_PREFIX = "auth:nbf:";
     /** Leeway the resource server grants on {@code exp}; the key must outlive it. */
@@ -82,6 +83,11 @@ public class AuthorizationRevoker {
         log.debug("Revoked {} authorizations and {} login sessions of {}", authorizations, logins.size(),
             principalName);
         return authorizations;
+    }
+
+    @Override
+    public void signOutEverywhere(User user) {
+        revokeAll(user);
     }
 
     private void markRevoked(Long userId) {

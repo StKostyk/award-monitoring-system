@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.AwardVisibilityUpdate;
 import ua.edu.chnu.awards.award.entity.Award;
@@ -32,12 +33,11 @@ import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.document.service.DocumentSharing;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
 
 class AwardSharingTest {
@@ -46,7 +46,7 @@ class AwardSharingTest {
     private final AwardOwnership ownership = mock(AwardOwnership.class);
     private final RequestLookup requests = mock(RequestLookup.class);
     private final AuditService audit = mock(AuditService.class);
-    private final DocumentSharing documents = mock(DocumentSharing.class);
+    private final AwardDocuments documents = mock(AwardDocuments.class);
     private final Clock clock = Clock.fixed(TestAwards.SUBMITTED_AT, ZoneId.of("Europe/Kyiv"));
     private final AwardSharing sharing = new AwardSharing(awards, ownership, requests,
         new AwardMapper(TestWorkflow.estimator(clock)), audit, documents);
@@ -93,7 +93,7 @@ class AwardSharingTest {
 
         sharing.update(TestAwards.AWARD_ID, new AwardVisibilityUpdate(AwardVisibility.PRIVATE));
 
-        verify(documents).clear(award);
+        verify(documents).hideFromColleagues(award);
     }
 
     @Test
@@ -103,7 +103,7 @@ class AwardSharingTest {
         sharing.update(TestAwards.AWARD_ID, new AwardVisibilityUpdate(AwardVisibility.UNIVERSITY));
         sharing.update(TestAwards.AWARD_ID, new AwardVisibilityUpdate(AwardVisibility.PUBLIC));
 
-        verify(documents, never()).clear(any());
+        verify(documents, never()).hideFromColleagues(any());
     }
 
     @Test

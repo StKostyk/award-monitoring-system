@@ -21,15 +21,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.service.AwardService;
-import ua.edu.chnu.awards.config.DocumentProperties;
+import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
 import ua.edu.chnu.awards.document.entity.DocumentType;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;

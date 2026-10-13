@@ -13,7 +13,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,7 +46,7 @@ public class CorrectionMails {
         "externalUrl", "Link");
 
     private final MailDelivery delivery;
-    private final AuthProperties properties;
+    private final AwardLinks links;
 
     /**
      * Sends the owner one message about the correction.
@@ -60,7 +59,7 @@ public class CorrectionMails {
         if (event.email() == null) {
             return;
         }
-        delivery.send(event.email(), SUBJECT, body(event, properties.awardLink(event.awardId())));
+        delivery.send(event.email(), SUBJECT, body(event, links.awardLink(event.awardId())));
     }
 
     static String body(AwardCorrected event, String link) {

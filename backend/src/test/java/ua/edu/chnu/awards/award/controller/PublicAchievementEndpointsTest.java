@@ -28,7 +28,7 @@ import ua.edu.chnu.awards.award.dto.UnitRef;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.service.Achievements;
 import ua.edu.chnu.awards.award.service.UnitNotFoundException;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 @WebMvcTest({PublicAchievementController.class, AchievementController.class})
 class PublicAchievementEndpointsTest extends AbstractAwardEndpointsTest {

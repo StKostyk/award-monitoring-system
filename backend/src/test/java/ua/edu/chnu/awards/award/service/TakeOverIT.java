@@ -25,12 +25,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
 import ua.edu.chnu.awards.support.RequestRows;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class TakeOverIT extends AbstractIntegrationTest {

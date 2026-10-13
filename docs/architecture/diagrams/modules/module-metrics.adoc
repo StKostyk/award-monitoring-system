@@ -1,0 +1,8 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.metrics`
+|Spring components
+|* `u.e.c.a.m.MetricsConfiguration`
+* `u.e.c.a.m.ObservabilityConfiguration`
+|===

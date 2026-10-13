@@ -23,17 +23,20 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
+import ua.edu.chnu.awards.auth.web.EmailChangeController;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.gdpr.controller.DataExportController;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
 import ua.edu.chnu.awards.user.dto.UserDirectoryQuery;
 import ua.edu.chnu.awards.user.dto.UserProfileResponse;
 import ua.edu.chnu.awards.user.dto.UserSummaryResponse;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
-@WebMvcTest({UserController.class, UserProfileController.class})
+@WebMvcTest({UserController.class, UserProfileController.class, EmailChangeController.class,
+    DataExportController.class})
 class UserControllerTest extends AbstractUserEndpointsTest {
 
     @Test

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -32,12 +33,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
+import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
+import ua.edu.chnu.awards.user.event.RoleAssigned;
 
 @ExtendWith(OutputCaptureExtension.class)
 class EventPublicationRegistryIT extends AbstractIntegrationTest {
@@ -89,6 +93,25 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         transactions.executeWithoutResult(status -> events.publishEvent(
             new ReviewMeasured(ApprovalLevel.DEAN, ReviewDecisionType.APPROVED, true, Duration.ofHours(2))));
 
+        assertThat(waitFor(this::incomplete, 0L)).isZero();
+    }
+
+    @Test
+    void ac2_5_roleAndDelegationMailsOfTheNotificationModuleStayRegistryBacked() {
+        String holder = "it.registry.role@chnu.edu.ua";
+        String delegate = "it.registry.delegation@chnu.edu.ua";
+
+        List<String> listeners = Objects.requireNonNull(transactions.execute(status -> {
+            events.publishEvent(new RoleAssigned(holder, "Олена", RoleType.FACULTY_SECRETARY, "Faculty", "Факультет",
+                "Admin", LocalDate.of(2026, 10, 1), null));
+            events.publishEvent(new DelegationRevoked(List.of(delegate), RoleType.DEAN, "Faculty", "Факультет",
+                "Delegate", "Admin"));
+            return jdbc.queryForList("SELECT listener_id FROM event_publication", String.class);
+        }));
+
+        assertThat(listeners).hasSize(2).allMatch(id -> id.contains("notification.AuthorityChangeMails"));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(holder)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(delegate)));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
     }
 

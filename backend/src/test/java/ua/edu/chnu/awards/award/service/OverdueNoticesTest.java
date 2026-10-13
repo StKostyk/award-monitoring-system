@@ -20,8 +20,8 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.service.ReviewerAvailability.Candidate;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 
 class OverdueNoticesTest {
 

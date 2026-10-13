@@ -1,0 +1,36 @@
+@startuml
+set separator none
+title Document
+
+top to bottom direction
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+Container_Boundary("AwardMonitoringSystemApplication.AwardMonitoringSystemApplication_boundary", "AwardMonitoringSystemApplication", $tags="") {
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Award, "Award", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Document, "Document", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "Common", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, "Audit", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Authz, "Authz", $techn="Module", $descr="", $tags="", $link="")
+  Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, "User", $techn="Module", $descr="", $tags="", $link="")
+}
+
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "depends on", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Authz, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Authz, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "depends on", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Award, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Award, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Award, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Authz, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Award, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Document, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.User, "depends on", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Document, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Award, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Document, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Document, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Authz, "uses", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Document, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "uses", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+@enduml

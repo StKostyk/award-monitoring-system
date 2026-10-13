@@ -29,17 +29,18 @@ import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.DelegatedScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.authz.RoleScope;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.dto.ReviewPeriodResponse;
 import ua.edu.chnu.awards.award.dto.ReviewPeriodUpdate;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 
 class ReviewPeriodsTest {
 
@@ -57,7 +58,8 @@ class ReviewPeriodsTest {
     private final AuditService audit = mock(AuditService.class);
     private final StatusEstimator estimator = TestWorkflow.estimator(
         Clock.fixed(Instant.parse("2026-10-01T09:00:00Z"), ZoneId.of("Europe/Kyiv")), DEFAULT_DAYS);
-    private final ReviewPeriods periods = new ReviewPeriods(organizations, tree, access, estimator, audit);
+    private final ReviewPeriods periods = new ReviewPeriods(new OrganizationLookup(organizations), tree, access,
+        estimator, audit);
     private final Organization faculty = TestUsers.organization(FACULTY, OrganizationType.FACULTY);
 
     @BeforeEach

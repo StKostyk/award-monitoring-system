@@ -13,11 +13,11 @@ import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ua.edu.chnu.awards.auth.event.EmailRestored;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.document.event.ObjectsReleased;
 import ua.edu.chnu.awards.gdpr.event.DataExported;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 

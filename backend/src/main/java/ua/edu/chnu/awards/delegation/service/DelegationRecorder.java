@@ -15,7 +15,7 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
-import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
 
 import lombok.RequiredArgsConstructor;

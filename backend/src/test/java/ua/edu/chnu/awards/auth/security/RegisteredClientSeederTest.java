@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
-import ua.edu.chnu.awards.config.AuthProperties;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 
 class RegisteredClientSeederTest {
 

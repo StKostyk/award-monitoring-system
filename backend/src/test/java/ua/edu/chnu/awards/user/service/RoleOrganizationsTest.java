@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 class RoleOrganizationsTest {
 

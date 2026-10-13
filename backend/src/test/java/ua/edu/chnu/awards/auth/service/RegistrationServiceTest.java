@@ -24,33 +24,33 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.VerificationRequested;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.config.AuthProperties;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 import ua.edu.chnu.awards.user.service.ManualConfirmation;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class RegistrationServiceTest {
 
     private static final RegisterRequest VALID = new RegisterRequest("New.User@chnu.edu.ua", "correct-horse-battery",
         "Олена", "Нова", 64L);
 
-    private final UserRepository userRepository = mock(UserRepository.class);
-    private final UserRoleRepository userRoleRepository = mock(UserRoleRepository.class);
-    private final OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
+    private final UserAccounts userRepository = mock(UserAccounts.class);
+    private final RoleHolders userRoleRepository = mock(RoleHolders.class);
+    private final OrganizationLookup organizationRepository = mock(OrganizationLookup.class);
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final AfterCommit events = mock(AfterCommit.class);
@@ -67,7 +67,8 @@ class RegistrationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new RegistrationService(userRepository, userRoleRepository, organizationRepository, tokens,
+        service = new RegistrationService(userRepository, userRoleRepository,
+            organizationRepository, tokens,
             new PasswordPolicy(), passwordEncoder, events, throttle, new EmailAddressRules(properties), properties,
             audit, new ManualConfirmation());
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
@@ -108,8 +109,10 @@ class RegistrationServiceTest {
 
     @Test
     void ac2_6_aProvenMembershipWouldGrantTheEmployeeRoleAtOnce() {
-        RegistrationService proven = new RegistrationService(userRepository, userRoleRepository,
-            organizationRepository, tokens, new PasswordPolicy(), passwordEncoder, events, throttle,
+        RegistrationService proven = new RegistrationService(userRepository,
+            userRoleRepository,
+            organizationRepository, tokens, new PasswordPolicy(), passwordEncoder, events,
+            throttle,
             new EmailAddressRules(properties), properties, audit, (user, where) -> Optional.of(UserRole.builder()
                 .user(user).roleType(RoleType.EMPLOYEE).organization(where).validFrom(LocalDate.of(2026, 9, 21))
                 .build()));

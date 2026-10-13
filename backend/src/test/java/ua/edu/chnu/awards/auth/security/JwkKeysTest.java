@@ -17,7 +17,7 @@ import org.springframework.mock.env.MockEnvironment;
 
 import com.nimbusds.jose.jwk.RSAKey;
 
-import ua.edu.chnu.awards.config.AuthProperties;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 
 class JwkKeysTest {
 

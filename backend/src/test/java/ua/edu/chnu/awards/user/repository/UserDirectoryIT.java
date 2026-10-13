@@ -14,11 +14,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.support.AbstractJpaSliceTest;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 
 class UserDirectoryIT extends AbstractJpaSliceTest {

@@ -18,14 +18,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.authz.DelegatedScope;
+import ua.edu.chnu.awards.authz.RolePermissions;
 import ua.edu.chnu.awards.authz.RoleScope;
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.authz.TokenClaimConstants;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
-import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.delegation.service.DelegationLookup;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
-import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,26 +39,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
 
-    public static final String CLAIM_EMAIL = "email";
-    public static final String CLAIM_NAME = "name";
-    public static final String CLAIM_ROLES = "roles";
-    public static final String CLAIM_ROLE_SCOPES = "role_scopes";
-    public static final String CLAIM_HELD_SCOPES = "held_scopes";
-    public static final String CLAIM_DELEGATIONS = "delegations";
-    public static final String CLAIM_PERMISSIONS = "permissions";
-    public static final String CLAIM_ORG_ID = "org_id";
-    public static final String CLAIM_ORG_TYPE = "org_type";
-    public static final String CLAIM_TOKEN_USE = "token_use";
-    /**
-     * Issue instant of an access token in epoch milliseconds, as a string like the other scalar claims because
-     * the stored authorization accepts no other scalar type; {@code iat} has second precision only.
-     */
-    public static final String CLAIM_ISSUED_AT_MILLIS = "iat_ms";
-    public static final String TOKEN_USE_ACCESS = "access";
-
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final RoleDelegationRepository delegationRepository;
+    private final UserAccounts userRepository;
+    private final RoleHolders userRoleRepository;
+    private final DelegationLookup delegationRepository;
     private final RolePermissions rolePermissions;
     private final Clock clock;
 
@@ -94,18 +79,18 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             delegation.getOrganization().getId()).toClaim()));
         context.getClaims().claims(claims -> {
             claims.put("sub", String.valueOf(user.getId()));
-            claims.put(CLAIM_EMAIL, user.getEmailAddress());
-            claims.put(CLAIM_NAME, user.getFullName());
-            claims.put(CLAIM_ROLES, new ArrayList<>(roles.stream().map(Enum::name).toList()));
-            claims.put(CLAIM_ROLE_SCOPES, new ArrayList<>(scopes));
-            claims.put(CLAIM_HELD_SCOPES, new ArrayList<>(held));
-            claims.put(CLAIM_DELEGATIONS, new ArrayList<>(delegations));
-            claims.put(CLAIM_ORG_ID, String.valueOf(user.getOrganization().getId()));
-            claims.put(CLAIM_ORG_TYPE, user.getOrganization().getOrgType().name());
+            claims.put(TokenClaimConstants.CLAIM_EMAIL, user.getEmailAddress());
+            claims.put(TokenClaimConstants.CLAIM_NAME, user.getFullName());
+            claims.put(TokenClaimConstants.CLAIM_ROLES, new ArrayList<>(roles.stream().map(Enum::name).toList()));
+            claims.put(TokenClaimConstants.CLAIM_ROLE_SCOPES, new ArrayList<>(scopes));
+            claims.put(TokenClaimConstants.CLAIM_HELD_SCOPES, new ArrayList<>(held));
+            claims.put(TokenClaimConstants.CLAIM_DELEGATIONS, new ArrayList<>(delegations));
+            claims.put(TokenClaimConstants.CLAIM_ORG_ID, String.valueOf(user.getOrganization().getId()));
+            claims.put(TokenClaimConstants.CLAIM_ORG_TYPE, user.getOrganization().getOrgType().name());
             if (accessToken) {
-                claims.put(CLAIM_PERMISSIONS, new ArrayList<>(permissions(roles, borrowed)));
-                claims.put(CLAIM_TOKEN_USE, TOKEN_USE_ACCESS);
-                claims.put(CLAIM_ISSUED_AT_MILLIS, String.valueOf(clock.millis()));
+                claims.put(TokenClaimConstants.CLAIM_PERMISSIONS, new ArrayList<>(permissions(roles, borrowed)));
+                claims.put(TokenClaimConstants.CLAIM_TOKEN_USE, TokenClaimConstants.TOKEN_USE_ACCESS);
+                claims.put(TokenClaimConstants.CLAIM_ISSUED_AT_MILLIS, String.valueOf(clock.millis()));
             }
         });
     }

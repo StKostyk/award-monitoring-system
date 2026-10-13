@@ -26,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.auth.dto.EmailChangeResponse;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
@@ -35,10 +36,10 @@ import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class EmailChangeServiceTest {
 
@@ -65,7 +66,8 @@ class EmailChangeServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new EmailChangeService(userRepository, tokens, passwordEncoder, attempts, revoker, throttle,
+        service = new EmailChangeService(new UserAccounts(userRepository), tokens, passwordEncoder, attempts, revoker,
+            throttle,
             new EmailAddressRules(properties), properties, audit, events);
         when(userRepository.findById(12L)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(PASSWORD, "$2a$12$hash")).thenReturn(true);

@@ -19,10 +19,12 @@ import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
 import ua.edu.chnu.awards.award.service.RequestLookup;
-import ua.edu.chnu.awards.user.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 /**
  * Award, request and decision entities for unit tests, with defaults that callers override through the builder.
@@ -92,7 +94,7 @@ public final class TestAwards {
         for (Organization unit : units) {
             when(organizations.findById(unit.getId())).thenReturn(Optional.of(unit));
         }
-        return new AwardOwnership(awards, users, organizations, access);
+        return new AwardOwnership(awards, new UserAccounts(users), new OrganizationLookup(organizations), access);
     }
 
     /**

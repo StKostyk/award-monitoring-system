@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.user.dto;
 import java.time.Instant;
 import java.util.List;
 
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 
 /**

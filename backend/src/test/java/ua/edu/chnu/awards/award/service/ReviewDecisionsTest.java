@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.ReviewDecisionRequest;
 import ua.edu.chnu.awards.award.dto.ReviewDecisionRequest.Decision;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
@@ -31,12 +32,11 @@ import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.document.repository.DocumentRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class ReviewDecisionsTest {
 
@@ -48,15 +48,16 @@ class ReviewDecisionsTest {
     private static final Instant NEXT_DEADLINE = Instant.parse("2026-10-14T09:00:00Z");
 
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
-    private final DocumentRepository documents = mock(DocumentRepository.class);
-    private final UserRepository users = mock(UserRepository.class);
+    private final AwardDocuments documents = mock(AwardDocuments.class);
+    private final UserAccounts users = mock(UserAccounts.class);
     private final ReviewerRule rule = mock(ReviewerRule.class);
     private final StartLevel startLevel = mock(StartLevel.class);
     private final StatusEstimator estimator = mock(StatusEstimator.class);
     private final AwardHistory history = mock(AwardHistory.class);
     private final DecisionLog log = mock(DecisionLog.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final ReviewDecisions service = new ReviewDecisions(requests, new DecisionRules(documents), users,
+    private final ReviewDecisions service = new ReviewDecisions(requests, new DecisionRules(documents),
+        users,
         new ReviewGuards(requests, rule, access), rule, new Transitions(), startLevel, estimator, history, log, access,
         Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
@@ -194,7 +195,7 @@ class ReviewDecisionsTest {
 
     @Test
     void ac2_6_aVerifiedApprovalSetsTheBadge() {
-        when(documents.countByAwardId(AWARD)).thenReturn(1L);
+        when(documents.countOf(AWARD)).thenReturn(1L);
 
         service.decide(AWARD, new ReviewDecisionRequest(Decision.APPROVE, VERSION, null, true));
 

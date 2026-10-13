@@ -9,6 +9,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
@@ -16,7 +17,6 @@ import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.RoleType;
 
 /**
  * Everything the system holds about one person, in the machine-readable form of GDPR Article 20

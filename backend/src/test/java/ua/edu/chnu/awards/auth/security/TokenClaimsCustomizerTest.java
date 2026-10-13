@@ -25,23 +25,28 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 
+import ua.edu.chnu.awards.authz.RolePermissions;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.delegation.service.DelegationLookup;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class TokenClaimsCustomizerTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
     private final UserRoleRepository userRoleRepository = mock(UserRoleRepository.class);
     private final RoleDelegationRepository delegationRepository = mock(RoleDelegationRepository.class);
-    private final TokenClaimsCustomizer customizer = new TokenClaimsCustomizer(userRepository, userRoleRepository,
-        delegationRepository, new RolePermissions(), Clock.systemUTC());
+    private final TokenClaimsCustomizer customizer = new TokenClaimsCustomizer(new UserAccounts(userRepository),
+        new RoleHolders(userRoleRepository),
+        new DelegationLookup(delegationRepository), new RolePermissions(), Clock.systemUTC());
 
     @Test
     void ac14_accessTokenCarriesIdentityRolesPermissionsAndOrganisation() {

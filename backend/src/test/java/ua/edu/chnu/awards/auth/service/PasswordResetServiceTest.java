@@ -21,16 +21,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.event.PasswordResetRequested;
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class PasswordResetServiceTest {
 
@@ -55,7 +56,8 @@ class PasswordResetServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PasswordResetService(userRepository, tokens, new PasswordPolicy(), passwordEncoder, events,
+        service = new PasswordResetService(new UserAccounts(userRepository), tokens, new PasswordPolicy(),
+            passwordEncoder, events,
             revoker, throttle, properties, audit);
         when(throttle.claimForTransaction(any(), any())).thenReturn(true);
         when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$12$new");

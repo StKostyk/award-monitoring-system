@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
@@ -27,12 +28,11 @@ import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.document.service.DocumentService;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.support.TestWorkflow;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
 class ReturnedDraftTest {
@@ -40,7 +40,7 @@ class ReturnedDraftTest {
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AwardRequestRepository requests = mock(AwardRequestRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final DocumentService documents = mock(DocumentService.class);
+    private final AwardDocuments documents = mock(AwardDocuments.class);
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
     private final AwardService service = new AwardService(awards, new RequestLookup(requests, decisions),
         mock(AwardSpecifications.class), mock(AwardInputRules.class),

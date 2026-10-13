@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.auth.dto.EmailChangeResponse;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
@@ -24,9 +25,8 @@ import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
 import ua.edu.chnu.awards.common.web.FieldViolation;
-import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -43,7 +43,7 @@ public class EmailChangeService {
     /** Redis key prefix of the one-request-a-minute marker, followed by the user id. */
     public static final String REQUEST_KEY_PREFIX = "auth:email-change:";
 
-    private final UserRepository userRepository;
+    private final UserAccounts userRepository;
     private final OneTimeTokenService tokens;
     private final PasswordEncoder passwordEncoder;
     private final LoginAttemptService attempts;

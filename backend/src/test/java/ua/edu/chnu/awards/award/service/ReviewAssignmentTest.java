@@ -39,10 +39,10 @@ import ua.edu.chnu.awards.award.mapper.ReviewItemMapper;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class ReviewAssignmentTest {
 
@@ -55,11 +55,12 @@ class ReviewAssignmentTest {
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
     private final ReviewerRule rule = mock(ReviewerRule.class);
     private final ReviewerAvailability availability = mock(ReviewerAvailability.class);
-    private final UserRepository users = mock(UserRepository.class);
+    private final UserAccounts users = mock(UserAccounts.class);
     private final AuditService audit = mock(AuditService.class);
     private final ReviewItemMapper mapper = mock(ReviewItemMapper.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final ReviewAssignment assignment = new ReviewAssignment(requests, decisions, rule, availability, users,
+    private final ReviewAssignment assignment = new ReviewAssignment(requests, decisions, rule, availability,
+        users,
         audit, mapper, access, new ReviewGuards(requests, rule, access),
         new TakeOverRule(rule, availability, access, mock(StatusEstimator.class, RETURNS_DEEP_STUBS),
             mock(ApplicationEventPublisher.class)));

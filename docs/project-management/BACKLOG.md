@@ -93,7 +93,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.3.9 | Achievement card names do not follow a language switch | 1 | ✅ Done | SCRUM-79 | [#204](https://github.com/StKostyk/award-monitoring-system/issues/204) |
 | 4.3.4 | Review decisions in the personal data export | 3 | ✅ Done | SCRUM-70 | [#190](https://github.com/StKostyk/award-monitoring-system/issues/190) |
 | 4.3.5 | Wire the business metrics to the award workflow | 2 | ✅ Done | SCRUM-71 | [#191](https://github.com/StKostyk/award-monitoring-system/issues/191) |
-| 4.3.8 | Documents shown to colleagues on a shared award | 5 | 👀 In review | SCRUM-74 | [#194](https://github.com/StKostyk/award-monitoring-system/issues/194) |
+| 4.3.8 | Documents shown to colleagues on a shared award | 5 | ✅ Done | SCRUM-74 | [#194](https://github.com/StKostyk/award-monitoring-system/issues/194) |
 
 ### Epic 7 — Notification & Communication System (Jira epic SCRUM-63)
 Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS.md). Kickoff 2026-10-09; Spring events on the Spring Modulith publication registry (no Kafka), e-mail and in-app channels (SMS out of scope, push with Epic 8). Story 1.3.2 from Epic 1 belongs here.
@@ -101,7 +101,7 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 7.1.1 | Event publication registry for the after-commit mails | 5 | ✅ Done | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
-| 7.1.2 | Module boundaries checked by Spring Modulith | 8 | Sprint 5 | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
+| 7.1.2 | Module boundaries checked by Spring Modulith | 8 | 👀 In review (Sprint 5) | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
 | 7.1.3 | Drop the duplicate async error log for undelivered mails | 1 | ✅ Done | SCRUM-75 | [#197](https://github.com/StKostyk/award-monitoring-system/issues/197) |
 | 7.2.1 | In-app notifications from award and review events | 5 | Sprint 5 | SCRUM-66 | [#183](https://github.com/StKostyk/award-monitoring-system/issues/183) |
 | 7.2.2 | Notification centre in the toolbar | 5 | Sprint 5 | SCRUM-67 | [#184](https://github.com/StKostyk/award-monitoring-system/issues/184) |

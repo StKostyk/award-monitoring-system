@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
@@ -22,7 +23,6 @@ import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.PageResponse;
-import ua.edu.chnu.awards.document.service.DocumentService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,7 +43,7 @@ public class AwardService {
     private final AwardMapper mapper;
     private final AccessScope access;
     private final AwardHistory history;
-    private final DocumentService documents;
+    private final AwardDocuments documents;
 
     /**
      * Creates a draft owned by the caller in the caller's department, or in the unit that received it.

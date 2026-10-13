@@ -37,6 +37,7 @@ import ua.edu.chnu.awards.gdpr.event.DataExported;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 class DataExportServiceTest {
@@ -50,7 +51,7 @@ class DataExportServiceTest {
     private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final DataExportService service = new DataExportService(users, assembler, throttle, audit,
+    private final DataExportService service = new DataExportService(new UserAccounts(users), assembler, throttle, audit,
         new DeviceFingerprint(), events, Clock.fixed(LATE_EVENING_UTC, ZoneId.of("Europe/Kyiv")));
 
     private final User user = TestUsers.person(5L, "employee.fmi@chnu.edu.ua", null);

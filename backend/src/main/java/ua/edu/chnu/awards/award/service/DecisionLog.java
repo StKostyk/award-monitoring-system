@@ -24,7 +24,7 @@ import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,7 +37,7 @@ import lombok.RequiredArgsConstructor;
 public class DecisionLog {
 
     private final ReviewDecisionRepository decisions;
-    private final UserRepository users;
+    private final UserAccounts users;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
 

@@ -13,19 +13,18 @@ import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 class CorrectionMailsTest {
 
     private static final String LINK = "http://localhost:4200/awards/5";
 
     private final MailDelivery delivery = mock(MailDelivery.class);
-    private final AuthProperties properties = mock(AuthProperties.class);
-    private final CorrectionMails mails = new CorrectionMails(delivery, properties);
+    private final AwardLinks links = mock(AwardLinks.class);
+    private final CorrectionMails mails = new CorrectionMails(delivery, links);
 
     @Test
     void ac3_5_theOwnerGetsOneMessageWithALinkToTheAward() {
-        when(properties.awardLink(5L)).thenReturn(LINK);
+        when(links.awardLink(5L)).thenReturn(LINK);
 
         mails.onCorrected(event("employee@chnu.edu.ua"));
 

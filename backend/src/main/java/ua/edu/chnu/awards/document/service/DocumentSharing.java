@@ -13,7 +13,7 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
-import ua.edu.chnu.awards.award.repository.AwardRepository;
+import ua.edu.chnu.awards.award.service.AwardLookup;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class DocumentSharing {
 
     private final DocumentRepository documents;
-    private final AwardRepository awards;
+    private final AwardLookup awards;
     private final AwardOwnership ownership;
     private final AuditService audit;
 

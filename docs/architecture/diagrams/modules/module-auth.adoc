@@ -1,0 +1,50 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.auth`
+|Spring components
+|_Services_
+
+* `u.e.c.a.a.service.DeviceLookup`
+* `u.e.c.a.a.service.DeviceService`
+* `u.e.c.a.a.service.EmailChangeService`
+* `u.e.c.a.a.service.LoginAttemptService`
+* `u.e.c.a.a.service.OneTimeTokenService`
+* `u.e.c.a.a.service.PasswordResetService`
+* `u.e.c.a.a.service.RegistrationService`
+
+_Event listeners_
+
+* `u.e.c.a.a.service.AuthenticationMails`
+
+_Others_
+
+* `u.e.c.a.a.service.DeviceFingerprint`
+* `u.e.c.a.a.service.EmailAddressRules`
+* `u.e.c.a.a.service.PasswordPolicy`
+|Bean references
+|* `u.e.c.a.u.service.UserAccounts` (in User)
+* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.u.service.RoleHolders` (in User)
+* `u.e.c.a.d.service.DelegationLookup` (in Delegation)
+* `u.e.c.a.a.RolePermissions` (in Authz)
+* `u.e.c.a.c.mail.MailDelivery` (in Common)
+* `u.e.c.a.c.event.AfterCommit` (in Common)
+* `u.e.c.a.c.limit.RequestThrottle` (in Common)
+* `u.e.c.a.c.limit.ProtectionProperties` (in Common)
+* `u.e.c.a.o.service.OrganizationLookup` (in Organization)
+* `u.e.c.a.u.service.MembershipConfirmation` (in User)
+|Aggregate roots
+|* `u.e.c.a.a.entity.OneTimeToken`
+* `u.e.c.a.a.entity.UserDevice`
+|Events listened to
+|* `org.springframework.security.authentication.event.AuthenticationSuccessEvent` 
+* `org.springframework.security.web.session.HttpSessionDestroyedEvent` 
+* `u.e.c.a.a.event.AccountLocked` (async) 
+* `u.e.c.a.a.event.EmailChangeRequested` (async) 
+* `u.e.c.a.a.event.EmailChanged` (async) 
+* `u.e.c.a.a.event.EmailRestored` (async) 
+* `u.e.c.a.a.event.NewDeviceSignedIn` (async) 
+* `u.e.c.a.a.event.PasswordResetRequested` (async) 
+* `u.e.c.a.a.event.VerificationRequested` (async) 
+|===

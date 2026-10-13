@@ -26,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.auth.entity.OneTimeToken;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
 import ua.edu.chnu.awards.auth.entity.UserDevice;
@@ -37,9 +38,8 @@ import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.ClientRequest;
-import ua.edu.chnu.awards.config.AuthProperties;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class DeviceServiceTest {
 
@@ -55,14 +55,15 @@ class DeviceServiceTest {
     private final AuthorizationRevoker authorizations = mock(AuthorizationRevoker.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final AuditService audit = mock(AuditService.class);
-    private final UserRepository users = mock(UserRepository.class);
+    private final UserAccounts users = mock(UserAccounts.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofHours(1), Duration.ofMinutes(1),
         new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15),
         Duration.ofDays(7)), new AuthProperties.Jwk("", "", "", ""));
     private final DeviceService service = new DeviceService(devices, new DeviceFingerprint(), tokens, events,
-        afterCommit, authorizations, passwordEncoder, audit, properties, users, Clock.fixed(NOW, ZoneOffset.UTC));
+        afterCommit, authorizations, passwordEncoder, audit, properties, users, Clock.fixed(NOW,
+            ZoneOffset.UTC));
     private final User olena = User.builder().id(7L).emailAddress("olena@chnu.edu.ua").firstName("Олена")
         .passwordHash("$2a$12$old").build();
 

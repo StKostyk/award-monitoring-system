@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
-
 class DelegatedScopeTest {
 
     @Test

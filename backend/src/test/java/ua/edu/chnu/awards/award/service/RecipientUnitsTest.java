@@ -15,14 +15,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.authz.AccessScope;
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.authz.RoleScope;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.dto.UnitRef;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 
 class RecipientUnitsTest {
 
@@ -36,7 +37,7 @@ class RecipientUnitsTest {
     private final AccessScope access = mock(AccessScope.class);
     private final OrganizationTree tree = mock(OrganizationTree.class);
     private final OrganizationRepository organizations = mock(OrganizationRepository.class);
-    private final RecipientUnits units = new RecipientUnits(access, tree, organizations);
+    private final RecipientUnits units = new RecipientUnits(access, tree, new OrganizationLookup(organizations));
     private final Map<Long, Organization> rows = Map.of(
         FACULTY, TestUsers.organization(FACULTY, OrganizationType.FACULTY, "Faculty of Mathematics"),
         ALGEBRA, named(ALGEBRA, "Algebra", "Кафедра алгебри"),

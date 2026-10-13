@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.AuthProperties;
 import ua.edu.chnu.awards.auth.dto.RegisterRequest;
 import ua.edu.chnu.awards.auth.dto.RegistrationResponse;
 import ua.edu.chnu.awards.auth.entity.TokenPurpose;
@@ -18,15 +19,14 @@ import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.config.AuthProperties;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
-import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 import ua.edu.chnu.awards.user.service.MembershipConfirmation;
+import ua.edu.chnu.awards.user.service.RoleHolders;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,9 +39,9 @@ public class RegistrationService {
 
     static final String RESEND_KEY_PREFIX = "auth:resend:";
 
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final OrganizationRepository organizationRepository;
+    private final UserAccounts userRepository;
+    private final RoleHolders userRoleRepository;
+    private final OrganizationLookup organizationRepository;
     private final OneTimeTokenService tokens;
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;

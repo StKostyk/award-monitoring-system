@@ -20,8 +20,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import ua.edu.chnu.awards.auth.security.RolePermissions;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.organization.OrganizationTree;
 
 class AccessScopeTest {
 

@@ -26,6 +26,7 @@ import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.authz.AccessScope;
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.BatchDecisionRequest;
 import ua.edu.chnu.awards.award.dto.BatchItem;
 import ua.edu.chnu.awards.award.dto.BatchItemResult;
@@ -38,7 +39,6 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.document.repository.DocumentRepository;
 
 class BatchReviewTest {
 
@@ -47,7 +47,7 @@ class BatchReviewTest {
     private final ReviewDecisions decisions = mock(ReviewDecisions.class);
     private final AuditService audit = mock(AuditService.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final BatchReview batch = new BatchReview(decisions, new DecisionRules(mock(DocumentRepository.class)),
+    private final BatchReview batch = new BatchReview(decisions, new DecisionRules(mock(AwardDocuments.class)),
         audit, access);
 
     @BeforeEach

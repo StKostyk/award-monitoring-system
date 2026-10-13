@@ -16,18 +16,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import ua.edu.chnu.awards.authz.OrganizationTree;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.OrganizationTree;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class OrganizationMatcherTest {
 
     @Mock
-    private OrganizationRepository repository;
+    private OrganizationLookup repository;
 
     @Mock
     private OrganizationTree tree;

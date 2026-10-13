@@ -18,8 +18,8 @@ import ua.edu.chnu.awards.award.dto.RecipientType;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
+import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
 
 /**
  * Query parts of the award lists.

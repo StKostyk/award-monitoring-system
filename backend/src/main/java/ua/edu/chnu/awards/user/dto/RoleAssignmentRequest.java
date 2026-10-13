@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotNull;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.authz.RoleType;
 
 /**
  * Request to grant a role to a user.

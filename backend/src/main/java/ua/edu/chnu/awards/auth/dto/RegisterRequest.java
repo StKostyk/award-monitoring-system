@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import ua.edu.chnu.awards.user.dto.NameConstants;
+
 /**
  * Self-registration of a university employee.
  *
@@ -18,12 +20,9 @@ import jakarta.validation.constraints.Size;
 public record RegisterRequest(
     @NotBlank @Email @Size(max = 254) String email,
     @NotBlank @Size(max = 72) String password,
-    @NotBlank @Size(max = 100) @Pattern(regexp = NAME) String firstName,
-    @NotBlank @Size(max = 100) @Pattern(regexp = NAME) String lastName,
+    @NotBlank @Size(max = 100) @Pattern(regexp = NameConstants.NAME) String firstName,
+    @NotBlank @Size(max = 100) @Pattern(regexp = NameConstants.NAME) String lastName,
     @NotNull Long organizationId) {
-
-    /** Letters, apostrophes, hyphens and spaces, starting with a letter. */
-    public static final String NAME = "^\\p{L}[\\p{L}'’\\- ]*$";
 
     @Override
     public String toString() {

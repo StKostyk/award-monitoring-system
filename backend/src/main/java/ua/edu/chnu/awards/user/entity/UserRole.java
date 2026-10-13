@@ -17,6 +17,9 @@ import jakarta.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.organization.entity.Organization;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

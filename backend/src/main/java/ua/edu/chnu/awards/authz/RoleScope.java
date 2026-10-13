@@ -2,8 +2,6 @@ package ua.edu.chnu.awards.authz;
 
 import java.util.Optional;
 
-import ua.edu.chnu.awards.user.entity.RoleType;
-
 /**
  * A role held within an organisation, as carried by the {@code role_scopes} token claim ({@code ROLE:orgId}).
  *

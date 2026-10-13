@@ -1,0 +1,10 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.config`
+|Spring components
+|* `u.e.c.a.c.InfrastructureConfig`
+* `u.e.c.a.c.OpenApiConfig`
+* `u.e.c.a.c.TransactionConfig`
+* `u.e.c.a.c.WebLocaleConfig`
+|===

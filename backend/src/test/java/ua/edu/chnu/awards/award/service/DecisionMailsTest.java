@@ -13,19 +13,18 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.config.AuthProperties;
 
 class DecisionMailsTest {
 
     private static final String LINK = "http://localhost:4200/awards/5";
 
     private final MailDelivery delivery = mock(MailDelivery.class);
-    private final AuthProperties properties = mock(AuthProperties.class);
-    private final DecisionMails mails = new DecisionMails(delivery, properties);
+    private final AwardLinks links = mock(AwardLinks.class);
+    private final DecisionMails mails = new DecisionMails(delivery, links);
 
     @Test
     void ac2_10_theOwnerGetsOneMessageWithALinkToTheAward() {
-        when(properties.awardLink(5L)).thenReturn(LINK);
+        when(links.awardLink(5L)).thenReturn(LINK);
 
         mails.onDecided(event(RequestStatus.APPROVED, ApprovalLevel.DEAN, null));
 

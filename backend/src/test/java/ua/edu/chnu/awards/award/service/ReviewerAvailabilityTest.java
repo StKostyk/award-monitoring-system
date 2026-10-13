@@ -13,12 +13,14 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import ua.edu.chnu.awards.authz.OrganizationTree;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.delegation.repository.RoleDelegationRepository;
+import ua.edu.chnu.awards.delegation.service.DelegationLookup;
+import ua.edu.chnu.awards.organization.OrganizationTree;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
+import ua.edu.chnu.awards.user.service.RoleHolders;
 
 class ReviewerAvailabilityTest {
 
@@ -30,7 +32,8 @@ class ReviewerAvailabilityTest {
     private final UserRoleRepository roles = mock(UserRoleRepository.class);
     private final RoleDelegationRepository delegations = mock(RoleDelegationRepository.class);
     private final OrganizationTree tree = mock(OrganizationTree.class);
-    private final ReviewerAvailability availability = new ReviewerAvailability(roles, delegations, tree,
+    private final ReviewerAvailability availability = new ReviewerAvailability(new RoleHolders(roles),
+        new DelegationLookup(delegations), tree,
         Clock.fixed(Instant.parse("2026-10-01T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
 
     @Test

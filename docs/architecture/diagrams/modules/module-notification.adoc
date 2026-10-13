@@ -1,0 +1,16 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.notification`
+|Spring components
+|_Event listeners_
+
+* `u.e.c.a.n.AuthorityChangeMails`
+|Bean references
+|* `u.e.c.a.c.mail.MailDelivery` (in Common)
+|Events listened to
+|* `u.e.c.a.d.event.DelegationCreated` (async) 
+* `u.e.c.a.d.event.DelegationRevoked` (async) 
+* `u.e.c.a.u.event.RoleAssigned` (async) 
+* `u.e.c.a.u.event.RoleRevoked` (async) 
+|===

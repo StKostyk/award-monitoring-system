@@ -2,8 +2,6 @@ package ua.edu.chnu.awards.award.dto;
 
 import java.util.List;
 
-import ua.edu.chnu.awards.document.dto.SharedDocument;
-
 /**
  * A shared award as a colleague sees it: the achievement and the documents its owner shows to colleagues.
  *

@@ -13,7 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import ua.edu.chnu.awards.award.dto.UnitRef;
 import ua.edu.chnu.awards.award.service.RecipientUnits;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
 
 @WebMvcTest(RecipientUnitController.class)
 class RecipientUnitEndpointsTest extends AbstractAwardEndpointsTest {

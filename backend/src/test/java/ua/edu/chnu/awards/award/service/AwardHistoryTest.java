@@ -31,13 +31,14 @@ import ua.edu.chnu.awards.award.entity.AwardVersion;
 import ua.edu.chnu.awards.award.entity.VersionAction;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardVersionRepository;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.support.TestAwards;
 import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class AwardHistoryTest {
 
@@ -50,8 +51,8 @@ class AwardHistoryTest {
     private final AwardRepository awards = mock(AwardRepository.class);
     private final UserRepository users = mock(UserRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AwardHistory history = new AwardHistory(versions, users,
-        new AwardOwnership(awards, users, mock(OrganizationRepository.class), access), access);
+    private final AwardHistory history = new AwardHistory(versions, new UserAccounts(users),
+        new AwardOwnership(awards, new UserAccounts(users), mock(OrganizationLookup.class), access), access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 

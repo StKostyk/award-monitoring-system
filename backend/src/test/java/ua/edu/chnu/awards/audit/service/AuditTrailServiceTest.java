@@ -22,12 +22,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import ua.edu.chnu.awards.audit.ActorDirectory;
 import ua.edu.chnu.awards.audit.dto.AuditTrailExport;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.entity.AuditLog;
 import ua.edu.chnu.awards.audit.repository.AuditLogRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class AuditTrailServiceTest {
@@ -39,7 +39,7 @@ class AuditTrailServiceTest {
     private AuditLogRepository logs;
 
     @Mock
-    private UserRepository users;
+    private ActorDirectory users;
 
     @Mock
     private AuditService audit;

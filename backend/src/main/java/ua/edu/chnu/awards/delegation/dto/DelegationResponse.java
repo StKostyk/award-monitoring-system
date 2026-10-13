@@ -3,9 +3,9 @@ package ua.edu.chnu.awards.delegation.dto;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.delegation.entity.DelegationState;
-import ua.edu.chnu.awards.user.dto.OrganizationRef;
-import ua.edu.chnu.awards.user.entity.RoleType;
+import ua.edu.chnu.awards.organization.dto.OrganizationRef;
 
 /**
  * One delegation of approval authority.

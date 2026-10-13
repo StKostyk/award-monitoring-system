@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.award.AwardDocuments;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.AwardVisibilityUpdate;
 import ua.edu.chnu.awards.award.entity.Award;
@@ -19,7 +20,6 @@ import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
-import ua.edu.chnu.awards.document.service.DocumentSharing;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,7 +39,7 @@ public class AwardSharing {
     private final RequestLookup requests;
     private final AwardMapper mapper;
     private final AuditService audit;
-    private final DocumentSharing documents;
+    private final AwardDocuments documents;
 
     /**
      * Sets the visibility of the caller's approved personal award.
@@ -68,7 +68,7 @@ public class AwardSharing {
             audit.record(AuditAction.AWARD_VISIBILITY_CHANGED, AuditEntityConstants.AWARDS, award.getOwner().getId(),
                 award.getId(), Map.of("from", from.name(), "to", visibility.name()));
             if (visibility == AwardVisibility.PRIVATE) {
-                documents.clear(award);
+                documents.hideFromColleagues(award);
             }
         }
         return mapper.toResponse(award, requests.of(id).orElse(null));

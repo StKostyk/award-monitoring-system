@@ -11,9 +11,9 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.entity.User;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
-import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,8 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class AwardOwnership {
 
     private final AwardRepository awards;
-    private final UserRepository users;
-    private final OrganizationRepository organizations;
+    private final UserAccounts users;
+    private final OrganizationLookup organizations;
     private final AccessScope access;
 
     /**

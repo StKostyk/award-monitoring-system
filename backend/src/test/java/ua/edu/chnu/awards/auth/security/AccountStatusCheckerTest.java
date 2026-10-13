@@ -14,11 +14,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class AccountStatusCheckerTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
-    private final AccountStatusChecker checker = new AccountStatusChecker(userRepository);
+    private final AccountStatusChecker checker = new AccountStatusChecker(new UserAccounts(userRepository));
 
     @Test
     void ac16_pendingAccountIsRefusedWithItsStatus() {

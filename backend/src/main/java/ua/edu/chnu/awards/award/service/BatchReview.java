@@ -65,10 +65,10 @@ public class BatchReview {
         long awardId = item.awardId();
         try {
             return BatchItemResult.done(decisions.decide(awardId, body.of(item)));
-        } catch (ApiProblemException problem) {
-            return BatchItemResult.failed(awardId, problem.getType(), problem.getMessage());
         } catch (AwardNotFoundException missing) {
             return BatchItemResult.failed(awardId, "not-found", "The award was not found or is not reviewable");
+        } catch (ApiProblemException problem) {
+            return BatchItemResult.failed(awardId, problem.getType(), problem.getMessage());
         } catch (OptimisticLockingFailureException changed) {
             return BatchItemResult.failed(awardId, ReviewProblemConstants.REQUEST_STALE,
                 "The request changed meanwhile");

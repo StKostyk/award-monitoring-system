@@ -26,21 +26,22 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 
-import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
 import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.RoleLevels;
+import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.delegation.service.DelegationService;
+import ua.edu.chnu.awards.organization.entity.Organization;
+import ua.edu.chnu.awards.organization.entity.OrganizationType;
+import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
+import ua.edu.chnu.awards.organization.service.OrganizationLookup;
+import ua.edu.chnu.awards.user.AccountSessions;
+import ua.edu.chnu.awards.user.LentAuthority;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentResponse;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
-import ua.edu.chnu.awards.user.entity.Organization;
-import ua.edu.chnu.awards.user.entity.OrganizationType;
-import ua.edu.chnu.awards.user.entity.RoleType;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
 import ua.edu.chnu.awards.user.mapper.UserProfileMapper;
-import ua.edu.chnu.awards.user.repository.OrganizationRepository;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
@@ -55,9 +56,9 @@ class RoleAssignmentServiceTest {
     private final UserRoleRepository userRoleRepository = mock(UserRoleRepository.class);
     private final OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
     private final AccessScope access = mock(AccessScope.class);
-    private final AuthorizationRevoker revoker = mock(AuthorizationRevoker.class);
+    private final AccountSessions revoker = mock(AccountSessions.class);
     private final RoleChangeRecorder recorder = mock(RoleChangeRecorder.class);
-    private final DelegationService delegations = mock(DelegationService.class);
+    private final LentAuthority delegations = mock(LentAuthority.class);
 
     private final Organization faculty = organization(FACULTY_ID, OrganizationType.FACULTY, "FMI");
     private final Organization department = organization(DEPARTMENT_ID, OrganizationType.DEPARTMENT, "DAI");
@@ -70,8 +71,8 @@ class RoleAssignmentServiceTest {
     @BeforeEach
     void setUp() {
         service = new RoleAssignmentService(userRepository, userRoleRepository,
-            new RoleAssignmentRules(userRoleRepository, organizationRepository, new RoleOrganizations(),
-                new RoleLevels(), access),
+            new RoleAssignmentRules(userRoleRepository, new OrganizationLookup(organizationRepository),
+                new RoleOrganizations(), new RoleLevels(), access),
             access, revoker, new UserProfileMapper(), recorder, delegations,
             Clock.fixed(Instant.parse("2026-09-22T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
         when(access.callerId()).thenReturn(dean.getId());
@@ -222,7 +223,7 @@ class RoleAssignmentServiceTest {
         service.revoke(employee.getId(), role.getId());
 
         assertThat(role.getValidTo()).isEqualTo(TODAY.minusDays(1));
-        verify(revoker).revokeAll(employee);
+        verify(revoker).signOutEverywhere(employee);
         verify(recorder).revoked(dean, role);
     }
 
@@ -237,7 +238,7 @@ class RoleAssignmentServiceTest {
                 assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
                 assertThat(e.getType()).isEqualTo("role-already-revoked");
             });
-        verify(revoker, never()).revokeAll(any());
+        verify(revoker, never()).signOutEverywhere(any());
     }
 
     @Test
@@ -304,7 +305,7 @@ class RoleAssignmentServiceTest {
         verify(recorder).superseded(dean, old);
         verify(recorder).granted(eq(dean), any(UserRole.class));
         verify(delegations).revokeForMove(dean, employee);
-        verify(revoker).revokeAll(employee);
+        verify(revoker).signOutEverywhere(employee);
     }
 
     @Test
@@ -353,7 +354,7 @@ class RoleAssignmentServiceTest {
         verify(userRoleRepository, never()).saveAndFlush(any());
         verify(recorder, never()).superseded(any(), any());
         verify(delegations, never()).revokeForMove(any(), any());
-        verify(revoker, never()).revokeAll(any());
+        verify(revoker, never()).signOutEverywhere(any());
     }
 
     @Test
@@ -367,7 +368,7 @@ class RoleAssignmentServiceTest {
             .isInstanceOfSatisfying(ApiProblemException.class,
                 e -> assertThat(e.getType()).isEqualTo("role-already-revoked"));
         verify(recorder, never()).revoked(any(), any());
-        verify(revoker, never()).revokeAll(any());
+        verify(revoker, never()).signOutEverywhere(any());
     }
 
     @Test
@@ -387,7 +388,7 @@ class RoleAssignmentServiceTest {
 
         assertThat(employee.getOrganization()).isSameAs(department);
         verify(recorder, never()).superseded(any(), any());
-        verify(revoker, never()).revokeAll(any());
+        verify(revoker, never()).signOutEverywhere(any());
     }
 
     @Test
@@ -413,7 +414,7 @@ class RoleAssignmentServiceTest {
         service.revoke(employee.getId(), future.getId());
 
         assertThat(future.getValidTo()).isEqualTo(TODAY.plusMonths(1).minusDays(1));
-        verify(revoker).revokeAll(employee);
+        verify(revoker).signOutEverywhere(employee);
     }
 
     @Test
