@@ -35,7 +35,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 9 | 1.2.3 Approval authority delegation | 1.2 | 5 | SCRUM-14 | #37 | yes | Done |
 | 9a | 1.2.4 Fixes from the Feature 1.2 validation | 1.2 | 5 | SCRUM-19 | #73 | no | Done |
 | 10 | 1.3.1 Profile information update | 1.3 | 5 | SCRUM-15 | #38 | yes | Done 2026-09-30 |
-| 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | Moved to Epic 7 |
+| 11 | 1.3.2 Notification preferences | 1.3 | 3 | SCRUM-16 | #39 | yes | In review |
 | 12 | 1.3.3 GDPR data portability | 1.3 | 5 | SCRUM-17 | #40 | no | Done 2026-09-30 |
 | 13 | 1.3.4 Fixes from the Feature 1.3 validation | 1.3 | 3 | SCRUM-29 | #92 | no | Done 2026-09-30 |
 | 13a | 1.1.7 Forgot-password 429 shows a raw translation key | 1.1 | 1 | SCRUM-80 | #207 | no | Done |

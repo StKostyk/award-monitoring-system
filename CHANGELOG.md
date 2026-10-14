@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Notification preferences: e-mail and in-app delivery per notification type on the profile page (GET/PUT /api/v1/users/me/notification-preferences); every mail and in-app listener honours them, security mails are always sent
 - Notification centre: a bell in the toolbar with the unread count, the latest ten notifications in uk and en, and a /notifications page with an unread filter (SCRUM-67).
 - In-app notifications for award decisions, corrections, overdue reviews, takeovers, roles and delegations, with endpoints to list, count and mark them read (7.2.1)
 - Owners can show chosen documents of a shared award to colleagues

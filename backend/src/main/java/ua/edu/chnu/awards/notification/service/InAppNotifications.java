@@ -30,7 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Writes the in-app notifications of committed events, in a transaction of their own on the publication registry:
- * a failed insert is retried, and a repeated delivery hits the dedupe key and writes nothing.
+ * a failed insert is retried, a repeated delivery hits the dedupe key and writes nothing, and a type the recipient
+ * switched off for in-app is skipped.
  */
 @Slf4j
 @Component
@@ -43,6 +44,7 @@ public class InAppNotifications {
     private final UserAccounts users;
     private final ObjectMapper mapper;
     private final Clock clock;
+    private final NotificationPreferenceService preferences;
 
     /**
      * Tells the owner about a decision.
@@ -127,6 +129,10 @@ public class InAppNotifications {
     void write(NotificationDraft draft) {
         if (draft.userId() == null || draft.occurredAt() == null || !reachable(draft.userId())) {
             log.info("No in-app notification {} for user {}: no recipient", draft.type(), draft.userId());
+            return;
+        }
+        if (!preferences.allows(draft.userId(), draft.type(), NotificationChannel.IN_APP)) {
+            log.info("No in-app notification {} for user {}: switched off", draft.type(), draft.userId());
             return;
         }
         Instant sentAt = clock.instant();

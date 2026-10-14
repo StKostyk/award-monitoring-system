@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { DatePipe, NgComponentOutlet } from '@angular/common';
+import { Component, Type, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
@@ -33,6 +33,7 @@ export function fileName(disposition: string | null): string {
   imports: [
     ReactiveFormsModule,
     DatePipe,
+    NgComponentOutlet,
     MatCard,
     MatCardHeader,
     MatCardTitle,
@@ -65,6 +66,7 @@ export class ProfileComponent {
   readonly exporting = signal(false);
   readonly exportMessage = signal<string | null>(null);
   readonly exportProblem = signal<string | null>(null);
+  readonly preferencesCard = signal<Type<unknown> | null>(null);
 
   readonly names = this.fb.nonNullable.group({
     firstName: ['', nameValidator],
@@ -80,6 +82,9 @@ export class ProfileComponent {
       next: (list) => this.received.set(list.received),
       error: () => this.received.set([]),
     });
+    import('../notification-preferences/notification-preferences.component')
+      .then((module) => this.preferencesCard.set(module.NotificationPreferencesComponent))
+      .catch(() => this.preferencesCard.set(null));
   }
 
   name(organization: OrganizationRef): string {

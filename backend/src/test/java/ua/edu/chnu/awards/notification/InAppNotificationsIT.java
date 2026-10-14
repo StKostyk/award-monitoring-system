@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -160,6 +161,25 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac3_5_eachChannelFollowsTheRecipientsPreferenceForTheType() {
+        User mailOff = account("mailoff");
+        User inAppOff = account("inappoff");
+        prefer(mailOff, false, true);
+        prefer(inAppOff, true, false);
+
+        publish(decided(mailOff, Instant.now()));
+        publish(decided(inAppOff, Instant.now()));
+
+        verify(mailSender, timeout(WAIT_MS))
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(inAppOff.getEmailAddress())));
+        assertThat(waitFor(() -> rows(mailOff), 1L)).isEqualTo(1);
+        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(rows(inAppOff)).isZero();
+        verify(mailSender, never())
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(mailOff.getEmailAddress())));
+    }
+
+    @Test
     void edgeCase_aRevokedDelegationWritesOneRowPerRecipientNamingTheOtherSide() {
         User delegate = account("delegate");
         User delegator = account("delegator");
@@ -184,6 +204,11 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
     private static AwardDecided decided(User owner, Instant occurredAt) {
         return new AwardDecided(owner.getId(), owner.getEmailAddress(), "Олена", AWARD_ID, "Certificate", "Грамота",
             RequestStatus.RETURNED, ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", "Виправте дату", occurredAt);
+    }
+
+    private void prefer(User user, boolean email, boolean inApp) {
+        jdbc.update("INSERT INTO notification_preferences (user_id, event_type, email_enabled, in_app_enabled)"
+            + " VALUES (?, 'AWARD_RETURNED', ?, ?)", user.getId(), email, inApp);
     }
 
     private void publish(Object event) {

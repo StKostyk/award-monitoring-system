@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.notification.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -38,8 +40,14 @@ class InAppNotificationsRoutingTest {
     private final NotificationDrafts drafts = mock(NotificationDrafts.class);
     private final NotificationRepository repository = mock(NotificationRepository.class);
     private final UserAccounts users = mock(UserAccounts.class);
+    private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
     private final InAppNotifications notifications = new InAppNotifications(drafts, new NotificationKeys(),
-        repository, users, new ObjectMapper(), Clock.fixed(AT, ZoneOffset.UTC));
+        repository, users, new ObjectMapper(), Clock.fixed(AT, ZoneOffset.UTC), preferences);
+
+    @BeforeEach
+    void allowEveryChannel() {
+        when(preferences.allows(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     void ac1_2_everyListedEventReachesTheWriter() {

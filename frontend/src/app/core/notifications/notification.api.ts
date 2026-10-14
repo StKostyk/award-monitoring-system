@@ -43,11 +43,31 @@ export interface AppNotification {
   sentAt: string;
 }
 
-/** The caller's in-app notifications. */
+/** The channels one notification type is delivered on. */
+export interface NotificationPreference {
+  type: NotificationType;
+  email: boolean;
+  inApp: boolean;
+}
+
+/** The caller's in-app notifications and delivery preferences. */
 @Injectable({ providedIn: 'root' })
 export class NotificationApi {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/notifications`;
+  private readonly preferencesUrl = `${environment.apiUrl}/users/me/notification-preferences`;
+
+  preferences(): Observable<NotificationPreference[]> {
+    return this.http
+      .get<{ preferences: NotificationPreference[] }>(this.preferencesUrl)
+      .pipe(map((body) => body.preferences));
+  }
+
+  savePreferences(preferences: NotificationPreference[]): Observable<NotificationPreference[]> {
+    return this.http
+      .put<{ preferences: NotificationPreference[] }>(this.preferencesUrl, { preferences })
+      .pipe(map((body) => body.preferences));
+  }
 
   list(page: number, size: number, unread = false): Observable<Page<AppNotification>> {
     let params = new HttpParams().set('page', page).set('size', size);

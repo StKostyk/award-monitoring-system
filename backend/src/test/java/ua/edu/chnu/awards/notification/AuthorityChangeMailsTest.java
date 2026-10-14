@@ -1,14 +1,19 @@
 package ua.edu.chnu.awards.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -16,6 +21,9 @@ import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
@@ -25,8 +33,14 @@ class AuthorityChangeMailsTest {
     private static final String FMI_UK = "Факультет математики та інформатики";
 
     private final MailDelivery delivery = mock(MailDelivery.class);
-    private final AuthorityChangeMails mails = new AuthorityChangeMails(delivery);
+    private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
+    private final AuthorityChangeMails mails = new AuthorityChangeMails(delivery, preferences);
     private final ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
+
+    @BeforeEach
+    void allowEveryChannel() {
+        when(preferences.allows(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     void ac2_5_tellsTheHolderWhichRoleWasGrantedWhereAndUntilWhen() {
@@ -87,6 +101,23 @@ class AuthorityChangeMailsTest {
         assertThat(recipient.getAllValues()).containsExactly("secretary@chnu.edu.ua", "dean@chnu.edu.ua");
         assertThat(text.getAllValues()).allSatisfy(body -> assertThat(body)
             .contains("DEAN", "Аліна Коваленко", "Олег Адміненко", "Every session of the delegate was ended"));
+    }
+
+    @Test
+    void ac3_5_onlyRecipientsWhoKeptTheseMailsOnAreTold() {
+        when(preferences.allows(4L, NotificationType.ROLE_ASSIGNED, NotificationChannel.EMAIL)).thenReturn(false);
+        when(preferences.allows(8L, NotificationType.DELEGATION_REVOKED, NotificationChannel.EMAIL)).thenReturn(false);
+
+        mails.onRoleAssigned(new RoleAssigned(4L, "member@chnu.edu.ua", "Анастасія", RoleType.EMPLOYEE,
+            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), null, null));
+        mails.onDelegationRevoked(new DelegationRevoked(List.of(
+            new DelegationRevoked.Recipient(8L, "secretary@chnu.edu.ua", null),
+            new DelegationRevoked.Recipient(9L, "dean@chnu.edu.ua", null)), RoleType.DEAN, FMI, FMI_UK,
+            "Аліна Коваленко", "Олег Адміненко", null, null));
+
+        verify(delivery, never()).send(eq("member@chnu.edu.ua"), anyString(), anyString());
+        verify(delivery, never()).send(eq("secretary@chnu.edu.ua"), anyString(), anyString());
+        verify(delivery).send(eq("dean@chnu.edu.ua"), eq("Делегування відкликано / Delegation revoked"), anyString());
     }
 
     private static DelegationCreated delegation(String reason) {

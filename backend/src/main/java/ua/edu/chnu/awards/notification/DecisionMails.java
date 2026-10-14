@@ -1,4 +1,4 @@
-package ua.edu.chnu.awards.award.service;
+package ua.edu.chnu.awards.notification;
 
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.SEPARATOR;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloEn;
@@ -12,7 +12,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.AwardDecided;
+import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,16 +41,18 @@ public class DecisionMails {
 
     private final MailDelivery delivery;
     private final AwardLinks links;
+    private final NotificationPreferenceService preferences;
 
     /**
-     * Sends the owner one message about the decision.
+     * Sends the owner one message about the decision, unless the owner switched these mails off.
      *
      * @param event the committed decision
      */
     @Async
     @TransactionalEventListener
     public void onDecided(AwardDecided event) {
-        if (event.email() == null) {
+        if (event.email() == null
+            || !preferences.allows(event.userId(), NotificationDrafts.typeOf(event), NotificationChannel.EMAIL)) {
             return;
         }
         delivery.send(event.email(), subject(event), body(event, links.awardLink(event.awardId())));

@@ -1,24 +1,45 @@
-package ua.edu.chnu.awards.award.service;
+package ua.edu.chnu.awards.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.award.event.ReviewTakenOver;
+import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 
 class TakeOverMailsTest {
+
+    @Test
+    void ac3_5_noMessageIfTheHolderSwitchedTheseMailsOff() {
+        when(preferences.allows(21L, NotificationType.REVIEW_TAKEN_OVER, NotificationChannel.EMAIL)).thenReturn(false);
+
+        mails.onTakenOver(event("secretary@chnu.edu.ua"));
+
+        verify(delivery, never()).send(anyString(), anyString(), anyString());
+    }
 
     private static final String LINK = "http://localhost:4200/awards/5";
 
     private final MailDelivery delivery = mock(MailDelivery.class);
     private final AwardLinks links = mock(AwardLinks.class);
-    private final TakeOverMails mails = new TakeOverMails(delivery, links);
+    private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
+    private final TakeOverMails mails = new TakeOverMails(delivery, links, preferences);
+
+    @BeforeEach
+    void allowEveryChannel() {
+        when(preferences.allows(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     void ac2_thePreviousHolderGetsOneMessageWithALinkToTheAward() {

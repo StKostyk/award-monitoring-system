@@ -1,7 +1,8 @@
-package ua.edu.chnu.awards.award.service;
+package ua.edu.chnu.awards.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -20,8 +21,13 @@ import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
+import ua.edu.chnu.awards.award.service.AwardLinks;
+import ua.edu.chnu.awards.award.service.ReviewMetrics;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.common.mail.MailNotDeliveredException;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 
 class OverdueMailsTest {
 
@@ -30,11 +36,13 @@ class OverdueMailsTest {
     private final MailDelivery delivery = mock(MailDelivery.class);
     private final AwardLinks links = mock(AwardLinks.class);
     private final ReviewMetrics metrics = mock(ReviewMetrics.class);
-    private final OverdueMails mails = new OverdueMails(delivery, links, metrics);
+    private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
+    private final OverdueMails mails = new OverdueMails(delivery, links, metrics, preferences);
 
     @BeforeEach
     void setUp() {
         when(links.awardLink(anyLong())).thenReturn("http://localhost:4200/awards/5");
+        when(preferences.allows(any(), any(), any())).thenReturn(true);
     }
 
     @Test
@@ -69,6 +77,15 @@ class OverdueMailsTest {
         assertThatThrownBy(() -> mails.onNoticed(digest)).isInstanceOf(MailNotDeliveredException.class);
 
         verify(metrics, never()).noticeSent();
+    }
+
+    @Test
+    void ac3_5_noDigestAndNoCountIfTheReviewerSwitchedTheseMailsOff() {
+        when(preferences.allows(4L, NotificationType.REVIEW_OVERDUE, NotificationChannel.EMAIL)).thenReturn(false);
+
+        mails.onNoticed(digest());
+
+        verifyNoInteractions(delivery, metrics);
     }
 
     @Test

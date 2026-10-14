@@ -38,8 +38,8 @@ public class NotificationDrafts {
     public NotificationDraft of(AwardDecided event) {
         Map<String, Object> payload = award(event.title(), event.titleUk(), event.reviewer());
         payload.put("level", event.level().name());
-        return new NotificationDraft(event.userId(), NotificationType.valueOf("AWARD_" + event.outcome().name()),
-            payload, AWARD, event.awardId(), event.occurredAt());
+        return new NotificationDraft(event.userId(), typeOf(event), payload, AWARD, event.awardId(),
+            event.occurredAt());
     }
 
     /**
@@ -133,6 +133,16 @@ public class NotificationDrafts {
             return new NotificationDraft(recipient.userId(), NotificationType.DELEGATION_REVOKED, payload, null,
                 null, event.occurredAt());
         }).toList();
+    }
+
+    /**
+     * The notification type of a decision.
+     *
+     * @param event the decision
+     * @return approved, rejected, returned or escalated
+     */
+    public static NotificationType typeOf(AwardDecided event) {
+        return NotificationType.valueOf("AWARD_" + event.outcome().name());
     }
 
     private static Map<String, Object> award(String title, String titleUk, String reviewer) {

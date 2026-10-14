@@ -1,4 +1,4 @@
-package ua.edu.chnu.awards.award.service;
+package ua.edu.chnu.awards.notification;
 
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.SEPARATOR;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloEn;
@@ -12,7 +12,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.award.event.AwardCorrected;
+import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,6 +51,7 @@ public class CorrectionMails {
 
     private final MailDelivery delivery;
     private final AwardLinks links;
+    private final NotificationPreferenceService preferences;
 
     /**
      * Sends the owner one message about the correction.
@@ -56,7 +61,8 @@ public class CorrectionMails {
     @Async
     @TransactionalEventListener
     public void onCorrected(AwardCorrected event) {
-        if (event.email() == null) {
+        if (event.email() == null
+            || !preferences.allows(event.userId(), NotificationType.AWARD_CORRECTED, NotificationChannel.EMAIL)) {
             return;
         }
         delivery.send(event.email(), SUBJECT, body(event, links.awardLink(event.awardId())));
