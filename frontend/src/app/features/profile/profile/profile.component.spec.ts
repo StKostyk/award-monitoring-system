@@ -6,13 +6,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserProfile } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { NotificationApi } from '../../../core/notifications/notification.api';
 import { ProfileComponent, fileName } from './profile.component';
 
 const PROFILE: UserProfile = {
@@ -82,6 +83,7 @@ describe('ProfileComponent', () => {
         { provide: AuthService, useValue: auth },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: MatDialog, useValue: dialog },
+        { provide: NotificationApi, useValue: { preferences: () => NEVER } },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -111,6 +113,18 @@ describe('ProfileComponent', () => {
     expect(text(fixture, 'profile-faculty')).toBe('Факультет математики та інформатики');
     expect(text(fixture, 'profile-membership')).toBe('Членство підтверджено');
     expect(fixture.nativeElement.querySelectorAll('[data-testid="profile-role"]').length).toBe(1);
+  });
+
+  it('ac3_6 loads the notifications card under its anchor', async () => {
+    const fixture = await setup();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector(
+          '#notifications [data-testid="notification-preferences"]',
+        ),
+      ).not.toBeNull();
+    });
   });
 
   it('ac17 keeps save disabled while the names are pristine or invalid', async () => {

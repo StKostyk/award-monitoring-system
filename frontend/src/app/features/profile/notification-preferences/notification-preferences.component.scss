@@ -1,0 +1,66 @@
+:host {
+  display: block;
+}
+
+.preferences {
+  max-width: 820px;
+  margin-bottom: 16px;
+}
+
+.preferences__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+
+  th,
+  td {
+    padding: 0 4px;
+    text-align: center;
+    font-weight: normal;
+  }
+
+  .preferences__channel {
+    width: 96px;
+  }
+
+  thead th {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.85rem;
+  }
+
+  .preferences__type {
+    text-align: left;
+  }
+
+  @media (max-width: 599px) {
+    .preferences__channel {
+      width: 76px;
+    }
+  }
+}
+
+.preferences__group {
+  padding: 8px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.preferences__hint {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.preferences__problem {
+  color: var(--mat-sys-error);
+}
+
+.preferences__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

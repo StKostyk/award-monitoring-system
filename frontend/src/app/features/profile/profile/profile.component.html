@@ -170,6 +170,14 @@
     </mat-card-content>
   </mat-card>
 
+  <section id="notifications">
+    @if (preferencesCard(); as card) {
+      <ng-container *ngComponentOutlet="card" />
+    } @else {
+      <div class="profile__placeholder"></div>
+    }
+  </section>
+
   <mat-card class="profile__card" data-testid="profile-my-data">
     <mat-card-header>
       <mat-card-title>{{ 'profile.dataTitle' | transloco }}</mat-card-title>

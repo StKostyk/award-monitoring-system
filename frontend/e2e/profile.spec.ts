@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { countMessages, linkFor, registerAndVerify, signIn } from './helpers';
@@ -145,5 +146,43 @@ test.describe('profile', () => {
       'Забагато запитів. Спробуйте пізніше.',
     );
     await expect.poll(() => countMessages(email, 'Your data was exported')).toBe(1);
+  });
+
+  test('ac3_6 keeps one channel per type and stores the choice', async ({ page }) => {
+    const email = `e2e.prefs.${Date.now()}@chnu.edu.ua`;
+    await registerAndVerify(page, email, PASSWORD);
+    await signIn(page, email, PASSWORD);
+
+    await page.goto('/profile#notifications');
+    const card = page.getByTestId('notification-preferences');
+    await expect(card).toBeInViewport();
+    await expect(card.getByTestId('preferences-group')).toHaveCount(3);
+    await expect(card.getByTestId('preferences-security')).toContainText('надсилаються завжди');
+    await expect(card.getByTestId('preferences-save')).toBeDisabled();
+    const scan = await new AxeBuilder({ page })
+      .include('[data-testid="notification-preferences"]')
+      .analyze();
+    expect(scan.violations.map((violation) => violation.id)).toEqual([]);
+
+    const awardEmail = page.getByRole('checkbox', { name: 'Е-пошта: Нагороду погоджено' });
+    const awardInApp = page.getByRole('checkbox', { name: 'У системі: Нагороду погоджено' });
+    await awardEmail.uncheck();
+    await expect(awardInApp).toBeChecked();
+    await expect(awardInApp).toBeDisabled();
+    await page
+      .getByRole('checkbox', { name: 'У системі: Щоденний перелік прострочених розглядів' })
+      .uncheck();
+
+    await card.getByTestId('preferences-save').click();
+    await expect(card.getByTestId('preferences-saved')).toHaveText(
+      'Налаштування сповіщень збережено',
+    );
+
+    await page.reload();
+    await expect(awardEmail).not.toBeChecked();
+    await expect(awardInApp).toBeDisabled();
+    await expect(
+      page.getByRole('checkbox', { name: 'Е-пошта: Щоденний перелік прострочених розглядів' }),
+    ).toBeDisabled();
   });
 });

@@ -1,0 +1,87 @@
+<mat-card class="preferences" data-testid="notification-preferences">
+  <mat-card-header>
+    <mat-card-title>{{ 'notifications.preferences.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="preferences__hint">{{ 'notifications.preferences.intro' | transloco }}</p>
+    @if (loadFailed()) {
+      <p class="preferences__problem" role="alert" data-testid="preferences-load-error">
+        {{ 'notifications.preferences.errors.load' | transloco }}
+      </p>
+      <button mat-stroked-button type="button" (click)="load()" data-testid="preferences-retry">
+        {{ 'notifications.retry' | transloco }}
+      </button>
+    } @else if (current().length > 0) {
+      @for (group of groups; track group.key) {
+        <table class="preferences__table" data-testid="preferences-group">
+          <caption class="preferences__group">
+            {{
+              'notifications.preferences.groups.' + group.key | transloco
+            }}
+          </caption>
+          <colgroup>
+            <col />
+            <col class="preferences__channel" />
+            <col class="preferences__channel" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">
+                <span class="preferences__visually-hidden">
+                  {{ 'notifications.preferences.type' | transloco }}
+                </span>
+              </th>
+              <th scope="col">{{ 'notifications.preferences.email' | transloco }}</th>
+              <th scope="col">{{ 'notifications.preferences.inApp' | transloco }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (type of group.types; track type) {
+              @let label = 'notifications.preferences.types.' + type | transloco;
+              <tr [attr.data-testid]="'preference-' + type">
+                <th scope="row" class="preferences__type">{{ label }}</th>
+                @for (channel of channels; track channel) {
+                  <td>
+                    <mat-checkbox
+                      [checked]="checked(type, channel)"
+                      [disabled]="locked(type, channel) || saving()"
+                      (change)="toggle(type, channel, $event.checked)"
+                      [aria-label]="
+                        ('notifications.preferences.' + channel | transloco) + ': ' + label
+                      "
+                      [aria-describedby]="locked(type, channel) ? 'preferences-last-hint' : ''"
+                      [attr.data-testid]="'preference-' + type + '-' + channel"
+                    />
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      <p id="preferences-last-hint" class="preferences__hint" data-testid="preferences-last-hint">
+        {{ 'notifications.preferences.lastChannel' | transloco }}
+      </p>
+      <p class="preferences__hint" data-testid="preferences-security">
+        {{ 'notifications.preferences.security' | transloco }}
+      </p>
+      @if (message(); as message) {
+        <p role="status" data-testid="preferences-saved">{{ message | transloco }}</p>
+      }
+      @if (problem(); as problem) {
+        <p class="preferences__problem" role="alert" data-testid="preferences-error">
+          {{ problem | transloco }}
+        </p>
+      }
+      <button
+        mat-flat-button
+        type="button"
+        [disabled]="!dirty() || saving()"
+        (click)="save()"
+        data-testid="preferences-save"
+      >
+        {{ 'notifications.preferences.save' | transloco }}
+      </button>
+    }
+  </mat-card-content>
+</mat-card>

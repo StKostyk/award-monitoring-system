@@ -1043,6 +1043,40 @@
       "DELEGATION_CREATED": "{{otherParty}} has delegated the role “{{role}}” to you: {{organization}}{{until}}",
       "DELEGATION_REVOKED": "The delegation of the role “{{role}}” with {{otherParty}} has been revoked: {{organization}}",
       "unknown": "New notification"
+    },
+    "preferences": {
+      "title": "Notifications",
+      "intro": "Choose how you hear about each event: by e-mail, in the notification centre, or both.",
+      "type": "Event",
+      "email": "E-mail",
+      "inApp": "In app",
+      "groups": {
+        "myAwards": "My awards",
+        "reviewing": "Reviewing",
+        "roles": "Roles and delegations"
+      },
+      "types": {
+        "AWARD_APPROVED": "Award approved",
+        "AWARD_REJECTED": "Award rejected",
+        "AWARD_RETURNED": "Award returned for changes",
+        "AWARD_ESCALATED": "Award passed to the next level",
+        "AWARD_CORRECTED": "Award corrected by a reviewer",
+        "REVIEW_OVERDUE": "Daily list of overdue reviews",
+        "REVIEW_TAKEN_OVER": "Review taken over",
+        "ROLE_ASSIGNED": "Role assigned",
+        "ROLE_REVOKED": "Role revoked",
+        "DELEGATION_CREATED": "Role delegated to me",
+        "DELEGATION_REVOKED": "Delegation revoked"
+      },
+      "lastChannel": "Each event keeps at least one channel, so the last ticked box cannot be cleared.",
+      "security": "Security e-mails (account verification, password reset, address change, new device, account lock, data export) are always sent.",
+      "save": "Save",
+      "saved": "Notification settings saved",
+      "errors": {
+        "load": "The notification settings could not be loaded.",
+        "network": "The server is unavailable. Try again later.",
+        "failed": "The notification settings could not be saved. Try again later."
+      }
     }
   }
 }
