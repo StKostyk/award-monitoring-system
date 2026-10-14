@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LoginSuccessListener {
 
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
     private final LoginAttemptService attempts;
     private final AuditService audit;
     private final DeviceService devices;
@@ -44,8 +44,8 @@ public class LoginSuccessListener {
         }
         String email = event.getAuthentication().getName();
         ClientRequest client = ClientRequest.current();
-        userRepository.findByEmailAddressIgnoreCase(email).ifPresent(user -> {
-            userRepository.recordLogin(user.getId(), Instant.now());
+        users.findByEmailAddressIgnoreCase(email).ifPresent(user -> {
+            users.recordLogin(user.getId(), Instant.now());
             audit.record(AuditAction.LOGIN_SUCCESS, user.getId());
             try {
                 devices.recordSignIn(user, client);
@@ -63,7 +63,7 @@ public class LoginSuccessListener {
             if (context.getAuthentication() == null) {
                 continue;
             }
-            Long userId = userRepository.findByEmailAddressIgnoreCase(context.getAuthentication().getName())
+            Long userId = users.findByEmailAddressIgnoreCase(context.getAuthentication().getName())
                 .map(User::getId).orElse(null);
             audit.record(AuditAction.LOGOUT, userId);
         }

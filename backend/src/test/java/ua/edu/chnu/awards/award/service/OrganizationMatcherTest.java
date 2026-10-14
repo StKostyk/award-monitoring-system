@@ -27,7 +27,7 @@ import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 class OrganizationMatcherTest {
 
     @Mock
-    private OrganizationLookup repository;
+    private OrganizationLookup organizations;
 
     @Mock
     private OrganizationTree tree;
@@ -42,7 +42,7 @@ class OrganizationMatcherTest {
         }
         when(tree.covers(9L, 64L)).thenReturn(true);
         when(tree.covers(14L, 97L)).thenReturn(true);
-        when(repository.findByActiveTrue()).thenReturn(List.of(
+        when(organizations.findByActiveTrue()).thenReturn(List.of(
             unit(1, OrganizationType.UNIVERSITY, 0, "Yuriy Fedkovych Chernivtsi National University",
                 "Чернівецький національний університет імені Юрія Федьковича", "ChNU"),
             unit(14, OrganizationType.COLLEGE, 1, "Applied College of Yuriy Fedkovych Chernivtsi National University",
@@ -126,7 +126,7 @@ class OrganizationMatcherTest {
     @Test
     void ac3_1_anEmptyOrganisationIsNotLookedUp() {
         assertThat(matcher.level(SuggestionText.of(""))).isEmpty();
-        verify(repository, never()).findByActiveTrue();
+        verify(organizations, never()).findByActiveTrue();
     }
 
     private static Organization unit(long id, OrganizationType type, int depth, String name, String nameUk,

@@ -37,7 +37,7 @@ public class OrganizationMatcher {
     private static final List<String> TYPE_STEMS = List.of("кафедр", "факультет", "інститут", "department",
         "faculty", "institut");
 
-    private final OrganizationLookup repository;
+    private final OrganizationLookup organizations;
     private final OrganizationTree tree;
 
     /**
@@ -50,7 +50,7 @@ public class OrganizationMatcher {
         if (organization.isEmpty()) {
             return Optional.empty();
         }
-        List<Match> matches = repository.findByActiveTrue().stream()
+        List<Match> matches = organizations.findByActiveTrue().stream()
             .map(unit -> match(unit, organization))
             .flatMap(Optional::stream)
             .toList();

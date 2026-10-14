@@ -32,15 +32,15 @@ public final class RefreshTokenReuseGuard implements AuthenticationProvider {
 
     private final AuthenticationProvider delegate;
     private final OAuth2AuthorizationService authorizationService;
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
     private final StringRedisTemplate redis;
     private final Duration remember;
 
     public RefreshTokenReuseGuard(AuthenticationProvider delegate, OAuth2AuthorizationService authorizationService,
-                                  UserAccounts userRepository, StringRedisTemplate redis, Duration remember) {
+                                  UserAccounts users, StringRedisTemplate redis, Duration remember) {
         this.delegate = delegate;
         this.authorizationService = authorizationService;
-        this.userRepository = userRepository;
+        this.users = users;
         this.redis = redis;
         this.remember = remember;
     }
@@ -54,7 +54,7 @@ public final class RefreshTokenReuseGuard implements AuthenticationProvider {
             revokeFamilyOf(presented);
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
         }
-        AccountStatus status = userRepository.findByEmailAddressIgnoreCase(authorization.getPrincipalName())
+        AccountStatus status = users.findByEmailAddressIgnoreCase(authorization.getPrincipalName())
             .map(User::getAccountStatus)
             .orElse(AccountStatus.DELETED);
         if (!status.canLogIn()) {

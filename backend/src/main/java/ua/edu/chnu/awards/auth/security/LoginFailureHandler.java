@@ -33,12 +33,12 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     private final LoginAttemptService attempts;
     private final AuditService audit;
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
 
-    public LoginFailureHandler(LoginAttemptService attempts, AuditService audit, UserAccounts userRepository) {
+    public LoginFailureHandler(LoginAttemptService attempts, AuditService audit, UserAccounts users) {
         this.attempts = attempts;
         this.audit = audit;
-        this.userRepository = userRepository;
+        this.users = users;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
                                         AuthenticationException exception) throws IOException {
         String code = codeOf(exception);
         String email = EmailUtils.normalize(request.getParameter("username"));
-        User user = userRepository.findByEmailAddressIgnoreCase(email).orElse(null);
+        User user = users.findByEmailAddressIgnoreCase(email).orElse(null);
         if (BAD_CREDENTIALS.equals(code)
             && (attempts.isLocked(email) || attempts.recordFailure(email, ClientRequest.from(request).ip()))) {
             code = LOCKED;

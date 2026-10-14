@@ -43,8 +43,8 @@ public class LoginAttemptService {
 
     private final StringRedisTemplate redis;
     private final ProtectionProperties properties;
-    private final UserAccounts userRepository;
-    private final RoleHolders userRoleRepository;
+    private final UserAccounts users;
+    private final RoleHolders roleHolders;
     private final OneTimeTokenService tokens;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
@@ -89,7 +89,7 @@ public class LoginAttemptService {
             log.error("Redis unavailable; failed login not counted: {}", e.getMessage());
             return false;
         }
-        userRepository.findByEmailAddressIgnoreCase(normalized).ifPresent(user -> report(user, ip));
+        users.findByEmailAddressIgnoreCase(normalized).ifPresent(user -> report(user, ip));
         return true;
     }
 
@@ -110,7 +110,7 @@ public class LoginAttemptService {
         tokens.invalidate(user, TokenPurpose.EMAIL_CHANGE);
         audit.record(AuditAction.ACCOUNT_LOCKED, user.getId(),
             Map.of("email", user.getEmailAddress(), "ip", String.valueOf(ip)));
-        List<String> admins = userRoleRepository.findCurrentEmailsByRole(RoleType.SYSTEM_ADMIN, LocalDate.now(clock));
+        List<String> admins = roleHolders.findCurrentEmailsByRole(RoleType.SYSTEM_ADMIN, LocalDate.now(clock));
         events.publishEvent(new AccountLocked(user.getEmailAddress(), ip, clock.instant(),
             properties.lockDuration(), admins));
     }

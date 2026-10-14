@@ -44,7 +44,7 @@ public class PersonalDataAssembler {
         AuditAction.PROFILE_UPDATED, AuditAction.EMAIL_CHANGE_REQUESTED, AuditAction.EMAIL_CHANGED,
         AuditAction.ACCESS_DENIED, AuditAction.DATA_EXPORT).map(Enum::name).toList();
 
-    private final RoleHolders roles;
+    private final RoleHolders roleHolders;
     private final DelegationLookup delegations;
     private final AwardLookup awards;
     private final AwardVersionLookup versions;
@@ -67,7 +67,7 @@ public class PersonalDataAssembler {
         return new PersonalDataFile(
             new PersonalDataFile.Metadata(now, userId, FORMAT_VERSION, GDPR_ARTICLE),
             new PersonalDataFile.PersonalData(mapper.profile(user)),
-            roles.findHistoryByUserId(userId).stream().map(role -> mapper.role(role, today)).toList(),
+            roleHolders.findHistoryByUserId(userId).stream().map(role -> mapper.role(role, today)).toList(),
             delegations(userId, today),
             awards.findByOwnerIdOrderByCreatedAtDescIdDesc(userId).stream().map(mapper::award).toList(),
             versions.findOfOwner(userId).stream().map(mapper::version).toList(),

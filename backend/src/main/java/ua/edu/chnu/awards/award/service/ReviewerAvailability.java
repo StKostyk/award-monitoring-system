@@ -42,7 +42,7 @@ public class ReviewerAvailability {
         .filter(AccountStatus::canLogIn)
         .collect(Collectors.toCollection(() -> EnumSet.noneOf(AccountStatus.class)));
 
-    private final RoleHolders roles;
+    private final RoleHolders roleHolders;
     private final DelegationLookup delegations;
     private final OrganizationTree tree;
     private final Clock clock;
@@ -59,7 +59,7 @@ public class ReviewerAvailability {
         Set<Long> scopes = scopesOf(organizationId);
         RoleType role = level.role();
         LocalDate today = LocalDate.now(clock);
-        return roles.existsHolder(role, scopes, CAN_REVIEW, ownerId, today)
+        return roleHolders.existsHolder(role, scopes, CAN_REVIEW, ownerId, today)
             || delegations.existsInEffect(role, scopes, CAN_REVIEW, ownerId, today);
     }
 
@@ -93,7 +93,7 @@ public class ReviewerAvailability {
         LocalDate today = LocalDate.now(clock);
         Set<Long> excluded = new HashSet<>(List.of(ownerId, submitterId));
         Map<Long, Candidate> found = new LinkedHashMap<>();
-        for (User holder : roles.findHolders(role, scopes, CAN_REVIEW, today)) {
+        for (User holder : roleHolders.findHolders(role, scopes, CAN_REVIEW, today)) {
             if (!excluded.contains(holder.getId())) {
                 found.put(holder.getId(), Candidate.of(holder, false));
             }

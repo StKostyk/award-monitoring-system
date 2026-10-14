@@ -43,7 +43,7 @@ public class EmailChangeService {
     /** Redis key prefix of the one-request-a-minute marker, followed by the user id. */
     public static final String REQUEST_KEY_PREFIX = "auth:email-change:";
 
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
     private final OneTimeTokenService tokens;
     private final PasswordEncoder passwordEncoder;
     private final LoginAttemptService attempts;
@@ -69,7 +69,7 @@ public class EmailChangeService {
      */
     @Transactional(noRollbackFor = ApiProblemException.class)
     public void request(long userId, String newEmail, String currentPassword) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        User user = users.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         if (attempts.isLocked(user.getEmailAddress())) {
             throw new ApiProblemException(HttpStatus.LOCKED, "account-locked",
                 "The account is locked after failed sign-ins; try again later");
@@ -119,12 +119,12 @@ public class EmailChangeService {
             throw OneTimeTokenService.gone();
         }
         String newEmail = token.getNewEmailAddress();
-        if (userRepository.existsByEmailAddressIgnoreCase(newEmail)) {
+        if (users.existsByEmailAddressIgnoreCase(newEmail)) {
             throw addressRules.taken(null);
         }
         user.setEmailAddress(newEmail);
         try {
-            userRepository.saveAndFlush(user);
+            users.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
             user.setEmailAddress(oldEmail);
             throw addressRules.taken(e);
@@ -147,7 +147,7 @@ public class EmailChangeService {
             throw ApiProblemException.validationFailed("The address is the current one",
                 List.of(new FieldViolation("newEmail", "unchanged", "This is already your sign-in address")));
         }
-        if (userRepository.existsByEmailAddressIgnoreCase(email)) {
+        if (users.existsByEmailAddressIgnoreCase(email)) {
             throw addressRules.taken(null);
         }
     }

@@ -35,11 +35,11 @@ import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class LoginSuccessListenerTest {
 
-    private final UserAccounts userRepository = mock(UserAccounts.class);
+    private final UserAccounts users = mock(UserAccounts.class);
     private final LoginAttemptService attempts = mock(LoginAttemptService.class);
     private final AuditService audit = mock(AuditService.class);
     private final DeviceService devices = mock(DeviceService.class);
-    private final LoginSuccessListener listener = new LoginSuccessListener(userRepository, attempts,
+    private final LoginSuccessListener listener = new LoginSuccessListener(users, attempts,
         audit, devices);
     private final User dean = User.builder().id(5L).emailAddress("dean@chnu.edu.ua").build();
 
@@ -50,7 +50,7 @@ class LoginSuccessListenerTest {
 
     @Test
     void ac43_ac51_formLoginIsAuditedResetsTheFailureCounterAndRecordsTheDevice() {
-        when(userRepository.findByEmailAddressIgnoreCase("dean@chnu.edu.ua")).thenReturn(Optional.of(dean));
+        when(users.findByEmailAddressIgnoreCase("dean@chnu.edu.ua")).thenReturn(Optional.of(dean));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr("203.0.113.7");
         request.addHeader("User-Agent", "Mozilla/5.0 Firefox/130.0");
@@ -60,7 +60,7 @@ class LoginSuccessListenerTest {
         listener.onLogin(new AuthenticationSuccessEvent(
             UsernamePasswordAuthenticationToken.authenticated("dean@chnu.edu.ua", "n/a", List.of())));
 
-        verify(userRepository).recordLogin(eq(5L), any(Instant.class));
+        verify(users).recordLogin(eq(5L), any(Instant.class));
         verify(audit).record(AuditAction.LOGIN_SUCCESS, 5L);
         verify(attempts).reset("dean@chnu.edu.ua");
         verify(devices).recordSignIn(dean, new ClientRequest("203.0.113.7", "Mozilla/5.0 Firefox/130.0", "uk", null));
@@ -68,7 +68,7 @@ class LoginSuccessListenerTest {
 
     @Test
     void ac51_aFailedDeviceRecordDoesNotBreakTheLogin() {
-        when(userRepository.findByEmailAddressIgnoreCase("dean@chnu.edu.ua")).thenReturn(Optional.of(dean));
+        when(users.findByEmailAddressIgnoreCase("dean@chnu.edu.ua")).thenReturn(Optional.of(dean));
         doThrow(new DataIntegrityViolationException("uk_user_devices_fingerprint"))
             .when(devices).recordSignIn(any(), any());
 
@@ -83,12 +83,12 @@ class LoginSuccessListenerTest {
     void otherAuthenticationsAreIgnored() {
         listener.onLogin(new AuthenticationSuccessEvent(new TestingAuthenticationToken("x", "y")));
 
-        verifyNoInteractions(userRepository, attempts, audit, devices);
+        verifyNoInteractions(users, attempts, audit, devices);
     }
 
     @Test
     void ac43_endOfALoginSessionIsAuditedAsLogout() {
-        when(userRepository.findByEmailAddressIgnoreCase("dean@chnu.edu.ua")).thenReturn(Optional.of(dean));
+        when(users.findByEmailAddressIgnoreCase("dean@chnu.edu.ua")).thenReturn(Optional.of(dean));
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("SPRING_SECURITY_CONTEXT", new SecurityContextImpl(
             UsernamePasswordAuthenticationToken.authenticated("dean@chnu.edu.ua", "n/a", List.of())));

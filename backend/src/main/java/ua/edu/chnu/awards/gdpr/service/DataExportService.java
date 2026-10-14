@@ -36,7 +36,7 @@ public class DataExportService {
     static final Duration INTERVAL = Duration.ofMinutes(1);
     static final String FILE_PREFIX = "award-monitoring-export-";
 
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
     private final PersonalDataAssembler assembler;
     private final RequestThrottle throttle;
     private final AuditService audit;
@@ -53,7 +53,7 @@ public class DataExportService {
      */
     @Transactional
     public DataExport export(long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+        User user = users.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         if (!throttle.claimForTransaction(THROTTLE_KEY_PREFIX + userId, INTERVAL)) {
             throw ApiProblemException.tooManyRequests("Your data was exported a moment ago; try again in a minute",
                 INTERVAL.toSeconds());
