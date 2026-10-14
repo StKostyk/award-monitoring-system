@@ -9,9 +9,9 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 1.1 Core Authentication System | Done (validated; fixes from the manual run merged, retest pending) | 2026-09-21 | 2026-09-21 |
-| 1.2 Role-Based Access Control | Validated; fix story 1.2.4 merged, manual run of §9 pending | 2026-09-21 | |
-| 1.3 User Profile Management | Validated 2026-09-30 (PRD §12); 1.3.2 moved to Epic 7; manual run of §9 pending | 2026-09-29 | 2026-09-30 |
+| 1.1 Core Authentication System | Done (validated; manually verified 2026-10-11, fixes re-run 2026-10-12, PRD §9 run tables) | 2026-09-21 | 2026-09-21 |
+| 1.2 Role-Based Access Control | Done (validated; manually verified 2026-10-11, fixes re-run 2026-10-12, PRD §9 run tables) | 2026-09-21 | 2026-10-12 |
+| 1.3 User Profile Management | Validated 2026-09-30 (PRD §12); 1.3.2 moved to Epic 7; manually verified 2026-10-11, fixes re-run 2026-10-12 (PRD §9 run tables) | 2026-09-29 | 2026-09-30 |
 
 ## Current focus
 
