@@ -235,7 +235,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 15. After step 3, sign out (or let the access token expire) before step 4. Expected: the pending mail still arrives; it does not depend on any session. (AC-1.4)
 16. With Mailpit stopped, `secretary.fmi` and `secretary2.fmi` decide two different awards from two browsers within a minute. Expected: two incomplete rows; both mails arrive once after the start, none duplicated. (AC-1.4)
 17. With Mailpit stopped, request an address change for `employee.fmi`. Expected: no row. Start Mailpit and request again. Expected: the new link confirms; no earlier link exists anywhere in the database. (AC-1.7)
-18. Add `private final ua.edu.chnu.awards.user.repository.UserRepository users;` to any `award` service locally and run `ModularityTest`. Expected: it fails, naming the `award` class and `UserRepository`; revert. (AC-2.3, 2.4)
+18. Add `private ua.edu.chnu.awards.user.repository.UserRepository users;` (not final: a final field changes the constructor and stops the compile) to any `award` service locally and run `ModularityTest`. Expected: it fails, naming the `award` class and `UserRepository`; revert. (AC-2.3, 2.4)
 19. `docker compose stop postgres` while a row is incomplete and the backend runs, then start it. Expected: the retry job logs a failure and recovers on the next run; the mail arrives. (AC-1.4)
 
 ### Run 2026-10-11
@@ -268,6 +268,16 @@ container stack with APP_EVENTS_RETRY_INTERVAL/AFTER=PT1M, develop e82b75b; re-r
 | Step | Result | Evidence |
 |---|---|---|
 | 3 | PASS | re-run after the fix, container stack with APP_EVENTS_RETRY_INTERVAL/AFTER=PT1M: Mailpit stopped, secretary.fmi returned award 238 with a comment; log 16:27:13/15/20 three WARN + 16:27:20 one ERROR «Email 'Нагороду повернуто на доопрацювання / Award returned for changes' to [employee.fmi@chnu.edu.ua] was not delivered», no body text, no SimpleAsyncUncaughtExceptionHandler line (UndeliveredMailAsyncHandler at DEBUG only); event_publication one open row …AwardDecided 16:27:09; award_events_incomplete 1.0 |
+
+### Run 2026-10-14
+
+container stack rebuilt at develop 8abe2af with APP_EVENTS_RETRY_INTERVAL/AFTER=PT1M; steps 9, 10, 18 of 7.1.2 (step 18 text corrected). Result: 3 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 9 | PASS | ModularityTest 4 run, 0 failures (10:50); components.puml: 12 components without metrics (only module-metrics.puml), 41 arrows each within the ADR-022 table row of its module, none reversed |
+| 10 | PASS | container stack rebuilt from develop 8abe2af; D=307 (upload refused after submit, 409 by design) and D2=308: PDF upload 201, submit, secretary.fmi approve, mail 'Award approved' once; secretary2.fmi /achievements loads (API 200 with items, no console errors), employee.fmi /awards lists 308; admin assign 201 + revoke 204 -> mails 'Role assigned' 10:58:56, 'Role revoked' 10:58:58; dean.fmi delegation 12 created/revoked -> 'Authority delegated' 10:59:05, 'Delegation revoked' 10:59:12; employee.fmi email-change 202 (warning mail + confirm mail to new address) and export 200 260 KB + 'Your data was exported' 10:59:15. Link confirmation not repeated here (covered by run 2026-10-11 step 17) |
+| 18 | PASS | step text corrected (non-final field; final one breaks the constructor and test compile): ModularityTest ac21 fails: Module 'award' depends on non-exposed type user.repository.UserRepository, Field AwardWarnings.users; reverted, git clean |
 
 ## 11. Risks
 
