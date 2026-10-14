@@ -59,6 +59,8 @@ tags:
     description: Analytics and reporting endpoints
   - name: Achievements
     description: Approved awards shared with colleagues or published (Feature 4.3)
+  - name: Notifications
+    description: In-app notifications and channel preferences (Feature 7.2)
 
 paths:
   # ============== Authentication ==============
@@ -1746,6 +1748,62 @@ paths:
             `urn:awards:problem:validation-failed`; `errors[]` names each field with `required`, `too-long`,
             `invalid` or `not-allowed`
 
+  /users/me/notification-preferences:
+    get:
+      tags: [Notifications]
+      summary: The caller's notification channels per type (planned, 1.3.2)
+      description: >
+        Every notification type with its e-mail and in-app choice; a type never changed is on for both channels.
+        Security and privacy mails have no preference and are always sent (1.3.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getNotificationPreferences
+      responses:
+        '200':
+          description: All types
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Notifications]
+      summary: Change the caller's notification channels (planned, 1.3.2)
+      description: >
+        Stores the listed types; types not listed keep their state. Each type keeps at least one channel. An
+        effective change writes `NOTIFICATION_PREFERENCES_CHANGED` to the audit log with the old and new values of
+        the changed types; a request that changes nothing writes no row (1.3.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: updateNotificationPreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferences'
+      responses:
+        '200':
+          description: All types after the change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: >
+            `urn:awards:problem:validation-failed`; `errors[]` names the entry with `both-off` (no channel left),
+            `invalid` (unknown type) or `duplicate` (type listed twice)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
   /users/me/email-change:
     post:
       tags: [Users]
@@ -2342,6 +2400,106 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+
+  # ============== Notifications ==============
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: The caller's in-app notifications (planned, 7.2.1)
+      description: >
+        In-app notifications of the caller, newest first; e-mail delivery rows are never listed. The text is
+        rendered by the client from `type` and `payload` in the interface language (7.2.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listNotifications
+      parameters:
+        - name: unread
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: True for unread notifications only
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: A page of notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Number of the caller's unread in-app notifications (planned, 7.2.1)
+      description: Polled by the toolbar every 60 s while the tab is visible (7.2.1)
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: countUnreadNotifications
+      responses:
+        '200':
+          description: The count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadCount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: Mark one notification read (planned, 7.2.1)
+      description: >
+        Idempotent: an already-read notification stays unchanged. Another person's notification, an e-mail
+        delivery row or an unknown id answers 404 (7.2.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: markNotificationRead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Read
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: '`urn:awards:problem:notification-not-found`'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all of the caller's notifications read (planned, 7.2.1)
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: markAllNotificationsRead
+      responses:
+        '200':
+          description: How many were unread; 0 when none
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkedCount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # ============== Reports ==============
   /reports/awards/summary:
@@ -3012,13 +3170,93 @@ components:
 
     NotificationPreferences:
       type: object
+      description: Channels per notification type (planned, 1.3.2)
+      required: [preferences]
       properties:
-        emailEnabled:
+        preferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationPreference'
+
+    NotificationPreference:
+      type: object
+      additionalProperties: false
+      required: [type, email, inApp]
+      properties:
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        email:
           type: boolean
-          default: true
-        browserEnabled:
+        inApp:
           type: boolean
-          default: true
+
+    NotificationType:
+      type: string
+      description: The event a notification reports (planned, 7.2.1)
+      enum:
+        - AWARD_APPROVED
+        - AWARD_REJECTED
+        - AWARD_RETURNED
+        - AWARD_ESCALATED
+        - AWARD_CORRECTED
+        - REVIEW_OVERDUE
+        - REVIEW_TAKEN_OVER
+        - ROLE_ASSIGNED
+        - ROLE_REVOKED
+        - DELEGATION_CREATED
+        - DELEGATION_REVOKED
+
+    Notification:
+      type: object
+      description: One in-app notification of the caller (planned, 7.2.1)
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        payload:
+          type: object
+          additionalProperties: true
+          description: >
+            Values for the text, by type: award types `title`, `titleUk`, `reviewer`, `level` (`fields` for
+            `AWARD_CORRECTED`); `REVIEW_OVERDUE` `count`, `oldestDeadline`; role types `role`, `organization`,
+            `organizationUk`, `validTo`; delegation types the same plus `otherParty`
+        referenceType:
+          type: [string, 'null']
+          enum: [AWARD, null]
+        referenceId:
+          type: [integer, 'null']
+          format: int64
+        read:
+          type: boolean
+        sentAt:
+          type: string
+          format: date-time
+
+    NotificationPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Notification'
+
+    UnreadCount:
+      type: object
+      properties:
+        unread:
+          type: integer
+          format: int64
+
+    MarkedCount:
+      type: object
+      properties:
+        marked:
+          type: integer
+          format: int64
 
     # Organization
     UnitRef:
