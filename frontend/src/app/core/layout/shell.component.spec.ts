@@ -11,6 +11,7 @@ import { AuthService } from '../auth/auth.service';
 import { NO_PERMISSIONS, readPermissions } from '../auth/permissions';
 import { BrandService, LocalizedText } from '../brand/brand.service';
 import { LanguageService } from '../i18n/language.service';
+import { NotificationApi } from '../notifications/notification.api';
 import { ShellComponent } from './shell.component';
 
 const dean = { id: 2, firstName: 'Мартин', lastName: 'Мартинюк', email: 'dean.fmi@chnu.edu.ua' };
@@ -56,6 +57,10 @@ describe('ShellComponent', () => {
   };
   const language = { toggle: vi.fn(), current: () => 'uk' };
   const delegations = { list: vi.fn().mockReturnValue(of({ given: [], received: [] })) };
+  const notifications = {
+    unreadCount: vi.fn().mockReturnValue(of(3)),
+    list: vi.fn().mockReturnValue(of({ content: [], totalElements: 0 })),
+  };
   const layout = new BehaviorSubject<BreakpointState>({ matches: true, breakpoints: {} });
   const brands = {
     brand: signal({
@@ -89,6 +94,10 @@ describe('ShellComponent', () => {
                 scheme: { title: 'Тема', system: 'Як на пристрої', light: 'Світла', dark: 'Темна' },
               },
               admin: { users: { title: 'Користувачі' } },
+              notifications: {
+                bell: 'Сповіщення',
+                bellUnread: 'Сповіщення, непрочитаних: {{count}}',
+              },
               delegations: {
                 title: 'Мої делегування',
                 actingFor: 'Діє за дорученням: {{name}}',
@@ -103,6 +112,7 @@ describe('ShellComponent', () => {
         { provide: AuthService, useValue: auth },
         { provide: LanguageService, useValue: language },
         { provide: DelegationsService, useValue: delegations },
+        { provide: NotificationApi, useValue: notifications },
         { provide: BrandService, useValue: brands },
         { provide: BreakpointObserver, useValue: { observe: () => layout } },
       ],
@@ -121,6 +131,18 @@ describe('ShellComponent', () => {
     (element.querySelector('[data-testid="logout"]') as HTMLButtonElement).click();
 
     expect(auth.logout).toHaveBeenCalled();
+  });
+
+  it('ac2_1_shows_the_bell_with_the_unread_count_before_the_account_menu', () => {
+    auth.isAuthenticated.set(true);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    const bell = element.querySelector('[data-testid="notification-bell"]') as HTMLElement;
+    const account = element.querySelector('[data-testid="user-menu"]') as HTMLElement;
+
+    expect(bell.compareDocumentPosition(account) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(bell.getAttribute('aria-label')).toBe('Сповіщення, непрочитаних: 3');
   });
 
   it('ac17 toggles the language from the toolbar', () => {

@@ -49,3 +49,8 @@ app-root {
   font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
+
+.notification-menu.mat-mdc-menu-panel {
+  width: min(400px, calc(100vw - 32px));
+  max-width: min(400px, calc(100vw - 32px));
+}

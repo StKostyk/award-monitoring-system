@@ -70,6 +70,14 @@ export const routes: Routes = [
       },
       { path: 'not-found', component: NotFoundComponent },
       {
+        path: 'notifications',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/notifications/notification-list/notification-list.component').then(
+            (m) => m.NotificationListComponent,
+          ),
+      },
+      {
         path: 'reviews',
         canActivate: [authGuard, approverGuard],
         loadChildren: () =>

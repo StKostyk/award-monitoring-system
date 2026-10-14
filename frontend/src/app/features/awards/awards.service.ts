@@ -7,6 +7,7 @@ import { OrganizationRef, OrganizationType } from '../../core/auth/user-profile'
 import { OrganizationsService } from '../../core/organizations/organizations.service';
 import { daysBefore } from '../../shared/date-format';
 import { organizationName } from '../../shared/organization-name';
+import { Page } from '../../shared/page';
 
 /** An organisation name in both languages. */
 export interface OrganizationName {
@@ -230,14 +231,7 @@ export const NO_FILTERS: AwardFilters = {
   dateTo: null,
 };
 
-/** A page of any list answered by the API. */
-export interface Page<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-}
+export type { Page };
 
 export type VersionAction =
   'BASELINE' | 'CREATED' | 'UPDATED' | 'SUBMITTED' | 'DECIDED' | 'CORRECTED';
