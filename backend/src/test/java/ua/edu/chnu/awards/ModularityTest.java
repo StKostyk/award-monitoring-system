@@ -3,6 +3,7 @@ package ua.edu.chnu.awards;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,9 @@ class ModularityTest {
             .writeModulesAsPlantUml()
             .writeIndividualModulesAsPlantUml()
             .writeModuleCanvases();
+
+        assertThat(Path.of("target", "spring-modulith-docs", "components.puml")).isNotEmptyFile();
+        assertThat(Path.of("target", "spring-modulith-docs", "module-notification.adoc")).isNotEmptyFile();
     }
 
     private static List<String> dependencies(String module) {

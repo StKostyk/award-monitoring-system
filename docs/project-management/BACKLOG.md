@@ -101,7 +101,7 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 7.1.1 | Event publication registry for the after-commit mails | 5 | ✅ Done | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
-| 7.1.2 | Module boundaries checked by Spring Modulith | 8 | 👀 In review (Sprint 5) | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
+| 7.1.2 | Module boundaries checked by Spring Modulith | 8 | ✅ Done | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
 | 7.1.3 | Drop the duplicate async error log for undelivered mails | 1 | ✅ Done | SCRUM-75 | [#197](https://github.com/StKostyk/award-monitoring-system/issues/197) |
 | 7.2.1 | In-app notifications from award and review events | 5 | Sprint 5 | SCRUM-66 | [#183](https://github.com/StKostyk/award-monitoring-system/issues/183) |
 | 7.2.2 | Notification centre in the toolbar | 5 | Sprint 5 | SCRUM-67 | [#184](https://github.com/StKostyk/award-monitoring-system/issues/184) |

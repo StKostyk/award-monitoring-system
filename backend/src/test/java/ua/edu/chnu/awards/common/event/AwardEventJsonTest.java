@@ -19,6 +19,7 @@ import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
+import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 
 @JsonTest
 class AwardEventJsonTest {
@@ -52,6 +53,12 @@ class AwardEventJsonTest {
     void ac1_8_reviewMeasured() throws Exception {
         assertRoundTrip(new ReviewMeasured(ApprovalLevel.DEAN, ReviewDecisionType.APPROVED, true,
             Duration.ofHours(30).plusMillis(250)));
+    }
+
+    @Test
+    void ac1_8_reviewTakenOver() throws Exception {
+        assertRoundTrip(new ReviewTakenOver("dean.fmi@chnu.edu.ua", "Ірина", 5L, "Certificate", "Грамота",
+            "Петро Іваненко"));
     }
 
     private void assertRoundTrip(Object event) throws Exception {

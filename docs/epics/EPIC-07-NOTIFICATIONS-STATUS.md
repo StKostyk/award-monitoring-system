@@ -10,7 +10,7 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 7.1 Reliable events and module boundaries (publication registry, Spring Modulith verification) | PRD approved ([feature-7.1](../features/epic-07/feature-7.1-reliable-events-module-boundaries.md)) | - | - |
+| 7.1 Reliable events and module boundaries (publication registry, Spring Modulith verification) | Done, manually verified 2026-10-11 to 2026-10-14 ([PRD](../features/epic-07/feature-7.1-reliable-events-module-boundaries.md), validation §13) | 2026-10-10 | 2026-10-14 |
 | 7.2 Notification centre and preferences (in-app notifications, preferences, delivery log, HTML mails) | Not started | - | - |
 
 ## Current focus
@@ -40,7 +40,7 @@ fix stories if chosen).
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 7.1.1 Event publication registry for the after-commit mails | 7.1 | 5 | SCRUM-64 | #181 | no | Done |
-| 2 | 7.1.2 Module boundaries checked by Spring Modulith | 7.1 | 8 | SCRUM-65 | #182 | no | In review |
+| 2 | 7.1.2 Module boundaries checked by Spring Modulith | 7.1 | 8 | SCRUM-65 | #182 | no | Done |
 | 2a | 7.1.3 Drop the duplicate async error log for undelivered mails | 7.1 | 1 | SCRUM-75 | #197 | no | Done |
 | 3 | 7.2.1 In-app notifications from award and review events | 7.2 | 5 | SCRUM-66 | #183 | no | Planned |
 | 4 | 7.2.2 Notification centre in the toolbar | 7.2 | 5 | SCRUM-67 | #184 | yes | Planned |
@@ -61,6 +61,7 @@ Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
 | 2026-10-09 | Security mails (verification, password reset, new device, lock, address change) are always sent and have no preference | They protect the account; a person must not switch them off | PRIVACY_BY_DESIGN §4.2 |
 | 2026-10-09 | Story 1.3.2 (notification preferences) moves from Epic 1 to this epic | Preferences need the notification types and channels built here | Design review A-9 |
 | 2026-10-09 | Story order: registry, boundaries, in-app notifications, centre, preferences, delivery log, HTML templates | Infrastructure before features; the HTML templates are the first to drop if the sprint runs short | This kickoff |
+| 2026-10-14 | Feature 7.1 validated (PASSED WITH NOTES); duplicate mails from a backlog behind the SMTP lock stay within at-least-once and are revisited with the delivery log of 7.2.3 | PRD §13 F-1; the delivery log can skip a resend already logged as sent | Feature 7.1 validation |
 
 ## Documentation deviations
 
@@ -100,6 +101,13 @@ To settle in the Feature 7.1 and 7.2 PRDs; each document is updated in the story
   language is stored.
 - The award page already polls the status every 60 s and pauses while hidden (`features/awards`); the centre reuses
   that approach.
+- Refactor sweep of 7.1 (validation 2026-10-14), not applied: every module's `service` package is one named
+  interface, wider than the class list of ADR-022 (narrow it or reword the ADR when ADR-022 is accepted);
+  `UserAccounts` and `OrganizationLookup` repeat the Spring Data methods one for one; `RoleHolders` and
+  `DelegationLookup` pair up in three callers (one "holders including delegates" method); `DeviceLookup`,
+  `AwardVersionLookup.findOfOwner`, `RoleHolders.findHistoryByUserId` serve only the data export (a per-module
+  personal-data contributor, with the Epic 6 erasure story); `EventPublicationRegistryIT` waits with
+  `Thread.sleep` (Awaitility); the two `*EventJsonTest` classes share one structure.
 
 ## Risks
 

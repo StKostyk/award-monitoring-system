@@ -3,7 +3,7 @@
 > **Epic**: 7 — Notification & Communication System (SCRUM-63)
 > **Sprint**: 5 (2026-10-12 → 2026-10-18)
 > **Points**: 13 (two stories)
-> **Status**: Approved 2026-10-09
+> **Status**: Done 2026-10-14 (validation §13; approved 2026-10-09)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-07 tracker (decisions of 2026-10-09, deviation 1, technical notes, risks 1–2), ADR-006 addendum 2026-10-05, ADR-022 (modules, step 2), ADR-021 (one instance per university), DATA_DICTIONARY §1.6, §5, PRIVACY_BY_DESIGN §4.2, `MailDelivery`, the mail listeners (`AuthenticationMails`, `AuthorityChangeMails`, `DecisionMails`, `CorrectionMails`, `OverdueMails`, `PrivacyMails`), `StoredObjectCleanup`, `ReviewMetrics`, the 18 records under `*/event/`
 
@@ -55,7 +55,7 @@ Backend only; neither story has a UI part, so neither splits.
 
 ## 4. Acceptance criteria
 
-**Registry events**: `EmailRestored`, `RoleAssigned`, `RoleRevoked`, `DelegationCreated`, `DelegationRevoked`, `AwardDecided`, `AwardCorrected`, `OverdueNoticed`, `DataExported`, `ObjectsReleased`, `ReviewMeasured`. **Transient events**: `VerificationRequested`, `PasswordResetRequested`, `EmailChangeRequested`, `EmailChanged`, `NewDeviceSignedIn` (each carries a link with a raw one-time token), `AccountLocked` (published outside a transaction). `ObjectStored` keeps its after-rollback listener, which the registry does not cover.
+**Registry events**: `EmailRestored`, `RoleAssigned`, `RoleRevoked`, `DelegationCreated`, `DelegationRevoked`, `AwardDecided`, `AwardCorrected`, `OverdueNoticed`, `DataExported`, `ObjectsReleased`, `ReviewMeasured`, `ReviewTakenOver` (added by 4.3.7, SCRUM-73). **Transient events**: `VerificationRequested`, `PasswordResetRequested`, `EmailChangeRequested`, `EmailChanged`, `NewDeviceSignedIn` (each carries a link with a raw one-time token), `AccountLocked` (published outside a transaction). `ObjectStored` keeps its after-rollback listener, which the registry does not cover.
 
 ### 7.1.1 Event publication registry for the after-commit mails (SCRUM-64)
 
@@ -298,3 +298,66 @@ container stack rebuilt at develop 8abe2af with APP_EVENTS_RETRY_INTERVAL/AFTER=
 - Docs in the same PR as the story: ADR-006 (decision, status, at-least-once, transient events), DATA_DICTIONARY (new §5.3 `event_publication`), V036 comment, ADR-022 (module list, named interfaces, step 2 done), module diagrams with `puml-check` passing, `CHANGELOG.md`, EPIC-07 tracker, `BACKLOG.md`, user guide FAQ line on possible duplicate mails
 - Security review of both diffs
 - §10 manual verification run after the validation, including the detours
+
+## 13. Validation (2026-10-14, `develop` at c1f130e)
+
+Result: **PASSED WITH NOTES**. Stories merged: SCRUM-64 (#189), SCRUM-75 (#222), SCRUM-65 (#229); manual runs of §10 on 2026-10-11, 2026-10-12 and 2026-10-14 cover steps 1–19 (19 pass after the SCRUM-75 fix).
+
+Gate (`gate.ps1 -Full`, 11:29): 996 unit, 330 IT/FT, coverage 98.7 % lines (3829/3878), Checkstyle/PMD/SpotBugs 0; frontend lint, 623 tests, prod build pass. e2e: full suite once after 7.1.2 (PR #229). Container stack rebuilt from `develop` on 2026-10-14; Flyway applies V001–V036 on the empty Testcontainers database in every IT; no endpoint changed (AC-2.5), moved endpoints answered as before in step 10.
+
+### AC evidence
+
+| AC | Tests | Result |
+|----|-------|--------|
+| 1.1 | `EventPublicationRegistryIT.ac1_1_aCommittedEventIsRecordedInTheTransactionAndDeletedOnceTheMailIsSent`, `ac1_1_aSynchronousListenerCompletesItsPublicationToo`; manual 2, 8, 14 | pass |
+| 1.2 | `EventPublicationRegistryIT.ac1_2_aRolledBackEventLeavesNoRowAndSendsNoMail`; manual 12, 13 | pass |
+| 1.3 | `MailDeliveryTest.ac1_3_retriesTwiceThenThrowsWithSubjectAndRecipientsOnly`, `EventPublicationRegistryIT.ac1_3_ac1_4_aRefusedMailStaysIncompleteAndTheRetryJobSendsIt`, `scrum75_ac1_anUndeliveredMailIsLoggedOnceWithoutTheAsyncStackTrace`; manual 3 | pass |
+| 1.4 | `PublicationRetryTest.ac1_4_aPublicationIsRetriedFromTenMinutesOn`, `ac1_4_eachRunResubmitsOnlyTheRetryWindow`, `EventPublicationRegistryIT.ac1_3_ac1_4_…`, `ac1_4_aPublicationThatCannotBeReadDoesNotStopTheOthers` (new); manual 4, 5, 7, 15, 16, 19 | pass |
+| 1.5 | `PublicationRetryTest.ac1_5_aPublicationOlderThanADayIsNoLongerRetried`, `ac1_5_eachRunDeletesWhatIsOlderThanThirtyDays`, `EventPublicationRegistryIT.ac1_5_aDayOldPublicationIsNoLongerRetriedAndAMonthOldOneIsDeleted`; manual 11 | pass |
+| 1.6 | `PublicationRetryTest.ac1_6_theGaugesReportIncompleteAndAbandonedPublications`, `ac1_6_anEmptyCountReadsAsZero`, `ActuatorHealthFT.ac1_6_prometheusListsTheEventPublicationGauges`; manual 3, 11 | pass |
+| 1.7 | `AfterCommitTest` (3 × ac1_7), `EventPublicationRegistryIT.ac1_7_aTransientEventIsNeverStoredAndIsSentAfterTheCommit`, `ac1_7_aTransientEventIsDroppedOnRollback`; manual 6, 17 | pass |
+| 1.8 | `AccountEventJsonTest` (7 × ac1_8), `AwardEventJsonTest` (5 × ac1_8, `reviewTakenOver` new) | pass |
+| 1.9 | `OverdueMailsTest.ac1_9_aRefusedDigestIsNotCountedAndStaysIncomplete`, existing listener tests and mail FTs | pass |
+| 1.10 | ADR-006 status line and addendum, DATA_DICTIONARY §5.3, EPIC-07 technical notes (retry settings) | doc review |
+| 2.1 | `ModularityTest.ac21_theApplicationConsistsOfTheAgreedModulesAndVerifies`; manual 9 | pass |
+| 2.2 | `ModularityTest.ac22_commonDependsOnNoModuleAndNoModuleDependsOnConfig`, `verify()` cycle check | pass |
+| 2.3 | `ModularityTest.ac21_…` (`verify()` against the named interfaces); manual 18 | pass |
+| 2.4 | `ModularityTest.ac24_aModuleUsingAnotherModulesRepositoryIsReported` (fixture `modulith/fixture`); manual 18 | pass |
+| 2.5 | full gate and e2e suite; `EventPublicationRegistryIT.ac2_5_roleAndDelegationMailsOfTheNotificationModuleStayRegistryBacked`; manual 10 | pass |
+| 2.6 | `ModularityTest.ac26_documenterWritesTheComponentDiagramAndCanvases` (now asserts the files); `puml-check.ps1` in #229; ADR-022 history row 2026-10-13 | pass |
+| 2.7 | `ModularityTest` has no named exceptions (list empty) | pass |
+
+### Edge cases (§5)
+
+| Case | Covered by |
+|------|------------|
+| Completion update fails after the mail was accepted | Not tested; at-least-once stated in ADR-006 (finding F-2) |
+| Retry while the first attempt still runs | Holds for single mails; not for a backlog behind the SMTP lock (finding F-1) |
+| Backend stops with publications queued | Manual 5 |
+| Overdue digest resent after a crash | `OverdueMailsTest.ac1_9_…` (counted only after `send`) |
+| Listener throws for a non-mail reason | `ac1_4_aPublicationThatCannotBeReadDoesNotStopTheOthers` (unknown event type stays incomplete, others complete) |
+| Event cannot be serialised | AC-1.8 tests, one per registry event type |
+| Transient security mail fails three times | Manual 6, 17 |
+| Listener id changes after a move | Same path as an unreadable row: stays incomplete, abandoned after 24 h, deleted after 30 days (manual 11) |
+| Two instances | Out of scope until Epic 9 (ADR-021) |
+| Pending row holds personal data | `ac1_1_…` (deleted at completion), `ac1_5_…` (30-day delete); erasure in Epic 6 |
+| `ObjectsReleased` cleanup fails | Existing `StoredObjectCleanup` tests |
+| Synchronous listeners added in 7.1.2 | Existing role, delegation and token revocation ITs (rollback with the role change) |
+| Endpoint moved module | Contract tests, FTs, manual 10 |
+
+### Security checklist
+
+| Item | Control |
+|------|---------|
+| A01 Access control | Moved controllers (`auth/web/EmailChangeController`, `gdpr/controller/DataExportController`) keep their paths under the authenticated API chain; `@PreAuthorize` beans unchanged; security review of #229 found nothing medium or higher |
+| A02 Cryptographic failures | One-time tokens never reach `event_publication` (AC-1.7 IT asserts no `token=` row); registry rows hold no secret |
+| A03 Injection | `PublicationRetry` uses fixed SQL with bound `Timestamp` parameters; events stored as JSON by Jackson, read only as the recorded type |
+| A07 Authentication failures | Security mails stay transient and are sent after the commit as before; lock notice outside a transaction (manual 6, 17) |
+
+### Findings
+
+- **F-1** `MailDelivery` serialises all sends behind one lock; during an SMTP hang (10 s connect timeout × 3 attempts) a backlog of about 20 mails keeps the last ones waiting longer than the 10-minute retry threshold, so the retry job may resubmit a publication still queued and the mail goes out twice. Within the at-least-once rule of ADR-006; revisit with the delivery log of 7.2.3 (skip a resend already logged as sent).
+- **F-2** No test fails the completion update after a sent mail; the resend follows from Spring Modulith's design and is accepted in ADR-006.
+- **F-3** A synchronous registry listener (`ReviewMetrics`) that throws after commit would surface to the caller although the decision is stored; counters only, no failure path known.
+- **F-4** Scenario detour for 7.2: once an event has two registry listeners, add an IT that one failing listener leaves the other's publication completed.
+- **F-5** Refactor sweep: field names that still say `userRepository`, `userRoleRepository`, `organizationRepository`, `delegationRepository` for the lookup services (separate `refactor(modules)` PR); the remaining items (named `service` interfaces wider than the ADR-022 list, pass-through lookups, single-caller lookups for the data export, `Thread.sleep` waits in `EventPublicationRegistryIT`, duplicated JSON test structure) are listed in the EPIC-07 technical notes.

@@ -154,6 +154,29 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac1_4_aPublicationThatCannotBeReadDoesNotStopTheOthers() {
+        String to = "it.registry.poison@chnu.edu.ua";
+        doThrow(new MailSendException("down")).when(mailSender)
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
+        verify(mailSender, timeout(FAILED_SEND_MS).times(3))
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
+        reset(mailSender);
+        age(Duration.ofMinutes(15));
+        jdbc.update("INSERT INTO event_publication (id, listener_id, event_type, serialized_event, publication_date)"
+                + " VALUES (gen_random_uuid(), 'gone.Listener.method', 'ua.edu.chnu.awards.Gone', '{}', ?)",
+            Timestamp.from(Instant.now().minus(Duration.ofMinutes(20))));
+
+        retry.run();
+
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT event_type FROM event_publication WHERE completion_date IS NULL",
+            String.class)).isEqualTo("ua.edu.chnu.awards.Gone");
+    }
+
+    @Test
     void scrum75_ac1_anUndeliveredMailIsLoggedOnceWithoutTheAsyncStackTrace(CapturedOutput output)
             throws InterruptedException {
         String to = "it.registry.quiet@chnu.edu.ua";
