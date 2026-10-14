@@ -1,0 +1,67 @@
+<button
+  mat-icon-button
+  type="button"
+  [matMenuTriggerFor]="menu"
+  (menuOpened)="load()"
+  [attr.aria-label]="
+    unread.count() > 0
+      ? ('notifications.bellUnread' | transloco: { count: unread.badge() })
+      : ('notifications.bell' | transloco)
+  "
+  data-testid="notification-bell"
+>
+  <mat-icon aria-hidden="true">notifications</mat-icon>
+  @if (unread.badge()) {
+    <span class="bell__badge" aria-hidden="true" data-testid="notification-badge">{{
+      unread.badge()
+    }}</span>
+  }
+</button>
+<mat-menu #menu="matMenu" xPosition="before" class="notification-menu">
+  <div class="bell__title" role="presentation">{{ 'notifications.menuTitle' | transloco }}</div>
+  @if (failed()) {
+    <p class="bell__note" role="presentation">{{ 'notifications.loadFailed' | transloco }}</p>
+  }
+  @for (item of items(); track item.id) {
+    <button
+      mat-menu-item
+      type="button"
+      class="bell__item"
+      [class.bell__item--unread]="!item.read"
+      (click)="open(item)"
+      data-testid="notification-item"
+    >
+      <span class="bell__row">
+        <span class="bell__dot" aria-hidden="true"></span>
+        <span class="bell__body">
+          @if (!item.read) {
+            <span class="cdk-visually-hidden">{{ 'notifications.unread' | transloco }}: </span>
+          }
+          <span class="bell__text">{{ texts.text(item) }}</span>
+          <span class="bell__time">{{ texts.time(item) }}</span>
+        </span>
+      </span>
+    </button>
+  } @empty {
+    @if (!loading() && !failed()) {
+      <p class="bell__note" role="presentation" data-testid="notifications-empty">
+        {{ 'notifications.empty' | transloco }}
+      </p>
+    }
+  }
+  <button
+    mat-menu-item
+    type="button"
+    class="bell__first-action"
+    [disabled]="!anyUnread()"
+    (click)="markAllRead()"
+    data-testid="notifications-mark-all"
+  >
+    <mat-icon>done_all</mat-icon>
+    <span>{{ 'notifications.markAllRead' | transloco }}</span>
+  </button>
+  <a mat-menu-item routerLink="/notifications" data-testid="notifications-see-all">
+    <mat-icon>list</mat-icon>
+    <span>{{ 'notifications.seeAll' | transloco }}</span>
+  </a>
+</mat-menu>

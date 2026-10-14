@@ -1012,5 +1012,37 @@
     "taken": "This address already belongs to another account. The address was not changed.",
     "invalid": "The link is invalid or expired.",
     "failed": "The address could not be changed. Try again later."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bell": "Notifications",
+    "bellUnread": "Notifications, {{count}} unread",
+    "menuTitle": "Notifications",
+    "empty": "No notifications yet",
+    "emptyUnread": "No unread notifications",
+    "markAllRead": "Mark all as read",
+    "seeAll": "See all notifications",
+    "unreadOnly": "Unread only",
+    "unread": "Unread",
+    "loadFailed": "Notifications could not be loaded. Please try again.",
+    "retry": "Try again",
+    "actionFailed": "The notification could not be updated. Please try again.",
+    "until": ", until {{date}}",
+    "lastDay": ", last day {{date}}",
+    "oldest": ", oldest deadline {{date}}",
+    "types": {
+      "AWARD_APPROVED": "«{{title}}» approved by {{reviewer}} at the {{level}} level",
+      "AWARD_REJECTED": "«{{title}}» rejected by {{reviewer}} at the {{level}} level",
+      "AWARD_RETURNED": "«{{title}}» returned for changes by {{reviewer}} at the {{level}} level",
+      "AWARD_ESCALATED": "«{{title}}» passed on from the {{level}} level by {{reviewer}}",
+      "AWARD_CORRECTED": "«{{title}}» corrected by {{reviewer}}: {{fields}}",
+      "REVIEW_OVERDUE": "Requests past their review period: {{count}}{{oldest}}",
+      "REVIEW_TAKEN_OVER": "The review of «{{title}}» was taken over by {{reviewer}}",
+      "ROLE_ASSIGNED": "You have been given the role “{{role}}”: {{organization}}{{until}}",
+      "ROLE_REVOKED": "Your role “{{role}}” has been revoked: {{organization}}{{lastDay}}",
+      "DELEGATION_CREATED": "{{otherParty}} has delegated the role “{{role}}” to you: {{organization}}{{until}}",
+      "DELEGATION_REVOKED": "The delegation of the role “{{role}}” with {{otherParty}} has been revoked: {{organization}}",
+      "unknown": "New notification"
+    }
   }
 }

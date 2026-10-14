@@ -17,6 +17,7 @@ import { canDelegate, canReadDirectory, canReadOwnAwards, canReview } from '../a
 import { BrandService } from '../brand/brand.service';
 import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-scheme.service';
 import { LanguageService } from '../i18n/language.service';
+import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
 
 export const WIDE_LAYOUT = '(min-width: 960px)';
 
@@ -34,6 +35,7 @@ export const WIDE_LAYOUT = '(min-width: 960px)';
     MatMenuItem,
     MatMenuTrigger,
     MatNavList,
+    NotificationBellComponent,
     MatSidenav,
     MatSidenavContainer,
     MatSidenavContent,

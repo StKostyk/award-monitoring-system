@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Notification centre: a bell in the toolbar with the unread count, the latest ten notifications in uk and en, and a /notifications page with an unread filter (SCRUM-67).
 - In-app notifications for award decisions, corrections, overdue reviews, takeovers, roles and delegations, with endpoints to list, count and mark them read (7.2.1)
 - Owners can show chosen documents of a shared award to colleagues
 - Personal data export (format 1.2) lists the review decisions on the person's own awards and the decisions made as a reviewer or under a lent role (4.3.4).
