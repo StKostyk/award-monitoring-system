@@ -33,26 +33,39 @@ class AccountEventJsonTest {
 
     @Test
     void ac1_8_roleAssigned() throws Exception {
-        assertRoundTrip(new RoleAssigned("olena@chnu.edu.ua", "Олена", RoleType.FACULTY_SECRETARY, "FMI", "ФМІ",
-            "Адміністратор", FROM, TO));
+        assertRoundTrip(new RoleAssigned(7L, "olena@chnu.edu.ua", "Олена", RoleType.FACULTY_SECRETARY, "FMI",
+            "ФМІ", "Адміністратор", FROM, TO, AT));
     }
 
     @Test
     void ac1_8_roleRevoked() throws Exception {
-        assertRoundTrip(new RoleRevoked("olena@chnu.edu.ua", "Олена", RoleType.FACULTY_SECRETARY, "FMI", "ФМІ",
-            "Адміністратор", TO));
+        assertRoundTrip(new RoleRevoked(7L, "olena@chnu.edu.ua", "Олена", RoleType.FACULTY_SECRETARY, "FMI", "ФМІ",
+            "Адміністратор", TO, AT));
     }
 
     @Test
     void ac1_8_delegationCreated() throws Exception {
-        assertRoundTrip(new DelegationCreated("olena@chnu.edu.ua", "Олена", RoleType.FACULTY_SECRETARY, "FMI",
-            "ФМІ", "Ірина Бойко", FROM, null, "Відпустка"));
+        assertRoundTrip(new DelegationCreated(7L, "olena@chnu.edu.ua", "Олена", RoleType.FACULTY_SECRETARY, "FMI",
+            "ФМІ", "Ірина Бойко", FROM, null, "Відпустка", AT));
     }
 
     @Test
     void ac1_8_delegationRevoked() throws Exception {
-        assertRoundTrip(new DelegationRevoked(List.of("olena@chnu.edu.ua", "dean.fmi@chnu.edu.ua"),
-            RoleType.FACULTY_SECRETARY, "FMI", "ФМІ", "Олена Петренко", "Ірина Бойко"));
+        assertRoundTrip(new DelegationRevoked(List.of(
+                new DelegationRevoked.Recipient(7L, "olena@chnu.edu.ua", "Ірина Бойко"),
+                new DelegationRevoked.Recipient(3L, "dean.fmi@chnu.edu.ua", "Олена Петренко")),
+            RoleType.FACULTY_SECRETARY, "FMI", "ФМІ", "Олена Петренко", "Ірина Бойко", TO, AT));
+    }
+
+    @Test
+    void scrum66_ac1_4_aRevocationStoredWithBareAddressesStillReads() throws Exception {
+        String stored = "{\"recipients\":[\"olena@chnu.edu.ua\"],\"role\":\"DEAN\",\"organization\":\"FMI\","
+            + "\"organizationUk\":\"ФМІ\",\"delegate\":\"Олена Петренко\",\"actor\":\"Ірина Бойко\"}";
+
+        DelegationRevoked event = mapper.readValue(stored, DelegationRevoked.class);
+
+        assertThat(event.recipients()).containsExactly(DelegationRevoked.Recipient.of("olena@chnu.edu.ua"));
+        assertThat(event.occurredAt()).isNull();
     }
 
     @Test

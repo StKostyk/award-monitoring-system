@@ -31,22 +31,35 @@ class AwardEventJsonTest {
 
     @Test
     void ac1_8_awardDecided() throws Exception {
-        assertRoundTrip(new AwardDecided("olena@chnu.edu.ua", "Олена", 5L, "Certificate", "Грамота",
-            RequestStatus.APPROVED, ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", "Добре"));
+        assertRoundTrip(new AwardDecided(7L, "olena@chnu.edu.ua", "Олена", 5L, "Certificate", "Грамота",
+            RequestStatus.APPROVED, ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", "Добре", AT));
+    }
+
+    @Test
+    void scrum66_ac1_4_aDecisionStoredWithoutRecipientIdStillReads() throws Exception {
+        String stored = "{\"email\":\"olena@chnu.edu.ua\",\"firstName\":\"Олена\",\"awardId\":5,"
+            + "\"title\":\"Certificate\",\"titleUk\":\"Грамота\",\"outcome\":\"APPROVED\",\"level\":\"DEAN\","
+            + "\"reviewer\":\"Ірина Бойко\",\"comment\":null}";
+
+        AwardDecided event = mapper.readValue(stored, AwardDecided.class);
+
+        assertThat(event.email()).isEqualTo("olena@chnu.edu.ua");
+        assertThat(event.userId()).isNull();
+        assertThat(event.occurredAt()).isNull();
     }
 
     @Test
     void ac1_8_awardCorrected() throws Exception {
-        assertRoundTrip(new AwardCorrected("olena@chnu.edu.ua", "Олена", 5L, "Certificate", "Грамота",
+        assertRoundTrip(new AwardCorrected(7L, "olena@chnu.edu.ua", "Олена", 5L, "Certificate", "Грамота",
             "Ірина Бойко", "Typo", List.of(new AwardCorrected.Change("title", "Certifcate", "Certificate",
-                "Грамта", "Грамота"))));
+                "Грамта", "Грамота")), AT));
     }
 
     @Test
     void ac1_8_overdueNoticed() throws Exception {
-        assertRoundTrip(new OverdueNoticed("dean.fmi@chnu.edu.ua", "Ірина Бойко", List.of(
+        assertRoundTrip(new OverdueNoticed(3L, "dean.fmi@chnu.edu.ua", "Ірина Бойко", List.of(
             new OverdueNoticed.Item(5L, "Certificate", "Грамота", "Анастасія Коваль",
-                ApprovalLevel.FACULTY_SECRETARY, AT, "Петро Іваненко"))));
+                ApprovalLevel.FACULTY_SECRETARY, AT, "Петро Іваненко")), AT));
     }
 
     @Test
@@ -57,8 +70,8 @@ class AwardEventJsonTest {
 
     @Test
     void ac1_8_reviewTakenOver() throws Exception {
-        assertRoundTrip(new ReviewTakenOver("dean.fmi@chnu.edu.ua", "Ірина", 5L, "Certificate", "Грамота",
-            "Петро Іваненко"));
+        assertRoundTrip(new ReviewTakenOver(3L, "dean.fmi@chnu.edu.ua", "Ірина", 5L, "Certificate", "Грамота",
+            "Петро Іваненко", AT));
     }
 
     private void assertRoundTrip(Object event) throws Exception {

@@ -83,7 +83,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
             return incomplete();
         }));
 
-        assertThat(inTransaction).isEqualTo(1);
+        assertThat(inTransaction).isEqualTo(2);
         verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
     }
@@ -102,11 +102,12 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         String delegate = "it.registry.delegation@chnu.edu.ua";
 
         List<String> listeners = Objects.requireNonNull(transactions.execute(status -> {
-            events.publishEvent(new RoleAssigned(holder, "Олена", RoleType.FACULTY_SECRETARY, "Faculty", "Факультет",
-                "Admin", LocalDate.of(2026, 10, 1), null));
-            events.publishEvent(new DelegationRevoked(List.of(delegate), RoleType.DEAN, "Faculty", "Факультет",
-                "Delegate", "Admin"));
-            return jdbc.queryForList("SELECT listener_id FROM event_publication", String.class);
+            events.publishEvent(new RoleAssigned(null, holder, "Олена", RoleType.FACULTY_SECRETARY, "Faculty",
+                "Факультет", "Admin", LocalDate.of(2026, 10, 1), null, null));
+            events.publishEvent(new DelegationRevoked(List.of(DelegationRevoked.Recipient.of(delegate)), RoleType.DEAN,
+                "Faculty", "Факультет", "Delegate", "Admin", null, null));
+            return jdbc.queryForList("SELECT listener_id FROM event_publication WHERE listener_id LIKE ?",
+                String.class, "%Mails%");
         }));
 
         assertThat(listeners).hasSize(2).allMatch(id -> id.contains("notification.AuthorityChangeMails"));
@@ -234,8 +235,8 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
     }
 
     private static AwardDecided decided(String to) {
-        return new AwardDecided(to, "Олена", 999_001L, "Certificate", "Грамота", RequestStatus.APPROVED,
-            ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", null);
+        return new AwardDecided(null, to, "Олена", 999_001L, "Certificate", "Грамота", RequestStatus.APPROVED,
+            ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", null, null);
     }
 
     private static ArgumentMatcher<SimpleMailMessage> sentTo(String to) {

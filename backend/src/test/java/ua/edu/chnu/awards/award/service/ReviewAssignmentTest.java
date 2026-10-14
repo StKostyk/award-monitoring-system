@@ -15,6 +15,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +64,7 @@ class ReviewAssignmentTest {
         users,
         audit, mapper, access, new ReviewGuards(requests, rule, access),
         new TakeOverRule(rule, availability, access, mock(StatusEstimator.class, RETURNS_DEEP_STUBS),
-            mock(ApplicationEventPublisher.class)));
+            mock(ApplicationEventPublisher.class), Clock.systemUTC()));
 
     private final Organization faculty = TestUsers.faculty(FACULTY);
     private final User owner = TestUsers.person(7L, "employee@chnu.edu.ua", faculty);

@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public class CorrectionLog {
     private final AuditService audit;
     private final ReviewerRule rule;
     private final ApplicationEventPublisher events;
+    private final Clock clock;
 
     /**
      * Writes the {@code AWARD_CORRECTED} audit row with the old and new values, the reason and the delegator.
@@ -80,8 +82,9 @@ public class CorrectionLog {
                 : new AwardCorrected.Change(change.field(), shown(change.from()), shown(change.to()),
                     shown(change.from()), shown(change.to())))
             .toList();
-        events.publishEvent(new AwardCorrected(owner.getEmailAddress(), owner.getFirstName(), award.getId(),
-            award.titleInEnglish(), award.titleInUkrainian(), reviewer.getFullName(), reason, mailed));
+        events.publishEvent(new AwardCorrected(owner.getId(), owner.getEmailAddress(), owner.getFirstName(),
+            award.getId(), award.titleInEnglish(), award.titleInUkrainian(), reviewer.getFullName(), reason, mailed,
+            clock.instant()));
     }
 
     private static String name(AwardCategory category, boolean ukrainian) {

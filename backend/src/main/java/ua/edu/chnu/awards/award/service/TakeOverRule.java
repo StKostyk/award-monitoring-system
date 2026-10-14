@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.time.Clock;
 import java.util.Arrays;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,6 +29,7 @@ public class TakeOverRule {
     private final AccessScope access;
     private final StatusEstimator estimator;
     private final ApplicationEventPublisher events;
+    private final Clock clock;
 
     /**
      * Whether the caller may take the request over from a colleague who holds it.
@@ -63,8 +65,8 @@ public class TakeOverRule {
      */
     public void announce(AwardRequest request, User holder, User caller) {
         Award award = request.getAward();
-        events.publishEvent(new ReviewTakenOver(holder.getEmailAddress(), holder.getFirstName(), award.getId(),
-            award.titleInEnglish(), award.titleInUkrainian(), caller.getFullName()));
+        events.publishEvent(new ReviewTakenOver(holder.getId(), holder.getEmailAddress(), holder.getFirstName(),
+            award.getId(), award.titleInEnglish(), award.titleInUkrainian(), caller.getFullName(), clock.instant()));
     }
 
     private boolean isOverdue(AwardRequest request) {

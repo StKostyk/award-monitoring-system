@@ -34,8 +34,8 @@ class DecisionMailsTest {
 
     @Test
     void ac2_10_anErasedOwnerGetsNoMessage() {
-        mails.onDecided(new AwardDecided(null, "Ірина", 5L, "Prize", "Премія", RequestStatus.APPROVED,
-            ApprovalLevel.DEAN, "Аліна Мартинюк", null));
+        mails.onDecided(new AwardDecided(21L, null, "Ірина", 5L, "Prize", "Премія", RequestStatus.APPROVED,
+            ApprovalLevel.DEAN, "Аліна Мартинюк", null, null));
 
         verify(delivery, never()).send(anyString(), anyString(), anyString());
     }
@@ -79,7 +79,7 @@ class DecisionMailsTest {
     }
 
     private static AwardDecided event(RequestStatus outcome, ApprovalLevel level, String comment) {
-        return new AwardDecided("employee@chnu.edu.ua", "Ірина", 5L, "Prize", "Премія", outcome, level,
-            "Аліна Мартинюк", comment);
+        return new AwardDecided(21L, "employee@chnu.edu.ua", "Ірина", 5L, "Prize", "Премія", outcome, level,
+            "Аліна Мартинюк", comment, null);
     }
 }

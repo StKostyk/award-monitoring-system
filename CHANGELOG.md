@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- In-app notifications for award decisions, corrections, overdue reviews, takeovers, roles and delegations, with endpoints to list, count and mark them read (7.2.1)
 - Owners can show chosen documents of a shared award to colleagues
 - Personal data export (format 1.2) lists the review decisions on the person's own awards and the decisions made as a reviewer or under a lent role (4.3.4).
 - A peer reviewer can take over an overdue request, the previous holder is mailed, and a reviewer is no longer offered an escalation to a level their role already covers.

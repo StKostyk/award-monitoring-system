@@ -5,6 +5,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,13 +29,15 @@ import ua.edu.chnu.awards.user.entity.User;
 class TakeOverRuleTest {
 
     private static final long FACULTY = 9L;
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-14T10:00:00Z"), ZoneOffset.UTC);
 
     private final ReviewerRule rule = mock(ReviewerRule.class);
     private final ReviewerAvailability availability = mock(ReviewerAvailability.class);
     private final AccessScope access = mock(AccessScope.class);
     private final StatusEstimator estimator = mock(StatusEstimator.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final TakeOverRule takeOver = new TakeOverRule(rule, availability, access, estimator, events);
+    private final TakeOverRule takeOver = new TakeOverRule(rule, availability, access, estimator, events,
+        CLOCK);
 
     private final Organization faculty = TestUsers.faculty(FACULTY);
     private final User owner = TestUsers.person(7L, "employee@chnu.edu.ua", faculty);
@@ -103,8 +108,8 @@ class TakeOverRuleTest {
 
         takeOver.announce(request, holder, caller);
 
-        verify(events).publishEvent(new ReviewTakenOver(holder.getEmailAddress(), holder.getFirstName(), 1L,
-            "Грамота", "Грамота", caller.getFullName()));
+        verify(events).publishEvent(new ReviewTakenOver(holder.getId(), holder.getEmailAddress(),
+            holder.getFirstName(), 1L, "Грамота", "Грамота", caller.getFullName(), CLOCK.instant()));
     }
 
     private void eligible(ApprovalLevel level) {

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static ua.edu.chnu.awards.support.TestUsers.person;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ class RoleChangeRecorderTest {
 
     private final AuditService audit = mock(AuditService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final RoleChangeRecorder recorder = new RoleChangeRecorder(audit, events);
+    private final RoleChangeRecorder recorder = new RoleChangeRecorder(audit, events, Clock.systemUTC());
 
     private final Organization faculty = Organization.builder().id(9L).orgType(OrganizationType.FACULTY)
         .name("Faculty of Mathematics and Informatics").nameUk("Факультет математики та інформатики").build();

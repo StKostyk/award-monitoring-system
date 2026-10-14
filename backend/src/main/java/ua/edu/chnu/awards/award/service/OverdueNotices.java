@@ -72,8 +72,9 @@ public class OverdueNotices {
                     "level", request.getCurrentLevel().name(), "deadline", request.getDeadline().toString(),
                     "recipients", recipients.stream().map(Candidate::id).toList()));
         }
-        digests.forEach((candidate, items) -> events.publishEvent(new OverdueNoticed(candidate.email(),
-            candidate.name(), items.stream().sorted(Comparator.comparing(OverdueNoticed.Item::deadline)).toList())));
+        digests.forEach((candidate, items) -> events.publishEvent(new OverdueNoticed(candidate.id(),
+            candidate.email(), candidate.name(),
+            items.stream().sorted(Comparator.comparing(OverdueNoticed.Item::deadline)).toList(), now)));
         refreshGauges(at);
         return ids.size();
     }

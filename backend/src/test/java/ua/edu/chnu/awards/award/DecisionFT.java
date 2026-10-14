@@ -136,6 +136,10 @@ class DecisionFT extends AbstractFunctionalTest {
             returned)).containsEntry("current_reviewer_id", null).containsEntry("deadline", null);
         assertThat(mailpit.latestTextTo(AUTHOR, "повернуто на доопрацювання"))
             .contains("Коментар: Додайте номер наказу");
+        as(tokenOf(AUTHOR)).get("/api/v1/notifications").then().statusCode(HttpStatus.OK.value())
+            .body("content.findAll { it.referenceId == " + returned + " }.type", contains("AWARD_RETURNED"))
+            .body("content.find { it.referenceId == " + returned + " }.payload.titleUk",
+                equalTo("Грамота для повернення"));
         as(tokenOf(AUTHOR)).get(AwardApi.AWARDS + "/" + returned + "/status").then()
             .statusCode(HttpStatus.OK.value())
             .body("status", equalTo("DRAFT"));

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static ua.edu.chnu.awards.support.TestUsers.person;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ class DelegationRecorderTest {
 
     private final AuditService audit = mock(AuditService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final DelegationRecorder recorder = new DelegationRecorder(audit, events);
+    private final DelegationRecorder recorder = new DelegationRecorder(audit, events, Clock.systemUTC());
 
     private final Organization faculty = Organization.builder().id(9L).orgType(OrganizationType.FACULTY)
         .name("Faculty of Mathematics and Informatics").nameUk("Факультет математики та інформатики").build();
@@ -63,7 +64,8 @@ class DelegationRecorderTest {
         recorder.revoked(dean, delegation());
 
         assertThat(published(DelegationRevoked.class).recipients())
-            .containsExactly(secretary.getEmailAddress());
+            .containsExactly(new DelegationRevoked.Recipient(secretary.getId(), secretary.getEmailAddress(),
+                "Марія Мартинюк"));
     }
 
     @Test
@@ -73,8 +75,11 @@ class DelegationRecorderTest {
         verify(audit).record(eq(AuditAction.DELEGATION_REVOKED), eq(AuditEntityConstants.AUTHORIZATION),
             eq(secretary.getId()), captor().capture());
         DelegationRevoked event = published(DelegationRevoked.class);
-        assertThat(event.recipients())
-            .containsExactly(secretary.getEmailAddress(), dean.getEmailAddress());
+        assertThat(event.recipients()).containsExactly(
+            new DelegationRevoked.Recipient(secretary.getId(), secretary.getEmailAddress(), "Марія Мартинюк"),
+            new DelegationRevoked.Recipient(dean.getId(), dean.getEmailAddress(), "Аліна Мартинюк"));
+        assertThat(event.validTo()).isEqualTo(TODAY.plusDays(14));
+        assertThat(event.occurredAt()).isNotNull();
         assertThat(event.actor()).isEqualTo("Олег Мартинюк");
         assertThat(event.delegate()).isEqualTo("Аліна Мартинюк");
     }

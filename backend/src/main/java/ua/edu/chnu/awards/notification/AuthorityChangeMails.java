@@ -71,7 +71,7 @@ public class AuthorityChangeMails {
     public void onDelegationRevoked(DelegationRevoked event) {
         String text = delegationRevokedBody(event);
         event.recipients().forEach(recipient ->
-            delivery.send(recipient, "Делегування відкликано / Delegation revoked", text));
+            delivery.send(recipient.email(), "Делегування відкликано / Delegation revoked", text));
     }
 
     static String roleAssignedBody(RoleAssigned event) {

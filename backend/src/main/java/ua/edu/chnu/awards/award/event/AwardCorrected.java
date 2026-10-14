@@ -1,21 +1,25 @@
 package ua.edu.chnu.awards.award.event;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
  * A reviewer corrected a pending award; its owner is told once the surrounding transaction commits.
  *
- * @param email     the owner's address
- * @param firstName used in the greeting
- * @param awardId   the award
- * @param title     the award's title, the Ukrainian one when it has no English title
- * @param titleUk   the award's Ukrainian title, the English one when it has none
- * @param reviewer  full name of the reviewer
- * @param reason    why the reviewer corrected the award
- * @param changes   the corrected fields with their old and new values
+ * @param userId     the owner, null in events stored before it was carried
+ * @param email      the owner's address
+ * @param firstName  used in the greeting
+ * @param awardId    the award
+ * @param title      the award's title, the Ukrainian one when it has no English title
+ * @param titleUk    the award's Ukrainian title, the English one when it has none
+ * @param reviewer   full name of the reviewer
+ * @param reason     why the reviewer corrected the award
+ * @param changes    the corrected fields with their old and new values
+ * @param occurredAt when the correction was announced
  */
-public record AwardCorrected(String email, String firstName, long awardId, String title, String titleUk,
-                             String reviewer, String reason, List<Change> changes) {
+public record AwardCorrected(Long userId, String email, String firstName, long awardId, String title,
+                             String titleUk, String reviewer, String reason, List<Change> changes,
+                             Instant occurredAt) {
 
     /**
      * Keeps an unmodifiable copy of the changes.
