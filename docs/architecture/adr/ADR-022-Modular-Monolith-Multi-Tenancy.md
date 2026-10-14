@@ -129,7 +129,7 @@ when a module meets the extraction criteria below.**
 | `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
 | `gdpr` | common, audit, organization, authz, user, delegation, auth, award | `dto`, `event` |
-| `notification` | common, user, delegation | — |
+| `notification` | common, authz, user, delegation, award | — |
 | `metrics` | — | — |
 | `config` | common, audit | — (depended on by none) |
 

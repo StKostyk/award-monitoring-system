@@ -2405,11 +2405,10 @@ paths:
   /notifications:
     get:
       tags: [Notifications]
-      summary: The caller's in-app notifications (planned, 7.2.1)
+      summary: The caller's in-app notifications
       description: >
         In-app notifications of the caller, newest first; e-mail delivery rows are never listed. The text is
         rendered by the client from `type` and `payload` in the interface language (7.2.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: listNotifications
@@ -2437,9 +2436,8 @@ paths:
   /notifications/unread-count:
     get:
       tags: [Notifications]
-      summary: Number of the caller's unread in-app notifications (planned, 7.2.1)
+      summary: Number of the caller's unread in-app notifications
       description: Polled by the toolbar every 60 s while the tab is visible (7.2.1)
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: countUnreadNotifications
@@ -2456,11 +2454,10 @@ paths:
   /notifications/{id}/read:
     post:
       tags: [Notifications]
-      summary: Mark one notification read (planned, 7.2.1)
+      summary: Mark one notification read
       description: >
         Idempotent: an already-read notification stays unchanged. Another person's notification, an e-mail
         delivery row or an unknown id answers 404 (7.2.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: markNotificationRead
@@ -2486,8 +2483,7 @@ paths:
   /notifications/read-all:
     post:
       tags: [Notifications]
-      summary: Mark all of the caller's notifications read (planned, 7.2.1)
-      x-status: planned
+      summary: Mark all of the caller's notifications read
       security:
         - bearerAuth: []
       operationId: markAllNotificationsRead
@@ -3192,7 +3188,7 @@ components:
 
     NotificationType:
       type: string
-      description: The event a notification reports (planned, 7.2.1)
+      description: The event a notification reports
       enum:
         - AWARD_APPROVED
         - AWARD_REJECTED
@@ -3208,7 +3204,7 @@ components:
 
     Notification:
       type: object
-      description: One in-app notification of the caller (planned, 7.2.1)
+      description: One in-app notification of the caller
       properties:
         id:
           type: integer
@@ -3219,9 +3215,11 @@ components:
           type: object
           additionalProperties: true
           description: >
-            Values for the text, by type: award types `title`, `titleUk`, `reviewer`, `level` (`fields` for
-            `AWARD_CORRECTED`); `REVIEW_OVERDUE` `count`, `oldestDeadline`; role types `role`, `organization`,
-            `organizationUk`, `validTo`; delegation types the same plus `otherParty`
+            Values for the text, by type: `AWARD_APPROVED|REJECTED|RETURNED|ESCALATED` `title`, `titleUk`,
+            `reviewer`, `level`; `AWARD_CORRECTED` `title`, `titleUk`, `reviewer`, `fields` (names only);
+            `REVIEW_TAKEN_OVER` `title`, `titleUk`, `reviewer`; `REVIEW_OVERDUE` `count`, `oldestDeadline`;
+            role types `role`, `organization`, `organizationUk`, `validTo` (null when open-ended); delegation
+            types the same plus `otherParty`. Never the reviewer's comment or corrected values
         referenceType:
           type: [string, 'null']
           enum: [AWARD, null]

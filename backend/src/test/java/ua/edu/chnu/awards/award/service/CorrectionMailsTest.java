@@ -56,10 +56,12 @@ class CorrectionMailsTest {
     }
 
     private static AwardCorrected event(String email) {
-        return new AwardCorrected(email, "Ірина", 5L, "Prize", "Премія", "Аліна Мартинюк", "Дата з наказу", List.of(
-            new AwardCorrected.Change("awardDate", "2025-05-01", "2025-06-01", "2025-05-01", "2025-06-01"),
-            new AwardCorrected.Change("categoryId", "University Award", "Ministry Recognition",
-                "Університетська нагорода", "Відзнака міністерства"),
-            new AwardCorrected.Change("externalUrl", null, "https://mon.gov.ua", null, "https://mon.gov.ua")));
+        return new AwardCorrected(21L, email, "Ірина", 5L, "Prize", "Премія", "Аліна Мартинюк", "Дата з наказу",
+            List.of(
+                new AwardCorrected.Change("awardDate", "2025-05-01", "2025-06-01", "2025-05-01", "2025-06-01"),
+                new AwardCorrected.Change("categoryId", "University Award", "Ministry Recognition",
+                    "Університетська нагорода", "Відзнака міністерства"),
+                new AwardCorrected.Change("externalUrl", null, "https://mon.gov.ua", null, "https://mon.gov.ua")),
+            null);
     }
 }

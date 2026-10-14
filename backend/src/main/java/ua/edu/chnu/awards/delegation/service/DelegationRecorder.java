@@ -1,10 +1,10 @@
 package ua.edu.chnu.awards.delegation.service;
 
-import java.util.LinkedHashSet;
+import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -30,6 +30,7 @@ public class DelegationRecorder {
 
     private final AuditService audit;
     private final ApplicationEventPublisher events;
+    private final Clock clock;
 
     /**
      * Records a delegation and tells the delegate.
@@ -42,10 +43,10 @@ public class DelegationRecorder {
             details(delegation, delegation.getDelegator()));
         User delegate = delegation.getDelegate();
         Organization organization = delegation.getOrganization();
-        events.publishEvent(new DelegationCreated(delegate.getEmailAddress(), delegate.getFirstName(),
-            delegation.getRoleType(), organization.getName(), nameUk(organization),
+        events.publishEvent(new DelegationCreated(delegate.getId(), delegate.getEmailAddress(),
+            delegate.getFirstName(), delegation.getRoleType(), organization.getName(), nameUk(organization),
             fullName(delegation.getDelegator()), delegation.getValidFrom(), delegation.getValidTo(),
-            delegation.getReason()));
+            delegation.getReason(), clock.instant()));
     }
 
     /**
@@ -61,16 +62,20 @@ public class DelegationRecorder {
         Organization organization = delegation.getOrganization();
         events.publishEvent(new DelegationRevoked(recipients(actor, delegation), delegation.getRoleType(),
             organization.getName(), nameUk(organization), fullName(delegation.getDelegate()),
-            fullName(actor)));
+            fullName(actor), delegation.getValidTo(), clock.instant()));
     }
 
-    private static List<String> recipients(User actor, RoleDelegation delegation) {
-        Set<String> addresses = new LinkedHashSet<>();
-        addresses.add(delegation.getDelegate().getEmailAddress());
-        if (!Objects.equals(actor.getId(), delegation.getDelegator().getId())) {
-            addresses.add(delegation.getDelegator().getEmailAddress());
+    private static List<DelegationRevoked.Recipient> recipients(User actor, RoleDelegation delegation) {
+        User delegate = delegation.getDelegate();
+        User delegator = delegation.getDelegator();
+        List<DelegationRevoked.Recipient> recipients = new ArrayList<>();
+        recipients.add(new DelegationRevoked.Recipient(delegate.getId(), delegate.getEmailAddress(),
+            fullName(delegator)));
+        if (!Objects.equals(actor.getId(), delegator.getId())) {
+            recipients.add(new DelegationRevoked.Recipient(delegator.getId(), delegator.getEmailAddress(),
+                fullName(delegate)));
         }
-        return List.copyOf(addresses);
+        return recipients;
     }
 
     private static Map<String, Object> details(RoleDelegation delegation, User actor) {

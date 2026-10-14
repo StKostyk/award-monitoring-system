@@ -30,8 +30,8 @@ class AuthorityChangeMailsTest {
 
     @Test
     void ac2_5_tellsTheHolderWhichRoleWasGrantedWhereAndUntilWhen() {
-        mails.onRoleAssigned(new RoleAssigned("member@chnu.edu.ua", "Анастасія", RoleType.FACULTY_SECRETARY,
-            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), LocalDate.of(2026, 10, 22)));
+        mails.onRoleAssigned(new RoleAssigned(4L, "member@chnu.edu.ua", "Анастасія", RoleType.FACULTY_SECRETARY,
+            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), LocalDate.of(2026, 10, 22), null));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль призначено / Role assigned"), text.capture());
         assertThat(text.getValue()).contains("FACULTY_SECRETARY", FMI_UK, FMI, "Марія Мартинюк", "2026-09-22",
@@ -40,8 +40,8 @@ class AuthorityChangeMailsTest {
 
     @Test
     void ac2_5_anOpenEndedRoleNamesNoEndDate() {
-        mails.onRoleAssigned(new RoleAssigned("member@chnu.edu.ua", "Анастасія", RoleType.EMPLOYEE,
-            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), null));
+        mails.onRoleAssigned(new RoleAssigned(4L, "member@chnu.edu.ua", "Анастасія", RoleType.EMPLOYEE,
+            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), null, null));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль призначено / Role assigned"), text.capture());
         assertThat(text.getValue()).doesNotContain(" until ");
@@ -49,8 +49,8 @@ class AuthorityChangeMailsTest {
 
     @Test
     void ac2_5_tellsTheFormerHolderTheLastDayAndThatEverySessionEnded() {
-        mails.onRoleRevoked(new RoleRevoked("member@chnu.edu.ua", "Анастасія", RoleType.DEAN, FMI, FMI_UK,
-            "Марія Мартинюк", LocalDate.of(2026, 9, 21)));
+        mails.onRoleRevoked(new RoleRevoked(4L, "member@chnu.edu.ua", "Анастасія", RoleType.DEAN, FMI, FMI_UK,
+            "Марія Мартинюк", LocalDate.of(2026, 9, 21), null));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль відкликано / Role revoked"), text.capture());
         assertThat(text.getValue()).contains("DEAN", "2026-09-21", "Every session was ended");
@@ -77,8 +77,9 @@ class AuthorityChangeMailsTest {
 
     @Test
     void ac3_5_tellsBothSidesWhenSomebodyElseTookTheAuthorityBack() {
-        mails.onDelegationRevoked(new DelegationRevoked(List.of("secretary@chnu.edu.ua", "dean@chnu.edu.ua"),
-            RoleType.DEAN, FMI, FMI_UK, "Аліна Коваленко", "Олег Адміненко"));
+        mails.onDelegationRevoked(new DelegationRevoked(List.of(DelegationRevoked.Recipient.of("secretary@chnu.edu.ua"),
+            DelegationRevoked.Recipient.of("dean@chnu.edu.ua")), RoleType.DEAN, FMI, FMI_UK, "Аліна Коваленко",
+            "Олег Адміненко", null, null));
 
         ArgumentCaptor<String> recipient = ArgumentCaptor.forClass(String.class);
         verify(delivery, times(2)).send(recipient.capture(), eq("Делегування відкликано / Delegation revoked"),
@@ -89,7 +90,7 @@ class AuthorityChangeMailsTest {
     }
 
     private static DelegationCreated delegation(String reason) {
-        return new DelegationCreated("secretary@chnu.edu.ua", "Аліна", RoleType.DEAN, FMI, FMI_UK,
-            "Марія Мартинюк", LocalDate.of(2026, 9, 24), LocalDate.of(2026, 10, 8), reason);
+        return new DelegationCreated(5L, "secretary@chnu.edu.ua", "Аліна", RoleType.DEAN, FMI, FMI_UK,
+            "Марія Мартинюк", LocalDate.of(2026, 9, 24), LocalDate.of(2026, 10, 8), reason, null);
     }
 }

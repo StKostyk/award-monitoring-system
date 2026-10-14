@@ -73,17 +73,17 @@ class OverdueMailsTest {
 
     @Test
     void ac2_2_aReviewerWithoutAddressGetsNothing() {
-        mails.onNoticed(new OverdueNoticed(null, "Ірина Бойко", digest().requests()));
+        mails.onNoticed(new OverdueNoticed(4L, null, "Ірина Бойко", digest().requests(), null));
 
         verifyNoInteractions(delivery, metrics);
     }
 
     private static OverdueNoticed digest() {
         Instant deadline = Instant.parse("2026-10-06T09:00:00Z");
-        return new OverdueNoticed(DEAN, "Ірина Бойко", List.of(
+        return new OverdueNoticed(4L, DEAN, "Ірина Бойко", List.of(
             new OverdueNoticed.Item(5L, "Certificate", "Грамота", "Анастасія Коваль", ApprovalLevel.FACULTY_SECRETARY,
                 deadline, null),
             new OverdueNoticed.Item(7L, "Diploma", "Диплом", "Анастасія Коваль", ApprovalLevel.FACULTY_SECRETARY,
-                deadline.plusSeconds(3600), "Олег Шевчук")));
+                deadline.plusSeconds(3600), "Олег Шевчук")), null);
     }
 }

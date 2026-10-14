@@ -47,6 +47,6 @@ class TakeOverMailsTest {
     }
 
     private static ReviewTakenOver event(String email) {
-        return new ReviewTakenOver(email, "Ірина", 5L, "Prize", "Премія", "Аліна Мартинюк");
+        return new ReviewTakenOver(21L, email, "Ірина", 5L, "Prize", "Премія", "Аліна Мартинюк", null);
     }
 }

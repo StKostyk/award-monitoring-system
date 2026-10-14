@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +32,7 @@ class DecisionLogMeasureTest {
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final DecisionLog log = new DecisionLog(decisions, mock(UserAccounts.class), mock(AuditService.class),
-        events);
+        events, Clock.systemUTC());
 
     @Test
     void ac2_6_theDurationRunsFromTheDecisionThatMovedTheRequestToThisLevel() {

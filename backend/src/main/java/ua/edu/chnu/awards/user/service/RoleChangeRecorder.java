@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.user.service;
 
+import java.time.Clock;
 import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,6 +27,7 @@ public class RoleChangeRecorder {
 
     private final AuditService audit;
     private final ApplicationEventPublisher events;
+    private final Clock clock;
 
     /**
      * Records a granted role and tells the holder.
@@ -38,9 +40,9 @@ public class RoleChangeRecorder {
             details(actor, assignment));
         User holder = assignment.getUser();
         Organization organization = assignment.getOrganization();
-        events.publishEvent(new RoleAssigned(holder.getEmailAddress(), holder.getFirstName(),
+        events.publishEvent(new RoleAssigned(holder.getId(), holder.getEmailAddress(), holder.getFirstName(),
             assignment.getRoleType(), organization.getName(), nameUk(organization), fullName(actor),
-            assignment.getValidFrom(), assignment.getValidTo()));
+            assignment.getValidFrom(), assignment.getValidTo(), clock.instant()));
     }
 
     /**
@@ -54,9 +56,9 @@ public class RoleChangeRecorder {
             details(actor, assignment));
         User holder = assignment.getUser();
         Organization organization = assignment.getOrganization();
-        events.publishEvent(new RoleRevoked(holder.getEmailAddress(), holder.getFirstName(),
+        events.publishEvent(new RoleRevoked(holder.getId(), holder.getEmailAddress(), holder.getFirstName(),
             assignment.getRoleType(), organization.getName(), nameUk(organization), fullName(actor),
-            assignment.getValidTo()));
+            assignment.getValidTo(), clock.instant()));
     }
 
     /**

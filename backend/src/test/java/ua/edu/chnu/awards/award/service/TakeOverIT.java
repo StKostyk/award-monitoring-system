@@ -117,7 +117,7 @@ class TakeOverIT extends AbstractIntegrationTest {
     }
 
     private static ReviewTakenOver takenOver(String to) {
-        return new ReviewTakenOver(to, "Ірина", 1L, "Prize", "Премія", "Аліна Мартинюк");
+        return new ReviewTakenOver(null, to, "Ірина", 1L, "Prize", "Премія", "Аліна Мартинюк", null);
     }
 
     private static ArgumentMatcher<SimpleMailMessage> sentTo(String to) {

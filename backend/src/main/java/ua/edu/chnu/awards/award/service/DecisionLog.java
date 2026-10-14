@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -40,6 +41,7 @@ public class DecisionLog {
     private final UserAccounts users;
     private final AuditService audit;
     private final ApplicationEventPublisher events;
+    private final Clock clock;
 
     /**
      * Publishes the decision for the review metrics, before the decision row is written and the request moves.
@@ -118,8 +120,8 @@ public class DecisionLog {
     public void announce(AwardRequest request, User reviewer, String comment) {
         Award award = request.getAward();
         User owner = award.getOwner();
-        events.publishEvent(new AwardDecided(owner.getEmailAddress(), owner.getFirstName(), award.getId(),
-            award.titleInEnglish(), award.titleInUkrainian(), request.getStatus(), request.getCurrentLevel(),
-            reviewer.getFullName(), comment));
+        events.publishEvent(new AwardDecided(owner.getId(), owner.getEmailAddress(), owner.getFirstName(),
+            award.getId(), award.titleInEnglish(), award.titleInUkrainian(), request.getStatus(),
+            request.getCurrentLevel(), reviewer.getFullName(), comment, clock.instant()));
     }
 }

@@ -827,59 +827,62 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 ### 5.1 Entity: `notifications`
 
-**Description**: System notifications sent to users about award activities, workflow updates, and system alerts.
+**Description**: In-app notifications written from committed events (V038), one row per recipient. The client renders the sentence from `type` and `payload` in the interface language; no text is stored.
 
 **Business Rules**:
-- Notifications created by system events (not user-initiated)
-- Unread notifications highlighted in UI
-- Notifications respect user preferences
-- Delivery via multiple channels (in-app, email, SMS)
-- Retention period: 1 year
+- Written by the `notification` module's listener on the event publication registry, after the business transaction commits and in a transaction of its own (ADR-006 addendum)
+- `dedupe_key` makes a repeated delivery of one event a no-op (`INSERT … ON CONFLICT DO NOTHING`)
+- No row for a recipient that no longer exists, is `DELETED` or has no address
+- `payload` holds only what the sentence needs: never the reviewer's comment or corrected values
+- The notification centre reads `IN_APP` rows of the caller only
+- Retention period: 1 year (`expires_at` = `sent_at` + 1 year); the account's deletion removes its rows (`ON DELETE CASCADE`)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `notification_id` | `BIGSERIAL` | NO | Auto | PK | Unique notification identifier |
 | `user_id` | `BIGINT` | NO | - | FK→users | Recipient user |
 | `type` | `VARCHAR(50)` | NO | - | CK | Notification type |
-| `title` | `VARCHAR(255)` | NO | - | - | Notification title |
-| `message` | `TEXT` | NO | - | - | Full notification message |
-| `is_read` | `BOOLEAN` | NO | `FALSE` | - | Read status |
+| `payload` | `JSONB` | NO | `'{}'` | - | Values of the sentence, by type (below) |
+| `dedupe_key` | `VARCHAR(64)` | NO | - | UK | SHA-256 hex of type, channel, recipient, reference and event time |
+| `is_read` | `BOOLEAN` | NO | `FALSE` | CK | Read status |
 | `channel` | `VARCHAR(20)` | NO | `'IN_APP'` | CK | Delivery channel |
-| `reference_type` | `VARCHAR(50)` | YES | - | - | Related entity type |
-| `reference_id` | `BIGINT` | YES | - | - | Related entity ID |
-| `sent_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Send timestamp |
-| `read_at` | `TIMESTAMPTZ` | YES | - | - | When marked as read |
-| `expires_at` | `TIMESTAMPTZ` | YES | - | - | Notification expiry |
+| `reference_type` | `VARCHAR(50)` | YES | - | - | `AWARD` for award types, null otherwise |
+| `reference_id` | `BIGINT` | YES | - | - | The award, null otherwise |
+| `sent_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the row was written |
+| `read_at` | `TIMESTAMPTZ` | YES | - | CK | When marked as read; set with `is_read` |
+| `expires_at` | `TIMESTAMPTZ` | YES | - | - | `sent_at` + 1 year |
 
-**Notification Types** (`type`): no application code writes this table yet; decisions, corrections and overdue notices of Epic 4 are sent as e-mail only, and the in-app centre arrives with Epic 7.
+**Notification Types** (`type`, also `notification_preferences.event_type`) and **payload**:
 
-| Value | Description | Trigger Event |
-|-------|-------------|---------------|
-| `AWARD_SUBMITTED` | New award submitted | Award submission |
-| `AWARD_APPROVED` | Award approved | Final approval |
-| `AWARD_REJECTED` | Award rejected | Rejection decision |
-| `AWARD_RETURNED` | Award returned for corrections | Return decision |
-| `REVIEW_ASSIGNED` | Assigned as reviewer | Workflow assignment |
-| `DEADLINE_REMINDER` | Approaching deadline | Scheduled job |
-| `SYSTEM_ALERT` | System announcement | Admin action |
+| Value | Trigger Event | Payload |
+|-------|---------------|---------|
+| `AWARD_APPROVED`, `AWARD_REJECTED`, `AWARD_RETURNED`, `AWARD_ESCALATED` | `AwardDecided` (by outcome) | `title`, `titleUk`, `reviewer`, `level` |
+| `AWARD_CORRECTED` | `AwardCorrected` | `title`, `titleUk`, `reviewer`, `fields` (names only) |
+| `REVIEW_OVERDUE` | `OverdueNoticed` | `count`, `oldestDeadline` |
+| `REVIEW_TAKEN_OVER` | `ReviewTakenOver` | `title`, `titleUk`, `reviewer` |
+| `ROLE_ASSIGNED`, `ROLE_REVOKED` | `RoleAssigned`, `RoleRevoked` | `role`, `organization`, `organizationUk`, `validTo` |
+| `DELEGATION_CREATED`, `DELEGATION_REVOKED` | `DelegationCreated`, `DelegationRevoked` (one row per recipient) | `role`, `organization`, `organizationUk`, `otherParty`, `validTo` |
 
 **Notification Channels** (`channel`):
 | Value | Description |
 |-------|-------------|
-| `IN_APP` | In-application notification |
-| `EMAIL` | Email delivery |
-| `SMS` | SMS delivery |
-| `PUSH` | Push notification |
+| `IN_APP` | In-application notification (written since 7.2.1) |
+| `EMAIL` | Email delivery log (7.2.3) |
+| `SMS` | Allowed by the check, not used |
+| `PUSH` | Allowed by the check, not used |
 
 **Indexes**:
 - `pk_notifications` - Primary key on `notification_id`
+- `uk_notifications_dedupe_key` - Unique on `dedupe_key`
+- `idx_notifications_user_channel_sent` - Composite on `(user_id, channel, sent_at DESC)` (notification centre list)
 - `idx_notifications_user` - B-tree on `user_id`
-- `idx_notifications_user_unread` - Partial for unread notifications
+- `idx_notifications_user_unread` - Partial on `(user_id, sent_at DESC)` for unread notifications
 - `idx_notifications_sent` - B-tree on `sent_at DESC`
 - `idx_notifications_reference` - Composite on `(reference_type, reference_id)`
+- `idx_notifications_expires` - Partial on `expires_at`
 
 **Relationships**:
-- BELONGS TO `users` (N:1) via `user_id`
+- BELONGS TO `users` (N:1) via `user_id`, `ON DELETE CASCADE`
 
 ---
 

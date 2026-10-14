@@ -9,11 +9,13 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
  * Overdue requests one reviewer of the next level hears about in one run of the overdue job, e-mailed once the
  * marks commit.
  *
- * @param email     the reviewer's address
- * @param name      the reviewer's full name
- * @param requests  the requests, oldest deadline first
+ * @param userId     the reviewer, null in events stored before it was carried
+ * @param email      the reviewer's address
+ * @param name       the reviewer's full name
+ * @param requests   the requests, oldest deadline first
+ * @param occurredAt the run time
  */
-public record OverdueNoticed(String email, String name, List<Item> requests) {
+public record OverdueNoticed(Long userId, String email, String name, List<Item> requests, Instant occurredAt) {
 
     public OverdueNoticed {
         requests = List.copyOf(requests);

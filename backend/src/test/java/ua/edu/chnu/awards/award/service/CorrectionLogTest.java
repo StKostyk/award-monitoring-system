@@ -6,7 +6,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +36,8 @@ class CorrectionLogTest {
     private final AuditService audit = mock(AuditService.class);
     private final ReviewerRule rule = mock(ReviewerRule.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final CorrectionLog log = new CorrectionLog(audit, rule, events);
+    private final CorrectionLog log = new CorrectionLog(audit, rule, events,
+        Clock.fixed(Instant.parse("2026-10-14T10:00:00Z"), ZoneOffset.UTC));
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", "Ірина",
         TestUsers.organization(TestUsers.DAI_DEPARTMENT_ID, OrganizationType.DEPARTMENT));
 
