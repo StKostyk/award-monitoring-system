@@ -32,7 +32,7 @@ public class RoleAssignmentRules {
     private static final LocalDate OPEN_ENDED = LocalDate.of(9999, 12, 31);
 
     private final UserRoleRepository userRoleRepository;
-    private final OrganizationLookup organizationRepository;
+    private final OrganizationLookup organizations;
     private final RoleOrganizations roleOrganizations;
     private final RoleLevels levels;
     private final AccessScope access;
@@ -69,7 +69,7 @@ public class RoleAssignmentRules {
      * @return the organisation
      */
     public Organization activeOrganization(long organizationId) {
-        return organizationRepository.findById(organizationId)
+        return organizations.findById(organizationId)
             .filter(Organization::isActive)
             .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
                 "Choose an active organisation"));

@@ -44,7 +44,7 @@ public class AuthorizationServerConfig {
     @Order(AUTHORIZATION_SERVER_ORDER)
     SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
                                                                OAuth2AuthorizationService authorizationService,
-                                                               UserAccounts userRepository,
+                                                               UserAccounts users,
                                                                StringRedisTemplate redisTemplate,
                                                                RegisteredClientRepository registeredClientRepository,
                                                                AuthorizationServerSettings settings,
@@ -62,7 +62,7 @@ public class AuthorizationServerConfig {
                         new PublicClientRefreshAuthenticationProvider(registeredClientRepository)))
                 .tokenEndpoint(token -> token.authenticationProviders(providers ->
                     providers.replaceAll(provider -> guardRefreshTokens(provider, authorizationService,
-                        userRepository, redisTemplate, properties)))))
+                        users, redisTemplate, properties)))))
             .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
             .cors(withDefaults())
             .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
@@ -78,11 +78,11 @@ public class AuthorizationServerConfig {
 
     private static AuthenticationProvider guardRefreshTokens(AuthenticationProvider provider,
                                                              OAuth2AuthorizationService authorizationService,
-                                                             UserAccounts userRepository,
+                                                             UserAccounts users,
                                                              StringRedisTemplate redisTemplate,
                                                              AuthProperties properties) {
         if (provider instanceof OAuth2RefreshTokenAuthenticationProvider) {
-            return new RefreshTokenReuseGuard(provider, authorizationService, userRepository, redisTemplate,
+            return new RefreshTokenReuseGuard(provider, authorizationService, users, redisTemplate,
                 properties.client().refreshTokenTtl());
         }
         return provider;

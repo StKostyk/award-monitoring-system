@@ -41,7 +41,7 @@ public class DelegationService implements LentAuthority {
     static final String PERMISSION_MANAGE_ALL = "user:manage";
 
     private final RoleDelegationRepository delegationRepository;
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
     private final DelegationRules rules;
     private final AccessScope access;
     private final AccountSessions sessions;
@@ -184,6 +184,6 @@ public class DelegationService implements LentAuthority {
 
     private User caller() {
         long id = access.callerId();
-        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        return users.findById(id).orElseThrow(() -> new UserNotFoundException(id));
     }
 }

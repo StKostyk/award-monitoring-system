@@ -18,12 +18,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccountStatusChecker implements UserDetailsChecker {
 
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
 
     @Override
     @Transactional(readOnly = true)
     public void check(UserDetails user) {
-        AccountStatus status = userRepository.findByEmailAddressIgnoreCase(user.getUsername())
+        AccountStatus status = users.findByEmailAddressIgnoreCase(user.getUsername())
             .map(User::getAccountStatus)
             .orElse(AccountStatus.ACTIVE);
         if (!status.canLogIn()) {

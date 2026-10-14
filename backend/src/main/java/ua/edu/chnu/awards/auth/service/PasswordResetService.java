@@ -31,7 +31,7 @@ public class PasswordResetService {
 
     static final String REQUEST_KEY_PREFIX = "auth:reset:";
 
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
     private final OneTimeTokenService tokens;
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;
@@ -53,7 +53,7 @@ public class PasswordResetService {
         if (!throttle.claimForTransaction(REQUEST_KEY_PREFIX + normalized, properties.resendInterval())) {
             return;
         }
-        userRepository.findByEmailAddressIgnoreCase(normalized)
+        users.findByEmailAddressIgnoreCase(normalized)
             .filter(user -> user.getAccountStatus() == AccountStatus.ACTIVE)
             .ifPresent(user -> {
                 String raw = tokens.issue(user, TokenPurpose.PASSWORD_RESET, properties.passwordResetTtl());

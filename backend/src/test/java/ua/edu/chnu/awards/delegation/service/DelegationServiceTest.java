@@ -53,9 +53,9 @@ class DelegationServiceTest {
     private static final long OTHER_FACULTY_ID = 10L;
 
     private final RoleDelegationRepository delegationRepository = mock(RoleDelegationRepository.class);
-    private final UserAccounts userRepository = mock(UserAccounts.class);
-    private final RoleHolders userRoleRepository = mock(RoleHolders.class);
-    private final OrganizationLookup organizationRepository = mock(OrganizationLookup.class);
+    private final UserAccounts users = mock(UserAccounts.class);
+    private final RoleHolders roleHolders = mock(RoleHolders.class);
+    private final OrganizationLookup organizations = mock(OrganizationLookup.class);
     private final AccessScope access = mock(AccessScope.class);
     private final AccountSessions revoker = mock(AccountSessions.class);
     private final DelegationRecorder recorder = mock(DelegationRecorder.class);
@@ -69,21 +69,21 @@ class DelegationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DelegationService(delegationRepository, userRepository,
-            new DelegationRules(delegationRepository, userRepository,
-                userRoleRepository, organizationRepository, access),
+        service = new DelegationService(delegationRepository, users,
+            new DelegationRules(delegationRepository, users,
+                roleHolders, organizations, access),
             access, revoker, new DelegationMapper(), recorder,
             Clock.fixed(Instant.parse("2026-09-24T09:00:00Z"), ZoneId.of("Europe/Kyiv")));
         when(access.callerId()).thenReturn(dean.getId());
         when(access.heldScopes()).thenReturn(List.of(new RoleScope(RoleType.DEAN, FACULTY_ID)));
         when(access.readableOrganizations()).thenReturn(Optional.of(Set.of(FACULTY_ID, DEPARTMENT_ID)));
         when(access.subtreeOf(FACULTY_ID)).thenReturn(Set.of(FACULTY_ID, DEPARTMENT_ID));
-        when(userRepository.findById(dean.getId())).thenReturn(Optional.of(dean));
-        when(userRepository.findById(secretary.getId())).thenReturn(Optional.of(secretary));
-        when(userRepository.findByIdForUpdate(secretary.getId())).thenReturn(Optional.of(secretary));
-        when(userRepository.findByIdForUpdate(dean.getId())).thenReturn(Optional.of(dean));
-        when(organizationRepository.findById(FACULTY_ID)).thenReturn(Optional.of(faculty));
-        when(userRoleRepository.findCurrentByUserId(anyLong(), any(LocalDate.class))).thenReturn(List.of(
+        when(users.findById(dean.getId())).thenReturn(Optional.of(dean));
+        when(users.findById(secretary.getId())).thenReturn(Optional.of(secretary));
+        when(users.findByIdForUpdate(secretary.getId())).thenReturn(Optional.of(secretary));
+        when(users.findByIdForUpdate(dean.getId())).thenReturn(Optional.of(dean));
+        when(organizations.findById(FACULTY_ID)).thenReturn(Optional.of(faculty));
+        when(roleHolders.findCurrentByUserId(anyLong(), any(LocalDate.class))).thenReturn(List.of(
             UserRole.builder().roleType(RoleType.FACULTY_SECRETARY).organization(faculty).build()));
         when(delegationRepository.findOverlapping(anyLong(), any(), anyLong(), any(), any()))
             .thenReturn(List.of());
@@ -156,7 +156,7 @@ class DelegationServiceTest {
             TODAY.plusDays(7))))).isEqualTo("delegation-bad-delegate");
 
         secretary.setAccountStatus(AccountStatus.ACTIVE);
-        when(userRoleRepository.findCurrentByUserId(anyLong(), any(LocalDate.class))).thenReturn(List.of(
+        when(roleHolders.findCurrentByUserId(anyLong(), any(LocalDate.class))).thenReturn(List.of(
             UserRole.builder().roleType(RoleType.FACULTY_SECRETARY)
                 .organization(organization(OTHER_FACULTY_ID, OrganizationType.FACULTY)).build()));
         assertThat(typeOf(() -> service.create(request(secretary.getId(), RoleType.DEAN, FACULTY_ID, TODAY,
@@ -165,7 +165,7 @@ class DelegationServiceTest {
 
     @Test
     void ac31_anUnknownOrForeignDelegateIsUnknown() {
-        when(userRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
+        when(users.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(request(99L, RoleType.DEAN, FACULTY_ID, TODAY,
             TODAY.plusDays(7))))
@@ -260,7 +260,7 @@ class DelegationServiceTest {
         RoleDelegation received = delegation(TODAY, TODAY.plusDays(7));
         when(delegationRepository.findStandingByDelegate(secretary.getId(), TODAY)).thenReturn(List.of(received));
         Organization elsewhere = organization(OTHER_FACULTY_ID, OrganizationType.FACULTY);
-        when(userRoleRepository.findCurrentByUserId(secretary.getId(), TODAY)).thenReturn(List.of(
+        when(roleHolders.findCurrentByUserId(secretary.getId(), TODAY)).thenReturn(List.of(
             UserRole.builder().roleType(RoleType.EMPLOYEE).organization(elsewhere).build()));
 
         service.revokeForMove(dean, secretary);
@@ -293,7 +293,7 @@ class DelegationServiceTest {
         RoleDelegation received = delegation(TODAY, TODAY.plusDays(7));
         when(delegationRepository.findStandingByDelegate(secretary.getId(), TODAY))
             .thenReturn(List.of(received));
-        when(userRoleRepository.findCurrentByUserId(secretary.getId(), TODAY)).thenReturn(List.of());
+        when(roleHolders.findCurrentByUserId(secretary.getId(), TODAY)).thenReturn(List.of());
         when(access.subtreeOf(FACULTY_ID)).thenReturn(Set.of(FACULTY_ID, DEPARTMENT_ID));
         UserRole assignment = UserRole.builder().user(secretary).roleType(RoleType.FACULTY_SECRETARY)
             .organization(faculty).validFrom(TODAY.minusDays(30)).build();

@@ -50,13 +50,13 @@ class PersonalDataAssemblerTest {
     private static final Instant NOW = Instant.parse("2026-09-30T09:00:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 9, 30);
 
-    private final RoleHolders roles = mock(RoleHolders.class);
+    private final RoleHolders roleHolders = mock(RoleHolders.class);
     private final DelegationLookup delegations = mock(DelegationLookup.class);
     private final AwardLookup awards = mock(AwardLookup.class);
     private final AwardVersionLookup versions = mock(AwardVersionLookup.class);
     private final DeviceLookup devices = mock(DeviceLookup.class);
     private final PersonalDataQueries queries = mock(PersonalDataQueries.class);
-    private final PersonalDataAssembler assembler = new PersonalDataAssembler(roles,
+    private final PersonalDataAssembler assembler = new PersonalDataAssembler(roleHolders,
         delegations, awards, versions,
         devices, queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
@@ -109,7 +109,7 @@ class PersonalDataAssemblerTest {
 
     @Test
     void ac32_rolesPastAndCurrentAreMarked() {
-        when(roles.findHistoryByUserId(5L)).thenReturn(List.of(
+        when(roleHolders.findHistoryByUserId(5L)).thenReturn(List.of(
             TestUsers.role(user, RoleType.EMPLOYEE, department, TODAY.minusYears(1), null),
             TestUsers.role(user, RoleType.DEAN, department, TODAY.minusYears(2), TODAY.minusYears(1))));
 

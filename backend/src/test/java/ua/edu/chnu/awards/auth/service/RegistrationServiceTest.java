@@ -48,9 +48,9 @@ class RegistrationServiceTest {
     private static final RegisterRequest VALID = new RegisterRequest("New.User@chnu.edu.ua", "correct-horse-battery",
         "Олена", "Нова", 64L);
 
-    private final UserAccounts userRepository = mock(UserAccounts.class);
-    private final RoleHolders userRoleRepository = mock(RoleHolders.class);
-    private final OrganizationLookup organizationRepository = mock(OrganizationLookup.class);
+    private final UserAccounts users = mock(UserAccounts.class);
+    private final RoleHolders roleHolders = mock(RoleHolders.class);
+    private final OrganizationLookup organizations = mock(OrganizationLookup.class);
     private final OneTimeTokenService tokens = mock(OneTimeTokenService.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final AfterCommit events = mock(AfterCommit.class);
@@ -67,13 +67,13 @@ class RegistrationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new RegistrationService(userRepository, userRoleRepository,
-            organizationRepository, tokens,
+        service = new RegistrationService(users, roleHolders,
+            organizations, tokens,
             new PasswordPolicy(), passwordEncoder, events, throttle, new EmailAddressRules(properties), properties,
             audit, new ManualConfirmation());
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
-        when(organizationRepository.findById(64L)).thenReturn(Optional.of(department));
-        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
+        when(organizations.findById(64L)).thenReturn(Optional.of(department));
+        when(users.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
             user.setId(42L);
             return user;
@@ -89,7 +89,7 @@ class RegistrationServiceTest {
         assertThat(response.status()).isEqualTo(AccountStatus.PENDING);
         assertThat(response.email()).isEqualTo("new.user@chnu.edu.ua");
         ArgumentCaptor<User> user = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).saveAndFlush(user.capture());
+        verify(users).saveAndFlush(user.capture());
         verify(throttle).claimForTransaction("auth:resend:new.user@chnu.edu.ua", Duration.ofMinutes(1));
         assertThat(user.getValue().getPasswordHash()).isEqualTo("$2a$12$hash");
         assertThat(user.getValue().getOrganization()).isSameAs(department);
@@ -104,14 +104,14 @@ class RegistrationServiceTest {
     void ac2_6_registrationGrantsNoRoleSoSomebodyMustConfirmTheMembership() {
         service.register(VALID);
 
-        verify(userRoleRepository, never()).save(any(UserRole.class));
+        verify(roleHolders, never()).save(any(UserRole.class));
     }
 
     @Test
     void ac2_6_aProvenMembershipWouldGrantTheEmployeeRoleAtOnce() {
-        RegistrationService proven = new RegistrationService(userRepository,
-            userRoleRepository,
-            organizationRepository, tokens, new PasswordPolicy(), passwordEncoder, events,
+        RegistrationService proven = new RegistrationService(users,
+            roleHolders,
+            organizations, tokens, new PasswordPolicy(), passwordEncoder, events,
             throttle,
             new EmailAddressRules(properties), properties, audit, (user, where) -> Optional.of(UserRole.builder()
                 .user(user).roleType(RoleType.EMPLOYEE).organization(where).validFrom(LocalDate.of(2026, 9, 21))
@@ -120,7 +120,7 @@ class RegistrationServiceTest {
         proven.register(VALID);
 
         ArgumentCaptor<UserRole> role = ArgumentCaptor.forClass(UserRole.class);
-        verify(userRoleRepository).save(role.capture());
+        verify(roleHolders).save(role.capture());
         assertThat(role.getValue().getRoleType()).isEqualTo(RoleType.EMPLOYEE);
         assertThat(role.getValue().getOrganization()).isSameAs(department);
     }
@@ -131,7 +131,7 @@ class RegistrationServiceTest {
             .lastName("Назва").passwordHash("$2a$12$old").accountStatus(AccountStatus.PENDING)
             .organization(Organization.builder().id(65L).orgType(OrganizationType.DEPARTMENT).active(true).build())
             .build();
-        when(userRepository.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(abandoned));
+        when(users.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(abandoned));
         when(tokens.countUsable(abandoned, TokenPurpose.EMAIL_VERIFICATION)).thenReturn(0L);
 
         RegistrationResponse response = service.register(VALID);
@@ -141,7 +141,7 @@ class RegistrationServiceTest {
         assertThat(abandoned.getPasswordHash()).isEqualTo("$2a$12$hash");
         assertThat(abandoned.getOrganization()).isSameAs(department);
         verify(tokens).invalidate(abandoned, TokenPurpose.EMAIL_VERIFICATION);
-        verify(userRepository, never()).saveAndFlush(any(User.class));
+        verify(users, never()).saveAndFlush(any(User.class));
         verify(audit).record(AuditAction.REGISTRATION_REPLACED, 7L, Map.of("organizationId", 64L));
     }
 
@@ -149,7 +149,7 @@ class RegistrationServiceTest {
     void ac2_8_pendingAccountWithAUsableLinkKeepsTheAddress() {
         User pending = User.builder().id(7L).emailAddress("new.user@chnu.edu.ua")
             .accountStatus(AccountStatus.PENDING).build();
-        when(userRepository.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(pending));
+        when(users.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(pending));
         when(tokens.countUsable(pending, TokenPurpose.EMAIL_VERIFICATION)).thenReturn(1L);
 
         assertThatThrownBy(() -> service.register(VALID))
@@ -168,12 +168,12 @@ class RegistrationServiceTest {
                 assertThat(e.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
                 assertThat(e.getType()).isEqualTo("institutional-email-required");
             });
-        verify(userRepository, never()).saveAndFlush(any());
+        verify(users, never()).saveAndFlush(any());
     }
 
     @Test
     void ac23_existingAddressIsAConflict() {
-        when(userRepository.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(
+        when(users.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(
             User.builder().id(7L).accountStatus(AccountStatus.ACTIVE).build()));
 
         assertThatThrownBy(() -> service.register(VALID))
@@ -185,7 +185,7 @@ class RegistrationServiceTest {
 
     @Test
     void ac23_concurrentRegistrationLosingTheRaceIsAConflictToo() {
-        when(userRepository.saveAndFlush(any(User.class)))
+        when(users.saveAndFlush(any(User.class)))
             .thenThrow(new DataIntegrityViolationException("uk_users_email_lower"));
 
         assertThatThrownBy(() -> service.register(VALID))
@@ -194,9 +194,9 @@ class RegistrationServiceTest {
 
     @Test
     void ac24_facultyOrInactiveOrganisationIsRefused() {
-        when(organizationRepository.findById(9L)).thenReturn(Optional.of(
+        when(organizations.findById(9L)).thenReturn(Optional.of(
             Organization.builder().id(9L).orgType(OrganizationType.FACULTY).active(true).build()));
-        when(organizationRepository.findById(65L)).thenReturn(Optional.of(
+        when(organizations.findById(65L)).thenReturn(Optional.of(
             Organization.builder().id(65L).orgType(OrganizationType.DEPARTMENT).active(false).build()));
 
         for (long id : new long[] {9L, 65L, 999L}) {
@@ -289,7 +289,7 @@ class RegistrationServiceTest {
         when(throttle.claimForTransaction("auth:resend:x@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true, false);
         User pending = User.builder().id(1L).emailAddress("x@chnu.edu.ua").firstName("A")
             .accountStatus(AccountStatus.PENDING).build();
-        when(userRepository.findByEmailAddressIgnoreCase("x@chnu.edu.ua")).thenReturn(Optional.of(pending));
+        when(users.findByEmailAddressIgnoreCase("x@chnu.edu.ua")).thenReturn(Optional.of(pending));
 
         service.resend("x@chnu.edu.ua");
         verify(events).publish(any(VerificationRequested.class));
@@ -299,7 +299,7 @@ class RegistrationServiceTest {
                 e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
 
         when(throttle.claimForTransaction("auth:resend:ghost@chnu.edu.ua", Duration.ofMinutes(1))).thenReturn(true);
-        when(userRepository.findByEmailAddressIgnoreCase("ghost@chnu.edu.ua")).thenReturn(Optional.empty());
+        when(users.findByEmailAddressIgnoreCase("ghost@chnu.edu.ua")).thenReturn(Optional.empty());
         service.resend("ghost@chnu.edu.ua");
         verify(events).publish(any(VerificationRequested.class));
     }

@@ -39,9 +39,9 @@ public class RegistrationService {
 
     static final String RESEND_KEY_PREFIX = "auth:resend:";
 
-    private final UserAccounts userRepository;
-    private final RoleHolders userRoleRepository;
-    private final OrganizationLookup organizationRepository;
+    private final UserAccounts users;
+    private final RoleHolders roleHolders;
+    private final OrganizationLookup organizations;
     private final OneTimeTokenService tokens;
     private final PasswordPolicy passwordPolicy;
     private final PasswordEncoder passwordEncoder;
@@ -64,15 +64,15 @@ public class RegistrationService {
         addressRules.requireInstitutional(email,
             "Registration is open to institutional addresses only; ask your faculty secretary for help");
         passwordPolicy.require(request.password());
-        Organization department = organizationRepository.findById(request.organizationId())
+        Organization department = organizations.findById(request.organizationId())
             .filter(org -> org.getOrgType() == OrganizationType.DEPARTMENT && org.isActive())
             .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
                 "Choose an active department"));
-        User user = userRepository.findByEmailAddressIgnoreCase(email)
+        User user = users.findByEmailAddressIgnoreCase(email)
             .map(existing -> replaceAbandoned(existing, request, department))
             .orElseGet(() -> create(email, request, department));
 
-        membership.confirm(user, department).ifPresent(userRoleRepository::save);
+        membership.confirm(user, department).ifPresent(roleHolders::save);
         throttle.claimForTransaction(RESEND_KEY_PREFIX + email, properties.resendInterval());
         sendVerification(user);
         return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
@@ -80,7 +80,7 @@ public class RegistrationService {
 
     private User create(String email, RegisterRequest request, Organization department) {
         try {
-            return userRepository.saveAndFlush(User.builder()
+            return users.saveAndFlush(User.builder()
                 .emailAddress(email)
                 .firstName(request.firstName().trim())
                 .lastName(request.lastName().trim())
@@ -152,7 +152,7 @@ public class RegistrationService {
             throw ApiProblemException.tooManyRequests("A verification email was sent recently; try again in a minute",
                 properties.resendInterval().toSeconds());
         }
-        userRepository.findByEmailAddressIgnoreCase(normalized)
+        users.findByEmailAddressIgnoreCase(normalized)
             .filter(user -> user.getAccountStatus() == AccountStatus.PENDING)
             .ifPresent(this::sendVerification);
     }

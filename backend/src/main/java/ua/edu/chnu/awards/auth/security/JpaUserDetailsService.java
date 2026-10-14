@@ -21,12 +21,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JpaUserDetailsService implements UserDetailsService {
 
-    private final UserAccounts userRepository;
+    private final UserAccounts users;
 
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) {
-        return userRepository.findByEmailAddressIgnoreCase(username)
+        return users.findByEmailAddressIgnoreCase(username)
             .map(user -> User.withUsername(user.getEmailAddress())
                 .password(user.getPasswordHash())
                 .authorities(List.of())

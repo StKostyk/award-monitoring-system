@@ -42,9 +42,9 @@ public class DelegationRules {
     private static final long MAX_DAYS = 90;
 
     private final RoleDelegationRepository delegationRepository;
-    private final UserAccounts userRepository;
-    private final RoleHolders userRoleRepository;
-    private final OrganizationLookup organizationRepository;
+    private final UserAccounts users;
+    private final RoleHolders roleHolders;
+    private final OrganizationLookup organizations;
     private final AccessScope access;
 
     /**
@@ -55,7 +55,7 @@ public class DelegationRules {
      * @throws ApiProblemException otherwise
      */
     public Organization activeOrganization(long organizationId) {
-        return organizationRepository.findById(organizationId)
+        return organizations.findById(organizationId)
             .filter(Organization::isActive)
             .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
                 "Choose an active organisation"));
@@ -108,13 +108,13 @@ public class DelegationRules {
      * @throws ApiProblemException   when the delegate cannot hold the borrowed authority
      */
     public User eligibleDelegate(long delegateId, User delegator, Organization organization, LocalDate today) {
-        User delegate = userRepository.findByIdForUpdate(delegateId)
+        User delegate = users.findByIdForUpdate(delegateId)
             .filter(found -> found.getAccountStatus().isListed())
             .filter(found -> access.readableOrganizations()
                 .map(ids -> ids.contains(found.getOrganization().getId())).orElse(true))
             .orElseThrow(() -> new UserNotFoundException(delegateId));
         Set<Long> subtree = access.subtreeOf(organization.getId());
-        boolean member = userRoleRepository.findCurrentByUserId(delegateId, today).stream()
+        boolean member = roleHolders.findCurrentByUserId(delegateId, today).stream()
             .anyMatch(role -> subtree.contains(role.getOrganization().getId()));
         if (delegate.getId().equals(delegator.getId()) || delegate.getAccountStatus() != AccountStatus.ACTIVE
             || !member) {
@@ -152,12 +152,12 @@ public class DelegationRules {
         if (received.isEmpty()) {
             return List.of();
         }
-        Set<Long> organizations = userRoleRepository.findCurrentByUserId(holder.getId(), today).stream()
+        Set<Long> heldOrganizations = roleHolders.findCurrentByUserId(holder.getId(), today).stream()
             .map(role -> role.getOrganization().getId())
             .collect(Collectors.toSet());
         return received.stream()
             .filter(delegation -> access.subtreeOf(delegation.getOrganization().getId()).stream()
-                .noneMatch(organizations::contains))
+                .noneMatch(heldOrganizations::contains))
             .toList();
     }
 

@@ -39,9 +39,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
 
-    private final UserAccounts userRepository;
-    private final RoleHolders userRoleRepository;
-    private final DelegationLookup delegationRepository;
+    private final UserAccounts users;
+    private final RoleHolders roleHolders;
+    private final DelegationLookup delegations;
     private final RolePermissions rolePermissions;
     private final Clock clock;
 
@@ -54,11 +54,11 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             return;
         }
         String email = context.getPrincipal().getName();
-        User user = userRepository.findByEmailAddressIgnoreCase(email)
+        User user = users.findByEmailAddressIgnoreCase(email)
             .orElseThrow(() -> new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT));
         LocalDate today = LocalDate.now(clock);
-        List<UserRole> assignments = userRoleRepository.findCurrentByUserId(user.getId(), today);
-        List<RoleDelegation> borrowed = delegationRepository.findCurrentByDelegateId(user.getId(), today);
+        List<UserRole> assignments = roleHolders.findCurrentByUserId(user.getId(), today);
+        List<RoleDelegation> borrowed = delegations.findCurrentByDelegateId(user.getId(), today);
         List<RoleType> roles = assignments.stream()
             .map(UserRole::getRoleType)
             .distinct()
@@ -70,7 +70,7 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             .sorted()
             .toList();
         Set<String> scopes = new TreeSet<>(held);
-        List<String> delegations = borrowed.stream()
+        List<String> delegationKeys = borrowed.stream()
             .map(TokenClaimsCustomizer::toClaim)
             .distinct()
             .sorted()
@@ -84,7 +84,7 @@ public class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             claims.put(TokenClaimConstants.CLAIM_ROLES, new ArrayList<>(roles.stream().map(Enum::name).toList()));
             claims.put(TokenClaimConstants.CLAIM_ROLE_SCOPES, new ArrayList<>(scopes));
             claims.put(TokenClaimConstants.CLAIM_HELD_SCOPES, new ArrayList<>(held));
-            claims.put(TokenClaimConstants.CLAIM_DELEGATIONS, new ArrayList<>(delegations));
+            claims.put(TokenClaimConstants.CLAIM_DELEGATIONS, new ArrayList<>(delegationKeys));
             claims.put(TokenClaimConstants.CLAIM_ORG_ID, String.valueOf(user.getOrganization().getId()));
             claims.put(TokenClaimConstants.CLAIM_ORG_TYPE, user.getOrganization().getOrgType().name());
             if (accessToken) {
