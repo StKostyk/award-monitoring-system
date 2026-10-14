@@ -1,18 +1,25 @@
-package ua.edu.chnu.awards.award.service;
+package ua.edu.chnu.awards.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.AwardDecided;
+import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 
 class DecisionMailsTest {
 
@@ -20,7 +27,13 @@ class DecisionMailsTest {
 
     private final MailDelivery delivery = mock(MailDelivery.class);
     private final AwardLinks links = mock(AwardLinks.class);
-    private final DecisionMails mails = new DecisionMails(delivery, links);
+    private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
+    private final DecisionMails mails = new DecisionMails(delivery, links, preferences);
+
+    @BeforeEach
+    void allowEveryChannel() {
+        when(preferences.allows(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     void ac2_10_theOwnerGetsOneMessageWithALinkToTheAward() {
@@ -38,6 +51,17 @@ class DecisionMailsTest {
             ApprovalLevel.DEAN, "Аліна Мартинюк", null, null));
 
         verify(delivery, never()).send(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void ac3_5_noMessageIfTheOwnerSwitchedTheseMailsOff() {
+        when(preferences.allows(21L, NotificationType.AWARD_REJECTED, NotificationChannel.EMAIL)).thenReturn(false);
+
+        mails.onDecided(event(RequestStatus.REJECTED, ApprovalLevel.DEAN, null));
+        mails.onDecided(event(RequestStatus.APPROVED, ApprovalLevel.DEAN, null));
+
+        verify(delivery).send(eq("employee@chnu.edu.ua"), eq("Нагороду затверджено / Award approved"), anyString());
+        verify(delivery, never()).send(anyString(), eq("Нагороду відхилено / Award rejected"), anyString());
     }
 
     @Test

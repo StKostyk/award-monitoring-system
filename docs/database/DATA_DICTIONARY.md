@@ -808,7 +808,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 |-------|-------------|----------|
 | `DATA_PROCESSING` | General data processing agreement | Yes |
 | `PUBLIC_VISIBILITY` | Not used: the choice is per award (`awards.visibility`, recorded by `AWARD_VISIBILITY_CHANGED`, 4.3.1) | - |
-| `EMAIL_NOTIFICATIONS` | Receive email notifications | No |
+| `EMAIL_NOTIFICATIONS` | Not used: e-mail is chosen per notification type in `notification_preferences` (1.3.2) | - |
 | `SMS_NOTIFICATIONS` | Receive SMS notifications | No |
 | `ANALYTICS` | Allow usage analytics | No |
 
@@ -888,13 +888,18 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 ### 5.2 Entity: `notification_preferences`
 
-**Description**: User preferences for notification delivery channels by event type.
+**Description**: A person's e-mail and in-app choice per notification type; the one store of notification
+preferences (`consent_records.EMAIL_NOTIFICATIONS` is not used).
 
 **Business Rules**:
-- Default preferences created on user registration
-- Users can modify preferences at any time
-- At least one channel must be enabled for mandatory notifications
-- Preferences respected by notification service
+- No rows are created at registration: a type without a row is on for both channels
+- `PUT /api/v1/users/me/notification-preferences` upserts the listed types; unlisted types keep their state
+- Every type keeps at least one channel (`both-off` is refused)
+- The mail and in-app listeners read the row when they send, so a change applies to the next notification
+- An effective change writes one `NOTIFICATION_PREFERENCES_CHANGED` audit row with the old and new channels of the
+  changed types
+- Security and privacy mails (sign-in, password, e-mail change, erasure, export) have no preference
+- `sms_enabled` and `push_enabled` are not used and stay `FALSE`
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -902,9 +907,9 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `user_id` | `BIGINT` | NO | - | FK→users | User owning preference |
 | `event_type` | `VARCHAR(50)` | NO | - | CK | Notification event type |
 | `email_enabled` | `BOOLEAN` | NO | `TRUE` | - | Email channel enabled |
-| `sms_enabled` | `BOOLEAN` | NO | `FALSE` | - | SMS channel enabled |
+| `sms_enabled` | `BOOLEAN` | NO | `FALSE` | - | Not used |
 | `in_app_enabled` | `BOOLEAN` | NO | `TRUE` | - | In-app channel enabled |
-| `push_enabled` | `BOOLEAN` | NO | `FALSE` | - | Push notification enabled |
+| `push_enabled` | `BOOLEAN` | NO | `FALSE` | - | Not used |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 

@@ -25,6 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
+import ua.edu.chnu.awards.notification.TakeOverMails;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;

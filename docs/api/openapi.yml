@@ -1751,11 +1751,10 @@ paths:
   /users/me/notification-preferences:
     get:
       tags: [Notifications]
-      summary: The caller's notification channels per type (planned, 1.3.2)
+      summary: The caller's notification channels per type
       description: >
         Every notification type with its e-mail and in-app choice; a type never changed is on for both channels.
         Security and privacy mails have no preference and are always sent (1.3.2).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: getNotificationPreferences
@@ -1771,12 +1770,11 @@ paths:
 
     put:
       tags: [Notifications]
-      summary: Change the caller's notification channels (planned, 1.3.2)
+      summary: Change the caller's notification channels
       description: >
         Stores the listed types; types not listed keep their state. Each type keeps at least one channel. An
         effective change writes `NOTIFICATION_PREFERENCES_CHANGED` to the audit log with the old and new values of
         the changed types; a request that changes nothing writes no row (1.3.2).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: updateNotificationPreferences
@@ -1798,7 +1796,8 @@ paths:
         '422':
           description: >
             `urn:awards:problem:validation-failed`; `errors[]` names the entry with `both-off` (no channel left),
-            `invalid` (unknown type) or `duplicate` (type listed twice)
+            `required` (a channel missing), `invalid` (unknown type) or `duplicate` (type listed twice); nothing
+            is stored
           content:
             application/problem+json:
               schema:
@@ -2885,7 +2884,9 @@ components:
     UserUpdateRequest:
       type: object
       additionalProperties: false
-      description: Notification preferences join this request with the notification channels (Epic 7)
+      description: >
+        The caller's names; notification channels have their own resource,
+        `/users/me/notification-preferences`
       properties:
         firstName:
           type: string
@@ -3166,7 +3167,7 @@ components:
 
     NotificationPreferences:
       type: object
-      description: Channels per notification type (planned, 1.3.2)
+      description: Channels per notification type; all types in a response, the types to change in a request
       required: [preferences]
       properties:
         preferences:

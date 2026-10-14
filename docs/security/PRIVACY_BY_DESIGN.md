@@ -329,7 +329,7 @@ public class NotificationService {
 |------------------|-------------|--------------|-----------------|----------------------|
 | `DATA_PROCESSING` | Basic system use | Yes | Binary | Account deletion |
 | `PUBLIC_VISIBILITY` | Award public display | Yes | Binary | Awards hidden |
-| `EMAIL_NOTIFICATIONS` | Email alerts | No | Per-type | No emails sent |
+| `EMAIL_NOTIFICATIONS` | Not used: e-mail and in-app are chosen per notification type in `notification_preferences` (1.3.2); security and privacy mails are always sent | - | - | - |
 | `SMS_NOTIFICATIONS` | SMS alerts | No | Binary | No SMS sent |
 | `DOCUMENT_AI_PROCESSING` | AI metadata extraction | No | Per-document | Manual entry only |
 | `ANALYTICS` | Usage analytics | No | Binary | Excluded from analytics |
@@ -428,7 +428,6 @@ public class ConsentManagementService {
     private void handleConsentWithdrawal(Long userId, ConsentType consentType) {
         switch (consentType) {
             case PUBLIC_VISIBILITY -> awardService.hideUserAwards(userId);
-            case EMAIL_NOTIFICATIONS -> notificationService.disableEmail(userId);
             case SMS_NOTIFICATIONS -> notificationService.disableSms(userId);
             case DOCUMENT_AI_PROCESSING -> documentService.disableAiProcessing(userId);
             case ANALYTICS -> analyticsService.excludeUser(userId);

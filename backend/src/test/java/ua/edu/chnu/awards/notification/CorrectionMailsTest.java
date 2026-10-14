@@ -1,6 +1,7 @@
-package ua.edu.chnu.awards.award.service;
+package ua.edu.chnu.awards.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -9,18 +10,38 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.award.event.AwardCorrected;
+import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 
 class CorrectionMailsTest {
+
+    @Test
+    void ac3_5_noMessageIfTheOwnerSwitchedTheseMailsOff() {
+        when(preferences.allows(21L, NotificationType.AWARD_CORRECTED, NotificationChannel.EMAIL)).thenReturn(false);
+
+        mails.onCorrected(event("employee@chnu.edu.ua"));
+
+        verify(delivery, never()).send(anyString(), anyString(), anyString());
+    }
 
     private static final String LINK = "http://localhost:4200/awards/5";
 
     private final MailDelivery delivery = mock(MailDelivery.class);
     private final AwardLinks links = mock(AwardLinks.class);
-    private final CorrectionMails mails = new CorrectionMails(delivery, links);
+    private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
+    private final CorrectionMails mails = new CorrectionMails(delivery, links, preferences);
+
+    @BeforeEach
+    void allowEveryChannel() {
+        when(preferences.allows(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     void ac3_5_theOwnerGetsOneMessageWithALinkToTheAward() {

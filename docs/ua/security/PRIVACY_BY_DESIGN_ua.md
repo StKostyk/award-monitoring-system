@@ -329,7 +329,7 @@ public class NotificationService {
 |---------------|----------|-----------------|-------------------|----------------------|
 | `DATA_PROCESSING` | Базове використання системи | Так | Бінарна | Видалення акаунту |
 | `PUBLIC_VISIBILITY` | Публічне відображення нагород | Так | Бінарна | Нагороди приховані |
-| `EMAIL_NOTIFICATIONS` | Email сповіщення | Ні | За типом | Не надсилаються emails |
+| `EMAIL_NOTIFICATIONS` | Не використовується: e-mail і сповіщення в застосунку обираються для кожного типу в `notification_preferences` (1.3.2); листи безпеки та конфіденційності надсилаються завжди | - | - | - |
 | `SMS_NOTIFICATIONS` | SMS сповіщення | Ні | Бінарна | Не надсилаються SMS |
 | `DOCUMENT_AI_PROCESSING` | AI витяг метаданих | Ні | За документом | Лише ручне введення |
 | `ANALYTICS` | Аналітика використання | Ні | Бінарна | Виключено з аналітики |
@@ -425,7 +425,6 @@ public class ConsentManagementService {
     private void handleConsentWithdrawal(Long userId, ConsentType consentType) {
         switch (consentType) {
             case PUBLIC_VISIBILITY -> awardService.hideUserAwards(userId);
-            case EMAIL_NOTIFICATIONS -> notificationService.disableEmail(userId);
             case SMS_NOTIFICATIONS -> notificationService.disableSms(userId);
             case DOCUMENT_AI_PROCESSING -> documentService.disableAiProcessing(userId);
             case ANALYTICS -> analyticsService.excludeUser(userId);

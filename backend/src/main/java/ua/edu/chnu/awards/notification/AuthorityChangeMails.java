@@ -11,13 +11,17 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * Tells users about granted and revoked roles and delegations after the change commits.
+ * Tells users about granted and revoked roles and delegations after the change commits, unless they switched
+ * the mails of that type off.
  */
 @Component
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class AuthorityChangeMails {
     private static final String IN_EN = " in ";
 
     private final MailDelivery delivery;
+    private final NotificationPreferenceService preferences;
 
     /**
      * Tells the holder which role was granted, where and for how long.
@@ -36,7 +41,8 @@ public class AuthorityChangeMails {
     @Async
     @TransactionalEventListener
     public void onRoleAssigned(RoleAssigned event) {
-        delivery.send(event.email(), "Роль призначено / Role assigned", roleAssignedBody(event));
+        send(event.userId(), NotificationType.ROLE_ASSIGNED, event.email(), "Роль призначено / Role assigned",
+            roleAssignedBody(event));
     }
 
     /**
@@ -47,7 +53,8 @@ public class AuthorityChangeMails {
     @Async
     @TransactionalEventListener
     public void onRoleRevoked(RoleRevoked event) {
-        delivery.send(event.email(), "Роль відкликано / Role revoked", roleRevokedBody(event));
+        send(event.userId(), NotificationType.ROLE_REVOKED, event.email(), "Роль відкликано / Role revoked",
+            roleRevokedBody(event));
     }
 
     /**
@@ -58,7 +65,8 @@ public class AuthorityChangeMails {
     @Async
     @TransactionalEventListener
     public void onDelegationCreated(DelegationCreated event) {
-        delivery.send(event.email(), "Делеговано повноваження / Authority delegated", delegationCreatedBody(event));
+        send(event.userId(), NotificationType.DELEGATION_CREATED, event.email(),
+            "Делеговано повноваження / Authority delegated", delegationCreatedBody(event));
     }
 
     /**
@@ -70,8 +78,14 @@ public class AuthorityChangeMails {
     @TransactionalEventListener
     public void onDelegationRevoked(DelegationRevoked event) {
         String text = delegationRevokedBody(event);
-        event.recipients().forEach(recipient ->
-            delivery.send(recipient.email(), "Делегування відкликано / Delegation revoked", text));
+        event.recipients().forEach(recipient -> send(recipient.userId(), NotificationType.DELEGATION_REVOKED,
+            recipient.email(), "Делегування відкликано / Delegation revoked", text));
+    }
+
+    private void send(Long userId, NotificationType type, String email, String subject, String body) {
+        if (preferences.allows(userId, type, NotificationChannel.EMAIL)) {
+            delivery.send(email, subject, body);
+        }
     }
 
     static String roleAssignedBody(RoleAssigned event) {

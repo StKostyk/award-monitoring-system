@@ -43,8 +43,8 @@ fix stories if chosen).
 | 2 | 7.1.2 Module boundaries checked by Spring Modulith | 7.1 | 8 | SCRUM-65 | #182 | no | Done |
 | 2a | 7.1.3 Drop the duplicate async error log for undelivered mails | 7.1 | 1 | SCRUM-75 | #197 | no | Done |
 | 3 | 7.2.1 In-app notifications from award and review events | 7.2 | 5 | SCRUM-66 | #183 | no | Done |
-| 4 | 7.2.2 Notification centre in the toolbar | 7.2 | 5 | SCRUM-67 | #184 | yes | In review |
-| 5 | 1.3.2 Notification preferences | 7.2 | 3 | SCRUM-16 | #39 | yes | Planned |
+| 4 | 7.2.2 Notification centre in the toolbar | 7.2 | 5 | SCRUM-67 | #184 | yes | Done |
+| 5 | 1.3.2 Notification preferences | 7.2 | 3 | SCRUM-16 | #39 | yes | In progress |
 | 6 | 7.2.3 Delivery log and notifications in the personal data export | 7.2 | 3 | SCRUM-68 | #185 | no | Planned |
 | 7 | 7.2.4 HTML e-mail templates in the university brand | 7.2 | 3 | SCRUM-69 | #186 | no | Planned |
 

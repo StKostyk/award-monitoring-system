@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -23,6 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.AwardDecided;
+import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.repository.NewNotification;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -38,8 +41,15 @@ class InAppNotificationsTest {
 
     private final NotificationRepository repository = mock(NotificationRepository.class);
     private final UserAccounts users = mock(UserAccounts.class);
+    private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
     private final InAppNotifications notifications = new InAppNotifications(new NotificationDrafts(),
-        new NotificationKeys(), repository, users, new ObjectMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
+        new NotificationKeys(), repository, users, new ObjectMapper(), Clock.fixed(NOW, ZoneOffset.UTC),
+        preferences);
+
+    @BeforeEach
+    void allowEveryChannel() {
+        when(preferences.allows(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     void ac1_2_aRowIsWrittenForTheRecipientWithAYearOfRetention() {
@@ -56,6 +66,16 @@ class InAppNotificationsTest {
                 Instant.parse("2027-10-14T10:00:00Z"));
         assertThat(row.getValue().payload()).contains("\"title\":\"Certificate\"", "\"level\":\"DEAN\"");
         assertThat(row.getValue().dedupeKey()).hasSize(64);
+    }
+
+    @Test
+    void ac3_5_noRowIfTheRecipientSwitchedInAppOffForTheType() {
+        when(users.findById(7L)).thenReturn(Optional.of(TestUsers.person(7L, EMAIL)));
+        when(preferences.allows(7L, NotificationType.AWARD_APPROVED, NotificationChannel.IN_APP)).thenReturn(false);
+
+        notifications.onAwardDecided(decided(7L, AT));
+
+        verify(repository, never()).insertOnce(any());
     }
 
     @Test
@@ -97,7 +117,7 @@ class InAppNotificationsTest {
         when(broken.writeValueAsString(any())).thenThrow(mock(JsonProcessingException.class));
         when(users.findById(7L)).thenReturn(Optional.of(TestUsers.person(7L, EMAIL)));
         InAppNotifications failing = new InAppNotifications(new NotificationDrafts(), new NotificationKeys(),
-            repository, users, broken, Clock.fixed(NOW, ZoneOffset.UTC));
+            repository, users, broken, Clock.fixed(NOW, ZoneOffset.UTC), preferences);
 
         assertThatThrownBy(() -> failing.onAwardDecided(decided(7L, AT))).isInstanceOf(IllegalStateException.class);
     }
