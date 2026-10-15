@@ -21,6 +21,8 @@ import org.mockito.ArgumentCaptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.AwardDecided;
@@ -42,9 +44,11 @@ class InAppNotificationsTest {
     private final NotificationRepository repository = mock(NotificationRepository.class);
     private final UserAccounts users = mock(UserAccounts.class);
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
+    private final DeliveryMetrics metrics = new DeliveryMetrics(registry);
     private final InAppNotifications notifications = new InAppNotifications(new NotificationDrafts(),
-        new NotificationKeys(), repository, users, new ObjectMapper(), Clock.fixed(NOW, ZoneOffset.UTC),
-        preferences);
+        new NotificationRows(new NotificationKeys(), new ObjectMapper(), Clock.fixed(NOW, ZoneOffset.UTC)),
+        repository, users, preferences, metrics);
 
     @BeforeEach
     void allowEveryChannel() {
@@ -116,8 +120,9 @@ class InAppNotificationsTest {
         ObjectMapper broken = mock(ObjectMapper.class);
         when(broken.writeValueAsString(any())).thenThrow(mock(JsonProcessingException.class));
         when(users.findById(7L)).thenReturn(Optional.of(TestUsers.person(7L, EMAIL)));
-        InAppNotifications failing = new InAppNotifications(new NotificationDrafts(), new NotificationKeys(),
-            repository, users, broken, Clock.fixed(NOW, ZoneOffset.UTC), preferences);
+        InAppNotifications failing = new InAppNotifications(new NotificationDrafts(),
+            new NotificationRows(new NotificationKeys(), broken, Clock.fixed(NOW, ZoneOffset.UTC)), repository, users,
+            preferences, metrics);
 
         assertThatThrownBy(() -> failing.onAwardDecided(decided(7L, AT))).isInstanceOf(IllegalStateException.class);
     }

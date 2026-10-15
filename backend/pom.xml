@@ -278,7 +278,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-          <argLine>@{surefireArgLine}</argLine>
+          <argLine>@{surefireArgLine} -Xmx1536m</argLine>
           <includes>
             <include>**/*Test.java</include>
             <include>**/*Tests.java</include>
@@ -300,7 +300,7 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>${maven-failsafe-plugin.version}</version>
         <configuration>
-          <argLine>@{failsafeArgLine}</argLine>
+          <argLine>@{failsafeArgLine} -Xmx2g</argLine>
           <includes>
             <include>**/*IT.java</include>
             <include>**/*FT.java</include>

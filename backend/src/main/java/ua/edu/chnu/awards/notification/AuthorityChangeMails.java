@@ -4,16 +4,17 @@ import static ua.edu.chnu.awards.common.mail.MailTextHelper.SEPARATOR;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloEn;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloUk;
 
+import java.util.List;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
-import ua.edu.chnu.awards.notification.entity.NotificationChannel;
-import ua.edu.chnu.awards.notification.entity.NotificationType;
-import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
+import ua.edu.chnu.awards.notification.service.DeliveryLog;
+import ua.edu.chnu.awards.notification.service.NotificationDraft;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
@@ -30,8 +31,8 @@ public class AuthorityChangeMails {
     private static final String IN_ORGANIZATION = "» у підрозділі «";
     private static final String IN_EN = " in ";
 
-    private final MailDelivery delivery;
-    private final NotificationPreferenceService preferences;
+    private final DeliveryLog deliveries;
+    private final NotificationDrafts drafts;
 
     /**
      * Tells the holder which role was granted, where and for how long.
@@ -41,8 +42,7 @@ public class AuthorityChangeMails {
     @Async
     @TransactionalEventListener
     public void onRoleAssigned(RoleAssigned event) {
-        send(event.userId(), NotificationType.ROLE_ASSIGNED, event.email(), "Роль призначено / Role assigned",
-            roleAssignedBody(event));
+        deliveries.send(drafts.of(event), event.email(), "Роль призначено / Role assigned", roleAssignedBody(event));
     }
 
     /**
@@ -53,8 +53,7 @@ public class AuthorityChangeMails {
     @Async
     @TransactionalEventListener
     public void onRoleRevoked(RoleRevoked event) {
-        send(event.userId(), NotificationType.ROLE_REVOKED, event.email(), "Роль відкликано / Role revoked",
-            roleRevokedBody(event));
+        deliveries.send(drafts.of(event), event.email(), "Роль відкликано / Role revoked", roleRevokedBody(event));
     }
 
     /**
@@ -65,8 +64,8 @@ public class AuthorityChangeMails {
     @Async
     @TransactionalEventListener
     public void onDelegationCreated(DelegationCreated event) {
-        send(event.userId(), NotificationType.DELEGATION_CREATED, event.email(),
-            "Делеговано повноваження / Authority delegated", delegationCreatedBody(event));
+        deliveries.send(drafts.of(event), event.email(), "Делеговано повноваження / Authority delegated",
+            delegationCreatedBody(event));
     }
 
     /**
@@ -78,13 +77,10 @@ public class AuthorityChangeMails {
     @TransactionalEventListener
     public void onDelegationRevoked(DelegationRevoked event) {
         String text = delegationRevokedBody(event);
-        event.recipients().forEach(recipient -> send(recipient.userId(), NotificationType.DELEGATION_REVOKED,
-            recipient.email(), "Делегування відкликано / Delegation revoked", text));
-    }
-
-    private void send(Long userId, NotificationType type, String email, String subject, String body) {
-        if (preferences.allows(userId, type, NotificationChannel.EMAIL)) {
-            delivery.send(email, subject, body);
+        List<NotificationDraft> parties = drafts.of(event);
+        for (int i = 0; i < parties.size(); i++) {
+            deliveries.send(parties.get(i), event.recipients().get(i).email(),
+                "Делегування відкликано / Delegation revoked", text);
         }
     }
 

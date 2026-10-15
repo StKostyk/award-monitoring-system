@@ -23,7 +23,9 @@ import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
+import ua.edu.chnu.awards.support.TestDeliveries;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
@@ -34,7 +36,8 @@ class AuthorityChangeMailsTest {
 
     private final MailDelivery delivery = mock(MailDelivery.class);
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
-    private final AuthorityChangeMails mails = new AuthorityChangeMails(delivery, preferences);
+    private final AuthorityChangeMails mails = new AuthorityChangeMails(TestDeliveries.log(delivery, preferences),
+        new NotificationDrafts());
     private final ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
 
     @BeforeEach

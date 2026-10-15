@@ -128,8 +128,8 @@ when a module meets the extraction criteria below.**
 | `auth` | common, audit, organization, authz, user, delegation | `entity`, `dto`, `event`, `service` (`DeviceLookup`) |
 | `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
-| `gdpr` | common, audit, organization, authz, user, delegation, auth, award | `dto`, `event` |
-| `notification` | common, authz, user, delegation, award, audit | — |
+| `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | `dto`, `event` |
+| `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` for the data export) |
 | `metrics` | — | — |
 | `config` | common, audit | — (depended on by none) |
 

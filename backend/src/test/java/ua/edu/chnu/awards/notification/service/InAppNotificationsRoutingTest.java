@@ -20,6 +20,8 @@ import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
 import ua.edu.chnu.awards.award.event.ReviewTakenOver;
@@ -41,8 +43,9 @@ class InAppNotificationsRoutingTest {
     private final NotificationRepository repository = mock(NotificationRepository.class);
     private final UserAccounts users = mock(UserAccounts.class);
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
-    private final InAppNotifications notifications = new InAppNotifications(drafts, new NotificationKeys(),
-        repository, users, new ObjectMapper(), Clock.fixed(AT, ZoneOffset.UTC), preferences);
+    private final InAppNotifications notifications = new InAppNotifications(drafts,
+        new NotificationRows(new NotificationKeys(), new ObjectMapper(), Clock.fixed(AT, ZoneOffset.UTC)),
+        repository, users, preferences, new DeliveryMetrics(new SimpleMeterRegistry()));
 
     @BeforeEach
     void allowEveryChannel() {

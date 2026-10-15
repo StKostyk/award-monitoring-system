@@ -1,14 +1,7 @@
 package ua.edu.chnu.awards.notification.service;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
-
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.award.event.AwardDecided;
@@ -17,8 +10,8 @@ import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
-import ua.edu.chnu.awards.notification.repository.NewNotification;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
+import ua.edu.chnu.awards.notification.service.DeliveryMetrics.Outcome;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
@@ -39,12 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 public class InAppNotifications {
 
     private final NotificationDrafts drafts;
-    private final NotificationKeys keys;
+    private final NotificationRows rows;
     private final NotificationRepository notifications;
     private final UserAccounts users;
-    private final ObjectMapper mapper;
-    private final Clock clock;
     private final NotificationPreferenceService preferences;
+    private final DeliveryMetrics metrics;
 
     /**
      * Tells the owner about a decision.
@@ -129,20 +121,20 @@ public class InAppNotifications {
     void write(NotificationDraft draft) {
         if (draft.userId() == null || draft.occurredAt() == null || !reachable(draft.userId())) {
             log.info("No in-app notification {} for user {}: no recipient", draft.type(), draft.userId());
+            metrics.count(NotificationChannel.IN_APP, draft.type(), Outcome.SKIPPED);
             return;
         }
         if (!preferences.allows(draft.userId(), draft.type(), NotificationChannel.IN_APP)) {
             log.info("No in-app notification {} for user {}: switched off", draft.type(), draft.userId());
+            metrics.count(NotificationChannel.IN_APP, draft.type(), Outcome.OFF);
             return;
         }
-        Instant sentAt = clock.instant();
-        Instant expiresAt = sentAt.atOffset(ZoneOffset.UTC).plusYears(1).toInstant();
-        int written = notifications.insertOnce(new NewNotification(draft.userId(), draft.type().name(),
-            NotificationChannel.IN_APP.name(), json(draft), keys.key(draft, NotificationChannel.IN_APP),
-            draft.referenceType(), draft.referenceId(), sentAt, expiresAt));
-        if (written == 0) {
+        if (notifications.insertOnce(rows.row(draft, NotificationChannel.IN_APP)) == 0) {
             log.info("In-app notification {} for user {} was written before", draft.type(), draft.userId());
+            metrics.count(NotificationChannel.IN_APP, draft.type(), Outcome.SKIPPED);
+            return;
         }
+        metrics.count(NotificationChannel.IN_APP, draft.type(), Outcome.SENT);
     }
 
     private boolean reachable(long userId) {
@@ -151,13 +143,5 @@ public class InAppNotifications {
             .map(User::getEmailAddress)
             .filter(address -> !address.isBlank())
             .isPresent();
-    }
-
-    private String json(NotificationDraft draft) {
-        try {
-            return mapper.writeValueAsString(draft.payload());
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Payload of " + draft.type() + " cannot be written", e);
-        }
     }
 }

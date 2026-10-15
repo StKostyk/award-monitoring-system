@@ -17,10 +17,8 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
 import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.award.service.ReviewMetrics;
-import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.notification.entity.NotificationChannel;
-import ua.edu.chnu.awards.notification.entity.NotificationType;
-import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
+import ua.edu.chnu.awards.notification.service.DeliveryLog;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,10 +43,10 @@ public class OverdueMails {
         ApprovalLevel.RECTOR_SECRETARY, "rector's secretary",
         ApprovalLevel.RECTOR, "rector");
 
-    private final MailDelivery delivery;
+    private final DeliveryLog deliveries;
+    private final NotificationDrafts drafts;
     private final AwardLinks links;
     private final ReviewMetrics metrics;
-    private final NotificationPreferenceService preferences;
 
     /**
      * Sends the digest and counts it once the mail server accepted it.
@@ -58,9 +56,7 @@ public class OverdueMails {
     @Async
     @TransactionalEventListener
     public void onNoticed(OverdueNoticed event) {
-        if (event.email() != null
-            && preferences.allows(event.userId(), NotificationType.REVIEW_OVERDUE, NotificationChannel.EMAIL)) {
-            delivery.send(event.email(), subject(event), body(event, links::awardLink));
+        if (deliveries.send(drafts.of(event), event.email(), subject(event), body(event, links::awardLink))) {
             metrics.noticeSent();
         }
     }

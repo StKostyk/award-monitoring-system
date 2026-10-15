@@ -326,17 +326,22 @@ Control what information is visible:
 
 ### Notification Preferences
 
-Customize how you receive updates:
+On your profile, the **Notifications** card lists every notification type with two switches, e-mail and in the application. Both are on until you change them. Security and privacy e-mails (sign-in, password, data export, account deletion) are always sent.
 
-- **Email notifications**: Award status changes, review requests
-- **Browser notifications**: Real-time alerts
-- **Digest emails**: Daily/weekly summaries
+### Exporting Your Data
+
+On your profile, **My data** → **Download my data** saves a JSON file with everything the system holds about you (GDPR Article 20): profile, roles, delegations, awards and their versions, documents, review decisions, consents, devices and your activity. Since format version 1.4 the file also contains:
+
+- `notifications`: your notifications in the application and the log of the notification e-mails sent to you, with when each was sent, read or delivered, and its delivery status
+- `notification_preferences`: the notification types you changed from the default
+
+You can download the file once a minute; each download is announced to you by e-mail.
 
 ---
 
 ## Notifications
 
-In this release, decisions, corrections and overdue notices reach you by e-mail only; the notifications below, in the application and in the browser, arrive in a later release.
+Decisions, corrections, overdue notices, take-overs, roles and delegations reach you by e-mail and in the application (the bell in the toolbar), as set in your notification preferences. Browser notifications, digests and quiet hours below are not available yet.
 
 ### Types of Notifications
 

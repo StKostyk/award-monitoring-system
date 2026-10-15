@@ -13,10 +13,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.award.service.AwardLinks;
-import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.notification.entity.NotificationChannel;
-import ua.edu.chnu.awards.notification.entity.NotificationType;
-import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
+import ua.edu.chnu.awards.notification.service.DeliveryLog;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,9 +47,9 @@ public class CorrectionMails {
         "awardDate", "Award date",
         "externalUrl", "Link");
 
-    private final MailDelivery delivery;
+    private final DeliveryLog deliveries;
+    private final NotificationDrafts drafts;
     private final AwardLinks links;
-    private final NotificationPreferenceService preferences;
 
     /**
      * Sends the owner one message about the correction.
@@ -61,11 +59,7 @@ public class CorrectionMails {
     @Async
     @TransactionalEventListener
     public void onCorrected(AwardCorrected event) {
-        if (event.email() == null
-            || !preferences.allows(event.userId(), NotificationType.AWARD_CORRECTED, NotificationChannel.EMAIL)) {
-            return;
-        }
-        delivery.send(event.email(), SUBJECT, body(event, links.awardLink(event.awardId())));
+        deliveries.send(drafts.of(event), event.email(), SUBJECT, body(event, links.awardLink(event.awardId())));
     }
 
     static String body(AwardCorrected event, String link) {

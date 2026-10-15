@@ -18,8 +18,13 @@ import ua.edu.chnu.awards.award.service.AwardVersionLookup;
 import ua.edu.chnu.awards.delegation.service.DelegationLookup;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.NotificationEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.NotificationPreferenceEntry;
 import ua.edu.chnu.awards.gdpr.mapper.PersonalDataMapper;
 import ua.edu.chnu.awards.gdpr.repository.PersonalDataQueries;
+import ua.edu.chnu.awards.notification.service.NotificationLookup;
+import ua.edu.chnu.awards.notification.service.NotificationLookup.NotificationRecord;
+import ua.edu.chnu.awards.notification.service.NotificationLookup.PreferenceRecord;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.service.RoleHolders;
 
@@ -33,7 +38,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PersonalDataAssembler {
 
-    static final String FORMAT_VERSION = "1.3";
+    static final String FORMAT_VERSION = "1.4";
     static final String GDPR_ARTICLE = "Article 20 - Right to Data Portability";
     static final String GIVEN = "GIVEN";
     static final String RECEIVED = "RECEIVED";
@@ -49,6 +54,7 @@ public class PersonalDataAssembler {
     private final AwardLookup awards;
     private final AwardVersionLookup versions;
     private final DeviceLookup devices;
+    private final NotificationLookup notifications;
     private final PersonalDataQueries queries;
     private final PersonalDataMapper mapper;
     private final Clock clock;
@@ -76,7 +82,9 @@ public class PersonalDataAssembler {
             queries.decisionsMade(userId),
             queries.consents(userId),
             devices.findByUserIdOrderByLastUsedAtDesc(userId).stream().map(mapper::device).toList(),
-            queries.activity(userId, ACTIVITY_AREAS, SELF_ACTIONS));
+            queries.activity(userId, ACTIVITY_AREAS, SELF_ACTIONS),
+            notifications.notificationsOf(userId).stream().map(PersonalDataAssembler::notification).toList(),
+            notifications.preferencesOf(userId).stream().map(PersonalDataAssembler::preference).toList());
     }
 
     private List<DelegationEntry> delegations(long userId, LocalDate today) {
@@ -86,5 +94,14 @@ public class PersonalDataAssembler {
         delegations.findByDelegateId(userId).forEach(delegation -> entries.add(
             mapper.delegation(delegation, RECEIVED, delegation.getDelegator(), null, today)));
         return entries;
+    }
+
+    private static NotificationEntry notification(NotificationRecord row) {
+        return new NotificationEntry(row.type(), row.channel(), row.payload(), row.read(), row.sentAt(),
+            row.readAt(), row.deliveredAt(), row.deliveryStatus());
+    }
+
+    private static NotificationPreferenceEntry preference(PreferenceRecord row) {
+        return new NotificationPreferenceEntry(row.type(), row.email(), row.inApp());
     }
 }

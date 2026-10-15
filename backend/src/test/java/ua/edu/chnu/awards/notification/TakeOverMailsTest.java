@@ -16,7 +16,9 @@ import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
+import ua.edu.chnu.awards.support.TestDeliveries;
 
 class TakeOverMailsTest {
 
@@ -34,7 +36,8 @@ class TakeOverMailsTest {
     private final MailDelivery delivery = mock(MailDelivery.class);
     private final AwardLinks links = mock(AwardLinks.class);
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
-    private final TakeOverMails mails = new TakeOverMails(delivery, links, preferences);
+    private final TakeOverMails mails = new TakeOverMails(TestDeliveries.log(delivery, preferences),
+        new NotificationDrafts(), links);
 
     @BeforeEach
     void allowEveryChannel() {

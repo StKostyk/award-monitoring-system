@@ -18,8 +18,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * One notification row; rows are inserted by {@code NotificationRepository#insertOnce} and only their read state
- * changes afterwards.
+ * One notification row: an in-app notification, inserted by {@code NotificationRepository#insertOnce}, of which only
+ * the read state changes afterwards, or the delivery log of a mail, claimed and finished by {@code DeliveryLog}.
  */
 @Entity
 @Table(name = "notifications")
@@ -66,4 +66,11 @@ public class Notification {
 
     @Column(name = "expires_at")
     private Instant expiresAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_status", length = 20)
+    private DeliveryStatus deliveryStatus;
+
+    @Column(name = "delivered_at")
+    private Instant deliveredAt;
 }

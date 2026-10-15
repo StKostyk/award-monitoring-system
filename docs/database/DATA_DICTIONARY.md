@@ -827,7 +827,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 ### 5.1 Entity: `notifications`
 
-**Description**: In-app notifications written from committed events (V038), one row per recipient. The client renders the sentence from `type` and `payload` in the interface language; no text is stored.
+**Description**: In-app notifications written from committed events (V038), one row per recipient, and the delivery log of the mails of the notification types (V039, `channel = 'EMAIL'`). The client renders the sentence from `type` and `payload` in the interface language; no text is stored.
 
 **Business Rules**:
 - Written by the `notification` module's listener on the event publication registry, after the business transaction commits and in a transaction of its own (ADR-006 addendum)
@@ -835,6 +835,9 @@ The minimum approval level is the lowest role that may give the final approval; 
 - No row for a recipient that no longer exists, is `DELETED` or has no address
 - `payload` holds only what the sentence needs: never the reviewer's comment or corrected values
 - The notification centre reads `IN_APP` rows of the caller only
+- Delivery log (7.2.3): before a mail of a notification type is sent, its `EMAIL` row is claimed in one statement (`INSERT … ON CONFLICT (dedupe_key) DO UPDATE … WHERE`): a new row, or a `FAILED` one, or a `SENDING` one older than `app.events.retry-after` (10 minutes) becomes `SENDING` with `sent_at` = now; a `SENT` row or a younger `SENDING` one is left alone and no mail goes out, as for a recipient whose account no longer exists. After the send the row becomes `SENT` with `delivered_at`, or `FAILED` when the mail server refused it (the publication is then retried)
+- `ck_notifications_delivery_status`: `IN_APP` rows carry no `delivery_status`, `EMAIL` rows one of `SENDING`, `SENT`, `FAILED`
+- Security and privacy mails (sign-in, password, export notice, erasure) are not logged here
 - Retention period: 1 year (`expires_at` = `sent_at` + 1 year); the account's deletion removes its rows (`ON DELETE CASCADE`)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
@@ -848,9 +851,11 @@ The minimum approval level is the lowest role that may give the final approval; 
 | `channel` | `VARCHAR(20)` | NO | `'IN_APP'` | CK | Delivery channel |
 | `reference_type` | `VARCHAR(50)` | YES | - | - | `AWARD` for award types, null otherwise |
 | `reference_id` | `BIGINT` | YES | - | - | The award, null otherwise |
-| `sent_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the row was written |
+| `sent_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the in-app row was written, or when the mail was last claimed for sending |
 | `read_at` | `TIMESTAMPTZ` | YES | - | CK | When marked as read; set with `is_read` |
 | `expires_at` | `TIMESTAMPTZ` | YES | - | - | `sent_at` + 1 year |
+| `delivery_status` | `VARCHAR(20)` | YES | - | CK | `EMAIL` rows: `SENDING`, `SENT`, `FAILED`; null for `IN_APP` (V039) |
+| `delivered_at` | `TIMESTAMPTZ` | YES | - | - | `EMAIL` rows: when the mail server accepted the mail; null otherwise (V039) |
 
 **Notification Types** (`type`, also `notification_preferences.event_type`) and **payload**:
 
@@ -867,9 +872,9 @@ The minimum approval level is the lowest role that may give the final approval; 
 | Value | Description |
 |-------|-------------|
 | `IN_APP` | In-application notification (written since 7.2.1) |
-| `EMAIL` | Email delivery log (7.2.3) |
-| `SMS` | Allowed by the check, not used |
-| `PUSH` | Allowed by the check, not used |
+| `EMAIL` | Delivery log of the mails of the notification types (written since 7.2.3) |
+| `SMS` | Allowed by `ck_notifications_channel`, refused by `ck_notifications_delivery_status` since V039 |
+| `PUSH` | Allowed by `ck_notifications_channel`, refused by `ck_notifications_delivery_status` since V039 |
 
 **Indexes**:
 - `pk_notifications` - Primary key on `notification_id`

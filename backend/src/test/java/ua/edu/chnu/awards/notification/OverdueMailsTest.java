@@ -27,7 +27,9 @@ import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.common.mail.MailNotDeliveredException;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
+import ua.edu.chnu.awards.support.TestDeliveries;
 
 class OverdueMailsTest {
 
@@ -37,7 +39,8 @@ class OverdueMailsTest {
     private final AwardLinks links = mock(AwardLinks.class);
     private final ReviewMetrics metrics = mock(ReviewMetrics.class);
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
-    private final OverdueMails mails = new OverdueMails(delivery, links, metrics, preferences);
+    private final OverdueMails mails = new OverdueMails(TestDeliveries.log(delivery, preferences),
+        new NotificationDrafts(), links, metrics);
 
     @BeforeEach
     void setUp() {
