@@ -108,7 +108,7 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 | 1.3.2 | Notification preferences | 3 | ✅ Done | SCRUM-16 | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |
 | 7.2.3 | Delivery log and notifications in the personal data export | 3 | ✅ Done | SCRUM-68 | [#185](https://github.com/StKostyk/award-monitoring-system/issues/185) |
 | 7.2.4 | HTML e-mail templates in the university brand | 3 | ✅ Done | SCRUM-69 | [#186](https://github.com/StKostyk/award-monitoring-system/issues/186) |
-| 7.2.5 | Name the target level in the passed-on notification text | 1 | 👀 In review | SCRUM-82 | [#239](https://github.com/StKostyk/award-monitoring-system/issues/239) |
+| 7.2.5 | Name the target level in the passed-on notification text | 1 | ✅ Done | SCRUM-82 | [#239](https://github.com/StKostyk/award-monitoring-system/issues/239) |
 
 ### Later epics
 | ID | Story | Points | Epic |

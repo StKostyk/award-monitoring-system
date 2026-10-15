@@ -11,7 +11,7 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 7.1 Reliable events and module boundaries (publication registry, Spring Modulith verification) | Done, manually verified 2026-10-11 to 2026-10-14 ([PRD](../features/epic-07/feature-7.1-reliable-events-module-boundaries.md), validation §13) | 2026-10-10 | 2026-10-14 |
-| 7.2 Notification centre and preferences (in-app notifications, preferences, delivery log, HTML mails) | PRD approved ([feature-7.2](../features/epic-07/feature-7.2-notification-centre-preferences.md)) | - | - |
+| 7.2 Notification centre and preferences (in-app notifications, preferences, delivery log, HTML mails) | Done, manually verified 2026-10-15 ([PRD](../features/epic-07/feature-7.2-notification-centre-preferences.md), validation §13; steps 27–31 and fix SCRUM-83 pending) | 2026-10-14 | 2026-10-15 |
 
 ## Current focus
 
@@ -47,7 +47,7 @@ fix stories if chosen).
 | 5 | 1.3.2 Notification preferences | 7.2 | 3 | SCRUM-16 | #39 | yes | Done |
 | 6 | 7.2.3 Delivery log and notifications in the personal data export | 7.2 | 3 | SCRUM-68 | #185 | no | Done |
 | 7 | 7.2.4 HTML e-mail templates in the university brand | 7.2 | 3 | SCRUM-69 | #186 | no | Done |
-| 7a | 7.2.5 Name the target level in the passed-on notification text | 7.2 | 1 | SCRUM-82 | #239 | no | In review |
+| 7a | 7.2.5 Name the target level in the passed-on notification text | 7.2 | 1 | SCRUM-82 | #239 | no | Done |
 
 Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
 
@@ -63,6 +63,7 @@ Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
 | 2026-10-09 | Story 1.3.2 (notification preferences) moves from Epic 1 to this epic | Preferences need the notification types and channels built here | Design review A-9 |
 | 2026-10-09 | Story order: registry, boundaries, in-app notifications, centre, preferences, delivery log, HTML templates | Infrastructure before features; the HTML templates are the first to drop if the sprint runs short | This kickoff |
 | 2026-10-14 | Feature 7.1 validated (PASSED WITH NOTES); duplicate mails from a backlog behind the SMTP lock stay within at-least-once and are revisited with the delivery log of 7.2.3 | PRD §13 F-1; the delivery log can skip a resend already logged as sent | Feature 7.1 validation |
+| 2026-10-15 | Feature 7.2 validated (PASSED WITH NOTES); a preferences save sends only the changed types (fix SCRUM-83), so a stale tab no longer reverts another tab's choices | PRD §5 "last PUT wins per type"; the endpoint already keeps unlisted types | Feature 7.2 validation F-1 |
 
 ## Documentation deviations
 
@@ -109,6 +110,11 @@ To settle in the Feature 7.1 and 7.2 PRDs; each document is updated in the story
   `AwardVersionLookup.findOfOwner`, `RoleHolders.findHistoryByUserId` serve only the data export (a per-module
   personal-data contributor, with the Epic 6 erasure story); `EventPublicationRegistryIT` waits with
   `Thread.sleep` (Awaitility); the two `*EventJsonTest` classes share one structure.
+- Refactor sweep of 7.2 (validation 2026-10-15), not applied: the five mail listeners each assemble "uk, separator,
+  en" with repeated labels ("Переглянути нагороду" / "View the award", "Причина" / "Reason"), a candidate for
+  `MailTextHelper`; `CorrectionMails` keeps field labels in Java beside `awards.fields.*` in i18n;
+  `AuthorityChangeMails.onDelegationRevoked` pairs drafts and recipients by index. The smaller items are in PRD 7.2
+  §13 F-5.
 
 ## Risks
 

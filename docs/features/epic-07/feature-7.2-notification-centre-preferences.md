@@ -3,7 +3,7 @@
 > **Epic**: 7 — Notification & Communication System (SCRUM-63)
 > **Sprint**: 5 (2026-10-12 → 2026-10-18), spilling into sprint 6
 > **Points**: 19 (five stories)
-> **Status**: Approved 2026-10-14
+> **Status**: Done 2026-10-15 (validation §13, pending the manual run of steps 27–31; approved 2026-10-14)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-07 tracker (decisions of 2026-10-09, deviations 3–8, technical notes, risk 3), Feature 7.1 PRD (§7 decisions 2, 6, 12; validation F-1, F-4), ADR-006 addendum, ADR-022 (module table), ADR-021, DATA_DICTIONARY §4 `consent_records`, §5, PRIVACY_BY_DESIGN §4.2, US-005, roadmap story 1.3.2, `openapi.yml` (`/users/me`, `NotificationPreferences`), the mail listeners (`DecisionMails`, `CorrectionMails`, `OverdueMails`, `TakeOverMails`, `AuthorityChangeMails`, `PrivacyMails`, `AuthenticationMails`), `MailDelivery`, `PersonalDataAssembler`, `award-status.component.ts` (polling), `shell.component.html` (toolbar)
 
@@ -254,7 +254,7 @@ Coverage 85 % lines; static clean. 7.2.1 (migration, endpoints), 1.3.2 (endpoint
 
 ## 10. Manual verification
 
-Draft; the expected texts are finalised against the merged i18n files at feature validation.
+Expected texts checked against the merged i18n files on 2026-10-15 (step 5 after SCRUM-82). Steps 27–31 come from the validation's scenario review and have not been run yet.
 
 Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backend in `backend/` with `$env:APP_EVENTS_RETRY_INTERVAL='PT1M'; $env:APP_EVENTS_RETRY_AFTER='PT1M'; ./mvnw spring-boot:run -Dspring-boot.run.profiles=local` (as in 7.1); frontend `npm start` on `http://localhost:4200`. Mailpit `http://localhost:8025`; psql `docker compose exec postgres psql -U postgres award_monitoring`; Swagger `http://localhost:8080/swagger-ui.html`. Seed accounts (password `Passw0rd-demo`, `@chnu.edu.ua`): `employee.fmi`, `secretary.fmi`, `secretary2.fmi`, `dean.fmi`, `admin`. Preparation: as `employee.fmi` create and submit awards A, B, C, E (department-level category) and D (faculty-level, passed on to the dean).
 
@@ -287,6 +287,11 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 24. Reload `/notifications?unread=true` and press Back after "Mark all as read". Expected: the filter is kept, nothing is marked twice, the list stays empty. (AC-2.6)
 25. With e-mail switched off for every type, request a password reset. Expected: the reset mail still arrives. (scope: security mails)
 26. Send step 2's approval again in Swagger. Expected: 409 from the workflow; no new notification row. (AC-1.2)
+27. Signed out, open the footer link of step 12's mail (`/profile#notifications`). Expected: the sign-in form; after signing in the profile opens scrolled to the "Notifications" card. (AC-5.3, 3.6)
+28. Open `/profile#notifications` in two tabs; in tab 1 untick e-mail for "Award returned" and save; in tab 2, not reloaded, untick in-app for "Award approved" and save. Expected: "Award returned" keeps e-mail off, "Award approved" has in-app off; one audit row per save. (§5, SCRUM-83)
+29. On `/profile` change a box, revoke the session (psql: delete the person's `oauth2_authorization` rows), press Save. Expected: the sign-in redirect or an error line; after signing in the stored choice is unchanged and the form loads fresh. (AC-3.6)
+30. Stop Redis (`docker compose stop redis`) with the bell open; wait for a poll, open the menu, mark one read, save a preference. Expected: all answer as with Redis up; start Redis again. (§5)
+31. Open `http://localhost:4200/notifications?page=999` and `?unread=junk`. Expected: an empty page with a working paginator back to page 1, or the first page; no console error. (AC-2.6)
 
 ### Run 2026-10-15
 
@@ -339,3 +344,88 @@ container stack (app, frontend at http://localhost) on develop b776fc0, APP_EVEN
 - Security review for 7.2.1, 1.3.2 and 7.2.3
 - `openapi.yml` without `x-status: planned` on the six operations; DATA_DICTIONARY §4 and §5; PRIVACY_BY_DESIGN §4.2 and the export section; ADR-022 module table; user guide (centre, preferences, export); CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation (2026-10-15, `develop` at 67dd103)
+
+Result: **PASSED WITH NOTES**, pending the manual run of §10 steps 27–31 and the fix SCRUM-83. Stories merged: SCRUM-66 (#234), SCRUM-67 (#235), SCRUM-16 (#236), SCRUM-68 (#237), SCRUM-69 (#238), SCRUM-82 (#241); manual run of §10 on 2026-10-15 (#240): 26 of 26 pass, the one defect fixed by SCRUM-82.
+
+Gate (`gate.ps1 -Full`, 15:03, 3.2 GB free, sequential): 1 059 unit, 361 IT/FT with one failure (`InAppNotificationsIT.ac4_2`, F-6; the class passes 8 of 8 on rerun), coverage 98.8 % lines (4173/4224), Checkstyle/PMD/SpotBugs 0; frontend lint, 663 tests, prod build pass (996 kB initial). e2e: full suite 86 of 91; of the five failures, four pass on a rerun with one worker (mails arriving late under memory pressure), and one is a race in `notifications.spec.ts` fixed here (F-7; the notification centre specs then pass 4 of 4). `openapi.yml` compared with the live `/v3/api-docs` of the container stack: same six notification operations and parameters. Migrations V038 and V039 apply to an empty database in every IT (Testcontainers).
+
+### AC evidence
+
+| AC | Tests | Result |
+|----|-------|--------|
+| 1.1 | `NotificationSchemaIT.ac1_1_both…`, `ac1_1_payload…`, `ac1_1_the…`; manual 1 | pass |
+| 1.2 | `InAppNotificationsIT.ac1_2_aCommittedDecisionWritesOneInAppRowForTheOwner`, `InAppNotificationsTest.ac1_2_…`, `NotificationDraftsTest` (4 × ac1_2), `AuthorityDraftsTest` (2 × ac1_2), `InAppNotificationsRoutingTest.ac1_2_every…`; manual 2, 5, 9, 10, 21, 26 | pass |
+| 1.3 | `InAppNotificationsIT.ac1_3_aSecondDeliveryOfTheSameEventWritesNothingAndCompletes`, `InAppNotificationsTest.ac1_3_…`, `NotificationKeysTest` (2 × ac1_3) | pass |
+| 1.4 | `AwardEventJsonTest.scrum66_ac1_4_aDecisionStoredWithoutRecipientIdStillReads`, `AccountEventJsonTest.scrum66_ac1_4_aRevocationStoredWithBareAddressesStillReads`, the ac1_8 round trips, existing mail tests and FTs | pass |
+| 1.5 | `InAppNotificationsIT.ac1_5_anUnknownOrDeletedRecipientGetsNoRowAndThePublicationCompletes`, `InAppNotificationsTest.ac1_5_…` | pass |
+| 1.6 | `InAppNotificationsIT.ac1_6_withTheMailServerDownTheInAppRowIsWrittenAndOnlyTheMailIsRetried`; manual 22 | pass |
+| 1.7 | `NotificationFT.ac1_7_theCallerSeesOnlyOwnInAppRowsNewestFirst`, `ac1_7_unreadFiltersAndPageSizeIsClamped`, `NotificationServiceTest` (2 × ac1_7) | pass |
+| 1.8 | `NotificationFT.ac1_8_ac1_9_markingReadSetsTheFlagOnceAndCountsDown`, `NotificationServiceTest.ac1_8_…` | pass |
+| 1.9 | `NotificationFT.ac1_8_ac1_9_…`, `ac1_9_anotherPersonsAnEmailOrAnUnknownIdIsNotFound`, `NotificationServiceTest` (3 × ac1_9); manual 13, 14 | pass |
+| 1.10 | `NotificationFT.ac1_10_readAllMarksTheCallersUnreadRowsOnly`, `NotificationServiceTest.ac1_10_…`; manual 15 | pass |
+| 1.11 | `NotificationFT.ac1_11_everyEndpointNeedsAToken`; DATA_DICTIONARY §5.1; `openapi.yml` has no `planned` notification operation, and the live `/v3/api-docs` lists the same six operations and parameters | pass |
+| 2.1 | e2e `notifications.spec.ts` "ac2_1 ac2_3 ac2_4 ac2_7 …", `notification-bell.component.spec.ts` ac2_1, `unread-count.spec.ts` ac2_1; manual 3 | pass |
+| 2.2 | `unread-count.spec.ts` (5 × ac2_2: start and interval, hidden, signed out, sign-out, 401); manual 17, 18 | pass |
+| 2.3 | `notification-bell.component.spec.ts` (2 × ac2_3), `notification-text.spec.ts` (3 × ac2_3); e2e as 2.1; manual 3 | pass |
+| 2.4 | `notification-bell…` ac2_4, `notification-list…` ac2_4, `notification-text.spec.ts` ac2_4_leads_each_type_to_its_page, `unread-count.spec.ts` (2 × ac2_4); e2e as 2.1; manual 4, 10, 14, 20 | pass |
+| 2.5 | e2e "ac2_5 ac2_6 …", `notification-bell…` ac2_5, `notification-list…` (2 × ac2_5), `unread-count.spec.ts` (2 × ac2_5); manual 5, 15 | pass |
+| 2.6 | `notification-list.component.spec.ts` (4 × ac2_6); e2e "ac2_5 ac2_6 …"; manual 6, 24 | pass |
+| 2.7 | `notification-text.spec.ts` ac2_7 (key sets, switch); screen checks in #235; manual 3 | pass |
+| 3.1 | `NotificationPreferenceFT.ac3_1_without…`, `NotificationPreferenceServiceTest.ac3_1_…` | pass |
+| 3.2 | `NotificationPreferenceFT.ac3_2_listed…`, `NotificationPreferenceServiceTest` (2 × ac3_2); manual 7 | pass |
+| 3.3 | `NotificationPreferenceFT.ac3_3_…`, `NotificationPreferenceServiceTest` (4 × ac3_3); manual 16 | pass |
+| 3.4 | `NotificationPreferenceFT.ac3_4_…`, `NotificationPreferenceServiceTest` (2 × ac3_4); manual 7 | pass |
+| 3.5 | `InAppNotificationsIT.ac3_5_eachChannelFollowsTheRecipientsPreferenceForTheType`; ac3_5 tests of `DecisionMails`, `CorrectionMails`, `OverdueMails`, `TakeOverMails`, `AuthorityChangeMails`, `InAppNotificationsTest`; `DecisionFT.ac4_4_aMailSwitchedOffAndAWrittenInAppRowAreCountedAtThePrometheusEndpoint` (Mailpit empty); manual 8, 25 | pass |
+| 3.6 | `notification-preferences.component.spec.ts` (4 × ac3_6), e2e `profile.spec.ts` "ac3_6 keeps one channel per type and stores the choice"; manual 7, 16 | pass |
+| 3.7 | PRIVACY_BY_DESIGN §4.2, DATA_DICTIONARY, `openapi.yml` (#236) | doc review |
+| 4.1 | `DeliveryLogIT.ac4_1_anInAppRowCannotCarryADeliveryStatusAndAMailRowNeedsOne`, `NotificationSchemaIT.ac4_1_…`; manual 1 | pass |
+| 4.2 | `DeliveryLogIT.ac4_2_aClaimWritesASendingRowAndFinishRecordsTheOutcome`, `InAppNotificationsIT.ac4_2_…`, `DeliveryLogTest` (2 × ac4_2); manual 2, 22 | pass |
+| 4.3 | `DeliveryLogIT.ac4_3_aSentOrFreshlyClaimedMailIsNotClaimedAgain`, `ac4_3_aFailedOrStaleClaimIsTakenOver`, `ac4_3_ofTwoConcurrentClaimsOnlyOneWins`, `InAppNotificationsIT.ac4_3_…`; manual 23 | pass |
+| 4.4 | `DeliveryLogTest` (2 × ac4_4), `DecisionFT.ac4_4_…`; manual 8 | pass |
+| 4.5 | `PersonalDataNotificationsTest` (2 × ac4_5), `DataExportFT` (format 1.4, both sections); manual 11 | pass |
+| 4.6 | DATA_DICTIONARY §5.1, PRIVACY_BY_DESIGN export section (#237) | doc review |
+| 5.1 | `MailDeliveryTest.ac5_1_…`, `DecisionFT.ac5_1_ac5_3_ac5_4_aDecisionMailHasAnEscapedHtmlPartWithThePreferencesLink`; manual 2 | pass |
+| 5.2 | `MailHtmlRendererTest` (5 × ac5_2); manual 12 | pass |
+| 5.3 | `MailHtmlRendererTest` (2 × ac5_3), `MailDeliveryTest.ac5_3_…`, `DecisionFT.ac5_1_ac5_3_…`, `PasswordResetFlowFT` (no preferences link); manual 12 | pass |
+| 5.4 | `MailHtmlRendererTest.ac5_4_escapes…`, `DecisionFT.ac5_1_ac5_3_ac5_4_…` | pass |
+| 5.5 | manual 12 (Mailpit HTML check: no error-level finding; 360 px) | pass |
+
+### Edge cases (§5)
+
+| Case | Covered by |
+|------|------------|
+| Event published before 7.2.1, retried after it | `InAppNotificationsTest.edgeCase_anEventStoredBeforeTheRecipientWasCarriedWritesNothing`, `DeliveryLogTest.edgeCase_anEventStoredBeforeItCarriedRecipientAndTimeIsSentWithoutALogRow`, the `scrum66_ac1_4_…` round trips |
+| In-app insert commits, completion update fails | `InAppNotificationsIT.ac1_3_…` (second delivery writes nothing) |
+| Mail sent, crash before `SENT` | `DeliveryLogIT.ac4_3_aFailedOrStaleClaimIsTakenOver`; manual 23 |
+| Two publications of one mail in flight | `DeliveryLogIT.ac4_3_ofTwoConcurrentClaimsOnlyOneWins`, `ac4_3_aSentOrFreshlyClaimedMailIsNotClaimedAgain` |
+| Same award returned twice with the same comment | `NotificationKeysTest.ac1_3_…` (the key includes `occurredAt`); manual 8 |
+| E-mail switched off before the retry | `InAppNotificationsIT.ac3_5_…` (preference read when the listener runs); a `FAILED` row followed by e-mail off is not tested (F-3) |
+| Preferences changed in two tabs | **Open**: a stale tab writes back all eleven types (F-1, SCRUM-83); manual 28 |
+| `DelegationRevoked` with two recipients | `InAppNotificationsIT.edgeCase_aRevokedDelegationWritesOneRowPerRecipientNamingTheOtherSide`, `AuthorityDraftsTest.edgeCase_…`; manual 10, 21 |
+| Award the person can no longer open | Manual 20 (`/forbidden`) |
+| Read in one tab, unread in the other | Manual 19; `NotificationFT.ac1_8_ac1_9_…` (a second mark is a no-op) |
+| Page size above 100 or negative page | `NotificationFT.ac1_7_unreadFiltersAndPageSizeIsClamped`; SPA side manual 31 |
+| Payload text with HTML | Angular interpolation in `notification-text.ts`; `MailHtmlRendererTest.ac5_4_…` |
+| Very long title in the menu | Screen check in #235 |
+| Account deleted | `ON DELETE CASCADE` in V038 (`NotificationSchemaIT`); others' payloads with the Epic 6 erasure story |
+
+### Security checklist
+
+| Item | Control |
+|------|---------|
+| A01 Access control | `NotificationController` and `NotificationPreferenceController` under `@PreAuthorize("isAuthenticated()")`; every query takes the caller's id from the token (`findByUserIdAndChannel…`, `markRead(id, userId, IN_APP, …)`); another person's or an `EMAIL` id answers 404 (FT 1.9, manual 13); the security reviews of #234, #236 and #237 found nothing medium or higher |
+| A02 Cryptographic failures | Payloads hold titles, names and levels only, no tokens or comment text (§8.3, manual 5); mails carry no tracking or remote images (AC-5.2) |
+| A03 Injection | Native inserts and the preference upsert use bound parameters; types validated against the enum (422 `invalid`); HTML escaped by `th:text` in mails and by interpolation in Angular (AC-5.4) |
+| A07 Authentication failures | Every endpoint answers 401 without a token (FT 1.11, preference FT); polling stops on 401 (AC-2.2); role revocation ends the session (manual 20); security mails ignore preferences (manual 25). CSRF is disabled for the bearer-token API, and these endpoints are not rate limited (Redis down: manual 30) |
+
+### Findings
+
+- **F-1** Preferences saved from a stale tab write back every type and revert the changes made in another tab (§5 expects last PUT wins per type). Fix story SCRUM-83 (#242): send only the changed types.
+- **F-2** Deep link `/profile#notifications` while signed out: the card is scrolled to only if the fragment survives the sign-in redirect; manual 27.
+- **F-3** Not tested: a `FAILED` mail row whose recipient then switches e-mail off; expected `outcome=off` on the retry with the row left `FAILED`. Candidate IT in `InAppNotificationsIT` with SCRUM-83 or the next notification story.
+- **F-4** Session expiry on the preferences save shows the generic error (no 401 branch) while the shell redirects; manual 29.
+- **F-5** Refactor sweep, for a follow-up `refactor(notification)` PR: the `ApprovalLevel` uk/en maps duplicated in `DecisionMails` and `OverdueMails`; the `NotificationType` union and `NOTIFICATION_TYPES` list the same literals (derive the type with `as const`); `open()` duplicated in the bell and the list, swallowing errors; the `NotificationRows` test fixture built in four places; hand-rolled polling loops in `InAppNotificationsIT` and `Mailpit`. Left as is (EPIC-07 technical notes): bilingual text helpers across five mail listeners, field labels in Java and in i18n, the index pairing of drafts and recipients in `AuthorityChangeMails`.
+- **F-6** `InAppNotificationsIT.ac4_2_aSentMailIsLoggedAsSentWithTheMomentTheServerAcceptedIt` found the row still `SENDING` after its 30 s wait in the full gate (sends serialised behind the one SMTP lock, 7.1 F-1, with 3.2 GB free); 8 of 8 on rerun. Watch in the next gates; a longer wait for this one assertion if it recurs.
+- **F-7** `notifications.spec.ts` counted all of the owner's rows and expected 1; since 7.2.3 a sent mail adds an `EMAIL` row, so the count is 2 whenever both land before the first poll. Both queries now filter `channel = 'IN_APP'`.
