@@ -3,7 +3,7 @@
 > **Epic**: 7 — Notification & Communication System (SCRUM-63)
 > **Sprint**: 5 (2026-10-12 → 2026-10-18), spilling into sprint 6
 > **Points**: 19 (five stories)
-> **Status**: Done 2026-10-15 (validation §13, pending the manual run of steps 27–31; approved 2026-10-14)
+> **Status**: Done 2026-10-15, manually verified (validation §13, all 31 steps of §10 pass; approved 2026-10-14)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-07 tracker (decisions of 2026-10-09, deviations 3–8, technical notes, risk 3), Feature 7.1 PRD (§7 decisions 2, 6, 12; validation F-1, F-4), ADR-006 addendum, ADR-022 (module table), ADR-021, DATA_DICTIONARY §4 `consent_records`, §5, PRIVACY_BY_DESIGN §4.2, US-005, roadmap story 1.3.2, `openapi.yml` (`/users/me`, `NotificationPreferences`), the mail listeners (`DecisionMails`, `CorrectionMails`, `OverdueMails`, `TakeOverMails`, `AuthorityChangeMails`, `PrivacyMails`, `AuthenticationMails`), `MailDelivery`, `PersonalDataAssembler`, `award-status.component.ts` (polling), `shell.component.html` (toolbar)
 
@@ -367,7 +367,7 @@ Container stack, frontend rebuilt from develop 8649062 (SCRUM-84 merged); app at
 
 ## 13. Validation (2026-10-15, `develop` at 67dd103)
 
-Result: **PASSED WITH NOTES**, pending the manual run of §10 steps 27–31 and the fix SCRUM-83. Stories merged: SCRUM-66 (#234), SCRUM-67 (#235), SCRUM-16 (#236), SCRUM-68 (#237), SCRUM-69 (#238), SCRUM-82 (#241); manual run of §10 on 2026-10-15 (#240): 26 of 26 pass, the one defect fixed by SCRUM-82.
+Result: **PASSED WITH NOTES**. Closed 2026-10-15 at `develop` 9e07cc8: SCRUM-83 (#244) and SCRUM-84 (#247) merged, gate of SCRUM-84 green (static 0, 669 frontend tests), §10 steps 27–31 run (#246, #248), every step of §10 now passes. Stories merged: SCRUM-66 (#234), SCRUM-67 (#235), SCRUM-16 (#236), SCRUM-68 (#237), SCRUM-69 (#238), SCRUM-82 (#241); manual run of §10 on 2026-10-15 (#240): 26 of 26 pass, the one defect fixed by SCRUM-82.
 
 Gate (`gate.ps1 -Full`, 15:03, 3.2 GB free, sequential): 1 059 unit, 361 IT/FT with one failure (`InAppNotificationsIT.ac4_2`, F-6; the class passes 8 of 8 on rerun), coverage 98.8 % lines (4173/4224), Checkstyle/PMD/SpotBugs 0; frontend lint, 663 tests, prod build pass (996 kB initial). e2e: full suite 86 of 91; of the five failures, four pass on a rerun with one worker (mails arriving late under memory pressure), and one is a race in `notifications.spec.ts` fixed here (F-7; the notification centre specs then pass 4 of 4). `openapi.yml` compared with the live `/v3/api-docs` of the container stack: same six notification operations and parameters. Migrations V038 and V039 apply to an empty database in every IT (Testcontainers).
 
@@ -422,11 +422,11 @@ Gate (`gate.ps1 -Full`, 15:03, 3.2 GB free, sequential): 1 059 unit, 361 IT/FT w
 | Two publications of one mail in flight | `DeliveryLogIT.ac4_3_ofTwoConcurrentClaimsOnlyOneWins`, `ac4_3_aSentOrFreshlyClaimedMailIsNotClaimedAgain` |
 | Same award returned twice with the same comment | `NotificationKeysTest.ac1_3_…` (the key includes `occurredAt`); manual 8 |
 | E-mail switched off before the retry | `InAppNotificationsIT.ac3_5_…` (preference read when the listener runs); a `FAILED` row followed by e-mail off is not tested (F-3) |
-| Preferences changed in two tabs | Fixed in SCRUM-83: save sends only the changed types, last PUT wins per type (F-1); manual 28 to run |
+| Preferences changed in two tabs | Fixed in SCRUM-83: save sends only the changed types, last PUT wins per type (F-1); manual 28 |
 | `DelegationRevoked` with two recipients | `InAppNotificationsIT.edgeCase_aRevokedDelegationWritesOneRowPerRecipientNamingTheOtherSide`, `AuthorityDraftsTest.edgeCase_…`; manual 10, 21 |
 | Award the person can no longer open | Manual 20 (`/forbidden`) |
 | Read in one tab, unread in the other | Manual 19; `NotificationFT.ac1_8_ac1_9_…` (a second mark is a no-op) |
-| Page size above 100 or negative page | `NotificationFT.ac1_7_unreadFiltersAndPageSizeIsClamped`; SPA side manual 31 |
+| Page size above 100 or negative page | `NotificationFT.ac1_7_unreadFiltersAndPageSizeIsClamped`; SPA side SCRUM-84 (out-of-range page moves to the last page), manual 31 |
 | Payload text with HTML | Angular interpolation in `notification-text.ts`; `MailHtmlRendererTest.ac5_4_…` |
 | Very long title in the menu | Screen check in #235 |
 | Account deleted | `ON DELETE CASCADE` in V038 (`NotificationSchemaIT`); others' payloads with the Epic 6 erasure story |
@@ -443,9 +443,9 @@ Gate (`gate.ps1 -Full`, 15:03, 3.2 GB free, sequential): 1 059 unit, 361 IT/FT w
 ### Findings
 
 - **F-1** Preferences saved from a stale tab write back every type and revert the changes made in another tab (§5 expects last PUT wins per type). Fixed in SCRUM-83 (#242): save sends only the changed types. Two tabs changing different channels of the same type still resolve per type (last PUT wins); manual 28.
-- **F-2** Deep link `/profile#notifications` while signed out: the card is scrolled to only if the fragment survives the sign-in redirect; manual 27.
+- **F-2** Deep link `/profile#notifications` while signed out: the card is scrolled to only if the fragment survives the sign-in redirect; manual 27 passes (card scrolled into view after sign-in).
 - **F-3** Not tested: a `FAILED` mail row whose recipient then switches e-mail off; expected `outcome=off` on the retry with the row left `FAILED`. Candidate IT in `InAppNotificationsIT` with the next notification story.
-- **F-4** Session expiry on the preferences save shows the generic error (no 401 branch) while the shell redirects; manual 29.
+- **F-4** Session expiry on the preferences save shows the generic error (no 401 branch) while the shell redirects; manual 29 passes (redirect to /login, no change saved); the generic message stays.
 - **F-5** Refactor sweep, for a follow-up `refactor(notification)` PR: the `ApprovalLevel` uk/en maps duplicated in `DecisionMails` and `OverdueMails`; the `NotificationType` union and `NOTIFICATION_TYPES` list the same literals (derive the type with `as const`); `open()` duplicated in the bell and the list, swallowing errors; the `NotificationRows` test fixture built in four places; hand-rolled polling loops in `InAppNotificationsIT` and `Mailpit`. Left as is (EPIC-07 technical notes): bilingual text helpers across five mail listeners, field labels in Java and in i18n, the index pairing of drafts and recipients in `AuthorityChangeMails`.
 - **F-6** `InAppNotificationsIT.ac4_2_aSentMailIsLoggedAsSentWithTheMomentTheServerAcceptedIt` found the row still `SENDING` after its 30 s wait in the full gate (sends serialised behind the one SMTP lock, 7.1 F-1, with 3.2 GB free); 8 of 8 on rerun. Watch in the next gates; a longer wait for this one assertion if it recurs.
 - **F-7** `notifications.spec.ts` counted all of the owner's rows and expected 1; since 7.2.3 a sent mail adds an `EMAIL` row, so the count is 2 whenever both land before the first poll. Both queries now filter `channel = 'IN_APP'`.
