@@ -7,8 +7,9 @@ import static org.mockito.Mockito.verify;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Objects;
+
+import jakarta.mail.internet.MimeMessage;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +19,6 @@ import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -30,6 +30,7 @@ import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
 import ua.edu.chnu.awards.support.RequestRows;
+import ua.edu.chnu.awards.support.TestMails;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
@@ -93,8 +94,8 @@ class TakeOverIT extends AbstractIntegrationTest {
 
         transactions.executeWithoutResult(status -> events.publishEvent(takenOver(to)));
 
-        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(
-            message -> sentTo(to).matches(message) && TakeOverMails.SUBJECT.equals(message.getSubject())));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(
+            message -> sentTo(to).matches(message) && TakeOverMails.SUBJECT.equals(TestMails.subject(message))));
     }
 
     @Test
@@ -106,7 +107,7 @@ class TakeOverIT extends AbstractIntegrationTest {
             status.setRollbackOnly();
         });
 
-        verify(mailSender, after(QUIET_MS).never()).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        verify(mailSender, after(QUIET_MS).never()).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
     }
 
     private boolean overdue(Instant deadline) {
@@ -121,7 +122,7 @@ class TakeOverIT extends AbstractIntegrationTest {
         return new ReviewTakenOver(null, to, "Ірина", 1L, "Prize", "Премія", "Аліна Мартинюк", null);
     }
 
-    private static ArgumentMatcher<SimpleMailMessage> sentTo(String to) {
-        return message -> message != null && message.getTo() != null && List.of(message.getTo()).contains(to);
+    private static ArgumentMatcher<MimeMessage> sentTo(String to) {
+        return message -> message != null && TestMails.recipients(message).contains(to);
     }
 }

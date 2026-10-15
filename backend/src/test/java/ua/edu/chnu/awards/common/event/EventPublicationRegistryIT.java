@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import jakarta.mail.internet.MimeMessage;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +29,6 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -41,6 +42,7 @@ import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
+import ua.edu.chnu.awards.support.TestMails;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 
 @ExtendWith(OutputCaptureExtension.class)
@@ -84,7 +86,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         }));
 
         assertThat(inTransaction).isEqualTo(2);
-        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
     }
 
@@ -111,8 +113,8 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         }));
 
         assertThat(listeners).hasSize(2).allMatch(id -> id.contains("notification.AuthorityChangeMails"));
-        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(holder)));
-        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(delegate)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(holder)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(delegate)));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
     }
 
@@ -127,30 +129,30 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
 
         assertThat(incomplete()).isZero();
         verify(mailSender, after(QUIET_MS).never())
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
     }
 
     @Test
     void ac1_3_ac1_4_aRefusedMailStaysIncompleteAndTheRetryJobSendsIt() {
         String to = "it.registry.retry@chnu.edu.ua";
         doThrow(new MailSendException("down")).when(mailSender)
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
 
         transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
 
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
 
         reset(mailSender);
         age(Duration.ofMinutes(5));
         retry.run();
-        verify(mailSender, after(QUIET_MS).never()).send(any(SimpleMailMessage.class));
+        verify(mailSender, after(QUIET_MS).never()).send(any(MimeMessage.class));
         assertThat(incomplete()).isEqualTo(1);
 
         age(Duration.ofMinutes(15));
         retry.run();
-        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
     }
 
@@ -158,10 +160,10 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
     void ac1_4_aPublicationThatCannotBeReadDoesNotStopTheOthers() {
         String to = "it.registry.poison@chnu.edu.ua";
         doThrow(new MailSendException("down")).when(mailSender)
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
         reset(mailSender);
         age(Duration.ofMinutes(15));
@@ -171,7 +173,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
 
         retry.run();
 
-        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT event_type FROM event_publication WHERE completion_date IS NULL",
             String.class)).isEqualTo("ua.edu.chnu.awards.Gone");
@@ -182,12 +184,12 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
             throws InterruptedException {
         String to = "it.registry.quiet@chnu.edu.ua";
         doThrow(new MailSendException("down")).when(mailSender)
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
 
         transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
 
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(waitFor(() -> output.getAll().contains(to + "] was not delivered"), true)).isTrue();
         Thread.sleep(QUIET_MS);
         assertThat(output.getAll()).doesNotContain("SimpleAsyncUncaughtExceptionHandler");
@@ -201,7 +203,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
 
         retry.run();
 
-        verify(mailSender, after(QUIET_MS).never()).send(any(SimpleMailMessage.class));
+        verify(mailSender, after(QUIET_MS).never()).send(any(MimeMessage.class));
         assertThat(incomplete()).isEqualTo(1);
     }
 
@@ -215,7 +217,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         }));
 
         assertThat(inTransaction).isZero();
-        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+        verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(jdbc.queryForObject("SELECT count(*) FROM event_publication WHERE serialized_event LIKE ?",
             Long.class, "%token=%")).isZero();
     }
@@ -230,7 +232,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         });
 
         verify(mailSender, after(QUIET_MS).never())
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(to)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
         assertThat(incomplete()).isZero();
     }
 
@@ -239,8 +241,8 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
             ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", null, null);
     }
 
-    private static ArgumentMatcher<SimpleMailMessage> sentTo(String to) {
-        return message -> message != null && message.getTo() != null && List.of(message.getTo()).contains(to);
+    private static ArgumentMatcher<MimeMessage> sentTo(String to) {
+        return message -> message != null && TestMails.recipients(message).contains(to);
     }
 
     private long incomplete() {

@@ -23,6 +23,7 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
 import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.award.service.ReviewMetrics;
+import ua.edu.chnu.awards.common.mail.MailContent;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.common.mail.MailNotDeliveredException;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
@@ -67,14 +68,14 @@ class OverdueMailsTest {
     void ac2_2_ac2_6_aDeliveredDigestIsCounted() {
         mails.onNoticed(digest());
 
-        verify(delivery).send(eq(DEAN), anyString(), anyString());
+        verify(delivery).send(eq(DEAN), anyString(), any(MailContent.class));
         verify(metrics).noticeSent();
     }
 
     @Test
     void ac1_9_aRefusedDigestIsNotCountedAndStaysIncomplete() {
         doThrow(new MailNotDeliveredException("s", List.of(DEAN), null))
-            .when(delivery).send(eq(DEAN), anyString(), anyString());
+            .when(delivery).send(eq(DEAN), anyString(), any(MailContent.class));
         OverdueNoticed digest = digest();
 
         assertThatThrownBy(() -> mails.onNoticed(digest)).isInstanceOf(MailNotDeliveredException.class);

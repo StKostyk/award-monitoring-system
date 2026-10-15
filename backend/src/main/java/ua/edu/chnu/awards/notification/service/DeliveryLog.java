@@ -5,6 +5,7 @@ import java.time.Clock;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.common.event.EventProperties;
+import ua.edu.chnu.awards.common.mail.MailContent;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.common.mail.MailNotDeliveredException;
 import ua.edu.chnu.awards.notification.entity.DeliveryStatus;
@@ -71,7 +72,7 @@ public class DeliveryLog {
 
     private boolean deliver(NotificationType type, String key, String email, String subject, String body) {
         try {
-            delivery.send(email, subject, body);
+            delivery.send(email, subject, MailContent.notification(body));
         } catch (MailNotDeliveredException e) {
             if (key != null) {
                 notifications.finish(key, DeliveryStatus.FAILED, null);

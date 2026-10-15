@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.restassured.RestAssured;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 
 /**
@@ -96,11 +97,26 @@ public final class Mailpit {
      * @return text body of the newest matching message
      */
     public String latestTextTo(String recipient, String subject, int count) {
+        return latestPartTo(recipient, subject, count, "Text");
+    }
+
+    /**
+     * Waits until a message with the given subject text reached the recipient and returns the HTML part of the newest.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @return HTML body of the newest matching message
+     */
+    public String latestHtmlTo(String recipient, String subject) {
+        return latestPartTo(recipient, subject, 1, "HTML");
+    }
+
+    private String latestPartTo(String recipient, String subject, int count, String part) {
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
             List<Map<String, Object>> messages = messagesTo(recipient, subject);
             if (messages.size() >= count) {
                 String id = String.valueOf(messages.get(0).get("ID"));
-                return RestAssured.given().get(apiUrl + "/api/v1/message/" + id).jsonPath().getString("Text");
+                return RestAssured.given().get(apiUrl + "/api/v1/message/" + id).jsonPath().getString(part);
             }
             sleep();
         }
@@ -119,12 +135,29 @@ public final class Mailpit {
      * @return text body of the newest message mentioning the fragment
      */
     public String textMentioning(String recipient, String subject, String fragment) {
+        return partMentioning(recipient, subject, fragment, "Text");
+    }
+
+    /**
+     * Waits until a message to the recipient with the given subject text mentions the fragment in its text part and
+     * returns its HTML part.
+     *
+     * @param recipient email address
+     * @param subject   text the subject must contain; empty for any subject
+     * @param fragment  text the plain-text body must contain
+     * @return HTML body of the newest message mentioning the fragment
+     */
+    public String htmlMentioning(String recipient, String subject, String fragment) {
+        return partMentioning(recipient, subject, fragment, "HTML");
+    }
+
+    private String partMentioning(String recipient, String subject, String fragment, String part) {
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
             for (Map<String, Object> message : messagesTo(recipient, subject)) {
-                String text = RestAssured.given().get(apiUrl + "/api/v1/message/" + message.get("ID")).jsonPath()
-                    .getString("Text");
+                JsonPath body = RestAssured.given().get(apiUrl + "/api/v1/message/" + message.get("ID")).jsonPath();
+                String text = body.getString("Text");
                 if (text != null && text.contains(fragment)) {
-                    return text;
+                    return body.getString(part);
                 }
             }
             sleep();

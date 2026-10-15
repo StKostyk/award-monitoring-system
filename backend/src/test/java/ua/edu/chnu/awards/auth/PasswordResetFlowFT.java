@@ -85,6 +85,8 @@ class PasswordResetFlowFT extends AbstractIntegrationTest {
         assertThat(mailpit.messagesTo("nobody@chnu.edu.ua")).isEmpty();
         String link = Mailpit.linkIn(text);
         assertThat(link).startsWith("http://localhost:4200/reset-password?token=");
+        assertThat(mailpit.latestHtmlTo(EMAIL, "Password reset")).contains("href=\"" + link + "\"")
+            .doesNotContain("/profile#notifications");
         String token = UriComponentsBuilder.fromUri(URI.create(link)).build().getQueryParams().getFirst("token");
 
         confirmReset(token, "password123").then().statusCode(422)

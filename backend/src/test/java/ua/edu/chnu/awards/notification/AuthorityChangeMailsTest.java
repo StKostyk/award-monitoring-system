@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.common.mail.MailContent;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
@@ -38,7 +39,7 @@ class AuthorityChangeMailsTest {
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
     private final AuthorityChangeMails mails = new AuthorityChangeMails(TestDeliveries.log(delivery, preferences),
         new NotificationDrafts());
-    private final ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
+    private final ArgumentCaptor<MailContent> text = ArgumentCaptor.forClass(MailContent.class);
 
     @BeforeEach
     void allowEveryChannel() {
@@ -51,7 +52,7 @@ class AuthorityChangeMailsTest {
             FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), LocalDate.of(2026, 10, 22), null));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль призначено / Role assigned"), text.capture());
-        assertThat(text.getValue()).contains("FACULTY_SECRETARY", FMI_UK, FMI, "Марія Мартинюк", "2026-09-22",
+        assertThat(text.getValue().text()).contains("FACULTY_SECRETARY", FMI_UK, FMI, "Марія Мартинюк", "2026-09-22",
             "2026-10-22");
     }
 
@@ -61,7 +62,7 @@ class AuthorityChangeMailsTest {
             FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), null, null));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль призначено / Role assigned"), text.capture());
-        assertThat(text.getValue()).doesNotContain(" until ");
+        assertThat(text.getValue().text()).doesNotContain(" until ");
     }
 
     @Test
@@ -70,7 +71,7 @@ class AuthorityChangeMailsTest {
             "Марія Мартинюк", LocalDate.of(2026, 9, 21), null));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль відкликано / Role revoked"), text.capture());
-        assertThat(text.getValue()).contains("DEAN", "2026-09-21", "Every session was ended");
+        assertThat(text.getValue().text()).contains("DEAN", "2026-09-21", "Every session was ended");
     }
 
     @Test
@@ -79,7 +80,7 @@ class AuthorityChangeMailsTest {
 
         verify(delivery).send(eq("secretary@chnu.edu.ua"), eq("Делеговано повноваження / Authority delegated"),
             text.capture());
-        assertThat(text.getValue()).contains("DEAN", FMI_UK, "Марія Мартинюк", "2026-09-24", "2026-10-08",
+        assertThat(text.getValue().text()).contains("DEAN", FMI_UK, "Марія Мартинюк", "2026-09-24", "2026-10-08",
             "Відпустка", "user management is not handed over");
     }
 
@@ -89,7 +90,7 @@ class AuthorityChangeMailsTest {
 
         verify(delivery).send(eq("secretary@chnu.edu.ua"), eq("Делеговано повноваження / Authority delegated"),
             text.capture());
-        assertThat(text.getValue()).doesNotContain("Причина").doesNotContain("Reason");
+        assertThat(text.getValue().text()).doesNotContain("Причина").doesNotContain("Reason");
     }
 
     @Test
@@ -102,7 +103,7 @@ class AuthorityChangeMailsTest {
         verify(delivery, times(2)).send(recipient.capture(), eq("Делегування відкликано / Delegation revoked"),
             text.capture());
         assertThat(recipient.getAllValues()).containsExactly("secretary@chnu.edu.ua", "dean@chnu.edu.ua");
-        assertThat(text.getAllValues()).allSatisfy(body -> assertThat(body)
+        assertThat(text.getAllValues()).extracting(MailContent::text).allSatisfy(body -> assertThat(body)
             .contains("DEAN", "Аліна Коваленко", "Олег Адміненко", "Every session of the delegate was ended"));
     }
 
@@ -118,9 +119,10 @@ class AuthorityChangeMailsTest {
             new DelegationRevoked.Recipient(9L, "dean@chnu.edu.ua", null)), RoleType.DEAN, FMI, FMI_UK,
             "Аліна Коваленко", "Олег Адміненко", null, null));
 
-        verify(delivery, never()).send(eq("member@chnu.edu.ua"), anyString(), anyString());
-        verify(delivery, never()).send(eq("secretary@chnu.edu.ua"), anyString(), anyString());
-        verify(delivery).send(eq("dean@chnu.edu.ua"), eq("Делегування відкликано / Delegation revoked"), anyString());
+        verify(delivery, never()).send(eq("member@chnu.edu.ua"), anyString(), any(MailContent.class));
+        verify(delivery, never()).send(eq("secretary@chnu.edu.ua"), anyString(), any(MailContent.class));
+        verify(delivery).send(eq("dean@chnu.edu.ua"), eq("Делегування відкликано / Delegation revoked"),
+            any(MailContent.class));
     }
 
     private static DelegationCreated delegation(String reason) {
