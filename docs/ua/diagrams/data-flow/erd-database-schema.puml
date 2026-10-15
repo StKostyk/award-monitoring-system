@@ -2,7 +2,7 @@
 !theme plain
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок (реалізація, V035)
+title Система Моніторингу та Відстеження Нагород - Діаграма Сутність-Зв'язок (реалізація, V039)
 
 ' * обов'язкове (NOT NULL); усі мітки часу — TIMESTAMPTZ
 
@@ -158,6 +158,7 @@ entity "documents\n(документи)" as documents {
     checksum_sha256 : VARCHAR(64)
     * document_type : VARCHAR(30)
     description : VARCHAR(500)
+    * shown_to_colleagues : BOOLEAN
     parsed_metadata : JSONB
     confidence_score : NUMERIC(5,4)
     * processing_status : VARCHAR(20)
@@ -252,8 +253,8 @@ entity "notifications\n(сповіщення)" as notifications {
     --
     * user_id : BIGINT <<FK>>
     * type : VARCHAR(50)
-    * title : VARCHAR(255)
-    * message : TEXT
+    * payload : JSONB
+    * dedupe_key : VARCHAR(64) <<UK>>
     * is_read : BOOLEAN
     * channel : VARCHAR(20)
     reference_type : VARCHAR(50)
@@ -261,6 +262,8 @@ entity "notifications\n(сповіщення)" as notifications {
     * sent_at : TIMESTAMPTZ
     read_at : TIMESTAMPTZ
     expires_at : TIMESTAMPTZ
+    delivery_status : VARCHAR(20)
+    delivered_at : TIMESTAMPTZ
 }
 
 entity "notification_preferences\n(налаштування сповіщень)" as notif_prefs {
@@ -274,6 +277,16 @@ entity "notification_preferences\n(налаштування сповіщень)"
     * push_enabled : BOOLEAN
     * created_at : TIMESTAMPTZ
     * updated_at : TIMESTAMPTZ
+}
+
+entity "event_publication\n(реєстр публікацій подій)" as event_pub {
+    * id : UUID <<PK>>
+    --
+    * listener_id : TEXT
+    * event_type : TEXT
+    * serialized_event : TEXT
+    * publication_date : TIMESTAMPTZ
+    completion_date : TIMESTAMPTZ
 }
 }
 
@@ -332,7 +345,8 @@ end note
 note bottom of documents
     Лише метадані; файл — це об'єкт у MinIO.
     Унікальність (award_id, checksum_sha256);
-    document_type і description з V025.
+    document_type і description з V025;
+    shown_to_colleagues з V037.
 end note
 
 note right of requests
@@ -340,6 +354,17 @@ note right of requests
     на поточному рівні (V024); overdue_noticed_*
     позначають сповіщення для рівня (V033).
     Індекси: DATA_DICTIONARY_ua.md 3.1
+end note
+
+note bottom of notifications
+    payload і dedupe_key замінюють title і
+    message (V038); рядки EMAIL — журнал
+    доставки з delivery_status (V039).
+end note
+
+note bottom of event_pub
+    Реєстр публікацій Spring Modulith (V036);
+    без зовнішніх ключів, завершені рядки видаляються.
 end note
 
 @enduml

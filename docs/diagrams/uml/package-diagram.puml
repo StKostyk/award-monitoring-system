@@ -7,7 +7,7 @@ skinparam package {
     BackgroundColor<<config>> LightGray
 }
 
-title Award Monitoring & Tracking System - Package Diagram (Java backend, Spring Modulith modules after 7.1.2)
+title Award Monitoring & Tracking System - Package Diagram (Java backend, Spring Modulith modules after Epic 7)
 
 ' Package by domain: each top-level package is an application module (ADR-022); others use only its base
 ' package and its named interfaces (dto, event, entity, service), never its repository, controller or mapper
@@ -187,6 +187,31 @@ package "ua.edu.chnu.awards" {
 
     package "notification" <<domain>> {
         class AuthorityChangeMails
+        class DecisionMails
+        class CorrectionMails
+        class OverdueMails
+        class TakeOverMails
+        package "controller" as notification_controller {
+            class NotificationController
+            class NotificationPreferenceController
+        }
+        package "service" as notification_service {
+            class InAppNotifications
+            class NotificationService
+            class NotificationPreferenceService
+            class NotificationDrafts
+            class DeliveryLog
+            class DeliveryMetrics
+            class NotificationLookup
+        }
+        package "entity" as notification_entity {
+            class Notification
+            class NotificationPreference
+        }
+        package "repository" as notification_repository {
+            class NotificationRepository
+            class NotificationPreferenceRepository
+        }
     }
 
     package "metrics" <<config>> {
@@ -211,6 +236,12 @@ package "ua.edu.chnu.awards" {
         }
         package "mail" as common_mail {
             class MailDelivery
+            class MailHtmlRenderer
+            class UndeliveredMailAsyncHandler
+        }
+        package "event" as common_event {
+            class AfterCommit
+            class PublicationRetry
         }
         package "limit" as common_limit {
             class FixedWindowCounter
@@ -250,14 +281,20 @@ gdpr ..> award
 gdpr ..> auth : devices
 gdpr ..> delegation
 gdpr ..> user
-notification ..> user : role events
+gdpr ..> notification : NotificationLookup
+notification ..> user : role events, recipients
 notification ..> delegation : delegation events
+notification ..> award : decision, correction, overdue, takeover events
+notification ..> authz
+notification ..> audit : NOTIFICATION_PREFERENCES_CHANGED
 user ..> audit : implements ActorDirectory
 config ..> audit
 
 note bottom of award
     Mappers are hand-written @Component classes;
     no MapStruct. The review workflow lives in award (ADR-023).
+    Listeners of notification run after commit on the
+    event publication registry (common.event, ADR-006 addendum).
     common is an open module used by all; config is used by none.
     Planned domains: parsing (OCR, deferred), analytics (Epic 5),
     compliance (Epic 6).

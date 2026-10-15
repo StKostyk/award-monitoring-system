@@ -180,7 +180,7 @@ public record UserRegistrationRequest(
 |----------------|------------------|-----------------|---------------------|---------------|
 | P001 | Award Management | Creating, tracking, and displaying awards | User profile, Award data | 7 years |
 | P002 | Authentication | User login and session management | Credentials, Session data | Session + 30 days |
-| P003 | Notification | Email/SMS alerts about awards | Contact info, Preferences | Account lifetime |
+| P003 | Notification | E-mail and in-app notifications about awards, reviews, roles and delegations (no SMS) | E-mail address, notification payloads, delivery log, preferences | Notifications 1 year (`expires_at`), preferences for the account lifetime |
 | P004 | Analytics | System usage and performance | Anonymized usage data | 3 years |
 | P005 | Compliance | Audit trails and GDPR compliance | Audit logs, Consent records | 7 years |
 

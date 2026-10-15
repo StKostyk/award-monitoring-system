@@ -300,6 +300,18 @@ Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](.
   moves or decides it (ADR-023). Expedited, appeal and exception workflows are deferred.
 - **Next**: manual runs of the Epic 4 scenarios, then Epic 7 (notifications) and Epic 6.
 
+## Addendum 2026-10-15: After Epic 7
+
+- **Velocity**: Epic 7 delivered 36 points between 2026-10-09 and 2026-10-15 (end of sprint 4 and sprint 5): 32 planned
+  and four one-point fix stories from the validations; about 266 points are delivered.
+- **Delivered scope**: feature 7.1 moved the after-commit e-mails onto the Spring Modulith event publication registry
+  and turned the module boundaries of ADR-022 into a test; feature 7.2 added in-app notifications with a notification
+  centre, per-type e-mail and in-app preferences, a delivery log in the personal data export and HTML e-mails in the
+  university brand. Both features were walked through their manual scenarios.
+- **Not built**: Kafka (ADR-006 addendum: only for a consumer outside the application), SMS, browser push, real-time
+  delivery and digests; purging expired notifications belongs to the retention job of Epic 6.
+- **Next**: Epic 6 (compliance and security: erasure, retention), then Epic 5 (analytics and reporting).
+
 ---
 
 ## Summary
