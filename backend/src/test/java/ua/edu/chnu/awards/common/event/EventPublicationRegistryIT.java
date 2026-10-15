@@ -11,10 +11,8 @@ import static org.mockito.Mockito.verify;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -42,8 +40,9 @@ import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.event.ReviewMeasured;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
+import ua.edu.chnu.awards.support.Eventually;
+import ua.edu.chnu.awards.support.TestEvents;
 import ua.edu.chnu.awards.support.TestMails;
-import ua.edu.chnu.awards.user.event.RoleAssigned;
 
 @ExtendWith(OutputCaptureExtension.class)
 class EventPublicationRegistryIT extends AbstractIntegrationTest {
@@ -87,7 +86,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
 
         assertThat(inTransaction).isEqualTo(2);
         verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
     }
 
     @Test
@@ -95,7 +94,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         transactions.executeWithoutResult(status -> events.publishEvent(
             new ReviewMeasured(ApprovalLevel.DEAN, ReviewDecisionType.APPROVED, true, Duration.ofHours(2))));
 
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
     }
 
     @Test
@@ -104,10 +103,10 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         String delegate = "it.registry.delegation@chnu.edu.ua";
 
         List<String> listeners = Objects.requireNonNull(transactions.execute(status -> {
-            events.publishEvent(new RoleAssigned(null, holder, "Олена", RoleType.FACULTY_SECRETARY, "Faculty",
-                "Факультет", "Admin", LocalDate.of(2026, 10, 1), null, null));
-            events.publishEvent(new DelegationRevoked(List.of(DelegationRevoked.Recipient.of(delegate)), RoleType.DEAN,
-                "Faculty", "Факультет", "Delegate", "Admin", null, null));
+            events.publishEvent(TestEvents.roleAssigned().to(null, holder, "Олена")
+                .role(RoleType.FACULTY_SECRETARY, "Faculty", "Факультет").by("Admin").build());
+            events.publishEvent(TestEvents.delegationRevoked(DelegationRevoked.Recipient.of(delegate))
+                .role(RoleType.DEAN, "Faculty", "Факультет").of("Delegate", "Admin").build());
             return jdbc.queryForList("SELECT listener_id FROM event_publication WHERE listener_id LIKE ?",
                 String.class, "%Mails%");
         }));
@@ -115,7 +114,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         assertThat(listeners).hasSize(2).allMatch(id -> id.contains("notification.AuthorityChangeMails"));
         verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(holder)));
         verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(delegate)));
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
     }
 
     @Test
@@ -142,7 +141,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
 
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
-        assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
 
         reset(mailSender);
         age(Duration.ofMinutes(5));
@@ -153,7 +152,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         age(Duration.ofMinutes(15));
         retry.run();
         verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
     }
 
     @Test
@@ -164,7 +163,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         transactions.executeWithoutResult(status -> events.publishEvent(decided(to)));
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
-        assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
         reset(mailSender);
         age(Duration.ofMinutes(15));
         jdbc.update("INSERT INTO event_publication (id, listener_id, event_type, serialized_event, publication_date)"
@@ -174,7 +173,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         retry.run();
 
         verify(mailSender, timeout(MAIL_WAIT_MS)).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
-        assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT event_type FROM event_publication WHERE completion_date IS NULL",
             String.class)).isEqualTo("ua.edu.chnu.awards.Gone");
     }
@@ -190,7 +189,7 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
 
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(to)));
-        assertThat(waitFor(() -> output.getAll().contains(to + "] was not delivered"), true)).isTrue();
+        assertThat(Eventually.equalTo(() -> output.getAll().contains(to + "] was not delivered"), true)).isTrue();
         Thread.sleep(QUIET_MS);
         assertThat(output.getAll()).doesNotContain("SimpleAsyncUncaughtExceptionHandler");
         assertThat(incomplete()).isEqualTo(1);
@@ -237,8 +236,8 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
     }
 
     private static AwardDecided decided(String to) {
-        return new AwardDecided(null, to, "Олена", 999_001L, "Certificate", "Грамота", RequestStatus.APPROVED,
-            ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", null, null);
+        return TestEvents.decided().to(null, to, "Олена").award(999_001L, "Certificate", "Грамота")
+            .outcome(RequestStatus.APPROVED, ApprovalLevel.FACULTY_SECRETARY).build();
     }
 
     private static ArgumentMatcher<MimeMessage> sentTo(String to) {
@@ -259,20 +258,5 @@ class EventPublicationRegistryIT extends AbstractIntegrationTest {
         jdbc.update("INSERT INTO event_publication (id, listener_id, event_type, serialized_event, publication_date)"
                 + " VALUES (gen_random_uuid(), 'listener', ?, '{}', ?)", AwardDecided.class.getName(),
             Timestamp.from(Instant.now().minus(age)));
-    }
-
-    private static <T> T waitFor(Supplier<T> value, T expected) {
-        long deadline = System.currentTimeMillis() + MAIL_WAIT_MS;
-        T current = value.get();
-        while (!expected.equals(current) && System.currentTimeMillis() < deadline) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return current;
-            }
-            current = value.get();
-        }
-        return current;
     }
 }

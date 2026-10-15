@@ -17,7 +17,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -41,6 +40,8 @@ import ua.edu.chnu.awards.common.event.PublicationRetry;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
+import ua.edu.chnu.awards.support.Eventually;
+import ua.edu.chnu.awards.support.TestEvents;
 import ua.edu.chnu.awards.support.TestMails;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.User;
@@ -91,8 +92,8 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         publish(decided(owner, occurredAt));
 
-        assertThat(waitFor(() -> rows(owner), 1L)).isEqualTo(1);
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(() -> rows(owner), 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
         Map<String, Object> row = jdbc.queryForMap("SELECT type, channel, payload::text AS payload, reference_type,"
             + " reference_id, is_read, sent_at, expires_at, length(dedupe_key) AS key_length FROM notifications"
             + " WHERE user_id = ? AND channel = 'IN_APP'", owner.getId());
@@ -112,10 +113,10 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         AwardDecided event = decided(owner, Instant.now());
 
         publish(event);
-        assertThat(waitFor(() -> rows(owner), 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(() -> rows(owner), 1L)).isEqualTo(1);
         publish(event);
 
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
         assertThat(rows(owner)).isEqualTo(1);
         assertThat(mailStatus(owner)).isEqualTo("SENT");
     }
@@ -125,11 +126,11 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         User deleted = account("deleted");
         jdbc.update("UPDATE users SET account_status = 'DELETED' WHERE user_id = ?", deleted.getId());
 
-        publish(new AwardDecided(Long.MAX_VALUE, "it.inapp.gone" + DOMAIN, "Олена", AWARD_ID, "Certificate",
-            "Грамота", RequestStatus.APPROVED, ApprovalLevel.DEAN, "Ірина Бойко", null, Instant.now()));
+        publish(TestEvents.decided().to(Long.MAX_VALUE, "it.inapp.gone" + DOMAIN, "Олена")
+            .award(AWARD_ID, "Certificate", "Грамота").at(Instant.now()).build());
         publish(decided(deleted, Instant.now()));
 
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
         assertThat(rows(deleted)).isZero();
         verify(mailSender, never())
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo("it.inapp.gone" + DOMAIN)));
@@ -151,9 +152,9 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         assertThat(publications).isEqualTo(2);
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
-        assertThat(waitFor(() -> rows(owner), 1L)).isEqualTo(1);
-        assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
-        assertThat(waitFor(() -> mailStatus(owner), "FAILED")).isEqualTo("FAILED");
+        assertThat(Eventually.equalTo(() -> rows(owner), 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(() -> mailStatus(owner), "FAILED")).isEqualTo("FAILED");
         assertThat(jdbc.queryForObject("SELECT listener_id FROM event_publication WHERE completion_date IS NULL",
             String.class)).contains("DecisionMails");
 
@@ -164,7 +165,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         verify(mailSender, timeout(WAIT_MS))
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
         assertThat(rows(owner)).isEqualTo(1);
         assertThat(mailStatus(owner)).isEqualTo("SENT");
     }
@@ -176,12 +177,12 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         publish(decided(owner, Instant.now()));
 
-        assertThat(waitFor(() -> mailStatus(owner), "SENT")).isEqualTo("SENT");
+        assertThat(Eventually.equalTo(() -> mailStatus(owner), "SENT")).isEqualTo("SENT");
         Map<String, Object> row = jdbc.queryForMap("SELECT type, payload ->> 'title' AS title, delivered_at"
             + " FROM notifications WHERE user_id = ? AND channel = 'EMAIL'", owner.getId());
         assertThat(row).containsEntry("type", "AWARD_RETURNED").containsEntry("title", "Certificate");
         assertThat(((Timestamp) row.get("delivered_at")).toInstant()).isAfter(before);
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
     }
 
     @Test
@@ -189,12 +190,12 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         User owner = account("f1");
         AwardDecided event = decided(owner, Instant.now().truncatedTo(ChronoUnit.MICROS));
         publish(event);
-        assertThat(waitFor(() -> mailStatus(owner), "SENT")).isEqualTo("SENT");
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(() -> mailStatus(owner), "SENT")).isEqualTo("SENT");
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
 
         publish(event);
 
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
         verify(mailSender, after(WAIT_SHORT_MS).times(1))
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
     }
@@ -211,8 +212,8 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         verify(mailSender, timeout(WAIT_MS))
             .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(inAppOff.getEmailAddress())));
-        assertThat(waitFor(() -> rows(mailOff), 1L)).isEqualTo(1);
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(() -> rows(mailOff), 1L)).isEqualTo(1);
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
         assertThat(rows(inAppOff)).isZero();
         assertThat(mailStatus(mailOff)).isNull();
         verify(mailSender, never())
@@ -230,11 +231,11 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
             RoleType.DEAN, "Faculty", "Факультет", "Аліна Коваль", "Олег Адміненко", LocalDate.of(2026, 10, 14),
             Instant.now()));
 
-        assertThat(waitFor(() -> rows(delegate) + rows(delegator), 2L)).isEqualTo(2);
+        assertThat(Eventually.equalTo(() -> rows(delegate) + rows(delegator), 2L)).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT payload ->> 'otherParty' FROM notifications WHERE user_id = ?"
             + " AND channel = 'IN_APP'",
             String.class, delegator.getId())).isEqualTo("Аліна Коваль");
-        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
     }
 
     private User account(String name) {
@@ -243,8 +244,10 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
     }
 
     private static AwardDecided decided(User owner, Instant occurredAt) {
-        return new AwardDecided(owner.getId(), owner.getEmailAddress(), "Олена", AWARD_ID, "Certificate", "Грамота",
-            RequestStatus.RETURNED, ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", "Виправте дату", occurredAt);
+        return TestEvents.decided().to(owner.getId(), owner.getEmailAddress(), "Олена")
+            .award(AWARD_ID, "Certificate", "Грамота")
+            .outcome(RequestStatus.RETURNED, ApprovalLevel.FACULTY_SECRETARY)
+            .by("Ірина Бойко", "Виправте дату").at(occurredAt).build();
     }
 
     private void prefer(User user, boolean email, boolean inApp) {
@@ -273,20 +276,5 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
     private static ArgumentMatcher<MimeMessage> sentTo(String to) {
         return message -> message != null && TestMails.recipients(message).contains(to);
-    }
-
-    private static <T> T waitFor(Supplier<T> value, T expected) {
-        long deadline = System.currentTimeMillis() + WAIT_MS;
-        T current = value.get();
-        while (!expected.equals(current) && System.currentTimeMillis() < deadline) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return current;
-            }
-            current = value.get();
-        }
-        return current;
     }
 }

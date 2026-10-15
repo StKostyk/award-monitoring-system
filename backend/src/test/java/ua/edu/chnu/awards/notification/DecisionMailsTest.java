@@ -23,6 +23,7 @@ import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 import ua.edu.chnu.awards.support.TestDeliveries;
+import ua.edu.chnu.awards.support.TestEvents;
 
 class DecisionMailsTest {
 
@@ -52,8 +53,8 @@ class DecisionMailsTest {
 
     @Test
     void ac2_10_anErasedOwnerGetsNoMessage() {
-        mails.onDecided(new AwardDecided(21L, null, "Ірина", 5L, "Prize", "Премія", RequestStatus.APPROVED,
-            ApprovalLevel.DEAN, "Аліна Мартинюк", null, null));
+        mails.onDecided(TestEvents.decided().to(21L, null, "Ірина").award(5L, "Prize", "Премія")
+            .by("Аліна Мартинюк", null).build());
 
         verify(delivery, never()).send(anyString(), anyString(), any(MailContent.class));
     }
@@ -109,7 +110,7 @@ class DecisionMailsTest {
     }
 
     private static AwardDecided event(RequestStatus outcome, ApprovalLevel level, String comment) {
-        return new AwardDecided(21L, "employee@chnu.edu.ua", "Ірина", 5L, "Prize", "Премія", outcome, level,
-            "Аліна Мартинюк", comment, null);
+        return TestEvents.decided().to(21L, "employee@chnu.edu.ua", "Ірина").award(5L, "Prize", "Премія")
+            .outcome(outcome, level).by("Аліна Мартинюк", comment).build();
     }
 }

@@ -30,6 +30,7 @@ import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
 import ua.edu.chnu.awards.support.RequestRows;
+import ua.edu.chnu.awards.support.TestEvents;
 import ua.edu.chnu.awards.support.TestMails;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.User;
@@ -119,7 +120,7 @@ class TakeOverIT extends AbstractIntegrationTest {
     }
 
     private static ReviewTakenOver takenOver(String to) {
-        return new ReviewTakenOver(null, to, "Ірина", 1L, "Prize", "Премія", "Аліна Мартинюк", null);
+        return TestEvents.takenOver().to(null, to, "Ірина").award(1L, "Prize", "Премія").by("Аліна Мартинюк").build();
     }
 
     private static ArgumentMatcher<MimeMessage> sentTo(String to) {

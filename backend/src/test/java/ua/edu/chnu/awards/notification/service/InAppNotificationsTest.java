@@ -23,13 +23,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
-import ua.edu.chnu.awards.award.entity.ApprovalLevel;
-import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.repository.NewNotification;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
+import ua.edu.chnu.awards.support.TestEvents;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
@@ -128,7 +127,6 @@ class InAppNotificationsTest {
     }
 
     private static AwardDecided decided(Long userId, Instant at) {
-        return new AwardDecided(userId, EMAIL, "Олена", 5L, "Certificate", "Грамота", RequestStatus.APPROVED,
-            ApprovalLevel.DEAN, "Ірина Бойко", null, at);
+        return TestEvents.decided().to(userId, EMAIL, "Олена").at(at).build();
     }
 }

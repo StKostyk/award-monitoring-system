@@ -140,9 +140,16 @@ public class NotificationDrafts {
      *
      * @param event the decision
      * @return approved, rejected, returned or escalated
+     * @throws IllegalArgumentException when the outcome is not a decision
      */
     public static NotificationType typeOf(AwardDecided event) {
-        return NotificationType.valueOf("AWARD_" + event.outcome().name());
+        return switch (event.outcome()) {
+            case APPROVED -> NotificationType.AWARD_APPROVED;
+            case REJECTED -> NotificationType.AWARD_REJECTED;
+            case RETURNED -> NotificationType.AWARD_RETURNED;
+            case ESCALATED -> NotificationType.AWARD_ESCALATED;
+            default -> throw new IllegalArgumentException("Not a decision: " + event.outcome());
+        };
     }
 
     private static Map<String, Object> award(String title, String titleUk, String reviewer) {
