@@ -179,6 +179,9 @@ paths:
         (membership confirmation), so a freshly verified account carries no roles or permissions in its token.
         Registering an address that already has a `PENDING` account whose newest verification link has expired
         replaces that account (name, organisation, password, fresh link) and answers 201.
+        `privacyNoticeVersion` must be the current notice version (`GET /public/privacy-notice`); the account is
+        stored with a `DATA_PROCESSING` consent record for that version in the same transaction and
+        `PRIVACY_NOTICE_ACKNOWLEDGED` is audited.
       operationId: register
       requestBody:
         required: true
@@ -202,7 +205,9 @@ paths:
         '422':
           description: |
             `urn:awards:problem:institutional-email-required`, `organisation-invalid`,
-            `password-too-short`, `password-too-long` or `password-too-common`
+            `password-too-short`, `password-too-long` or `password-too-common`; `validation-failed` with field
+            `privacyNoticeVersion`, code `outdated` when the notice changed since the form was loaded (no account
+            is created)
 
   /auth/verify-email:
     post:
@@ -2506,7 +2511,6 @@ paths:
       description: >
         Open endpoint. The texts are static pages of the web client per version and language
         (`/privacy/<version>/<lang>.html`); this operation names the current version (6.1.1).
-      x-status: planned
       operationId: getPrivacyNotice
       responses:
         '200':
@@ -2523,7 +2527,6 @@ paths:
       description: >
         `acknowledgementRequired` is true when the last acknowledged notice version differs from the current one
         or none exists. The history lists every record oldest first, without IP address or user agent (6.1.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: getConsents
@@ -2544,7 +2547,6 @@ paths:
       description: >
         Appends a `DATA_PROCESSING` record for the version and writes `PRIVACY_NOTICE_ACKNOWLEDGED`; a version
         already acknowledged appends nothing and answers 200 (6.1.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: acknowledgePrivacyNotice
@@ -2579,7 +2581,6 @@ paths:
       description: >
         Appends a record when the state changes and writes `CONSENT_GRANTED` or `CONSENT_WITHDRAWN`; the
         unchanged state appends nothing. Only `ANALYTICS` is optional (6.1.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: setConsent
@@ -3078,7 +3079,7 @@ components:
 
     RegisterRequest:
       type: object
-      required: [email, password, firstName, lastName, organizationId]
+      required: [email, password, firstName, lastName, organizationId, privacyNoticeVersion]
       properties:
         email:
           type: string
@@ -3103,8 +3104,8 @@ components:
           type: string
           maxLength: 20
           description: >
-            Version of the privacy notice the person acknowledged; required and equal to the current version from
-            6.1.1 (planned), otherwise 422 `validation-failed` with code `outdated`
+            Version of the privacy notice the person acknowledged; must equal the current version, otherwise 422
+            `validation-failed` with code `outdated`
 
     RevokeRequest:
       type: object

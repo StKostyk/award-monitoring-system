@@ -167,6 +167,12 @@ app:
     keep-failed: P30D
   mail:
     from: ${APP_MAIL_FROM:awards@chnu.edu.ua}
+  privacy:
+    # texts: frontend/public/privacy/<version>/<lang>.html; a new version is added here and becomes current
+    notice-version: ${APP_PRIVACY_NOTICE_VERSION:1.0}
+    notice-versions:
+      - version: '1.0'
+        published-on: 2026-10-15
   auth:
     issuer: ${AUTH_ISSUER:http://localhost:8080}
     frontend-url: ${AUTH_FRONTEND_URL:http://localhost:4200}

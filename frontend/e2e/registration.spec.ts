@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-import { linkFor, signIn } from './helpers';
+import { linkFor, seriousViolations, signIn, sql } from './helpers';
 
 const password = 'correct-horse-battery';
 
 test.describe('registration', () => {
-  test('ac21 ac25 ac28 registers, verifies the address from the email and signs in', async ({
+  test('ac21 ac25 ac28 ac1_3 registers, verifies the address from the email and signs in', async ({
     page,
   }) => {
     const email = `e2e.${Date.now()}@chnu.edu.ua`;
@@ -22,9 +22,19 @@ test.describe('registration', () => {
     await page.getByRole('combobox', { name: 'Кафедра' }).click();
     await page.getByRole('option', { name: 'Кафедра алгебри та інформатики' }).click();
     await page.getByTestId('register-submit').click();
+    await expect(page.getByTestId('privacy-notice-required')).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
+    await expect(page.getByTestId('privacy-notice-link')).toHaveAttribute('target', '_blank');
+    await page.getByTestId('privacy-notice-box').getByRole('checkbox').check();
+    await page.getByTestId('register-submit').click();
 
     await expect(page).toHaveURL(/registration-pending/);
     await expect(page.getByTestId('pending-text')).toContainText('24 години');
+    expect(
+      sql(
+        `select consent_type || ' ' || consent_version || ' ' || is_granted::text from consent_records c join users u using (user_id) where u.email_address = '${email}'`,
+      ),
+    ).toBe('DATA_PROCESSING 1.0 true');
 
     await page.getByTestId('pending-sign-in').click();
     await expect(page).toHaveURL(/localhost:8080\/login/);

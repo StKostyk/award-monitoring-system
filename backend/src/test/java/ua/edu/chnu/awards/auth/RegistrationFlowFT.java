@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import io.restassured.response.Response;
 
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AuthorizationCodeFlow;
+import ua.edu.chnu.awards.support.ConsentRows;
 import ua.edu.chnu.awards.support.Mailpit;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
@@ -36,6 +38,7 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
 
     private static final String EMAIL = "ft.register@chnu.edu.ua";
     private static final String ABANDONED = "ft.abandoned@chnu.edu.ua";
+    private static final String NOTICE = "ft.notice@chnu.edu.ua";
     private static final String PASSWORD = "correct-horse-battery";
 
     @LocalServerPort
@@ -60,8 +63,36 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
 
     @AfterAll
     void cleanUp() {
-        List.of(EMAIL, ABANDONED).forEach(email ->
-            userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
+        List.of(EMAIL, ABANDONED, NOTICE).forEach(email ->
+            userRepository.findByEmailAddressIgnoreCase(email).ifPresent(user -> {
+                ConsentRows.purge(jdbc, user.getId());
+                userRepository.delete(user);
+            }));
+    }
+
+    @Test
+    void ac13_ac14_theRegistrationRecordsTheAcknowledgedNoticeVersion() {
+        register(NOTICE, 64L, null).then().statusCode(400);
+        register(NOTICE, 64L, "0.9").then().statusCode(422)
+            .body("type", equalTo("urn:awards:problem:validation-failed"))
+            .body("errors[0].field", equalTo("privacyNoticeVersion"))
+            .body("errors[0].code", equalTo("outdated"));
+        assertThat(userRepository.existsByEmailAddressIgnoreCase(NOTICE)).isFalse();
+
+        RestAssured.given().contentType(ContentType.JSON).header("User-Agent", "FT browser")
+            .body(Map.of("email", NOTICE, "password", PASSWORD, "firstName", "Олена", "lastName", "Нова",
+                "organizationId", 64L, "privacyNoticeVersion", "1.0"))
+            .post("/api/v1/auth/register").then().statusCode(201);
+
+        long userId = userRepository.findByEmailAddressIgnoreCase(NOTICE).orElseThrow().getId();
+        Map<String, Object> consent = jdbc.queryForMap("select consent_type, consent_version, is_granted,"
+            + " granted_at is not null as dated, host(ip_address) as ip, user_agent from consent_records"
+            + " where user_id = ?", userId);
+        assertThat(consent).containsEntry("consent_type", "DATA_PROCESSING").containsEntry("consent_version", "1.0")
+            .containsEntry("is_granted", true).containsEntry("dated", true).containsEntry("user_agent", "FT browser");
+        assertThat(consent.get("ip")).isNotNull();
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where user_id = ? and entity_type = 'GDPR'"
+            + " and action_type = 'PRIVACY_NOTICE_ACKNOWLEDGED'", Integer.class, userId)).isEqualTo(1);
     }
 
     @Test
@@ -120,7 +151,7 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
 
         RestAssured.given().contentType(ContentType.JSON)
             .body(Map.of("email", ABANDONED, "password", PASSWORD, "firstName", "Друга", "lastName", "Спроба",
-                "organizationId", 65L))
+                "organizationId", 65L, "privacyNoticeVersion", "1.0"))
             .post("/api/v1/auth/register").then().statusCode(201).body("status", equalTo("PENDING"));
 
         assertThat(userRepository.findByEmailAddressIgnoreCase(ABANDONED).orElseThrow().getFirstName())
@@ -151,10 +182,16 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
     }
 
     private static Response register(String email, long organizationId) {
-        return RestAssured.given().contentType(ContentType.JSON)
-            .body(Map.of("email", email, "password", PASSWORD, "firstName", "Олена", "lastName", "Нова",
-                "organizationId", organizationId))
-            .post("/api/v1/auth/register");
+        return register(email, organizationId, "1.0");
+    }
+
+    private static Response register(String email, long organizationId, String noticeVersion) {
+        Map<String, Object> body = new HashMap<>(Map.of("email", email, "password", PASSWORD, "firstName", "Олена",
+            "lastName", "Нова", "organizationId", organizationId));
+        if (noticeVersion != null) {
+            body.put("privacyNoticeVersion", noticeVersion);
+        }
+        return RestAssured.given().contentType(ContentType.JSON).body(body).post("/api/v1/auth/register");
     }
 
     private static Response verify(String token, String password) {

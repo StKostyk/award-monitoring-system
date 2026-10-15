@@ -325,151 +325,28 @@ public class NotificationService {
 
 ### 4.2 Consent Types
 
-| **Consent Type** | **Purpose** | **Required** | **Granularity** | **Withdrawal Impact** |
-|------------------|-------------|--------------|-----------------|----------------------|
-| `DATA_PROCESSING` | Basic system use | Yes | Binary | Account deletion |
-| `PUBLIC_VISIBILITY` | Award public display | Yes | Binary | Awards hidden |
-| `EMAIL_NOTIFICATIONS` | Not used: e-mail and in-app are chosen per notification type in `notification_preferences` (1.3.2); security and privacy mails are always sent | - | - | - |
-| `SMS_NOTIFICATIONS` | SMS alerts | No | Binary | No SMS sent |
-| `DOCUMENT_AI_PROCESSING` | AI metadata extraction | No | Per-document | Manual entry only |
-| `ANALYTICS` | Usage analytics | No | Binary | Excluded from analytics |
-| Document shown to colleagues (`documents.shown_to_colleagues`) | A chosen document of a shared award opened by signed-in colleagues | No | Per-document | Document hidden at once |
+Processing of the data needed to run the system rests on legitimate interest (DATA_GOVERNANCE §2.1), so it is not asked as a consent: a consent that the system cannot be used without would not be freely given (Art. 7(4)). The person acknowledges the privacy notice instead, and the acknowledgement is recorded per notice version.
+
+| **Record** | **Purpose** | **Legal basis** | **Required** | **Granularity** | **Withdrawal Impact** |
+|------------|-------------|-----------------|--------------|-----------------|----------------------|
+| `DATA_PROCESSING` | Acknowledgement of a privacy notice version, at registration and after each new version | Legitimate interest (records that the notice was read) | Yes | Per notice version | Cannot be withdrawn; erasure (§5) ends the processing |
+| `ANALYTICS` | Naming the person in rankings and comparisons of unit reports (Epic 5) | Consent | No | Binary | Counted only in totals |
+| Award visibility (`awards.visibility`) | Showing an approved personal award beyond the person's unit (4.3.1) | Consent | No | Per award | Award back to `PRIVATE` at once |
+| Document shown to colleagues (`documents.shown_to_colleagues`) | A chosen document of a shared award opened by signed-in colleagues | Consent | No | Per document | Document hidden at once |
+| E-mail per notification type (`notification_preferences`) | E-mail and in-app chosen per notification type (1.3.2); security and privacy mails are always sent | Legitimate interest | No | Per notification type | No e-mail of that type |
+
+The former consent types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` were removed (V040): the first two are chosen per award and per notification type, and there is no SMS channel. Metadata extraction from documents (`DOCUMENT_AI_PROCESSING`) is not built; it would need its own consent type before it is.
 
 Showing documents to colleagues (4.3.8) follows the award's visibility choice (4.3.1): every document starts hidden, including those uploaded before the choice existed, and only the owner of an approved personal award shared at `UNIVERSITY` or `PUBLIC` can show one. Colleagues see the shown documents on the read-only achievement view and download them while signed in; the public page and anonymous visitors never receive a document. Returning the award to `PRIVATE` clears every choice, so sharing it again does not reopen documents silently. Each effective change is a `DOCUMENT_SHARING_CHANGED` audit row (the record of consent), each colleague download a `DOCUMENT_DOWNLOAD` row marked `via: colleague`, and the export lists the choice per document.
 
 ### 4.3 Technical Implementation
 
-```java
-// Consent Management Service
-@Service
-@Transactional
-public class ConsentManagementService {
-    
-    private final ConsentRepository consentRepository;
-    private final ConsentEventPublisher eventPublisher;
-    private final AuditService auditService;
-    
-    /**
-     * Grant consent with full audit trail
-     */
-    public ConsentRecord grantConsent(ConsentRequest request) {
-        validateConsentRequest(request);
-        
-        ConsentRecord consent = ConsentRecord.builder()
-            .userId(request.getUserId())
-            .consentType(request.getConsentType())
-            .consentVersion(getCurrentPolicyVersion(request.getConsentType()))
-            .isGranted(true)
-            .grantedAt(Instant.now())
-            .ipAddress(request.getIpAddress())
-            .userAgent(request.getUserAgent())
-            .build();
-        
-        ConsentRecord saved = consentRepository.save(consent);
-        
-        // Publish event for downstream systems
-        eventPublisher.publish(new ConsentGrantedEvent(saved));
-        
-        // Audit log
-        auditService.logConsentChange(
-            AuditAction.CONSENT_GRANTED,
-            saved.getUserId(),
-            saved.getConsentType(),
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Withdraw consent with cascading effects
-     */
-    public ConsentRecord withdrawConsent(Long userId, ConsentType consentType, 
-                                          WithdrawalRequest request) {
-        ConsentRecord current = consentRepository
-            .findCurrentConsent(userId, consentType)
-            .orElseThrow(() -> new ConsentNotFoundException("No active consent found"));
-        
-        // Update consent record
-        current.setIsGranted(false);
-        current.setWithdrawnAt(Instant.now());
-        ConsentRecord saved = consentRepository.save(current);
-        
-        // Publish event for cascading effects
-        eventPublisher.publish(new ConsentWithdrawnEvent(saved));
-        
-        // Trigger immediate data handling based on consent type
-        handleConsentWithdrawal(userId, consentType);
-        
-        // Audit log
-        auditService.logConsentChange(
-            AuditAction.CONSENT_WITHDRAWN,
-            userId,
-            consentType,
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Check if user has valid consent for operation
-     */
-    public boolean hasValidConsent(Long userId, ConsentType consentType) {
-        return consentRepository.findCurrentConsent(userId, consentType)
-            .map(consent -> consent.getIsGranted() && 
-                           consent.getConsentVersion().equals(getCurrentPolicyVersion(consentType)))
-            .orElse(false);
-    }
-    
-    /**
-     * Handle cascading effects of consent withdrawal
-     */
-    private void handleConsentWithdrawal(Long userId, ConsentType consentType) {
-        switch (consentType) {
-            case PUBLIC_VISIBILITY -> awardService.hideUserAwards(userId);
-            case SMS_NOTIFICATIONS -> notificationService.disableSms(userId);
-            case DOCUMENT_AI_PROCESSING -> documentService.disableAiProcessing(userId);
-            case ANALYTICS -> analyticsService.excludeUser(userId);
-            case DATA_PROCESSING -> initiateAccountDeletion(userId);
-        }
-    }
-}
-
-// Consent Enforcement Annotation
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface RequiresConsent {
-    ConsentType value();
-    boolean failSilently() default false;
-}
-
-// Consent Enforcement Aspect
-@Aspect
-@Component
-public class ConsentEnforcementAspect {
-    
-    @Around("@annotation(requiresConsent)")
-    public Object enforceConsent(ProceedingJoinPoint joinPoint, 
-                                  RequiresConsent requiresConsent) throws Throwable {
-        Long userId = extractUserId(joinPoint);
-        ConsentType requiredConsent = requiresConsent.value();
-        
-        if (!consentService.hasValidConsent(userId, requiredConsent)) {
-            if (requiresConsent.failSilently()) {
-                return null; // Silent skip
-            }
-            throw new ConsentRequiredException(
-                "Valid consent for " + requiredConsent + " is required"
-            );
-        }
-        
-        return joinPoint.proceed();
-    }
-}
-```
-
----
+- `consent_records` is append-only (V040, `trg_consent_records_guard`): rows are never deleted or changed, except that erasure may clear `ip_address` and `user_agent`. The newest row per type is the current state; DATA_DICTIONARY §4.2 has the columns.
+- The notice texts are static pages of the web client per version and language (`/privacy/<version>/<lang>.html`); `app.privacy.notice-version` names the version in force and `GET /api/v1/public/privacy-notice` publishes it with the earlier versions.
+- Registration requires the current version (`privacyNoticeVersion`, otherwise 422 `outdated` and no account) and writes the `DATA_PROCESSING` row in the registration transaction. `PrivacyNoticeVersions` (shared `common` module) checks the version and publishes `PrivacyNoticeAcknowledged`; `ConsentService` (`gdpr`) appends the row, so `auth` does not depend on `gdpr`.
+- `GET /users/me/consents`, `POST /users/me/consents/notice-acknowledgement` and `PUT /users/me/consents/ANALYTICS` read and change the caller's own records. A change that does not alter the state appends nothing; concurrent changes of one person are serialised by a row lock on the account. The overview never shows IP addresses or user agents.
+- After a new notice version, the web client sends a signed-in person to the acknowledgement page before any other screen; the API does not refuse requests of a person who has not acknowledged (PRD 6.1, decision 2).
+- Each appended row is audited (`PRIVACY_NOTICE_ACKNOWLEDGED`, `CONSENT_GRANTED`, `CONSENT_WITHDRAWN`, entity type `GDPR`), and the personal data export lists every row under `consent_history`.
 
 ## 5. Right to Erasure Implementation
 

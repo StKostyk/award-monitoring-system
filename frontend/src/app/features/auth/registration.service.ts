@@ -15,6 +15,7 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   organizationId: number;
+  privacyNoticeVersion: string;
 }
 
 export interface RegistrationResponse {

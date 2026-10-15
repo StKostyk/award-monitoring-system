@@ -22,6 +22,7 @@ import io.lettuce.core.TimeoutOptions;
 import ua.edu.chnu.awards.common.event.EventProperties;
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 import ua.edu.chnu.awards.common.mail.UndeliveredMailAsyncHandler;
+import ua.edu.chnu.awards.common.privacy.PrivacyNoticeProperties;
 
 /**
  * Shared clock (injectable for tests), workflow timing, event publication retry, asynchronous execution for
@@ -29,7 +30,7 @@ import ua.edu.chnu.awards.common.mail.UndeliveredMailAsyncHandler;
  */
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties(EventProperties.class)
+@EnableConfigurationProperties({EventProperties.class, PrivacyNoticeProperties.class})
 @EnableScheduling
 public class InfrastructureConfig {
 

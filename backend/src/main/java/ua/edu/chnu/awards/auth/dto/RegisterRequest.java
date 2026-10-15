@@ -11,22 +11,24 @@ import ua.edu.chnu.awards.user.dto.NameConstants;
 /**
  * Self-registration of a university employee.
  *
- * @param email          institutional address
- * @param password       chosen password
- * @param firstName      first name
- * @param lastName       last name
- * @param organizationId department the person belongs to
+ * @param email                institutional address
+ * @param password             chosen password
+ * @param firstName            first name
+ * @param lastName             last name
+ * @param organizationId       department the person belongs to
+ * @param privacyNoticeVersion privacy notice version the person acknowledged
  */
 public record RegisterRequest(
     @NotBlank @Email @Size(max = 254) String email,
     @NotBlank @Size(max = 72) String password,
     @NotBlank @Size(max = 100) @Pattern(regexp = NameConstants.NAME) String firstName,
     @NotBlank @Size(max = 100) @Pattern(regexp = NameConstants.NAME) String lastName,
-    @NotNull Long organizationId) {
+    @NotNull Long organizationId,
+    @NotBlank @Size(max = 20) String privacyNoticeVersion) {
 
     @Override
     public String toString() {
         return "RegisterRequest[email=" + email + ", firstName=" + firstName + ", lastName=" + lastName
-            + ", organizationId=" + organizationId + "]";
+            + ", organizationId=" + organizationId + ", privacyNoticeVersion=" + privacyNoticeVersion + "]";
     }
 }

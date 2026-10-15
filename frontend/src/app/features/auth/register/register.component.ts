@@ -2,17 +2,19 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
+import { MatCheckbox } from '@angular/material/checkbox';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatOptgroup, MatOption, MatSelect } from '@angular/material/select';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
-import { problemType } from '../../../core/api/problem';
+import { fieldProblems, problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { nameValidator } from '../../../shared/name-rules';
 import { PASSWORD_VALIDATORS } from '../password-rules';
 import { OrganizationSummary } from '../../../core/organizations/organizations.service';
+import { ConsentsService } from '../../privacy/consents.service';
 import { RegistrationService } from '../registration.service';
 
 export const INSTITUTIONAL_DOMAIN = 'chnu.edu.ua';
@@ -41,6 +43,7 @@ export interface DepartmentGroup {
     MatSelect,
     MatOptgroup,
     MatOption,
+    MatCheckbox,
     MatButton,
     RouterLink,
     TranslocoPipe,
@@ -53,6 +56,7 @@ export class RegisterComponent implements OnInit {
   private readonly api = inject(RegistrationService);
   private readonly router = inject(Router);
   private readonly language = inject(LanguageService);
+  private readonly consents = inject(ConsentsService);
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.pattern(INSTITUTIONAL_EMAIL)]],
@@ -60,16 +64,19 @@ export class RegisterComponent implements OnInit {
     firstName: ['', nameValidator],
     lastName: ['', nameValidator],
     organizationId: [null as number | null, Validators.required],
+    privacyNotice: [false, Validators.requiredTrue],
   });
 
   readonly groups = signal<DepartmentGroup[]>([]);
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
+  readonly noticeVersion = signal<string | null>(null);
 
   ngOnInit(): void {
     this.api
       .departments()
       .subscribe((departments) => this.groups.set(this.groupByFaculty(departments)));
+    this.loadNotice();
   }
 
   name(organization: { name: string; nameUk: string | null }): string {
@@ -83,16 +90,23 @@ export class RegisterComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
+    const privacyNoticeVersion = this.noticeVersion();
+    if (!privacyNoticeVersion) {
+      this.error.set('register.errors.notice-unavailable');
+      this.loadNotice();
+      return;
+    }
     this.submitting.set(true);
     this.error.set(null);
     const value = this.form.getRawValue();
     this.api
       .register({
-        ...value,
+        password: value.password,
         email: value.email.trim(),
         firstName: value.firstName.trim(),
         lastName: value.lastName.trim(),
         organizationId: value.organizationId as number,
+        privacyNoticeVersion,
       })
       .subscribe({
         next: (response) =>
@@ -100,8 +114,14 @@ export class RegisterComponent implements OnInit {
             queryParams: { email: response.email },
           }),
         error: (err) => {
-          this.error.set(`register.errors.${problemType(err)}`);
           this.submitting.set(false);
+          if (noticeOutdated(err)) {
+            this.error.set('register.errors.notice-outdated');
+            this.form.controls.privacyNotice.setValue(false);
+            this.loadNotice();
+            return;
+          }
+          this.error.set(`register.errors.${problemType(err)}`);
         },
       });
   }
@@ -116,4 +136,17 @@ export class RegisterComponent implements OnInit {
     }
     return [...groups.values()].sort((a, b) => a.faculty.localeCompare(b.faculty));
   }
+
+  private loadNotice(): void {
+    this.consents.notice().subscribe({
+      next: (notice) => this.noticeVersion.set(notice.version),
+      error: () => this.noticeVersion.set(null),
+    });
+  }
+}
+
+function noticeOutdated(error: unknown): boolean {
+  return fieldProblems(error).some(
+    (problem) => problem.field === 'privacyNoticeVersion' && problem.code === 'outdated',
+  );
 }
