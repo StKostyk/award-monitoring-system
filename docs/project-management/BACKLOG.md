@@ -105,8 +105,8 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 | 7.1.3 | Drop the duplicate async error log for undelivered mails | 1 | ✅ Done | SCRUM-75 | [#197](https://github.com/StKostyk/award-monitoring-system/issues/197) |
 | 7.2.1 | In-app notifications from award and review events | 5 | ✅ Done | SCRUM-66 | [#183](https://github.com/StKostyk/award-monitoring-system/issues/183) |
 | 7.2.2 | Notification centre in the toolbar | 5 | ✅ Done | SCRUM-67 | [#184](https://github.com/StKostyk/award-monitoring-system/issues/184) |
-| 1.3.2 | Notification preferences | 3 | 👀 In review (Sprint 5) | SCRUM-16 | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |
-| 7.2.3 | Delivery log and notifications in the personal data export | 3 | Sprint 5 | SCRUM-68 | [#185](https://github.com/StKostyk/award-monitoring-system/issues/185) |
+| 1.3.2 | Notification preferences | 3 | ✅ Done | SCRUM-16 | [#39](https://github.com/StKostyk/award-monitoring-system/issues/39) |
+| 7.2.3 | Delivery log and notifications in the personal data export | 3 | 👀 In review (Sprint 5) | SCRUM-68 | [#185](https://github.com/StKostyk/award-monitoring-system/issues/185) |
 | 7.2.4 | HTML e-mail templates in the university brand | 3 | Sprint 5 | SCRUM-69 | [#186](https://github.com/StKostyk/award-monitoring-system/issues/186) |
 
 ### Later epics

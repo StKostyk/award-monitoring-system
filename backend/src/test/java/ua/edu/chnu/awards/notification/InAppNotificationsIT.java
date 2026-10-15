@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -47,6 +48,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
     private static final long WAIT_MS = 30_000;
     private static final long FAILED_SEND_MS = 20_000;
+    private static final long WAIT_SHORT_MS = 2_000;
     private static final long AWARD_ID = 999_002L;
     private static final String PREFIX = "it.inapp.";
     private static final String DOMAIN = "@chnu.edu.ua";
@@ -91,7 +93,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         Map<String, Object> row = jdbc.queryForMap("SELECT type, channel, payload::text AS payload, reference_type,"
             + " reference_id, is_read, sent_at, expires_at, length(dedupe_key) AS key_length FROM notifications"
-            + " WHERE user_id = ?", owner.getId());
+            + " WHERE user_id = ? AND channel = 'IN_APP'", owner.getId());
         assertThat(row).containsEntry("type", "AWARD_RETURNED").containsEntry("channel", "IN_APP")
             .containsEntry("reference_type", "AWARD").containsEntry("reference_id", AWARD_ID)
             .containsEntry("is_read", false).containsEntry("key_length", 64);
@@ -113,6 +115,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         assertThat(rows(owner)).isEqualTo(1);
+        assertThat(mailStatus(owner)).isEqualTo("SENT");
     }
 
     @Test
@@ -126,6 +129,8 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         assertThat(rows(deleted)).isZero();
+        verify(mailSender, never())
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo("it.inapp.gone" + DOMAIN)));
         assertThat(jdbc.queryForObject("SELECT count(*) FROM notifications WHERE user_id = ?", Long.class,
             Long.MAX_VALUE)).isZero();
     }
@@ -146,6 +151,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
             .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(owner.getEmailAddress())));
         assertThat(waitFor(() -> rows(owner), 1L)).isEqualTo(1);
         assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
+        assertThat(waitFor(() -> mailStatus(owner), "FAILED")).isEqualTo("FAILED");
         assertThat(jdbc.queryForObject("SELECT listener_id FROM event_publication WHERE completion_date IS NULL",
             String.class)).contains("DecisionMails");
 
@@ -158,6 +164,37 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
             .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(owner.getEmailAddress())));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         assertThat(rows(owner)).isEqualTo(1);
+        assertThat(mailStatus(owner)).isEqualTo("SENT");
+    }
+
+    @Test
+    void ac4_2_aSentMailIsLoggedAsSentWithTheMomentTheServerAcceptedIt() {
+        User owner = account("logged");
+        final Instant before = Instant.now().minusSeconds(1);
+
+        publish(decided(owner, Instant.now()));
+
+        assertThat(waitFor(() -> mailStatus(owner), "SENT")).isEqualTo("SENT");
+        Map<String, Object> row = jdbc.queryForMap("SELECT type, payload ->> 'title' AS title, delivered_at"
+            + " FROM notifications WHERE user_id = ? AND channel = 'EMAIL'", owner.getId());
+        assertThat(row).containsEntry("type", "AWARD_RETURNED").containsEntry("title", "Certificate");
+        assertThat(((Timestamp) row.get("delivered_at")).toInstant()).isAfter(before);
+        assertThat(waitFor(this::incomplete, 0L)).isZero();
+    }
+
+    @Test
+    void ac4_3_aRepeatedDeliveryOfASentMailSendsNothingAndCompletes() {
+        User owner = account("f1");
+        AwardDecided event = decided(owner, Instant.now().truncatedTo(ChronoUnit.MICROS));
+        publish(event);
+        assertThat(waitFor(() -> mailStatus(owner), "SENT")).isEqualTo("SENT");
+        assertThat(waitFor(this::incomplete, 0L)).isZero();
+
+        publish(event);
+
+        assertThat(waitFor(this::incomplete, 0L)).isZero();
+        verify(mailSender, after(WAIT_SHORT_MS).times(1))
+            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(owner.getEmailAddress())));
     }
 
     @Test
@@ -175,6 +212,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         assertThat(waitFor(() -> rows(mailOff), 1L)).isEqualTo(1);
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         assertThat(rows(inAppOff)).isZero();
+        assertThat(mailStatus(mailOff)).isNull();
         verify(mailSender, never())
             .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(mailOff.getEmailAddress())));
     }
@@ -191,7 +229,8 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
             Instant.now()));
 
         assertThat(waitFor(() -> rows(delegate) + rows(delegator), 2L)).isEqualTo(2);
-        assertThat(jdbc.queryForObject("SELECT payload ->> 'otherParty' FROM notifications WHERE user_id = ?",
+        assertThat(jdbc.queryForObject("SELECT payload ->> 'otherParty' FROM notifications WHERE user_id = ?"
+            + " AND channel = 'IN_APP'",
             String.class, delegator.getId())).isEqualTo("Аліна Коваль");
         assertThat(waitFor(this::incomplete, 0L)).isZero();
     }
@@ -216,7 +255,13 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
     }
 
     private long rows(User user) {
-        return jdbc.queryForObject("SELECT count(*) FROM notifications WHERE user_id = ?", Long.class, user.getId());
+        return jdbc.queryForObject("SELECT count(*) FROM notifications WHERE user_id = ? AND channel = 'IN_APP'",
+            Long.class, user.getId());
+    }
+
+    private String mailStatus(User user) {
+        return jdbc.query("SELECT delivery_status FROM notifications WHERE user_id = ? AND channel = 'EMAIL'",
+            (rs, i) -> rs.getString(1), user.getId()).stream().findFirst().orElse(null);
     }
 
     private long incomplete() {

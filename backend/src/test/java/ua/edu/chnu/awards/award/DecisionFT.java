@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
@@ -39,7 +41,9 @@ class DecisionFT extends AbstractFunctionalTest {
     private static final String EMPLOYEE = "ft.decision.employee@chnu.edu.ua";
     private static final String AUTHOR = "ft.decision.author@chnu.edu.ua";
     private static final String DEPUTY = "ft.decision.deputy@chnu.edu.ua";
-    private static final List<String> ACCOUNTS = List.of(SECRETARY, DEAN, OFFICE, EMPLOYEE, AUTHOR, DEPUTY);
+    private static final String QUIET = "ft.decision.quiet@chnu.edu.ua";
+    private static final List<String> ACCOUNTS = List.of(SECRETARY, DEAN, OFFICE, EMPLOYEE, AUTHOR, DEPUTY, QUIET);
+    private static final long METRIC_WAIT_MS = 20_000;
     private static final String VERSION = "requestVersion";
     private static final String DECISION = "decision";
     private static final String COMMENT = "comment";
@@ -72,6 +76,9 @@ class DecisionFT extends AbstractFunctionalTest {
         withRole(OFFICE, university, RoleType.RECTOR_SECRETARY, university);
         withRole(EMPLOYEE, department, RoleType.EMPLOYEE, department);
         withRole(AUTHOR, department, RoleType.EMPLOYEE, department);
+        long quietId = withRole(QUIET, department, RoleType.EMPLOYEE, department);
+        jdbc.update("insert into notification_preferences (user_id, event_type, email_enabled, in_app_enabled)"
+            + " values (?, 'AWARD_RETURNED', false, true)", quietId);
         long deputyId = withRole(DEPUTY, department, RoleType.EMPLOYEE, department);
         jdbc.update("insert into role_delegations (delegator_id, delegate_id, organization_id, role_type, valid_from,"
             + " valid_to, reason) values (?, ?, ?, 'FACULTY_SECRETARY', ?, ?, 'Leave')", secretaryId, deputyId,
@@ -219,6 +226,38 @@ class DecisionFT extends AbstractFunctionalTest {
         decide(secretary, rejected, Map.of(DECISION, "REJECT", COMMENT, "Повторно", VERSION, stale)).then()
             .statusCode(HttpStatus.CONFLICT.value())
             .body(TYPE, equalTo(PROBLEM + "request-closed"));
+    }
+
+    @Test
+    void ac4_4_aMailSwitchedOffAndAWrittenInAppRowAreCountedAtThePrometheusEndpoint() {
+        long returned = submitted(QUIET, "Грамота без листа");
+
+        decide(tokenOf(SECRETARY), returned, "RETURN", "Додайте дату наказу").then()
+            .statusCode(HttpStatus.OK.value());
+
+        assertThat(prometheusEventually(delivered("email", "off"))).isTrue();
+        assertThat(prometheusEventually(delivered("in_app", "sent"))).isTrue();
+        assertThat(mailpit.messagesTo(QUIET, "повернуто на доопрацювання")).isEmpty();
+    }
+
+    private static Pattern delivered(String channel, String outcome) {
+        return Pattern.compile("\naward_notifications_delivered_total\\{[^}]*channel=\"" + channel
+            + "\"[^}]*outcome=\"" + outcome + "\"[^}]*type=\"AWARD_RETURNED\"[^}]*} [1-9]");
+    }
+
+    private boolean prometheusEventually(Pattern series) {
+        long deadline = System.currentTimeMillis() + METRIC_WAIT_MS;
+        boolean found = series.matcher(RestAssured.get("/actuator/prometheus").asString()).find();
+        while (!found && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+            found = series.matcher(RestAssured.get("/actuator/prometheus").asString()).find();
+        }
+        return found;
     }
 
     private long submitted(String owner, String title) {

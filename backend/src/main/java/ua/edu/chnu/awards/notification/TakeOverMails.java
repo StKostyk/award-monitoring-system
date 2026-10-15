@@ -10,10 +10,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.award.service.AwardLinks;
-import ua.edu.chnu.awards.common.mail.MailDelivery;
-import ua.edu.chnu.awards.notification.entity.NotificationChannel;
-import ua.edu.chnu.awards.notification.entity.NotificationType;
-import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
+import ua.edu.chnu.awards.notification.service.DeliveryLog;
+import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,9 +24,9 @@ public class TakeOverMails {
 
     public static final String SUBJECT = "Заявку передано іншому рецензенту / A request was taken over";
 
-    private final MailDelivery delivery;
+    private final DeliveryLog deliveries;
+    private final NotificationDrafts drafts;
     private final AwardLinks links;
-    private final NotificationPreferenceService preferences;
 
     /**
      * Sends the previous holder one message about the take-over.
@@ -38,11 +36,7 @@ public class TakeOverMails {
     @Async
     @TransactionalEventListener
     public void onTakenOver(ReviewTakenOver event) {
-        if (event.email() == null
-            || !preferences.allows(event.userId(), NotificationType.REVIEW_TAKEN_OVER, NotificationChannel.EMAIL)) {
-            return;
-        }
-        delivery.send(event.email(), SUBJECT, body(event, links.awardLink(event.awardId())));
+        deliveries.send(drafts.of(event), event.email(), SUBJECT, body(event, links.awardLink(event.awardId())));
     }
 
     static String body(ReviewTakenOver event, String link) {

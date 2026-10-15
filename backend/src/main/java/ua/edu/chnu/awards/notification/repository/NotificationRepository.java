@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.notification.repository;
 
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,7 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
+import ua.edu.chnu.awards.notification.entity.DeliveryStatus;
 import ua.edu.chnu.awards.notification.entity.Notification;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 
@@ -30,6 +33,50 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         + ":#{#row.referenceId()}, :#{#row.sentAt()}, :#{#row.expiresAt()}) ON CONFLICT (dedupe_key) DO NOTHING",
         nativeQuery = true)
     int insertOnce(@Param("row") NewNotification row);
+
+    /**
+     * Claims the delivery of a mail: inserts a {@code SENDING} row, or takes over the row of the same key when it
+     * failed or was claimed before {@code staleBefore}. One statement, so two concurrent claims cannot both win.
+     *
+     * @param row         the values, channel {@code EMAIL}
+     * @param staleBefore claims older than this are taken over
+     * @return 1 when claimed, 0 when the mail was sent or is being sent, or the recipient no longer exists
+     */
+    @Transactional
+    @Modifying
+    @Query(value = "INSERT INTO notifications (user_id, type, channel, payload, dedupe_key, reference_type, "
+        + "reference_id, sent_at, expires_at, delivery_status) SELECT u.user_id, :#{#row.type()}, "
+        + ":#{#row.channel()}, CAST(:#{#row.payload()} AS jsonb), :#{#row.dedupeKey()}, :#{#row.referenceType()}, "
+        + ":#{#row.referenceId()}, :#{#row.sentAt()}, :#{#row.expiresAt()}, 'SENDING' FROM users u "
+        + "WHERE u.user_id = :#{#row.userId()} "
+        + "ON CONFLICT (dedupe_key) DO UPDATE SET delivery_status = 'SENDING', sent_at = EXCLUDED.sent_at, "
+        + "delivered_at = NULL WHERE notifications.delivery_status = 'FAILED' "
+        + "OR (notifications.delivery_status = 'SENDING' AND notifications.sent_at < :staleBefore)",
+        nativeQuery = true)
+    int claim(@Param("row") NewNotification row, @Param("staleBefore") Instant staleBefore);
+
+    /**
+     * Records the outcome of a claimed mail.
+     *
+     * @param dedupeKey   the key of the claimed row
+     * @param status      sent or failed
+     * @param deliveredAt when the mail server accepted it, null when it did not
+     * @return 1 when recorded
+     */
+    @Transactional
+    @Modifying
+    @Query("UPDATE Notification n SET n.deliveryStatus = :status, n.deliveredAt = :deliveredAt "
+        + "WHERE n.dedupeKey = :dedupeKey")
+    int finish(@Param("dedupeKey") String dedupeKey, @Param("status") DeliveryStatus status,
+               @Param("deliveredAt") Instant deliveredAt);
+
+    /**
+     * Every row of one person, both channels, newest first.
+     *
+     * @param userId the person
+     * @return the rows
+     */
+    List<Notification> findByUserIdOrderBySentAtDesc(long userId);
 
     /**
      * One person's rows of a channel.

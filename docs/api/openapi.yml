@@ -2913,13 +2913,14 @@ components:
 
     PersonalDataExport:
       type: object
-      description: GDPR Article 20 export, format version 1.2; every list is present, possibly empty
+      description: GDPR Article 20 export, format version 1.4; every list is present, possibly empty
       required: [export_metadata, personal_data, roles, delegations, awards, award_versions, documents,
-                 review_decisions, decisions_made, consent_history, devices, activity_log]
+                 review_decisions, decisions_made, consent_history, devices, activity_log, notifications,
+                 notification_preferences]
       properties:
         export_metadata:
           type: object
-          description: '`export_date` (instant), `user_id`, `format_version` (`1.2`), `gdpr_article`'
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.4`), `gdpr_article`'
         personal_data:
           type: object
           description: |
@@ -2995,6 +2996,19 @@ components:
           description: |
             The caller's authentication, authorization, profile and GDPR events, newest first: `action`,
             `timestamp`, `ip_address`
+          items:
+            type: object
+        notifications:
+          type: array
+          description: |
+            In-app notifications and the delivery log of the mails of the notification types, newest first:
+            `type`, `channel` (`IN_APP`, `EMAIL`), `payload`, `read`, `sent_at`, `read_at`, `delivered_at`,
+            `delivery_status` (`SENDING`, `SENT`, `FAILED` for mails, null in-app)
+          items:
+            type: object
+        notification_preferences:
+          type: array
+          description: 'Types the caller changed from the default (both channels on): `type`, `email`, `in_app`'
           items:
             type: object
 

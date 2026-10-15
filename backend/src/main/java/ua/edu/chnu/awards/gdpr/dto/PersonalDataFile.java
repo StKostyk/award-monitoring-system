@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.gdpr.dto;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param consentHistory  every consent record
  * @param devices         browsers the account signed in from
  * @param activityLog     the person's own application events, newest first
+ * @param notifications   in-app notifications and the delivery log of mails, newest first
+ * @param notificationPreferences the notification choices the person changed from the default
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PersonalDataFile(Metadata exportMetadata, PersonalData personalData, List<RoleEntry> roles,
@@ -42,7 +45,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
                                List<AwardVersionEntry> awardVersions, List<DocumentEntry> documents,
                                List<ReviewDecisionEntry> reviewDecisions, List<DecisionMadeEntry> decisionsMade,
                                List<ConsentEntry> consentHistory, List<DeviceEntry> devices,
-                               List<ActivityEntry> activityLog) {
+                               List<ActivityEntry> activityLog, List<NotificationEntry> notifications,
+                               List<NotificationPreferenceEntry> notificationPreferences) {
 
     /**
      * Keeps unmodifiable copies of the sections.
@@ -58,6 +62,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         consentHistory = List.copyOf(consentHistory);
         devices = List.copyOf(devices);
         activityLog = List.copyOf(activityLog);
+        notifications = List.copyOf(notifications);
+        notificationPreferences = List.copyOf(notificationPreferences);
     }
 
     /**
@@ -77,6 +83,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         counts.put("consent_history", consentHistory.size());
         counts.put("devices", devices.size());
         counts.put("activity_log", activityLog.size());
+        counts.put("notifications", notifications.size());
+        counts.put("notification_preferences", notificationPreferences.size());
         return counts;
     }
 
@@ -328,5 +336,40 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
      */
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record ActivityEntry(String action, Instant timestamp, String ipAddress) {
+    }
+
+    /**
+     * One notification: an in-app row or the delivery log of a mail.
+     *
+     * @param type           the notification type
+     * @param channel        {@code IN_APP} or {@code EMAIL}
+     * @param payload        the values of its sentence
+     * @param read           whether an in-app notification was read
+     * @param sentAt         when it was written, or when the mail was handed to sending
+     * @param readAt         when it was read, null when not
+     * @param deliveredAt    when the mail server accepted the mail, null otherwise
+     * @param deliveryStatus {@code SENDING}, {@code SENT} or {@code FAILED} for mails, null for in-app rows
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record NotificationEntry(String type, String channel, Map<String, Object> payload, boolean read,
+                                    Instant sentAt, Instant readAt, Instant deliveredAt, String deliveryStatus) {
+
+        /**
+         * Keeps an unmodifiable copy of the payload; its values may be null.
+         */
+        public NotificationEntry {
+            payload = Collections.unmodifiableMap(new LinkedHashMap<>(payload));
+        }
+    }
+
+    /**
+     * One notification type the person changed from the default (both channels on).
+     *
+     * @param type  the notification type
+     * @param email whether mails of the type are sent
+     * @param inApp whether in-app notifications of the type are written
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record NotificationPreferenceEntry(String type, boolean email, boolean inApp) {
     }
 }

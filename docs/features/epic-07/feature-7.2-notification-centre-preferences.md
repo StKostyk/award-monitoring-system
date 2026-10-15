@@ -99,7 +99,7 @@ Everything the system tells a person today arrives as a bilingual e-mail. Nothin
 - **AC-4.2** Given a mail listener of a preference type, when it runs, then it claims an `EMAIL` row by dedupe key (`SENDING`) before the send, and sets `SENT` with `delivered_at` after `MailDelivery` returns, or `FAILED` when it throws (the exception still propagates, so the publication stays incomplete).
 - **AC-4.3** Given an `EMAIL` row for the same dedupe key is already `SENT`, or `SENDING` and younger than 10 minutes, when the listener runs again, then no mail is sent and the publication completes (F-1). A `FAILED` row or a `SENDING` one older than 10 minutes is claimed again.
 - **AC-4.4** Given deliveries, then the counter `award.notifications.delivered` with tags `channel` (`email`, `in_app`), `type` and `outcome` (`sent`, `failed`, `skipped`, `off`) appears in `/actuator/prometheus`.
-- **AC-4.5** Given the export, then `formatVersion` is `1.4`, `notifications` lists each row (type, channel, payload, sent, read and delivered moments, delivery status) and `notificationPreferences` the stored choices; the user guide's export section names both.
+- **AC-4.5** Given the export, then `export_metadata.format_version` is `1.4`, `notifications` lists each row (type, channel, payload, sent, read and delivered moments, delivery status) and `notification_preferences` the stored choices (snake_case like every section of the file); the user guide's export section names both.
 - **AC-4.6** Given the documentation, then DATA_DICTIONARY §5.1 describes the delivery columns, and the data export section of PRIVACY_BY_DESIGN lists the new parts.
 
 ### 7.2.4 HTML e-mail templates in the university brand (SCRUM-69)
@@ -154,7 +154,7 @@ Everything the system tells a person today arrives as a bilingual e-mail. Nothin
 - `award`, `user`, `delegation`: events gain `userId`/`recipients` and `occurredAt` (7.2.1)
 - `award.service.{Decision,Correction,Overdue,TakeOver}Mails` move to `notification` (1.3.2); `OverdueMails` keeps its metric
 - `common.mail.MailDelivery`: HTML part from the layout (7.2.4); `MailContent` (text, preferences-link flag)
-- `gdpr.PersonalDataAssembler`: `notifications`, `notificationPreferences` (7.2.3)
+- `gdpr.PersonalDataAssembler`: `notifications`, `notification_preferences` (7.2.3), read through `notification.service.NotificationLookup`
 - ADR-022 module table: `notification` also depends on `award` (events); `gdpr` → `notification` (`service`)
 
 ### Frontend
@@ -265,10 +265,10 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 5. `secretary.fmi` returns B with a comment and rejects C; D is passed on at the faculty level. Expected: three new items for `employee.fmi` (returned, rejected, passed on); the returned item carries no comment text; "Mark all as read" empties the badge. (AC-1.2, 2.5, §8.3)
 6. Open `http://localhost:4200/notifications` and turn on "Unread only". Expected: the list, `?unread=true` in the URL, the empty state after step 5. (AC-2.6)
 7. As `employee.fmi` on `/profile`, untick e-mail for "Award returned" and save. Expected: confirmation; the in-app box of that row is disabled; a reload keeps the choice; psql `audit_logs` has `NOTIFICATION_PREFERENCES_CHANGED`. (AC-3.2, 3.4, 3.6)
-8. Correct B and resubmit; `secretary.fmi` returns it again. Expected: an in-app item, no new mail in Mailpit; `http://localhost:8080/actuator/prometheus` `award_notifications_delivered_total{channel="email",type="AWARD_RETURNED",outcome="off"}` grew by 1. (AC-3.5, 4.4)
+8. Correct B and resubmit; `secretary.fmi` returns it again. Expected: an in-app item, no new mail in Mailpit; `http://localhost:8080/actuator/prometheus` the `award_notifications_delivered_total` series with `channel="email"`, `outcome="off"` and `type="AWARD_RETURNED"` (labels in alphabetical order, next to `application` and `environment`) grew by 1. (AC-3.5, 4.4)
 9. `secretary.fmi` corrects A through the correction flow. Expected: a mail and an in-app item about the correction of «A» naming the fields. (AC-1.2)
 10. As `admin` assign `secretary2.fmi` a role; as `dean.fmi` delegate to `secretary2.fmi` and revoke. Expected: three items for `secretary2.fmi` (role, delegation, revoked) and the revoke item for `dean.fmi`; the links lead to `/profile` and `/delegations`. (AC-1.2, 2.4)
-11. As `employee.fmi` call `GET /api/v1/users/me/export`. Expected: `formatVersion` `1.4`; `notifications` with the rows of steps 2–9 including the `EMAIL` rows and their status; `notificationPreferences` with the returned-award choice. (AC-4.5)
+11. As `employee.fmi` call `GET /api/v1/users/me/export`. Expected: `export_metadata.format_version` `1.4`; `notifications` with the rows of steps 2–9 including the `EMAIL` rows with `delivery_status` `SENT` and `delivered_at`; `notification_preferences` with the returned-award choice (`email` false, `in_app` true). (AC-4.5)
 12. Mailpit: open the decision mail of step 2, tabs HTML and HTML Check; narrow the window to 360 px. Expected: brand header, button for "Переглянути нагороду", footer link to `/profile#notifications`; no error-level finding. Request a password reset and open that mail. Expected: the same layout, no preferences link. (AC-5.2, 5.3, 5.5)
 
 ### Detours

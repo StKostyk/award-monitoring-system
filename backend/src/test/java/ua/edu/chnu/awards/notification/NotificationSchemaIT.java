@@ -43,6 +43,19 @@ class NotificationSchemaIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac4_1_theDeliveryColumnsAndTheirCheckExist() {
+        List<String> columns = jdbc.queryForList("SELECT column_name || ':' || data_type || ':' || is_nullable"
+            + " || ':' || coalesce(character_maximum_length::text, '') FROM information_schema.columns"
+            + " WHERE table_name = 'notifications'", String.class);
+        String check = jdbc.queryForObject("SELECT pg_get_constraintdef(oid) FROM pg_constraint"
+            + " WHERE conname = 'ck_notifications_delivery_status'", String.class);
+
+        assertThat(columns).contains("delivery_status:character varying:YES:20",
+            "delivered_at:timestamp with time zone:YES:");
+        assertThat(check).contains("'IN_APP'", "'EMAIL'", "'SENDING'", "'SENT'", "'FAILED'", "IS NULL");
+    }
+
+    @Test
     void ac1_1_theDedupeKeyIsUniqueAndTheListQueryHasItsIndex() {
         List<String> indexes = jdbc.queryForList("SELECT indexdef FROM pg_indexes WHERE tablename = 'notifications'",
             String.class);

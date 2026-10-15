@@ -116,7 +116,7 @@ class UserProfileEndpointsTest extends AbstractUserEndpointsTest {
             new PersonalDataFile.PersonalData(new PersonalDataFile.Profile("employee.fmi@chnu.edu.ua", "Анастасія",
                 "Петренко", null, null, AccountStatus.ACTIVE, null, null)),
             List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-            List.of());
+            List.of(), List.of(), List.of());
         when(dataExportService.export(5L))
             .thenReturn(new DataExport("award-monitoring-export-2026-09-30.json", file));
 

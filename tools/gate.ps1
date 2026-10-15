@@ -10,18 +10,28 @@
     verify runs only when the branch changes something under backend/ compared with develop (develop passed it
     when it was merged); -Full runs it regardless. The frontend checks run in a background job while the backend
     verify runs (-Sequential runs them afterwards); every phase prints its duration.
+    With less than -MinFreeGb of free memory the run switches to -Sequential by itself. A second gate, or a
+    running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
+    For a full run started from an agent shell, use tools/detach.ps1 so the run survives the shell.
+
+.PARAMETER MinFreeGb
+    Free physical memory, in GB, below which the frontend checks run after the backend verify. Default 8.
 
 .EXAMPLE
     .\tools\gate.ps1 -StaticOnly
     .\tools\gate.ps1
+    .\tools\detach.ps1 gate tools\gate.ps1
 #>
 [CmdletBinding()]
 param(
     [switch]$StaticOnly,
     [switch]$SkipFrontend,
     [switch]$Full,
-    [switch]$Sequential
+    [switch]$Sequential,
+    [double]$MinFreeGb = 8
 )
+
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
 
 $runningBackend = Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" |
     Where-Object { $_.CommandLine -like '*spring-boot:run*' }
@@ -31,12 +41,41 @@ if ($runningBackend) {
     exit 1
 }
 
+$playwright = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+    Where-Object { $_.CommandLine -like '*playwright*test*' }
+if ($playwright) {
+    Write-Host "A Playwright run is going (PID $($playwright.ProcessId -join ', ')); run the gate after it."
+    exit 1
+}
+
 $root = Split-Path -Parent $PSScriptRoot
 $backend = Join-Path $root 'backend'
 $logDir = Join-Path $root 'build'
 New-Item -ItemType Directory -Force $logDir | Out-Null
+
+$lock = Join-Path $logDir 'gate.lock'
+if (Test-Path $lock) {
+    $holder = Get-Process -Id ([int](Get-Content $lock -Raw)) -ErrorAction SilentlyContinue
+    if ($holder -and $holder.Id -ne $PID -and $holder.ProcessName -match '^(pwsh|powershell)$') {
+        Write-Host "Another gate is running (PID $($holder.Id)); wait for it to finish."
+        exit 1
+    }
+}
+Set-Content -Path $lock -Value $PID
+
+$freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+if (-not ($StaticOnly -or $Sequential) -and $freeGb -lt $MinFreeGb) {
+    $Sequential = $true
+    Write-Host ('{0:N1} GB free (under {1} GB): the frontend checks run after the backend verify.' -f $freeGb,
+        $MinFreeGb)
+}
 $log = Join-Path $logDir 'gate.log'
 $mvnw = Join-Path $backend 'mvnw.cmd'
+
+function Exit-Gate([int]$code) {
+    Remove-Item $lock -ErrorAction SilentlyContinue
+    exit $code
+}
 
 function Format-Elapsed([datetime]$start) {
     $span = (Get-Date) - $start
@@ -63,7 +102,7 @@ if (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:ch
         } | Select-Object -First 20
     }
     Write-Host 'Fix the violations above, then run the gate again.'
-    exit 1
+    Exit-Gate 1
 }
 $frontendChecks = {
     param([string]$root, [string]$logDir, [bool]$staticOnly)
@@ -103,13 +142,13 @@ $frontendChecks = {
 }
 
 if ($StaticOnly) {
-    if ($SkipFrontend) { exit 0 }
+    if ($SkipFrontend) { Exit-Gate 0 }
     $start = Get-Date
     Write-Host "$(Get-Date -Format 'HH:mm:ss') frontend static..." -NoNewline
     $static = & $frontendChecks $root $logDir $true
     Write-Host " $(if ($static.LintOk) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $start))"
     $static.Lines | ForEach-Object { Write-Host $_ }
-    if ($static.LintOk) { exit 0 } else { exit 1 }
+    if ($static.LintOk) { Exit-Gate 0 } else { Exit-Gate 1 }
 }
 
 $backendPaths = @('backend', 'docs/api/openapi.yml')
@@ -122,7 +161,7 @@ if ($Full -or ($backendChanged | Where-Object { $_ })) {
     docker info --format '{{.ServerVersion}}' *> $null
     if ($LASTEXITCODE -ne 0) {
         Write-Host 'Docker is not running: the integration and functional tests need it (TestContainers). Start Docker Desktop and run the gate again.'
-        exit 1
+        Exit-Gate 1
     }
 
     if (-not ($SkipFrontend -or $Sequential)) {
@@ -190,4 +229,5 @@ Frontend: $frontend
 "@
 Set-Content -Path (Join-Path $logDir 'gate-summary.txt') -Value $summary
 Write-Host $summary
-if (-not ($backendOk -and $frontendOk)) { exit 1 }
+if (-not ($backendOk -and $frontendOk)) { Exit-Gate 1 }
+Exit-Gate 0

@@ -158,10 +158,10 @@ class NotificationFT extends AbstractFunctionalTest {
         boolean award = type.startsWith("AWARD_");
         Timestamp sentAt = Timestamp.from(Instant.now().minus(age));
         return jdbc.queryForObject("insert into notifications (user_id, type, channel, payload, dedupe_key,"
-                + " reference_type, reference_id, sent_at, expires_at) values (?, ?, ?,"
-                + " '{\"title\": \"Certificate\"}'::jsonb, ?, ?, ?, ?, ?) returning notification_id", Long.class,
+                + " reference_type, reference_id, sent_at, expires_at, delivery_status) values (?, ?, ?,"
+                + " '{\"title\": \"Certificate\"}'::jsonb, ?, ?, ?, ?, ?, ?) returning notification_id", Long.class,
             userId, type, channel, UUID.randomUUID().toString().replace("-", ""), award ? "AWARD" : null,
-            award ? 5L : null, sentAt, sentAt);
+            award ? 5L : null, sentAt, sentAt, "EMAIL".equals(channel) ? "SENT" : null);
     }
 
     private Timestamp readAt(long id) {

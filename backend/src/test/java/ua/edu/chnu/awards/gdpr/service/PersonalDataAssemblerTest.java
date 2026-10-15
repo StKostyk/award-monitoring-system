@@ -39,6 +39,7 @@ import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ReviewDecisionEntry;
 import ua.edu.chnu.awards.gdpr.mapper.PersonalDataMapper;
 import ua.edu.chnu.awards.gdpr.repository.PersonalDataQueries;
+import ua.edu.chnu.awards.notification.service.NotificationLookup;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -56,9 +57,10 @@ class PersonalDataAssemblerTest {
     private final AwardVersionLookup versions = mock(AwardVersionLookup.class);
     private final DeviceLookup devices = mock(DeviceLookup.class);
     private final PersonalDataQueries queries = mock(PersonalDataQueries.class);
+    private final NotificationLookup notifications = mock(NotificationLookup.class);
     private final PersonalDataAssembler assembler = new PersonalDataAssembler(roleHolders,
         delegations, awards, versions,
-        devices, queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
+        devices, notifications, queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
     private Organization faculty;
     private Organization department;
@@ -77,7 +79,7 @@ class PersonalDataAssemblerTest {
     void ac32_theMetadataAndProfileDescribeThePersonWithDepartmentAndFaculty() {
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.3",
+        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.4",
             "Article 20 - Right to Data Portability"));
         PersonalDataFile.Profile profile = file.personalData().profile();
         assertThat(profile.email()).isEqualTo("employee.fmi@chnu.edu.ua");
@@ -102,8 +104,11 @@ class PersonalDataAssemblerTest {
         assertThat(file.awardVersions()).isEmpty();
         assertThat(file.reviewDecisions()).isEmpty();
         assertThat(file.decisionsMade()).isEmpty();
+        assertThat(file.notifications()).isEmpty();
+        assertThat(file.notificationPreferences()).isEmpty();
         assertThat(file.sectionCounts()).containsOnlyKeys("roles", "delegations", "awards", "award_versions",
-            "documents", "review_decisions", "decisions_made", "consent_history", "devices", "activity_log")
+            "documents", "review_decisions", "decisions_made", "consent_history", "devices", "activity_log",
+            "notifications", "notification_preferences")
             .allSatisfy((key, count) -> assertThat(count).isEqualTo(0));
     }
 
