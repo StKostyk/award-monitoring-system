@@ -1,0 +1,59 @@
+<mat-card class="notice" data-testid="privacy-notice">
+  <mat-card-content>
+    <header class="notice__header">
+      <h1 class="notice__title">{{ 'privacy.notice.title' | transloco }}</h1>
+      @if (notice(); as notice) {
+        <mat-form-field appearance="outline" class="notice__version" subscriptSizing="dynamic">
+          <mat-label>{{ 'privacy.notice.version' | transloco }}</mat-label>
+          <mat-select
+            [value]="version()"
+            (selectionChange)="version.set($event.value)"
+            data-testid="notice-version"
+          >
+            @for (published of notice.versions; track published.version) {
+              <mat-option [value]="published.version">
+                {{ published.version }} · {{ published.publishedOn | kyivDate }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </header>
+
+    @if (acknowledging() && notice(); as notice) {
+      <p class="notice__hint" role="status" data-testid="notice-acknowledge-hint">
+        {{ 'privacy.notice.acknowledgeHint' | transloco: { version: notice.version } }}
+      </p>
+    }
+
+    @if (failed()) {
+      <p class="notice__error" role="alert" data-testid="notice-failed">
+        {{ 'privacy.notice.loadFailed' | transloco }}
+      </p>
+    } @else if (text(); as text) {
+      <article class="notice__text" [innerHTML]="text" data-testid="notice-text"></article>
+    } @else {
+      <p>{{ 'app.loading' | transloco }}</p>
+    }
+
+    @if (acknowledging()) {
+      @if (error(); as error) {
+        <p class="notice__error" role="alert" data-testid="notice-error">{{ error | transloco }}</p>
+      }
+      <div class="notice__actions">
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="sending() || !notice()"
+          (click)="acknowledge()"
+          data-testid="notice-acknowledge"
+        >
+          {{ 'privacy.notice.acknowledge' | transloco }}
+        </button>
+        <button mat-stroked-button type="button" (click)="signOut()" data-testid="notice-sign-out">
+          {{ 'privacy.notice.signOut' | transloco }}
+        </button>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

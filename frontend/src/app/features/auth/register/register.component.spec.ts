@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
@@ -7,9 +8,13 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { vi } from 'vitest';
 
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { OrganizationSummary } from '../../../core/organizations/organizations.service';
 import { RegisterComponent } from './register.component';
+
+const noticeUrl = `${environment.apiUrl}/public/privacy-notice`;
+const notice = { version: '1.0', publishedOn: '2026-10-15', versions: [] };
 
 const departments: OrganizationSummary[] = [
   {
@@ -63,6 +68,10 @@ describe('RegisterComponent', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: LanguageService, useValue: { current: () => lang } },
+        {
+          provide: AuthService,
+          useValue: { isAuthenticated: signal(false), userId: signal(null) },
+        },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -70,6 +79,7 @@ describe('RegisterComponent', () => {
     fixture = TestBed.createComponent(RegisterComponent);
     fixture.detectChanges();
     http.expectOne(`${environment.apiUrl}/organizations?type=DEPARTMENT`).flush(departments);
+    http.expectOne(noticeUrl).flush(notice);
     fixture.detectChanges();
   });
 
@@ -93,6 +103,7 @@ describe('RegisterComponent', () => {
       firstName: 'A',
       lastName: 'B',
       organizationId: 64,
+      privacyNotice: true,
     });
 
     fixture.componentInstance.submit();
@@ -122,6 +133,7 @@ describe('RegisterComponent', () => {
       firstName: ' Олена ',
       lastName: 'Нова  ',
       organizationId: 64,
+      privacyNotice: true,
     });
 
     fixture.componentInstance.submit();
@@ -132,6 +144,7 @@ describe('RegisterComponent', () => {
       firstName: 'Олена',
       lastName: 'Нова',
       organizationId: 64,
+      privacyNoticeVersion: '1.0',
     });
     request.flush(
       { email: 'new.user@chnu.edu.ua', status: 'PENDING' },
@@ -150,6 +163,7 @@ describe('RegisterComponent', () => {
       firstName: 'A',
       lastName: 'B',
       organizationId: 64,
+      privacyNotice: true,
     });
 
     fixture.componentInstance.submit();
@@ -166,5 +180,73 @@ describe('RegisterComponent', () => {
       fixture.nativeElement.querySelector('[data-testid="register-error"]').textContent,
     ).toContain('Адреса зайнята');
     expect(fixture.componentInstance.submitting()).toBe(false);
+  });
+
+  it('ac1_3 refuses the form until the privacy notice box is ticked', () => {
+    const form = fixture.componentInstance.form;
+    form.setValue({
+      email: 'new.user@chnu.edu.ua',
+      password: 'correct-horse-battery',
+      firstName: 'Олена',
+      lastName: 'Нова',
+      organizationId: 64,
+      privacyNotice: false,
+    });
+
+    fixture.componentInstance.submit();
+    fixture.detectChanges();
+
+    expect(form.controls.privacyNotice.hasError('required')).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="privacy-notice-required"]'),
+    ).not.toBeNull();
+    const link = fixture.nativeElement.querySelector('[data-testid="privacy-notice-link"]');
+    expect(link.getAttribute('href')).toBe('/privacy-notice');
+    expect(link.getAttribute('target')).toBe('_blank');
+    http.expectNone(`${environment.apiUrl}/auth/register`);
+  });
+
+  it('ac1_3 asks to tick the box again when the notice changed while the form was open', () => {
+    fixture.componentInstance.form.setValue({
+      email: 'new.user@chnu.edu.ua',
+      password: 'correct-horse-battery',
+      firstName: 'Олена',
+      lastName: 'Нова',
+      organizationId: 64,
+      privacyNotice: true,
+    });
+
+    fixture.componentInstance.submit();
+    http.expectOne(`${environment.apiUrl}/auth/register`).flush(
+      {
+        type: 'urn:awards:problem:validation-failed',
+        errors: [{ field: 'privacyNoticeVersion', code: 'outdated', message: 'outdated' }],
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+    http.expectOne(noticeUrl).flush({ ...notice, version: '1.1' });
+
+    expect(fixture.componentInstance.error()).toBe('register.errors.notice-outdated');
+    expect(fixture.componentInstance.form.controls.privacyNotice.value).toBe(false);
+    expect(fixture.componentInstance.noticeVersion()).toBe('1.1');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('ac1_3 does not register while the notice version is unknown', () => {
+    fixture.componentInstance.noticeVersion.set(null);
+    fixture.componentInstance.form.setValue({
+      email: 'new.user@chnu.edu.ua',
+      password: 'correct-horse-battery',
+      firstName: 'Олена',
+      lastName: 'Нова',
+      organizationId: 64,
+      privacyNotice: true,
+    });
+
+    fixture.componentInstance.submit();
+    http.expectOne(noticeUrl).flush(null, { status: 503, statusText: 'Unavailable' });
+
+    expect(fixture.componentInstance.error()).toBe('register.errors.notice-unavailable');
+    http.expectNone(`${environment.apiUrl}/auth/register`);
   });
 });

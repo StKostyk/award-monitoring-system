@@ -1,1 +1,10 @@
 @use '../auth-card';
+
+.auth-form__consent {
+  margin: 0 0 8px;
+
+  .auth-form__error {
+    margin: 0 0 0 40px;
+    font: var(--mat-sys-body-small);
+  }
+}

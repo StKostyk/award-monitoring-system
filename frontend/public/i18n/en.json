@@ -849,12 +849,15 @@
     "submit": "Register",
     "haveAccount": "Already have an account?",
     "signIn": "Sign in",
+    "privacyNotice": "I have read the",
+    "privacyNoticeLink": "privacy notice",
     "validation": {
       "required": "Required",
       "institutionalEmail": "An address in the chnu.edu.ua domain is required",
       "password": "The password must be at least 10 characters and at most 72 bytes",
       "name": "Letters, apostrophe, hyphen and space only",
-      "tooLong": "At most 100 characters"
+      "tooLong": "At most 100 characters",
+      "privacyNotice": "Confirm that you have read the privacy notice"
     },
     "errors": {
       "institutional-email-required": "Registration is possible only with a @chnu.edu.ua address. Ask your faculty secretary if you do not have one.",
@@ -864,6 +867,8 @@
       "password-too-long": "The password is too long.",
       "password-too-common": "This password is too common; choose another one.",
       "network": "The server is unreachable. Try again later.",
+      "notice-outdated": "The privacy notice changed while you filled in the form. Read the new version and tick the box again.",
+      "notice-unavailable": "The privacy notice could not be loaded. Try again in a moment.",
       "unknown": "Registration failed. Try again later."
     }
   },
@@ -938,6 +943,21 @@
       "too-many-requests": "Too many requests from this address. Try again in a minute.",
       "network": "The server is unreachable. Try again later.",
       "unknown": "The request could not be completed. Try again later."
+    }
+  },
+  "privacy": {
+    "notice": {
+      "title": "Privacy notice",
+      "version": "Version",
+      "acknowledgeHint": "Read version {{version}} of the privacy notice and confirm it to continue.",
+      "acknowledge": "I have read the notice",
+      "signOut": "Sign out",
+      "loadFailed": "The notice could not be loaded. Try again later.",
+      "errors": {
+        "outdated": "The notice changed again. Read the new version and confirm it.",
+        "network": "The server is unreachable. Try again later.",
+        "unknown": "The confirmation failed. Try again later."
+      }
     }
   },
   "profile": {

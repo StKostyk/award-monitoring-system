@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Versioned privacy notice with append-only consent records: acknowledgement at registration and after each new version, optional analytics consent (SCRUM-86)
 - Every e-mail carries an HTML part in the university brand next to the plain text; notification mails link to the preferences (SCRUM-69).
 - Delivery log of notification e-mails (no duplicate after a retried publication), delivery counter award.notifications.delivered, and notifications plus notification preferences in the personal data export (format 1.4)
 - Notification preferences: e-mail and in-app delivery per notification type on the profile page (GET/PUT /api/v1/users/me/notification-preferences); every mail and in-app listener honours them, security mails are always sent

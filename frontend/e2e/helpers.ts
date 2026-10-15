@@ -20,6 +20,9 @@ export const SEED = {
 /** Password of the accounts the tests register themselves. */
 export const FRESH_PASSWORD = 'correct-horse-battery';
 
+/** The privacy notice version the backend serves as current (`app.privacy.notice-version`). */
+export const NOTICE_VERSION = '1.0';
+
 interface MessageSummary {
   ID: string;
   Subject: string;
@@ -61,13 +64,16 @@ export async function countMessages(email: string, subject: string): Promise<num
   return (await messagesTo(email, subject)).length;
 }
 
-/** Registers and verifies a fresh account through the API and the verification page. */
+/**
+ * Registers and verifies a fresh account through the API and the verification page; a rate-limited registration
+ * waits for `Retry-After` and is sent again.
+ */
 export async function registerAndVerify(
   page: Page,
   email: string,
   password: string,
 ): Promise<void> {
-  await fetch('http://localhost:8080/api/v1/auth/register', {
+  const request = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -76,9 +82,18 @@ export async function registerAndVerify(
       firstName: 'Ірина',
       lastName: 'Нова',
       organizationId: 64,
-      privacyNoticeVersion: '1.0',
+      privacyNoticeVersion: NOTICE_VERSION,
     }),
-  });
+  };
+  let response = await fetch('http://localhost:8080/api/v1/auth/register', request);
+  for (let attempt = 0; response.status === 429 && attempt < 3; attempt++) {
+    const seconds = Number(response.headers.get('Retry-After') ?? '5');
+    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+    response = await fetch('http://localhost:8080/api/v1/auth/register', request);
+  }
+  if (response.status !== 201) {
+    throw new Error(`Registration of ${email} answered ${response.status}`);
+  }
   await page.goto(await linkFor(email, 'verify-email'));
   await page.getByTestId('verify-password').fill(password);
   await page.getByTestId('verify-submit').click();

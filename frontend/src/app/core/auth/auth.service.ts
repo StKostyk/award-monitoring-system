@@ -22,6 +22,7 @@ const PUBLIC_ROUTES = [
   '/callback',
   '/public/',
   '/not-found',
+  '/privacy-notice',
 ];
 
 @Injectable({ providedIn: 'root' })

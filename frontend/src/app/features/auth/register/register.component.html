@@ -86,6 +86,25 @@
         }
       </mat-form-field>
 
+      <div class="auth-form__consent">
+        <mat-checkbox formControlName="privacyNotice" data-testid="privacy-notice-box">
+          {{ 'register.privacyNotice' | transloco }}
+          <a
+            href="/privacy-notice"
+            target="_blank"
+            rel="noopener"
+            (click)="$event.stopPropagation()"
+            data-testid="privacy-notice-link"
+            >{{ 'register.privacyNoticeLink' | transloco }}</a
+          >
+        </mat-checkbox>
+        @if (form.controls.privacyNotice.touched && form.controls.privacyNotice.invalid) {
+          <p class="auth-form__error" data-testid="privacy-notice-required">
+            {{ 'register.validation.privacyNotice' | transloco }}
+          </p>
+        }
+      </div>
+
       @if (error(); as error) {
         <p class="auth-form__error" role="alert" data-testid="register-error">
           {{ error | transloco }}
