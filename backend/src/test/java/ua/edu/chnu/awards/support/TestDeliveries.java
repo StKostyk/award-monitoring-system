@@ -59,7 +59,18 @@ public final class TestDeliveries {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
         EventProperties events = new EventProperties(Duration.ofMinutes(1), RETRY_AFTER, RETRY_AFTER,
             Duration.ofDays(1), Duration.ofDays(1));
-        return new DeliveryLog(delivery, new NotificationRows(new NotificationKeys(), new ObjectMapper(), clock),
-            notifications, preferences, metrics, events, clock);
+        return new DeliveryLog(delivery, rows(new ObjectMapper(), NOW), notifications, preferences, metrics, events,
+            clock);
+    }
+
+    /**
+     * Notification rows stamped at a fixed moment.
+     *
+     * @param mapper writes the payloads
+     * @param now    the moment
+     * @return the rows
+     */
+    public static NotificationRows rows(ObjectMapper mapper, Instant now) {
+        return new NotificationRows(new NotificationKeys(), mapper, Clock.fixed(now, ZoneOffset.UTC));
     }
 }

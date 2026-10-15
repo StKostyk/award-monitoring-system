@@ -8,19 +8,18 @@ import { vi } from 'vitest';
 import en from '../../../../../public/i18n/en.json';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AppNotification, NotificationApi } from '../../../core/notifications/notification.api';
+import { notificationItem } from '../../../core/notifications/notification.testing';
 import { UnreadCount } from '../../../core/notifications/unread-count';
 import { NotificationListComponent, PAGE_SIZE } from './notification-list.component';
 
 function item(id: number, read: boolean): AppNotification {
-  return {
-    id,
+  return notificationItem(id, read, {
     type: 'ROLE_ASSIGNED',
     payload: { role: 'DEAN', organization: 'Faculty', organizationUk: 'Факультет', validTo: null },
     referenceType: null,
     referenceId: null,
-    read,
     sentAt: '2026-10-14T09:00:00Z',
-  };
+  });
 }
 
 describe('NotificationListComponent', () => {
@@ -190,6 +189,22 @@ describe('NotificationListComponent', () => {
       element().querySelector('[data-testid="notifications-action-failed"]')?.textContent,
     ).toContain('The notification could not be updated');
     expect(rows().length).toBe(2);
+  });
+
+  it('ac2_4_says_so_when_marking_an_item_read_fails', () => {
+    unread.markRead.mockReturnValue(throwError(() => new Error('offline')));
+    api.list.mockReturnValue(
+      of({ content: [notificationItem(3, false, { referenceId: null })], totalElements: 1 }),
+    );
+    fixture.componentInstance.load();
+    fixture.detectChanges();
+
+    rows()[0].click();
+    fixture.detectChanges();
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(element().querySelector('[data-testid="notifications-action-failed"]')).not.toBeNull();
+    expect(rows()[0].classList).toContain('notifications__item--unread');
   });
 
   it('offers_a_retry_when_loading_fails', () => {

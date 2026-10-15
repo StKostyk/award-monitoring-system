@@ -9,9 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +26,7 @@ import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.repository.NewNotification;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
+import ua.edu.chnu.awards.support.TestDeliveries;
 import ua.edu.chnu.awards.support.TestEvents;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -46,7 +45,7 @@ class InAppNotificationsTest {
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private final DeliveryMetrics metrics = new DeliveryMetrics(registry);
     private final InAppNotifications notifications = new InAppNotifications(new NotificationDrafts(),
-        new NotificationRows(new NotificationKeys(), new ObjectMapper(), Clock.fixed(NOW, ZoneOffset.UTC)),
+        TestDeliveries.rows(new ObjectMapper(), NOW),
         repository, users, preferences, metrics);
 
     @BeforeEach
@@ -120,7 +119,7 @@ class InAppNotificationsTest {
         when(broken.writeValueAsString(any())).thenThrow(mock(JsonProcessingException.class));
         when(users.findById(7L)).thenReturn(Optional.of(TestUsers.person(7L, EMAIL)));
         InAppNotifications failing = new InAppNotifications(new NotificationDrafts(),
-            new NotificationRows(new NotificationKeys(), broken, Clock.fixed(NOW, ZoneOffset.UTC)), repository, users,
+            TestDeliveries.rows(broken, NOW), repository, users,
             preferences, metrics);
 
         assertThatThrownBy(() -> failing.onAwardDecided(decided(7L, AT))).isInstanceOf(IllegalStateException.class);

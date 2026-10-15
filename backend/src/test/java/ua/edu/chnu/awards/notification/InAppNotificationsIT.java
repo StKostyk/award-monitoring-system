@@ -32,6 +32,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
@@ -76,6 +79,9 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
     @Autowired
     private OrganizationRepository organizations;
+
+    @Autowired
+    private MeterRegistry registry;
 
     @AfterEach
     void cleanUp() {
@@ -168,6 +174,28 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
         assertThat(rows(owner)).isEqualTo(1);
         assertThat(mailStatus(owner)).isEqualTo("SENT");
+    }
+
+    @Test
+    void ac3_5_aFailedMailIsNotRetriedOnceTheRecipientSwitchedMailOff() {
+        User owner = account("failedoff");
+        doThrow(new MailSendException("down")).when(mailSender)
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
+        publish(decided(owner, Instant.now()));
+        assertThat(Eventually.equalTo(() -> mailStatus(owner), "FAILED")).isEqualTo("FAILED");
+        assertThat(Eventually.equalTo(this::incomplete, 1L)).isEqualTo(1);
+        final double off = mailsOff();
+
+        reset(mailSender);
+        prefer(owner, false, true);
+        jdbc.update("UPDATE event_publication SET publication_date = ?",
+            Timestamp.from(Instant.now().minus(Duration.ofMinutes(15))));
+        retry.run();
+
+        assertThat(Eventually.equalTo(this::incomplete, 0L)).isZero();
+        assertThat(mailsOff()).isEqualTo(off + 1);
+        assertThat(mailStatus(owner)).isEqualTo("FAILED");
+        verify(mailSender, never()).send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
     }
 
     @Test
@@ -267,6 +295,12 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
     private String mailStatus(User user) {
         return jdbc.query("SELECT delivery_status FROM notifications WHERE user_id = ? AND channel = 'EMAIL'",
             (rs, i) -> rs.getString(1), user.getId()).stream().findFirst().orElse(null);
+    }
+
+    private double mailsOff() {
+        Counter counter = registry.find("award.notifications.delivered")
+            .tags("channel", "email", "type", "AWARD_RETURNED", "outcome", "off").counter();
+        return counter == null ? 0 : counter.count();
     }
 
     private long incomplete() {

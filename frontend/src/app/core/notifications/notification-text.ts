@@ -4,28 +4,23 @@ import { TranslocoService } from '@jsverse/transloco';
 
 import { kyivDate } from '../../shared/date-format';
 import { LanguageService } from '../i18n/language.service';
-import { AppNotification, NotificationType } from './notification.api';
+import { AppNotification } from './notification.api';
 
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const RELATIVE_DAYS = 7;
 
-const AWARD_TYPES: readonly NotificationType[] = [
-  'AWARD_APPROVED',
-  'AWARD_REJECTED',
-  'AWARD_RETURNED',
-  'AWARD_ESCALATED',
-  'AWARD_CORRECTED',
-  'REVIEW_TAKEN_OVER',
-];
-
 /** Where choosing a notification leads, or null when it has nowhere to go. */
 export function notificationTarget(notification: AppNotification): unknown[] | null {
-  if (AWARD_TYPES.includes(notification.type)) {
-    return notification.referenceId === null ? null : ['/awards', notification.referenceId];
-  }
   switch (notification.type) {
+    case 'AWARD_APPROVED':
+    case 'AWARD_REJECTED':
+    case 'AWARD_RETURNED':
+    case 'AWARD_ESCALATED':
+    case 'AWARD_CORRECTED':
+    case 'REVIEW_TAKEN_OVER':
+      return notification.referenceId === null ? null : ['/awards', notification.referenceId];
     case 'REVIEW_OVERDUE':
       return ['/reviews'];
     case 'ROLE_ASSIGNED':

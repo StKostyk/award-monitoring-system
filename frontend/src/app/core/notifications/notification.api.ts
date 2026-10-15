@@ -5,20 +5,8 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Page } from '../../shared/page';
 
-export type NotificationType =
-  | 'AWARD_APPROVED'
-  | 'AWARD_REJECTED'
-  | 'AWARD_RETURNED'
-  | 'AWARD_ESCALATED'
-  | 'AWARD_CORRECTED'
-  | 'REVIEW_OVERDUE'
-  | 'REVIEW_TAKEN_OVER'
-  | 'ROLE_ASSIGNED'
-  | 'ROLE_REVOKED'
-  | 'DELEGATION_CREATED'
-  | 'DELEGATION_REVOKED';
-
-export const NOTIFICATION_TYPES: readonly NotificationType[] = [
+/** Every notification type, in the order the server lists them. */
+export const NOTIFICATION_TYPES = [
   'AWARD_APPROVED',
   'AWARD_REJECTED',
   'AWARD_RETURNED',
@@ -30,7 +18,9 @@ export const NOTIFICATION_TYPES: readonly NotificationType[] = [
   'ROLE_REVOKED',
   'DELEGATION_CREATED',
   'DELEGATION_REVOKED',
-];
+] as const;
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** One in-app notification; the payload fields depend on the type. */
 export interface AppNotification {
