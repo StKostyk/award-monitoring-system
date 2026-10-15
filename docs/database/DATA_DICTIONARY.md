@@ -781,36 +781,36 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 ### 4.2 Entity: `consent_records`
 
-**Description**: GDPR-compliant consent tracking for user data processing agreements. Records all consent grants and withdrawals.
+**Description**: Append-only history of privacy notice acknowledgements and of the optional `ANALYTICS` consent (V040, 6.1.1). The newest row per user and type is the current state.
 
 **Business Rules**:
-- Each consent type tracked separately per user
-- Consent version tracked for policy updates
-- Withdrawal timestamp preserved for audit
-- Consent required before processing personal data
-- Historical consent records never deleted
+- Rows are only appended: `trg_consent_records_guard` (`fn_consent_records_guard`) raises on `DELETE` and on any `UPDATE` other than setting `ip_address` and `user_agent` to NULL (kept for erasure)
+- Registration writes a `DATA_PROCESSING` row for the notice version the person acknowledged, in the same transaction as the account; a later notice version asks for a new acknowledgement (another `DATA_PROCESSING` row)
+- An acknowledgement of the version already acknowledged, or an `ANALYTICS` choice equal to the current state, appends nothing; changes of one person are serialised by a row lock on `users`
+- A withdrawal is a row with `is_granted` false and `withdrawn_at`; `granted_at` is set on grants only
+- Processing itself rests on legitimate interest (PRIVACY_BY_DESIGN §4.2): `DATA_PROCESSING` records that the notice was read, not a consent that could be withdrawn
+- Audited as `PRIVACY_NOTICE_ACKNOWLEDGED`, `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` (entity type `GDPR`)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `consent_id` | `BIGSERIAL` | NO | Auto | PK | Unique consent record identifier |
-| `user_id` | `BIGINT` | NO | - | FK→users | User granting consent |
-| `consent_type` | `VARCHAR(50)` | NO | - | CK | Type of consent |
-| `consent_version` | `VARCHAR(20)` | NO | - | - | Policy version consented to |
-| `is_granted` | `BOOLEAN` | NO | - | - | Current consent state |
-| `granted_at` | `TIMESTAMPTZ` | YES | - | - | Timestamp when granted |
-| `withdrawn_at` | `TIMESTAMPTZ` | YES | - | - | Timestamp when withdrawn |
-| `ip_address` | `INET` | YES | - | - | IP at time of action |
-| `user_agent` | `VARCHAR(500)` | YES | - | - | Browser/client info |
-| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
+| `user_id` | `BIGINT` | NO | - | FK→users (RESTRICT) | The person |
+| `consent_type` | `VARCHAR(50)` | NO | - | CK | `DATA_PROCESSING` or `ANALYTICS` |
+| `consent_version` | `VARCHAR(20)` | NO | - | - | Privacy notice version in force when the row was written (`app.privacy.notice-version`) |
+| `is_granted` | `BOOLEAN` | NO | - | - | Granted (true) or withdrawn (false) |
+| `granted_at` | `TIMESTAMPTZ` | YES | - | CK | When granted; set on grants |
+| `withdrawn_at` | `TIMESTAMPTZ` | YES | - | CK | When withdrawn; set on withdrawals only |
+| `ip_address` | `INET` | YES | - | - | Client address of the request; never shown in the overview |
+| `user_agent` | `VARCHAR(500)` | YES | - | - | Client user agent of the request |
+| `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp; orders the history |
 
-**Consent Types** (`consent_type`):
+**Consent Types** (`consent_type`, `ck_consent_records_type`):
 | Value | Description | Required |
 |-------|-------------|----------|
-| `DATA_PROCESSING` | General data processing agreement | Yes |
-| `PUBLIC_VISIBILITY` | Not used: the choice is per award (`awards.visibility`, recorded by `AWARD_VISIBILITY_CHANGED`, 4.3.1) | - |
-| `EMAIL_NOTIFICATIONS` | Not used: e-mail is chosen per notification type in `notification_preferences` (1.3.2) | - |
-| `SMS_NOTIFICATIONS` | Receive SMS notifications | No |
-| `ANALYTICS` | Allow usage analytics | No |
+| `DATA_PROCESSING` | Acknowledgement of a privacy notice version (registration, or the acknowledgement page after a new version) | Yes |
+| `ANALYTICS` | Naming the person in rankings and comparisons of unit reports; without it the person is counted only in totals (Epic 5) | No |
+
+The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` were removed by V040: visibility is chosen per award (`awards.visibility`, 4.3.1) and e-mail per notification type (`notification_preferences`, 1.3.2).
 
 **Indexes**:
 - `pk_consent_records` - Primary key on `consent_id`
@@ -894,7 +894,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 ### 5.2 Entity: `notification_preferences`
 
 **Description**: A person's e-mail and in-app choice per notification type; the one store of notification
-preferences (`consent_records.EMAIL_NOTIFICATIONS` is not used).
+preferences (the consent type `EMAIL_NOTIFICATIONS` was removed by V040).
 
 **Business Rules**:
 - No rows are created at registration: a type without a row is on for both channels

@@ -76,6 +76,7 @@ export async function registerAndVerify(
       firstName: 'Ірина',
       lastName: 'Нова',
       organizationId: 64,
+      privacyNoticeVersion: '1.0',
     }),
   });
   await page.goto(await linkFor(email, 'verify-email'));

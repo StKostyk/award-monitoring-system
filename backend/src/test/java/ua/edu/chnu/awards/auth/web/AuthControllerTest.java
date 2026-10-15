@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.auth.web;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -55,7 +56,7 @@ class AuthControllerTest {
 
     private static final String VALID = """
         {"email":"new.user@chnu.edu.ua","password":"correct-horse-battery","firstName":"Олена",
-         "lastName":"Нова","organizationId":64}
+         "lastName":"Нова","organizationId":64,"privacyNoticeVersion":"1.0"}
         """;
 
     @Autowired
@@ -139,6 +140,15 @@ class AuthControllerTest {
                 .content("{\"token\":\"raw\"}"))
             .andExpect(status().isGone())
             .andExpect(jsonPath("$.type").value("urn:awards:problem:token-invalid"));
+    }
+
+    @Test
+    void ac14_aRegistrationWithoutTheNoticeVersionIsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
+                .content(VALID.replace(",\"privacyNoticeVersion\":\"1.0\"", "")))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentType("application/problem+json"));
+        verifyNoInteractions(registrationService);
     }
 
     @Test

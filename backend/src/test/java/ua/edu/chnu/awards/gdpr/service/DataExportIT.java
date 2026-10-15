@@ -27,6 +27,7 @@ import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
+import ua.edu.chnu.awards.support.ConsentRows;
 import ua.edu.chnu.awards.support.DecisionRows;
 import ua.edu.chnu.awards.support.RequestRows;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -83,7 +84,7 @@ class DataExportIT extends AbstractIntegrationTest {
         List<Long> ids = List.of(user.getId(), dean.getId(), admin.getId());
         ids.forEach(id -> {
             jdbc.update("delete from documents where uploaded_by = ?", id);
-            jdbc.update("delete from consent_records where user_id = ?", id);
+            ConsentRows.purge(jdbc, id);
             jdbc.update("delete from awards where user_id = ?", id);
         });
         ids.forEach(userRepository::deleteById);

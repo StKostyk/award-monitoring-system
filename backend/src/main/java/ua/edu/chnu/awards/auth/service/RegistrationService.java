@@ -18,6 +18,7 @@ import ua.edu.chnu.awards.auth.event.VerificationRequested;
 import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
+import ua.edu.chnu.awards.common.privacy.PrivacyNoticeVersions;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.entity.OrganizationType;
@@ -51,9 +52,11 @@ public class RegistrationService {
     private final AuthProperties properties;
     private final AuditService audit;
     private final MembershipConfirmation membership;
+    private final PrivacyNoticeVersions noticeVersions;
 
     /**
-     * Creates a pending account and requests the verification email.
+     * Creates a pending account with the acknowledgement of the current privacy notice and requests the
+     * verification email.
      *
      * @param request registration data
      * @return the address and its {@code PENDING} status
@@ -64,6 +67,7 @@ public class RegistrationService {
         addressRules.requireInstitutional(email,
             "Registration is open to institutional addresses only; ask your faculty secretary for help");
         passwordPolicy.require(request.password());
+        noticeVersions.requireCurrent(request.privacyNoticeVersion(), "privacyNoticeVersion");
         Organization department = organizations.findById(request.organizationId())
             .filter(org -> org.getOrgType() == OrganizationType.DEPARTMENT && org.isActive())
             .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
@@ -73,6 +77,7 @@ public class RegistrationService {
             .orElseGet(() -> create(email, request, department));
 
         membership.confirm(user, department).ifPresent(roleHolders::save);
+        noticeVersions.recordAcknowledgement(user.getId(), request.privacyNoticeVersion());
         throttle.claimForTransaction(RESEND_KEY_PREFIX + email, properties.resendInterval());
         sendVerification(user);
         return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());

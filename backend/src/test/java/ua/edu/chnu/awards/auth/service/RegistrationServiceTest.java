@@ -3,7 +3,9 @@ package ua.edu.chnu.awards.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -32,6 +34,7 @@ import ua.edu.chnu.awards.auth.event.VerificationRequested;
 import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.event.AfterCommit;
 import ua.edu.chnu.awards.common.limit.RequestThrottle;
+import ua.edu.chnu.awards.common.privacy.PrivacyNoticeVersions;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.entity.OrganizationType;
@@ -39,14 +42,13 @@ import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
-import ua.edu.chnu.awards.user.service.ManualConfirmation;
 import ua.edu.chnu.awards.user.service.RoleHolders;
 import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class RegistrationServiceTest {
 
     private static final RegisterRequest VALID = new RegisterRequest("New.User@chnu.edu.ua", "correct-horse-battery",
-        "Олена", "Нова", 64L);
+        "Олена", "Нова", 64L, "1.0");
 
     private final UserAccounts users = mock(UserAccounts.class);
     private final RoleHolders roleHolders = mock(RoleHolders.class);
@@ -56,6 +58,7 @@ class RegistrationServiceTest {
     private final AfterCommit events = mock(AfterCommit.class);
     private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
+    private final PrivacyNoticeVersions noticeVersions = mock(PrivacyNoticeVersions.class);
     private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
         List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
         Duration.ofHours(1), Duration.ofMinutes(1),
@@ -70,7 +73,7 @@ class RegistrationServiceTest {
         service = new RegistrationService(users, roleHolders,
             organizations, tokens,
             new PasswordPolicy(), passwordEncoder, events, throttle, new EmailAddressRules(properties), properties,
-            audit, new ManualConfirmation());
+            audit, (user, where) -> Optional.empty(), noticeVersions);
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
         when(organizations.findById(64L)).thenReturn(Optional.of(department));
         when(users.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
@@ -101,6 +104,29 @@ class RegistrationServiceTest {
     }
 
     @Test
+    void ac13_theAcknowledgedNoticeIsRecordedInTheRegistrationTransaction() {
+        service.register(VALID);
+
+        verify(noticeVersions).recordAcknowledgement(42L, "1.0");
+    }
+
+    @Test
+    void ac14_anOutdatedNoticeVersionIsRefusedBeforeAnythingIsStored() {
+        RegisterRequest request = new RegisterRequest("x@chnu.edu.ua", "correct-horse-battery", "A", "B", 64L,
+            "0.9");
+        doThrow(ApiProblemException.validationFailed("The privacy notice has changed", List.of()))
+            .when(noticeVersions).requireCurrent("0.9", "privacyNoticeVersion");
+
+        assertThatThrownBy(() -> service.register(request))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                assertThat(e.getType()).isEqualTo("validation-failed");
+            });
+        verify(users, never()).saveAndFlush(any());
+        verify(noticeVersions, never()).recordAcknowledgement(anyLong(), any());
+    }
+
+    @Test
     void ac2_6_registrationGrantsNoRoleSoSomebodyMustConfirmTheMembership() {
         service.register(VALID);
 
@@ -115,7 +141,7 @@ class RegistrationServiceTest {
             throttle,
             new EmailAddressRules(properties), properties, audit, (user, where) -> Optional.of(UserRole.builder()
                 .user(user).roleType(RoleType.EMPLOYEE).organization(where).validFrom(LocalDate.of(2026, 9, 21))
-                .build()));
+                .build()), noticeVersions);
 
         proven.register(VALID);
 
@@ -161,7 +187,8 @@ class RegistrationServiceTest {
 
     @Test
     void ac22_nonInstitutionalAddressIsRefusedBeforeAnythingIsStored() {
-        RegisterRequest request = new RegisterRequest("someone@gmail.com", "correct-horse-battery", "A", "B", 64L);
+        RegisterRequest request = new RegisterRequest("someone@gmail.com", "correct-horse-battery", "A", "B", 64L,
+            "1.0");
 
         assertThatThrownBy(() -> service.register(request))
             .isInstanceOfSatisfying(ApiProblemException.class, e -> {
@@ -200,7 +227,8 @@ class RegistrationServiceTest {
             Organization.builder().id(65L).orgType(OrganizationType.DEPARTMENT).active(false).build()));
 
         for (long id : new long[] {9L, 65L, 999L}) {
-            RegisterRequest request = new RegisterRequest("x@chnu.edu.ua", "correct-horse-battery", "A", "B", id);
+            RegisterRequest request = new RegisterRequest("x@chnu.edu.ua", "correct-horse-battery", "A", "B", id,
+                "1.0");
             assertThatThrownBy(() -> service.register(request))
                 .isInstanceOfSatisfying(ApiProblemException.class,
                     e -> assertThat(e.getType()).isEqualTo("organisation-invalid"));
@@ -209,7 +237,7 @@ class RegistrationServiceTest {
 
     @Test
     void weakPasswordIsRefusedWithTheReason() {
-        RegisterRequest request = new RegisterRequest("x@chnu.edu.ua", "password123", "A", "B", 64L);
+        RegisterRequest request = new RegisterRequest("x@chnu.edu.ua", "password123", "A", "B", 64L, "1.0");
 
         assertThatThrownBy(() -> service.register(request))
             .isInstanceOfSatisfying(ApiProblemException.class,

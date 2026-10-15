@@ -325,148 +325,26 @@ public class NotificationService {
 
 ### 4.2 Типи Згоди
 
-| **Тип Згоди** | **Мета** | **Обов'язкова** | **Гранулярність** | **Вплив Відкликання** |
-|---------------|----------|-----------------|-------------------|----------------------|
-| `DATA_PROCESSING` | Базове використання системи | Так | Бінарна | Видалення акаунту |
-| `PUBLIC_VISIBILITY` | Публічне відображення нагород | Так | Бінарна | Нагороди приховані |
-| `EMAIL_NOTIFICATIONS` | Не використовується: e-mail і сповіщення в застосунку обираються для кожного типу в `notification_preferences` (1.3.2); листи безпеки та конфіденційності надсилаються завжди | - | - | - |
-| `SMS_NOTIFICATIONS` | SMS сповіщення | Ні | Бінарна | Не надсилаються SMS |
-| `DOCUMENT_AI_PROCESSING` | AI витяг метаданих | Ні | За документом | Лише ручне введення |
-| `ANALYTICS` | Аналітика використання | Ні | Бінарна | Виключено з аналітики |
+Обробка даних, потрібних для роботи системи, ґрунтується на законному інтересі (DATA_GOVERNANCE §2.1), тому про неї не питають як про згоду: згода, без якої системою неможливо користуватися, не була б вільною (ст. 7(4)). Натомість людина підтверджує ознайомлення з повідомленням про конфіденційність, і підтвердження записується для кожної версії повідомлення.
+
+| **Запис** | **Мета** | **Правова підстава** | **Обов'язковий** | **Гранулярність** | **Вплив Відкликання** |
+|-----------|----------|----------------------|------------------|-------------------|----------------------|
+| `DATA_PROCESSING` | Підтвердження ознайомлення з версією повідомлення, при реєстрації та після кожної нової версії | Законний інтерес (фіксує ознайомлення) | Так | За версією повідомлення | Не відкликається; обробку припиняє видалення акаунта (§5) |
+| `ANALYTICS` | Згадування людини на ім'я в рейтингах і порівняннях звітів підрозділу (Епік 5) | Згода | Ні | Бінарна | Лише в підсумках |
+| Видимість нагороди (`awards.visibility`) | Показ затвердженої особистої нагороди поза підрозділом людини (4.3.1) | Згода | Ні | За нагородою | Нагорода одразу повертається до `PRIVATE` |
+| Документ, показаний колегам (`documents.shown_to_colleagues`) | Вибраний документ спільної нагороди, який відкривають колеги, що увійшли в систему | Згода | Ні | За документом | Документ одразу прихований |
+| E-mail за типом сповіщення (`notification_preferences`) | E-mail і сповіщення в застосунку обираються для кожного типу (1.3.2); листи безпеки та конфіденційності надсилаються завжди | Законний інтерес | Ні | За типом сповіщення | Немає листів цього типу |
+
+Колишні типи згоди `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` і `SMS_NOTIFICATIONS` вилучено (V040): перші два обираються для кожної нагороди й кожного типу сповіщень, а каналу SMS немає. Витяг метаданих з документів (`DOCUMENT_AI_PROCESSING`) не реалізовано; перед реалізацією він потребуватиме окремого типу згоди.
 
 ### 4.3 Технічне Впровадження
 
-```java
-// Сервіс Управління Згодою
-@Service
-@Transactional
-public class ConsentManagementService {
-    
-    private final ConsentRepository consentRepository;
-    private final ConsentEventPublisher eventPublisher;
-    private final AuditService auditService;
-    
-    /**
-     * Надання згоди з повним аудит слідом
-     */
-    public ConsentRecord grantConsent(ConsentRequest request) {
-        validateConsentRequest(request);
-        
-        ConsentRecord consent = ConsentRecord.builder()
-            .userId(request.getUserId())
-            .consentType(request.getConsentType())
-            .consentVersion(getCurrentPolicyVersion(request.getConsentType()))
-            .isGranted(true)
-            .grantedAt(Instant.now())
-            .ipAddress(request.getIpAddress())
-            .userAgent(request.getUserAgent())
-            .build();
-        
-        ConsentRecord saved = consentRepository.save(consent);
-        
-        // Публікація події для downstream систем
-        eventPublisher.publish(new ConsentGrantedEvent(saved));
-        
-        // Аудит лог
-        auditService.logConsentChange(
-            AuditAction.CONSENT_GRANTED,
-            saved.getUserId(),
-            saved.getConsentType(),
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Відкликання згоди з каскадними ефектами
-     */
-    public ConsentRecord withdrawConsent(Long userId, ConsentType consentType, 
-                                          WithdrawalRequest request) {
-        ConsentRecord current = consentRepository
-            .findCurrentConsent(userId, consentType)
-            .orElseThrow(() -> new ConsentNotFoundException("Активну згоду не знайдено"));
-        
-        // Оновлення запису згоди
-        current.setIsGranted(false);
-        current.setWithdrawnAt(Instant.now());
-        ConsentRecord saved = consentRepository.save(current);
-        
-        // Публікація події для каскадних ефектів
-        eventPublisher.publish(new ConsentWithdrawnEvent(saved));
-        
-        // Запуск негайної обробки даних на основі типу згоди
-        handleConsentWithdrawal(userId, consentType);
-        
-        // Аудит лог
-        auditService.logConsentChange(
-            AuditAction.CONSENT_WITHDRAWN,
-            userId,
-            consentType,
-            request.getIpAddress()
-        );
-        
-        return saved;
-    }
-    
-    /**
-     * Перевірка чи користувач має валідну згоду для операції
-     */
-    public boolean hasValidConsent(Long userId, ConsentType consentType) {
-        return consentRepository.findCurrentConsent(userId, consentType)
-            .map(consent -> consent.getIsGranted() && 
-                           consent.getConsentVersion().equals(getCurrentPolicyVersion(consentType)))
-            .orElse(false);
-    }
-    
-    /**
-     * Обробка каскадних ефектів відкликання згоди
-     */
-    private void handleConsentWithdrawal(Long userId, ConsentType consentType) {
-        switch (consentType) {
-            case PUBLIC_VISIBILITY -> awardService.hideUserAwards(userId);
-            case SMS_NOTIFICATIONS -> notificationService.disableSms(userId);
-            case DOCUMENT_AI_PROCESSING -> documentService.disableAiProcessing(userId);
-            case ANALYTICS -> analyticsService.excludeUser(userId);
-            case DATA_PROCESSING -> initiateAccountDeletion(userId);
-        }
-    }
-}
-
-// Анотація Забезпечення Згоди
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface RequiresConsent {
-    ConsentType value();
-    boolean failSilently() default false;
-}
-
-// Аспект Забезпечення Згоди
-@Aspect
-@Component
-public class ConsentEnforcementAspect {
-    
-    @Around("@annotation(requiresConsent)")
-    public Object enforceConsent(ProceedingJoinPoint joinPoint, 
-                                  RequiresConsent requiresConsent) throws Throwable {
-        Long userId = extractUserId(joinPoint);
-        ConsentType requiredConsent = requiresConsent.value();
-        
-        if (!consentService.hasValidConsent(userId, requiredConsent)) {
-            if (requiresConsent.failSilently()) {
-                return null; // Тихе пропускання
-            }
-            throw new ConsentRequiredException(
-                "Потрібна валідна згода для " + requiredConsent
-            );
-        }
-        
-        return joinPoint.proceed();
-    }
-}
-```
-
----
+- `consent_records` допускає лише додавання записів (V040, `trg_consent_records_guard`): рядки ніколи не видаляються й не змінюються, крім очищення `ip_address` і `user_agent` при видаленні акаунта. Найновіший рядок для типу задає поточний стан; колонки описано в DATA_DICTIONARY §4.2.
+- Тексти повідомлення — статичні сторінки вебклієнта для кожної версії та мови (`/privacy/<version>/<lang>.html`); `app.privacy.notice-version` задає чинну версію, а `GET /api/v1/public/privacy-notice` публікує її разом із попередніми.
+- Реєстрація вимагає поточної версії (`privacyNoticeVersion`, інакше 422 `outdated` і акаунт не створюється) і записує рядок `DATA_PROCESSING` у транзакції реєстрації. `PrivacyNoticeVersions` (спільний модуль `common`) перевіряє версію й публікує `PrivacyNoticeAcknowledged`; `ConsentService` (`gdpr`) додає рядок, тож `auth` не залежить від `gdpr`.
+- `GET /users/me/consents`, `POST /users/me/consents/notice-acknowledgement` і `PUT /users/me/consents/ANALYTICS` читають і змінюють власні записи викликача. Зміна, яка не змінює стан, нічого не додає; одночасні зміни однієї людини впорядковуються блокуванням рядка акаунта. Огляд ніколи не показує IP-адрес і user agent.
+- Після нової версії повідомлення вебклієнт спрямовує людину, що увійшла, на сторінку підтвердження перед будь-яким іншим екраном; API не відхиляє запитів людини, яка ще не підтвердила (PRD 6.1, рішення 2).
+- Кожен доданий рядок потрапляє в аудит (`PRIVACY_NOTICE_ACKNOWLEDGED`, `CONSENT_GRANTED`, `CONSENT_WITHDRAWN`, тип сутності `GDPR`), а експорт персональних даних містить усі рядки в `consent_history`.
 
 ## 5. Впровадження Права на Видалення
 

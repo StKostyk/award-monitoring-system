@@ -183,6 +183,9 @@ package "ua.edu.chnu.awards" {
         class DataExportController
         class DataExportService
         class PersonalDataAssembler
+        class ConsentController
+        class ConsentService
+        class PrivacyNoticeController
     }
 
     package "notification" <<domain>> {
@@ -245,6 +248,9 @@ package "ua.edu.chnu.awards" {
         }
         package "limit" as common_limit {
             class FixedWindowCounter
+        }
+        package "privacy" as common_privacy {
+            class PrivacyNoticeVersions
         }
     }
 
