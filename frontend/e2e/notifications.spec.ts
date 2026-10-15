@@ -135,6 +135,10 @@ test.describe('notification centre', () => {
     );
     expect(await seriousViolations(page)).toEqual([]);
 
+    await page.goto('/notifications?page=999');
+    await expect(page).toHaveURL(/\/notifications$/);
+    await expect(rows).toHaveCount(3);
+
     await page.getByTestId('notifications-unread-only').locator('button').click();
     await expect(page).toHaveURL(/\/notifications\?unread=true$/);
     await expect(rows).toHaveCount(2);

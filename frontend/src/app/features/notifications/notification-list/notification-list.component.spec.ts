@@ -100,6 +100,53 @@ describe('NotificationListComponent', () => {
     );
   });
 
+  it('ac2_6_moves_a_page_past_the_end_to_the_last_page', () => {
+    api.list.mockReturnValue(of({ content: [], totalElements: 45 }));
+    query.next(convertToParamMap({ unread: 'true', page: '999' }));
+    fixture.detectChanges();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { unread: true, page: 2 }, replaceUrl: true }),
+    );
+    expect(element().querySelector('[data-testid="notifications-page-empty"]')).toBeNull();
+  });
+
+  it('ac2_6_moves_a_page_past_the_end_of_one_page_to_the_first', () => {
+    api.list.mockReturnValue(of({ content: [], totalElements: 12 }));
+    query.next(convertToParamMap({ page: '999' }));
+    fixture.detectChanges();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { unread: null, page: null }, replaceUrl: true }),
+    );
+  });
+
+  it('ac2_6_stays_on_the_last_page_when_it_comes_back_empty', () => {
+    api.list.mockReturnValue(of({ content: [], totalElements: 45 }));
+    query.next(convertToParamMap({ page: '2' }));
+    fixture.detectChanges();
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(element().querySelector('[data-testid="notifications-page-empty"]')).not.toBeNull();
+  });
+
+  it('ac2_6_keeps_the_empty_state_on_a_deep_page_without_notifications', () => {
+    api.list.mockReturnValue(of({ content: [], totalElements: 0 }));
+    query.next(convertToParamMap({ page: '3' }));
+    fixture.detectChanges();
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(element().querySelector('[data-testid="notifications-page-empty"]')).not.toBeNull();
+  });
+
+  it('ac2_6_asks_for_at_most_the_highest_page_the_api_binds', () => {
+    query.next(convertToParamMap({ page: '99999999999' }));
+
+    expect(api.list).toHaveBeenLastCalledWith(2_147_483_647, PAGE_SIZE, false);
+  });
+
   it('ac2_6_shows_the_unread_empty_state', () => {
     api.list.mockReturnValue(of({ content: [], totalElements: 0 }));
     query.next(convertToParamMap({ unread: 'true' }));
