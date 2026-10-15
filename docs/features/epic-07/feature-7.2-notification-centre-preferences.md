@@ -338,6 +338,14 @@ Compose stack (app, frontend rebuilt from feature/SCRUM-83 30b68c0, PR #244 open
 | 30 | PASS | Redis stopped: bell poll (unread-count) and menu list 200, no console errors; RETURN notification created; POST read 204, unread 1->0; preference PUT 200; Redis restarted |
 | 31 | FAIL | page=999: API 200 empty (totalElements 12, totalPages 1) but UI shows «Сповіщень поки немає», no paginator, no way back; unread=junk shows first page (12 rows); no console errors |
 
+### Run 2026-10-15
+
+Container stack, frontend rebuilt from develop 8649062 (SCRUM-84 merged); app at http://localhost, employee.fmi. Result: 1 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 31 | PASS | Frontend rebuilt from develop 8649062 (SCRUM-84). /notifications?page=999 -> redirected to /notifications (last page = page 1, list shown); ?unread=junk -> first page listed, URL unchanged; 0 console errors |
+
 ## 11. Risks
 
 | Risk | Likelihood | Impact | Mitigation |
