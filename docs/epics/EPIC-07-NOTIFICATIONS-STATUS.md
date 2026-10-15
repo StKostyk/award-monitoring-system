@@ -11,7 +11,7 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 7.1 Reliable events and module boundaries (publication registry, Spring Modulith verification) | Done, manually verified 2026-10-11 to 2026-10-14 ([PRD](../features/epic-07/feature-7.1-reliable-events-module-boundaries.md), validation §13) | 2026-10-10 | 2026-10-14 |
-| 7.2 Notification centre and preferences (in-app notifications, preferences, delivery log, HTML mails) | Done, manually verified 2026-10-15 ([PRD](../features/epic-07/feature-7.2-notification-centre-preferences.md), validation §13; steps 27–31 and fix SCRUM-83 pending) | 2026-10-14 | 2026-10-15 |
+| 7.2 Notification centre and preferences (in-app notifications, preferences, delivery log, HTML mails) | Done, manually verified 2026-10-15 ([PRD](../features/epic-07/feature-7.2-notification-centre-preferences.md), validation §13; all 31 steps pass, fixes SCRUM-82, SCRUM-83, SCRUM-84) | 2026-10-14 | 2026-10-15 |
 
 ## Current focus
 
@@ -49,7 +49,7 @@ fix stories if chosen).
 | 7 | 7.2.4 HTML e-mail templates in the university brand | 7.2 | 3 | SCRUM-69 | #186 | no | Done |
 | 7a | 7.2.5 Name the target level in the passed-on notification text | 7.2 | 1 | SCRUM-82 | #239 | no | Done |
 | 7b | 7.2.6 Save only the changed notification preferences | 7.2 | 1 | SCRUM-83 | #242 | no | Done |
-| 7c | 7.2.7 Out-of-range notification page shows the empty state | 7.2 | 1 | SCRUM-84 | #245 | no | In review |
+| 7c | 7.2.7 Out-of-range notification page shows the empty state | 7.2 | 1 | SCRUM-84 | #245 | no | Done |
 
 Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
 
