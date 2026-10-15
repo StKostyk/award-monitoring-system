@@ -81,8 +81,8 @@ describe('NotificationText', () => {
       '«Best teacher» rejected by Аліна Мартинюк at the faculty secretary level',
     );
     expect(render('AWARD_RETURNED', { ...award, level: 'DEAN' })).toContain('returned for changes');
-    expect(render('AWARD_ESCALATED', { ...award, level: 'DEAN' })).toContain(
-      'passed on from the dean level',
+    expect(render('AWARD_ESCALATED', { ...award, level: 'DEAN' })).toBe(
+      '«Best teacher» passed on to the dean level by Аліна Мартинюк',
     );
     expect(render('AWARD_CORRECTED', { ...award, fields: ['title', 'awardDate'] })).toBe(
       '«Best teacher» corrected by Аліна Мартинюк: Title in English, Award date',

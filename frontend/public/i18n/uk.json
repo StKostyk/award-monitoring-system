@@ -1034,7 +1034,7 @@
       "AWARD_APPROVED": "«{{title}}» схвалено (рівень: {{level}}): {{reviewer}}",
       "AWARD_REJECTED": "«{{title}}» відхилено (рівень: {{level}}): {{reviewer}}",
       "AWARD_RETURNED": "«{{title}}» повернуто на доопрацювання (рівень: {{level}}): {{reviewer}}",
-      "AWARD_ESCALATED": "«{{title}}» передано на вищий рівень (рівень: {{level}}): {{reviewer}}",
+      "AWARD_ESCALATED": "«{{title}}» передано на рівень «{{level}}»: {{reviewer}}",
       "AWARD_CORRECTED": "«{{title}}» виправлено: {{reviewer}}; поля: {{fields}}",
       "REVIEW_OVERDUE": "Запитів із простроченим терміном розгляду: {{count}}{{oldest}}",
       "REVIEW_TAKEN_OVER": "Розгляд «{{title}}» тепер веде {{reviewer}}",
