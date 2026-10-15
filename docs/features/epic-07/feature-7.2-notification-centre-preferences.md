@@ -289,7 +289,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 26. Send step 2's approval again in Swagger. Expected: 409 from the workflow; no new notification row. (AC-1.2)
 27. Signed out, open the footer link of step 12's mail (`/profile#notifications`). Expected: the sign-in form; after signing in the profile opens scrolled to the "Notifications" card. (AC-5.3, 3.6)
 28. Open `/profile#notifications` in two tabs; in tab 1 untick e-mail for "Award returned" and save; in tab 2, not reloaded, untick in-app for "Award approved" and save. Expected: "Award returned" keeps e-mail off, "Award approved" has in-app off; one audit row per save. (§5, SCRUM-83)
-29. On `/profile` change a box, revoke the session (psql: delete the person's `oauth2_authorization` rows), press Save. Expected: the sign-in redirect or an error line; after signing in the stored choice is unchanged and the form loads fresh. (AC-3.6)
+29. As a fresh account on `/profile` change a box, then revoke the session by confirming a password reset for that account in another browser or through the API (deleting `oauth2_authorization` rows only blocks the next refresh: the access token stays valid for 15 minutes and the login session signs the SPA in again), press Save. Expected: the sign-in redirect or an error line; after signing in the stored choice is unchanged and the form loads fresh. (AC-3.6)
 30. Stop Redis (`docker compose stop redis`) with the bell open; wait for a poll, open the menu, mark one read, save a preference. Expected: all answer as with Redis up; start Redis again. (§5)
 31. Open `http://localhost:4200/notifications?page=999` and `?unread=junk`. Expected: an empty page with a working paginator back to page 1, or the first page; no console error. (AC-2.6)
 
@@ -325,6 +325,18 @@ container stack (app, frontend at http://localhost) on develop b776fc0, APP_EVEN
 | 24 | PASS | /notifications?unread=true reload keeps the toggle on; Mark all as read -> one POST read-all; Back -> /, Forward -> filter kept, list empty 'No unread notifications' |
 | 25 | PASS | fresh mr72.allmailoff: e-mail off for all 11 types (PUT 200), password reset 202 -> mail 'Скидання пароля / Password reset' 14:31:15 |
 | 26 | PASS | replayed approval of 425: 409 request-closed 'already decided'; notification rows for 425 stay 2 |
+
+### Run 2026-10-15
+
+Compose stack (app, frontend rebuilt from feature/SCRUM-83 30b68c0, PR #244 open), default retry settings; steps 27-31; fresh account pref.run28 for 28-29. Result: 4 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 27 | PASS | login redirect, after sign-in /profile#notifications, card top at y=0.2 (scrolled), no console errors |
+| 28 | PASS | two sessions of pref.run28 (separate contexts): RETURNED email=false kept, APPROVED inApp=false; audit NOTIFICATION_PREFERENCES_CHANGED 8->10 (one per save) |
+| 29 | PASS | step text corrected (psql delete only blocks refresh; revoke via password reset): Save -> PUT 401, refresh 400, /login; after sign-in /profile#notifications, REVIEW_OVERDUE email still on, Save disabled, audit rows for user 365 stay 3 |
+| 30 | PASS | Redis stopped: bell poll (unread-count) and menu list 200, no console errors; RETURN notification created; POST read 204, unread 1->0; preference PUT 200; Redis restarted |
+| 31 | FAIL | page=999: API 200 empty (totalElements 12, totalPages 1) but UI shows «Сповіщень поки немає», no paginator, no way back; unread=junk shows first page (12 rows); no console errors |
 
 ## 11. Risks
 
