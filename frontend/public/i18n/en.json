@@ -1034,7 +1034,7 @@
       "AWARD_APPROVED": "«{{title}}» approved by {{reviewer}} at the {{level}} level",
       "AWARD_REJECTED": "«{{title}}» rejected by {{reviewer}} at the {{level}} level",
       "AWARD_RETURNED": "«{{title}}» returned for changes by {{reviewer}} at the {{level}} level",
-      "AWARD_ESCALATED": "«{{title}}» passed on from the {{level}} level by {{reviewer}}",
+      "AWARD_ESCALATED": "«{{title}}» passed on to the {{level}} level by {{reviewer}}",
       "AWARD_CORRECTED": "«{{title}}» corrected by {{reviewer}}: {{fields}}",
       "REVIEW_OVERDUE": "Requests past their review period: {{count}}{{oldest}}",
       "REVIEW_TAKEN_OVER": "The review of «{{title}}» was taken over by {{reviewer}}",
