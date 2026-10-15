@@ -2621,7 +2621,6 @@ paths:
       description: >
         Approved personal awards per visibility, documents shown to colleagues, notification types with e-mail
         off, the last export (6.1.2) and the pending erasure request (6.1.4).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: getPrivacySummary
@@ -2642,7 +2641,6 @@ paths:
       description: >
         Audit rows written by the caller or about the caller (`USER`, `AUTHENTICATION`, `AUTHORIZATION`, `GDPR`),
         newest first; trigger rows are left out, and no values, IP address or user agent are returned (6.1.2).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: listMyActivity
