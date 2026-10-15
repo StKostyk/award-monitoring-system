@@ -19,16 +19,16 @@
 </button>
 <mat-menu #menu="matMenu" xPosition="before" class="notification-menu">
   <div class="bell__title" role="presentation">{{ 'notifications.menuTitle' | transloco }}</div>
-  @if (failed()) {
+  @if (feed.failed()) {
     <p class="bell__note" role="presentation">{{ 'notifications.loadFailed' | transloco }}</p>
   }
-  @for (item of items(); track item.id) {
+  @for (item of feed.items(); track item.id) {
     <button
       mat-menu-item
       type="button"
       class="bell__item"
       [class.bell__item--unread]="!item.read"
-      (click)="open(item)"
+      (click)="feed.open(item)"
       data-testid="notification-item"
     >
       <span class="bell__row">
@@ -43,18 +43,23 @@
       </span>
     </button>
   } @empty {
-    @if (!loading() && !failed()) {
+    @if (!feed.loading() && !feed.failed()) {
       <p class="bell__note" role="presentation" data-testid="notifications-empty">
         {{ 'notifications.empty' | transloco }}
       </p>
     }
   }
+  @if (feed.actionFailed()) {
+    <p class="bell__note" role="alert" data-testid="notifications-action-failed">
+      {{ 'notifications.actionFailed' | transloco }}
+    </p>
+  }
   <button
     mat-menu-item
     type="button"
     class="bell__first-action"
-    [disabled]="!anyUnread()"
-    (click)="markAllRead()"
+    [disabled]="!feed.anyUnread()"
+    (click)="$event.stopPropagation(); feed.markAllRead()"
     data-testid="notifications-mark-all"
   >
     <mat-icon>done_all</mat-icon>

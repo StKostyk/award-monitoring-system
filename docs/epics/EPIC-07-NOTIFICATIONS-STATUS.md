@@ -119,6 +119,16 @@ To settle in the Feature 7.1 and 7.2 PRDs; each document is updated in the story
   `MailTextHelper`; `CorrectionMails` keeps field labels in Java beside `awards.fields.*` in i18n;
   `AuthorityChangeMails.onDelegationRevoked` pairs drafts and recipients by index. The smaller items are in PRD 7.2
   §13 F-5.
+- Epic refactor `refactor(epic-07)` (2026-10-15) applied: one `support/Eventually` for the polling loops, `TestEvents`
+  builders, `LevelNamesHelper`, an explicit `NotificationDrafts.typeOf`, the digest zone from the `Clock`, a
+  `NotificationFeed` shared by the bell and the list (mark-read and mark-all failures shown), `NOTIFICATION_TYPES`
+  as the source of the type union, the preferences card on OnPush, and the PRD 7.2 F-3 integration test. Not applied,
+  for Epic 6: in-app and e-mail treat an unreachable recipient differently (in-app needs an account, e-mail an
+  address), and `DeliveryLog` counts both a duplicate and a missing recipient as `skipped` — one reachability rule and
+  a split metric outcome belong with the erasure story; the one-year notification retention is a literal
+  (`plusYears(1)` in `NotificationRows`) and becomes a property with Feature 6.2; the dedupe key of two events of one
+  type for one award at the same instant would collide (no such case exists, remark only). The two `*EventJsonTest`
+  classes keep their explicit constructors, since a round trip should show every field.
 
 ### Findings of the documentation sync of 2026-10-15
 

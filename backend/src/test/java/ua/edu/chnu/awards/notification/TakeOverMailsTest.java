@@ -20,6 +20,7 @@ import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 import ua.edu.chnu.awards.support.TestDeliveries;
+import ua.edu.chnu.awards.support.TestEvents;
 
 class TakeOverMailsTest {
 
@@ -72,6 +73,6 @@ class TakeOverMailsTest {
     }
 
     private static ReviewTakenOver event(String email) {
-        return new ReviewTakenOver(21L, email, "Ірина", 5L, "Prize", "Премія", "Аліна Мартинюк", null);
+        return TestEvents.takenOver().to(21L, email, "Ірина").award(5L, "Prize", "Премія").by("Аліна Мартинюк").build();
     }
 }

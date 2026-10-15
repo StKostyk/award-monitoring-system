@@ -1,4 +1,13 @@
-import { Component, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -55,11 +64,14 @@ const CHANNELS: readonly Channel[] = ['email', 'inApp'];
   ],
   templateUrl: './notification-preferences.component.html',
   styleUrl: './notification-preferences.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotificationPreferencesComponent {
   private readonly api = inject(NotificationApi);
   private readonly route = inject(ActivatedRoute);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private scrollTimer: ReturnType<typeof setTimeout> | undefined;
 
   readonly groups = PREFERENCE_GROUPS;
   readonly channels = CHANNELS;
@@ -78,20 +90,24 @@ export class NotificationPreferencesComponent {
   readonly dirty = computed(() => this.changed().length > 0);
 
   constructor() {
+    this.destroyRef.onDestroy(() => clearTimeout(this.scrollTimer));
     this.load();
   }
 
   load(): void {
     this.loadFailed.set(false);
-    this.api.preferences().subscribe({
-      next: (preferences) => {
-        this.show(preferences);
-        if (this.route.snapshot.fragment === ANCHOR) {
-          setTimeout(() => this.host.nativeElement.scrollIntoView());
-        }
-      },
-      error: () => this.loadFailed.set(true),
-    });
+    this.api
+      .preferences()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (preferences) => {
+          this.show(preferences);
+          if (this.route.snapshot.fragment === ANCHOR) {
+            this.scrollTimer = setTimeout(() => this.host.nativeElement.scrollIntoView());
+          }
+        },
+        error: () => this.loadFailed.set(true),
+      });
   }
 
   preference(type: NotificationType): NotificationPreference | undefined {
@@ -129,21 +145,24 @@ export class NotificationPreferencesComponent {
     this.saving.set(true);
     this.message.set(null);
     this.problem.set(null);
-    this.api.savePreferences(this.changed()).subscribe({
-      next: (preferences) => {
-        this.show(preferences);
-        this.message.set('notifications.preferences.saved');
-        this.saving.set(false);
-      },
-      error: (err: unknown) => {
-        this.problem.set(
-          problemType(err) === 'network'
-            ? 'notifications.preferences.errors.network'
-            : 'notifications.preferences.errors.failed',
-        );
-        this.saving.set(false);
-      },
-    });
+    this.api
+      .savePreferences(this.changed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (preferences) => {
+          this.show(preferences);
+          this.message.set('notifications.preferences.saved');
+          this.saving.set(false);
+        },
+        error: (err: unknown) => {
+          this.problem.set(
+            problemType(err) === 'network'
+              ? 'notifications.preferences.errors.network'
+              : 'notifications.preferences.errors.failed',
+          );
+          this.saving.set(false);
+        },
+      });
   }
 
   private show(preferences: NotificationPreference[]): void {

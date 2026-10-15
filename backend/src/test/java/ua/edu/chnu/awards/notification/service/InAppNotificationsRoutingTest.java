@@ -7,9 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +28,7 @@ import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.repository.NewNotification;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
+import ua.edu.chnu.awards.support.TestDeliveries;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
@@ -44,7 +43,7 @@ class InAppNotificationsRoutingTest {
     private final UserAccounts users = mock(UserAccounts.class);
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
     private final InAppNotifications notifications = new InAppNotifications(drafts,
-        new NotificationRows(new NotificationKeys(), new ObjectMapper(), Clock.fixed(AT, ZoneOffset.UTC)),
+        TestDeliveries.rows(new ObjectMapper(), AT),
         repository, users, preferences, new DeliveryMetrics(new SimpleMeterRegistry()));
 
     @BeforeEach

@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Marking all notifications read from the toolbar menu keeps the menu open, and a failed mark-read is reported instead of being ignored
 - Backend split into 13 Spring Modulith modules with verified boundaries and generated module diagrams (7.1.2)
 - Award submissions are counted in Prometheus (awards.submissions by start level and resubmission); the review queue gauges are filled at startup, and the business meters that nothing recorded were removed.
 - Shared helpers for award titles and links, problem messages, field errors and Kyiv dates; the gate runs the production build.

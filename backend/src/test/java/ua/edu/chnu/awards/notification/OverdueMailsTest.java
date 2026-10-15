@@ -13,7 +13,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -35,13 +37,14 @@ import ua.edu.chnu.awards.support.TestDeliveries;
 class OverdueMailsTest {
 
     private static final String DEAN = "dean.fmi@chnu.edu.ua";
+    private static final ZoneId KYIV = ZoneId.of("Europe/Kyiv");
 
     private final MailDelivery delivery = mock(MailDelivery.class);
     private final AwardLinks links = mock(AwardLinks.class);
     private final ReviewMetrics metrics = mock(ReviewMetrics.class);
     private final NotificationPreferenceService preferences = mock(NotificationPreferenceService.class);
     private final OverdueMails mails = new OverdueMails(TestDeliveries.log(delivery, preferences),
-        new NotificationDrafts(), links, metrics);
+        new NotificationDrafts(), links, metrics, Clock.system(KYIV));
 
     @BeforeEach
     void setUp() {
@@ -53,7 +56,7 @@ class OverdueMailsTest {
     void ac2_9_theDigestListsEveryRequestInUkrainianAndEnglish() {
         OverdueNoticed event = digest();
 
-        String body = OverdueMails.body(event, awardId -> "link-" + awardId);
+        String body = OverdueMails.body(event, awardId -> "link-" + awardId, KYIV);
 
         assertThat(OverdueMails.subject(event)).isEqualTo("Прострочені заявки: 2 / Overdue requests: 2");
         assertThat(body).contains("Ірина Бойко", "«Грамота», Анастасія Коваль; рівень: секретар факультету;"

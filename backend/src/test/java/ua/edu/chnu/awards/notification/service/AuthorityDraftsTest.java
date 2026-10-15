@@ -9,10 +9,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.authz.RoleType;
-import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
-import ua.edu.chnu.awards.user.event.RoleAssigned;
+import ua.edu.chnu.awards.support.TestEvents;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
 class AuthorityDraftsTest {
@@ -26,8 +25,7 @@ class AuthorityDraftsTest {
 
     @Test
     void ac1_2_rolesCarryRoleOrganisationAndLastDay() {
-        NotificationDraft assigned = drafts.of(new RoleAssigned(7L, EMAIL, "Олена", RoleType.DEAN, "FMI", "ФМІ",
-            "Адміністратор", LocalDate.of(2026, 10, 1), null, AT));
+        NotificationDraft assigned = drafts.of(TestEvents.roleAssigned().to(7L, EMAIL, "Олена").at(AT).build());
         NotificationDraft revoked = drafts.of(new RoleRevoked(7L, EMAIL, "Олена", RoleType.DEAN, "FMI", "ФМІ",
             "Адміністратор", TO, AT));
 
@@ -41,8 +39,8 @@ class AuthorityDraftsTest {
 
     @Test
     void ac1_2_aDelegationNamesTheDelegatorAsTheOtherParty() {
-        NotificationDraft draft = drafts.of(new DelegationCreated(7L, EMAIL, "Олена", RoleType.DEAN, "FMI", "ФМІ",
-            "Марія Мартинюк", LocalDate.of(2026, 10, 1), TO, "Відпустка", AT));
+        NotificationDraft draft = drafts.of(TestEvents.delegationCreated().to(7L, EMAIL, "Олена")
+            .by("Марія Мартинюк", "Відпустка").valid(LocalDate.of(2026, 10, 1), TO).at(AT).build());
 
         assertThat(draft.type()).isEqualTo(NotificationType.DELEGATION_CREATED);
         assertThat(draft.payload()).containsEntry(OTHER_PARTY, "Марія Мартинюк").containsEntry("validTo",
@@ -51,10 +49,10 @@ class AuthorityDraftsTest {
 
     @Test
     void edgeCase_aRevokedDelegationGivesEachRecipientTheirOwnDraft() {
-        List<NotificationDraft> revoked = drafts.of(new DelegationRevoked(List.of(
+        List<NotificationDraft> revoked = drafts.of(TestEvents.delegationRevoked(
                 new DelegationRevoked.Recipient(7L, EMAIL, "Марія Мартинюк"),
-                new DelegationRevoked.Recipient(3L, "dean@chnu.edu.ua", "Олена Петренко")),
-            RoleType.DEAN, "FMI", "ФМІ", "Олена Петренко", "Адміністратор", TO, AT));
+                new DelegationRevoked.Recipient(3L, "dean@chnu.edu.ua", "Олена Петренко"))
+            .of("Олена Петренко", "Адміністратор").until(TO).at(AT).build());
 
         assertThat(revoked).extracting(NotificationDraft::userId).containsExactly(7L, 3L);
         assertThat(revoked).extracting(draft -> draft.payload().get(OTHER_PARTY))

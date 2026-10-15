@@ -4,13 +4,10 @@ import static ua.edu.chnu.awards.common.mail.MailTextHelper.SEPARATOR;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloEn;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloUk;
 
-import java.util.Map;
-
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.service.AwardLinks;
 import ua.edu.chnu.awards.notification.service.DeliveryLog;
@@ -26,16 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DecisionMails {
 
-    private static final Map<ApprovalLevel, String> TO_LEVEL_UK = Map.of(
-        ApprovalLevel.FACULTY_SECRETARY, "секретарю факультету",
-        ApprovalLevel.DEAN, "декану",
-        ApprovalLevel.RECTOR_SECRETARY, "секретарю ректора",
-        ApprovalLevel.RECTOR, "ректору");
-    private static final Map<ApprovalLevel, String> TO_LEVEL_EN = Map.of(
-        ApprovalLevel.FACULTY_SECRETARY, "the faculty secretary",
-        ApprovalLevel.DEAN, "the dean",
-        ApprovalLevel.RECTOR_SECRETARY, "the rector's secretary",
-        ApprovalLevel.RECTOR, "the rector");
+    private static final String NOT_A_DECISION = "Not a decision: ";
 
     private final DeliveryLog deliveries;
     private final NotificationDrafts drafts;
@@ -54,11 +42,12 @@ public class DecisionMails {
     }
 
     static String subject(AwardDecided event) {
-        return switch (event.outcome()) {
-            case APPROVED -> "Нагороду затверджено / Award approved";
-            case RETURNED -> "Нагороду повернуто на доопрацювання / Award returned for changes";
-            case REJECTED -> "Нагороду відхилено / Award rejected";
-            default -> "Нагороду передано далі / Award passed on";
+        return switch (NotificationDrafts.typeOf(event)) {
+            case AWARD_APPROVED -> "Нагороду затверджено / Award approved";
+            case AWARD_RETURNED -> "Нагороду повернуто на доопрацювання / Award returned for changes";
+            case AWARD_REJECTED -> "Нагороду відхилено / Award rejected";
+            case AWARD_ESCALATED -> "Нагороду передано далі / Award passed on";
+            default -> throw new IllegalStateException(NOT_A_DECISION + event.outcome());
         };
     }
 
@@ -77,21 +66,26 @@ public class DecisionMails {
     }
 
     private static String outcomeUk(AwardDecided event) {
-        return switch (event.outcome()) {
-            case APPROVED -> event.reviewer() + " затвердив(ла) нагороду.";
-            case RETURNED -> event.reviewer() + " повернув(ла) нагороду на доопрацювання. Виправте її та подайте "
+        return switch (NotificationDrafts.typeOf(event)) {
+            case AWARD_APPROVED -> event.reviewer() + " затвердив(ла) нагороду.";
+            case AWARD_RETURNED -> event.reviewer() + " повернув(ла) нагороду на доопрацювання. Виправте її та подайте "
                 + "ще раз.";
-            case REJECTED -> event.reviewer() + " відхилив(ла) нагороду.";
-            default -> event.reviewer() + " передав(ла) нагороду " + TO_LEVEL_UK.get(event.level()) + ".";
+            case AWARD_REJECTED -> event.reviewer() + " відхилив(ла) нагороду.";
+            case AWARD_ESCALATED -> event.reviewer() + " передав(ла) нагороду " + LevelNamesHelper.toUk(event.level())
+                + ".";
+            default -> throw new IllegalStateException(NOT_A_DECISION + event.outcome());
         };
     }
 
     private static String outcomeEn(AwardDecided event) {
-        return switch (event.outcome()) {
-            case APPROVED -> event.reviewer() + " approved the award.";
-            case RETURNED -> event.reviewer() + " returned the award for changes. Correct it and submit it again.";
-            case REJECTED -> event.reviewer() + " rejected the award.";
-            default -> event.reviewer() + " passed the award on to " + TO_LEVEL_EN.get(event.level()) + ".";
+        return switch (NotificationDrafts.typeOf(event)) {
+            case AWARD_APPROVED -> event.reviewer() + " approved the award.";
+            case AWARD_RETURNED -> event.reviewer() + " returned the award for changes. Correct it and submit it "
+                + "again.";
+            case AWARD_REJECTED -> event.reviewer() + " rejected the award.";
+            case AWARD_ESCALATED -> event.reviewer() + " passed the award on to the "
+                + LevelNamesHelper.en(event.level()) + ".";
+            default -> throw new IllegalStateException(NOT_A_DECISION + event.outcome());
         };
     }
 }

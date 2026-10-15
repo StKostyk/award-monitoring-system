@@ -11,7 +11,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +26,7 @@ import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.service.NotificationDrafts;
 import ua.edu.chnu.awards.notification.service.NotificationPreferenceService;
 import ua.edu.chnu.awards.support.TestDeliveries;
+import ua.edu.chnu.awards.support.TestEvents;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
@@ -48,8 +48,7 @@ class AuthorityChangeMailsTest {
 
     @Test
     void ac2_5_tellsTheHolderWhichRoleWasGrantedWhereAndUntilWhen() {
-        mails.onRoleAssigned(new RoleAssigned(4L, "member@chnu.edu.ua", "Анастасія", RoleType.FACULTY_SECRETARY,
-            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), LocalDate.of(2026, 10, 22), null));
+        mails.onRoleAssigned(assigned(RoleType.FACULTY_SECRETARY, LocalDate.of(2026, 10, 22)));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль призначено / Role assigned"), text.capture());
         assertThat(text.getValue().text()).contains("FACULTY_SECRETARY", FMI_UK, FMI, "Марія Мартинюк", "2026-09-22",
@@ -58,8 +57,7 @@ class AuthorityChangeMailsTest {
 
     @Test
     void ac2_5_anOpenEndedRoleNamesNoEndDate() {
-        mails.onRoleAssigned(new RoleAssigned(4L, "member@chnu.edu.ua", "Анастасія", RoleType.EMPLOYEE,
-            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), null, null));
+        mails.onRoleAssigned(assigned(RoleType.EMPLOYEE, null));
 
         verify(delivery).send(eq("member@chnu.edu.ua"), eq("Роль призначено / Role assigned"), text.capture());
         assertThat(text.getValue().text()).doesNotContain(" until ");
@@ -95,9 +93,8 @@ class AuthorityChangeMailsTest {
 
     @Test
     void ac3_5_tellsBothSidesWhenSomebodyElseTookTheAuthorityBack() {
-        mails.onDelegationRevoked(new DelegationRevoked(List.of(DelegationRevoked.Recipient.of("secretary@chnu.edu.ua"),
-            DelegationRevoked.Recipient.of("dean@chnu.edu.ua")), RoleType.DEAN, FMI, FMI_UK, "Аліна Коваленко",
-            "Олег Адміненко", null, null));
+        mails.onDelegationRevoked(revoked(DelegationRevoked.Recipient.of("secretary@chnu.edu.ua"),
+            DelegationRevoked.Recipient.of("dean@chnu.edu.ua")));
 
         ArgumentCaptor<String> recipient = ArgumentCaptor.forClass(String.class);
         verify(delivery, times(2)).send(recipient.capture(), eq("Делегування відкликано / Delegation revoked"),
@@ -112,12 +109,9 @@ class AuthorityChangeMailsTest {
         when(preferences.allows(4L, NotificationType.ROLE_ASSIGNED, NotificationChannel.EMAIL)).thenReturn(false);
         when(preferences.allows(8L, NotificationType.DELEGATION_REVOKED, NotificationChannel.EMAIL)).thenReturn(false);
 
-        mails.onRoleAssigned(new RoleAssigned(4L, "member@chnu.edu.ua", "Анастасія", RoleType.EMPLOYEE,
-            FMI, FMI_UK, "Марія Мартинюк", LocalDate.of(2026, 9, 22), null, null));
-        mails.onDelegationRevoked(new DelegationRevoked(List.of(
-            new DelegationRevoked.Recipient(8L, "secretary@chnu.edu.ua", null),
-            new DelegationRevoked.Recipient(9L, "dean@chnu.edu.ua", null)), RoleType.DEAN, FMI, FMI_UK,
-            "Аліна Коваленко", "Олег Адміненко", null, null));
+        mails.onRoleAssigned(assigned(RoleType.EMPLOYEE, null));
+        mails.onDelegationRevoked(revoked(new DelegationRevoked.Recipient(8L, "secretary@chnu.edu.ua", null),
+            new DelegationRevoked.Recipient(9L, "dean@chnu.edu.ua", null)));
 
         verify(delivery, never()).send(eq("member@chnu.edu.ua"), anyString(), any(MailContent.class));
         verify(delivery, never()).send(eq("secretary@chnu.edu.ua"), anyString(), any(MailContent.class));
@@ -126,7 +120,18 @@ class AuthorityChangeMailsTest {
     }
 
     private static DelegationCreated delegation(String reason) {
-        return new DelegationCreated(5L, "secretary@chnu.edu.ua", "Аліна", RoleType.DEAN, FMI, FMI_UK,
-            "Марія Мартинюк", LocalDate.of(2026, 9, 24), LocalDate.of(2026, 10, 8), reason, null);
+        return TestEvents.delegationCreated().to(5L, "secretary@chnu.edu.ua", "Аліна")
+            .role(RoleType.DEAN, FMI, FMI_UK).by("Марія Мартинюк", reason)
+            .valid(LocalDate.of(2026, 9, 24), LocalDate.of(2026, 10, 8)).build();
+    }
+
+    private static RoleAssigned assigned(RoleType role, LocalDate validTo) {
+        return TestEvents.roleAssigned().to(4L, "member@chnu.edu.ua", "Анастасія").role(role, FMI, FMI_UK)
+            .by("Марія Мартинюк").valid(LocalDate.of(2026, 9, 22), validTo).build();
+    }
+
+    private static DelegationRevoked revoked(DelegationRevoked.Recipient... recipients) {
+        return TestEvents.delegationRevoked(recipients).role(RoleType.DEAN, FMI, FMI_UK)
+            .of("Аліна Коваленко", "Олег Адміненко").build();
     }
 }

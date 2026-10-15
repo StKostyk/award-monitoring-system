@@ -6,10 +6,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 
 import java.sql.Date;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterAll;
@@ -29,6 +31,7 @@ import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 import ua.edu.chnu.awards.support.AwardApi;
+import ua.edu.chnu.awards.support.Eventually;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.repository.UserRepository;
 
@@ -43,7 +46,8 @@ class DecisionFT extends AbstractFunctionalTest {
     private static final String DEPUTY = "ft.decision.deputy@chnu.edu.ua";
     private static final String QUIET = "ft.decision.quiet@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(SECRETARY, DEAN, OFFICE, EMPLOYEE, AUTHOR, DEPUTY, QUIET);
-    private static final long METRIC_WAIT_MS = 20_000;
+    private static final Duration METRIC_WAIT = Duration.ofSeconds(20);
+    private static final Duration METRIC_POLL = Duration.ofMillis(200);
     private static final String VERSION = "requestVersion";
     private static final String DECISION = "decision";
     private static final String COMMENT = "comment";
@@ -264,18 +268,8 @@ class DecisionFT extends AbstractFunctionalTest {
     }
 
     private boolean prometheusEventually(Pattern series) {
-        long deadline = System.currentTimeMillis() + METRIC_WAIT_MS;
-        boolean found = series.matcher(RestAssured.get("/actuator/prometheus").asString()).find();
-        while (!found && System.currentTimeMillis() < deadline) {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return false;
-            }
-            found = series.matcher(RestAssured.get("/actuator/prometheus").asString()).find();
-        }
-        return found;
+        return Eventually.attempt(() -> Optional.of(RestAssured.get("/actuator/prometheus").asString())
+            .filter(body -> series.matcher(body).find()), METRIC_WAIT, METRIC_POLL).isPresent();
     }
 
     private long submitted(String owner, String title) {

@@ -11,7 +11,7 @@
     <button
       mat-stroked-button
       type="button"
-      [disabled]="!anyUnread()"
+      [disabled]="!feed.anyUnread()"
       (click)="markAllRead()"
       data-testid="notifications-page-mark-all"
     >
@@ -21,15 +21,15 @@
   </div>
 </header>
 
-@if (actionFailed()) {
+@if (feed.actionFailed()) {
   <p class="notifications__problem" role="alert" data-testid="notifications-action-failed">
     {{ 'notifications.actionFailed' | transloco }}
   </p>
 }
-@if (loading()) {
+@if (feed.loading()) {
   <mat-progress-bar mode="indeterminate" />
 }
-@if (failed()) {
+@if (feed.failed()) {
   <p class="notifications__problem" role="alert">
     {{ 'notifications.loadFailed' | transloco }}
     <button mat-button type="button" (click)="load()">
@@ -38,15 +38,15 @@
   </p>
 }
 
-@if (items().length > 0) {
+@if (feed.items().length > 0) {
   <ul class="notifications__list" data-testid="notifications-list">
-    @for (item of items(); track item.id) {
+    @for (item of feed.items(); track item.id) {
       <li>
         <button
           type="button"
           class="notifications__item"
           [class.notifications__item--unread]="!item.read"
-          (click)="open(item)"
+          (click)="feed.open(item)"
           data-testid="notifications-list-item"
         >
           <span class="notifications__dot" aria-hidden="true"></span>
@@ -61,7 +61,7 @@
       </li>
     }
   </ul>
-} @else if (!loading() && !failed()) {
+} @else if (!feed.loading() && !feed.failed()) {
   <p class="notifications__empty" data-testid="notifications-page-empty">
     {{ (unreadOnly() ? 'notifications.emptyUnread' : 'notifications.empty') | transloco }}
   </p>

@@ -1,12 +1,13 @@
 package ua.edu.chnu.awards.support;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.restassured.RestAssured;
-import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 
 /**
@@ -18,8 +19,8 @@ public final class Mailpit {
 
     private static final int OK = 200;
     private static final int PAGE = 200;
-    private static final int ATTEMPTS = 240;
-    private static final long PAUSE_MS = 250;
+    private static final Duration DELIVERY_WAIT = Duration.ofSeconds(60);
+    private static final Duration PAUSE = Duration.ofMillis(250);
 
     private final String apiUrl;
 
@@ -112,17 +113,14 @@ public final class Mailpit {
     }
 
     private String latestPartTo(String recipient, String subject, int count, String part) {
-        for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
-            List<Map<String, Object>> messages = messagesTo(recipient, subject);
-            if (messages.size() >= count) {
-                String id = String.valueOf(messages.get(0).get("ID"));
-                return RestAssured.given().get(apiUrl + "/api/v1/message/" + id).jsonPath().getString(part);
-            }
-            sleep();
-        }
-        throw new IllegalStateException("No message with subject '" + subject + "' delivered to " + recipient
-            + "; inbox has " + RestAssured.given().get(apiUrl + "/api/v1/messages").jsonPath().getInt("total")
-            + " messages, " + messagesTo(recipient).size() + " of them to this address");
+        return Eventually.attempt(() -> Optional.of(messagesTo(recipient, subject))
+                .filter(messages -> messages.size() >= count)
+                .map(messages -> RestAssured.given().get(apiUrl + "/api/v1/message/" + messages.get(0).get("ID"))
+                    .jsonPath().getString(part)), DELIVERY_WAIT, PAUSE)
+            .orElseThrow(() -> new IllegalStateException("No message with subject '" + subject + "' delivered to "
+                + recipient + "; inbox has "
+                + RestAssured.given().get(apiUrl + "/api/v1/messages").jsonPath().getInt("total") + " messages, "
+                + messagesTo(recipient).size() + " of them to this address"));
     }
 
     /**
@@ -152,18 +150,13 @@ public final class Mailpit {
     }
 
     private String partMentioning(String recipient, String subject, String fragment, String part) {
-        for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
-            for (Map<String, Object> message : messagesTo(recipient, subject)) {
-                JsonPath body = RestAssured.given().get(apiUrl + "/api/v1/message/" + message.get("ID")).jsonPath();
-                String text = body.getString("Text");
-                if (text != null && text.contains(fragment)) {
-                    return body.getString(part);
-                }
-            }
-            sleep();
-        }
-        throw new IllegalStateException("No message with subject '" + subject + "' to " + recipient
-            + " mentions '" + fragment + "'");
+        return Eventually.attempt(() -> messagesTo(recipient, subject).stream()
+                .map(message -> RestAssured.given().get(apiUrl + "/api/v1/message/" + message.get("ID")).jsonPath())
+                .filter(body -> body.getString("Text") != null && body.getString("Text").contains(fragment))
+                .findFirst()
+                .map(body -> body.getString(part)), DELIVERY_WAIT, PAUSE)
+            .orElseThrow(() -> new IllegalStateException("No message with subject '" + subject + "' to " + recipient
+                + " mentions '" + fragment + "'"));
     }
 
     /**
@@ -178,13 +171,5 @@ public final class Mailpit {
             throw new IllegalStateException("No link with a token in: " + text);
         }
         return matcher.group();
-    }
-
-    private static void sleep() {
-        try {
-            Thread.sleep(PAUSE_MS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 }

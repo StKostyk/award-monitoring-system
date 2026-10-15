@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.notification.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,8 +15,8 @@ import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.event.OverdueNoticed;
-import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.support.TestEvents;
 
 class NotificationDraftsTest {
 
@@ -27,8 +28,8 @@ class NotificationDraftsTest {
     @ParameterizedTest
     @EnumSource(value = RequestStatus.class, names = {"APPROVED", "REJECTED", "RETURNED", "ESCALATED"})
     void ac1_2_aDecisionBecomesTheTypeOfItsOutcomeWithoutTheComment(RequestStatus outcome) {
-        NotificationDraft draft = drafts.of(new AwardDecided(7L, EMAIL, "Олена", 5L, "Certificate", "Грамота",
-            outcome, ApprovalLevel.DEAN, "Ірина Бойко", "Секретний коментар", AT));
+        NotificationDraft draft = drafts.of(TestEvents.decided().to(7L, EMAIL, "Олена")
+            .outcome(outcome, ApprovalLevel.DEAN).by("Ірина Бойко", "Секретний коментар").at(AT).build());
 
         assertThat(draft.type()).isEqualTo(NotificationType.valueOf("AWARD_" + outcome.name()));
         assertThat(draft.userId()).isEqualTo(7L);
@@ -37,6 +38,15 @@ class NotificationDraftsTest {
         assertThat(draft.occurredAt()).isEqualTo(AT);
         assertThat(draft.payload()).containsOnlyKeys("title", "titleUk", "reviewer", "level")
             .containsEntry("level", "DEAN").doesNotContainValue("Секретний коментар");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = RequestStatus.class, names = {"SUBMITTED", "IN_REVIEW", "EXPIRED", "WITHDRAWN"})
+    void aStatusThatIsNoDecisionHasNoNotificationType(RequestStatus outcome) {
+        AwardDecided event = TestEvents.decided().outcome(outcome, ApprovalLevel.DEAN).build();
+
+        assertThatThrownBy(() -> NotificationDrafts.typeOf(event)).isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining(outcome.name());
     }
 
     @Test
@@ -65,8 +75,8 @@ class NotificationDraftsTest {
 
     @Test
     void ac1_2_aTakeoverPointsAtTheAward() {
-        NotificationDraft draft = drafts.of(new ReviewTakenOver(3L, EMAIL, "Ірина", 5L, "Certificate", "Грамота",
-            "Петро Іваненко", AT));
+        NotificationDraft draft = drafts.of(TestEvents.takenOver().to(3L, EMAIL, "Ірина").by("Петро Іваненко").at(AT)
+            .build());
 
         assertThat(draft.type()).isEqualTo(NotificationType.REVIEW_TAKEN_OVER);
         assertThat(draft.referenceId()).isEqualTo(5L);
