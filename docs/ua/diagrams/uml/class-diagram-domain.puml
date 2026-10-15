@@ -3,7 +3,7 @@
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіку 4)
+title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіку 7)
 
 ' Сутності JPA пакета ua.edu.chnu.awards; класи з позначкою <<planned>> існують лише як таблиці
 
@@ -275,6 +275,7 @@ package "document" <<Rectangle>> {
         -checksum: String
         -type: DocumentType
         -description: String
+        -shownToColleagues: boolean
         -uploadedAt: Instant
         -uploadedBy: User
     }
@@ -317,6 +318,59 @@ package "audit" <<Rectangle>> {
     }
 }
 
+package "notification" <<Rectangle>> {
+
+    class Notification {
+        -id: Long
+        -userId: Long
+        -type: NotificationType
+        -channel: NotificationChannel
+        -payload: Map
+        -dedupeKey: String
+        -read: boolean
+        -referenceType: String
+        -referenceId: Long
+        -sentAt: Instant
+        -readAt: Instant
+        -expiresAt: Instant
+        -deliveryStatus: DeliveryStatus
+        -deliveredAt: Instant
+    }
+
+    class NotificationPreference {
+        -id: Long
+        -userId: Long
+        -type: NotificationType
+        -emailEnabled: boolean
+        -inAppEnabled: boolean
+    }
+
+    enum NotificationType {
+        AWARD_APPROVED
+        AWARD_REJECTED
+        AWARD_RETURNED
+        AWARD_ESCALATED
+        AWARD_CORRECTED
+        REVIEW_OVERDUE
+        REVIEW_TAKEN_OVER
+        ROLE_ASSIGNED
+        ROLE_REVOKED
+        DELEGATION_CREATED
+        DELEGATION_REVOKED
+    }
+
+    enum NotificationChannel {
+        IN_APP
+        EMAIL
+    }
+
+    enum DeliveryStatus {
+        SENDING
+        SENT
+        FAILED
+    }
+}
+
 package "заплановано (лише таблиці)" <<Rectangle>> {
 
     class ConsentRecord <<planned епік 6>> {
@@ -324,13 +378,6 @@ package "заплановано (лише таблиці)" <<Rectangle>> {
         -consentType: String
         -consentVersion: String
         -granted: boolean
-    }
-
-    class Notification <<planned епік 7>> {
-        -userId: Long
-        -type: String
-        -channel: String
-        -read: boolean
     }
 }
 
@@ -372,6 +419,11 @@ Document "*" --> "1" User : завантажив
 Document --> DocumentFormat
 Document --> DocumentType
 ConsentRecord ..> User
-Notification ..> User
+Notification "*" --> "1" User : одержувач
+Notification --> NotificationType
+Notification --> NotificationChannel
+Notification --> DeliveryStatus
+NotificationPreference "*" --> "1" User : обирає
+NotificationPreference --> NotificationType
 
 @enduml

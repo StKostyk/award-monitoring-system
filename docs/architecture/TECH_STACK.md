@@ -137,6 +137,14 @@ are recorded in the ADR addenda.
 | Static analysis | Checkstyle, PMD, SpotBugs, ESLint, Prettier (blocking) | ADR-019 addendum |
 | Delivery | Docker Compose (development and demo), GitHub Actions; Kubernetes and a cloud platform deferred | ADR-017 – ADR-021 |
 
+## Addendum 2026-10-15: After Epic 7
+
+| **Layer** | **Change** | **Reference** |
+|-----------|------------|---------------|
+| Backend | Modular monolith with module boundaries checked by Spring Modulith 1.4 (`ApplicationModules.verify()`); ADR-022 accepted | ADR-022 |
+| Messaging | Spring application events with the Spring Modulith event publication registry (`spring-modulith-starter-jdbc`, table `event_publication`); still no broker | ADR-006 addendum 2026-10-09 |
+| Mail | HTML part in the university brand next to the plain text in every e-mail | Feature 7.2 |
+
 ---
 
 ## Conclusion

@@ -1,6 +1,6 @@
 # ADR-022: Modular Monolith and Multi-University Deployment
 
-**Status**: Proposed  
+**Status**: Accepted (2026-10-15; steps 1 and 2 done, steps 3 and 4 wait for their trigger)  
 **Date**: 2026-10-05  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Thesis Supervisor, IT departments of interested universities
@@ -197,9 +197,10 @@ when a module meets the extraction criteria below.**
 |----------|------------|-------------|------------|
 | 2026-10-05 | Stefan Kostyk | Initial version (proposed) | Design review of 2026-10-04 |
 | 2026-10-13 | Stefan Kostyk | Module list, named interfaces, step 2 done | Story 7.1.2 (SCRUM-65) |
+| 2026-10-15 | Stefan Kostyk | Status Accepted | Boundaries enforced by `ApplicationModules.verify()` through Epic 7 |
 
 ---
 
-**Document Status**: Draft  
-**Next Review Date**: Epic 7 kickoff  
+**Document Status**: Approved  
+**Next Review Date**: When OCR returns (step 3) or a second university joins (step 4)  
 **ADR Category**: Architecture

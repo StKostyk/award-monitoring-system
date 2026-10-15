@@ -3,7 +3,7 @@
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Award Monitoring & Tracking System - Domain Class Diagram (as built after Epic 4)
+title Award Monitoring & Tracking System - Domain Class Diagram (as built after Epic 7)
 
 ' JPA entities of ua.edu.chnu.awards; classes marked <<planned>> exist as tables only
 
@@ -318,6 +318,59 @@ package "audit" <<Rectangle>> {
     }
 }
 
+package "notification" <<Rectangle>> {
+
+    class Notification {
+        -id: Long
+        -userId: Long
+        -type: NotificationType
+        -channel: NotificationChannel
+        -payload: Map
+        -dedupeKey: String
+        -read: boolean
+        -referenceType: String
+        -referenceId: Long
+        -sentAt: Instant
+        -readAt: Instant
+        -expiresAt: Instant
+        -deliveryStatus: DeliveryStatus
+        -deliveredAt: Instant
+    }
+
+    class NotificationPreference {
+        -id: Long
+        -userId: Long
+        -type: NotificationType
+        -emailEnabled: boolean
+        -inAppEnabled: boolean
+    }
+
+    enum NotificationType {
+        AWARD_APPROVED
+        AWARD_REJECTED
+        AWARD_RETURNED
+        AWARD_ESCALATED
+        AWARD_CORRECTED
+        REVIEW_OVERDUE
+        REVIEW_TAKEN_OVER
+        ROLE_ASSIGNED
+        ROLE_REVOKED
+        DELEGATION_CREATED
+        DELEGATION_REVOKED
+    }
+
+    enum NotificationChannel {
+        IN_APP
+        EMAIL
+    }
+
+    enum DeliveryStatus {
+        SENDING
+        SENT
+        FAILED
+    }
+}
+
 package "planned (tables only)" <<Rectangle>> {
 
     class ConsentRecord <<planned Epic 6>> {
@@ -325,13 +378,6 @@ package "planned (tables only)" <<Rectangle>> {
         -consentType: String
         -consentVersion: String
         -granted: boolean
-    }
-
-    class Notification <<planned Epic 7>> {
-        -userId: Long
-        -type: String
-        -channel: String
-        -read: boolean
     }
 }
 
@@ -373,6 +419,11 @@ Document "*" --> "1" User : uploaded by
 Document --> DocumentFormat
 Document --> DocumentType
 ConsentRecord ..> User
-Notification ..> User
+Notification "*" --> "1" User : recipient
+Notification --> NotificationType
+Notification --> NotificationChannel
+Notification --> DeliveryStatus
+NotificationPreference "*" --> "1" User : chosen by
+NotificationPreference --> NotificationType
 
 @enduml

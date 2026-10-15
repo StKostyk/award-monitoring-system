@@ -15,8 +15,9 @@
 
 ## Current focus
 
-Kickoff 2026-10-09. Feature 7.1 first: every notification built in 7.2 is a listener on the publication registry and
-lives in a module the verification test already checks.
+Epic delivered 2026-10-15: features 7.1 and 7.2 are merged, validated against their PRDs and walked through their
+manual scenarios. The documentation sync of 2026-10-15 (`docs/sync-epic-07`) brought the contract documents, the
+diagrams and the Ukrainian copies up to date; the epic refactor sweep follows. Next: Epic 6.
 
 ## Scope
 
@@ -65,6 +66,7 @@ Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
 | 2026-10-09 | Story 1.3.2 (notification preferences) moves from Epic 1 to this epic | Preferences need the notification types and channels built here | Design review A-9 |
 | 2026-10-09 | Story order: registry, boundaries, in-app notifications, centre, preferences, delivery log, HTML templates | Infrastructure before features; the HTML templates are the first to drop if the sprint runs short | This kickoff |
 | 2026-10-14 | Feature 7.1 validated (PASSED WITH NOTES); duplicate mails from a backlog behind the SMTP lock stay within at-least-once and are revisited with the delivery log of 7.2.3 | PRD §13 F-1; the delivery log can skip a resend already logged as sent | Feature 7.1 validation |
+| 2026-10-15 | ADR-022 accepted: the module boundaries hold through Epic 7 under `ApplicationModules.verify()`; steps 3 and 4 wait for OCR and a second university | Step 2 done in 7.1.2 with no exception left; the decision is enforced by a test | Documentation sync |
 | 2026-10-15 | Feature 7.2 validated (PASSED WITH NOTES); a preferences save sends only the changed types (fix SCRUM-83), so a stale tab no longer reverts another tab's choices | PRD §5 "last PUT wins per type"; the endpoint already keeps unlisted types | Feature 7.2 validation F-1 |
 
 ## Documentation deviations
@@ -117,6 +119,17 @@ To settle in the Feature 7.1 and 7.2 PRDs; each document is updated in the story
   `MailTextHelper`; `CorrectionMails` keeps field labels in Java beside `awards.fields.*` in i18n;
   `AuthorityChangeMails.onDelegationRevoked` pairs drafts and recipients by index. The smaller items are in PRD 7.2
   §13 F-5.
+
+### Findings of the documentation sync of 2026-10-15
+
+Corrected in the sync: the ERD and the class diagram still showed `notifications` with `title` and `message` and
+`Notification` as planned (now the V038/V039 columns, `event_publication`, the `notification` package with
+`NotificationPreference` and its enums); the package diagram showed one class in `notification`; the as-built container
+diagram listed a broker and a notification service as planned; PRIVACY_BY_DESIGN purpose P003 named SMS and
+account-lifetime retention (now e-mail and in-app, one year for notifications); the Ukrainian notification section of
+the data dictionary predated V038. API, data dictionary (English) and RBAC matrix matched the code. Deviations kept on
+purpose: the roadmap's Kafka task and the SMS and push promises of BRD §6.2 and US-005 (documentation deviations 2
+and 3 above).
 
 ## Risks
 

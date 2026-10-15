@@ -2,7 +2,7 @@
 !theme plain
 skinparam linetype ortho
 
-title Award Monitoring & Tracking System - Entity Relationship Diagram (as built, V035)
+title Award Monitoring & Tracking System - Entity Relationship Diagram (as built, V039)
 
 ' * mandatory (NOT NULL); all timestamps are TIMESTAMPTZ
 
@@ -253,8 +253,8 @@ entity "notifications" as notifications {
     --
     * user_id : BIGINT <<FK>>
     * type : VARCHAR(50)
-    * title : VARCHAR(255)
-    * message : TEXT
+    * payload : JSONB
+    * dedupe_key : VARCHAR(64) <<UK>>
     * is_read : BOOLEAN
     * channel : VARCHAR(20)
     reference_type : VARCHAR(50)
@@ -262,6 +262,8 @@ entity "notifications" as notifications {
     * sent_at : TIMESTAMPTZ
     read_at : TIMESTAMPTZ
     expires_at : TIMESTAMPTZ
+    delivery_status : VARCHAR(20)
+    delivered_at : TIMESTAMPTZ
 }
 
 entity "notification_preferences" as notif_prefs {
@@ -275,6 +277,16 @@ entity "notification_preferences" as notif_prefs {
     * push_enabled : BOOLEAN
     * created_at : TIMESTAMPTZ
     * updated_at : TIMESTAMPTZ
+}
+
+entity "event_publication" as event_pub {
+    * id : UUID <<PK>>
+    --
+    * listener_id : TEXT
+    * event_type : TEXT
+    * serialized_event : TEXT
+    * publication_date : TIMESTAMPTZ
+    completion_date : TIMESTAMPTZ
 }
 }
 
@@ -342,6 +354,17 @@ note right of requests
     the current level (V024); overdue_noticed_*
     mark the notice sent for a level (V033).
     Indexes: DATA_DICTIONARY.md 3.1
+end note
+
+note bottom of notifications
+    payload and dedupe_key replace title and
+    message (V038); EMAIL rows are the delivery
+    log with delivery_status (V039).
+end note
+
+note bottom of event_pub
+    Spring Modulith publication registry (V036);
+    no foreign keys, completed rows are deleted.
 end note
 
 @enduml

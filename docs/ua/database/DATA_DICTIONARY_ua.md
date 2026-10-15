@@ -819,59 +819,67 @@
 
 ### 5.1 Сутність: `notifications`
 
-**Опис**: Системні сповіщення що надсилаються користувачам про активність нагород, оновлення робочого процесу та системні попередження.
+**Опис**: Сповіщення в застосунку, що записуються із зафіксованих подій (V038), по одному рядку на одержувача, та журнал доставки листів типів сповіщень (V039, `channel = 'EMAIL'`). Клієнт формує речення з `type` і `payload` мовою інтерфейсу; текст не зберігається.
 
 **Бізнес-Правила**:
-- Сповіщення створюються системними подіями (не користувачем)
-- Непрочитані сповіщення виділяються в UI
-- Сповіщення поважають налаштування користувача
-- Доставка через кілька каналів (in-app, email, SMS)
-- Період зберігання: 1 рік
+- Записує слухач модуля `notification` на реєстрі публікацій подій після коміту бізнес-транзакції, у власній транзакції (доповнення до ADR-006)
+- `dedupe_key` робить повторну доставку однієї події холостою (`INSERT … ON CONFLICT DO NOTHING`)
+- Рядок не створюється для одержувача, якого більше не існує, який має статус `DELETED` або не має адреси
+- `payload` містить лише те, що потрібно реченню: ніколи не коментар рецензента чи виправлені значення
+- Центр сповіщень читає лише рядки `IN_APP` того, хто звертається
+- Журнал доставки (7.2.3): перед надсиланням листа типу сповіщень його рядок `EMAIL` захоплюється одним оператором (`INSERT … ON CONFLICT (dedupe_key) DO UPDATE … WHERE`): новий рядок, рядок `FAILED` або рядок `SENDING`, старший за `app.events.retry-after` (10 хвилин), стає `SENDING` із `sent_at` = зараз; рядок `SENT` чи молодший рядок `SENDING` лишається без змін і лист не надсилається, як і для одержувача, чийого облікового запису вже немає. Після надсилання рядок стає `SENT` із `delivered_at` або `FAILED`, якщо поштовий сервер відмовив (тоді публікація повторюється)
+- `ck_notifications_delivery_status`: рядки `IN_APP` не мають `delivery_status`, рядки `EMAIL` мають одне з `SENDING`, `SENT`, `FAILED`
+- Листи безпеки та конфіденційності (вхід, пароль, повідомлення про експорт, стирання) тут не журналюються
+- Період зберігання: 1 рік (`expires_at` = `sent_at` + 1 рік); видалення облікового запису видаляє його рядки (`ON DELETE CASCADE`)
 
 | **Колонка** | **Тип Даних** | **Nullable** | **За Замовч.** | **Обмеження** | **Опис** |
 |-------------|---------------|--------------|----------------|---------------|----------|
 | `notification_id` | `BIGSERIAL` | НІ | Авто | PK | Унікальний ідентифікатор сповіщення |
-| `user_id` | `BIGINT` | НІ | - | FK→users | Користувач отримувач |
+| `user_id` | `BIGINT` | НІ | - | FK→users | Користувач-одержувач |
 | `type` | `VARCHAR(50)` | НІ | - | CK | Тип сповіщення |
-| `title` | `VARCHAR(255)` | НІ | - | - | Заголовок сповіщення |
-| `message` | `TEXT` | НІ | - | - | Повне повідомлення сповіщення |
-| `is_read` | `BOOLEAN` | НІ | `FALSE` | - | Статус прочитання |
+| `payload` | `JSONB` | НІ | `'{}'` | - | Значення для речення, залежно від типу (нижче) |
+| `dedupe_key` | `VARCHAR(64)` | НІ | - | UK | SHA-256 (hex) від типу, каналу, одержувача, посилання й часу події |
+| `is_read` | `BOOLEAN` | НІ | `FALSE` | CK | Статус прочитання |
 | `channel` | `VARCHAR(20)` | НІ | `'IN_APP'` | CK | Канал доставки |
-| `reference_type` | `VARCHAR(50)` | ТАК | - | - | Тип пов'язаної сутності |
-| `reference_id` | `BIGINT` | ТАК | - | - | ID пов'язаної сутності |
-| `sent_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу відправлення |
-| `read_at` | `TIMESTAMPTZ` | ТАК | - | - | Коли позначено як прочитане |
-| `expires_at` | `TIMESTAMPTZ` | ТАК | - | - | Закінчення терміну сповіщення |
+| `reference_type` | `VARCHAR(50)` | ТАК | - | - | `AWARD` для типів нагород, інакше null |
+| `reference_id` | `BIGINT` | ТАК | - | - | Нагорода, інакше null |
+| `sent_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Коли записано рядок у застосунку або коли лист востаннє захоплено для надсилання |
+| `read_at` | `TIMESTAMPTZ` | ТАК | - | CK | Коли позначено як прочитане; встановлюється разом з `is_read` |
+| `expires_at` | `TIMESTAMPTZ` | ТАК | - | - | `sent_at` + 1 рік |
+| `delivery_status` | `VARCHAR(20)` | ТАК | - | CK | Рядки `EMAIL`: `SENDING`, `SENT`, `FAILED`; null для `IN_APP` (V039) |
+| `delivered_at` | `TIMESTAMPTZ` | ТАК | - | - | Рядки `EMAIL`: коли поштовий сервер прийняв лист; інакше null (V039) |
 
-**Типи Сповіщень** (`type`): жоден код застосунку поки не записує цю таблицю; рішення, виправлення й повідомлення про прострочення епіку 4 надсилаються лише електронною поштою, а центр сповіщень у застосунку з'явиться в епіку 7.
+**Типи Сповіщень** (`type`, також `notification_preferences.event_type`) і **payload**:
 
-| Значення | Опис | Тригер Події |
-|----------|------|--------------|
-| `AWARD_SUBMITTED` | Нова нагорода подана | Подання нагороди |
-| `AWARD_APPROVED` | Нагорода затверджена | Остаточне затвердження |
-| `AWARD_REJECTED` | Нагорода відхилена | Рішення про відхилення |
-| `AWARD_RETURNED` | Нагорода повернута для виправлень | Рішення про повернення |
-| `REVIEW_ASSIGNED` | Призначено рецензентом | Призначення в робочому процесі |
-| `DEADLINE_REMINDER` | Наближається дедлайн | Запланована задача |
-| `SYSTEM_ALERT` | Системне оголошення | Дія адміністратора |
+| Значення | Тригер Події | Payload |
+|----------|--------------|---------|
+| `AWARD_APPROVED`, `AWARD_REJECTED`, `AWARD_RETURNED`, `AWARD_ESCALATED` | `AwardDecided` (за результатом) | `title`, `titleUk`, `reviewer`, `level` |
+| `AWARD_CORRECTED` | `AwardCorrected` | `title`, `titleUk`, `reviewer`, `fields` (лише назви) |
+| `REVIEW_OVERDUE` | `OverdueNoticed` | `count`, `oldestDeadline` |
+| `REVIEW_TAKEN_OVER` | `ReviewTakenOver` | `title`, `titleUk`, `reviewer` |
+| `ROLE_ASSIGNED`, `ROLE_REVOKED` | `RoleAssigned`, `RoleRevoked` | `role`, `organization`, `organizationUk`, `validTo` |
+| `DELEGATION_CREATED`, `DELEGATION_REVOKED` | `DelegationCreated`, `DelegationRevoked` (по рядку на одержувача) | `role`, `organization`, `organizationUk`, `otherParty`, `validTo` |
 
 **Канали Сповіщень** (`channel`):
 | Значення | Опис |
 |----------|------|
-| `IN_APP` | Сповіщення в застосунку |
-| `EMAIL` | Доставка email |
-| `SMS` | Доставка SMS |
-| `PUSH` | Push сповіщення |
+| `IN_APP` | Сповіщення в застосунку (записуються з 7.2.1) |
+| `EMAIL` | Журнал доставки листів типів сповіщень (записується з 7.2.3) |
+| `SMS` | Дозволено `ck_notifications_channel`, відхиляється `ck_notifications_delivery_status` з V039 |
+| `PUSH` | Дозволено `ck_notifications_channel`, відхиляється `ck_notifications_delivery_status` з V039 |
 
 **Індекси**:
 - `pk_notifications` - Первинний ключ на `notification_id`
+- `uk_notifications_dedupe_key` - Унікальний на `dedupe_key`
+- `idx_notifications_user_channel_sent` - Композитний на `(user_id, channel, sent_at DESC)` (список центру сповіщень)
 - `idx_notifications_user` - B-tree на `user_id`
-- `idx_notifications_user_unread` - Частковий для непрочитаних сповіщень
+- `idx_notifications_user_unread` - Частковий на `(user_id, sent_at DESC)` для непрочитаних сповіщень
 - `idx_notifications_sent` - B-tree на `sent_at DESC`
 - `idx_notifications_reference` - Композитний на `(reference_type, reference_id)`
+- `idx_notifications_expires` - Частковий на `expires_at`
 
 **Зв'язки**:
-- НАЛЕЖИТЬ ДО `users` (N:1) через `user_id`
+- НАЛЕЖИТЬ ДО `users` (N:1) через `user_id`, `ON DELETE CASCADE`
 
 ---
 

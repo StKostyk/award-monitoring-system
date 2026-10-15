@@ -7,9 +7,10 @@ skinparam package {
     BackgroundColor<<config>> LightGray
 }
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Пакетів (Java Backend, реалізація після епіку 4)
+title Система Моніторингу та Відстеження Нагород - Діаграма Пакетів (Java-бекенд, модулі Spring Modulith після епіку 7)
 
-' Пакети за доменами: кожен домен має controller, dto, entity, event, mapper, repository, service за потреби
+' Пакети за доменами: кожен пакет верхнього рівня — модуль застосунку (ADR-022); інші використовують лише його
+' базовий пакет та іменовані інтерфейси (dto, event, entity, service), ніколи repository, controller чи mapper
 
 package "ua.edu.chnu.awards" {
 
@@ -17,6 +18,14 @@ package "ua.edu.chnu.awards" {
         package "web" as auth_web {
             class AuthController
             class LoginController
+            class EmailChangeController
+        }
+        package "config" as auth_config {
+            class SecurityConfig
+            class AuthorizationServerConfig
+            class LoginSessionConfig
+            class TokenConfig
+            class AuthProperties
         }
         package "security" as auth_security {
             class RateLimitFilter
@@ -29,6 +38,7 @@ package "ua.edu.chnu.awards" {
             class PasswordResetService
             class EmailChangeService
             class DeviceService
+            class DeviceLookup
         }
         package "entity" as auth_entity {
             class OneTimeToken
@@ -38,38 +48,53 @@ package "ua.edu.chnu.awards" {
 
     package "authz" <<security>> {
         class AccessScope
-        class OrganizationTree
+        class RoleType
+        class RolePermissions
+        class TokenClaimConstants
         class RoleScope
         class DelegatedScope
         class AccessDenials
+        class AccessDeniedProblems
+    }
+
+    package "organization" <<domain>> {
+        class OrganizationTree
+        class OrganizationController
+        class OrganizationService
+        class OrganizationLookup
+        class Organization
     }
 
     package "user" <<domain>> {
+        interface AccountSessions
+        interface LentAuthority
         package "controller" as user_controller {
             class UserController
             class UserProfileController
-            class OrganizationController
         }
         package "service" as user_service {
             class UserDirectoryService
             class UserProfileService
             class RoleAssignmentService
-            class OrganizationService
+            class UserAccounts
+            class RoleHolders
+            class UserActorDirectory
         }
         package "entity" as user_entity {
             class User
             class UserRole
-            class Organization
         }
     }
 
     package "delegation" <<domain>> {
         class DelegationController
         class DelegationService
+        class DelegationLookup
         class RoleDelegation
     }
 
     package "award" <<domain>> {
+        interface AwardDocuments
         package "controller" as award_controller {
             class AwardController
             class AwardCategoryController
@@ -107,6 +132,8 @@ package "ua.edu.chnu.awards" {
             class OverdueNotices
             class AwardSharing
             class Achievements
+            class AwardLookup
+            class AwardLinks
         }
         package "entity" as award_entity {
             class Award
@@ -139,6 +166,10 @@ package "ua.edu.chnu.awards" {
             class ObjectStorage
             class StoredObjectCleanup
             class DocumentSweeper
+            class DocumentsOfAwards
+        }
+        package "config" as document_config {
+            class StorageConfig
         }
         package "entity" as document_entity {
             class Document
@@ -149,11 +180,47 @@ package "ua.edu.chnu.awards" {
     }
 
     package "gdpr" <<domain>> {
+        class DataExportController
         class DataExportService
         class PersonalDataAssembler
     }
 
+    package "notification" <<domain>> {
+        class AuthorityChangeMails
+        class DecisionMails
+        class CorrectionMails
+        class OverdueMails
+        class TakeOverMails
+        package "controller" as notification_controller {
+            class NotificationController
+            class NotificationPreferenceController
+        }
+        package "service" as notification_service {
+            class InAppNotifications
+            class NotificationService
+            class NotificationPreferenceService
+            class NotificationDrafts
+            class DeliveryLog
+            class DeliveryMetrics
+            class NotificationLookup
+        }
+        package "entity" as notification_entity {
+            class Notification
+            class NotificationPreference
+        }
+        package "repository" as notification_repository {
+            class NotificationRepository
+            class NotificationPreferenceRepository
+        }
+    }
+
+    package "metrics" <<config>> {
+        class MetricsConfiguration
+        class ObservabilityConfiguration
+    }
+
     package "audit" <<shared>> {
+        interface ActorDirectory
         class AuditService
         class AuditTrailService
         class AuditLog
@@ -163,11 +230,18 @@ package "ua.edu.chnu.awards" {
         package "web" as common_web {
             class ApiExceptionHandler
             class ApiProblemException
+            class NotFoundException
             class CorrelationIdFilter
             class PageResponse
         }
         package "mail" as common_mail {
             class MailDelivery
+            class MailHtmlRenderer
+            class UndeliveredMailAsyncHandler
+        }
+        package "event" as common_event {
+            class AfterCommit
+            class PublicationRetry
         }
         package "limit" as common_limit {
             class FixedWindowCounter
@@ -175,45 +249,55 @@ package "ua.edu.chnu.awards" {
     }
 
     package "config" <<config>> {
-        class SecurityConfig
-        class AuthorizationServerConfig
-        class LoginSessionConfig
-        class TokenConfig
         class OpenApiConfig
-        class StorageConfig
         class InfrastructureConfig
+        class TransactionConfig
+        class WebLocaleConfig
     }
 }
 
-' Залежності між пакетами верхнього рівня
-award ..> user : власник, підрозділ
+' Залежності між модулями (перевіряє ModularityTest; без циклів)
+user ..> organization
+user ..> authz
+authz ..> organization
+authz ..> audit
+delegation ..> user : реалізує LentAuthority
+delegation ..> organization
+delegation ..> authz
+auth ..> user : реалізує AccountSessions
+auth ..> delegation
+auth ..> organization
+auth ..> authz
+award ..> user : власник, рецензенти
+award ..> organization
 award ..> authz : область читання
-award ..> audit : рядки AWARD_* і REVIEW_*
 award ..> delegation : делеговані області рецензування
-award ..> config : властивості процесу
-award ..> document : чернетки видаляються разом з об'єктами
-document ..> award : чернетка власника, правило читання
+award ..> audit : рядки AWARD_* і REVIEW_*
+document ..> award : реалізує AwardDocuments
+document ..> user
 document ..> authz
 document ..> audit : рядки DOCUMENT_*
-document ..> common
-delegation ..> user
-delegation ..> authz
-user ..> authz
-user ..> audit
-auth ..> user
-auth ..> audit
-gdpr ..> user
 gdpr ..> award
-config ..> auth
-config ..> authz
-award ..> common
-user ..> common
+gdpr ..> auth : пристрої
+gdpr ..> delegation
+gdpr ..> user
+gdpr ..> notification : NotificationLookup
+notification ..> user : події ролей, одержувачі
+notification ..> delegation : події делегування
+notification ..> award : події рішень, виправлень, прострочення, перехоплення
+notification ..> authz
+notification ..> audit : NOTIFICATION_PREFERENCES_CHANGED
+user ..> audit : реалізує ActorDirectory
+config ..> audit
 
 note bottom of award
     Мапери — написані вручну класи @Component;
     без MapStruct. Процес рецензування живе в award (ADR-023).
+    Слухачі notification працюють після коміту на
+    реєстрі публікацій подій (common.event, доповнення до ADR-006).
+    common — відкритий модуль для всіх; config не використовує жоден.
     Заплановані домени: parsing (OCR, відкладено), analytics (епік 5),
-    compliance (епік 6), notification (епік 7).
+    compliance (епік 6).
 end note
 
 @enduml
