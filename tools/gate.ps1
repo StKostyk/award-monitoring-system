@@ -5,7 +5,7 @@
 .DESCRIPTION
     Static analysis first (about half a minute), then the full build with tests and coverage, so a style
     violation never costs a five-minute run. -StaticOnly stops after the static checks (backend, then the
-    frontend ESLint and Prettier check); -SkipFrontend leaves the Angular checks, unit tests and the production
+    frontend ESLint and Prettier check and nginx -t on the frontend nginx configuration); -SkipFrontend leaves the Angular checks, unit tests and the production
     build (bundle budgets) out. The backend
     verify runs only when the branch changes something under backend/ compared with develop (develop passed it
     when it was merged); -Full runs it regardless. The frontend checks run in a background job while the backend
@@ -117,6 +117,24 @@ $frontendChecks = {
         if (-not $result.LintOk) {
             $result.Lines += Select-String -Path $lintLog -Pattern 'error|\[warn\]' | Select-Object -First 20 |
                 ForEach-Object { $_.Line }
+        }
+
+        docker info --format '{{.ServerVersion}}' *> $null
+        if ($LASTEXITCODE -eq 0) {
+            $nginxLog = Join-Path $logDir 'gate-nginx.log'
+            $mounts = @(
+                @('nginx.conf', '/etc/nginx/conf.d/default.conf'),
+                @('security-headers.conf', '/etc/nginx/snippets/security-headers.conf'),
+                @('backend-proxy.conf', '/etc/nginx/snippets/backend-proxy.conf')
+            ) | ForEach-Object { '-v'; "$(Join-Path (Get-Location) $_[0]):$($_[1]):ro" }
+            & docker run --rm --pull=never --add-host app:127.0.0.1 @mounts nginx:alpine nginx -t *> $nginxLog
+            if ($LASTEXITCODE -ne 0) {
+                $result.LintOk = $false
+                $result.Lines += Select-String -Path $nginxLog -Pattern 'emerg|error' | Select-Object -First 5 |
+                    ForEach-Object { "nginx -t: $($_.Line)" }
+            }
+        } else {
+            $result.Lines += 'nginx -t skipped: Docker is not running.'
         }
         if ($staticOnly) { return $result }
 
