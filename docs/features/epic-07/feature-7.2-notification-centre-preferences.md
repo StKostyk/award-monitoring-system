@@ -246,7 +246,7 @@ Written to `docs/api/openapi.yml` in this PRD's PR, each with `x-status: planned
 | 4.1–4.3 | ✓ claim rules with a fixed clock | ✓ claim race (two threads, one send); `FAILED` reclaimed; stale `SENDING` reclaimed | | |
 | 4.4 | ✓ counter tags | | ✓ prometheus lists the counter | |
 | 4.5 | ✓ assembler | | ✓ export contains both sections | |
-| 5.1–5.4 | ✓ layout rendering, escaping, link button, footer rule | ✓ multipart parts through the Mailpit API | ✓ existing mail FTs read the text part | |
+| 5.1–5.4 | ✓ layout rendering, escaping, link button, footer rule, MIME parts | | ✓ HTML part through the Mailpit API (decision mail, password reset); existing mail FTs read the text part | |
 | 5.5 | | | | manual step 12 |
 | 1.11, 3.7, 4.6 | | | | doc review in the PR |
 

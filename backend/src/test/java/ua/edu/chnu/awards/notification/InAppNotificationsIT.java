@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import jakarta.mail.internet.MimeMessage;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
@@ -27,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -40,6 +41,7 @@ import ua.edu.chnu.awards.common.event.PublicationRetry;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
+import ua.edu.chnu.awards.support.TestMails;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.repository.UserRepository;
@@ -130,7 +132,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         assertThat(rows(deleted)).isZero();
         verify(mailSender, never())
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo("it.inapp.gone" + DOMAIN)));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo("it.inapp.gone" + DOMAIN)));
         assertThat(jdbc.queryForObject("SELECT count(*) FROM notifications WHERE user_id = ?", Long.class,
             Long.MAX_VALUE)).isZero();
     }
@@ -139,7 +141,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
     void ac1_6_withTheMailServerDownTheInAppRowIsWrittenAndOnlyTheMailIsRetried() {
         User owner = account("maildown");
         doThrow(new MailSendException("down")).when(mailSender)
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(owner.getEmailAddress())));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
 
         long publications = Objects.requireNonNull(transactions.execute(status -> {
             events.publishEvent(decided(owner, Instant.now()));
@@ -148,7 +150,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         assertThat(publications).isEqualTo(2);
         verify(mailSender, timeout(FAILED_SEND_MS).times(3))
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(owner.getEmailAddress())));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
         assertThat(waitFor(() -> rows(owner), 1L)).isEqualTo(1);
         assertThat(waitFor(this::incomplete, 1L)).isEqualTo(1);
         assertThat(waitFor(() -> mailStatus(owner), "FAILED")).isEqualTo("FAILED");
@@ -161,7 +163,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         retry.run();
 
         verify(mailSender, timeout(WAIT_MS))
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(owner.getEmailAddress())));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         assertThat(rows(owner)).isEqualTo(1);
         assertThat(mailStatus(owner)).isEqualTo("SENT");
@@ -194,7 +196,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
 
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         verify(mailSender, after(WAIT_SHORT_MS).times(1))
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(owner.getEmailAddress())));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(owner.getEmailAddress())));
     }
 
     @Test
@@ -208,13 +210,13 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
         publish(decided(inAppOff, Instant.now()));
 
         verify(mailSender, timeout(WAIT_MS))
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(inAppOff.getEmailAddress())));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(inAppOff.getEmailAddress())));
         assertThat(waitFor(() -> rows(mailOff), 1L)).isEqualTo(1);
         assertThat(waitFor(this::incomplete, 0L)).isZero();
         assertThat(rows(inAppOff)).isZero();
         assertThat(mailStatus(mailOff)).isNull();
         verify(mailSender, never())
-            .send(ArgumentMatchers.<SimpleMailMessage>argThat(sentTo(mailOff.getEmailAddress())));
+            .send(ArgumentMatchers.<MimeMessage>argThat(sentTo(mailOff.getEmailAddress())));
     }
 
     @Test
@@ -269,8 +271,8 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
             Long.class);
     }
 
-    private static ArgumentMatcher<SimpleMailMessage> sentTo(String to) {
-        return message -> message != null && message.getTo() != null && List.of(message.getTo()).contains(to);
+    private static ArgumentMatcher<MimeMessage> sentTo(String to) {
+        return message -> message != null && TestMails.recipients(message).contains(to);
     }
 
     private static <T> T waitFor(Supplier<T> value, T expected) {

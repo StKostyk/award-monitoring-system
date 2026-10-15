@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.award.event.AwardCorrected;
 import ua.edu.chnu.awards.award.service.AwardLinks;
+import ua.edu.chnu.awards.common.mail.MailContent;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
@@ -30,7 +31,7 @@ class CorrectionMailsTest {
 
         mails.onCorrected(event("employee@chnu.edu.ua"));
 
-        verify(delivery, never()).send(anyString(), anyString(), anyString());
+        verify(delivery, never()).send(anyString(), anyString(), any(MailContent.class));
     }
 
     private static final String LINK = "http://localhost:4200/awards/5";
@@ -53,14 +54,14 @@ class CorrectionMailsTest {
         mails.onCorrected(event("employee@chnu.edu.ua"));
 
         verify(delivery).send("employee@chnu.edu.ua", CorrectionMails.SUBJECT,
-            CorrectionMails.body(event("employee@chnu.edu.ua"), LINK));
+            MailContent.notification(CorrectionMails.body(event("employee@chnu.edu.ua"), LINK)));
     }
 
     @Test
     void ac3_5_anErasedOwnerGetsNoMessage() {
         mails.onCorrected(event(null));
 
-        verify(delivery, never()).send(anyString(), anyString(), anyString());
+        verify(delivery, never()).send(anyString(), anyString(), any(MailContent.class));
     }
 
     @Test

@@ -26,6 +26,7 @@ import org.mockito.InOrder;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
+import ua.edu.chnu.awards.common.mail.MailContent;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.common.mail.MailNotDeliveredException;
 import ua.edu.chnu.awards.notification.entity.DeliveryStatus;
@@ -62,7 +63,7 @@ class DeliveryLogTest {
         ArgumentCaptor<NewNotification> row = ArgumentCaptor.forClass(NewNotification.class);
         InOrder order = inOrder(repository, delivery);
         order.verify(repository).claim(row.capture(), eq(TestDeliveries.NOW.minus(TestDeliveries.RETRY_AFTER)));
-        order.verify(delivery).send(EMAIL, SUBJECT, BODY);
+        order.verify(delivery).send(EMAIL, SUBJECT, MailContent.notification(BODY));
         order.verify(repository).finish(row.getValue().dedupeKey(), DeliveryStatus.SENT, TestDeliveries.NOW);
         assertThat(sent).isTrue();
         assertThat(row.getValue()).extracting(NewNotification::userId, NewNotification::type,
@@ -76,7 +77,7 @@ class DeliveryLogTest {
     @Test
     void ac4_2_aRefusedMailIsMarkedFailedAndTheFailurePropagates() {
         MailNotDeliveredException failure = new MailNotDeliveredException(SUBJECT, List.of(EMAIL), null);
-        doThrow(failure).when(delivery).send(EMAIL, SUBJECT, BODY);
+        doThrow(failure).when(delivery).send(EMAIL, SUBJECT, MailContent.notification(BODY));
 
         assertThatThrownBy(() -> log.send(draft(7L, OCCURRED), EMAIL, SUBJECT, BODY)).isSameAs(failure);
 
@@ -121,7 +122,7 @@ class DeliveryLogTest {
         assertThat(log.send(draft(7L, null), EMAIL, SUBJECT, BODY)).isTrue();
         assertThat(log.send(draft(null, OCCURRED), EMAIL, SUBJECT, BODY)).isTrue();
 
-        verify(delivery, times(2)).send(EMAIL, SUBJECT, BODY);
+        verify(delivery, times(2)).send(EMAIL, SUBJECT, MailContent.notification(BODY));
         verifyNoInteractions(repository);
         assertThat(count("email", "sent")).isEqualTo(2.0);
     }

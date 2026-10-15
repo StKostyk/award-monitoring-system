@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.award.service.AwardLinks;
+import ua.edu.chnu.awards.common.mail.MailContent;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
@@ -28,7 +29,7 @@ class TakeOverMailsTest {
 
         mails.onTakenOver(event("secretary@chnu.edu.ua"));
 
-        verify(delivery, never()).send(anyString(), anyString(), anyString());
+        verify(delivery, never()).send(anyString(), anyString(), any(MailContent.class));
     }
 
     private static final String LINK = "http://localhost:4200/awards/5";
@@ -51,14 +52,14 @@ class TakeOverMailsTest {
         mails.onTakenOver(event("secretary@chnu.edu.ua"));
 
         verify(delivery).send("secretary@chnu.edu.ua", TakeOverMails.SUBJECT,
-            TakeOverMails.body(event("secretary@chnu.edu.ua"), LINK));
+            MailContent.notification(TakeOverMails.body(event("secretary@chnu.edu.ua"), LINK)));
     }
 
     @Test
     void ac2_anErasedHolderGetsNoMessage() {
         mails.onTakenOver(event(null));
 
-        verify(delivery, never()).send(anyString(), anyString(), anyString());
+        verify(delivery, never()).send(anyString(), anyString(), any(MailContent.class));
     }
 
     @Test

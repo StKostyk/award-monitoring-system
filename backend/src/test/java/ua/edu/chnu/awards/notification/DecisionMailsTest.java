@@ -16,6 +16,7 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.AwardDecided;
 import ua.edu.chnu.awards.award.service.AwardLinks;
+import ua.edu.chnu.awards.common.mail.MailContent;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
@@ -45,7 +46,8 @@ class DecisionMailsTest {
         mails.onDecided(event(RequestStatus.APPROVED, ApprovalLevel.DEAN, null));
 
         verify(delivery).send("employee@chnu.edu.ua", "Нагороду затверджено / Award approved",
-            DecisionMails.body(event(RequestStatus.APPROVED, ApprovalLevel.DEAN, null), LINK));
+            MailContent.notification(
+                DecisionMails.body(event(RequestStatus.APPROVED, ApprovalLevel.DEAN, null), LINK)));
     }
 
     @Test
@@ -53,7 +55,7 @@ class DecisionMailsTest {
         mails.onDecided(new AwardDecided(21L, null, "Ірина", 5L, "Prize", "Премія", RequestStatus.APPROVED,
             ApprovalLevel.DEAN, "Аліна Мартинюк", null, null));
 
-        verify(delivery, never()).send(anyString(), anyString(), anyString());
+        verify(delivery, never()).send(anyString(), anyString(), any(MailContent.class));
     }
 
     @Test
@@ -63,8 +65,9 @@ class DecisionMailsTest {
         mails.onDecided(event(RequestStatus.REJECTED, ApprovalLevel.DEAN, null));
         mails.onDecided(event(RequestStatus.APPROVED, ApprovalLevel.DEAN, null));
 
-        verify(delivery).send(eq("employee@chnu.edu.ua"), eq("Нагороду затверджено / Award approved"), anyString());
-        verify(delivery, never()).send(anyString(), eq("Нагороду відхилено / Award rejected"), anyString());
+        verify(delivery).send(eq("employee@chnu.edu.ua"), eq("Нагороду затверджено / Award approved"),
+            any(MailContent.class));
+        verify(delivery, never()).send(anyString(), eq("Нагороду відхилено / Award rejected"), any(MailContent.class));
     }
 
     @Test

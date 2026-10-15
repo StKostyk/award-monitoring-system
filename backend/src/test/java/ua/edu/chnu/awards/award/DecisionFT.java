@@ -141,7 +141,7 @@ class DecisionFT extends AbstractFunctionalTest {
             .body(REQUEST_STATUS, equalTo("RETURNED"));
         assertThat(jdbc.queryForMap("select current_reviewer_id, deadline from award_requests where award_id = ?",
             returned)).containsEntry("current_reviewer_id", null).containsEntry("deadline", null);
-        assertThat(mailpit.latestTextTo(AUTHOR, "повернуто на доопрацювання"))
+        assertThat(mailpit.textMentioning(AUTHOR, "повернуто на доопрацювання", "/awards/" + returned))
             .contains("Коментар: Додайте номер наказу");
         as(tokenOf(AUTHOR)).get("/api/v1/notifications").then().statusCode(HttpStatus.OK.value())
             .body("content.findAll { it.referenceId == " + returned + " }.type", contains("AWARD_RETURNED"))
@@ -158,6 +158,24 @@ class DecisionFT extends AbstractFunctionalTest {
         assertThat(jdbc.queryForObject("select rejection_reason from award_requests where award_id = ?",
             String.class, rejected)).isEqualTo("Не відповідає положенню");
         assertThat(mailpit.latestTextTo(AUTHOR, "Нагороду відхилено")).contains("Не відповідає положенню");
+    }
+
+    @Test
+    void ac5_1_ac5_3_ac5_4_aDecisionMailHasAnEscapedHtmlPartWithThePreferencesLink() {
+        String title = "<script>alert(1)</script> & \"Премія\"";
+        long id = submitted(AUTHOR, title);
+
+        decide(tokenOf(SECRETARY), id, "RETURN", "Додайте <b>номер</b> наказу").then()
+            .statusCode(HttpStatus.OK.value());
+
+        String link = "/awards/" + id;
+        assertThat(mailpit.textMentioning(AUTHOR, "повернуто на доопрацювання", link)).contains(title,
+            "Додайте <b>номер</b> наказу");
+        assertThat(mailpit.htmlMentioning(AUTHOR, "повернуто на доопрацювання", link))
+            .contains("&lt;script&gt;alert(1)&lt;/script&gt; &amp; &quot;Премія&quot;",
+                "Додайте &lt;b&gt;номер&lt;/b&gt; наказу", "href=\"http://localhost:4200" + link + "\"",
+                "href=\"http://localhost:4200/profile#notifications\"")
+            .doesNotContain("<script>", "<b>номер");
     }
 
     @Test

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${subject}">Subject</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f5f7;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background-color: #f4f5f7;">
+  <tr>
+    <td align="center" style="padding: 16px 8px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+             style="width: 100%; max-width: 600px; background-color: #ffffff; border-collapse: collapse;">
+        <tr>
+          <td th:style="'padding: 20px 24px; background-color: ' + ${colours.header()} + ';'"
+              style="padding: 20px 24px; background-color: #003278;">
+            <p style="margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 18px; line-height: 24px;
+                      font-weight: bold; color: #ffffff;" th:text="${organizationUk}">Organisation</p>
+            <p style="margin: 4px 0 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px;
+                      line-height: 20px; color: #ffffff;" th:text="${organizationEn}">Organisation</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px; font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 22px;
+                     color: #1a1b21;">
+            <th:block th:each="block : ${blocks}">
+              <hr th:if="${block.kind() == 'rule'}"
+                  style="margin: 24px 0; border: 0; border-top: 1px solid #dfe9eb;">
+              <table th:if="${block.kind() == 'button'}" role="presentation" cellpadding="0" cellspacing="0"
+                     border="0" style="margin: 0 0 16px;">
+                <tr>
+                  <td th:style="'border-radius: 4px; background-color: ' + ${colours.button()} + ';'"
+                      style="border-radius: 4px; background-color: #0047ab;">
+                    <a th:href="${block.href()}" th:text="${block.label()}"
+                       style="display: inline-block; padding: 12px 20px; font-family: Arial, Helvetica, sans-serif;
+                              font-size: 15px; font-weight: bold; color: #ffffff; text-decoration: none;">Open</a>
+                  </td>
+                </tr>
+              </table>
+              <p th:if="${block.kind() == 'text'}" style="margin: 0 0 16px;">
+                <th:block th:each="line, state : ${block.lines()}"><th:block th:each="segment : ${line}"><a
+                    th:if="${segment.href() != null}" th:href="${segment.href()}" th:text="${segment.text()}"
+                    th:style="'color: ' + ${colours.button()} + '; word-break: break-all;'">link</a><span
+                    th:if="${segment.href() == null}" th:text="${segment.text()}">text</span></th:block><br
+                    th:unless="${state.last}"></th:block>
+              </p>
+            </th:block>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 16px 24px; border-top: 1px solid #dfe9eb; font-family: Arial, Helvetica, sans-serif;
+                     font-size: 12px; line-height: 18px; color: #44464f;">
+            <p style="margin: 0;" th:text="${senderUk}">Sender</p>
+            <p style="margin: 0;" th:text="${senderEn}">Sender</p>
+            <p th:if="${preferencesUrl != null}" style="margin: 8px 0 0;">
+              <a th:href="${preferencesUrl}" th:text="${preferencesLabel}"
+                 th:style="'color: ' + ${colours.button()} + ';'">Manage notifications</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
