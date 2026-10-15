@@ -61,6 +61,8 @@ tags:
     description: Approved awards shared with colleagues or published (Feature 4.3)
   - name: Notifications
     description: In-app notifications and channel preferences (Feature 7.2)
+  - name: Privacy
+    description: Privacy notice, consents, privacy centre, legal holds and erasure (Feature 6.1)
 
 paths:
   # ============== Authentication ==============
@@ -2496,6 +2498,358 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  # ============== Privacy ==============
+  /public/privacy-notice:
+    get:
+      tags: [Privacy]
+      summary: The current privacy notice version and the published versions
+      description: >
+        Open endpoint. The texts are static pages of the web client per version and language
+        (`/privacy/<version>/<lang>.html`); this operation names the current version (6.1.1).
+      x-status: planned
+      operationId: getPrivacyNotice
+      responses:
+        '200':
+          description: Current version and every published version, newest first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyNotice'
+
+  /users/me/consents:
+    get:
+      tags: [Privacy]
+      summary: The caller's notice acknowledgement, consents and consent history
+      description: >
+        `acknowledgementRequired` is true when the last acknowledged notice version differs from the current one
+        or none exists. The history lists every record oldest first, without IP address or user agent (6.1.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getConsents
+      responses:
+        '200':
+          description: The overview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentOverview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/consents/notice-acknowledgement:
+    post:
+      tags: [Privacy]
+      summary: Acknowledge the current privacy notice
+      description: >
+        Appends a `DATA_PROCESSING` record for the version and writes `PRIVACY_NOTICE_ACKNOWLEDGED`; a version
+        already acknowledged appends nothing and answers 200 (6.1.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: acknowledgePrivacyNotice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoticeAcknowledgement'
+      responses:
+        '200':
+          description: The overview after the acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentOverview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Not the current version (`validation-failed`, field `version`, code `outdated`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /users/me/consents/{type}:
+    put:
+      tags: [Privacy]
+      summary: Grant or withdraw an optional consent
+      description: >
+        Appends a record when the state changes and writes `CONSENT_GRANTED` or `CONSENT_WITHDRAWN`; the
+        unchanged state appends nothing. Only `ANALYTICS` is optional (6.1.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: setConsent
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ConsentType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentChoice'
+      responses:
+        '200':
+          description: The overview after the change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentOverview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: The type is not optional (`validation-failed`, field `type`, code `not-optional`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /users/me/privacy:
+    get:
+      tags: [Privacy]
+      summary: Summary of the caller's privacy choices
+      description: >
+        Approved personal awards per visibility, documents shown to colleagues, notification types with e-mail
+        off, the last export (6.1.2) and the pending erasure request (6.1.4).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getPrivacySummary
+      responses:
+        '200':
+          description: The summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacySummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/activity:
+    get:
+      tags: [Privacy]
+      summary: The caller's activity log
+      description: >
+        Audit rows written by the caller or about the caller (`USER`, `AUTHENTICATION`, `AUTHORIZATION`, `GDPR`),
+        newest first; trigger rows are left out, and no values, IP address or user agent are returned (6.1.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listMyActivity
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: A page of entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{id}/legal-holds:
+    get:
+      tags: [Privacy]
+      summary: Legal holds of an account
+      description: >
+        Requires `legal-hold:manage` (GDPR officer). Holds newest first; `erasureScheduledFor` names a pending
+        erasure (6.1.3, field from 6.1.4).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listLegalHolds
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: The holds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldOverview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Privacy]
+      summary: Place a legal hold
+      description: >
+        Requires `legal-hold:manage`. Blocks the erasure of the account and its retention until lifted.
+        `LEGAL_HOLD_PLACED` records the reason length, not the text (6.1.3).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: placeLegalHold
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHoldReason'
+      responses:
+        '201':
+          description: The hold
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHold'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: An active hold exists (`legal-hold-active`) or the account is erased (`account-erased`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /users/{id}/legal-holds/{holdId}/lift:
+    post:
+      tags: [Privacy]
+      summary: Lift a legal hold
+      description: Requires `legal-hold:manage`; writes `LEGAL_HOLD_LIFTED` (6.1.3).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: liftLegalHold
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - name: holdId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalHoldReason'
+      responses:
+        '200':
+          description: The lifted hold
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHold'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No such hold of this user (`legal-hold-not-found`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: Already lifted (`legal-hold-lifted`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /users/me/erasure-request:
+    post:
+      tags: [Privacy]
+      summary: Ask for the erasure of the caller's account
+      description: >
+        The current password is required; a wrong one counts as a failed sign-in. The account is erased after
+        `app.erasure.grace-period` (30 days) unless cancelled; approved awards stay under a pseudonym. Writes
+        `ERASURE_REQUESTED` and sends a privacy mail (6.1.4).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: requestErasure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErasureConfirmation'
+      responses:
+        '201':
+          description: The pending request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErasureRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Wrong current password (`urn:awards:problem:password-mismatch`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: >
+            A request is pending (`erasure-pending`), a legal hold is active (`legal-hold`, reason not disclosed),
+            or the caller is the only active system administrator (`last-administrator`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '423':
+          description: The account is locked after five failed sign-ins (`urn:awards:problem:account-locked`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /users/me/erasure-request/cancel:
+    post:
+      tags: [Privacy]
+      summary: Cancel the caller's pending erasure request
+      description: Writes `ERASURE_CANCELLED` and sends a privacy mail (6.1.4).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: cancelErasure
+      responses:
+        '204':
+          description: Cancelled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: No pending request (`erasure-not-pending`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
   # ============== Reports ==============
   /reports/awards/summary:
     get:
@@ -2588,6 +2942,14 @@ components:
         type: integer
         default: 0
         minimum: 0
+
+    UserIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
 
     SizeParam:
       name: size
@@ -2737,6 +3099,12 @@ components:
           type: integer
           format: int64
           description: Department the employee belongs to
+        privacyNoticeVersion:
+          type: string
+          maxLength: 20
+          description: >
+            Version of the privacy notice the person acknowledged; required and equal to the current version from
+            6.1.1 (planned), otherwise 422 `validation-failed` with code `outdated`
 
     RevokeRequest:
       type: object
@@ -4490,6 +4858,223 @@ components:
           description: The version of the award now (`award-stale`)
         awardStatus:
           $ref: '#/components/schemas/AwardStatus'
+
+    # ---------- Privacy (Feature 6.1, planned) ----------
+    PrivacyNotice:
+      type: object
+      properties:
+        version:
+          type: string
+          example: '1.0'
+        publishedOn:
+          type: string
+          format: date
+        versions:
+          type: array
+          items:
+            type: object
+            properties:
+              version:
+                type: string
+              publishedOn:
+                type: string
+                format: date
+
+    ConsentType:
+      type: string
+      enum: [DATA_PROCESSING, ANALYTICS]
+      description: >
+        `DATA_PROCESSING` records the acknowledgement of a notice version; `ANALYTICS` (optional) allows naming
+        the person in rankings and comparisons of unit reports
+
+    ConsentOverview:
+      type: object
+      properties:
+        notice:
+          type: object
+          properties:
+            currentVersion:
+              type: string
+            acknowledgedVersion:
+              type: string
+              nullable: true
+            acknowledgedAt:
+              type: string
+              format: date-time
+              nullable: true
+            acknowledgementRequired:
+              type: boolean
+        consents:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                $ref: '#/components/schemas/ConsentType'
+              granted:
+                type: boolean
+              changedAt:
+                type: string
+                format: date-time
+                nullable: true
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                $ref: '#/components/schemas/ConsentType'
+              version:
+                type: string
+              granted:
+                type: boolean
+              at:
+                type: string
+                format: date-time
+
+    NoticeAcknowledgement:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: string
+          maxLength: 20
+
+    ConsentChoice:
+      type: object
+      required: [granted]
+      properties:
+        granted:
+          type: boolean
+
+    PrivacySummary:
+      type: object
+      properties:
+        awardsByVisibility:
+          type: object
+          properties:
+            PRIVATE:
+              type: integer
+            UNIVERSITY:
+              type: integer
+            PUBLIC:
+              type: integer
+        documentsShown:
+          type: integer
+        emailOffTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationType'
+        lastExportAt:
+          type: string
+          format: date-time
+          nullable: true
+        erasure:
+          allOf:
+            - $ref: '#/components/schemas/ErasureRequest'
+          nullable: true
+          description: The pending erasure request (6.1.4)
+
+    ActivityEntry:
+      type: object
+      properties:
+        action:
+          type: string
+          example: LOGIN_SUCCESS
+        occurredAt:
+          type: string
+          format: date-time
+        entityType:
+          type: string
+        entityId:
+          type: integer
+          format: int64
+          nullable: true
+        byMe:
+          type: boolean
+          description: True when the caller performed the action, false when it was about the caller
+
+    ActivityPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ActivityEntry'
+
+    LegalHoldReason:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+
+    LegalHold:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        reason:
+          type: string
+        placedAt:
+          type: string
+          format: date-time
+        placedBy:
+          $ref: '#/components/schemas/UserRef'
+        liftedAt:
+          type: string
+          format: date-time
+          nullable: true
+        liftedBy:
+          allOf:
+            - $ref: '#/components/schemas/UserRef'
+          nullable: true
+        liftReason:
+          type: string
+          nullable: true
+
+    LegalHoldOverview:
+      type: object
+      properties:
+        holds:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegalHold'
+        erasureScheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date of a pending erasure request (6.1.4)
+
+    ErasureConfirmation:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
+          maxLength: 72
+
+    ErasureRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        requestedAt:
+          type: string
+          format: date-time
+        scheduledFor:
+          type: string
+          format: date-time
+        postponed:
+          type: boolean
+          description: True when a legal hold postponed the erasure past its date
 
   responses:
     BadRequest:
