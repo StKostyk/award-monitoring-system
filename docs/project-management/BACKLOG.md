@@ -109,7 +109,8 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 | 7.2.3 | Delivery log and notifications in the personal data export | 3 | ✅ Done | SCRUM-68 | [#185](https://github.com/StKostyk/award-monitoring-system/issues/185) |
 | 7.2.4 | HTML e-mail templates in the university brand | 3 | ✅ Done | SCRUM-69 | [#186](https://github.com/StKostyk/award-monitoring-system/issues/186) |
 | 7.2.5 | Name the target level in the passed-on notification text | 1 | ✅ Done | SCRUM-82 | [#239](https://github.com/StKostyk/award-monitoring-system/issues/239) |
-| 7.2.6 | Save only the changed notification preferences | 1 | 👀 In review | SCRUM-83 | [#242](https://github.com/StKostyk/award-monitoring-system/issues/242) |
+| 7.2.6 | Save only the changed notification preferences | 1 | ✅ Done | SCRUM-83 | [#242](https://github.com/StKostyk/award-monitoring-system/issues/242) |
+| 7.2.7 | Out-of-range notification page shows the empty state | 1 | 👀 In review | SCRUM-84 | [#245](https://github.com/StKostyk/award-monitoring-system/issues/245) |
 
 ### Later epics
 | ID | Story | Points | Epic |

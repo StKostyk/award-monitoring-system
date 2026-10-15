@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- A notification page past the end (e.g. `?page=999`) moves to the last page instead of showing an empty list without a paginator (SCRUM-84).
 - Saving notification preferences sends only the changed types, so a stale tab no longer reverts changes made in another tab
 - Passed-on award notifications name the level the award moved to (uk + en).
 - A reviewer at the same level can take over a request whose holder lost the approving role (4.1.6).
