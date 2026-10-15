@@ -267,7 +267,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 7. As `employee.fmi` on `/profile`, untick e-mail for "Award returned" and save. Expected: confirmation; the in-app box of that row is disabled; a reload keeps the choice; psql `audit_logs` has `NOTIFICATION_PREFERENCES_CHANGED`. (AC-3.2, 3.4, 3.6)
 8. Correct B and resubmit; `secretary.fmi` returns it again. Expected: an in-app item, no new mail in Mailpit; `http://localhost:8080/actuator/prometheus` the `award_notifications_delivered_total` series with `channel="email"`, `outcome="off"` and `type="AWARD_RETURNED"` (labels in alphabetical order, next to `application` and `environment`) grew by 1. (AC-3.5, 4.4)
 9. `secretary.fmi` corrects A through the correction flow. Expected: a mail and an in-app item about the correction of «A» naming the fields. (AC-1.2)
-10. As `admin` assign `secretary2.fmi` a role; as `dean.fmi` delegate to `secretary2.fmi` and revoke. Expected: three items for `secretary2.fmi` (role, delegation, revoked) and the revoke item for `dean.fmi`; the links lead to `/profile` and `/delegations`. (AC-1.2, 2.4)
+10. As `admin` assign `secretary2.fmi` a role; as `dean.fmi` delegate to `secretary2.fmi` and revoke. Expected: three items for `secretary2.fmi` (role, delegation, revoked) and no revoke item for `dean.fmi`, who revoked it; delegate again and revoke as `admin`, and `dean.fmi` gets the revoke item too; the links lead to `/profile` and `/delegations`. (AC-1.2, 2.4)
 11. As `employee.fmi` call `GET /api/v1/users/me/export`. Expected: `export_metadata.format_version` `1.4`; `notifications` with the rows of steps 2–9 including the `EMAIL` rows with `delivery_status` `SENT` and `delivered_at`; `notification_preferences` with the returned-award choice (`email` false, `in_app` true). (AC-4.5)
 12. Mailpit: open the decision mail of step 2, tabs HTML and HTML Check; narrow the window to 360 px. Expected: brand header, button for "Переглянути нагороду", footer link to `/profile#notifications`; no error-level finding. Request a password reset and open that mail. Expected: the same layout, no preferences link. (AC-5.2, 5.3, 5.5)
 
@@ -280,13 +280,46 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 17. Call any notification endpoint without a token. Expected: 401. Let the access token expire with the app open. Expected: polling stops, the sign-in redirect applies, and polling resumes after signing in. (AC-1.11, 2.2)
 18. Switch to another tab for two minutes while `secretary.fmi` approves E, then return. Expected: no count request while hidden (Network), one on return; the badge updates. (AC-2.2)
 19. Open the centre in two browsers as `employee.fmi`; read an item in one. Expected: the other shows it unread until its next poll; choosing it there works (204). (§5)
-20. Revoked mid-flow, role: `secretary.fmi` holds a claimed review of a new award F; `secretary2.fmi` takes it over, so `secretary.fmi` has a `REVIEW_TAKEN_OVER` item; with the bell menu open, `admin` revokes `secretary.fmi`'s role. Expected: the item stays listed and can be marked read; following it shows the award page's no-access message; `secretary2.fmi`, still a secretary at the same level, keeps working on F. (§5, AC-2.4)
+20. Revoked mid-flow, role: `secretary.fmi` holds a claimed review of a new award F; `secretary2.fmi` takes it over, so `secretary.fmi` has a `REVIEW_TAKEN_OVER` item; with the bell menu open, `admin` revokes `secretary.fmi`'s role. Expected: the revocation ends the session (the next request answers 401 and the sign-in form opens); after signing in again the item stays listed and can be marked read; following it opens `/forbidden`; `secretary2.fmi`, still a secretary at the same level, keeps working on F. (§5, AC-2.4)
 21. Revoked mid-flow, delegation: `dean.fmi` revokes the delegation while `secretary2.fmi` has a delegated review open. Expected: `secretary2.fmi` gets `DELEGATION_REVOKED` in-app and by mail; the centre and the notification endpoints keep working for them, as they need no role. (AC-1.2)
 22. With Mailpit stopped, `secretary.fmi` approves another award. Expected: the in-app item appears at once; psql shows the `EMAIL` row `FAILED` and one incomplete publication (the mail listener only). Start Mailpit. Expected: within 2 minutes the mail arrives once and the row is `SENT`. (AC-1.6, 4.2)
 23. Repeat step 22 and stop the backend right after the mail arrives; start it again. Expected: the mail is in Mailpit once; one `EMAIL` row for its key. The race itself is proven by the claim IT. (AC-4.3)
 24. Reload `/notifications?unread=true` and press Back after "Mark all as read". Expected: the filter is kept, nothing is marked twice, the list stays empty. (AC-2.6)
 25. With e-mail switched off for every type, request a password reset. Expected: the reset mail still arrives. (scope: security mails)
 26. Send step 2's approval again in Swagger. Expected: 409 from the workflow; no new notification row. (AC-1.2)
+
+### Run 2026-10-15
+
+container stack (app, frontend at http://localhost) on develop b776fc0, APP_EVENTS_RETRY_INTERVAL/AFTER=PT1M; Mailpit, psql, Playwright MCP. Result: 26 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | payload, dedupe_key, delivery_status, delivered_at present; no title/message; type check lists 11 types |
+| 2 | PASS | award 425 approved; mail 14:05 with HTML+text parts; AWARD_APPROVED IN_APP and EMAIL SENT |
+| 3 | PASS | bell 'Сповіщення, непрочитаних: 1' on load; uk/en texts match, bold+dot, 'зараз'/'now', switch without reload, See all -> /notifications |
+| 4 | PASS | item opens /awards/425 'MR72 A'; badge aria-label 'Notifications' (no count) |
+| 5 | PASS | 3 new items (escalated/rejected/returned) for employee.fmi; payload has no comment text; Mark all as read -> badge empty. Defect noted: escalated text says 'from the dean level' (level = new level), SCRUM-82 / #239 |
+| 6 | PASS | Unread only -> /notifications?unread=true, empty state 'No unread notifications' |
+| 7 | PASS | email unticked for AWARD_RETURNED, snackbar 'Notification settings saved', in-app box disabled+checked, reload keeps it; NOTIFICATION_PREFERENCES_CHANGED in audit_logs (5 rows, extra saves from my toggling AWARD_APPROVED back and forth) |
+| 8 | PASS | 426 returned again: in-app item (in_app sent 2.0), 0 mails; email/off/AWARD_RETURNED series 1.0 (new) |
+| 9 | PASS | correction of 430 by secretary.fmi: mail 14:10 'A reviewer corrected your award' + IN_APP and EMAIL SENT rows, fields [title] (A was already approved, used pending award G) |
+| 10 | PASS | secretary2.fmi: ROLE_ASSIGNED, DELEGATION_CREATED, DELEGATION_REVOKED (IN_APP+EMAIL SENT each); dean's own revoke gives dean no item, revoke by admin (delegation 16) does; links /profile, /delegations in notification-text.ts; step text corrected |
+| 11 | PASS | format_version 1.4; 11 notification rows (6 IN_APP, 5 EMAIL SENT with delivered_at); preferences AWARD_RETURNED email=false in_app=true (+AWARD_APPROVED both true from step 7 toggling) |
+| 12 | PASS | approval mail HTML: header, button 'Переглянути нагороду' -> /awards/431, footer link /profile#notifications; Mailpit HTML check 86.6% supported / 0.88% unsupported, no error level; 360 px: scrollWidth=clientWidth=360, button 208 px wide; password-reset mail same layout (600 px container), one link, no preferences link |
+| 13 | PASS | secretary2 row 112 and own EMAIL row 101: both 404 notification-not-found; row 112 still unread |
+| 14 | PASS | read item has no 'Unread' marker; click navigates to /awards/431 with no POST .../read (only the poll); API POST read of read row answers 204, read_at unchanged |
+| 15 | PASS | nothing unread: 'Mark all as read' disabled; POST read-all -> {marked:0} |
+| 16 | PASS | UI: unticking email makes in-app box disabled (not saved); PUT both off AWARD_APPROVED 422 both-off; SYSTEM_ALERT 422 invalid |
+| 17 | PASS | no token: GET/POST notification endpoints 401; dean.fmi session with deleted authorizations: after the backend restart (14:25) the page sat on /login, 0 count requests in 65 s; after sign-in polling resumed (unread-count 200 at 14:28:16) |
+| 18 | PASS | tab hidden 14:14:47-14:20:44 (visibilityState override), E (428) approved 14:20:26: 0 unread-count requests while hidden, 1 on return, badge 'Notifications, 1 unread' |
+| 19 | PASS | two contexts as employee.fmi on /notifications: read E in #2 -> #1 still shows it under 'Unread:' until its next poll; choosing it in #1 -> POST read 204, opens /awards/428 |
+| 20 | PASS | secretary.fmi claimed 435 (deadline moved past in psql), secretary2.fmi took over -> REVIEW_TAKEN_OVER item 141; admin revoked role 152 with menu open: mark-read 401 + sign-in form (token revocation by design); after sign-in item listed, read 204, link -> /forbidden; secretary2.fmi approved 435; role re-granted (344); step text corrected |
+| 21 | PASS | dean.fmi revoked delegation 17 while secretary2.fmi had 432's reviewer item open: DELEGATION_REVOKED IN_APP + EMAIL SENT, mail 14:21:37; unread-count 200 {unread:7}, list 200, read-all {marked:7}; reviewer item now 404 |
+| 22 | PASS | Mailpit down 14:22:00, 433 approved: IN_APP at once, EMAIL FAILED, one incomplete publication (DecisionMails.onDecided); Mailpit up 14:23:14 -> mail 14:23:16 once, row SENT, 0 incomplete |
+| 23 | PASS | Mailpit down, 434 approved -> FAILED, Mailpit up, mail 14:25:09, backend stopped 14:25:10 and started: still 1 mail, 1 EMAIL row SENT, 0 incomplete publications |
+| 24 | PASS | /notifications?unread=true reload keeps the toggle on; Mark all as read -> one POST read-all; Back -> /, Forward -> filter kept, list empty 'No unread notifications' |
+| 25 | PASS | fresh mr72.allmailoff: e-mail off for all 11 types (PUT 200), password reset 202 -> mail 'Скидання пароля / Password reset' 14:31:15 |
+| 26 | PASS | replayed approval of 425: 409 request-closed 'already decided'; notification rows for 425 stay 2 |
 
 ## 11. Risks
 
