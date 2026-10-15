@@ -10,12 +10,12 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 6.1 GDPR consent management and data subject rights (privacy notice, consents, privacy centre, legal hold, erasure) | Not started | - | - |
+| 6.1 GDPR consent management and data subject rights (privacy notice, consents, privacy centre, legal hold, erasure) | Approved (PRD) | - | - |
 | 6.2 Automated data retention (retention job, compliance page) | Not started | - | - |
 
 ## Current focus
 
-Kickoff 2026-10-15. Next: a design note on erasure and the audit trail, then the PRD of Feature 6.1.
+Feature 6.1 PRD approved 2026-10-15: [feature-6.1-consent-data-subject-rights.md](../features/epic-06/feature-6.1-consent-data-subject-rights.md). Next: story 6.1.1 (SCRUM-86).
 
 ## Scope
 
@@ -58,6 +58,8 @@ Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 
 | 2026-10-15 | Legal hold moves from Feature 6.2 to 6.1 (6.1.3) | Erasure checks the hold, so the hold exists before erasure is built | US-012 additional scenario |
 | 2026-10-15 | Erasure is split into the request (6.1.4) and the cross-module execution (6.1.5) | Request flow and UI stand alone; execution touches every module and gets the security review | ADR-022 |
 | 2026-10-15 | Each module erases its own data behind one contract, called from the `gdpr` module | Keeps ADR-022 boundaries; the same contributors can serve the export (Epic 7 refactor note) | ADR-022 |
+| 2026-10-15 | Audit trail: guarded redaction (design note option B); V043 replaces the immutability rules with a row trigger and `fn_redact_audit_subject` | Keeps every row and its legal value while removing the identity of an erased person | PRD 6.1 §7 decision 11, §8.4; ADR-024 with 6.1.5 |
+| 2026-10-15 | Feature 6.1 PRD approved with deviations 1–14 (consent types, client-side acknowledgement, static notice pages, `legal-hold:manage`, pseudonym "Erased #<id>", usable account during the grace period) | One-pass approval | PRD 6.1 §7 |
 
 ## Documentation deviations found at kickoff
 
@@ -94,6 +96,8 @@ Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 
   (`plusYears(1)` in `NotificationRows`) becomes a property in 6.2.1.
 - Audit partitions are monthly (V009, V016, `fn_create_audit_partition`); dropping a partition older than seven years
   is the retention path that keeps the immutability rules.
+- For Epic 5: the `ANALYTICS` consent decides whether a person is named in rankings and comparisons of unit
+  reports; without it the person is counted only in totals (PRD 6.1 decision 1).
 - Documents live in MinIO; object deletion runs after the commit, with `DocumentSweeper` as the safety net.
 
 ## Risks
