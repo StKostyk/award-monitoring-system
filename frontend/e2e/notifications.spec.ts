@@ -75,7 +75,11 @@ test.describe('notification centre', () => {
 
     await approvedBy(browser, dean, id);
     await expect
-      .poll(() => sql(`select count(*) from notifications where user_id = ${user(owner)}`))
+      .poll(() =>
+        sql(
+          `select count(*) from notifications where user_id = ${user(owner)} and channel = 'IN_APP'`,
+        ),
+      )
       .toBe('1');
     await page.goto('/achievements');
     await expect(bell).toHaveAccessibleName('Сповіщення, непрочитаних: 1');
@@ -98,7 +102,11 @@ test.describe('notification centre', () => {
     await item.click();
     await expect(page).toHaveURL(new RegExp(`/awards/${id}$`));
     await expect(bell).toHaveAccessibleName('Notifications');
-    expect(sql(`select is_read from notifications where user_id = ${user(owner)}`)).toBe('t');
+    expect(
+      sql(
+        `select is_read from notifications where user_id = ${user(owner)} and channel = 'IN_APP'`,
+      ),
+    ).toBe('t');
   });
 
   test('ac2_5 ac2_6 the page filters unread and mark all empties the badge', async ({
