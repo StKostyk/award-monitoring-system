@@ -112,12 +112,24 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 | 7.2.6 | Save only the changed notification preferences | 1 | ✅ Done | SCRUM-83 | [#242](https://github.com/StKostyk/award-monitoring-system/issues/242) |
 | 7.2.7 | Out-of-range notification page shows the empty state | 1 | ✅ Done | SCRUM-84 | [#245](https://github.com/StKostyk/award-monitoring-system/issues/245) |
 
+### Epic 6 — Compliance & Audit System (Jira epic SCRUM-85)
+Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-STATUS.md). Kickoff 2026-10-15; versioned privacy notice and consent records, privacy centre, legal hold, erasure after a 30-day grace period, nightly retention job. Story 6.1.5 replaces 2.4.2.
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 6.1.1 | Versioned privacy notice and consent records | 5 | 6 | SCRUM-86 | [#252](https://github.com/StKostyk/award-monitoring-system/issues/252) |
+| 6.1.2 | Privacy centre in the profile | 5 | 6 | SCRUM-87 | [#253](https://github.com/StKostyk/award-monitoring-system/issues/253) |
+| 6.1.3 | Legal hold on accounts | 3 | 6 | SCRUM-88 | [#254](https://github.com/StKostyk/award-monitoring-system/issues/254) |
+| 6.1.4 | Account erasure request with a 30-day grace period | 5 | 6 | SCRUM-89 | [#255](https://github.com/StKostyk/award-monitoring-system/issues/255) |
+| 6.1.5 | Erasure across modules with anonymised awards | 8 | 6 | SCRUM-90 | [#256](https://github.com/StKostyk/award-monitoring-system/issues/256) |
+| 6.2.1 | Nightly retention job with configurable policies | 8 | 7 | SCRUM-91 | [#257](https://github.com/StKostyk/award-monitoring-system/issues/257) |
+| 6.2.2 | Compliance page for retention runs, erasures and legal holds | 5 | 7 | SCRUM-92 | [#258](https://github.com/StKostyk/award-monitoring-system/issues/258) |
+
 ### Later epics
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
 | US-006 | AI-Powered Document Parsing (deferred) | 21 | Documents |
 | US-007 | Confidence Score Display (deferred) | 8 | Documents |
-| 2.4.2 | GDPR-compliant award deletion | 5 | Compliance |
 | US-008 | Personal Dashboard | 13 | Analytics |
 | US-010 | Executive Dashboard | 21 | Analytics |
 | — | Production hardening: backend-for-frontend with an HttpOnly cookie, refresh tokens hashed at rest, rate limits for a campus NAT, Spring Session on Redis (design review 2026-10-04) | - | Epic 9 |
