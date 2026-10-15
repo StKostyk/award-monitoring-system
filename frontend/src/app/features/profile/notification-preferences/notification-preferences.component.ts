@@ -69,12 +69,13 @@ export class NotificationPreferencesComponent {
   readonly saving = signal(false);
   readonly message = signal<string | null>(null);
   readonly problem = signal<string | null>(null);
-  readonly dirty = computed(() =>
-    this.current().some((preference) => {
+  readonly changed = computed(() =>
+    this.current().filter((preference) => {
       const stored = this.loaded().find((other) => other.type === preference.type);
       return stored?.email !== preference.email || stored.inApp !== preference.inApp;
     }),
   );
+  readonly dirty = computed(() => this.changed().length > 0);
 
   constructor() {
     this.load();
@@ -128,7 +129,7 @@ export class NotificationPreferencesComponent {
     this.saving.set(true);
     this.message.set(null);
     this.problem.set(null);
-    this.api.savePreferences(this.current()).subscribe({
+    this.api.savePreferences(this.changed()).subscribe({
       next: (preferences) => {
         this.show(preferences);
         this.message.set('notifications.preferences.saved');

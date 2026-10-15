@@ -108,13 +108,9 @@ describe('NotificationPreferencesComponent', () => {
 
     const request = http.expectOne(URL);
     expect(request.request.method).toBe('PUT');
-    const sent = request.request.body.preferences as NotificationPreference[];
-    expect(sent.length).toBe(NOTIFICATION_TYPES.length);
-    expect(sent.find((preference) => preference.type === 'REVIEW_OVERDUE')).toEqual({
-      type: 'REVIEW_OVERDUE',
-      email: false,
-      inApp: true,
-    });
+    expect(request.request.body.preferences).toEqual([
+      { type: 'REVIEW_OVERDUE', email: false, inApp: true },
+    ]);
     const stored = allOn().map((preference) =>
       preference.type === 'REVIEW_OVERDUE' ? { ...preference, email: false } : preference,
     );
@@ -125,6 +121,42 @@ describe('NotificationPreferencesComponent', () => {
       fixture.nativeElement.querySelector('[data-testid="preferences-saved"]').textContent,
     ).toContain(uk.notifications.preferences.saved);
     expect(save.disabled).toBe(true);
+  });
+
+  it('ac1_sends_only_the_types_changed_since_the_last_load_or_save', async () => {
+    const fixture = await loaded();
+    const save = fixture.nativeElement.querySelector(
+      '[data-testid="preferences-save"]',
+    ) as HTMLButtonElement;
+
+    box(fixture, 'preference-AWARD_APPROVED-inApp').click();
+    box(fixture, 'preference-AWARD_RETURNED-email').click();
+    box(fixture, 'preference-AWARD_RETURNED-email').click();
+    fixture.detectChanges();
+    save.click();
+
+    const first = http.expectOne(URL);
+    const sent = first.request.body.preferences as NotificationPreference[];
+    expect(sent.map((preference) => preference.type)).toEqual(['AWARD_APPROVED']);
+    const fromOtherTab = allOn().map((preference) => {
+      if (preference.type === 'AWARD_APPROVED') {
+        return { ...preference, inApp: false };
+      }
+      return preference.type === 'AWARD_RETURNED' ? { ...preference, email: false } : preference;
+    });
+    first.flush({ preferences: fromOtherTab });
+    fixture.detectChanges();
+
+    expect(box(fixture, 'preference-AWARD_RETURNED-email').checked).toBe(false);
+    expect(box(fixture, 'preference-AWARD_APPROVED-inApp').checked).toBe(false);
+    expect(box(fixture, 'preference-AWARD_APPROVED-email').checked).toBe(true);
+    box(fixture, 'preference-ROLE_ASSIGNED-email').click();
+    fixture.detectChanges();
+    save.click();
+
+    expect(http.expectOne(URL).request.body.preferences).toEqual([
+      { type: 'ROLE_ASSIGNED', email: false, inApp: true },
+    ]);
   });
 
   it('ac3_6_shows_a_failed_save_and_keeps_the_choice', async () => {
