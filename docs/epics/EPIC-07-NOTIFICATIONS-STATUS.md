@@ -48,6 +48,7 @@ fix stories if chosen).
 | 6 | 7.2.3 Delivery log and notifications in the personal data export | 7.2 | 3 | SCRUM-68 | #185 | no | Done |
 | 7 | 7.2.4 HTML e-mail templates in the university brand | 7.2 | 3 | SCRUM-69 | #186 | no | Done |
 | 7a | 7.2.5 Name the target level in the passed-on notification text | 7.2 | 1 | SCRUM-82 | #239 | no | Done |
+| 7b | 7.2.6 Save only the changed notification preferences | 7.2 | 1 | SCRUM-83 | #242 | no | In review |
 
 Total: 32 points, planned for sprint 5 (2026-10-12 to 2026-10-18).
 
