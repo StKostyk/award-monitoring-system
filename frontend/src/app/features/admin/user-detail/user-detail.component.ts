@@ -15,6 +15,7 @@ import { grantableRoles } from '../../../core/auth/permissions';
 import { OrganizationRef, RoleAssignment } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { AssignRoleDialogComponent } from '../assign-role-dialog/assign-role-dialog.component';
+import { LegalHoldCardComponent } from '../legal-hold-card/legal-hold-card.component';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
 import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
@@ -36,6 +37,7 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
     RouterLink,
     TranslocoPipe,
     KyivDatePipe,
+    LegalHoldCardComponent,
   ],
   templateUrl: './user-detail.component.html',
   styleUrl: './user-detail.component.scss',
@@ -50,6 +52,7 @@ export class UserDetailComponent implements OnInit {
 
   protected readonly id = Number(this.route.snapshot.paramMap.get('id'));
   protected readonly canAssign = grantableRoles(this.auth.permissions()).length > 0;
+  protected readonly canManageHolds = this.auth.permissions().hasPermission('legal-hold:manage');
 
   readonly user = this.store.selectSignal(adminUsersFeature.selectSelected);
   readonly loading = this.store.selectSignal(adminUsersFeature.selectSelectedLoading);

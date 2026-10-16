@@ -119,7 +119,7 @@ Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-
 |----|-------|--------|--------|------|-------|
 | 6.1.1 | Versioned privacy notice and consent records | 5 | ✅ Done | SCRUM-86 | [#252](https://github.com/StKostyk/award-monitoring-system/issues/252) |
 | 6.1.2 | Privacy centre in the profile | 5 | ✅ Done | SCRUM-87 | [#253](https://github.com/StKostyk/award-monitoring-system/issues/253) |
-| 6.1.3 | Legal hold on accounts | 3 | 6 | SCRUM-88 | [#254](https://github.com/StKostyk/award-monitoring-system/issues/254) |
+| 6.1.3 | Legal hold on accounts | 3 | 👀 In review (6) | SCRUM-88 | [#254](https://github.com/StKostyk/award-monitoring-system/issues/254) |
 | 6.1.4 | Account erasure request with a 30-day grace period | 5 | 6 | SCRUM-89 | [#255](https://github.com/StKostyk/award-monitoring-system/issues/255) |
 | 6.1.5 | Erasure across modules with anonymised awards | 8 | 6 | SCRUM-90 | [#256](https://github.com/StKostyk/award-monitoring-system/issues/256) |
 | 6.2.1 | Nightly retention job with configurable policies | 8 | 7 | SCRUM-91 | [#257](https://github.com/StKostyk/award-monitoring-system/issues/257) |

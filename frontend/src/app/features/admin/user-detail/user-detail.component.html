@@ -58,6 +58,14 @@
     </p>
   }
 
+  @if (canManageHolds) {
+    <app-legal-hold-card
+      [userId]="user.id"
+      [name]="user.firstName + ' ' + user.lastName"
+      [erased]="user.status === 'DELETED'"
+    />
+  }
+
   <mat-card class="admin__card">
     <mat-card-header>
       <mat-card-title>{{ 'admin.detail.currentRoles' | transloco }}</mat-card-title>

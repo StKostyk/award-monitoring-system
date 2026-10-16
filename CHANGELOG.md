@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Legal hold on accounts: the GDPR officer places and lifts a hold with a reason on the user detail page; holds are audited without the reason text and listed by date in the personal data export (format 1.5).
 - Privacy centre at /privacy: privacy notice, analytics consent with history, own visibility and notification choices, data export and a personal activity log (SCRUM-87).
 - Versioned privacy notice with append-only consent records: acknowledgement at registration and after each new version, optional analytics consent (SCRUM-86)
 - Every e-mail carries an HTML part in the university brand next to the plain text; notification mails link to the preferences (SCRUM-69).

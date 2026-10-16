@@ -545,7 +545,54 @@
       "revoked": "The role is revoked.",
       "sessionHint": "The new role reaches the user's own session with the next silent token refresh or the next sign-in.",
       "notFound": "User not found",
-      "notFoundHint": "There is no such user, or the user is outside your scope."
+      "notFoundHint": "There is no such user, or the user is outside your scope.",
+      "legalHold": {
+        "title": "Legal hold",
+        "none": "No legal hold",
+        "active": "Active legal hold: the account cannot be erased",
+        "placedBy": "Placed {{at}} by {{name}}",
+        "liftedBy": "Lifted {{at}} by {{name}}",
+        "history": "Earlier holds",
+        "erasure": "Erasure requested, due {{at}}",
+        "place": "Place hold",
+        "lift": "Lift hold",
+        "placed": "The legal hold is placed.",
+        "lifted": "The legal hold is lifted.",
+        "dialog": {
+          "title": {
+            "place": "Place a legal hold",
+            "lift": "Lift the legal hold"
+          },
+          "text": {
+            "place": "While the hold is active, the account of {{name}} cannot be erased. The reason is visible only to GDPR officers.",
+            "lift": "The account of {{name}} can be erased again once the hold is lifted."
+          },
+          "reason": "Reason",
+          "hint": "{{min}}–{{max}} characters, e.g. the case or inspection number",
+          "required": "Enter the reason",
+          "tooShort": "At least {{min}} characters",
+          "tooLong": "At most {{max}} characters",
+          "sending": "Saving",
+          "confirm": {
+            "place": "Place hold",
+            "lift": "Lift hold"
+          },
+          "cancel": "Cancel",
+          "close": "Close"
+        },
+        "problems": {
+          "legal-hold-active": "The account already has an active hold. The card has been reloaded.",
+          "legal-hold-lifted": "This hold has already been lifted. The card has been reloaded.",
+          "legal-hold-not-found": "This hold no longer exists. The card has been reloaded.",
+          "account-erased": "The account has been erased; a hold cannot be placed.",
+          "user-not-found": "There is no such user.",
+          "validation-failed": "The reason must have 10–500 characters.",
+          "access-denied": "You lack the permission for this action.",
+          "network": "The server is unreachable. Try again later.",
+          "load": "The legal holds could not be loaded.",
+          "unknown": "The action failed. Try again later."
+        }
+      }
     },
     "confirmDialog": {
       "title": "Confirm membership",
@@ -1056,7 +1103,9 @@
         "NOTIFICATION_PREFERENCES_CHANGED": "Notification settings changed",
         "PRIVACY_NOTICE_ACKNOWLEDGED": "Privacy notice confirmed",
         "CONSENT_GRANTED": "Consent given",
-        "CONSENT_WITHDRAWN": "Consent withdrawn"
+        "CONSENT_WITHDRAWN": "Consent withdrawn",
+        "LEGAL_HOLD_PLACED": "Legal hold placed",
+        "LEGAL_HOLD_LIFTED": "Legal hold lifted"
       }
     }
   },

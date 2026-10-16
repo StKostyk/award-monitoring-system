@@ -77,6 +77,8 @@ export const LABELLED_ACTIONS: ReadonlySet<string> = new Set([
   'PRIVACY_NOTICE_ACKNOWLEDGED',
   'CONSENT_GRANTED',
   'CONSENT_WITHDRAWN',
+  'LEGAL_HOLD_PLACED',
+  'LEGAL_HOLD_LIFTED',
 ]);
 
 export const VISIBILITIES: readonly Visibility[] = ['PRIVATE', 'UNIVERSITY', 'PUBLIC'];
