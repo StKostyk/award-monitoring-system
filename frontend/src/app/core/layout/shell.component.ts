@@ -12,6 +12,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { map } from 'rxjs';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
+import { PrivacyCentreService } from '../../features/privacy/privacy-centre.service';
+import { kyivDate } from '../../shared/date-format';
 import { AuthService } from '../auth/auth.service';
 import { canDelegate, canReadDirectory, canReadOwnAwards, canReview } from '../auth/permissions';
 import { BrandService } from '../brand/brand.service';
@@ -49,6 +51,7 @@ export const WIDE_LAYOUT = '(min-width: 960px)';
 })
 export class ShellComponent {
   private readonly delegations = inject(DelegationsService);
+  private readonly privacy = inject(PrivacyCentreService);
   private readonly router = inject(Router);
   private readonly drawer = viewChild<MatSidenav>('drawer');
 
@@ -82,9 +85,16 @@ export class ShellComponent {
     () => this.auth.isAuthenticated() && canDelegate(this.auth.permissions()),
   );
   protected readonly actingFor = signal('');
+  protected readonly erasureDate = computed(() => {
+    const pending = this.privacy.erasure();
+    return this.auth.isAuthenticated() && pending
+      ? kyivDate(pending.scheduledFor, this.language.current())
+      : null;
+  });
 
   constructor() {
     effect(() => this.readActingFor());
+    effect(() => this.readErasure());
   }
 
   logout(): void {
@@ -100,6 +110,14 @@ export class ShellComponent {
     if (!this.wide()) {
       void this.drawer()?.close();
     }
+  }
+
+  private readErasure(): void {
+    if (!this.auth.isAuthenticated()) {
+      this.privacy.forgetErasure();
+      return;
+    }
+    this.privacy.summary().subscribe({ error: () => this.privacy.forgetErasure() });
   }
 
   private readActingFor(): void {

@@ -7,6 +7,10 @@ import { BehaviorSubject, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
+import {
+  ErasureRequest,
+  PrivacyCentreService,
+} from '../../features/privacy/privacy-centre.service';
 import { AuthService } from '../auth/auth.service';
 import { NO_PERMISSIONS, readPermissions } from '../auth/permissions';
 import { BrandService, LocalizedText } from '../brand/brand.service';
@@ -61,6 +65,11 @@ describe('ShellComponent', () => {
     unreadCount: vi.fn().mockReturnValue(of(3)),
     list: vi.fn().mockReturnValue(of({ content: [], totalElements: 0 })),
   };
+  const privacy = {
+    erasure: signal<ErasureRequest | null>(null),
+    summary: vi.fn().mockReturnValue(of({})),
+    forgetErasure: vi.fn(),
+  };
   const layout = new BehaviorSubject<BreakpointState>({ matches: true, breakpoints: {} });
   const brands = {
     brand: signal({
@@ -77,6 +86,9 @@ describe('ShellComponent', () => {
     auth.permissions.set(NO_PERMISSIONS);
     language.toggle.mockClear();
     delegations.list.mockClear();
+    privacy.erasure.set(null);
+    privacy.summary.mockClear();
+    privacy.forgetErasure.mockClear();
     delegations.list.mockReturnValue(of({ given: [], received: [] }));
     layout.next({ matches: true, breakpoints: {} });
     document.documentElement.removeAttribute('data-color-scheme');
@@ -102,6 +114,12 @@ describe('ShellComponent', () => {
                 title: 'Мої делегування',
                 actingFor: 'Діє за дорученням: {{name}}',
               },
+              privacy: {
+                erasure: {
+                  banner: 'Ваш обліковий запис буде видалено {{date}}.',
+                  bannerLink: 'Скасувати',
+                },
+              },
             },
           },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
@@ -112,6 +130,7 @@ describe('ShellComponent', () => {
         { provide: AuthService, useValue: auth },
         { provide: LanguageService, useValue: language },
         { provide: DelegationsService, useValue: delegations },
+        { provide: PrivacyCentreService, useValue: privacy },
         { provide: NotificationApi, useValue: notifications },
         { provide: BrandService, useValue: brands },
         { provide: BreakpointObserver, useValue: { observe: () => layout } },
@@ -341,5 +360,41 @@ describe('ShellComponent', () => {
     fixture.detectChanges();
 
     expect(document.documentElement.getAttribute('data-color-scheme')).toBe('dark');
+  });
+
+  it('ac4_8_shows_the_erasure_date_with_a_link_to_the_privacy_centre', () => {
+    auth.isAuthenticated.set(true);
+    privacy.erasure.set({
+      id: 7,
+      requestedAt: '2026-10-16T10:00:00Z',
+      scheduledFor: '2026-11-15T10:00:00Z',
+      postponed: false,
+    });
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector('[data-testid="erasure-banner"]');
+    expect(privacy.summary).toHaveBeenCalled();
+    expect(banner?.textContent).toContain('15.11.2026');
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="erasure-banner-link"]')
+        ?.getAttribute('href'),
+    ).toBe('/privacy');
+
+    privacy.erasure.set(null);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="erasure-banner"]')).toBeNull();
+  });
+
+  it('ac4_8_reads_no_erasure_for_an_anonymous_visitor', () => {
+    auth.isAuthenticated.set(false);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(privacy.summary).not.toHaveBeenCalled();
+    expect(privacy.forgetErasure).toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[data-testid="erasure-banner"]')).toBeNull();
   });
 });

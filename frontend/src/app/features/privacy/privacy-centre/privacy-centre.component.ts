@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import {
   MatExpansionPanel,
   MatExpansionPanelHeader,
@@ -19,15 +20,17 @@ import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-to
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
-import { problemStatus } from '../../../core/api/problem';
+import { problemStatus, problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivDate, kyivDateTime } from '../../../shared/date-format';
 import { attachmentName, saveFile } from '../../../shared/file-download';
 import { PagedList } from '../../../shared/paged-list';
 import { ProfileService } from '../../profile/profile.service';
 import { ConsentOverview, ConsentsService } from '../consents.service';
+import { ErasureDialogComponent } from '../erasure-dialog/erasure-dialog.component';
 import {
   ActivityEntry,
+  ErasureRequest,
   PrivacyCentreService,
   PrivacySummary,
   Visibility,
@@ -79,6 +82,8 @@ export const LABELLED_ACTIONS: ReadonlySet<string> = new Set([
   'CONSENT_WITHDRAWN',
   'LEGAL_HOLD_PLACED',
   'LEGAL_HOLD_LIFTED',
+  'ERASURE_REQUESTED',
+  'ERASURE_CANCELLED',
 ]);
 
 export const VISIBILITIES: readonly Visibility[] = ['PRIVATE', 'UNIVERSITY', 'PUBLIC'];
@@ -113,6 +118,7 @@ export class PrivacyCentreComponent implements OnInit {
   private readonly centre = inject(PrivacyCentreService);
   private readonly profile = inject(ProfileService);
   private readonly language = inject(LanguageService);
+  private readonly dialog = inject(MatDialog);
 
   readonly visibilities = VISIBILITIES;
   readonly overview = signal<ConsentOverview | null>(null);
@@ -124,6 +130,10 @@ export class PrivacyCentreComponent implements OnInit {
   readonly exporting = signal(false);
   readonly exportMessage = signal<string | null>(null);
   readonly exportProblem = signal<string | null>(null);
+  readonly erasure = this.centre.erasure;
+  readonly cancellingErasure = signal(false);
+  readonly erasureMessage = signal<string | null>(null);
+  readonly erasureProblem = signal<string | null>(null);
 
   readonly analytics = computed(
     () =>
@@ -195,6 +205,51 @@ export class PrivacyCentreComponent implements OnInit {
             : 'privacy.centre.data.failed',
         );
         this.exporting.set(false);
+      },
+    });
+  }
+
+  openErasure(): void {
+    this.erasureMessage.set(null);
+    this.erasureProblem.set(null);
+    this.dialog
+      .open<ErasureDialogComponent, unknown, ErasureRequest>(ErasureDialogComponent, {
+        width: '520px',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      })
+      .afterClosed()
+      .subscribe((request) => {
+        if (request) {
+          this.erasureMessage.set('privacy.erasure.requested');
+          this.list.reload();
+        } else {
+          this.loadSummary();
+        }
+      });
+  }
+
+  cancelErasure(): void {
+    if (this.cancellingErasure()) {
+      return;
+    }
+    this.cancellingErasure.set(true);
+    this.erasureMessage.set(null);
+    this.erasureProblem.set(null);
+    this.centre.cancelErasure().subscribe({
+      next: () => {
+        this.erasureMessage.set('privacy.erasure.cancelled');
+        this.cancellingErasure.set(false);
+        this.list.reload();
+      },
+      error: (err: unknown) => {
+        this.cancellingErasure.set(false);
+        if (problemType(err) === 'erasure-not-pending') {
+          this.erasureProblem.set('privacy.erasure.problems.erasure-not-pending');
+          this.loadSummary();
+        } else {
+          this.erasureProblem.set('privacy.erasure.problems.cancelFailed');
+        }
       },
     });
   }

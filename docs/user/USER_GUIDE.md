@@ -314,15 +314,24 @@ awards with «Колегам» or «Публічно». A unit award is visible 
    - Contact information
    - Notification preferences
 
-### Privacy Settings
+### Privacy centre
 
-Control what information is visible:
+Your name → **Privacy and my data** opens the privacy centre (`/privacy`). Its cards show:
 
-| Setting | Options |
-|---------|---------|
-| Email visibility | Public / Organization only / Private |
-| Award display | Show all / Show approved only |
-| Profile visibility | Public / Organization only |
+- **Privacy notice**: the version you confirmed and a link to read it again
+- **Consents**: whether you may be named in rankings and unit report comparisons, with the history of every change
+- **Your choices**: how many approved awards are private, shown to colleagues or public, how many documents colleagues see and how many notification e-mails you switched off, with links to change them
+- **Your data**: the download of your data (see below)
+- **Your activity**: what you did in the system and what others did with your account, newest first
+- **Delete my account**: the erasure request (see below)
+
+### Deleting your account
+
+**Delete my account** lists what is erased (profile, sign-in data, drafts and pending awards, documents, notifications, settings) and what is kept: approved awards under a pseudonym, audit records with your name, address and IP addresses removed, and consent records for seven years after the last change. Enter your password, tick the confirmation box and choose **Request erasure**.
+
+The account is erased 30 days later. Until then you can sign in as usual; a banner on every page names the date, and you receive an e-mail at once and another one a week before the date. **Cancel the erasure** in the privacy centre stops it.
+
+The request is refused when the password is wrong (it counts as a failed sign-in), when the account is locked, when a legal obligation requires the university to keep your data (contact the data protection officer), or when you are the only system administrator (another administrator must be appointed first).
 
 ### Notification Preferences
 
@@ -330,10 +339,12 @@ On your profile, the **Notifications** card lists every notification type with t
 
 ### Exporting Your Data
 
-On your profile, **My data** → **Download my data** saves a JSON file with everything the system holds about you (GDPR Article 20): profile, roles, delegations, awards and their versions, documents, review decisions, consents, devices and your activity. Since format version 1.4 the file also contains:
+In the privacy centre, **Your data** → **Download my data** saves a JSON file with everything the system holds about you (GDPR Article 20): profile, roles, delegations, awards and their versions, documents, review decisions, consents, devices and your activity. Since format version 1.4 the file also contains:
 
 - `notifications`: your notifications in the application and the log of the notification e-mails sent to you, with when each was sent, read or delivered, and its delivery status
 - `notification_preferences`: the notification types you changed from the default
+- `legal_holds` (since 1.5): the dates of legal holds on your account, without their reasons
+- `erasure_requests` (since 1.6): your erasure requests with their dates and status
 
 You can download the file once a minute; each download is announced to you by e-mail.
 
