@@ -12,6 +12,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { LegalHoldsService } from '../legal-holds.service';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
@@ -238,5 +239,59 @@ describe('UserDetailComponent', () => {
       fixture.nativeElement.querySelector('[data-testid="detail-action-error"]').textContent,
     ).toContain('Не можна відкликати власну останню роль');
     expect(fixture.nativeElement.querySelector('[data-testid="detail-message"]')).toBeNull();
+  });
+
+  it('ac3_6_shows_no_legal_hold_card_without_the_permission', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="legal-hold-card"]')).toBeNull();
+  });
+});
+
+describe('UserDetailComponent for a GDPR officer', () => {
+  it('ac3_6_shows_the_legal_hold_card_of_the_opened_user', async () => {
+    const holds = { list: vi.fn().mockReturnValue(of({ holds: [], erasureScheduledFor: null })) };
+    await TestBed.configureTestingModule({
+      imports: [
+        UserDetailComponent,
+        NoopAnimationsModule,
+        TranslocoTestingModule.forRoot({
+          langs: translations,
+          translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideStore(),
+        provideState(adminUsersFeature),
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+        { provide: UsersService, useValue: {} },
+        { provide: LegalHoldsService, useValue: holds },
+        { provide: LanguageService, useValue: { current: () => 'uk' } },
+        {
+          provide: AuthService,
+          useValue: {
+            permissions: signal(
+              readPermissions(
+                token({ permissions: ['user:read:all', 'legal-hold:manage'], role_scopes: [] }),
+              ),
+            ),
+          },
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ id: '7' }) } },
+        },
+      ],
+    }).compileComponents();
+    const store = TestBed.inject(Store);
+    const fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="legal-hold-card"]')).not.toBeNull();
+    expect(holds.list).toHaveBeenCalledWith(7);
   });
 });

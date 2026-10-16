@@ -41,8 +41,8 @@ recorded in the thesis as a limitation).
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 6.1.1 Versioned privacy notice and consent records | 6.1 | 5 | SCRUM-86 | #252 | no | Done |
-| 2 | 6.1.2 Privacy centre in the profile | 6.1 | 5 | SCRUM-87 | #253 | yes | In review |
-| 3 | 6.1.3 Legal hold on accounts | 6.1 | 3 | SCRUM-88 | #254 | no | To do |
+| 2 | 6.1.2 Privacy centre in the profile | 6.1 | 5 | SCRUM-87 | #253 | yes | Done |
+| 3 | 6.1.3 Legal hold on accounts | 6.1 | 3 | SCRUM-88 | #254 | no | In review |
 | 4 | 6.1.4 Account erasure request with a 30-day grace period | 6.1 | 5 | SCRUM-89 | #255 | no | To do |
 | 5 | 6.1.5 Erasure across modules with anonymised awards | 6.1 | 8 | SCRUM-90 | #256 | no | To do |
 | 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 8 | SCRUM-91 | #257 | no | To do |

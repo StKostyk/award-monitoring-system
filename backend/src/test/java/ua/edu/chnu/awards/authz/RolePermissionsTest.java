@@ -45,6 +45,14 @@ class RolePermissionsTest {
     }
 
     @Test
+    void ac3_1_onlyTheGdprOfficerManagesLegalHolds() {
+        for (RoleType role : RoleType.values()) {
+            assertThat(permissions.of(role).contains("legal-hold:manage")).as(role.name())
+                .isEqualTo(role == RoleType.GDPR_OFFICER);
+        }
+    }
+
+    @Test
     void ac14_unionIsSortedAndDeduplicated() {
         List<String> union = permissions.union(List.of(RoleType.EMPLOYEE, RoleType.FACULTY_SECRETARY));
 

@@ -17,13 +17,14 @@ import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ActivityEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ConsentEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DecisionMadeEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DocumentEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.LegalHoldEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ReviewDecisionEntry;
 
 import lombok.RequiredArgsConstructor;
 
 /**
  * Reads the export sections that span several tables or have no entities yet: documents, review decisions,
- * consent records and the audit trail.
+ * consent records, legal holds and the audit trail.
  */
 @Repository
 @RequiredArgsConstructor
@@ -63,6 +64,13 @@ public class PersonalDataQueries {
     private static final String DECISIONS_MADE = DECISIONS + """
          where d.reviewer_id = :userId or d.delegator_id = :userId
          order by d.decided_at, d.decision_id
+        """;
+
+    private static final String LEGAL_HOLDS = """
+        select placed_at, lifted_at
+          from legal_holds
+         where user_id = :userId
+         order by placed_at desc, hold_id desc
         """;
 
     private static final String CONSENTS = """
@@ -139,6 +147,17 @@ public class PersonalDataQueries {
             row.getString("consent_type"), row.getString("consent_version"), row.getBoolean("is_granted"),
             instant(row, "granted_at"), instant(row, "withdrawn_at"), row.getString("ip"),
             instant(row, "created_at")));
+    }
+
+    /**
+     * The legal holds on the account, without reasons or officers.
+     *
+     * @param userId the person
+     * @return holds, newest first
+     */
+    public List<LegalHoldEntry> legalHolds(long userId) {
+        return jdbc.query(LEGAL_HOLDS, Map.of(USER_ID, userId), (row, index) -> new LegalHoldEntry(
+            instant(row, "placed_at"), instant(row, "lifted_at")));
     }
 
     /**

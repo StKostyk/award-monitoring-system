@@ -522,6 +522,7 @@ public class TotpService {
 | `system:configure` | - | - | - | - | - | ✅ | - |
 | `data:export` | - | - | - | - | - | ✅ | ✅ |
 | `consent:manage` | - | - | - | - | - | - | ✅ |
+| `legal-hold:manage` | - | - | - | - | - | - | ✅ |
 | `audit:read` | - | - | - | - | - | ✅ | ✅ |
 
 ### 3.4 Впровадження RBAC
@@ -551,6 +552,7 @@ public final class Permissions {
     public static final String SYSTEM_CONFIGURE = "system:configure";
     public static final String DATA_EXPORT = "data:export";
     public static final String CONSENT_MANAGE = "consent:manage";
+    public static final String LEGAL_HOLD_MANAGE = "legal-hold:manage";
     public static final String AUDIT_READ = "audit:read";
 }
 

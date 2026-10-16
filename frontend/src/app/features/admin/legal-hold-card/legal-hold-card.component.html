@@ -1,0 +1,72 @@
+<mat-card class="hold-card" data-testid="legal-hold-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'admin.detail.legalHold.title' | transloco }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (message(); as message) {
+      <p role="status" data-testid="legal-hold-message">{{ message | transloco }}</p>
+    }
+    @if (problem(); as problem) {
+      <p class="hold-card__problem" role="alert" data-testid="legal-hold-error">
+        {{ 'admin.detail.legalHold.problems.' + problem | transloco }}
+      </p>
+    }
+    @if (overview(); as overview) {
+      @if (active(); as hold) {
+        <div class="hold-card__active" data-testid="legal-hold-active">
+          <strong>{{ 'admin.detail.legalHold.active' | transloco }}</strong>
+          <span>
+            {{
+              'admin.detail.legalHold.placedBy'
+                | transloco: { at: moment(hold.placedAt), name: hold.placedBy.name }
+            }}
+          </span>
+          <span class="hold-card__reason">{{ hold.reason }}</span>
+          <button mat-flat-button type="button" (click)="lift(hold)" data-testid="legal-hold-lift">
+            {{ 'admin.detail.legalHold.lift' | transloco }}
+          </button>
+        </div>
+      } @else {
+        <p data-testid="legal-hold-none">{{ 'admin.detail.legalHold.none' | transloco }}</p>
+        @if (!erased()) {
+          <button mat-flat-button type="button" (click)="place()" data-testid="legal-hold-place">
+            {{ 'admin.detail.legalHold.place' | transloco }}
+          </button>
+        }
+      }
+      @if (overview.erasureScheduledFor; as due) {
+        <p class="hold-card__hint" data-testid="legal-hold-erasure">
+          {{ 'admin.detail.legalHold.erasure' | transloco: { at: moment(due) } }}
+        </p>
+      }
+      @if (history().length) {
+        <h3 class="hold-card__subtitle">{{ 'admin.detail.legalHold.history' | transloco }}</h3>
+        <ul class="hold-card__list" data-testid="legal-hold-history">
+          @for (hold of history(); track hold.id) {
+            <li class="hold-card__item">
+              <span>
+                {{
+                  'admin.detail.legalHold.placedBy'
+                    | transloco: { at: moment(hold.placedAt), name: hold.placedBy.name }
+                }}
+              </span>
+              <span class="hold-card__reason">{{ hold.reason }}</span>
+              @if (hold.liftedAt) {
+                <span>
+                  {{
+                    'admin.detail.legalHold.liftedBy'
+                      | transloco: { at: moment(hold.liftedAt), name: hold.liftedBy?.name ?? '' }
+                  }}
+                </span>
+                <span class="hold-card__reason">{{ hold.liftReason }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </mat-card-content>
+</mat-card>

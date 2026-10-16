@@ -34,6 +34,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param decisionsMade   decisions the person made as a reviewer or that were made under a role the person
  *                        lent, oldest first
  * @param consentHistory  every consent record
+ * @param legalHolds      legal holds placed on the account, newest first
  * @param devices         browsers the account signed in from
  * @param activityLog     the person's own application events, newest first
  * @param notifications   in-app notifications and the delivery log of mails, newest first
@@ -44,7 +45,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
                                List<DelegationEntry> delegations, List<AwardEntry> awards,
                                List<AwardVersionEntry> awardVersions, List<DocumentEntry> documents,
                                List<ReviewDecisionEntry> reviewDecisions, List<DecisionMadeEntry> decisionsMade,
-                               List<ConsentEntry> consentHistory, List<DeviceEntry> devices,
+                               List<ConsentEntry> consentHistory, List<LegalHoldEntry> legalHolds,
+                               List<DeviceEntry> devices,
                                List<ActivityEntry> activityLog, List<NotificationEntry> notifications,
                                List<NotificationPreferenceEntry> notificationPreferences) {
 
@@ -60,6 +62,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         reviewDecisions = List.copyOf(reviewDecisions);
         decisionsMade = List.copyOf(decisionsMade);
         consentHistory = List.copyOf(consentHistory);
+        legalHolds = List.copyOf(legalHolds);
         devices = List.copyOf(devices);
         activityLog = List.copyOf(activityLog);
         notifications = List.copyOf(notifications);
@@ -81,6 +84,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         counts.put("review_decisions", reviewDecisions.size());
         counts.put("decisions_made", decisionsMade.size());
         counts.put("consent_history", consentHistory.size());
+        counts.put("legal_holds", legalHolds.size());
         counts.put("devices", devices.size());
         counts.put("activity_log", activityLog.size());
         counts.put("notifications", notifications.size());
@@ -311,6 +315,16 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record ConsentEntry(String consentType, String consentVersion, boolean granted, Instant grantedAt,
                                Instant withdrawnAt, String ipAddress, Instant createdAt) {
+    }
+
+    /**
+     * One legal hold on the account; the reasons and the officers stay out of the file.
+     *
+     * @param placedAt when the hold was placed
+     * @param liftedAt when it was lifted, null while active
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record LegalHoldEntry(Instant placedAt, Instant liftedAt) {
     }
 
     /**

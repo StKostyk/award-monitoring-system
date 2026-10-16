@@ -345,6 +345,30 @@ Administration → GDPR → Data Requests
 4. Document completion
 5. Notify user
 
+#### Legal Hold
+
+```
+Users → open a user → Legal hold card
+```
+
+A legal hold keeps an account from being erased while an inspection, a court case or another legal
+obligation needs its data. Only the GDPR officer (permission `legal-hold:manage`) sees the card; a
+system administrator or a dean opening the same user does not.
+
+| Action | Steps |
+|--------|-------|
+| Place a hold | "Place hold" → enter the reason (10–500 characters, e.g. the case or inspection number) → "Place hold" |
+| Lift a hold | "Lift hold" → enter why the hold ends (10–500 characters) → "Lift hold" |
+
+- An account has at most one active hold; the card shows it with the officer and the time, and earlier holds
+  below with their lift reason.
+- When the person has requested erasure, the card shows the due date; an erasure that falls due under a hold
+  is postponed and runs after the hold is lifted.
+- An erased account cannot receive a hold.
+- The audit log records `LEGAL_HOLD_PLACED` and `LEGAL_HOLD_LIFTED` with the length of the reason, never its
+  text. Both entries appear in the officer's own activity log; the person sees only the dates of the hold in
+  their data export.
+
 #### Data Retention
 
 ```
