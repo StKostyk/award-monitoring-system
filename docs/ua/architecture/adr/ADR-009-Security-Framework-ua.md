@@ -139,7 +139,8 @@ OAuth 2.1 / OpenID Connect.
   (`user_roles.role_type` словника даних)
 - **Дозволи**: матриця AUTHENTICATION_AUTHORIZATION §3.3 — `award:read:{own,department,faculty,all}`,
   `award:create`, `award:update:own`, `award:approve:{level1,level2,level3,final}`, `user:read:{all,scope}`,
-  `user:manage`, `user:manage:scope`, `system:configure`, `data:export`, `consent:manage`, `audit:read`
+  `user:manage`, `user:manage:scope`, `system:configure`, `data:export`, `consent:manage`, `legal-hold:manage`,
+  `audit:read`
 - **Область дії**: кожна роль належить до підрозділу; токен доступу містить `role_scopes` (`ROLE:orgId`), а
   сервер ресурсів визначає «всередині мого піддерева» за деревом підрозділів у пам'яті (`@access` у виразах
   `@PreAuthorize`)

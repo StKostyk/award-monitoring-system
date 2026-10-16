@@ -2666,7 +2666,6 @@ paths:
       description: >
         Requires `legal-hold:manage` (GDPR officer). Holds newest first; `erasureScheduledFor` names a pending
         erasure (6.1.3, field from 6.1.4).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: listLegalHolds
@@ -2691,7 +2690,6 @@ paths:
       description: >
         Requires `legal-hold:manage`. Blocks the erasure of the account and its retention until lifted.
         `LEGAL_HOLD_PLACED` records the reason length, not the text (6.1.3).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: placeLegalHold
@@ -2731,8 +2729,7 @@ paths:
     post:
       tags: [Privacy]
       summary: Lift a legal hold
-      description: Requires `legal-hold:manage`; writes `LEGAL_HOLD_LIFTED` (6.1.3).
-      x-status: planned
+      description: Requires `legal-hold:manage`; `LEGAL_HOLD_LIFTED` records the reason length, not the text (6.1.3).
       security:
         - bearerAuth: []
       operationId: liftLegalHold
@@ -3280,14 +3277,14 @@ components:
 
     PersonalDataExport:
       type: object
-      description: GDPR Article 20 export, format version 1.4; every list is present, possibly empty
+      description: GDPR Article 20 export, format version 1.5; every list is present, possibly empty
       required: [export_metadata, personal_data, roles, delegations, awards, award_versions, documents,
-                 review_decisions, decisions_made, consent_history, devices, activity_log, notifications,
-                 notification_preferences]
+                 review_decisions, decisions_made, consent_history, legal_holds, devices, activity_log,
+                 notifications, notification_preferences]
       properties:
         export_metadata:
           type: object
-          description: '`export_date` (instant), `user_id`, `format_version` (`1.4`), `gdpr_article`'
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.5`), `gdpr_article`'
         personal_data:
           type: object
           description: |
@@ -3351,6 +3348,11 @@ components:
         consent_history:
           type: array
           description: '`consent_type`, `consent_version`, `granted`, `granted_at`, `withdrawn_at`, `ip_address`, `created_at`'
+          items:
+            type: object
+        legal_holds:
+          type: array
+          description: 'Legal holds on the account, newest first: `placed_at`, `lifted_at`; no reasons or officers (6.1.3)'
           items:
             type: object
         devices:

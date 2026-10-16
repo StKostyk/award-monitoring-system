@@ -176,6 +176,22 @@ class SchemaIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac3_1_legalHoldsAllowOneActiveHoldPerAccount() {
+        List<String> constraints = jdbc.queryForList(
+            "select constraint_name from information_schema.table_constraints where table_schema = 'public' "
+                + "and table_name = 'legal_holds' and constraint_type = 'CHECK' and constraint_name like 'ck_%'",
+            String.class);
+        String active = jdbc.queryForObject(
+            "select indexdef from pg_indexes where indexname = 'uk_legal_holds_active'", String.class);
+        List<String> triggers = jdbc.queryForList("select tgname from pg_trigger"
+            + " where tgrelid = 'legal_holds'::regclass and not tgisinternal", String.class);
+
+        assertThat(constraints).containsExactly("ck_legal_holds_lifted");
+        assertThat(active).contains("UNIQUE INDEX", "(user_id)", "WHERE (lifted_at IS NULL)");
+        assertThat(triggers).containsExactly("trg_legal_holds_audit");
+    }
+
+    @Test
     void ac02_authTablesHaveExpectedConstraints() {
         List<String> constraints = jdbc.queryForList(
             "select constraint_name from information_schema.table_constraints "

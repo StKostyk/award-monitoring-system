@@ -38,7 +38,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PersonalDataAssembler {
 
-    static final String FORMAT_VERSION = "1.4";
+    static final String FORMAT_VERSION = "1.5";
     static final String GDPR_ARTICLE = "Article 20 - Right to Data Portability";
     static final String GIVEN = "GIVEN";
     static final String RECEIVED = "RECEIVED";
@@ -81,6 +81,7 @@ public class PersonalDataAssembler {
             queries.reviewDecisions(userId),
             queries.decisionsMade(userId),
             queries.consents(userId),
+            queries.legalHolds(userId),
             devices.findByUserIdOrderByLastUsedAtDesc(userId).stream().map(mapper::device).toList(),
             queries.activity(userId, ACTIVITY_AREAS, SELF_ACTIONS),
             notifications.notificationsOf(userId).stream().map(PersonalDataAssembler::notification).toList(),

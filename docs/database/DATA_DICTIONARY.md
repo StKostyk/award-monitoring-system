@@ -22,7 +22,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
-| **Compliance Domain** | `audit_logs`, `consent_records` | GDPR compliance, audit trails |
+| **Compliance Domain** | `audit_logs`, `consent_records`, `legal_holds` | GDPR compliance, audit trails |
 | **Notification Domain** | `notifications`, `notification_preferences`, `event_publication` | Communication, user preferences, event publication registry |
 
 ---
@@ -77,6 +77,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - HAS MANY `awards` (1:N)
 - HAS MANY `audit_logs` (1:N)
 - HAS MANY `consent_records` (1:N)
+- HAS MANY `legal_holds` (1:N)
 - HAS MANY `notifications` (1:N)
 
 ---
@@ -747,6 +748,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `DELEGATION_CREATED`, `DELEGATION_REVOKED` - approval authority lent and taken back (`entity_type` = `AUTHORIZATION`, `entity_id` = the delegate; `new_values` carries the actor, both parties, role, organization and period)
 - `PASSWORD_CHANGE` - Security
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Privacy
+- `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` - the GDPR officer placed or lifted a legal hold (`entity_type` = `GDPR`, `entity_id` = the account, `user_id` = the officer; `new_values` = `holdId` and `reasonLength`, never the text)
 - `DATA_EXPORT` - the person downloaded their own data (`entity_type` = `GDPR`, `entity_id` = the user; `new_values` carries the entry count of each list section of the file)
 - `AUDIT_EXPORT` - an `audit:read` holder downloaded the audit trail of an award as CSV (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the auditor; `new_values` = `rows` written and `truncated` when older rows beyond 10 000 were left out)
 - `DOCUMENT_DOWNLOAD` - a reader of the award downloaded a document (`entity_type` = `documents`, `entity_id` = the document, `user_id` = the reader; `new_values` = `awardId`, and `via: colleague` when a colleague opened a document shown on a shared award, 4.3.8); uploads and deletions are the trigger's `INSERT` and `DELETE` rows with the caller as actor (Feature 3.1)
@@ -820,6 +822,38 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
+
+---
+
+### 4.3 Entity: `legal_holds`
+
+**Description**: Legal holds the GDPR officer places on accounts (V041, 6.1.3). An active hold (`lifted_at` null) blocks the erasure of the account (6.1.5); a lifted hold stays as history.
+
+**Business Rules**:
+- At most one active hold per account (`uk_legal_holds_active`); placing a second gives 409 `legal-hold-active`, placing one on a `DELETED` account 409 `account-erased`
+- `reason` and `lift_reason` are 10 to 500 characters after trimming; a lift sets `lifted_by`, `lifted_at` and `lift_reason` together (`ck_legal_holds_lifted`) and cannot be undone
+- Changes of one account's holds are serialised by a row lock on `users`
+- Audited as `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` (entity type `GDPR`, `user_id` the officer, `entity_id` the account, `reasonLength` without the text); `trg_legal_holds_audit` writes the row changes with `reason` and `lift_reason` left out of the snapshots
+- The person's export (format 1.5) lists `placed_at` and `lifted_at` only
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `hold_id` | `BIGSERIAL` | NO | Auto | PK | Unique hold identifier |
+| `user_id` | `BIGINT` | NO | - | FK→users (RESTRICT) | The account under hold |
+| `reason` | `VARCHAR(500)` | NO | - | - | Why the hold was placed |
+| `placed_by` | `BIGINT` | NO | - | FK→users (RESTRICT) | The GDPR officer who placed it |
+| `placed_at` | `TIMESTAMPTZ` | NO | `now()` | - | When it was placed |
+| `lifted_by` | `BIGINT` | YES | - | FK→users (RESTRICT), CK | The GDPR officer who lifted it |
+| `lifted_at` | `TIMESTAMPTZ` | YES | - | CK | When it was lifted; null while active |
+| `lift_reason` | `VARCHAR(500)` | YES | - | CK | Why it was lifted |
+
+**Indexes**:
+- `legal_holds_pkey` - Primary key on `hold_id`
+- `uk_legal_holds_active` - Unique partial on `user_id` where `lifted_at IS NULL`
+- `idx_legal_holds_user` - Composite on `(user_id, placed_at DESC)`
+
+**Relationships**:
+- BELONGS TO `users` (N:1) via `user_id`, `placed_by`, `lifted_by`
 
 ---
 
@@ -973,7 +1007,7 @@ Legal basis is that of the change that caused the mail.
 
 | **Entity** | **Relationships** |
 |------------|-------------------|
-| `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
+| `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← legal_holds (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
 | `user_roles` | → users (N:1), → organizations (N:1) |
 | `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N), ← awards (1:N, as recipient) |
 | `one_time_tokens` | → users (N:1) |
@@ -988,6 +1022,7 @@ Legal basis is that of the change that caused the mail.
 | `review_templates` | none (reference data) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |
+| `legal_holds` | → users (N:1, held account and officers) |
 | `notifications` | → users (N:1) |
 | `notification_preferences` | → users (N:1) |
 | `event_publication` | none (event registry) |

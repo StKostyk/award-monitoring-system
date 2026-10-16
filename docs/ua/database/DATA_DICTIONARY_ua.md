@@ -740,6 +740,7 @@
 - `DELEGATION_CREATED`, `DELEGATION_REVOKED` - повноваження затвердження позичено й забрано (`entity_type` = `AUTHORIZATION`, `entity_id` = делегат; `new_values` містить виконавця, обидві сторони, роль, підрозділ і період)
 - `PASSWORD_CHANGE` - Безпека
 - `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` - Приватність
+- `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` - уповноважений з питань захисту даних наклав або зняв юридичне утримання (`entity_type` = `GDPR`, `entity_id` = обліковий запис, `user_id` = уповноважений; `new_values` = `holdId` і `reasonLength`, ніколи текст)
 - `DATA_EXPORT` - особа завантажила власні дані (`entity_type` = `GDPR`, `entity_id` = користувач; `new_values` містить кількість записів у кожному розділі-списку файлу)
 - `AUDIT_EXPORT` - власник `audit:read` завантажив журнал аудиту нагороди у CSV (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = аудитор; `new_values` = записані `rows` і `truncated`, якщо старіші рядки понад 10 000 пропущено)
 - `DOCUMENT_DOWNLOAD` - читач нагороди завантажив документ (`entity_type` = `documents`, `entity_id` = документ, `user_id` = читач; `new_values` = `awardId`); завантаження на сервер і видалення — це рядки тригера `INSERT` і `DELETE` з тим, хто викликав, як виконавцем (функція 3.1)
