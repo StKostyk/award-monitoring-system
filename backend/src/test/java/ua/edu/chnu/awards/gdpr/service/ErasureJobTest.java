@@ -16,7 +16,8 @@ class ErasureJobTest {
     private static final Instant NOW = Instant.parse("2026-10-16T00:30:00Z");
 
     private final ErasureRequestService erasures = mock(ErasureRequestService.class);
-    private final ErasureJob job = new ErasureJob(erasures, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
+    private final ErasureRunner runner = mock(ErasureRunner.class);
+    private final ErasureJob job = new ErasureJob(erasures, runner, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
     @Test
     void ac4_6_aRunRemindsAtTheClockTime() {
@@ -28,7 +29,16 @@ class ErasureJobTest {
     @Test
     void ac4_6_aDatabaseFailureIsLoggedAndLeftToTheNextRun() {
         when(erasures.warnDue(NOW)).thenThrow(new QueryTimeoutException("timeout"));
+        when(runner.runDue(NOW)).thenThrow(new QueryTimeoutException("timeout"));
 
         assertThat(job.run()).isZero();
+    }
+
+    @Test
+    void ac5_1_aRunErasesDueAccountsEvenWhenTheRemindersFail() {
+        when(erasures.warnDue(NOW)).thenThrow(new QueryTimeoutException("timeout"));
+        when(runner.runDue(NOW)).thenReturn(3);
+
+        assertThat(job.run()).isEqualTo(3);
     }
 }

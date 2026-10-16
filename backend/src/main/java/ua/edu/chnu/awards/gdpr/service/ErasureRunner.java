@@ -1,0 +1,137 @@
+package ua.edu.chnu.awards.gdpr.service;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import ua.edu.chnu.awards.audit.entity.AuditAction;
+import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
+import ua.edu.chnu.awards.audit.service.AuditRedaction;
+import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.common.erasure.ErasureContext;
+import ua.edu.chnu.awards.common.erasure.ErasureContributor;
+import ua.edu.chnu.awards.gdpr.event.ErasureCompleted;
+import ua.edu.chnu.awards.gdpr.event.ErasurePostponed;
+import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
+import ua.edu.chnu.awards.gdpr.repository.LegalHolds;
+import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.service.UserAccounts;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Carries out due erasures, one transaction per request: every contributor in its order, the audit row with their
+ * counts, the redaction of the trail, the request marked completed and the confirmation mail after the commit. A
+ * request whose account is under a legal hold, or whose holder is the only system administrator, is postponed; a
+ * failure rolls the whole erasure back and the next run tries again.
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class ErasureRunner {
+
+    static final String LEGAL_HOLD = "legal-hold";
+    static final String LAST_ADMINISTRATOR = "last-administrator";
+
+    private static final String REQUEST_ID = "requestId";
+
+    private final ErasureRequests requests;
+    private final LegalHolds holds;
+    private final UserAccounts users;
+    private final List<ErasureContributor> contributors;
+    private final AuditService audit;
+    private final AuditRedaction redaction;
+    private final ApplicationEventPublisher events;
+    private final TransactionTemplate transactions;
+    private final ErasureMetrics metrics;
+    private final Clock clock;
+
+    /**
+     * Erases every account whose request is due.
+     *
+     * @param now the current moment
+     * @return how many accounts were erased
+     */
+    public int runDue(Instant now) {
+        int erased = 0;
+        for (Long requestId : requests.due(now)) {
+            try {
+                Outcome outcome = Objects.requireNonNull(transactions.execute(status -> erase(requestId, now)));
+                if (outcome == Outcome.COMPLETED) {
+                    metrics.completed();
+                    erased++;
+                }
+            } catch (Exception exception) {
+                metrics.failed();
+                log.error("Erasure request {} failed and stays pending for the next run", requestId, exception);
+            }
+        }
+        return erased;
+    }
+
+    private Outcome erase(long requestId, Instant now) {
+        requests.serialize();
+        Optional<ErasureRequests.Locked> locked = requests.lockDue(requestId, now);
+        if (locked.isEmpty()) {
+            return Outcome.SKIPPED;
+        }
+        long userId = locked.get().userId();
+        User user = users.findByIdForUpdate(userId)
+            .orElseThrow(() -> new IllegalStateException("Erasure request " + requestId + " has no account"));
+        LocalDate day = LocalDate.now(clock);
+        if (holds.isActive(userId)) {
+            return postpone(requestId, user, LEGAL_HOLD, now);
+        }
+        if (requests.isOnlyAdministrator(userId, day)) {
+            return postpone(requestId, user, LAST_ADMINISTRATOR, now);
+        }
+        final String email = user.getEmailAddress();
+        final String firstName = user.getFirstName();
+        Set<String> names = new LinkedHashSet<>();
+        names.add(user.getFullName());
+        names.addAll(redaction.formerNames(userId));
+        ErasureContext context = new ErasureContext(userId, email, names, now, day);
+        contributors.stream()
+            .sorted(Comparator.comparingInt(ErasureContributor::order))
+            .forEach(contributor -> contributor.erase(context));
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put(REQUEST_ID, requestId);
+        details.putAll(context.counts());
+        audit.record(AuditAction.ERASURE_COMPLETED, AuditEntityConstants.GDPR, userId, userId, details);
+        redaction.redactSubject(userId, context.names(), context.erasedRecords());
+        requests.markCompleted(requestId, now);
+        events.publishEvent(new ErasureCompleted(email, firstName));
+        log.info("Erased account {} (request {})", userId, requestId);
+        return Outcome.COMPLETED;
+    }
+
+    private Outcome postpone(long requestId, User user, String reason, Instant now) {
+        if (requests.markPostponed(requestId, now)) {
+            audit.record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, user.getId(), user.getId(),
+                Map.of(REQUEST_ID, requestId, "reason", reason));
+            if (LEGAL_HOLD.equals(reason)) {
+                events.publishEvent(new ErasurePostponed(user.getEmailAddress(), user.getFirstName()));
+            }
+        }
+        return Outcome.POSTPONED;
+    }
+
+    private enum Outcome {
+        COMPLETED,
+        POSTPONED,
+        SKIPPED
+    }
+}

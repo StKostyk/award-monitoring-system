@@ -138,7 +138,7 @@ public class RoleAssignmentService {
      * The day an assignment stops applying when it is taken back today: yesterday, or the day before it was due
      * to start when it has not started yet, so the row can never be current and the date check still holds.
      */
-    private static LocalDate lastDayOf(UserRole role, LocalDate today) {
+    static LocalDate lastDayOf(UserRole role, LocalDate today) {
         return today.isAfter(role.getValidFrom()) ? today.minusDays(1) : role.getValidFrom().minusDays(1);
     }
 

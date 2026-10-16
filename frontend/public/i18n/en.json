@@ -1107,7 +1107,8 @@
         "LEGAL_HOLD_PLACED": "Legal hold placed",
         "LEGAL_HOLD_LIFTED": "Legal hold lifted",
         "ERASURE_REQUESTED": "Account erasure requested",
-        "ERASURE_CANCELLED": "Account erasure cancelled"
+        "ERASURE_CANCELLED": "Account erasure cancelled",
+        "ERASURE_POSTPONED": "Account erasure postponed"
       }
     },
     "erasure": {

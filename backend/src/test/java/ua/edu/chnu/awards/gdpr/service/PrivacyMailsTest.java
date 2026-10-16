@@ -15,6 +15,8 @@ import org.mockito.ArgumentCaptor;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.gdpr.event.DataExported;
 import ua.edu.chnu.awards.gdpr.event.ErasureCancelled;
+import ua.edu.chnu.awards.gdpr.event.ErasureCompleted;
+import ua.edu.chnu.awards.gdpr.event.ErasurePostponed;
 import ua.edu.chnu.awards.gdpr.event.ErasureRequested;
 import ua.edu.chnu.awards.gdpr.event.ErasureWarned;
 
@@ -59,6 +61,22 @@ class PrivacyMailsTest {
 
         assertThat(sent("Видалення скасовано / Account erasure cancelled")).contains("Hello Анастасія,",
             "The account stays active");
+    }
+
+    @Test
+    void ac5_2_thePostponedMailNamesALegalObligationAndTheWayToTheOfficerWithoutTheReason() {
+        mails.onErasurePostponed(new ErasurePostponed(EMAIL, "Анастасія"));
+
+        assertThat(sent("Видалення відкладено / Account erasure postponed")).contains("Вітаємо, Анастасія!",
+            "legal obligation", "data protection officer", "http://localhost:4200/privacy");
+    }
+
+    @Test
+    void ac5_10_theCompletedMailConfirmsWhatWasKeptWithoutALink() {
+        mails.onErasureCompleted(new ErasureCompleted(EMAIL, "Анастасія"));
+
+        assertThat(sent("Обліковий запис видалено / Your account was erased")).contains("Hello Анастасія,",
+            "was erased", "under a pseudonym").doesNotContain("http");
     }
 
     private String sent(String subject) {

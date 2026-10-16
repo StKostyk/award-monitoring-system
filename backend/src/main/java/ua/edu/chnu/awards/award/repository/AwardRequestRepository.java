@@ -17,6 +17,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.award.entity.RequestStatus;
 
 /**
  * Access to {@link AwardRequest} rows.
@@ -39,6 +40,15 @@ public interface AwardRequestRepository extends JpaRepository<AwardRequest, Long
      * @return their requests; drafts have none
      */
     List<AwardRequest> findByAwardIdIn(Collection<Long> awardIds);
+
+    /**
+     * The requests a reviewer holds in a status.
+     *
+     * @param reviewerId the reviewer
+     * @param status     the status, {@code IN_REVIEW} for claims
+     * @return the requests
+     */
+    List<AwardRequest> findByCurrentReviewerIdAndStatus(Long reviewerId, RequestStatus status);
 
     /**
      * The request of an award, locked for the rest of the transaction, so claims, releases, hand-overs and

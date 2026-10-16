@@ -72,6 +72,21 @@ public class RoleChangeRecorder {
             details(actor, assignment));
     }
 
+    /**
+     * Records a role ended by the erasure of its holder, without a message.
+     *
+     * @param assignment the assignment that has just been ended
+     */
+    public void erased(UserRole assignment) {
+        audit.record(AuditAction.ROLE_REVOKED, AuditEntityConstants.AUTHORIZATION, assignment.getUser().getId(),
+            Map.of(
+                "reason", "erasure",
+                "role", assignment.getRoleType().name(),
+                "organizationId", assignment.getOrganization().getId(),
+                "validFrom", assignment.getValidFrom().toString(),
+                "validTo", String.valueOf(assignment.getValidTo())));
+    }
+
     private static Map<String, Object> details(User actor, UserRole assignment) {
         return Map.of(
             "actorId", actor.getId(),

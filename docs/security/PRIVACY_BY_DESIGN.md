@@ -409,10 +409,12 @@ Showing documents to colleagues (4.3.8) follows the award's visibility choice (4
 
 | **Category** | **Deletion Strategy** | **Timeline** | **Exceptions** |
 |--------------|----------------------|--------------|----------------|
-| **User Profile** | Full deletion | 30 days | Legal holds |
-| **Awards** | Anonymization | 30 days | Public record retention |
-| **Documents** | Full deletion | 30 days | None |
-| **Audit Logs** | Anonymization | 30 days | 7-year retention for compliance |
+| **User Profile** | Scrub: pseudonym `Erased #<id>`, address `erased-<id>@erased.invalid`, status `DELETED`; sign-in material deleted | 30 days | Legal holds postpone |
+| **Awards** | Approved: kept `PRIVATE` under the pseudonym; all others deleted with requests, decisions and versions | 30 days | Public record retention |
+| **Documents** | Full deletion, stored objects after the commit | 30 days | None |
+| **Notifications** | Own deleted; the person's names in related notifications of others replaced by the pseudonym | 30 days | None |
+| **Consent Records** | Kept without IP address and user agent | 30 days | 7-year retention (proof of acknowledgement) |
+| **Audit Logs** | Guarded redaction of values (`fn_redact_audit_subject`, ADR-024): personal keys `"[erased]"`, snapshots of deleted records `{"erased": true}`, own IP address and user agent removed; rows, actions and times kept; `AUDIT_REDACTED` records the counts | 30 days | 7-year retention for compliance |
 | **Backups** | Marked for exclusion | Next backup cycle | Compliance requirements |
 | **Analytics** | Anonymization | Immediate | Already anonymized |
 

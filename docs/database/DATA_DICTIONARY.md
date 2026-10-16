@@ -62,7 +62,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `SUSPENDED` | Administrative hold | ACTIVE, RETIRED |
 | `RETIRED` | Former employee (read-only access) | MEMORIAL |
 | `MEMORIAL` | Deceased (awards preserved, no access) | - |
-| `DELETED` | Erased on request (GDPR); personal data anonymised | - |
+| `DELETED` | Erased on request (GDPR, 6.1.5): the row stays with `first_name` `Erased`, `last_name` `#<id>`, `email_address` `erased-<id>@erased.invalid`, a random password hash and no `last_login_at`; the old address can register a new account | - |
 
 **Indexes**:
 - `pk_users` - Primary key on `user_id`
@@ -301,7 +301,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - Award status follows defined workflow progression
 - Verified awards display a verification badge
 - Impact score calculated based on category level and awarding organization
-- An award is seen by its owner and the reviewers whose scope covers it; beyond them only by the owner's choice for an approved personal award (`visibility`, V035, 4.3.1), while an approved unit award is shared with every signed-in user without a stored choice. Personal awards of a `DELETED` account are never shared; the erasure function resets `visibility` to `PRIVATE` when the erasure story is built
+- An award is seen by its owner and the reviewers whose scope covers it; beyond them only by the owner's choice for an approved personal award (`visibility`, V035, 4.3.1), while an approved unit award is shared with every signed-in user without a stored choice. Personal awards of a `DELETED` account are never shared; the erasure sets `visibility` to `PRIVATE` on the approved awards it keeps (6.1.5)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -529,7 +529,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - A reviewer's correction of a pending award (4.2, story 2.4.1) writes a `CORRECTED` version with the reviewer as actor and the reason in `comment`, in the transaction of the correction
 - `version_number` is the award's `version` after the change; V023 wrote one `BASELINE` row per existing award with its current state and version and no actor
 - Rows are immutable: `trg_award_versions_immutable` refuses every update except clearing `actor_id` (`ON DELETE SET NULL` when the actor's account is erased)
-- Deleted with the award (`ON DELETE CASCADE`); erasure of submitted awards and their versions is an Epic 6 decision
+- Deleted with the award (`ON DELETE CASCADE`); an erasure deletes every award of the person that is not `APPROVED` with its versions, keeps the approved ones with theirs, and clears `actor_id` wherever the person acted (6.1.5)
 - Readable by the owner in full and, from the first `SUBMITTED` version (or the `BASELINE` of an award submitted before V023), by readers whose scope covers `awards.organization_id`
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
@@ -721,7 +721,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 - All data modifications logged automatically via triggers
 - Trigger rows carry the signed-in caller in `user_id` and the request's `correlation_id`: the transaction manager sets `app.current_user_id` and `app.correlation_id` with `set_config(…, true)` when a read-write transaction of a request with an access token begins (Feature 2.2, D-3); changes without a signed-in caller (migrations, seeds, jobs, sign-in and registration) keep `user_id` empty, as do rows written before 2.2.1
 - Trigger rows take `entity_id` from the changed record's own key for `INSERT`, `UPDATE` and, since V023, `DELETE` (V013 used `user_id` of the deleted row, so older `DELETE` rows of `awards` point at the owner and of `user_roles` at the user)
-- Logs are immutable (no UPDATE/DELETE allowed)
+- Logs are append-only (V043, ADR-024): `trg_audit_logs_guard` (`fn_audit_logs_guard`, `BEFORE UPDATE OR DELETE … FOR EACH ROW`, inherited by every partition) raises on every `DELETE` and on every `UPDATE` unless the transaction-local setting `app.audit_redaction` is `on` and only `old_values`, `new_values`, `ip_address` and `user_agent` change; the rules `audit_logs_no_update` and `audit_logs_no_delete` of V009 are gone
+- Only `fn_redact_audit_subject(p_user_id, p_names, p_entities)` sets the flag (`SECURITY DEFINER`, called last in an erasure, 6.1.5): the person's own rows lose `ip_address` and `user_agent`; rows about the person (`users`, `USER`, `AUTHENTICATION`, `AUTHORIZATION`, `GDPR` with `entity_id` the person, and trigger rows of `consent_records`, `notification_preferences`, `notifications`, `user_roles`, `role_delegations`, `one_time_tokens`, `legal_holds`, `erasure_requests` whose snapshot `user_id`, `delegator_id` or `delegate_id` is the person) get `"[erased]"` for the personal keys listed in `fn_redact_audit_values`; rows of the awards, requests and documents deleted at the erasure, and decisions on those requests, become `{"erased": true}`; the person's names in the listed notifications of others become `Erased #<id>` (`fn_jsonb_replace_strings`); one `AUDIT_REDACTED` row records the counts
 - Retention period: 7 years (per GDPR requirements)
 - Partition by month for performance
 - Stores both old and new values for change tracking
@@ -763,7 +764,10 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `REVIEW_OVERDUE_NOTICED` - the hourly overdue job marked an open request past its deadline (`entity_type` = `awards`, `entity_id` = the award, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = user ids e-mailed, empty at the rector or without a reviewer above); once per level (4.2.2)
 - `AWARD_CORRECTED` - a reviewer corrected the fields of a pending award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `requestId`, `level`, `changes` = list of `field`, `from`, `to`, `reason`, `delegatorId` under a delegation); preceded by `REVIEW_CLAIMED` when the correction claimed the request (4.2, story 2.4.1)
 - `AWARD_VISIBILITY_CHANGED` - the owner changed who sees an approved personal award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` = `from`, `to`); written only for an effective change and the record of the owner's consent to show the award (4.3.1)
-- `DATA_DELETE` - GDPR rights
+- `ERASURE_POSTPONED` - a due erasure waits (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId`, `reason` `legal-hold` or `last-administrator`); once per request (6.1.5)
+- `ERASURE_COMPLETED` - the account was erased (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId` and the counts each erasure contributor reported) (6.1.5)
+- `AUDIT_REDACTED` - written by `fn_redact_audit_subject` after an erasure (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `context`, `values`, `erasedRecords`, `names` row counts) (6.1.5)
+- `DATA_DELETE` - reserved and unused; erasure is written as `ERASURE_COMPLETED`
 - `APPROVAL`, `REJECTION` - reserved and unused; decisions are written as `REVIEW_DECISION`
 
 **Indexes**:
@@ -867,7 +871,8 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 - `cancelled_at` is set exactly when `CANCELLED`, `completed_at` exactly when `COMPLETED` (`ck_erasure_requests_dates`)
 - The nightly job mails one reminder `app.erasure.warning-before` (default 7 days) before `scheduled_for` and sets `warning_sent_at`; a request made with less time left gets none
 - Requests and cancellations of one account are serialised by a row lock on `users`
-- Audited as `ERASURE_REQUESTED` (`requestId`, `scheduledFor`), `ERASURE_CANCELLED` (`requestId`), entity type `GDPR`, `entity_id` the account; `trg_erasure_requests_audit` writes the row changes keyed by `request_id`
+- At the first nightly run after `scheduled_for` the job locks the request (`FOR UPDATE SKIP LOCKED`, erasures serialized by a transaction advisory lock) and erases the account in one transaction, then sets `COMPLETED`; a failure leaves it `PENDING` for the next run (6.1.5)
+- Audited as `ERASURE_REQUESTED` (`requestId`, `scheduledFor`), `ERASURE_CANCELLED` (`requestId`), `ERASURE_POSTPONED`, `ERASURE_COMPLETED`, entity type `GDPR`, `entity_id` the account; `trg_erasure_requests_audit` writes the row changes keyed by `request_id`
 - The person's export (format 1.6) lists every request without `completed_at`
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
@@ -878,7 +883,7 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 | `requested_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the person asked |
 | `scheduled_for` | `TIMESTAMPTZ` | NO | - | - | When the account is erased |
 | `warning_sent_at` | `TIMESTAMPTZ` | YES | - | - | When the reminder was mailed |
-| `postponed_at` | `TIMESTAMPTZ` | YES | - | - | When a legal hold first postponed the erasure (6.1.5) |
+| `postponed_at` | `TIMESTAMPTZ` | YES | - | - | When the erasure was first postponed: an active legal hold, or the only system administrator (6.1.5) |
 | `cancelled_at` | `TIMESTAMPTZ` | YES | - | CK | When the person cancelled |
 | `completed_at` | `TIMESTAMPTZ` | YES | - | CK | When the account was erased (6.1.5) |
 
