@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class ErasureRequests {
 
     private static final String USER_ID = "userId";
+    private static final String REQUEST_ID = "requestId";
 
     private static final String PENDING = """
         select request_id, requested_at, scheduled_for, postponed_at
@@ -71,6 +72,28 @@ public class ErasureRequests {
 
     private static final String MARK_WARNED =
         "update erasure_requests set warning_sent_at = :at where request_id = :requestId";
+
+    private static final String DUE = """
+        select request_id from erasure_requests
+         where status = 'PENDING' and scheduled_for <= :now
+         order by scheduled_for, request_id
+        """;
+
+    private static final String LOCK_DUE = """
+        select request_id, user_id from erasure_requests
+         where request_id = :requestId and status = 'PENDING' and scheduled_for <= :now
+           for update skip locked
+        """;
+
+    private static final String SERIALIZE = "select pg_advisory_xact_lock(hashtext('erasure-run'))";
+
+    private static final String MARK_POSTPONED =
+        "update erasure_requests set postponed_at = :at where request_id = :requestId and postponed_at is null";
+
+    private static final String MARK_COMPLETED = """
+        update erasure_requests set status = 'COMPLETED', completed_at = :at
+         where request_id = :requestId and status = 'PENDING'
+        """;
 
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -146,7 +169,61 @@ public class ErasureRequests {
      * @param at        when
      */
     public void markWarned(long requestId, Instant at) {
-        jdbc.update(MARK_WARNED, new MapSqlParameterSource("requestId", requestId).addValue("at", utc(at)));
+        jdbc.update(MARK_WARNED, new MapSqlParameterSource(REQUEST_ID, requestId).addValue("at", utc(at)));
+    }
+
+    /**
+     * The pending requests whose erasure is due, without locking them.
+     *
+     * @param now the current moment
+     * @return their identifiers, earliest due first
+     */
+    public List<Long> due(Instant now) {
+        return jdbc.queryForList(DUE, Map.of("now", utc(now)), Long.class);
+    }
+
+    /**
+     * Makes erasures wait for each other until the end of the transaction, across instances, so the check for the
+     * last system administrator sees the result of an erasure that ran just before.
+     */
+    public void serialize() {
+        jdbc.getJdbcTemplate().queryForList(SERIALIZE);
+    }
+
+    /**
+     * Locks a request that is still pending and due; a request another run holds, or one cancelled or completed
+     * meanwhile, is not returned.
+     *
+     * @param requestId the request
+     * @param now       the current moment
+     * @return the locked request, empty when it is gone or locked elsewhere
+     */
+    public Optional<Locked> lockDue(long requestId, Instant now) {
+        MapSqlParameterSource params = new MapSqlParameterSource(REQUEST_ID, requestId).addValue("now", utc(now));
+        return jdbc.query(LOCK_DUE, params, (row, index) -> new Locked(row.getLong("request_id"),
+            row.getLong("user_id"))).stream().findFirst();
+    }
+
+    /**
+     * Records the first postponement of a request.
+     *
+     * @param requestId the request
+     * @param at        when
+     * @return true when this was the first postponement
+     */
+    public boolean markPostponed(long requestId, Instant at) {
+        return jdbc.update(MARK_POSTPONED, new MapSqlParameterSource(REQUEST_ID, requestId)
+            .addValue("at", utc(at))) > 0;
+    }
+
+    /**
+     * Marks a pending request completed.
+     *
+     * @param requestId the request
+     * @param at        when the account was erased
+     */
+    public void markCompleted(long requestId, Instant at) {
+        jdbc.update(MARK_COMPLETED, new MapSqlParameterSource(REQUEST_ID, requestId).addValue("at", utc(at)));
     }
 
     private static ErasureRequest request(ResultSet row) throws SQLException {
@@ -172,5 +249,14 @@ public class ErasureRequests {
      * @param firstName    used in the greeting
      */
     public record Due(long requestId, Instant scheduledFor, String email, String firstName) {
+    }
+
+    /**
+     * A due request locked for its erasure.
+     *
+     * @param requestId the request
+     * @param userId    the account
+     */
+    public record Locked(long requestId, long userId) {
     }
 }

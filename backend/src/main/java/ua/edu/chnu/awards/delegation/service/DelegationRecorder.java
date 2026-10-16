@@ -65,6 +65,24 @@ public class DelegationRecorder {
             fullName(actor), delegation.getValidTo(), clock.instant()));
     }
 
+    /**
+     * Records a delegation ended by the erasure of one of its parties, without a message.
+     *
+     * @param delegation the delegation that has just been ended
+     */
+    public void erased(RoleDelegation delegation) {
+        audit.record(AuditAction.DELEGATION_REVOKED, AuditEntityConstants.AUTHORIZATION,
+            delegation.getDelegate().getId(),
+            Map.of(
+                "reason", "erasure",
+                "delegatorId", delegation.getDelegator().getId(),
+                "delegateId", delegation.getDelegate().getId(),
+                "role", delegation.getRoleType().name(),
+                "organizationId", delegation.getOrganization().getId(),
+                "validFrom", delegation.getValidFrom().toString(),
+                "validTo", delegation.getValidTo().toString()));
+    }
+
     private static List<DelegationRevoked.Recipient> recipients(User actor, RoleDelegation delegation) {
         User delegate = delegation.getDelegate();
         User delegator = delegation.getDelegator();

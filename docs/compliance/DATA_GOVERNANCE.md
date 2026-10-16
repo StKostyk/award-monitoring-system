@@ -155,41 +155,34 @@ public class DataRetentionService {
 
 ### **2.3 Data Deletion Procedures**
 
-```sql
--- Data Deletion Procedures
--- 1. Soft Delete (Initial)
-UPDATE users SET 
-    status = 'DELETED',
-    deletion_requested_at = CURRENT_TIMESTAMP,
-    scheduled_deletion_date = CURRENT_TIMESTAMP + INTERVAL '30 days'
-WHERE user_id = ?;
+Erasure of an account (Art. 17) as built in Feature 6.1 (stories 6.1.4 and 6.1.5):
 
--- 2. Grace Period Warning
-SELECT user_id, email, scheduled_deletion_date 
-FROM users 
-WHERE status = 'DELETED' 
-    AND scheduled_deletion_date <= CURRENT_TIMESTAMP + INTERVAL '7 days'
-    AND deletion_warning_sent = FALSE;
+1. **Request.** The person confirms with their password in the privacy centre; an `erasure_requests` row is
+   `PENDING` with `scheduled_for` 30 days later (`APP_ERASURE_GRACE_PERIOD`). Refused while a legal hold is
+   active or for the only system administrator. The account stays usable and the request can be cancelled.
+2. **Warning.** The nightly job (03:30 Kyiv) mails a reminder seven days before the date
+   (`APP_ERASURE_WARNING_BEFORE`).
+3. **Execution.** At the first nightly run after the date, each due request is locked (`FOR UPDATE SKIP LOCKED`)
+   and erased in one transaction. A legal hold placed meanwhile postpones it (`postponed_at`, one mail, audit
+   `ERASURE_POSTPONED`); so does being the only system administrator by then (audit only). Otherwise every
+   module's erasure contributor runs in order (ADR-022):
+   - sign-in material: one-time tokens, devices, OAuth authorizations; sessions and access tokens end;
+   - current and future roles and open delegations end, audited with the reason `erasure`, without messages;
+   - documents of the person's awards are deleted (stored objects after the commit);
+   - the person's notifications, preferences and undelivered events are deleted; their names in related
+     notifications of others become the pseudonym;
+   - approved awards stay as `PRIVATE` records under the pseudonym; every other award goes with its request,
+     decisions and versions; review claims return to the queue; decisions on others' awards stay;
+   - consent records stay without IP address and user agent;
+   - the account row stays with `account_status` `DELETED`, the pseudonym `Erased #<id>`, the address
+     `erased-<id>@erased.invalid` and an unknown password, so the address can register again.
+4. **Audit.** `ERASURE_COMPLETED` records the counts; `fn_redact_audit_subject` then redacts the person's values
+   in the trail and records `AUDIT_REDACTED` (ADR-024). Rows, actions and times stay.
+5. **Confirmation.** After the commit, a mail goes to the address captured before the scrub. A failure anywhere
+   rolls the erasure back; the request stays pending and the next run retries
+   (`award_erasure_runs_total{outcome}`).
 
--- 3. Hard Delete (After Grace Period)
-BEGIN;
-    -- Anonymize awards (keep achievement records)
-    UPDATE awards SET recipient_name = 'ANONYMIZED_USER_' || user_id 
-    WHERE user_id = ?;
-    
-    -- Delete personal data
-    DELETE FROM user_profiles WHERE user_id = ?;
-    DELETE FROM contact_information WHERE user_id = ?;
-    DELETE FROM consent_records WHERE user_id = ?;
-    
-    -- Update user record to anonymous
-    UPDATE users SET 
-        full_name = NULL,
-        email = NULL,
-        status = 'ANONYMIZED'
-    WHERE user_id = ?;
-COMMIT;
-```
+`legal_holds` and `erasure_requests` rows stay as the record of the obligation and the request.
 
 ---
 

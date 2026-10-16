@@ -15,6 +15,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
 import ua.edu.chnu.awards.gdpr.event.DataExported;
 import ua.edu.chnu.awards.gdpr.event.ErasureCancelled;
+import ua.edu.chnu.awards.gdpr.event.ErasureCompleted;
+import ua.edu.chnu.awards.gdpr.event.ErasurePostponed;
 import ua.edu.chnu.awards.gdpr.event.ErasureRequested;
 import ua.edu.chnu.awards.gdpr.event.ErasureWarned;
 
@@ -80,6 +82,29 @@ public class PrivacyMails {
         delivery.send(event.email(), "Видалення скасовано / Account erasure cancelled", cancelledBody(event));
     }
 
+    /**
+     * Tells the person that the erasure waits for a legal obligation to end.
+     *
+     * @param event the committed postponement
+     */
+    @Async
+    @TransactionalEventListener
+    public void onErasurePostponed(ErasurePostponed event) {
+        delivery.send(event.email(), "Видалення відкладено / Account erasure postponed",
+            postponedBody(event, links.privacyCentre()));
+    }
+
+    /**
+     * Confirms the erasure at the address the account had before it.
+     *
+     * @param event the committed erasure
+     */
+    @Async
+    @TransactionalEventListener
+    public void onErasureCompleted(ErasureCompleted event) {
+        delivery.send(event.email(), "Обліковий запис видалено / Your account was erased", completedBody(event));
+    }
+
     static String requestedBody(ErasureRequested event, String date, String link) {
         return helloUk(event.firstName())
             + "Ви попросили видалити ваш обліковий запис у системі обліку нагород ЧНУ. Його буде видалено "
@@ -120,6 +145,33 @@ public class PrivacyMails {
             + "The erasure of your account in the ChNU award monitoring system is cancelled. The account stays "
             + "active.\n\n"
             + "If this was not you, change your password at once and contact the system administrator.\n";
+    }
+
+    static String postponedBody(ErasurePostponed event, String link) {
+        return helloUk(event.firstName())
+            + "Видалення вашого облікового запису в системі обліку нагород ЧНУ відкладено: університет має "
+            + "зберігати ваші дані, доки діє правовий обов'язок. Обліковий запис буде видалено, щойно цей "
+            + "обов'язок припиниться.\n\n"
+            + "Звернутися до відповідального за захист персональних даних можна через центр конфіденційності: "
+            + link + "\n\n"
+            + SEPARATOR
+            + helloEn(event.firstName())
+            + "The erasure of your account in the ChNU award monitoring system is postponed: the university must "
+            + "keep your data while a legal obligation applies. The account will be erased as soon as that "
+            + "obligation ends.\n\n"
+            + "You can reach the data protection officer through the privacy centre: " + link + "\n";
+    }
+
+    static String completedBody(ErasureCompleted event) {
+        return helloUk(event.firstName())
+            + "Ваш обліковий запис у системі обліку нагород ЧНУ видалено. Увійти в нього більше не можна.\n\n"
+            + "Затверджені нагороди залишаються під псевдонімом без документів, записи журналу аудиту "
+            + "знеособлено, а записи згод зберігаються сім років.\n\n"
+            + SEPARATOR
+            + helloEn(event.firstName())
+            + "Your account in the ChNU award monitoring system was erased. It can no longer be signed in to.\n\n"
+            + "Approved awards stay under a pseudonym without their documents, audit records are redacted, and "
+            + "consent records are kept for seven years.\n";
     }
 
     private String date(Instant at) {

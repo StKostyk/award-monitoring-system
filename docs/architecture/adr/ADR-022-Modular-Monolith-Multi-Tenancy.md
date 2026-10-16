@@ -139,6 +139,13 @@ when a module meets the extraction criteria below.**
   authority through `LentAuthority` (implemented in `delegation`); the not-found exceptions extend
   `common.web.NotFoundException`, and the 403 handler lives in `authz`. The address-change and export endpoints
   moved to `auth` and `gdpr` with unchanged paths.
+- Account erasure (6.1.5) uses the same inversion: the contract `ErasureContributor` and its `ErasureContext`
+  live in `common.erasure`, and each module that holds personal data implements it in its own `service` package
+  (`auth` 10, `user` roles 20, `delegation` 30, `document` 35, `notification` 38, `award` 40, `gdpr` consents 70,
+  `user` account row 90, `ErasureOrderConstants`). `gdpr.service.ErasureRunner` calls them in order in one
+  transaction and finishes with `audit.service.AuditRedaction` (ADR-024). The PRD placed the contract in a
+  `gdpr` named interface; since `gdpr` already depends on `auth`, `user` and `award`, that would have formed
+  cycles, so it sits in the open `common` module.
 - Cross-module repository calls go through lookup services of the owning module whose methods keep the
   repository's names and transaction behaviour.
 - Besides `User` and `Organization`, the entities of `award`, `delegation` and `auth` are readable by other
@@ -198,6 +205,7 @@ when a module meets the extraction criteria below.**
 | 2026-10-05 | Stefan Kostyk | Initial version (proposed) | Design review of 2026-10-04 |
 | 2026-10-13 | Stefan Kostyk | Module list, named interfaces, step 2 done | Story 7.1.2 (SCRUM-65) |
 | 2026-10-15 | Stefan Kostyk | Status Accepted | Boundaries enforced by `ApplicationModules.verify()` through Epic 7 |
+| 2026-10-16 | Stefan Kostyk | Erasure contributor contract in `common.erasure` | Story 6.1.5 (SCRUM-90) |
 
 ---
 

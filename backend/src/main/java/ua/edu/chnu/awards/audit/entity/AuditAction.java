@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.audit.entity;
 /**
  * Security events written to {@code audit_logs} by the application (table triggers write the CRUD ones).
  */
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public enum AuditAction {
     LOGIN_SUCCESS,
     LOGIN_FAILED,
@@ -45,5 +46,8 @@ public enum AuditAction {
     LEGAL_HOLD_PLACED,
     LEGAL_HOLD_LIFTED,
     ERASURE_REQUESTED,
-    ERASURE_CANCELLED
+    ERASURE_CANCELLED,
+    ERASURE_POSTPONED,
+    ERASURE_COMPLETED,
+    AUDIT_REDACTED
 }

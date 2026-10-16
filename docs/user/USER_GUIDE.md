@@ -333,6 +333,10 @@ The account is erased 30 days later. Until then you can sign in as usual; a bann
 
 The request is refused when the password is wrong (it counts as a failed sign-in), when the account is locked, when a legal obligation requires the university to keep your data (contact the data protection officer), or when you are the only system administrator (another administrator must be appointed first).
 
+On the date, the erasure runs during the night. You are signed out everywhere and can no longer sign in; a last e-mail confirms the erasure. Your approved awards stay visible only to the reviewers and units that keep them, under the name "Erased #" followed by a number, without their documents. Awards you submitted on behalf of a unit that were still pending are deleted with your account, so the unit's secretary no longer sees them in the queue. Reviews you had claimed go back to the queue of their level, and decisions you made on other people's awards stay under the same pseudonym. The address becomes free and can be used to register a new account.
+
+If a legal obligation arises during the 30 days, the erasure waits until it ends and you receive an e-mail saying so; it then runs at the next night without a new waiting period.
+
 ### Notification Preferences
 
 On your profile, the **Notifications** card lists every notification type with two switches, e-mail and in the application. Both are on until you change them. Security and privacy e-mails (sign-in, password, data export, account deletion) are always sent.

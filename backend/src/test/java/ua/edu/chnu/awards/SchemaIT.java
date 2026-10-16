@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -155,9 +156,8 @@ class SchemaIT extends AbstractIntegrationTest {
                 + "from audit_logs where entity_type = 'users' and action_type = 'UPDATE' and entity_id = ?", owner);
             assertThat(audit).containsEntry("old_values", "{\"first_name\": \"A\"}")
                 .containsEntry("new_values", "{\"first_name\": \"B\"}").containsEntry("changed", "first_name");
-            old.update("update audit_logs set entity_type = 'changed'");
-            assertThat(old.queryForObject("select count(*) from audit_logs where entity_type = 'changed'",
-                Long.class)).isZero();
+            assertThatThrownBy(() -> old.update("update audit_logs set entity_type = 'changed'"))
+                .hasMessageContaining("audit_logs rows are immutable");
         } finally {
             jdbc.execute("drop database " + database + " with (force)");
         }
