@@ -110,6 +110,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'privacy',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/privacy/privacy-centre/privacy-centre.component').then(
+            (m) => m.PrivacyCentreComponent,
+          ),
+      },
+      {
         path: 'notifications',
         canActivate: [authGuard],
         loadComponent: () =>

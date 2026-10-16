@@ -1,32 +1,34 @@
 import { DatePipe, NgComponentOutlet } from '@angular/common';
-import { Component, Type, inject, signal } from '@angular/core';
+import {
+  Component,
+  Injector,
+  Type,
+  afterNextRender,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
-import { fieldProblems, problemStatus, problemType } from '../../../core/api/problem';
+import { fieldProblems, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { OrganizationRef, UserProfile } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { organizationName } from '../../../shared/organization-name';
 import { Delegation, DelegationsService } from '../../delegations/delegations.service';
 import { EmailChangeDialogComponent } from '../email-change-dialog/email-change-dialog.component';
-import { attachmentName, saveFile } from '../../../shared/file-download';
 import { nameValidator } from '../../../shared/name-rules';
 import { NameChange, ProfileService } from '../profile.service';
 
 type NameField = 'firstName' | 'lastName';
-
-const DEFAULT_EXPORT_NAME = 'award-monitoring-export.json';
-
-/** The attachment name of a Content-Disposition header, or a default. */
-export function fileName(disposition: string | null): string {
-  return attachmentName(disposition, DEFAULT_EXPORT_NAME);
-}
 
 @Component({
   selector: 'app-profile',
@@ -43,6 +45,7 @@ export function fileName(disposition: string | null): string {
     MatError,
     MatInput,
     MatButton,
+    RouterLink,
     TranslocoPipe,
   ],
   templateUrl: './profile.component.html',
@@ -55,6 +58,9 @@ export class ProfileComponent {
   private readonly delegations = inject(DelegationsService);
   private readonly language = inject(LanguageService);
   private readonly dialog = inject(MatDialog);
+  private readonly route = inject(ActivatedRoute);
+  private readonly injector = inject(Injector);
+  private scrolled = false;
 
   readonly profile = signal<UserProfile | null>(null);
   readonly received = signal<Delegation[]>([]);
@@ -63,9 +69,6 @@ export class ProfileComponent {
   readonly message = signal<string | null>(null);
   readonly problem = signal<string | null>(null);
   readonly sentTo = signal<string | null>(null);
-  readonly exporting = signal(false);
-  readonly exportMessage = signal<string | null>(null);
-  readonly exportProblem = signal<string | null>(null);
   readonly preferencesCard = signal<Type<unknown> | null>(null);
 
   readonly names = this.fb.nonNullable.group({
@@ -85,6 +88,11 @@ export class ProfileComponent {
     import('../notification-preferences/notification-preferences.component')
       .then((module) => this.preferencesCard.set(module.NotificationPreferencesComponent))
       .catch(() => this.preferencesCard.set(null));
+    effect(() => {
+      if (this.profile() && this.preferencesCard()) {
+        untracked(() => this.scrollToFragment());
+      }
+    });
   }
 
   name(organization: OrganizationRef): string {
@@ -145,28 +153,14 @@ export class ProfileComponent {
       });
   }
 
-  downloadData(): void {
-    if (this.exporting()) {
+  private scrollToFragment(): void {
+    const fragment = this.route.snapshot.fragment;
+    if (!fragment || this.scrolled) {
       return;
     }
-    this.exporting.set(true);
-    this.exportMessage.set(null);
-    this.exportProblem.set(null);
-    this.api.exportData().subscribe({
-      next: (response) => {
-        saveFile(
-          response.body ?? new Blob(),
-          fileName(response.headers.get('Content-Disposition')),
-        );
-        this.exportMessage.set('profile.downloaded');
-        this.exporting.set(false);
-      },
-      error: (err: unknown) => {
-        this.exportProblem.set(
-          problemStatus(err) === 429 ? 'profile.errors.tooMany' : 'profile.errors.export',
-        );
-        this.exporting.set(false);
-      },
+    this.scrolled = true;
+    afterNextRender(() => document.getElementById(fragment)?.scrollIntoView(), {
+      injector: this.injector,
     });
   }
 

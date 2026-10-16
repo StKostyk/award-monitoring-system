@@ -1,9 +1,7 @@
-import { readFileSync } from 'node:fs';
-
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { countMessages, linkFor, registerAndVerify, signIn } from './helpers';
+import { linkFor, registerAndVerify, signIn } from './helpers';
 
 const PASSWORD = 'correct-horse-battery';
 
@@ -112,40 +110,6 @@ test.describe('profile', () => {
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL('http://localhost:4200/profile');
     await expect(page.getByTestId('profile-email')).toHaveText(email);
-  });
-
-  test('ac31 ac33 ac34 ac35 downloads my data once a minute and announces it by email', async ({
-    page,
-  }) => {
-    const email = `e2e.export.${Date.now()}@chnu.edu.ua`;
-    await registerAndVerify(page, email, PASSWORD);
-    await signIn(page, email, PASSWORD);
-    await expect(page.getByTestId('user-name')).toBeVisible();
-    await page.goto('/profile');
-    await expect(page.getByTestId('profile-my-data')).toBeVisible();
-
-    const downloading = page.waitForEvent('download');
-    await page.getByTestId('profile-download').click();
-    const download = await downloading;
-    expect(download.suggestedFilename()).toMatch(
-      /^award-monitoring-export-\d{4}-\d{2}-\d{2}\.json$/,
-    );
-    const path = await download.path();
-    const body = readFileSync(path, 'utf-8');
-    const file = JSON.parse(body) as {
-      personal_data: { profile: { email: string } };
-      roles: unknown[];
-    };
-    expect(file.personal_data.profile.email).toBe(email);
-    expect(file.roles).toEqual([]);
-    expect(body).not.toMatch(/password|\$2a\$|token/);
-    await expect(page.getByTestId('profile-export-done')).toBeVisible();
-
-    await page.getByTestId('profile-download').click();
-    await expect(page.getByTestId('profile-export-error')).toHaveText(
-      'Забагато запитів. Спробуйте пізніше.',
-    );
-    await expect.poll(() => countMessages(email, 'Your data was exported')).toBe(1);
   });
 
   test('ac3_6 keeps one channel per type and stores the choice', async ({ page }) => {
