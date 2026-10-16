@@ -35,6 +35,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  *                        lent, oldest first
  * @param consentHistory  every consent record
  * @param legalHolds      legal holds placed on the account, newest first
+ * @param erasureRequests requests to erase the account, newest first
  * @param devices         browsers the account signed in from
  * @param activityLog     the person's own application events, newest first
  * @param notifications   in-app notifications and the delivery log of mails, newest first
@@ -46,7 +47,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
                                List<AwardVersionEntry> awardVersions, List<DocumentEntry> documents,
                                List<ReviewDecisionEntry> reviewDecisions, List<DecisionMadeEntry> decisionsMade,
                                List<ConsentEntry> consentHistory, List<LegalHoldEntry> legalHolds,
-                               List<DeviceEntry> devices,
+                               List<ErasureRequestEntry> erasureRequests, List<DeviceEntry> devices,
                                List<ActivityEntry> activityLog, List<NotificationEntry> notifications,
                                List<NotificationPreferenceEntry> notificationPreferences) {
 
@@ -63,6 +64,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         decisionsMade = List.copyOf(decisionsMade);
         consentHistory = List.copyOf(consentHistory);
         legalHolds = List.copyOf(legalHolds);
+        erasureRequests = List.copyOf(erasureRequests);
         devices = List.copyOf(devices);
         activityLog = List.copyOf(activityLog);
         notifications = List.copyOf(notifications);
@@ -85,6 +87,7 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
         counts.put("decisions_made", decisionsMade.size());
         counts.put("consent_history", consentHistory.size());
         counts.put("legal_holds", legalHolds.size());
+        counts.put("erasure_requests", erasureRequests.size());
         counts.put("devices", devices.size());
         counts.put("activity_log", activityLog.size());
         counts.put("notifications", notifications.size());
@@ -325,6 +328,21 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
      */
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record LegalHoldEntry(Instant placedAt, Instant liftedAt) {
+    }
+
+    /**
+     * One request to erase the account.
+     *
+     * @param status        PENDING, CANCELLED or COMPLETED
+     * @param requestedAt   when the person asked
+     * @param scheduledFor  when the account is erased
+     * @param warningSentAt when the reminder was mailed, or null
+     * @param postponedAt   when a legal hold first postponed the erasure, or null
+     * @param cancelledAt   when the person cancelled, or null
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record ErasureRequestEntry(String status, Instant requestedAt, Instant scheduledFor,
+                                      Instant warningSentAt, Instant postponedAt, Instant cancelledAt) {
     }
 
     /**

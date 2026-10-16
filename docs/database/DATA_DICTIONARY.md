@@ -22,7 +22,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
-| **Compliance Domain** | `audit_logs`, `consent_records`, `legal_holds` | GDPR compliance, audit trails |
+| **Compliance Domain** | `audit_logs`, `consent_records`, `legal_holds`, `erasure_requests` | GDPR compliance, audit trails |
 | **Notification Domain** | `notifications`, `notification_preferences`, `event_publication` | Communication, user preferences, event publication registry |
 
 ---
@@ -78,6 +78,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - HAS MANY `audit_logs` (1:N)
 - HAS MANY `consent_records` (1:N)
 - HAS MANY `legal_holds` (1:N)
+- HAS MANY `erasure_requests` (1:N)
 - HAS MANY `notifications` (1:N)
 
 ---
@@ -834,7 +835,7 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 - `reason` and `lift_reason` are 10 to 500 characters after trimming; a lift sets `lifted_by`, `lifted_at` and `lift_reason` together (`ck_legal_holds_lifted`) and cannot be undone
 - Changes of one account's holds are serialised by a row lock on `users`
 - Audited as `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` (entity type `GDPR`, `user_id` the officer, `entity_id` the account, `reasonLength` without the text); `trg_legal_holds_audit` writes the row changes with `reason` and `lift_reason` left out of the snapshots
-- The person's export (format 1.5) lists `placed_at` and `lifted_at` only
+- The person's export (format 1.5 and later) lists `placed_at` and `lifted_at` only
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -854,6 +855,40 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`, `placed_by`, `lifted_by`
+
+### 4.4 Entity: `erasure_requests`
+
+**Description**: Requests of people to erase their account after a grace period (V042, 6.1.4). A request stays `PENDING` until the person cancels it or the erasure job completes it (6.1.5).
+
+**Business Rules**:
+- At most one pending request per account (`uk_erasure_requests_pending`); a second request gives 409 `erasure-pending`
+- `scheduled_for` = `requested_at` + `app.erasure.grace-period` (default 30 days)
+- A request needs the current password and is refused under an active legal hold (409 `legal-hold`) and for the only active `SYSTEM_ADMIN` (409 `last-administrator`)
+- `cancelled_at` is set exactly when `CANCELLED`, `completed_at` exactly when `COMPLETED` (`ck_erasure_requests_dates`)
+- The nightly job mails one reminder `app.erasure.warning-before` (default 7 days) before `scheduled_for` and sets `warning_sent_at`; a request made with less time left gets none
+- Requests and cancellations of one account are serialised by a row lock on `users`
+- Audited as `ERASURE_REQUESTED` (`requestId`, `scheduledFor`), `ERASURE_CANCELLED` (`requestId`), entity type `GDPR`, `entity_id` the account; `trg_erasure_requests_audit` writes the row changes keyed by `request_id`
+- The person's export (format 1.6) lists every request without `completed_at`
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `request_id` | `BIGSERIAL` | NO | Auto | PK | Unique request identifier |
+| `user_id` | `BIGINT` | NO | - | FK→users (RESTRICT) | The account to erase |
+| `status` | `VARCHAR(20)` | NO | `'PENDING'` | CK: `PENDING`, `CANCELLED`, `COMPLETED` | Request state |
+| `requested_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the person asked |
+| `scheduled_for` | `TIMESTAMPTZ` | NO | - | - | When the account is erased |
+| `warning_sent_at` | `TIMESTAMPTZ` | YES | - | - | When the reminder was mailed |
+| `postponed_at` | `TIMESTAMPTZ` | YES | - | - | When a legal hold first postponed the erasure (6.1.5) |
+| `cancelled_at` | `TIMESTAMPTZ` | YES | - | CK | When the person cancelled |
+| `completed_at` | `TIMESTAMPTZ` | YES | - | CK | When the account was erased (6.1.5) |
+
+**Indexes**:
+- `erasure_requests_pkey` - Primary key on `request_id`
+- `uk_erasure_requests_pending` - Unique partial on `user_id` where `status = 'PENDING'`
+- `idx_erasure_requests_due` - Partial on `scheduled_for` where `status = 'PENDING'`
+
+**Relationships**:
+- BELONGS TO `users` (N:1) via `user_id`
 
 ---
 
@@ -1007,7 +1042,7 @@ Legal basis is that of the change that caused the mail.
 
 | **Entity** | **Relationships** |
 |------------|-------------------|
-| `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← legal_holds (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
+| `users` | → organizations (N:1), ← user_roles (1:N), ← one_time_tokens (1:N), ← user_devices (1:N), ← awards (1:N), ← audit_logs (1:N), ← consent_records (1:N), ← legal_holds (1:N), ← erasure_requests (1:N), ← notifications (1:N), ← notification_preferences (1:N) |
 | `user_roles` | → users (N:1), → organizations (N:1) |
 | `organizations` | → organizations (N:1, self), ← organizations (1:N), ← users (1:N), ← user_roles (1:N), ← awards (1:N), ← awards (1:N, as recipient) |
 | `one_time_tokens` | → users (N:1) |

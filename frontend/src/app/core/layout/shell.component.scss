@@ -112,6 +112,23 @@
   margin: 0 auto;
 }
 
+.shell__erasure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  a {
+    color: inherit;
+    font-weight: 500;
+  }
+}
+
 @media (max-width: 600px) {
   .shell__toolbar {
     padding: 0 8px;

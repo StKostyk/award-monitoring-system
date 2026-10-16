@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -17,8 +18,10 @@ import org.springframework.data.domain.Pageable;
 
 import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.gdpr.dto.ActivityEntry;
+import ua.edu.chnu.awards.gdpr.dto.ErasureRequest;
 import ua.edu.chnu.awards.gdpr.dto.PrivacySummary;
 import ua.edu.chnu.awards.gdpr.repository.ActivityQueries;
+import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
 import ua.edu.chnu.awards.gdpr.repository.PrivacySummaryQueries;
 
 class PrivacyCentreServiceTest {
@@ -27,7 +30,9 @@ class PrivacyCentreServiceTest {
 
     private final PrivacySummaryQueries summaryQueries = mock(PrivacySummaryQueries.class);
     private final ActivityQueries activityQueries = mock(ActivityQueries.class);
-    private final PrivacyCentreService service = new PrivacyCentreService(summaryQueries, activityQueries);
+    private final ErasureRequests erasureRequests = mock(ErasureRequests.class);
+    private final PrivacyCentreService service = new PrivacyCentreService(summaryQueries, activityQueries,
+        erasureRequests);
 
     @Test
     void ac21_everyVisibilityIsReportedEvenWithoutAwards() {
@@ -44,6 +49,16 @@ class PrivacyCentreServiceTest {
         assertThat(summary.documentsShown()).isEqualTo(1L);
         assertThat(summary.emailOffTypes()).containsExactly("AWARD_RETURNED");
         assertThat(summary.lastExportAt()).isEqualTo(exported);
+        assertThat(summary.erasure()).isNull();
+    }
+
+    @Test
+    void ac4_5_theSummaryCarriesThePendingErasure() {
+        ErasureRequest pending = new ErasureRequest(3L, Instant.parse("2026-10-16T08:00:00Z"),
+            Instant.parse("2026-11-15T08:00:00Z"), false);
+        when(erasureRequests.pending(USER)).thenReturn(Optional.of(pending));
+
+        assertThat(service.summary(USER).erasure()).isEqualTo(pending);
     }
 
     @Test

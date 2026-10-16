@@ -168,7 +168,7 @@ class LegalHoldFT extends AbstractFunctionalTest {
     @Test
     void ac3_7_theExportListsTheHoldDatesOnly() {
         as(tokenOf(PERSON)).get("/api/v1/users/me/export").then().statusCode(HttpStatus.OK.value())
-            .body("export_metadata.format_version", equalTo("1.5"))
+            .body("export_metadata.format_version", equalTo("1.6"))
             .body("legal_holds", hasSize(2))
             .body("legal_holds[0].placed_at", notNullValue())
             .body("legal_holds[0].lifted_at", nullValue())

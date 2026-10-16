@@ -78,7 +78,7 @@ class DataExportFT extends AbstractFunctionalTest {
             .body("awards[0].visibility", equalTo("PRIVATE"))
             .body("roles", hasSize(0))
             .body("activity_log.action", hasItem("LOGIN_SUCCESS"))
-            .body("export_metadata.format_version", equalTo("1.5"))
+            .body("export_metadata.format_version", equalTo("1.6"))
             .body("notifications", hasSize(1))
             .body("notifications[0].channel", equalTo("EMAIL"))
             .body("notifications[0].delivery_status", equalTo("SENT"))

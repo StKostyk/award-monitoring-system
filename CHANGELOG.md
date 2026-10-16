@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Account erasure request from the privacy centre with a 30-day grace period, reminder mail, cancellation and a banner with the date on every page
 - Legal hold on accounts: the GDPR officer places and lifts a hold with a reason on the user detail page; holds are audited without the reason text and listed by date in the personal data export (format 1.5).
 - Privacy centre at /privacy: privacy notice, analytics consent with history, own visibility and notification choices, data export and a personal activity log (SCRUM-87).
 - Versioned privacy notice with append-only consent records: acknowledgement at registration and after each new version, optional analytics consent (SCRUM-86)

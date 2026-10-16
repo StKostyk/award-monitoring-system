@@ -1,15 +1,22 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { environment } from '../../../../environments/environment';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { ConsentOverview, ConsentsService } from '../consents.service';
-import { ActivityEntry, PrivacySummary } from '../privacy-centre.service';
+import {
+  ActivityEntry,
+  ErasureRequest,
+  PrivacyCentreService,
+  PrivacySummary,
+} from '../privacy-centre.service';
 import { PrivacyCentreComponent, fileName } from './privacy-centre.component';
 
 const OVERVIEW: ConsentOverview = {
@@ -43,6 +50,14 @@ const SUMMARY: PrivacySummary = {
   documentsShown: 3,
   emailOffTypes: ['AWARD_APPROVED', 'ROLE_ASSIGNED'],
   lastExportAt: null,
+  erasure: null,
+};
+
+const PENDING: ErasureRequest = {
+  id: 7,
+  requestedAt: '2026-10-16T10:00:00Z',
+  scheduledFor: '2026-11-15T10:00:00Z',
+  postponed: false,
 };
 
 function entry(action: string, byMe: boolean, minute: number): ActivityEntry {
@@ -68,7 +83,14 @@ describe('PrivacyCentreComponent', () => {
         PrivacyCentreComponent,
         NoopAnimationsModule,
         TranslocoTestingModule.forRoot({
-          langs: { uk: { privacy: { activity: { actions: { LOGIN_SUCCESS: 'Вхід' } } } } },
+          langs: {
+            uk: {
+              privacy: {
+                activity: { actions: { LOGIN_SUCCESS: 'Вхід' } },
+                erasure: { scheduled: 'Буде видалено {{date}}.' },
+              },
+            },
+          },
           translocoConfig: { availableLangs: ['uk'], defaultLang: 'uk' },
         }),
       ],
@@ -83,12 +105,12 @@ describe('PrivacyCentreComponent', () => {
     http = TestBed.inject(HttpTestingController);
   }
 
-  async function setup(activity: ActivityEntry[] = [], totalPages = 1) {
+  async function setup(activity: ActivityEntry[] = [], totalPages = 1, summary = SUMMARY) {
     consents.overview.mockResolvedValue(OVERVIEW);
     await configure();
     const fixture = TestBed.createComponent(PrivacyCentreComponent);
     fixture.detectChanges();
-    http.expectOne(summaryUrl).flush(SUMMARY);
+    http.expectOne(summaryUrl).flush(summary);
     http.expectOne(activityUrl).flush({ content: activity, totalPages });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -116,6 +138,7 @@ describe('PrivacyCentreComponent', () => {
       'privacy-choices-card',
       'privacy-data-card',
       'privacy-activity-card',
+      'privacy-erasure-card',
     ]);
     expect(query(fixture, 'privacy-notice-acknowledged')?.textContent).toContain('15.10.2026');
     expect(query(fixture, 'privacy-awards-PRIVATE')?.textContent?.trim()).toBe('2');
@@ -257,5 +280,108 @@ describe('PrivacyCentreComponent', () => {
     expect(query(fixture, 'privacy-summary-error')).not.toBeNull();
     expect(query(fixture, 'privacy-activity-error')).not.toBeNull();
     expect(fixture.componentInstance.overviewFailed()).toBe(true);
+  });
+
+  describe('erasure', () => {
+    const requestUrl = `${environment.apiUrl}/users/me/erasure-request`;
+    const cancelUrl = `${requestUrl}/cancel`;
+
+    function openDialog(result: ErasureRequest | undefined) {
+      const open = vi.fn().mockReturnValue({ afterClosed: () => of(result) });
+      TestBed.inject(MatDialog).open = open;
+      return open;
+    }
+
+    it('ac4_7_explains_what_is_erased_and_kept_and_offers_the_request', async () => {
+      const fixture = await setup();
+
+      expect(query(fixture, 'privacy-erasure-terms')?.querySelectorAll('li').length).toBe(4);
+      expect(query(fixture, 'privacy-erasure-open')).not.toBeNull();
+      expect(query(fixture, 'privacy-erasure-scheduled')).toBeNull();
+    });
+
+    it('ac4_7_shows_the_date_and_the_cancel_button_after_a_request', async () => {
+      const fixture = await setup();
+      const open = openDialog(PENDING);
+      TestBed.inject(PrivacyCentreService).requestErasure('Secret#2026').subscribe();
+      http.expectOne(requestUrl).flush(PENDING);
+
+      query(fixture, 'privacy-erasure-open')?.click();
+      http.expectOne(activityUrl).flush({ content: [], totalPages: 1 });
+      fixture.detectChanges();
+
+      expect(open).toHaveBeenCalled();
+      expect(query(fixture, 'privacy-erasure-scheduled')?.textContent).toContain('15.11.2026');
+      expect(query(fixture, 'privacy-erasure-done')).not.toBeNull();
+      expect(query(fixture, 'privacy-erasure-cancel')).not.toBeNull();
+      expect(query(fixture, 'privacy-erasure-open')).toBeNull();
+    });
+
+    it('ac4_7_reloads_the_summary_when_the_dialog_closes_without_a_request', async () => {
+      const fixture = await setup();
+      openDialog(undefined);
+
+      query(fixture, 'privacy-erasure-open')?.click();
+      http.expectOne(summaryUrl).flush({ ...SUMMARY, erasure: PENDING });
+      fixture.detectChanges();
+
+      expect(query(fixture, 'privacy-erasure-scheduled')).not.toBeNull();
+    });
+
+    it('ac4_4_cancels_the_pending_request', async () => {
+      const fixture = await setup([], 1, { ...SUMMARY, erasure: PENDING });
+      expect(query(fixture, 'privacy-erasure-scheduled')?.textContent).toContain('15.11.2026');
+
+      query(fixture, 'privacy-erasure-cancel')?.click();
+      const cancel = http.expectOne(cancelUrl);
+      expect(cancel.request.method).toBe('POST');
+      cancel.flush(null, { status: 204, statusText: 'No Content' });
+      http.expectOne(activityUrl).flush({ content: [], totalPages: 1 });
+      fixture.detectChanges();
+
+      expect(query(fixture, 'privacy-erasure-scheduled')).toBeNull();
+      expect(query(fixture, 'privacy-erasure-done')).not.toBeNull();
+      expect(query(fixture, 'privacy-erasure-open')).not.toBeNull();
+    });
+
+    it('ac4_4_reloads_when_nothing_is_pending_any_more', async () => {
+      const fixture = await setup([], 1, { ...SUMMARY, erasure: PENDING });
+
+      query(fixture, 'privacy-erasure-cancel')?.click();
+      http
+        .expectOne(cancelUrl)
+        .flush(
+          { type: 'urn:awards:problem:erasure-not-pending' },
+          { status: 409, statusText: 'Conflict' },
+        );
+      http.expectOne(summaryUrl).flush(SUMMARY);
+      fixture.detectChanges();
+
+      expect(query(fixture, 'privacy-erasure-error')).not.toBeNull();
+      expect(query(fixture, 'privacy-erasure-open')).not.toBeNull();
+    });
+
+    it('ac4_4_keeps_the_request_when_the_cancel_fails', async () => {
+      const fixture = await setup([], 1, { ...SUMMARY, erasure: PENDING });
+
+      query(fixture, 'privacy-erasure-cancel')?.click();
+      http.expectOne(cancelUrl).flush(null, { status: 500, statusText: 'Error' });
+      fixture.detectChanges();
+
+      expect(query(fixture, 'privacy-erasure-error')).not.toBeNull();
+      expect(query(fixture, 'privacy-erasure-scheduled')).not.toBeNull();
+      expect(fixture.componentInstance.cancellingErasure()).toBe(false);
+    });
+
+    it('ac4_7_labels_the_erasure_actions', async () => {
+      const fixture = await setup();
+
+      expect(fixture.componentInstance.actionKey('ERASURE_REQUESTED')).toBe(
+        'privacy.activity.actions.ERASURE_REQUESTED',
+      );
+      expect(fixture.componentInstance.actionKey('ERASURE_CANCELLED')).toBe(
+        'privacy.activity.actions.ERASURE_CANCELLED',
+      );
+    });
   });
 });

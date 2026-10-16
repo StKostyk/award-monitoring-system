@@ -1105,7 +1105,49 @@
         "CONSENT_GRANTED": "Consent given",
         "CONSENT_WITHDRAWN": "Consent withdrawn",
         "LEGAL_HOLD_PLACED": "Legal hold placed",
-        "LEGAL_HOLD_LIFTED": "Legal hold lifted"
+        "LEGAL_HOLD_LIFTED": "Legal hold lifted",
+        "ERASURE_REQUESTED": "Account erasure requested",
+        "ERASURE_CANCELLED": "Account erasure cancelled"
+      }
+    },
+    "erasure": {
+      "title": "Delete my account",
+      "intro": "After a 30-day grace period the system erases your account:",
+      "erased": "Erased: your profile, sign-in data, drafts and pending awards, documents, notifications and settings.",
+      "keptAwards": "Kept: approved awards, under a pseudonym and visible only inside the university records.",
+      "keptAudit": "Kept: audit records, with your name, address and IP addresses removed.",
+      "keptConsents": "Kept: consent records, for seven years after the last change, as the law requires.",
+      "grace": "Until the erasure date you can sign in as usual and cancel the request here.",
+      "open": "Delete my account",
+      "scheduled": "Your account will be erased on {{date}}.",
+      "postponed": "The erasure is postponed because of a legal obligation. It continues once the obligation ends.",
+      "cancelHint": "You can still change your mind: cancelling keeps the account as it is.",
+      "cancel": "Cancel the erasure",
+      "requested": "The request is saved. We sent you an email with the date.",
+      "cancelled": "The erasure is cancelled. Your account stays.",
+      "banner": "Your account will be erased on {{date}}.",
+      "bannerLink": "Cancel in the privacy centre",
+      "dialog": {
+        "title": "Delete my account",
+        "text": "Enter your password to confirm. The account is erased after 30 days unless you cancel the request.",
+        "password": "Current password",
+        "passwordRequired": "Enter your password",
+        "understood": "I understand that my account and data will be erased after the grace period",
+        "understoodRequired": "Tick the box to confirm",
+        "confirm": "Request erasure",
+        "cancel": "Back",
+        "sending": "Sending the request"
+      },
+      "problems": {
+        "password-mismatch": "Wrong password",
+        "account-locked": "The account is locked after failed sign-ins. Try again later.",
+        "erasure-pending": "An erasure is already scheduled. Close the dialog to see its date.",
+        "legal-hold": "Your account cannot be deleted now because of a legal obligation. Contact the data protection officer for details.",
+        "last-administrator": "You are the only system administrator. Appoint another administrator before deleting your account.",
+        "network": "The server is unreachable. Try again later.",
+        "unknown": "The request failed. Try again later.",
+        "erasure-not-pending": "No erasure is pending any more.",
+        "cancelFailed": "The erasure could not be cancelled. Try again later."
       }
     }
   },

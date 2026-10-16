@@ -54,6 +54,14 @@
   gap: 8px;
 }
 
+.centre__scheduled {
+  font-weight: 500;
+}
+
+.centre__danger {
+  --mat-button-outlined-label-text-color: var(--mat-sys-error);
+}
+
 .centre__table {
   width: 100%;
   margin-bottom: 8px;

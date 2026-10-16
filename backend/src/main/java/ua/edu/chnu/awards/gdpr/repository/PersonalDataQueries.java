@@ -17,6 +17,7 @@ import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ActivityEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ConsentEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DecisionMadeEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DocumentEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ErasureRequestEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.LegalHoldEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ReviewDecisionEntry;
 
@@ -71,6 +72,13 @@ public class PersonalDataQueries {
           from legal_holds
          where user_id = :userId
          order by placed_at desc, hold_id desc
+        """;
+
+    private static final String ERASURE_REQUESTS = """
+        select status, requested_at, scheduled_for, warning_sent_at, postponed_at, cancelled_at
+          from erasure_requests
+         where user_id = :userId
+         order by requested_at desc, request_id desc
         """;
 
     private static final String CONSENTS = """
@@ -158,6 +166,18 @@ public class PersonalDataQueries {
     public List<LegalHoldEntry> legalHolds(long userId) {
         return jdbc.query(LEGAL_HOLDS, Map.of(USER_ID, userId), (row, index) -> new LegalHoldEntry(
             instant(row, "placed_at"), instant(row, "lifted_at")));
+    }
+
+    /**
+     * The requests to erase the account.
+     *
+     * @param userId the person
+     * @return requests, newest first
+     */
+    public List<ErasureRequestEntry> erasureRequests(long userId) {
+        return jdbc.query(ERASURE_REQUESTS, Map.of(USER_ID, userId), (row, index) -> new ErasureRequestEntry(
+            row.getString("status"), instant(row, "requested_at"), instant(row, "scheduled_for"),
+            instant(row, "warning_sent_at"), instant(row, "postponed_at"), instant(row, "cancelled_at")));
     }
 
     /**

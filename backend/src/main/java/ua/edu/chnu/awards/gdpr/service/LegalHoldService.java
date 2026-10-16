@@ -13,8 +13,10 @@ import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
+import ua.edu.chnu.awards.gdpr.dto.ErasureRequest;
 import ua.edu.chnu.awards.gdpr.dto.LegalHold;
 import ua.edu.chnu.awards.gdpr.dto.LegalHoldOverview;
+import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
 import ua.edu.chnu.awards.gdpr.repository.LegalHolds;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
@@ -33,14 +35,15 @@ public class LegalHoldService {
     private static final String DELETED = "DELETED";
 
     private final LegalHolds holds;
+    private final ErasureRequests erasureRequests;
     private final AuditService audit;
     private final Clock clock;
 
     /**
-     * Every hold of the account.
+     * Every hold of the account and when its pending erasure is due.
      *
      * @param userId the account
-     * @return the holds, newest first
+     * @return the holds, newest first, and the due date
      * @throws UserNotFoundException when there is no such account
      */
     @Transactional(readOnly = true)
@@ -49,7 +52,8 @@ public class LegalHoldService {
         if (list.isEmpty() && !holds.accountExists(userId)) {
             throw new UserNotFoundException(userId);
         }
-        return new LegalHoldOverview(list, null);
+        return new LegalHoldOverview(list,
+            erasureRequests.pending(userId).map(ErasureRequest::scheduledFor).orElse(null));
     }
 
     /**

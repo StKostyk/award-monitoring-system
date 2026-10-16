@@ -223,4 +223,65 @@
       }
     </mat-card-content>
   </mat-card>
+
+  <mat-card class="centre__card" data-testid="privacy-erasure-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'privacy.erasure.title' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (erasure(); as pending) {
+        <p class="centre__scheduled" data-testid="privacy-erasure-scheduled">
+          {{ 'privacy.erasure.scheduled' | transloco: { date: date(pending.scheduledFor) } }}
+        </p>
+        @if (pending.postponed) {
+          <p data-testid="privacy-erasure-postponed">
+            {{ 'privacy.erasure.postponed' | transloco }}
+          </p>
+        }
+        <p class="centre__hint">{{ 'privacy.erasure.cancelHint' | transloco }}</p>
+      } @else if (summary()) {
+        <p>{{ 'privacy.erasure.intro' | transloco }}</p>
+        <ul class="centre__list" data-testid="privacy-erasure-terms">
+          <li>{{ 'privacy.erasure.erased' | transloco }}</li>
+          <li>{{ 'privacy.erasure.keptAwards' | transloco }}</li>
+          <li>{{ 'privacy.erasure.keptAudit' | transloco }}</li>
+          <li>{{ 'privacy.erasure.keptConsents' | transloco }}</li>
+        </ul>
+        <p class="centre__hint">{{ 'privacy.erasure.grace' | transloco }}</p>
+      } @else if (summaryFailed()) {
+        <p class="centre__problem" role="alert">{{ 'privacy.centre.loadFailed' | transloco }}</p>
+      }
+      @if (erasureMessage(); as erasureMessage) {
+        <p role="status" data-testid="privacy-erasure-done">{{ erasureMessage | transloco }}</p>
+      }
+      @if (erasureProblem(); as erasureProblem) {
+        <p class="centre__problem" role="alert" data-testid="privacy-erasure-error">
+          {{ erasureProblem | transloco }}
+        </p>
+      }
+      <div class="centre__actions">
+        @if (erasure()) {
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="cancellingErasure()"
+            (click)="cancelErasure()"
+            data-testid="privacy-erasure-cancel"
+          >
+            {{ 'privacy.erasure.cancel' | transloco }}
+          </button>
+        } @else if (summary()) {
+          <button
+            mat-stroked-button
+            type="button"
+            class="centre__danger"
+            (click)="openErasure()"
+            data-testid="privacy-erasure-open"
+          >
+            {{ 'privacy.erasure.open' | transloco }}
+          </button>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
 </div>

@@ -57,7 +57,7 @@ class DataExportServiceTest {
     private final PersonalDataFile file = new PersonalDataFile(
         new PersonalDataFile.Metadata(LATE_EVENING_UTC, 5L, "1.2", "Article 20"), null, List.of(), List.of(),
         List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-        List.of());
+        List.of(), List.of());
 
     @BeforeEach
     void bindRequest() {
@@ -113,7 +113,8 @@ class DataExportServiceTest {
     @Test
     void ac34_theSectionCountsAreWhatTheAuditKeeps() {
         assertThat(file.sectionCounts()).containsOnlyKeys("roles", "delegations", "awards", "award_versions",
-                "documents", "review_decisions", "decisions_made", "consent_history", "legal_holds", "devices",
+                "documents", "review_decisions", "decisions_made", "consent_history", "legal_holds",
+                "erasure_requests", "devices",
                 "activity_log", "notifications", "notification_preferences")
             .allSatisfy((section, count) -> assertThat(count).isEqualTo(0));
     }

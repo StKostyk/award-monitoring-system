@@ -217,6 +217,15 @@
       }
     </mat-toolbar>
     <main class="shell__content">
+      @if (erasureDate(); as date) {
+        <div class="shell__erasure" role="status" data-testid="erasure-banner">
+          <mat-icon aria-hidden="true">delete_forever</mat-icon>
+          <span>{{ 'privacy.erasure.banner' | transloco: { date } }}</span>
+          <a routerLink="/privacy" data-testid="erasure-banner-link">
+            {{ 'privacy.erasure.bannerLink' | transloco }}
+          </a>
+        </div>
+      }
       <router-outlet />
     </main>
   </mat-sidenav-content>

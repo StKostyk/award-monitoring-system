@@ -12,6 +12,7 @@ import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.gdpr.dto.ActivityEntry;
 import ua.edu.chnu.awards.gdpr.dto.PrivacySummary;
 import ua.edu.chnu.awards.gdpr.repository.ActivityQueries;
+import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
 import ua.edu.chnu.awards.gdpr.repository.PrivacySummaryQueries;
 
 import lombok.RequiredArgsConstructor;
@@ -28,9 +29,10 @@ public class PrivacyCentreService {
 
     private final PrivacySummaryQueries summaryQueries;
     private final ActivityQueries activityQueries;
+    private final ErasureRequests erasureRequests;
 
     /**
-     * What the person shares and when the data was last exported.
+     * What the person shares, when the data was last exported and the pending erasure.
      *
      * @param userId the person
      * @return the summary
@@ -41,7 +43,8 @@ public class PrivacyCentreService {
         Map<String, Long> awards = new HashMap<>();
         VISIBILITIES.forEach(visibility -> awards.put(visibility, stored.getOrDefault(visibility, 0L)));
         return new PrivacySummary(awards, summaryQueries.documentsShown(userId),
-            summaryQueries.emailOffTypes(userId), summaryQueries.lastExportAt(userId));
+            summaryQueries.emailOffTypes(userId), summaryQueries.lastExportAt(userId),
+            erasureRequests.pending(userId).orElse(null));
     }
 
     /**
