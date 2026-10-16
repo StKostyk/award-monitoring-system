@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Privacy centre at /privacy: privacy notice, analytics consent with history, own visibility and notification choices, data export and a personal activity log (SCRUM-87).
 - Versioned privacy notice with append-only consent records: acknowledgement at registration and after each new version, optional analytics consent (SCRUM-86)
 - Every e-mail carries an HTML part in the university brand next to the plain text; notification mails link to the preferences (SCRUM-69).
 - Delivery log of notification e-mails (no duplicate after a retried publication), delivery counter award.notifications.delivered, and notifications plus notification preferences in the personal data export (format 1.4)

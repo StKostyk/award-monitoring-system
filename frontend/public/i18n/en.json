@@ -958,6 +958,106 @@
         "network": "The server is unreachable. Try again later.",
         "unknown": "The confirmation failed. Try again later."
       }
+    },
+    "centre": {
+      "menu": "Privacy and my data",
+      "title": "Privacy and my data",
+      "loadFailed": "This part could not be loaded. Try again later.",
+      "notice": {
+        "title": "Privacy notice",
+        "acknowledged": "You confirmed version {{version}}",
+        "notAcknowledged": "You have not confirmed the notice yet.",
+        "read": "Read the notice"
+      },
+      "consents": {
+        "title": "Consents",
+        "ANALYTICS": "Name me in rankings and comparisons of unit reports",
+        "ANALYTICS_purpose": "Without this consent you are counted only in totals. Withdrawing it does not affect earlier reports.",
+        "failed": "The choice could not be saved. Try again later.",
+        "history": "History of consents",
+        "noHistory": "No records yet.",
+        "granted": "given",
+        "withdrawn": "withdrawn",
+        "version": "notice {{version}}",
+        "types": {
+          "DATA_PROCESSING": "Processing of personal data",
+          "ANALYTICS": "Rankings and comparisons"
+        }
+      },
+      "choices": {
+        "title": "Your choices",
+        "awards": {
+          "PRIVATE": "Approved awards seen only by you and reviewers",
+          "UNIVERSITY": "Approved awards shown to colleagues",
+          "PUBLIC": "Approved awards shown publicly"
+        },
+        "documentsTitle": "Documents shown to colleagues",
+        "emailTitle": "Event types with e-mail switched off",
+        "awardsLink": "My awards",
+        "notificationsLink": "Notification settings"
+      },
+      "data": {
+        "title": "Your data",
+        "download": "Download my data",
+        "downloading": "Preparing the file…",
+        "downloaded": "File downloaded",
+        "lastExport": "Last download: {{date}}",
+        "tooMany": "Too many requests. Try again later.",
+        "failed": "The file could not be prepared. Try again later.",
+        "hint": "A JSON file with everything the system keeps about you: profile, roles, delegations, awards including drafts, document details, consents, devices and the log of your actions with IP addresses. You will get an email about the download."
+      }
+    },
+    "activity": {
+      "title": "Your activity",
+      "empty": "Nothing recorded yet.",
+      "failed": "The activity could not be loaded.",
+      "byMe": "By me",
+      "aboutMe": "About me",
+      "columns": {
+        "action": "Action",
+        "time": "Time",
+        "who": "Who"
+      },
+      "actions": {
+        "LOGIN_SUCCESS": "Signed in",
+        "LOGIN_FAILED": "Failed sign-in",
+        "ACCOUNT_LOCKED": "Account locked",
+        "LOGOUT": "Signed out",
+        "PASSWORD_RESET_REQUESTED": "Password reset requested",
+        "PASSWORD_RESET": "Password reset",
+        "EMAIL_VERIFIED": "Address confirmed",
+        "SECURITY_REVOKE": "Sessions ended after a security report",
+        "REGISTRATION_REPLACED": "Registration started again",
+        "ACCESS_DENIED": "Access denied",
+        "ROLE_ASSIGNED": "Role assigned",
+        "ROLE_REVOKED": "Role revoked",
+        "DELEGATION_CREATED": "Delegation created",
+        "DELEGATION_REVOKED": "Delegation revoked",
+        "AWARD_SUBMITTED": "Award submitted",
+        "REVIEW_CLAIMED": "Review taken",
+        "REVIEW_RELEASED": "Review released",
+        "REVIEW_HANDED_OVER": "Review handed over",
+        "REVIEW_TAKEN_OVER": "Review taken over",
+        "REVIEW_DECISION": "Review decision",
+        "AWARD_WITHDRAWN": "Award withdrawn",
+        "REVIEW_BATCH": "Batch review",
+        "REVIEW_PERIOD_CHANGED": "Review period changed",
+        "REVIEW_OVERDUE_NOTICED": "Overdue review reported",
+        "AWARD_CORRECTED": "Award corrected",
+        "AWARD_VISIBILITY_CHANGED": "Award visibility changed",
+        "PROFILE_UPDATED": "Profile changed",
+        "EMAIL_CHANGE_REQUESTED": "Address change requested",
+        "EMAIL_CHANGED": "Address changed",
+        "DATA_EXPORT": "Data downloaded",
+        "AUDIT_EXPORT": "Audit log exported",
+        "DOCUMENT_DOWNLOAD": "Document downloaded",
+        "DOCUMENT_REJECTED": "Document rejected",
+        "DOCUMENT_SHARING_CHANGED": "Document sharing changed",
+        "NOTIFICATION_PREFERENCES_CHANGED": "Notification settings changed",
+        "PRIVACY_NOTICE_ACKNOWLEDGED": "Privacy notice confirmed",
+        "CONSENT_GRANTED": "Consent given",
+        "CONSENT_WITHDRAWN": "Consent withdrawn"
+      }
     }
   },
   "profile": {
@@ -985,11 +1085,7 @@
     "addressTitle": "Sign-in address",
     "addressHint": "A new address has to be confirmed from its mailbox. Confirming ends every session.",
     "changeAddress": "Change address",
-    "dataTitle": "My data",
-    "dataHint": "A JSON file with everything the system keeps about you: profile, roles, delegations, awards including drafts, document details, consents, devices and the log of your actions with IP addresses. You will get an email about the download.",
-    "download": "Download my data",
-    "downloading": "Preparing the file…",
-    "downloaded": "File downloaded",
+    "privacyLink": "Privacy and my data",
     "validation": {
       "required": "The field cannot be empty",
       "too-long": "At most 100 characters",
@@ -999,9 +1095,7 @@
     "errors": {
       "load": "The profile could not be loaded. Try again later.",
       "network": "The server is unavailable. Try again later.",
-      "failed": "The changes could not be saved. Try again later.",
-      "tooMany": "Too many requests. Try again later.",
-      "export": "The file could not be prepared. Try again later."
+      "failed": "The changes could not be saved. Try again later."
     }
   },
   "emailChange": {

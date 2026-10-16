@@ -1,0 +1,226 @@
+<div class="centre">
+  <h1 class="centre__title">{{ 'privacy.centre.title' | transloco }}</h1>
+
+  <mat-card class="centre__card" data-testid="privacy-notice-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'privacy.centre.notice.title' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (overview(); as overview) {
+        @if (overview.notice.acknowledgedVersion; as version) {
+          <p data-testid="privacy-notice-acknowledged">
+            {{ 'privacy.centre.notice.acknowledged' | transloco: { version } }}
+            @if (overview.notice.acknowledgedAt; as at) {
+              · <time [attr.datetime]="at">{{ date(at) }}</time>
+            }
+          </p>
+        } @else {
+          <p>{{ 'privacy.centre.notice.notAcknowledged' | transloco }}</p>
+        }
+      } @else if (overviewFailed()) {
+        <p class="centre__problem" role="alert">{{ 'privacy.centre.loadFailed' | transloco }}</p>
+      }
+      <a mat-stroked-button routerLink="/privacy-notice" data-testid="privacy-notice-link">
+        {{ 'privacy.centre.notice.read' | transloco }}
+      </a>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="centre__card" data-testid="privacy-consents-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'privacy.centre.consents.title' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (overview(); as overview) {
+        <mat-slide-toggle
+          [checked]="analytics()"
+          [disabled]="savingConsent()"
+          (change)="chooseAnalytics($event)"
+          data-testid="privacy-analytics"
+        >
+          {{ 'privacy.centre.consents.ANALYTICS' | transloco }}
+        </mat-slide-toggle>
+        <p class="centre__hint">{{ 'privacy.centre.consents.ANALYTICS_purpose' | transloco }}</p>
+        @if (consentProblem(); as consentProblem) {
+          <p class="centre__problem" role="alert" data-testid="privacy-analytics-error">
+            {{ consentProblem | transloco }}
+          </p>
+        }
+        <mat-expansion-panel class="centre__history" data-testid="privacy-consent-history">
+          <mat-expansion-panel-header>
+            <mat-panel-title>{{ 'privacy.centre.consents.history' | transloco }}</mat-panel-title>
+          </mat-expansion-panel-header>
+          @if (history().length === 0) {
+            <p>{{ 'privacy.centre.consents.noHistory' | transloco }}</p>
+          } @else {
+            <ul class="centre__list">
+              @for (line of history(); track $index) {
+                <li data-testid="privacy-consent-line">
+                  <time [attr.datetime]="line.at">{{ time(line.at) }}</time> ·
+                  {{ 'privacy.centre.consents.types.' + line.type | transloco }} ·
+                  {{
+                    (line.granted
+                      ? 'privacy.centre.consents.granted'
+                      : 'privacy.centre.consents.withdrawn'
+                    ) | transloco
+                  }}
+                  · {{ 'privacy.centre.consents.version' | transloco: { version: line.version } }}
+                </li>
+              }
+            </ul>
+          }
+        </mat-expansion-panel>
+      } @else if (overviewFailed()) {
+        <p class="centre__problem" role="alert">{{ 'privacy.centre.loadFailed' | transloco }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="centre__card" data-testid="privacy-choices-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'privacy.centre.choices.title' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (summary(); as summary) {
+        <dl class="centre__facts">
+          @for (visibility of visibilities; track visibility) {
+            <dt>{{ 'privacy.centre.choices.awards.' + visibility | transloco }}</dt>
+            <dd [attr.data-testid]="'privacy-awards-' + visibility">
+              {{ summary.awardsByVisibility[visibility] }}
+            </dd>
+          }
+          <dt>{{ 'privacy.centre.choices.documentsTitle' | transloco }}</dt>
+          <dd data-testid="privacy-documents">
+            {{ summary.documentsShown }}
+          </dd>
+          <dt>{{ 'privacy.centre.choices.emailTitle' | transloco }}</dt>
+          <dd data-testid="privacy-email-off">
+            {{ summary.emailOffTypes.length }}
+          </dd>
+        </dl>
+        <div class="centre__actions">
+          <a mat-stroked-button routerLink="/awards" data-testid="privacy-awards-link">
+            {{ 'privacy.centre.choices.awardsLink' | transloco }}
+          </a>
+          <a
+            mat-stroked-button
+            routerLink="/profile"
+            fragment="notifications"
+            data-testid="privacy-notifications-link"
+          >
+            {{ 'privacy.centre.choices.notificationsLink' | transloco }}
+          </a>
+        </div>
+      } @else if (summaryFailed()) {
+        <p class="centre__problem" role="alert" data-testid="privacy-summary-error">
+          {{ 'privacy.centre.loadFailed' | transloco }}
+        </p>
+      } @else {
+        <mat-progress-bar mode="indeterminate" />
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="centre__card" data-testid="privacy-data-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'privacy.centre.data.title' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="centre__hint">{{ 'privacy.centre.data.hint' | transloco }}</p>
+      @if (summary()?.lastExportAt; as lastExportAt) {
+        <p data-testid="privacy-last-export">
+          {{ 'privacy.centre.data.lastExport' | transloco: { date: time(lastExportAt) } }}
+        </p>
+      }
+      @if (exportMessage(); as exportMessage) {
+        <p role="status" data-testid="privacy-export-done">{{ exportMessage | transloco }}</p>
+      }
+      @if (exportProblem(); as exportProblem) {
+        <p class="centre__problem" role="alert" data-testid="privacy-export-error">
+          {{ exportProblem | transloco }}
+        </p>
+      }
+      <div class="centre__actions">
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="exporting()"
+          (click)="downloadData()"
+          data-testid="privacy-download"
+        >
+          {{
+            (exporting() ? 'privacy.centre.data.downloading' : 'privacy.centre.data.download')
+              | transloco
+          }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="centre__card" data-testid="privacy-activity-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'privacy.activity.title' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (activity().length === 0 && !activityLoading() && !activityProblem()) {
+        <p data-testid="privacy-activity-empty">{{ 'privacy.activity.empty' | transloco }}</p>
+      } @else if (activity().length > 0) {
+        <table class="centre__table" data-testid="privacy-activity">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'privacy.activity.columns.action' | transloco }}</th>
+              <th scope="col">{{ 'privacy.activity.columns.time' | transloco }}</th>
+              <th scope="col">{{ 'privacy.activity.columns.who' | transloco }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of activity(); track $index) {
+              <tr data-testid="privacy-activity-row">
+                <td data-testid="privacy-activity-action">
+                  @if (actionKey(entry.action); as key) {
+                    {{ key | transloco }}
+                  } @else {
+                    {{ entry.action }}
+                  }
+                </td>
+                <td>
+                  <time [attr.datetime]="entry.occurredAt">{{ time(entry.occurredAt) }}</time>
+                </td>
+                <td>
+                  {{
+                    (entry.byMe ? 'privacy.activity.byMe' : 'privacy.activity.aboutMe') | transloco
+                  }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      @if (activityLoading()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      @if (activityProblem(); as problem) {
+        <div class="centre__problem" role="alert" data-testid="privacy-activity-error">
+          <span>{{ 'privacy.activity.failed' | transloco }}</span>
+          <button
+            mat-button
+            type="button"
+            (click)="loadMore()"
+            data-testid="privacy-activity-retry"
+          >
+            {{ 'awards.history.retry' | transloco }}
+          </button>
+        </div>
+      } @else if (activityHasMore() && !activityLoading()) {
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="loadMore()"
+          data-testid="privacy-activity-more"
+        >
+          {{ 'awards.history.more' | transloco }}
+        </button>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

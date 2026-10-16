@@ -88,6 +88,19 @@ export class ConsentsService {
       .pipe(tap((overview) => this.remember(overview)));
   }
 
+  /**
+   * Grants or withdraws an optional consent.
+   *
+   * @param type the consent type
+   * @param granted whether the consent is given
+   * @returns the overview after the change
+   */
+  choose(type: ConsentType, granted: boolean): Observable<ConsentOverview> {
+    return this.http
+      .put<ConsentOverview>(`${this.base}/${type}`, { granted })
+      .pipe(tap((overview) => this.remember(overview)));
+  }
+
   private remember(overview: ConsentOverview): ConsentOverview {
     this.cached = { userId: this.auth.userId(), readAt: Date.now(), overview };
     return overview;

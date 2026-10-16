@@ -104,4 +104,15 @@ describe('ConsentsService', () => {
 
     expect((await read()).notice.acknowledgementRequired).toBe(false);
   });
+
+  it('ac2_4 stores a consent choice and answers the next read from it', async () => {
+    const changed = firstValueFrom(service.choose('ANALYTICS', true));
+    const request = http.expectOne(`${consentsUrl}/ANALYTICS`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ granted: true });
+    request.flush(overview(false));
+    await changed;
+
+    expect((await read()).notice.acknowledgementRequired).toBe(false);
+  });
 });

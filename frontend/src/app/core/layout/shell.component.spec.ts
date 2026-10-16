@@ -314,6 +314,19 @@ describe('ShellComponent', () => {
     expect(drawer().classList).not.toContain('mat-drawer-opened');
   });
 
+  it('ac2_3_offers_the_privacy_centre_in_the_account_menu', () => {
+    auth.isAuthenticated.set(true);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-testid="user-menu"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(document.querySelector('[data-testid="nav-privacy"]')?.getAttribute('href')).toBe(
+      '/privacy',
+    );
+  });
+
   it('ac4_switches_the_colour_scheme_from_the_user_menu', async () => {
     auth.isAuthenticated.set(true);
     const fixture = TestBed.createComponent(ShellComponent);
