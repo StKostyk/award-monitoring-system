@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -30,8 +31,10 @@ import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
 import ua.edu.chnu.awards.common.web.NotFoundException;
+import ua.edu.chnu.awards.gdpr.dto.ErasureRequest;
 import ua.edu.chnu.awards.gdpr.dto.LegalHold;
 import ua.edu.chnu.awards.gdpr.dto.LegalHoldOverview;
+import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
 import ua.edu.chnu.awards.gdpr.repository.LegalHolds;
 
 class LegalHoldServiceTest {
@@ -45,7 +48,9 @@ class LegalHoldServiceTest {
 
     private final LegalHolds holds = mock(LegalHolds.class);
     private final AuditService audit = mock(AuditService.class);
-    private final LegalHoldService service = new LegalHoldService(holds, audit, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final ErasureRequests erasureRequests = mock(ErasureRequests.class);
+    private final LegalHoldService service = new LegalHoldService(holds, erasureRequests, audit,
+        Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
     void ac3_2_aHoldIsPlacedAndAuditedWithTheReasonLengthOnly() {
@@ -157,6 +162,15 @@ class LegalHoldServiceTest {
         when(holds.of(USER_ID)).thenReturn(List.of(active()));
 
         assertThat(service.overview(USER_ID)).isEqualTo(new LegalHoldOverview(List.of(active()), null));
+    }
+
+    @Test
+    void ac4_5_theOverviewCarriesWhenThePendingErasureIsDue() {
+        Instant due = NOW.plus(Duration.ofDays(30));
+        when(holds.of(USER_ID)).thenReturn(List.of(active()));
+        when(erasureRequests.pending(USER_ID)).thenReturn(Optional.of(new ErasureRequest(9L, NOW, due, false)));
+
+        assertThat(service.overview(USER_ID).erasureScheduledFor()).isEqualTo(due);
     }
 
     @Test

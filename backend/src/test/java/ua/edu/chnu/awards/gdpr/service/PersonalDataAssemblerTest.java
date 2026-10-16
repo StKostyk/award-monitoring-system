@@ -79,7 +79,7 @@ class PersonalDataAssemblerTest {
     void ac32_theMetadataAndProfileDescribeThePersonWithDepartmentAndFaculty() {
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.5",
+        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.6",
             "Article 20 - Right to Data Portability"));
         PersonalDataFile.Profile profile = file.personalData().profile();
         assertThat(profile.email()).isEqualTo("employee.fmi@chnu.edu.ua");
@@ -100,6 +100,7 @@ class PersonalDataAssemblerTest {
         assertThat(file.documents()).isEmpty();
         assertThat(file.consentHistory()).isEmpty();
         assertThat(file.legalHolds()).isEmpty();
+        assertThat(file.erasureRequests()).isEmpty();
         assertThat(file.devices()).isEmpty();
         assertThat(file.activityLog()).isEmpty();
         assertThat(file.awardVersions()).isEmpty();
@@ -108,8 +109,8 @@ class PersonalDataAssemblerTest {
         assertThat(file.notifications()).isEmpty();
         assertThat(file.notificationPreferences()).isEmpty();
         assertThat(file.sectionCounts()).containsOnlyKeys("roles", "delegations", "awards", "award_versions",
-            "documents", "review_decisions", "decisions_made", "consent_history", "legal_holds", "devices",
-            "activity_log", "notifications", "notification_preferences")
+            "documents", "review_decisions", "decisions_made", "consent_history", "legal_holds", "erasure_requests",
+            "devices", "activity_log", "notifications", "notification_preferences")
             .allSatisfy((key, count) -> assertThat(count).isEqualTo(0));
     }
 

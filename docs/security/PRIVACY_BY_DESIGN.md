@@ -396,6 +396,15 @@ Showing documents to colleagues (4.3.8) follows the award's visibility choice (4
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+**Request and grace period (Feature 6.1, 6.1.4)**
+
+1. In the privacy centre the person reads what is erased and what is kept (approved awards under a pseudonym, redacted audit records, consent records for seven years), ticks the confirmation and enters the current password (`POST /api/v1/users/me/erasure-request`). A wrong password counts as a failed sign-in; five lock the account.
+2. The request is refused, with nothing written, while another request is pending (`erasure-pending`), while a legal hold is active (`legal-hold`; the reason is not disclosed) and for the only active system administrator (`last-administrator`).
+3. An accepted request is stored as `PENDING` in `erasure_requests` with `scheduled_for` 30 days later (`app.erasure.grace-period`), audited as `ERASURE_REQUESTED` and confirmed by a privacy mail with the date and a link to cancel. The shell shows a banner with the date on every page.
+4. Until the date the person can cancel (`POST /api/v1/users/me/erasure-request/cancel`): `CANCELLED`, `ERASURE_CANCELLED`, a confirmation mail.
+5. The nightly job (03:30 Kyiv time) mails one reminder seven days before the date (`app.erasure.warning-before`).
+6. At the date the job erases the account unless a legal hold postpones it (6.1.5). The GDPR officer sees the pending date next to the account's legal holds.
+
 ### 5.2 Data Deletion Categories
 
 | **Category** | **Deletion Strategy** | **Timeline** | **Exceptions** |

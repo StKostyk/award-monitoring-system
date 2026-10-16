@@ -153,6 +153,9 @@ services:
       - APP_WORKFLOW_OVERDUE_CRON=${APP_WORKFLOW_OVERDUE_CRON:-0 5 * * * *}
       - APP_EVENTS_RETRY_INTERVAL=${APP_EVENTS_RETRY_INTERVAL:-PT10M}
       - APP_EVENTS_RETRY_AFTER=${APP_EVENTS_RETRY_AFTER:-PT10M}
+      - APP_ERASURE_GRACE_PERIOD=${APP_ERASURE_GRACE_PERIOD:-P30D}
+      - APP_ERASURE_WARNING_BEFORE=${APP_ERASURE_WARNING_BEFORE:-P7D}
+      - APP_ERASURE_CRON=${APP_ERASURE_CRON:-0 30 3 * * *}
       - AUTH_ALLOWED_ORIGINS=http://localhost,http://localhost:4200,http://localhost:8080
       - AUTH_REDIRECT_URIS=http://localhost/callback,http://localhost:4200/callback,http://localhost/swagger-ui/oauth2-redirect.html,http://localhost:8080/swagger-ui/oauth2-redirect.html
       - AUTH_POST_LOGOUT_REDIRECT_URIS=http://localhost,http://localhost:4200
