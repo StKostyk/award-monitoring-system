@@ -45,6 +45,7 @@ recorded in the thesis as a limitation).
 | 3 | 6.1.3 Legal hold on accounts | 6.1 | 3 | SCRUM-88 | #254 | no | Done |
 | 4 | 6.1.4 Account erasure request with a 30-day grace period | 6.1 | 5 | SCRUM-89 | #255 | no | Done |
 | 5 | 6.1.5 Erasure across modules with anonymised awards | 6.1 | 8 | SCRUM-90 | #256 | no | Done |
+| 5a | 6.1.6 Mails without a reverse DNS lookup per message | 6.1 | 2 | SCRUM-93 | #266 | no | In review |
 | 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 8 | SCRUM-91 | #257 | no | To do |
 | 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | To do |
 

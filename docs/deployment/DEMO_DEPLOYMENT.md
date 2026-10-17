@@ -12,7 +12,7 @@ Copy `.env.prod.example` to `.env.prod` (ignored by git) and fill it in.
 
 | Variable | Value |
 |---|---|
-| `SITE_ADDRESS` | Domain, `<server-ip>.sslip.io`, or `localhost` for a rehearsal |
+| `SITE_ADDRESS` | Domain, `<server-ip>.sslip.io`, or `localhost` for a rehearsal; also the host name in the SMTP greeting |
 | `BACKEND_IMAGE`, `FRONTEND_IMAGE` | GHCR image references on the server; `award-backend:prod` / `award-frontend:prod` when built locally |
 | `POSTGRES_*`, `REDIS_PASSWORD`, `MINIO_ROOT_*` | Generated random values (`openssl rand -base64 24`) |
 | `MINIO_APP_USER`, `MINIO_APP_PASSWORD` | The backend's MinIO account, created by the one-shot `minio-init` service with rights on the objects of `award-documents` only (no bucket settings, policies or admin); the root account stays with MinIO |

@@ -124,6 +124,10 @@ spring:
       mail.smtp.connectiontimeout: 10000
       mail.smtp.timeout: 10000
       mail.smtp.writetimeout: 10000
+      # Message-ID host and EHLO greeting without a reverse DNS lookup of the local host per mail
+      mail.from: ${app.mail.from}
+      mail.smtp.localhost: ${APP_MAIL_EHLO_HOST:chnu.edu.ua}
+      mail.smtps.localhost: ${APP_MAIL_EHLO_HOST:chnu.edu.ua}
 
 springdoc:
   swagger-ui:
