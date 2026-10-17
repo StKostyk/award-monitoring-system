@@ -371,6 +371,7 @@ Run 2026-10-17 on `develop` at c83afc7 (PRs #261, #262, #263, #264, #265 merged)
 | Backend unit / IT + FT | 1120 / 413, all green |
 | Coverage, static | 98.7 % lines (4694/4757); Checkstyle, PMD, SpotBugs 0 |
 | Frontend | lint clean, 741 tests, initial bundle 948.01 kB (privacy centre lazy) |
+| Integration | `docker compose up -d --build` clean, Flyway at V043; the 70 operations of `/v3/api-docs` match `openapi.yml` (7 more documented ones belong to the authorization server and actuator; 2 report operations stay planned) |
 | Playwright | 99 of 106 at two workers; all six specs of the feature pass. The 7 failures are mails arriving after the helpers' 20 s wait: JavaMail resolves the host name by reverse DNS for every Message-ID (`InternetAddress.getLocalHostName`), and that lookup takes seconds on the development machine (fix story). Re-run: 18 of 19, the remaining one the known batch-return flake (`reviews.spec.ts:387`) |
 
 ### AC evidence
