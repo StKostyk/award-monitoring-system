@@ -10,12 +10,12 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 6.1 GDPR consent management and data subject rights (privacy notice, consents, privacy centre, legal hold, erasure) | Approved (PRD) | - | - |
+| 6.1 GDPR consent management and data subject rights (privacy notice, consents, privacy centre, legal hold, erasure) | Validated, manual run of PRD §10 pending | 2026-10-15 | - |
 | 6.2 Automated data retention (retention job, compliance page) | Not started | - | - |
 
 ## Current focus
 
-Feature 6.1 PRD approved 2026-10-15: [feature-6.1-consent-data-subject-rights.md](../features/epic-06/feature-6.1-consent-data-subject-rights.md). Next: story 6.1.1 (SCRUM-86).
+Feature 6.1 validated 2026-10-17 (PRD §13): every AC has a test, gates green; the manual run of PRD §10 is next, then the Feature 6.2 PRD.
 
 ## Scope
 
@@ -44,7 +44,7 @@ recorded in the thesis as a limitation).
 | 2 | 6.1.2 Privacy centre in the profile | 6.1 | 5 | SCRUM-87 | #253 | yes | Done |
 | 3 | 6.1.3 Legal hold on accounts | 6.1 | 3 | SCRUM-88 | #254 | no | Done |
 | 4 | 6.1.4 Account erasure request with a 30-day grace period | 6.1 | 5 | SCRUM-89 | #255 | no | Done |
-| 5 | 6.1.5 Erasure across modules with anonymised awards | 6.1 | 8 | SCRUM-90 | #256 | no | In review |
+| 5 | 6.1.5 Erasure across modules with anonymised awards | 6.1 | 8 | SCRUM-90 | #256 | no | Done |
 | 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 8 | SCRUM-91 | #257 | no | To do |
 | 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | To do |
 
@@ -60,6 +60,7 @@ Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 
 | 2026-10-15 | Each module erases its own data behind one contract, called from the `gdpr` module | Keeps ADR-022 boundaries; the same contributors can serve the export (Epic 7 refactor note) | ADR-022 |
 | 2026-10-15 | Audit trail: guarded redaction (design note option B); V043 replaces the immutability rules with a row trigger and `fn_redact_audit_subject` | Keeps every row and its legal value while removing the identity of an erased person | PRD 6.1 §7 decision 11, §8.4; ADR-024 with 6.1.5 |
 | 2026-10-15 | Feature 6.1 PRD approved with deviations 1–14 (consent types, client-side acknowledgement, static notice pages, `legal-hold:manage`, pseudonym "Erased #<id>", usable account during the grace period) | One-pass approval | PRD 6.1 §7 |
+| 2026-10-17 | Feature 6.1 validated; four detours added to the manual scenario (last administrator at execution, restart mid-run, old password, odd `returnUrl`); lost mails on an outage stay a project-wide finding for Epic 9 | Scenario review found no break in the merged code | PRD 6.1 §13 |
 
 ## Documentation deviations found at kickoff
 
@@ -99,6 +100,10 @@ Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 
 - For Epic 5: the `ANALYTICS` consent decides whether a person is named in rankings and comparisons of unit
   reports; without it the person is counted only in totals (PRD 6.1 decision 1).
 - Documents live in MinIO; object deletion runs after the commit, with `DocumentSweeper` as the safety net.
+- Refactor candidates left after the 6.1 sweep: a shared submit helper for the legal hold and erasure dialogs (when
+  a third dialog appears), one `startAction()` for the privacy centre's busy and message resets, the cancel problem
+  keys under `privacy.erasure.cancel.*`, one account clean-up helper in `AbstractFunctionalTest` for the GDPR FTs,
+  `namesOf` in `ErasureRunner`, one row record in `DocumentErasure`.
 
 ## Risks
 

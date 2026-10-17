@@ -3,7 +3,7 @@
 > **Epic**: 6 — Compliance & Audit System (SCRUM-85)
 > **Sprint**: 6 (2026-10-19 → 2026-10-25), 6.1.5 may spill into sprint 7
 > **Points**: 26 (five stories)
-> **Status**: Approved 2026-10-15
+> **Status**: Validated 2026-10-17, pending the manual run of §10 (§13)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-06 tracker (decisions of 2026-10-15, deviations 1–6, technical notes, risks 1–3), design note erasure-audit-trail of 2026-10-15 (option B "guarded redaction"), US-011, US-012 (legal hold scenario), roadmap Feature 6.1, PRIVACY_BY_DESIGN §4.2, §5, §8, §9.2, DATA_GOVERNANCE §2.1, §2.3, §4.3, DATA_DICTIONARY §1.1, §4.1, §4.2, §5, ADR-022 (modules), ADR-021 (one instance), AUTHENTICATION_AUTHORIZATION §3.3 (permission matrix), V009, V010, V013, V023, `RolePermissions`, `PersonalDataAssembler`, `PrivacyMails`, `RegistrationService`, `AuthorizationRevoker`, `DocumentSweeper`, `openapi.yml` (`/auth/register`, `/users/me/*`, `/users/{id}`)
 
@@ -337,7 +337,11 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 33. Revoked mid-flow, delegation: `dean.fmi` delegates to E2 and E2 requests erasure; at the run the delegation ends. Expected: `dean.fmi` sees it ended on `/delegations`, no notification; `DELEGATION_REVOKED` with `reason: erasure`. (AC-5.3)
 34. Stop MinIO during the run of another fresh account with a document. Expected: the erasure completes; the log shows the failed object deletion; after MinIO starts, `DocumentSweeper` removes the object at its next run. (§5)
 35. Back after cancelling the erasure, and a reload of `/privacy` right after the request. Expected: the page reads the server state; no second request is sent. (AC-4.7)
-36. Two tabs on `/privacy`: request erasure in one, then cancel in the other without reloading. Expected: the second tab's cancel works (204) or, if done first, the request tab shows 409 `erasure-pending` after the reload. (§5)
+36. Two tabs on `/privacy`: request erasure in one, then cancel in the other without reloading. Expected: the second tab's cancel works (204) or, if done first, the request tab shows 409 `erasure-pending` after the reload. Cancel in tab A, then cancel again in tab B without reloading. Expected: B shows the `erasure-not-pending` message and the banner disappears after the next navigation. (§5)
+37. Last administrator at execution: `admin` assigns E2 `SYSTEM_ADMIN`; E2 requests erasure (allowed, two administrators); E2 revokes `SYSTEM_ADMIN` from `admin`. Wait past the due time. Expected: request `PENDING` with `postponed_at`, `ERASURE_POSTPONED` with `reason: last-administrator`, no mail. E2 assigns `SYSTEM_ADMIN` to `admin` again. Expected: the next run erases E2. (§7 decision 15)
+38. Stop the backend (Ctrl+C) while the job runs an erasure of a fresh account, start it again. Expected: the request is either `PENDING` (rolled back) and erased by the next run, or `COMPLETED`; never a half-erased account (psql: `account_status` and `erasure_requests.status` agree). (AC-5.10)
+39. Change E1's password on `/profile`, then request erasure with the old password. Expected: 403 `password-mismatch`, one failed sign-in counted; the new password succeeds. (AC-4.3)
+40. Signed in with a pending acknowledgement, open `/privacy-notice?acknowledge=true&returnUrl=` with `%2F%2Fexample.com`, `https://example.com`, `/%09/example.com` and `/privacy-notice`. Expected: acknowledging lands on an in-app page (`/` for the rejected values), never another site, and no redirect loop. (AC-1.8)
 
 ## 11. Risks
 
@@ -357,3 +361,111 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 - Security review for every story
 - `openapi.yml` without `x-status: planned` on the twelve operations; DATA_DICTIONARY §4.1, §4.2, new tables; PRIVACY_BY_DESIGN §4.2, §5, §8, §9.2; DATA_GOVERNANCE §2.3; AUTHENTICATION_AUTHORIZATION §3.3; ADR-022; ADR-024; user guide (privacy centre, erasure); admin guide (legal hold); CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation
+
+Run 2026-10-17 on `develop` at c83afc7 (PRs #261, #262, #263, #264, #265 merged). Result: **passed with notes**, pending the manual run of §10.
+
+| Layer | Result |
+|-------|--------|
+| Backend unit / IT + FT | 1120 / 413, all green |
+| Coverage, static | 98.7 % lines (4694/4757); Checkstyle, PMD, SpotBugs 0 |
+| Frontend | lint clean, 741 tests, initial bundle 948.01 kB (privacy centre lazy) |
+| Playwright | 99 of 106 at two workers; all six specs of the feature pass. The 7 failures are mails arriving after the helpers' 20 s wait: JavaMail resolves the host name by reverse DNS for every Message-ID (`InternetAddress.getLocalHostName`), and that lookup takes seconds on the development machine (fix story). Re-run: 18 of 19, the remaining one the known batch-return flake (`reviews.spec.ts:387`) |
+
+### AC evidence
+
+| AC | Unit | IT / FT | E2E |
+|----|------|---------|-----|
+| 1.1 | | `ConsentRecordsIT.ac11_onlyTheTwoTypesAreAllowed`, `ac11_rowsCannotBeDeletedOrChanged`, `ac11_theNetworkFactsCanBeCleared` | |
+| 1.2 | | `ConsentFT.ac12_theNoticeVersionIsOpenToEveryone` | `privacy-notice.spec` ac1_2 ac1_9 |
+| 1.3, 1.4 | `ConsentServiceTest.ac13_aRegistrationRecordsTheAcknowledgement` | `RegistrationFlowFT.ac13_ac14_theRegistrationRecordsTheAcknowledgedNoticeVersion` | `registration.spec` ac1_3 |
+| 1.5 | `ConsentServiceTest.ac15_*` (3) | `ConsentFT.ac15_anAccountWithoutRecordsMustAcknowledge` | |
+| 1.6 | `ConsentServiceTest.ac16_*` (3) | `ConsentFT.ac16_theAcknowledgementIsAppendedOnce` | |
+| 1.7 | `ConsentServiceTest.ac17_*` (4) | `ConsentFT.ac17_analyticsIsGrantedAndWithdrawnOnChangeOnly`, `ConsentRecordsIT.ac17_concurrentGrantsAppendOneRecord` | |
+| 1.8 | `notice-acknowledgement.guard.spec` (5), `consents.service.spec` (5) | | `privacy-notice.spec` ac1_8 |
+| 1.9 | `privacy-notice.component.spec` (7) | | `privacy-notice.spec` ac1_2 ac1_9 |
+| 1.10 | `PersonalDataAssemblerTest` | `ConsentFT.ac1_10_theExportListsTheConsentRecords` | doc review ✓ |
+| 2.1 | `PrivacyCentreServiceTest.ac21_*` | `PrivacyQueriesIT.ac21_*` (2), `PrivacyCentreFT.ac21_a_*`, `ac21_b_*` | |
+| 2.2 | `PrivacyCentreServiceTest.ac22_thePageSizeIsClamped…` | `PrivacyQueriesIT.ac22_*`, `PrivacyCentreFT.ac22_*` | |
+| 2.3, 2.4, 2.6 | `privacy-centre.component.spec` (16) | | `privacy-centre.spec` ac2_3 ac2_4 ac2_6 |
+| 2.5 | `profile.component.spec` | `DataExportFT.ac31_ac33_ac34_*` | `privacy-centre.spec` ac2_5 |
+| 2.7 | | | `privacy-centre.spec` ac2_7 (360/1280, uk/en, axe) |
+| 3.1 | `RolePermissionsTest.ac3_1_onlyTheGdprOfficerManagesLegalHolds` | `LegalHoldsIT.ac3_1_*` (2), `SchemaIT.ac3_1_*` | |
+| 3.2 | `LegalHoldServiceTest.ac3_2_*` (6) | `LegalHoldFT.ac3_2_*` (2), `LegalHoldsIT.ac3_2_theRowAuditKeepsNeitherReason` | `legal-hold.spec` ac3_2 ac3_3 ac3_6 |
+| 3.3 | `LegalHoldServiceTest.ac3_3_*` (3) | `LegalHoldFT.ac3_3_*`, `LegalHoldsIT.ac3_3_*` | same |
+| 3.4 | `LegalHoldServiceTest.ac3_4_*` (3) | `LegalHoldFT.ac3_4_theHoldsAreListedNewestFirst` | |
+| 3.5 | | `LegalHoldFT.ac3_5_otherRolesAndAnonymousCallersAreRefused` | |
+| 3.6 | `legal-hold-card.component.spec` (6), `legal-hold-dialog.component.spec` (6) | | `legal-hold.spec` ac3_6 (both) |
+| 3.7 | `PersonalDataAssemblerTest` | `LegalHoldFT.ac3_7_*`, `LegalHoldsIT.ac3_7_*` | doc review ✓ |
+| 4.1 | | `ErasureRequestsIT.ac4_1_*` (3) | |
+| 4.2 | `ErasureRequestServiceTest.ac4_2_*` | `ErasureRequestFT.ac4_2_*` (mail in Mailpit) | `erasure.spec` ac4_7 |
+| 4.3 | `ErasureRequestServiceTest.ac4_3_*` (6) | `ErasureRequestFT.ac4_3_*` (2), `ErasureRequestsIT.ac4_3_*` | `erasure.spec` ac4_3 (both) |
+| 4.4 | `ErasureRequestServiceTest.ac4_4_*` (2) | `ErasureRequestFT.ac4_4_thePendingRequestIsCancelledOnce` | `erasure.spec` ac4_4 |
+| 4.5 | `PrivacyCentreServiceTest.ac4_5_*`, `LegalHoldServiceTest.ac4_5_*` | `ErasureRequestFT.ac4_5_*` | |
+| 4.6 | `ErasureRequestServiceTest.ac4_6_*`, `ErasureJobTest.ac4_6_*` (2) | `ErasureRequestsIT.ac4_6_*` (2), `ErasureRequestFT.ac4_6_*` | |
+| 4.7, 4.8 | `erasure-dialog.component.spec` (3), `privacy-centre.component.spec`, `shell.component.spec` | | `erasure.spec` ac4_7 ac4_8 |
+| 4.9 | `PersonalDataAssemblerTest`, `DataExportServiceTest` | `DataExportIT` | doc review ✓ |
+| 5.1 | `ErasureRunnerTest.ac5_1_*` (3), `ErasureJobTest.ac5_1_*` | `ErasureIT.ac5_1_*` | |
+| 5.2 | `ErasureRunnerTest.ac5_2_*` (2) | `ErasureIT.ac5_2_*`, `ErasureFT.ac5_2_*` | |
+| 5.3 | | `ErasureIT.ac5_3_*`, `ErasureFT.ac5_3_ac5_10_ac5_11_*` | |
+| 5.4 | | `ErasureIT.ac5_4_*` | |
+| 5.5 | | `ErasureIT.ac5_5_*` | |
+| 5.6 | | `ErasureIT.ac5_6_*` | |
+| 5.7 | | `ErasureIT.ac5_7_*` | |
+| 5.8 | | `ErasureIT.ac5_8_*` | |
+| 5.9 | | `ErasureIT.ac5_9_*` | |
+| 5.10 | `ErasureRunnerTest.ac5_10_*` | `ErasureFT.ac5_3_ac5_10_ac5_11_*` | |
+| 5.11 | | `ErasureFT.ac5_3_ac5_10_ac5_11_*` (hidden, address free) | |
+| 5.12 | | `ModularityTest` (4) | doc review ✓ |
+
+Every AC has a test. Notes: the contributors have no unit tests of their own (§9 planned them); `ErasureIT` covers each one against Testcontainers, one test per AC-5.3–5.9. AC-1.8 is proven for an account without an acknowledgement; the version bump stays a manual step (30).
+
+### Edge cases (§5)
+
+| Case | Covered by |
+|------|------------|
+| Version raised while signed in | guard and service specs (cache refresh); manual 30 |
+| Form sent after a version change | `RegistrationFlowFT.ac13_ac14_*` (422 `outdated`); manual 30 |
+| Two tabs, acknowledgement and analytics | `ConsentRecordsIT.ac17_concurrentGrantsAppendOneRecord` |
+| Never signs in after a version change | by design (decision 2), no test |
+| Hold placed while erasure pending | `ErasureFT.ac5_2_*`, `ErasureRequestFT.ac4_5_*` |
+| Hold lifted after the due date | `ErasureIT.ac5_2_*` (next run erases) |
+| Address changed in the grace period | `ErasureRunnerTest.ac5_1_theContextCarriesTheCapturedAddress…`; old-address sessions end at the change (`EmailChangeService` revokes them) |
+| Signed in when the erasure runs | `ErasureFT.ac5_3_*`, `ErasureIT.ac5_3_*` |
+| Cancel while the job locks the row | `ErasureRunnerTest.ac5_1_aRequestLockedElsewhereOrCancelledMeanwhileIsSkipped` |
+| Only system administrator asks / at execution | `ErasureRequestServiceTest.ac4_3_theOnlySystemAdministratorIsRefused`, `ErasureRunnerTest.ac5_2_theOnlySystemAdministratorIsPostponedWithoutAMail` |
+| Pending unit request, claims on the person's requests | `ErasureIT.ac5_4_*`, `ac5_5_*` |
+| Delegation partner | `ErasureIT.ac5_3_*` |
+| Namesake elsewhere | `ErasureIT.ac5_6_*` |
+| MinIO down | manual 34 (`DocumentSweeper` existing tests) |
+| Job twice at once | `ErasureRunnerTest.ac5_1_aRequestLocked…` (`SKIP LOCKED`) |
+| Account already erased | `LegalHoldFT.ac3_2_erasedAndUnknownAccountsAreRefused` |
+| Re-registration with the address | `ErasureFT.ac5_3_ac5_10_ac5_11_*` |
+
+### Security (A01, A02, A03, A07)
+
+| Item | Control |
+|------|---------|
+| A01 access control | `/users/me/*` operations read the caller from the token only; `LegalHoldController` carries `@PreAuthorize(CAN_MANAGE)` on all three operations (`legal-hold:manage`, `GDPR_OFFICER` only, `RolePermissionsTest`); 403 for admin, dean and the person proven in `LegalHoldFT.ac3_5_*` |
+| A02 crypto, data | erasure needs the current password (encoder match under a row lock); the scrub writes an unusable hash; consent IP and user agent nulled; holds audited by reason length only |
+| A03 injection | parameterised JDBC and JPA throughout; `fn_redact_audit_subject` is `SECURITY DEFINER` with a fixed `search_path` and `REVOKE ALL … FROM PUBLIC` (V043) |
+| A07 auth failures | wrong password counts as a failed sign-in and locks at the threshold (423, `ErasureRequestServiceTest.ac4_3_*`); erasure deletes `oauth2_authorization`, devices and tokens, so the session ends at the next request (`ErasureFT.ac5_3_*`) |
+| Audit trail | V043 trigger refuses every `DELETE` and any `UPDATE` outside the redaction setting (`ErasureIT.ac5_8_*`); the setting is transaction-local, so the guard stops accidental and ordinary writes, not a database role that sets it on purpose (ADR-024) |
+
+### Scenario review (untested detours)
+
+| # | Detour | Outcome |
+|---|--------|---------|
+| 1 | Sessions under the old address after an address change in the grace period | refuted: `EmailChangeService` revokes them at the change |
+| 2 | Last administrator at execution: postponed without a mail, retried every night | as designed (decision 15); manual detour 37 added |
+| 3 | Redis down at the erasure commit: an access token may live up to 15 minutes | accepted (existing fail-open rule) |
+| 4 | Mail outage or restart between commit and send loses the request, warning or completed mail | project-wide `@Async` listener pattern; finding for Epic 9 hardening |
+| 5 | Backend killed mid-run | one transaction per request; manual detour 38 added |
+| 6 | Acknowledgement on another device or version bump seen up to 15 min late; `outdated` on acknowledge reloads the text | unit spec only; manual 30 covers the bump |
+| 7 | Cancel in a stale second tab leaves the banner | manual 36 extended to the banner |
+| 8 | Double submit in the hold dialog | buttons disabled while sending; server 409 `legal-hold-active` |
+| 9 | Old password after a password change in the erasure dialog | manual detour 39 added |
+| 10 | Odd `returnUrl` values (`/%2F%2F…`, tab characters, the notice page itself) | guard rejects `//`, `/\` and absolute URLs; manual detour 40 added |
+| 11 | Token expired with the erasure dialog open | existing refresh and sign-in redirect; manual covers revocation (31, 32) |
+| 12 | No rate limit on the erasure request and the consent PUT | the password lockout limits guessing; appends are change-only; noted |
