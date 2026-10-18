@@ -42,7 +42,8 @@ async function messagesTo(email: string, subject = ''): Promise<MessageSummary[]
 /** The newest link `http://localhost:4200/<path>?token=...` sent to the address, waiting up to 20 seconds. */
 export async function linkFor(email: string, path: string, minimumMessages = 1): Promise<string> {
   const pattern = new RegExp(`http://localhost:4200/${path}\\?token=[A-Za-z0-9_-]+`);
-  for (let attempt = 0; attempt < 40; attempt++) {
+  const deadline = Date.now() + 45_000;
+  while (Date.now() < deadline) {
     const candidates: string[] = [];
     for (const message of await messagesTo(email)) {
       const full = await (await fetch(`${mailpit}/api/v1/message/${message.ID}`)).json();

@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Writes build/<key>.diff (committed, staged, unstaged and new files against the merge base with -Base) and
-    build/<key>-review.md (diff path, the PRD section of the story, the checklist and the finding limit). Prints
+    build/<key>-review.md (absolute diff path, the PRD section of the story, the checklist and the finding limit). Prints
     "security-reviewer" with the paths that trigger it (auth/, authz/, gdpr/, config/*Security*, config/*Authorization*,
     db/migration/, @PreAuthorize, document upload and storage code, access rules such as *Rule.java, *Guard(s).java
     and the delegation, role-assignment, decision and correction rules) or "code-review" otherwise.
@@ -55,7 +55,7 @@ $prd = Get-PrdSection $Key
 $brief = @(
     "# Review $Key",
     '',
-    "Diff: $diffPath ($($files.Count) files, base $Base)",
+    "Diff: $((Join-Path $root $diffPath) -replace '\\', '/') ($($files.Count) files, base $Base)",
     '',
     '## Acceptance criteria',
     ''

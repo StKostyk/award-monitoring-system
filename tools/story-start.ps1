@@ -11,7 +11,10 @@
     Then Jira and GitHub of the story move to In Progress, its tracker row is marked and the PRD section of the
     story (the "### ... (<KEY>)" heading up to the next heading) is printed.
     For an unplanned story (-Summary, -Points, -Epic, -GitHub) the tracker and BACKLOG rows are added on the new
-    branch, numbered after the last started story of the epic. A rerun on the story branch skips the checkout.
+    branch, numbered from the PRD heading of the story ("### 6.2.3 ...") or after the last started story of the
+    epic; the BACKLOG sprint cell comes from the neighbouring row or the PRD's **Sprint** line. A rerun on the story
+    branch skips the checkout. -Carry takes uncommitted changes along to the new branch; a base without an
+    upstream is not pulled, and a failed pull or GitHub query is retried once.
 
 .EXAMPLE
     .\tools\story-start.ps1 SCRUM-49
@@ -35,6 +38,7 @@ param(
     [int]$GitHub,
     [switch]$NoTracker,
     [switch]$NoClose,
+    [switch]$Carry,
     [switch]$DryRun
 )
 
@@ -49,33 +53,12 @@ function New-Slug([string]$title) {
     return ($words | Select-Object -First 4) -join '-'
 }
 
-function Find-MergedStories {
-    $inReview = @(Find-StoriesWithStatus 'In review')
-    if (-not $inReview) { return }
-    $merged = gh pr list --state merged --limit 100 --json number,headRefName | ConvertFrom-Json
-    foreach ($story in $inReview) {
-        $pr = $merged | Where-Object { $_.headRefName -like "feature/$($story.Key)-*" } | Select-Object -First 1
-        if ($pr) { $story | Add-Member -PassThru Pr $pr.number | Add-Member -PassThru Branch $pr.headRefName }
-    }
-}
-
-function Close-Story($story) {
-    if (-not $NoTracker) {
-        Invoke-TrackerSync status -Jira $story.Key -GitHub $story.Issue -Status Done
-    }
-    $null = Set-TrackerStatus $story.Key 'Done'
-    $null = Set-BacklogStatus $story.Key 'Done'
-    if (git branch --list $story.Branch) {
-        git branch -d $story.Branch
-        if ($LASTEXITCODE) { Write-Warning "Branch $($story.Branch) kept: not merged into $Base locally" }
-    }
-    Write-Host "Closed:  $($story.Key) (PR #$($story.Pr) merged)"
-}
-
 $row = Find-StoryRow $Key
 if ($Summary -and -not ($Epic -and $GitHub)) { throw '-Summary needs -Epic and -GitHub' }
 $number = ''
 if ($Summary -match '^\s*(\d+\.\d+\.\d+)\s+') { $number = $Matches[1] }
+$facts = if ($Summary) { Get-PrdFacts $Key }
+if (-not $number -and $facts) { $number = $facts.Number }
 if ($Summary) { $Summary = $Summary -replace '^\s*\d+\.\d+\.\d+\s+', '' }
 if (-not ($row -or $Summary)) { throw "No tracker row for $Key in docs/epics" }
 if (-not $Slug) { $Slug = New-Slug $(if ($row) { $row.Title } else { $Summary }) }
@@ -87,17 +70,23 @@ if ($DryRun) {
     if (-not $row) { $row = [pscustomobject]@{ Title = "(new) $Summary"; Issue = $GitHub } }
 } else {
     if ((git branch --show-current) -ne $branch) {
-        if (git status --porcelain) { throw 'The working tree is not clean; commit or stash first.' }
-        git checkout $Base
+        if ((git status --porcelain) -and -not $Carry) {
+            throw 'The working tree is not clean; commit or stash first, or carry the changes with -Carry.'
+        }
+        git checkout -q $Base
         if ($LASTEXITCODE) { throw "Cannot check out $Base" }
-        git pull --ff-only -q
-        if ($LASTEXITCODE) { throw "Cannot update $Base" }
+        git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' *> $null
+        if ($LASTEXITCODE) {
+            Write-Host "Base:    $Base has no upstream; not pulled"
+        } else {
+            Invoke-WithRetry { git pull --ff-only -q } | Out-Null
+        }
         git checkout -b $branch
         if ($LASTEXITCODE) { throw "Cannot create $branch" }
     }
-    $closing | ForEach-Object { Close-Story $_ }
+    $closing | ForEach-Object { Close-Story $_ -NoTracker:$NoTracker }
     if (-not $row) {
-        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number
+        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number $(if ($facts) { $facts.Sprint } else { '' })
         Write-Host "Rows:    $id added to the epic tracker and BACKLOG"
         $row = Find-StoryRow $Key
     }
@@ -118,3 +107,5 @@ if ($prd) {
 } else {
     Write-Host 'PRD:     no section with this key under docs/features'
 }
+Write-Host ''
+Write-Host 'Next:    tests first; .\tools\gate.ps1 -StaticOnly after writing code'
