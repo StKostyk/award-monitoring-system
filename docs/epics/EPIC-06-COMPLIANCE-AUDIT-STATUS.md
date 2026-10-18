@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Feature 6.1 done 2026-10-18: validated 2026-10-17 (PRD §13), manual run of PRD §10 passed 40 of 40 (PRD §10, run 2026-10-18). Next: the Feature 6.2 PRD.
+Feature 6.1 done 2026-10-18: validated 2026-10-17 (PRD §13), manual run of PRD §10 passed 40 of 40. Feature 6.2 PRD approved 2026-10-18 ([feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md)); next: 6.2.1 (SCRUM-91), then 6.2.3 (SCRUM-95), then 6.2.2 (SCRUM-92).
 
 ## Scope
 
@@ -47,10 +47,10 @@ recorded in the thesis as a limitation).
 | 5 | 6.1.5 Erasure across modules with anonymised awards | 6.1 | 8 | SCRUM-90 | #256 | no | Done |
 | 5a | 6.1.6 Mails without a reverse DNS lookup per message | 6.1 | 2 | SCRUM-93 | #266 | no | Done |
 | 5b | 6.1.7 Shared erasure guard, postponement enum and consent append helper | 6.1 | 2 | SCRUM-94 | #268 | no | Done |
-| 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 8 | SCRUM-91 | #257 | no | To do |
+| 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 5 | SCRUM-91 | #257 | no | To do |
 | 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | To do |
 
-Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01). 6.1.5 replaces
+Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01). 6.1.5 replaces
 2.4.2 "GDPR-compliant award deletion" (moved here at the Epic 2 kickoff, no tracker item existed).
 
 ## Decisions
@@ -64,6 +64,7 @@ Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 
 | 2026-10-15 | Feature 6.1 PRD approved with deviations 1–14 (consent types, client-side acknowledgement, static notice pages, `legal-hold:manage`, pseudonym "Erased #<id>", usable account during the grace period) | One-pass approval | PRD 6.1 §7 |
 | 2026-10-17 | Feature 6.1 validated; four detours added to the manual scenario (last administrator at execution, restart mid-run, old password, odd `returnUrl`); lost mails on an outage stay a project-wide finding for Epic 9 | Scenario review found no break in the merged code | PRD 6.1 §13 |
 | 2026-10-18 | Feature 6.1 done after the manual run (40 of 40); step 5 uses a pending notice 1.1 instead of deleting a consent row | Consent rows are append-only, so the scenario no longer removes one | PRD 6.1 §10 |
+| 2026-10-18 | Feature 6.2 PRD approved with deviations 1–10; 6.2.1 split into 6.2.1 (job, technical policies) and 6.2.3 (SCRUM-95: accounts, consent records, audit partitions) | The second part changes guarded tables and the erasure path and gets its own review | PRD 6.2 §7 |
 
 ## Documentation deviations found at kickoff
 
@@ -80,7 +81,7 @@ Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 
    of the notice version, `PUBLIC_VISIBILITY` is retired in favour of the per-award choice, `ANALYTICS` stays the one
    optional consent type. Settled in the 6.1 PRD.
 4. DATA_GOVERNANCE §2.1 keeps profiles "seven years post-employment"; `users` stores no date of the change to
-   `RETIRED`. The 6.2 PRD picks a column or the audit row of the status change.
+   `RETIRED`. The 6.2 PRD adds `users.status_changed_at`, set by a trigger (PRD 6.2 §7 decision 2, story 6.2.3).
 5. USER_STORIES.md titles the next section "Epic 6: Mobile & Accessibility"; the roadmap numbers compliance as Epic 6
    and mobile as Epic 8. The heading is corrected in the 6.1 PRD.
 6. PRIVACY_BY_DESIGN §9.2 promises CSV and PDF exports "with Epic 6"; JSON stays the only format, and the row is
