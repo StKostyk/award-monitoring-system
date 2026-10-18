@@ -25,7 +25,6 @@ import ua.edu.chnu.awards.common.erasure.ErasureContributor;
 import ua.edu.chnu.awards.gdpr.event.ErasureCompleted;
 import ua.edu.chnu.awards.gdpr.event.ErasurePostponed;
 import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
-import ua.edu.chnu.awards.gdpr.repository.LegalHolds;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.service.UserAccounts;
 
@@ -43,13 +42,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ErasureRunner {
 
-    static final String LEGAL_HOLD = "legal-hold";
-    static final String LAST_ADMINISTRATOR = "last-administrator";
-
     private static final String REQUEST_ID = "requestId";
 
     private final ErasureRequests requests;
-    private final LegalHolds holds;
+    private final ErasureGuard guard;
     private final UserAccounts users;
     private final List<ErasureContributor> contributors;
     private final AuditService audit;
@@ -92,11 +88,9 @@ public class ErasureRunner {
         User user = users.findByIdForUpdate(userId)
             .orElseThrow(() -> new IllegalStateException("Erasure request " + requestId + " has no account"));
         LocalDate day = LocalDate.now(clock);
-        if (holds.isActive(userId)) {
-            return postpone(requestId, user, LEGAL_HOLD, now);
-        }
-        if (requests.isOnlyAdministrator(userId, day)) {
-            return postpone(requestId, user, LAST_ADMINISTRATOR, now);
+        Optional<ErasureBlocker> blocker = guard.blocker(userId, day);
+        if (blocker.isPresent()) {
+            return postpone(requestId, user, blocker.get(), now);
         }
         final String email = user.getEmailAddress();
         final String firstName = user.getFirstName();
@@ -118,11 +112,11 @@ public class ErasureRunner {
         return Outcome.COMPLETED;
     }
 
-    private Outcome postpone(long requestId, User user, String reason, Instant now) {
+    private Outcome postpone(long requestId, User user, ErasureBlocker reason, Instant now) {
         if (requests.markPostponed(requestId, now)) {
             audit.record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, user.getId(), user.getId(),
-                Map.of(REQUEST_ID, requestId, "reason", reason));
-            if (LEGAL_HOLD.equals(reason)) {
+                Map.of(REQUEST_ID, requestId, "reason", reason.code()));
+            if (reason.notifies()) {
                 events.publishEvent(new ErasurePostponed(user.getEmailAddress(), user.getFirstName()));
             }
         }

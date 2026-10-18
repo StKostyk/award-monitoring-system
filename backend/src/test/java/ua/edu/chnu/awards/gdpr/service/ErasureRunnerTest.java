@@ -65,8 +65,9 @@ class ErasureRunnerTest {
         .build();
 
     private ErasureRunner runner(ErasureContributor... contributors) {
-        return new ErasureRunner(requests, holds, users, List.of(contributors), audit, redaction, events,
-            new TransactionTemplate(transactionManager), new ErasureMetrics(meters), Clock.fixed(NOW, KYIV));
+        return new ErasureRunner(requests, new ErasureGuard(holds, requests), users, List.of(contributors), audit,
+            redaction, events, new TransactionTemplate(transactionManager), new ErasureMetrics(meters),
+            Clock.fixed(NOW, KYIV));
     }
 
     @BeforeEach
@@ -127,7 +128,7 @@ class ErasureRunnerTest {
 
         assertThat(calls).isEmpty();
         verify(audit).record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, USER_ID, USER_ID,
-            Map.of("requestId", REQUEST_ID, "reason", ErasureRunner.LEGAL_HOLD));
+            Map.of("requestId", REQUEST_ID, "reason", "legal-hold"));
         verify(events).publishEvent(new ErasurePostponed(EMAIL, "Петро"));
         verify(requests, never()).markCompleted(REQUEST_ID, NOW);
     }
@@ -141,7 +142,7 @@ class ErasureRunnerTest {
 
         assertThat(calls).isEmpty();
         verify(audit).record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, USER_ID, USER_ID,
-            Map.of("requestId", REQUEST_ID, "reason", ErasureRunner.LAST_ADMINISTRATOR));
+            Map.of("requestId", REQUEST_ID, "reason", "last-administrator"));
         verify(events, never()).publishEvent(any(Object.class));
     }
 

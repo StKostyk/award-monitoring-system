@@ -25,7 +25,6 @@ import ua.edu.chnu.awards.gdpr.event.ErasureCancelled;
 import ua.edu.chnu.awards.gdpr.event.ErasureRequested;
 import ua.edu.chnu.awards.gdpr.event.ErasureWarned;
 import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
-import ua.edu.chnu.awards.gdpr.repository.LegalHolds;
 import ua.edu.chnu.awards.user.AccountSessions;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.service.UserAccounts;
@@ -45,7 +44,7 @@ public class ErasureRequestService {
 
     private final UserAccounts users;
     private final ErasureRequests requests;
-    private final LegalHolds holds;
+    private final ErasureGuard guard;
     private final PasswordEncoder passwordEncoder;
     private final LoginAttemptService attempts;
     private final AccountSessions sessions;
@@ -127,12 +126,8 @@ public class ErasureRequestService {
         if (requests.pending(userId).isPresent()) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "erasure-pending", "An erasure is already pending");
         }
-        if (holds.isActive(userId)) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "legal-hold", "The account cannot be erased now");
-        }
-        if (requests.isOnlyAdministrator(userId, LocalDate.now(clock))) {
-            throw new ApiProblemException(HttpStatus.CONFLICT, "last-administrator",
-                "The only system administrator cannot be erased; appoint another one first");
-        }
+        guard.blocker(userId, LocalDate.now(clock)).ifPresent(blocker -> {
+            throw blocker.problem();
+        });
     }
 }
