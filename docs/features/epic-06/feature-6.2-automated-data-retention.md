@@ -3,7 +3,7 @@
 > **Epic**: 6 — Compliance & Audit System (SCRUM-85)
 > **Sprint**: 7 (2026-10-26 → 2026-11-01)
 > **Points**: 15 (three stories; tracked 13 before the split of decision 1)
-> **Status**: Validated 2026-10-18, pending the manual run of §10
+> **Status**: Done 2026-10-18 (validated, manual run of §10 recorded)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-06 tracker (scope, deviation 4, technical notes), US-012, DATA_GOVERNANCE §2.1–§2.3, PRIVACY_BY_DESIGN §5.2, DATA_DICTIONARY §1.1, §1.4, §1.5, §1.6, §4.1–§4.4, §5.1, §5.3, ADR-022 (modules), ADR-024 (guarded redaction), ADR-021 (one instance), AUTHENTICATION_AUTHORIZATION §3.3, PRD 6.1 (§7 decisions 9, 13, 15; AC-5.1–5.10), `ErasureRunner`, `ErasureGuard`, `ErasureContributor`, `PublicationRetry`, `NotificationRows`, `DocumentSweeper`, `fn_create_audit_partition`, `RolePermissions`, `openapi.yml` (`/users/{id}/legal-holds`)
 
@@ -239,7 +239,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 
 ### Run 2026-10-18
 
-container stack from develop ee2e7d4 (rebuilt), APP_RETENTION_CRON 0 * * * * *, APP_ERASURE_CRON 30 * * * * *, pending accounts PT5M, devices P30D, events retry PT30S; batch size 1 and cron */10 for the overlap detours; defaults restored after the run. Result: 26 pass, 1 blocked.
+container stack from develop ee2e7d4 (rebuilt), APP_RETENTION_CRON 0 * * * * *, APP_ERASURE_CRON 30 * * * * *, pending accounts PT5M, devices P30D, events retry PT30S; batch size 1 and cron */10 for the overlap detours; defaults restored after the run. Result: 26 pass, 1 blocked; step 9 accepted on the ITs (below).
 
 | Step | Result | Evidence |
 |---|---|---|
@@ -251,7 +251,7 @@ container stack from develop ee2e7d4 (rebuilt), APP_RETENTION_CRON 0 * * * * *, 
 | 6 | PASS | R2=958 RETIRED -> status_changed_at now (trigger); backdated 8y; erased by retention request (COMPLETED, requested_at=scheduled_for, ERASURE_COMPLETED origin retention); award 984 APPROVED/PRIVATE by 'Erased #958' |
 | 7 | PASS | run 5: R3=959 ANALYTICS rows 2->0, DATA_PROCESSING kept; R4=960 keeps 3 ANALYTICS + 1; consent-records affected 2 |
 | 8 | PASS | run 5: audit_logs_2018_02 dropped, _01 kept, audit-logs affected 1 held 1; hold 20 on R5=961 lifted -> next run dropped _01 |
-| 9 | BLOCKED | not run in this session: the DELETEs on consent_records and audit_logs were not executed; the guards are covered by the ITs, repeat by hand in psql |
+| 9 | BLOCKED, accepted on ITs | DELETEs not run by hand; accepted on `ConsentRecordsIT#ac11_rowsCannotBeDeletedOrChanged`, `RecordRetentionIT#ac3_5_aDirectDeleteStillRaisesAfterAPurge`, `ErasureIT#ac5_8_theTrailRefusesDeletesAndEveryUpdateBeyondTheGuardedValues` (green in the 2026-10-18 gate) |
 | 10 | PASS | award_retention_runs_total{outcome=completed}=6; award_retention_rows_total{policy=notifications}=1 present (all nine policies) |
 | 11 | PASS | gdpr nav 'Відповідність' -> /compliance; Retention tab: 9 policies with periods, 8 runs newest first; run 21:40 expands to 1/1/1/1, run 21:42 to consent 2, audit 1 processed/1 held |
 | 12 | PASS | Erasure requests: R1 #957, R2 #958 origin Строк зберігання, Виконано, 'Erased #id'; Pending filter empty ('Запитів на видалення немає'); Holds All: R5 hold with set/lift dates and both reasons. Note: tab switch keeps status=PENDING in the holds URL |
@@ -292,7 +292,7 @@ container stack from develop ee2e7d4 (rebuilt), APP_RETENTION_CRON 0 * * * * *, 
 
 ## 13. Validation (2026-10-18, `develop` at d31c5e6)
 
-PRs #274, #275, #276 merged. Result: **passed with notes**, pending the manual run of §10. One defect found and fixed: the 03:30 Kyiv erasure cron skipped the spring-forward night and ran twice on the fall-back night; 6.2.4 moves it to 02:30.
+PRs #274, #275, #276, #278 merged. Result: **passed with notes**; manual run of §10 on 2026-10-18: 26 pass, step 9 accepted on the ITs. One defect found and fixed: the 03:30 Kyiv erasure cron skipped the spring-forward night and ran twice on the fall-back night; 6.2.4 moves it to 02:30.
 
 | Layer | Result |
 |-------|--------|
