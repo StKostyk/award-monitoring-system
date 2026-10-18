@@ -10,12 +10,12 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 6.1 GDPR consent management and data subject rights (privacy notice, consents, privacy centre, legal hold, erasure) | Validated, manual run of PRD §10 pending | 2026-10-15 | - |
+| 6.1 GDPR consent management and data subject rights (privacy notice, consents, privacy centre, legal hold, erasure) | Done | 2026-10-15 | 2026-10-18 |
 | 6.2 Automated data retention (retention job, compliance page) | Not started | - | - |
 
 ## Current focus
 
-Feature 6.1 validated 2026-10-17 (PRD §13): every AC has a test, gates green; the manual run of PRD §10 is next, then the Feature 6.2 PRD.
+Feature 6.1 done 2026-10-18: validated 2026-10-17 (PRD §13), manual run of PRD §10 passed 40 of 40 (PRD §10, run 2026-10-18). Next: the Feature 6.2 PRD.
 
 ## Scope
 
@@ -46,7 +46,7 @@ recorded in the thesis as a limitation).
 | 4 | 6.1.4 Account erasure request with a 30-day grace period | 6.1 | 5 | SCRUM-89 | #255 | no | Done |
 | 5 | 6.1.5 Erasure across modules with anonymised awards | 6.1 | 8 | SCRUM-90 | #256 | no | Done |
 | 5a | 6.1.6 Mails without a reverse DNS lookup per message | 6.1 | 2 | SCRUM-93 | #266 | no | Done |
-| 5b | 6.1.7 Shared erasure guard, postponement enum and consent append helper | 6.1 | 2 | SCRUM-94 | #268 | no | In review |
+| 5b | 6.1.7 Shared erasure guard, postponement enum and consent append helper | 6.1 | 2 | SCRUM-94 | #268 | no | Done |
 | 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 8 | SCRUM-91 | #257 | no | To do |
 | 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | To do |
 
@@ -63,6 +63,7 @@ Total: 39 points (roadmap estimate 26), planned for sprints 6 and 7 (2026-10-19 
 | 2026-10-15 | Audit trail: guarded redaction (design note option B); V043 replaces the immutability rules with a row trigger and `fn_redact_audit_subject` | Keeps every row and its legal value while removing the identity of an erased person | PRD 6.1 §7 decision 11, §8.4; ADR-024 with 6.1.5 |
 | 2026-10-15 | Feature 6.1 PRD approved with deviations 1–14 (consent types, client-side acknowledgement, static notice pages, `legal-hold:manage`, pseudonym "Erased #<id>", usable account during the grace period) | One-pass approval | PRD 6.1 §7 |
 | 2026-10-17 | Feature 6.1 validated; four detours added to the manual scenario (last administrator at execution, restart mid-run, old password, odd `returnUrl`); lost mails on an outage stay a project-wide finding for Epic 9 | Scenario review found no break in the merged code | PRD 6.1 §13 |
+| 2026-10-18 | Feature 6.1 done after the manual run (40 of 40); step 5 uses a pending notice 1.1 instead of deleting a consent row | Consent rows are append-only, so the scenario no longer removes one | PRD 6.1 §10 |
 
 ## Documentation deviations found at kickoff
 

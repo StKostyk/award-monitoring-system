@@ -3,7 +3,7 @@
 > **Epic**: 6 — Compliance & Audit System (SCRUM-85)
 > **Sprint**: 6 (2026-10-19 → 2026-10-25), 6.1.5 may spill into sprint 7
 > **Points**: 26 (five stories)
-> **Status**: Validated 2026-10-17, pending the manual run of §10 (§13)
+> **Status**: Done 2026-10-18 (validated 2026-10-17, §13; manual run of §10 on 2026-10-18, 40 of 40)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-06 tracker (decisions of 2026-10-15, deviations 1–6, technical notes, risks 1–3), design note erasure-audit-trail of 2026-10-15 (option B "guarded redaction"), US-011, US-012 (legal hold scenario), roadmap Feature 6.1, PRIVACY_BY_DESIGN §4.2, §5, §8, §9.2, DATA_GOVERNANCE §2.1, §2.3, §4.3, DATA_DICTIONARY §1.1, §4.1, §4.2, §5, ADR-022 (modules), ADR-021 (one instance), AUTHENTICATION_AUTHORIZATION §3.3 (permission matrix), V009, V010, V013, V023, `RolePermissions`, `PersonalDataAssembler`, `PrivacyMails`, `RegistrationService`, `AuthorizationRevoker`, `DocumentSweeper`, `openapi.yml` (`/auth/register`, `/users/me/*`, `/users/{id}`)
 
@@ -411,7 +411,7 @@ container stack from b196cb6 (develop + SCRUM-94 refactor), APP_ERASURE_GRACE_PE
 
 ## 13. Validation
 
-Run 2026-10-17 on `develop` at c83afc7 (PRs #261, #262, #263, #264, #265 merged). Result: **passed with notes**, pending the manual run of §10.
+Run 2026-10-17 on `develop` at c83afc7 (PRs #261, #262, #263, #264, #265 merged). Result: **passed with notes**; the manual run of §10 on 2026-10-18 passed all 40 steps, so the feature is Done.
 
 | Layer | Result |
 |-------|--------|
