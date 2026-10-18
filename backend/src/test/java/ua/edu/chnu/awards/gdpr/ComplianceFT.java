@@ -141,6 +141,22 @@ class ComplianceFT extends AbstractFunctionalTest {
     }
 
     @Test
+    void ac2_2_ac2_4_pagesOutOfRangeAreClampedAndMalformedParametersAreRejected() {
+        as(tokenOf(OFFICER)).queryParam("page", -1).queryParam("size", 0).get(ENDPOINTS.get(1))
+            .then().statusCode(HttpStatus.OK.value())
+            .body("number", equalTo(0))
+            .body("size", equalTo(1));
+        as(tokenOf(OFFICER)).queryParam("size", "abc").get(ENDPOINTS.get(2))
+            .then().statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("type", endsWith("invalid-parameter"))
+            .body("parameter", equalTo("size"));
+        as(tokenOf(OFFICER)).queryParam("active", "maybe").get(ENDPOINTS.get(3))
+            .then().statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("type", endsWith("invalid-parameter"))
+            .body("parameter", equalTo("active"));
+    }
+
+    @Test
     void ac2_4_activeHoldsAreListedWithThePersonAndTheOfficer() {
         jdbc.update("insert into legal_holds (user_id, reason, placed_by, placed_at, lifted_by, lifted_at,"
             + " lift_reason) values (?, 'Audit 2099', ?, ?, ?, ?, 'Closed')", personId, officerId,

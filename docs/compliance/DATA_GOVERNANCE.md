@@ -114,7 +114,7 @@ The periods of one-time tokens, authorizations, devices and unverified registrat
 
 The nightly retention job (Feature 6.2, story 6.2.1) applies every retention policy:
 
-- **Schedule.** `app.retention.cron`, default `0 0 4 * * *` in `Europe/Kyiv`, after the 03:30 erasure run. A session advisory lock keeps one run at a time; a start while another run works is skipped with a log line.
+- **Schedule.** `app.retention.cron`, default `0 0 4 * * *` in `Europe/Kyiv`, after the 02:30 erasure run. A session advisory lock keeps one run at a time; a start while another run works is skipped with a log line.
 - **Run record.** Each run is a `retention_runs` row (DATA_DICTIONARY §4.5). A row left `RUNNING` by a stop is marked `INTERRUPTED` by the next run; `results` is saved after each policy.
 - **Policies.** Beans implementing `common.retention.RetentionPolicy` (`key`, `order`, `action`, `period`, `apply`), run in their order:
 
@@ -133,7 +133,7 @@ The nightly retention job (Feature 6.2, story 6.2.1) applies every retention pol
 - **Batches.** A policy changes at most `app.retention.batch-size` (default 1000) rows per transaction and repeats until a batch is short, so a large backlog never locks a table for long and a failure keeps the committed batches.
 - **Failures.** A policy that throws is recorded with `failed` and the exception class only (no message, which could name a person); the other policies still run and the run ends `PARTIAL`.
 - **Legal holds.** The set of people under an active hold is read once at the start and given to every policy. The technical rows above go regardless of a hold, since they prove nothing a hold protects; accounts, consent records and audit partitions stay for held people and are counted as `held`.
-- **Accounts.** The two account policies only file requests; the 03:30 erasure run carries them out the next night through the one erasure path of §2.3, with its holds, last-administrator check, rollback and audit redaction, but without any mail. Under the row locks it cancels a request whose account was verified, renewed or returned to service meanwhile.
+- **Accounts.** The two account policies only file requests; the 02:30 erasure run carries them out the next night through the one erasure path of §2.3, with its holds, last-administrator check, rollback and audit redaction, but without any mail. Under the row locks it cancels a request whose account was verified, renewed or returned to service meanwhile.
 - **Report.** The run row, the audit row `RETENTION_RUN_COMPLETED` (status and counts, no actor), the metrics `award_retention_runs_total{outcome}` and `award_retention_rows_total{policy}`, and, only for a `PARTIAL` or `INTERRUPTED` run, one mail to the active data protection officers naming the run, the failed policies and the compliance page.
 
 ### **2.3 Data Deletion Procedures**
@@ -143,7 +143,7 @@ Erasure of an account (Art. 17) as built in Feature 6.1 (stories 6.1.4 and 6.1.5
 1. **Request.** The person confirms with their password in the privacy centre; an `erasure_requests` row is
    `PENDING` with `scheduled_for` 30 days later (`APP_ERASURE_GRACE_PERIOD`). Refused while a legal hold is
    active or for the only system administrator. The account stays usable and the request can be cancelled.
-2. **Warning.** The nightly job (03:30 Kyiv) mails a reminder seven days before the date
+2. **Warning.** The nightly job (02:30 Kyiv) mails a reminder seven days before the date
    (`APP_ERASURE_WARNING_BEFORE`).
 3. **Execution.** At the first nightly run after the date, each due request is locked (`FOR UPDATE SKIP LOCKED`)
    and erased in one transaction. A legal hold placed meanwhile postpones it (`postponed_at`, one mail, audit

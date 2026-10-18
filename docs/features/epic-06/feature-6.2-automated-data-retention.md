@@ -3,7 +3,7 @@
 > **Epic**: 6 — Compliance & Audit System (SCRUM-85)
 > **Sprint**: 7 (2026-10-26 → 2026-11-01)
 > **Points**: 15 (three stories; tracked 13 before the split of decision 1)
-> **Status**: Approved 2026-10-18
+> **Status**: Validated 2026-10-18, pending the manual run of §10
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-06 tracker (scope, deviation 4, technical notes), US-012, DATA_GOVERNANCE §2.1–§2.3, PRIVACY_BY_DESIGN §5.2, DATA_DICTIONARY §1.1, §1.4, §1.5, §1.6, §4.1–§4.4, §5.1, §5.3, ADR-022 (modules), ADR-024 (guarded redaction), ADR-021 (one instance), AUTHENTICATION_AUTHORIZATION §3.3, PRD 6.1 (§7 decisions 9, 13, 15; AC-5.1–5.10), `ErasureRunner`, `ErasureGuard`, `ErasureContributor`, `PublicationRetry`, `NotificationRows`, `DocumentSweeper`, `fn_create_audit_partition`, `RolePermissions`, `openapi.yml` (`/users/{id}/legal-holds`)
 
@@ -22,7 +22,7 @@ Personal data outlives its purpose. Expired notifications, used sign-in links, e
 - A nightly retention job (04:00 Kyiv) running every policy in its own transactions, in batches, with a `retention_runs` row per run, one audit row, metrics and a mail to GDPR officers when a run does not complete
 - Policies as properties, each a period and an action: expired notifications (the one-year period of `NotificationRows` becomes the property), used or expired one-time tokens, expired OAuth2 authorizations, devices not used for two years, unverified registrations, former staff (`RETIRED`, `MEMORIAL`), consent records seven years after withdrawal or erasure, audit partitions older than seven years
 - Monthly audit partitions created three months ahead (V009/V016 end at 2027-12)
-- Account retention through the erasure of 6.1.5: the job files an `erasure_requests` row of origin `RETENTION`, the 03:30 erasure run executes it the next night with the same contributors, holds and last-administrator check, without mails
+- Account retention through the erasure of 6.1.5: the job files an `erasure_requests` row of origin `RETENTION`, the 02:30 erasure run executes it the next night with the same contributors, holds and last-administrator check, without mails
 - A legal hold skips the held person in the account, consent and audit policies
 - `users.status_changed_at` (tracker deviation 4)
 - Compliance page `/compliance` for the GDPR officer: policies and runs, erasure requests of every origin, legal holds
@@ -69,7 +69,7 @@ Order: 6.2.1 → 6.2.3 → 6.2.2. 6.2.1 and 6.2.3 are backend only; 6.2.2 splits
 - **AC-3.1** Given V045, then `users.status_changed_at TIMESTAMPTZ NOT NULL` exists, backfilled with `updated_at`, and a trigger sets it to `now()` whenever `account_status` changes; `erasure_requests.origin` exists (`REQUEST` default, `RETENTION`), with `requested_at` = `scheduled_for` for retention rows.
 - **AC-3.2** Given `app.retention.pending-accounts` (default `P30D`), when the job runs, then for every `PENDING` account created longer ago than the period, without a pending erasure request and without an active legal hold, it files a `RETENTION` request due at once; `affected` counts the requests filed and `held` the accounts skipped for a hold.
 - **AC-3.3** Given `app.retention.former-staff` (default `P7Y`), then the same happens for `RETIRED` and `MEMORIAL` accounts with `status_changed_at` older than the period.
-- **AC-3.4** Given a `RETENTION` request, when the 03:30 erasure run reaches it, then the account is erased exactly as in 6.1.5 (contributors, pseudonym, approved awards kept `PRIVATE`, audit redaction) and `ERASURE_COMPLETED` carries `origin: retention`; no request, reminder, postponement or completion mail is sent; a hold placed in between, or the only system administrator, postpones it as in AC-5.2 of 6.1 without a mail; when the policy's condition no longer holds under the row lock (verified, renewed or back to `ACTIVE`), the request becomes `CANCELLED` without a mail.
+- **AC-3.4** Given a `RETENTION` request, when the 02:30 erasure run reaches it, then the account is erased exactly as in 6.1.5 (contributors, pseudonym, approved awards kept `PRIVATE`, audit redaction) and `ERASURE_COMPLETED` carries `origin: retention`; no request, reminder, postponement or completion mail is sent; a hold placed in between, or the only system administrator, postpones it as in AC-5.2 of 6.1 without a mail; when the policy's condition no longer holds under the row lock (verified, renewed or back to `ACTIVE`), the request becomes `CANCELLED` without a mail.
 - **AC-3.5** Given `app.retention.consent-records` (default `P7Y`), then the `consent-records` policy deletes, through `fn_purge_consent_records(p_before)`, the `ANALYTICS` rows of a person whose latest `ANALYTICS` row is a withdrawal older than the period, and every row of an account whose erasure completed longer ago than the period; `DATA_PROCESSING` rows of living accounts stay; held persons are skipped. A direct `DELETE` outside the function still raises.
 - **AC-3.6** Given `app.retention.audit-logs` (default `P7Y`), then the `audit-logs` policy detaches and drops, through `fn_drop_expired_audit_partitions(p_before, p_held)`, every monthly partition that ends before now minus the period, except a partition with a row whose `user_id`, or whose `entity_id` for the person entity types of `fn_redact_audit_subject`, is a held person; `affected` counts partitions dropped, `held` partitions kept. The default partition is never dropped; a direct `DELETE` still raises.
 - **AC-3.7** Given the documentation, then DATA_DICTIONARY has the two columns, the consent purge in §4.2 and the partition drop in §4.1; DATA_GOVERNANCE §2.1 names the account policies; PRIVACY_BY_DESIGN §5.2 the retention origin; ADR-024 the two new guarded functions; tracker deviation 4 closed.
@@ -93,7 +93,7 @@ Order: 6.2.1 → 6.2.3 → 6.2.2. 6.2.1 and 6.2.3 are backend only; 6.2.2 splits
 | A policy fails at batch 3 of 5 | Batches 1–2 stay committed; `affected` counts them; `failed` true; run `PARTIAL` |
 | Mail server down when the failure mail is sent | Registry retries (`PublicationRetry`), as every other mail |
 | No GDPR officer exists | No mail; the log names the run |
-| Legal hold placed after the request was filed, before 03:30 | Erasure postponed (6.1.5 path), no mail |
+| Legal hold placed after the request was filed, before 02:30 | Erasure postponed (6.1.5 path), no mail |
 | Person under hold also has expired notifications and old devices | Those still go (decision 7); account, consents and audit rows stay |
 | A `PENDING` account is verified, or taken over by a new registration (`RegistrationService`), after its `RETENTION` request was filed | The erasure run re-checks the policy's condition under the row lock and cancels the request (`CANCELLED`, no mail) when it no longer holds |
 | Former staff account changed back to `ACTIVE` before the erasure run | Same re-check: the request is cancelled |
@@ -140,7 +140,7 @@ Inherited: ADR-022 (modules, a contract in `common` like `common.erasure`, `Modu
 
 1. **Split of 6.2.1** (8 points) into 6.2.1 (job, runs, technical policies, 5) and a new 6.2.3 (accounts, consents, audit, 5): the second touches guarded tables and the erasure path and gets its own security review. Feature total 15 instead of 13; 6.2.3 is SCRUM-95 (#272).
 2. **`users.status_changed_at`** (tracker deviation 4): a column set by a trigger on every status change, backfilled with `updated_at`, instead of searching the audit trail (the trail is redacted on erasure and partitioned). No screen sets `RETIRED` or `MEMORIAL` yet (parked, §2).
-3. **Account retention is an erasure.** The job files a `RETENTION` request and the 03:30 erasure run executes it the next night, so one code path anonymises accounts, with holds, the last-administrator check, rollback and the audit redaction of 6.1.5. "Anonymise the profile, keep the awards" (US-012) is what that erasure does. No mails: an unverified address was never confirmed, and a former employee's address is usually gone.
+3. **Account retention is an erasure.** The job files a `RETENTION` request and the 02:30 erasure run executes it the next night, so one code path anonymises accounts, with holds, the last-administrator check, rollback and the audit redaction of 6.1.5. "Anonymise the profile, keep the awards" (US-012) is what that erasure does. No mails: an unverified address was never confirmed, and a former employee's address is usually gone.
 4. **Unverified registrations** after 30 days are erased the same way: the row holds a name, an address and an acknowledgement with IP address. DATA_GOVERNANCE §2.1 gains the row.
 5. **Scanned documents** have no user-defined period: the matrix row becomes "with the award; deleted with the award or the account (6.1.5)".
 6. **System logs**: the matrix row becomes "application log files, 30 days / 1 GB (logback); container logs per the Epic 9 runbook"; the database keeps no system log.
@@ -202,7 +202,7 @@ Coverage 85 % lines; static clean. Security review for 6.2.1 (deletes), 6.2.3 (g
 
 ## 10. Manual verification
 
-Draft; expected texts quote the planned wording and are checked against the merged i18n files at validation.
+Expected texts checked against the merged `public/i18n/en.json` on 2026-10-18 (`compliance.*`). The "Legal holds" tab opens on "Active"; "Postponed" is a chip on a `PENDING` request, not a filter value.
 
 Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backend in `backend/` with `$env:APP_RETENTION_CRON='0 * * * * *'; $env:APP_ERASURE_CRON='30 * * * * *'; $env:APP_RETENTION_PENDING_ACCOUNTS='PT5M'; $env:APP_RETENTION_DEVICES='P30D'; ./mvnw spring-boot:run -Dspring-boot.run.profiles=local`; frontend `npm start` on `http://localhost:4200`. Mailpit `http://localhost:8025`; psql `docker compose exec postgres psql -U postgres award_monitoring`; Swagger `http://localhost:8080/swagger-ui.html`. Seed accounts (password `Passw0rd-demo`, `@chnu.edu.ua`): `employee.fmi`, `admin`, `gdpr`. Fresh accounts R1–R5 are registered in the steps (department ФМІ; R1 left unverified, the others verified through Mailpit).
 
@@ -232,6 +232,10 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 21. Reload and Back on `/compliance` with a filter set. Expected: the page reads the server state again; the tab and filter are kept in the URL. (AC-2.5)
 22. Two overlapping runs: set `APP_RETENTION_CRON='*/10 * * * * *'` with a batch size of 1 and many rows. Expected: only one run row at a time; the log notes the skipped start. (§5)
 23. Mailpit stopped during a failing run (detour 16 with Mailpit down), then started. Expected: the mail arrives after the publication retry. (§5)
+24. Hold lifted after a postponement: continue detour 19, lift the hold as `gdpr`. Expected: the next erasure run erases the account (`COMPLETED`, `origin: retention`), still one request, no mail. (AC-3.4; `AccountRetentionIT`)
+25. Registration taken over after filing: register R7, leave it unverified until its `RETENTION` request exists (six minutes, default erasure cron), then register again with R7's address. Expected: at the next erasure run the request is `CANCELLED`; R7 stays `PENDING` with the new link working. (§5; `AccountRetentionIT`)
+26. Malformed URL: `http://localhost:4200/compliance?tab=bogus&page=-1&status=POSTPONED`. Expected: the "Retention" tab with defaults, no error. Swagger as `gdpr`: `GET /compliance/legal-holds?active=maybe` and `GET /compliance/retention-runs?size=abc` → 400 `invalid-parameter`; `?page=-1&size=0` → 200, page 0 of size 1. (AC-2.1–2.4; `ComplianceFT`)
+27. Hold placed while a run works (batch size 1, 200 expired notifications as in detour 15): place a hold on R5 during the run. Expected, per decision 7: this run may still act on R5's consent and audit rows; the next run skips R5. Record what happened.
 
 ## 11. Risks
 
@@ -251,3 +255,88 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 - Security review for every story
 - `openapi.yml` without `x-status: planned` on the four operations; DATA_DICTIONARY §1.1, §1.4, §4.1, §4.2, §4.4, §5.1, new table; DATA_GOVERNANCE §2.1, §2.2; PRIVACY_BY_DESIGN §5.2; AUTHENTICATION_AUTHORIZATION §3.3; ADR-022; ADR-024; admin guide (compliance page); CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation (2026-10-18, `develop` at d31c5e6)
+
+PRs #274, #275, #276 merged. Result: **passed with notes**, pending the manual run of §10. One defect found and fixed: the 03:30 Kyiv erasure cron skipped the spring-forward night and ran twice on the fall-back night; 6.2.4 moves it to 02:30.
+
+| Layer | Result |
+|-------|--------|
+| Backend unit / IT + FT | 1155 / 443 on `develop`, all green (`gate.ps1 -Full`); the validation adds `NightlyScheduleTest` (4), 2 `AccountRetentionIT` and 1 `ComplianceFT` cases; its 2 erasure-cron cases failed at 03:30 and pass at 02:30 since 6.2.4 |
+| Coverage, static | 98.6 % lines (5040/5110); Checkstyle, PMD, SpotBugs 0 |
+| Frontend | lint clean, 764 tests, initial bundle 949.05 kB |
+| Integration | Containers built from the merged tree (`git diff f19fa00 d31c5e6` empty), healthy; Flyway at V045; the four `/api/v1/compliance/*` operations and their parameters in `/v3/api-docs` match `openapi.yml`, none left `x-status: planned` |
+| Playwright | Full run on the same tree 2026-10-18: 97 of 101; `compliance.spec` 2/2. The failures are the known `reviews.spec:387`, `overdue-notice.spec:62` and two flakes green on rerun, none in this feature |
+
+### AC evidence
+
+| AC | Unit | IT / FT | E2E |
+|----|------|---------|-----|
+| 1.1 | | `RetentionIT.ac1_1_retentionRunsChecksItsStatusAndFinishAndIsIndexedByStart` | |
+| 1.2 | `RetentionJobTest.ac1_2_*` (5); `NightlyScheduleTest` (04:00 cases) | `RetentionIT.ac1_2_ac1_3_*`, `ac1_2_aRunStartedWhileAnotherHoldsTheLockIsSkippedWithoutARow`, `ac1_2_aPolicyDeletesInBatchesOfTheBatchSize` | |
+| 1.3 | `RetentionJobTest.ac1_3_*` (2) | `RetentionIT.ac1_2_ac1_3_aRunClosesTheInterruptedRunAppliesEveryPolicyAndIsAudited` | |
+| 1.4 | `RetentionJobTest.ac1_4_*` (4), `RetentionMailsTest.ac1_4_*` (2) | `RetentionFT.ac1_4_aRunLeftRunningIsReportedToTheOfficerWithALinkToTheCompliancePage` | |
+| 1.5 | | `RetentionIT.ac1_5_expiredNotificationsGoAndTheOthersStay`, `InAppNotificationsIT` (expiry from the property) | |
+| 1.6 | | `RetentionIT.ac1_6_tokensUsedOrExpiredLongerAgoThanThePeriodGo` | |
+| 1.7 | | `RetentionIT.ac1_7_authorizationsGoOnlyWhenEveryExpiryIsOlderThanThePeriod` | |
+| 1.8 | | `RetentionIT.ac1_8_devicesUnusedForThePeriodGo` | |
+| 1.9 | | `RetentionIT.ac1_9_theCurrentMonthAndThreeAheadGetPartitionsAndExistingOnesAreSkipped` | |
+| 1.10 | `RetentionMetricsTest.ac1_10_*`, `RetentionJobTest.ac1_10_*` | `RetentionFT.ac1_10_runsAndRowsAreExposedAsMetrics` | |
+| 1.11, 2.7, 3.7 | | `ModularityTest` | doc review ✓ |
+| 3.1 | | `AccountRetentionIT.ac3_1_theStatusChangeTimeIsSetOnAChangeOnlyAndTheOriginIsChecked` | |
+| 3.2 | `RetentionPolicyTest.ac3_2_*` | `AccountRetentionIT.ac3_2_oldUnverifiedRegistrationsGetADueRetentionRequestAndHeldOnesAreCounted` | |
+| 3.3 | | `AccountRetentionIT.ac3_3_retiredAndMemorialAccountsGetARequestSevenYearsAfterTheirStatusChanged` | |
+| 3.4 | `AccountRetentionRuleTest.ac3_4_*` (3), `ErasureRunnerTest.ac3_4_*` (3) | `AccountRetentionIT.ac3_4_*` (5: erased with origin, verified meanwhile, taken over meanwhile, hold postpones, erased after the hold is lifted), `RetentionFT.ac3_4_anAbandonedRegistrationIsErasedByTheNextErasureRunWithoutAnyMail` | |
+| 3.5 | `RetentionPolicyTest.ac3_5_*` | `RecordRetentionIT.ac3_5_*` (2) | |
+| 3.6 | | `RecordRetentionIT.ac3_6_expiredPartitionsAreDroppedUnlessTheyHoldARowOfAHeldPerson` | |
+| 2.1 | `ComplianceServiceTest.ac2_1_*` | `ComplianceFT.ac2_1_*` (2) | |
+| 2.2 | `ComplianceServiceTest.ac2_2_ac2_3_ac2_4_*` | `ComplianceQueriesIT.ac2_2_*` (2), `ComplianceFT.ac2_2_*` (2, incl. clamping and malformed parameters) | |
+| 2.3 | same | `ComplianceQueriesIT.ac2_3_*`, `ComplianceFT.ac2_3_*` | |
+| 2.4 | same | `ComplianceQueriesIT.ac2_4_*`, `ComplianceFT.ac2_4_*`, `ComplianceFT.ac2_2_ac2_4_*` | |
+| 2.5 | `compliance.component.spec` ac2_5 (5), `auth.guard.spec` ac2_5 (2), `shell.component.spec` ac2_5 | | `compliance.spec` ac25 (2) |
+| 2.6 | `compliance.component.spec` ac2_6 (2), `compliance.effects.spec`, `compliance.feature.spec` | | screen check in #276 (360/1280, uk/en, light/dark) |
+
+### Edge cases (§5)
+
+| Case | Covered by |
+|------|------------|
+| Backend stops mid-run | `RetentionIT.ac1_2_ac1_3_*` (interrupted marking), `RetentionFT.ac1_4_*` (mail); detour 15 |
+| Two runs at once | `RetentionIT` and `RetentionJobTest` `ac1_2_aRunStartedWhileAnotherHoldsTheLockIsSkippedWithoutARow`; detour 22 |
+| Policy fails at batch 3 | `RetentionJobTest.ac1_3_aFailingPolicyKeepsItsCommittedBatchesNamesTheErrorClassOnlyAndTheOthersStillRun` |
+| Mail server down | `PublicationRetry` (shared); detour 23 |
+| No GDPR officer | `RetentionJobTest.ac1_4_withoutAnOfficerNothingIsPublished` |
+| Hold placed after filing | `AccountRetentionIT.ac3_4_aHoldPlacedAfterTheFilingPostponesTheRetentionErasure`; lifted later: `ac3_4_aPostponedRetentionErasureRunsOnceTheHoldIsLifted` |
+| Held person's technical rows still go | Open: no test names it (the delete policies take no hold set); manual step 8 |
+| `PENDING` verified or taken over after filing | `AccountRetentionIT.ac3_4_aRetentionRequestOfAnAccountVerifiedMeanwhileIsCancelled`, `ac3_4_aRetentionRequestOfARegistrationTakenOverMeanwhileIsCancelled` |
+| Former staff back to `ACTIVE` | `AccountRetentionRuleTest.ac3_4_theConditionIsCheckedWithBothCutOffs` (the same `applies` query as the verified case) |
+| Own `PENDING` request exists | `AccountRetentionIT.ac3_2_*` (`alreadyRequested`); the filing insert ends `on conflict … do nothing` |
+| Old partition with a held person's row | `RecordRetentionIT.ac3_6_*` |
+| Partition ahead exists | `RetentionIT.ac1_9_*` |
+| Notification period shortened | `InAppNotificationsIT` (new rows only) |
+| Consent chain ends with a grant | `RecordRetentionIT.ac3_5_*` |
+| Authorization with a live refresh token | `RetentionIT.ac1_7_*` |
+| Large backlog | `RetentionIT.ac1_2_aPolicyDeletesInBatchesOfTheBatchSize` |
+| Stale officer tab after revocation | `AuthorizationRevokerTest`, `AuthenticationFlowFT.ac18_*` (shared); detour 20 |
+
+### Security (A01, A02, A03, A07)
+
+| Item | Control |
+|------|---------|
+| A01 access control | `ComplianceController` class-level `@PreAuthorize(CAN_READ)` = `compliance:read`, granted to `GDPR_OFFICER` only (`RolePermissions:49`); `ComplianceFT.ac2_1_everyoneElseIsRefused`; route guard and navigation entry in the SPA |
+| A02 data exposure | Run results carry the exception class only (AC-1.3); erased persons appear by pseudonym; no new secrets |
+| A03 injection | `ComplianceQueries` binds every value (`:status`, `:active`, paging); concatenation joins constants only; an unknown `status` is a 400 |
+| A07 and guarded deletes | `fn_purge_consent_records`, `fn_drop_expired_audit_partitions`: `SECURITY DEFINER`, fixed `search_path`, `REVOKE ALL … FROM PUBLIC` (V045); a direct `DELETE` still raises (`RecordRetentionIT.ac3_5_aDirectDeleteStillRaisesAfterAPurge`) |
+| Concurrency | Retention run under a session advisory lock (`RetentionRuns:41`), erasure run under a transaction advisory lock (`ErasureRequests:89`) |
+
+### Scenario review
+
+Turned into tests: a registration taken over after filing, a hold lifted after a postponement, malformed and out-of-range query parameters, both nightly crons across the clock changes (which found the 6.2.4 defect). Added to §10: detours 24–27. Open:
+
+1. The hold set is read once per run (decision 7): a hold placed during a run takes effect at the next run; detour 27 records what happens.
+2. A crashed process that leaves a pooled connection holding the session lock would skip later runs with a log line only; no metric counts skipped runs.
+3. Role revocation for `/compliance` relies on the shared session revocation; no compliance-specific FT.
+4. The officers for the failure mail are read at the start of the run.
+
+### Refactor sweep
+
+To apply in a `refactor(gdpr)` PR: shared JDBC row helpers (`instant`, `ref`, `utc` in five repositories), one legal-hold select and mapper for `LegalHolds` and `ComplianceQueries`, `period()` and `before()` once in `AbstractAccountRetention`, one period format across the policies, a shorter `ErasureRunner.erase`, shared retention test fixtures, one loader shape in `compliance.effects.ts`. Noted only: a shared JDBC page helper, `UserRef` in `shared/`, the policy-key list in `compliance.component.ts`, the double `queryParamMap` read, the pass-through `ComplianceService`.

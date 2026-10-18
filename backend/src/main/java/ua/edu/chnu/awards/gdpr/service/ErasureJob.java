@@ -27,7 +27,7 @@ public class ErasureJob {
      *
      * @return how many reminders were queued and accounts erased
      */
-    @Scheduled(cron = "${app.erasure.cron:0 30 3 * * *}", zone = "Europe/Kyiv")
+    @Scheduled(cron = "${app.erasure.cron:0 30 2 * * *}", zone = "Europe/Kyiv")
     public int run() {
         int warned = attempt("reminders", () -> erasures.warnDue(clock.instant()));
         int erased = attempt("erasures", () -> runner.runDue(clock.instant()));

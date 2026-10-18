@@ -89,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- Nightly erasure run moved from 03:30 to 02:30 Kyiv time, so it no longer skips the spring-forward night or runs twice on the fall-back night (6.2.4).
 - Mails no longer wait for a reverse DNS lookup of the server: the Message-ID host comes from the sender address and the SMTP greeting host from APP_MAIL_EHLO_HOST (SCRUM-93)
 - A notification page past the end (e.g. `?page=999`) moves to the last page instead of showing an empty list without a paginator (SCRUM-84).
 - Saving notification preferences sends only the changed types, so a stale tab no longer reverts changes made in another tab

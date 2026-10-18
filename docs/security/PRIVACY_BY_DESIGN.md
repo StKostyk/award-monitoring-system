@@ -402,7 +402,7 @@ Showing documents to colleagues (4.3.8) follows the award's visibility choice (4
 2. The request is refused, with nothing written, while another request is pending (`erasure-pending`), while a legal hold is active (`legal-hold`; the reason is not disclosed) and for the only active system administrator (`last-administrator`).
 3. An accepted request is stored as `PENDING` in `erasure_requests` with `scheduled_for` 30 days later (`app.erasure.grace-period`), audited as `ERASURE_REQUESTED` and confirmed by a privacy mail with the date and a link to cancel. The shell shows a banner with the date on every page.
 4. Until the date the person can cancel (`POST /api/v1/users/me/erasure-request/cancel`): `CANCELLED`, `ERASURE_CANCELLED`, a confirmation mail.
-5. The nightly job (03:30 Kyiv time) mails one reminder seven days before the date (`app.erasure.warning-before`).
+5. The nightly job (02:30 Kyiv time) mails one reminder seven days before the date (`app.erasure.warning-before`).
 6. At the date the job erases the account unless a legal hold postpones it (6.1.5). The GDPR officer sees the pending date next to the account's legal holds.
 
 ### 5.2 Data Deletion Categories
@@ -418,7 +418,7 @@ Showing documents to colleagues (4.3.8) follows the award's visibility choice (4
 | **Backups** | Marked for exclusion | Next backup cycle | Compliance requirements |
 | **Analytics** | Anonymization | Immediate | Already anonymized |
 
-The same erasure runs without a request of the person when the retention job files one (`erasure_requests.origin` `RETENTION`, 6.2.3): an unverified registration 30 days after its last verification link, a retired or memorial account seven years after its status changed. Such a request is due at once and carried out at the next 03:30 run with the same holds, last-administrator check and audit redaction, but without any mail (an unverified address was never confirmed, a former employee's is usually gone); `ERASURE_COMPLETED` and `ERASURE_POSTPONED` carry `origin: retention`, and a request whose account was verified, renewed or returned to service meanwhile is cancelled under the row locks.
+The same erasure runs without a request of the person when the retention job files one (`erasure_requests.origin` `RETENTION`, 6.2.3): an unverified registration 30 days after its last verification link, a retired or memorial account seven years after its status changed. Such a request is due at once and carried out at the next 02:30 run with the same holds, last-administrator check and audit redaction, but without any mail (an unverified address was never confirmed, a former employee's is usually gone); `ERASURE_COMPLETED` and `ERASURE_POSTPONED` carry `origin: retention`, and a request whose account was verified, renewed or returned to service meanwhile is cancelled under the row locks.
 
 ### 5.3 Technical Implementation
 

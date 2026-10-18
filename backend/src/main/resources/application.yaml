@@ -174,7 +174,7 @@ app:
   erasure:
     grace-period: ${APP_ERASURE_GRACE_PERIOD:P30D}
     warning-before: ${APP_ERASURE_WARNING_BEFORE:P7D}
-    cron: ${APP_ERASURE_CRON:0 30 3 * * *}
+    cron: ${APP_ERASURE_CRON:0 30 2 * * *}
   retention:
     cron: ${APP_RETENTION_CRON:0 0 4 * * *}
     batch-size: ${APP_RETENTION_BATCH_SIZE:1000}
