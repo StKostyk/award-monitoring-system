@@ -49,7 +49,8 @@ recorded in the thesis as a limitation).
 | 5b | 6.1.7 Shared erasure guard, postponement enum and consent append helper | 6.1 | 2 | SCRUM-94 | #268 | no | Done |
 | 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 5 | SCRUM-91 | #257 | no | Done |
 | 6a | 6.2.3 Retention of accounts, consent records and audit partitions | 6.2 | 5 | SCRUM-95 | #272 | no | Done |
-| 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | In review |
+| 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | Done |
+| 7a | 6.2.4 Nightly erasure run outside the clock-change hour | 6.2 | 1 | SCRUM-96 | #277 | no | In review |
 
 Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01). 6.1.5 replaces
 2.4.2 "GDPR-compliant award deletion" (moved here at the Epic 2 kickoff, no tracker item existed).

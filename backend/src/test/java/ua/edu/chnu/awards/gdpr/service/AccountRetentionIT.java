@@ -171,6 +171,38 @@ class AccountRetentionIT extends AbstractIntegrationTest {
             + "'ERASURE_POSTPONED' and entity_id = ?", String.class, abandoned)).isEqualTo("retention");
     }
 
+    @Test
+    void ac3_4_aRetentionRequestOfARegistrationTakenOverMeanwhileIsCancelled() {
+        final long taken = pending("31 days");
+        pendingAccounts.apply(context(Set.of(), 1000));
+        jdbc.update("insert into one_time_tokens (token_hash, user_id, purpose, expires_at) values (?, ?, "
+            + "'EMAIL_VERIFICATION', now() + interval '1 day')", UUID.randomUUID().toString(), taken);
+
+        runner.runDue(Instant.now());
+
+        assertThat(jdbc.queryForObject(STATUS, String.class, taken)).isEqualTo("CANCELLED");
+        assertThat(jdbc.queryForObject("select account_status from users where user_id = ?", String.class,
+            taken)).isEqualTo("PENDING");
+    }
+
+    @Test
+    void ac3_4_aPostponedRetentionErasureRunsOnceTheHoldIsLifted() {
+        final long abandoned = pending("31 days");
+        pendingAccounts.apply(context(Set.of(), 1000));
+        jdbc.update("insert into legal_holds (user_id, reason, placed_by) values (?, 'Court case 4/2026', ?)",
+            abandoned, person("ACTIVE"));
+        runner.runDue(Instant.now());
+        jdbc.update("update legal_holds set lifted_at = now(), lifted_by = placed_by, lift_reason = 'Closed' "
+            + "where user_id = ?", abandoned);
+
+        runner.runDue(Instant.now());
+
+        assertThat(jdbc.queryForObject(STATUS, String.class, abandoned)).isEqualTo("COMPLETED");
+        assertThat(jdbc.queryForObject("select account_status from users where user_id = ?", String.class,
+            abandoned)).isEqualTo("DELETED");
+        assertThat(requestsOf(abandoned)).isOne();
+    }
+
     private RetentionContext context(Set<Long> held, int batchSize) {
         return new RetentionContext(Instant.now(), held, batchSize, transactions);
     }
