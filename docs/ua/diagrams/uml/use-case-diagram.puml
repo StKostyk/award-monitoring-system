@@ -76,7 +76,8 @@ rectangle "Система Моніторингу та Відстеження Н�
         usecase "Експортувати Персональні Дані" as UC_EXPORT_DATA
         usecase "Запит на Видалення Даних" as UC_DELETE_DATA
         usecase "Переглянути Журнали Аудиту" as UC_AUDIT
-        usecase "Керувати Політиками Зберігання" as UC_RETENTION
+        usecase "Переглядати Політики та Запуски Зберігання" as UC_RETENTION
+        usecase "Встановлювати й Знімати Юридичне Блокування" as UC_HOLD
         usecase "Конфігурація Системи" as UC_CONFIG
         usecase "Моніторинг Здоров'я Системи" as UC_MONITOR
     }
@@ -173,6 +174,7 @@ admin --> UC_AUDIT
 ' Зв'язки Відповідального за GDPR
 gdpr --> UC_AUDIT
 gdpr --> UC_RETENTION
+gdpr --> UC_HOLD
 gdpr --> UC_CONSENT
 
 ' Зв'язки Зовнішніх Систем

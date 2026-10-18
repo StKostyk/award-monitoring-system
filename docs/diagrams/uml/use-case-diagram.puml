@@ -76,7 +76,8 @@ rectangle "Award Monitoring & Tracking System" {
         usecase "Export Personal Data" as UC_EXPORT_DATA
         usecase "Request Data Deletion" as UC_DELETE_DATA
         usecase "View Audit Logs" as UC_AUDIT
-        usecase "Manage Retention Policies" as UC_RETENTION
+        usecase "Review Retention Policies and Runs" as UC_RETENTION
+        usecase "Place and Lift Legal Hold" as UC_HOLD
         usecase "System Configuration" as UC_CONFIG
         usecase "Monitor System Health" as UC_MONITOR
     }
@@ -173,6 +174,7 @@ admin --> UC_AUDIT
 ' GDPR Officer relationships
 gdpr --> UC_AUDIT
 gdpr --> UC_RETENTION
+gdpr --> UC_HOLD
 gdpr --> UC_CONSENT
 
 ' External system relationships

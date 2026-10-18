@@ -950,12 +950,13 @@ public class BreachNotificationService {
 
 | **Right** | **Article** | **Feature** | **Status** |
 |-----------|-------------|-------------|------------|
-| Access | Art. 15 | View My Data dashboard | ✅ Designed |
-| Rectification | Art. 16 | Edit profile, data correction request | ✅ Designed |
-| Erasure | Art. 17 | Account deletion, data anonymization | ✅ Designed |
-| Portability | Art. 20 | JSON/CSV/PDF export | ✅ JSON implemented (Feature 1.3); CSV/PDF with Epic 6 |
-| Restriction | Art. 18 | Privacy settings, visibility controls | ✅ Designed |
-| Object | Art. 21 | Consent withdrawal, opt-out | ✅ Designed |
+| Access | Art. 15 | Privacy centre with the log of one's own actions, JSON export | ✅ Implemented (Features 1.3, 6.1) |
+| Rectification | Art. 16 | Edit profile | ✅ Implemented (Feature 1.3); no separate correction-request flow |
+| Erasure | Art. 17 | Erasure request with a 30-day grace period, erasure across modules, legal hold | ✅ Implemented (Feature 6.1) |
+| Portability | Art. 20 | JSON export | ✅ Implemented (Feature 1.3); CSV and PDF not built, the JSON file meets Art. 20 (Epic 6 deviation 6) |
+| Restriction | Art. 18 | Award visibility, document sharing and notification choices in the privacy centre | ✅ Implemented as choices (Features 2.x, 6.1); no restriction-of-processing flow |
+| Object | Art. 21 | Consent withdrawal | ✅ Implemented for the optional `ANALYTICS` consent (Feature 6.1) |
+| Storage limitation | Art. 5(1)(e) | Nightly retention job with configurable policies | ✅ Implemented (Feature 6.2) |
 
 ---
 

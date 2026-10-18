@@ -7,7 +7,7 @@ skinparam package {
     BackgroundColor<<config>> LightGray
 }
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Пакетів (Java-бекенд, модулі Spring Modulith після епіку 7)
+title Система Моніторингу та Відстеження Нагород - Діаграма Пакетів (Java-бекенд, модулі Spring Modulith після епіків 6 і 7)
 
 ' Пакети за доменами: кожен пакет верхнього рівня — модуль застосунку (ADR-022); інші використовують лише його
 ' базовий пакет та іменовані інтерфейси (dto, event, entity, service), ніколи repository, controller чи mapper
@@ -186,6 +186,16 @@ package "ua.edu.chnu.awards" {
         class ConsentController
         class ConsentService
         class PrivacyNoticeController
+        class PrivacyCentreController
+        class ErasureController
+        class ErasureRequestService
+        class ErasureRunner
+        class ErasureJob
+        class LegalHoldController
+        class LegalHoldService
+        class RetentionJob
+        class ComplianceController
+        class ComplianceService
     }
 
     package "notification" <<domain>> {

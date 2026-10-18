@@ -2,7 +2,7 @@
 !theme plain
 skinparam linetype ortho
 
-title Award Monitoring & Tracking System - Entity Relationship Diagram (as built, V039)
+title Award Monitoring & Tracking System - Entity Relationship Diagram (as built, V045)
 
 ' * mandatory (NOT NULL); all timestamps are TIMESTAMPTZ
 
@@ -245,6 +245,41 @@ entity "consent_records" as consent_records {
     user_agent : VARCHAR(500)
     * created_at : TIMESTAMPTZ
 }
+
+entity "legal_holds" as legal_holds {
+    * hold_id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * reason : VARCHAR(500)
+    * placed_by : BIGINT <<FK>>
+    * placed_at : TIMESTAMPTZ
+    lifted_by : BIGINT <<FK>>
+    lifted_at : TIMESTAMPTZ
+    lift_reason : VARCHAR(500)
+}
+
+entity "erasure_requests" as erasure_requests {
+    * request_id : BIGINT <<PK>>
+    --
+    * user_id : BIGINT <<FK>>
+    * status : VARCHAR(20)
+    * origin : VARCHAR(20)
+    * requested_at : TIMESTAMPTZ
+    * scheduled_for : TIMESTAMPTZ
+    warning_sent_at : TIMESTAMPTZ
+    postponed_at : TIMESTAMPTZ
+    cancelled_at : TIMESTAMPTZ
+    completed_at : TIMESTAMPTZ
+}
+
+entity "retention_runs" as retention_runs {
+    * run_id : BIGINT <<PK>>
+    --
+    * started_at : TIMESTAMPTZ
+    finished_at : TIMESTAMPTZ
+    * status : VARCHAR(20)
+    * results : JSONB
+}
 }
 
 package "Notification" {
@@ -319,6 +354,8 @@ users |o--o{ decisions : "delegates"
 requests |o--o{ documents : "has"
 
 users ||--o{ consent_records : "gives"
+users ||--o{ legal_holds : "held under"
+users ||--o{ erasure_requests : "asks for erasure"
 users ||--o{ notifications : "receives"
 users ||--o{ notif_prefs : "sets"
 

@@ -3,9 +3,9 @@
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Award Monitoring & Tracking System - Domain Class Diagram (as built after Epic 7)
+title Award Monitoring & Tracking System - Domain Class Diagram (as built after Epics 6 and 7)
 
-' JPA entities of ua.edu.chnu.awards; classes marked <<planned>> exist as tables only
+' JPA entities of ua.edu.chnu.awards; classes marked <<table>> exist as tables only (no JPA entity)
 
 package "user" <<Rectangle>> {
 
@@ -371,13 +371,32 @@ package "notification" <<Rectangle>> {
     }
 }
 
-package "planned (tables only)" <<Rectangle>> {
+package "gdpr (tables only, read and written through JDBC)" <<Rectangle>> {
 
-    class ConsentRecord <<planned Epic 6>> {
+    class ConsentRecord <<table>> {
         -userId: Long
         -consentType: String
         -consentVersion: String
         -granted: boolean
+    }
+
+    class LegalHold <<table>> {
+        -userId: Long
+        -placedBy: Long
+        -liftedBy: Long
+        -reason: String
+    }
+
+    class ErasureRequest <<table>> {
+        -userId: Long
+        -status: String
+        -origin: String
+        -scheduledFor: Instant
+    }
+
+    class RetentionRun <<table>> {
+        -status: String
+        -results: Map
     }
 }
 
@@ -419,6 +438,8 @@ Document "*" --> "1" User : uploaded by
 Document --> DocumentFormat
 Document --> DocumentType
 ConsentRecord ..> User
+LegalHold ..> User : held account, officers
+ErasureRequest ..> User
 Notification "*" --> "1" User : recipient
 Notification --> NotificationType
 Notification --> NotificationChannel

@@ -133,6 +133,10 @@ when a module meets the extraction criteria below.**
 | `metrics` | — | — |
 | `config` | common, audit | — (depended on by none) |
 
+- Addendum 2026-10-18: a Spring Modulith named interface is a whole package, so every public type in a module's
+  `service` package is visible to the other modules. The "Exposed to others" column names the types they are meant to
+  use; the rest of the package is reachable but not part of the contract. Narrowing it would mean moving the lookups
+  into their own package, which no story needs yet.
 - Cycles were broken by dependency inversion, with no behaviour change: `audit` names actors through
   `ActorDirectory` (implemented in `user`); `award` reads documents through `AwardDocuments` (implemented in
   `document`); `user` signs accounts out through `AccountSessions` (implemented in `auth`) and takes back lent
@@ -213,6 +217,7 @@ when a module meets the extraction criteria below.**
 | 2026-10-15 | Stefan Kostyk | Status Accepted | Boundaries enforced by `ApplicationModules.verify()` through Epic 7 |
 | 2026-10-16 | Stefan Kostyk | Erasure contributor contract in `common.erasure` | Story 6.1.5 (SCRUM-90) |
 | 2026-10-18 | Stefan Kostyk | Retention policy contract in `common.retention` | Story 6.2.1 (SCRUM-91) |
+| 2026-10-18 | Stefan Kostyk | Named interfaces are whole packages (addendum) | Documentation sync, Epic 6 |
 
 ---
 

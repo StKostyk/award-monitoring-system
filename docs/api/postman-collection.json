@@ -101,6 +101,14 @@
     {
       "key": "organizationId",
       "value": ""
+    },
+    {
+      "key": "holdId",
+      "value": "1"
+    },
+    {
+      "key": "notificationId",
+      "value": "1"
     }
   ],
   "item": [
@@ -1730,6 +1738,538 @@
             "auth": {
               "type": "noauth"
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Privacy and compliance",
+      "description": "Features 6.1 and 6.2. The privacy notice is public; the consent, privacy centre and erasure requests belong to the caller; legal holds need legal-hold:manage and the compliance endpoints compliance:read (GDPR officer).",
+      "item": [
+        {
+          "name": "Privacy notice (public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/privacy-notice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "privacy-notice"
+              ]
+            },
+            "description": "Current notice version and the published versions."
+          }
+        },
+        {
+          "name": "My consents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/consents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "consents"
+              ]
+            },
+            "description": "Acknowledgement, consents and consent history of the caller."
+          }
+        },
+        {
+          "name": "Acknowledge the privacy notice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/consents/notice-acknowledgement",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "consents",
+                "notice-acknowledgement"
+              ]
+            },
+            "description": "Records the acknowledgement of a notice version.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"1.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Grant or withdraw a consent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/consents/ANALYTICS",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "consents",
+                "ANALYTICS"
+              ]
+            },
+            "description": "Appends a grant or a withdrawal of an optional consent.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"granted\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "My privacy summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/privacy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "privacy"
+              ]
+            },
+            "description": "Award visibility, document sharing, notification choices, consents and erasure state."
+          }
+        },
+        {
+          "name": "My activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/activity?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "activity"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "The caller's own audit log entries."
+          }
+        },
+        {
+          "name": "Request erasure of my account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/erasure-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "erasure-request"
+              ]
+            },
+            "description": "Files a request that is carried out after the grace period; refused while a legal hold is active.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"<current password>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancel my erasure request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/erasure-request/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "erasure-request",
+                "cancel"
+              ]
+            },
+            "description": "Cancels the pending request before its date.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"<current password>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List legal holds of an account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/legal-holds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "legal-holds"
+              ]
+            },
+            "description": "Needs legal-hold:manage."
+          }
+        },
+        {
+          "name": "Place a legal hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/legal-holds",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "legal-holds"
+              ]
+            },
+            "description": "Blocks the erasure and the retention of the account until lifted. Needs legal-hold:manage.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Pending disciplinary proceedings (at least 10 characters)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Lift a legal hold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/legal-holds/{{holdId}}/lift",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "legal-holds",
+                "{{holdId}}",
+                "lift"
+              ]
+            },
+            "description": "Needs legal-hold:manage.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Proceedings closed (at least 10 characters)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Retention policies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/compliance/retention-policies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compliance",
+                "retention-policies"
+              ]
+            },
+            "description": "Needs compliance:read."
+          }
+        },
+        {
+          "name": "Retention runs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/compliance/retention-runs?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compliance",
+                "retention-runs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Needs compliance:read."
+          }
+        },
+        {
+          "name": "Erasure requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/compliance/erasure-requests?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compliance",
+                "erasure-requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Needs compliance:read."
+          }
+        },
+        {
+          "name": "Legal holds",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/compliance/legal-holds?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compliance",
+                "legal-holds"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Needs compliance:read."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "Feature 7.2. In-app notifications and channel preferences of the caller.",
+      "item": [
+        {
+          "name": "List notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "The caller's in-app notifications, newest first."
+          }
+        },
+        {
+          "name": "Unread count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "unread-count"
+              ]
+            },
+            "description": "Number of unread notifications."
+          }
+        },
+        {
+          "name": "Mark one read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "Marks one notification read."
+          }
+        },
+        {
+          "name": "Mark all read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "Marks all of the caller's notifications read."
+          }
+        },
+        {
+          "name": "Notification preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/notification-preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "notification-preferences"
+              ]
+            },
+            "description": "E-mail and in-app choice per notification type."
           }
         }
       ]

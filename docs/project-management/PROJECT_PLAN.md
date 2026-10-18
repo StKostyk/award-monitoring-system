@@ -312,6 +312,21 @@ Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](.
   delivery and digests; purging expired notifications belongs to the retention job of Epic 6.
 - **Next**: Epic 6 (compliance and security: erasure, retention), then Epic 5 (analytics and reporting).
 
+## Addendum 2026-10-18: After Epic 6
+
+- **Velocity**: Epic 6 delivered 46 points between 2026-10-15 and 2026-10-18 (sprint 5), ahead of the plan for sprints 6
+  and 7: 26 estimated on the roadmap, 46 after splitting the retention job and adding three small stories from the
+  reviews and manual runs. About 312 points are delivered.
+- **Delivered scope**: feature 6.1 added the versioned privacy notice and consent records, the privacy centre in the
+  profile, legal holds, and erasure of an account after a 30-day grace period across modules (approved awards stay under
+  a pseudonym, audit rows are redacted under ADR-024); feature 6.2 added the nightly retention job with configurable
+  policies (also for unverified and former accounts, consent records and audit partitions) and the compliance page for
+  the GDPR officer. Both features were walked through their manual scenarios.
+- **Not built**: CSV and PDF variants of the data export, breach notification, backups (before the deployment of Epic 9),
+  SMS and OCR consents, a screen that sets an account to retired or memorial; the legal review of GDPR compliance
+  stays outside the software.
+- **Next**: Epic 5 (analytics and reporting).
+
 ---
 
 ## Summary

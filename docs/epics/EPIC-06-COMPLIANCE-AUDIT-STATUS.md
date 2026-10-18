@@ -1,7 +1,7 @@
 # Epic 6: Compliance & Audit System — Status
 
 > **Started**: 2026-10-15 (kickoff)
-> **Done**: -
+> **Done**: 2026-10-18
 > **Author**: Stefan Kostyk
 > **Jira epic**: SCRUM-85
 > **Roadmap**: DEVELOPMENT_ROADMAP.md § Epic 6 (local planning document)
@@ -15,7 +15,7 @@
 
 ## Current focus
 
-Both features done. Feature 6.1 done 2026-10-18: validated 2026-10-17 (PRD §13), manual run of PRD §10 passed 40 of 40. Feature 6.2 done 2026-10-18 ([feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md)): validated (PRD §13), manual run of §10 passed 26 of 27, step 9 accepted on the ITs. Next: epic-end reconciliation, then Epic 5.
+Both features done. Feature 6.1 done 2026-10-18: validated 2026-10-17 (PRD §13), manual run of PRD §10 passed 40 of 40. Feature 6.2 done 2026-10-18 ([feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md)): validated (PRD §13), manual run of §10 passed 26 of 27, step 9 accepted on the ITs. Epic-end reconciliation done 2026-10-18 (documentation sync, refactor sweeps). Next: Epic 5.
 
 ## Scope
 
@@ -52,7 +52,7 @@ recorded in the thesis as a limitation).
 | 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | Done |
 | 7a | 6.2.4 Nightly erasure run outside the clock-change hour | 6.2 | 1 | SCRUM-96 | #277 | no | Done |
 
-Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01). 6.1.5 replaces
+Total: 46 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01). 6.1.5 replaces
 2.4.2 "GDPR-compliant award deletion" (moved here at the Epic 2 kickoff, no tracker item existed).
 
 ## Decisions
@@ -112,6 +112,13 @@ Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planne
   a third dialog appears), one `startAction()` for the privacy centre's busy and message resets, the cancel problem
   keys under `privacy.erasure.cancel.*`, one account clean-up helper in `AbstractFunctionalTest` for the GDPR FTs,
   `namesOf` in `ErasureRunner`, one row record in `DocumentErasure`.
+- Left open at the end of the epic (no story yet): the `status` query parameter of the erasure tab stays in the URL
+  on the legal holds tab; no metric for retention runs skipped because the session lock was held; no FT for the
+  compliance endpoints after a role revocation; ended roles can get `valid_to` before `valid_from` on a same-day
+  erasure or revocation; revoking `GDPR_OFFICER` or `SYSTEM_ADMIN` has no last-holder guard and is not serialised
+  with erasures; the erasure card shows a date where the mail shows a time. Noted by the 6.2 sweep and left: a JDBC
+  page helper, `UserRef` in `shared/`, the policy-key list, the double `queryParamMap` read on the compliance page,
+  the pass-through `ComplianceService`.
 
 ## Risks
 
