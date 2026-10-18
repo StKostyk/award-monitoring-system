@@ -303,8 +303,8 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 2. Signed out, open `http://localhost:4200/privacy-notice`; switch uk/en. Expected: version 1.0 with its date in both languages; the selector lists 1.0. (AC-1.2, 1.9)
 3. Register E1 at `/register` without ticking the box. Expected: the form refuses with a message under the box. Tick it and register. Expected: psql `select consent_type, consent_version, is_granted, ip_address is not null from consent_records where user_id = <E1>;` → `DATA_PROCESSING 1.0 t t`; `PRIVACY_NOTICE_ACKNOWLEDGED` in `audit_logs`. (AC-1.3)
 4. Swagger `POST /auth/register` with `privacyNoticeVersion` `0.9`. Expected: 422 `outdated`, no account. (AC-1.4)
-5. Sign in as `employee.fmi` (seeded, no row; the Playwright global setup records an acknowledgement for every account, so after an e2e run first remove it in psql: `begin; set local session_replication_role = replica; delete from consent_records where user_id = (select user_id from users where email_address = 'employee.fmi@chnu.edu.ua'); commit;`). Expected: redirect to `/privacy-notice?acknowledge=true…`; "I have read the notice" returns to the start page; a second sign-in goes straight in. (AC-1.5, 1.6, 1.8)
-6. Account menu → "Privacy and my data". Expected: `/privacy` with the cards in order (five until 6.1.4 adds "Delete my account"); notice 1.0 acknowledged today; analytics off; your choices with the employee's award counts; activity lists the acknowledgement and the sign-ins. (AC-2.1–2.3, 2.6)
+5. Sign in as `employee.fmi` without an acknowledgement of the current version (a seeded account already has a row for 1.0, so raise the notice version to 1.1 as in step 30 and restart; consent rows are never deleted). Expected: redirect to `/privacy-notice?acknowledge=true…`; "I have read the notice" returns to the start page; a second sign-in goes straight in. (AC-1.5, 1.6, 1.8)
+6. Account menu → "Privacy and my data". Expected: `/privacy` with the cards in order (notice, consents, your choices, your data, activity, "Delete my account"); the notice card names the acknowledged version 1.0 with its date; analytics off; your choices with the employee's award counts; activity lists the acknowledgement and the sign-ins. (AC-2.1–2.3, 2.6)
 7. Turn analytics on, then off. Expected: two history lines; psql two rows (`is_granted` t, then f with `withdrawn_at`); `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` audited. (AC-1.7, 2.4)
 8. Download the data from the privacy centre. Expected: the file's `consent_history` lists the three rows; `/profile` shows the link "Privacy and my data" instead of the card; a second download within a minute shows the rate-limit message. (AC-1.10, 2.5)
 9. As `gdpr` open `http://localhost:4200/admin/users` → E2 (registered now). Expected: "Legal hold" card "No legal hold"; place a hold with the reason "Inspection 2026/14 by the ministry". Expected: card shows it; psql `LEGAL_HOLD_PLACED` with `reasonLength`, no text. (AC-3.2, 3.4, 3.6)
@@ -323,16 +323,16 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 
 ### Detours
 
-22. Sign in as E3 with the old address. Expected: "Invalid e-mail or password" (no hint that the account was erased). Register a new account with E3's old address. Expected: works; a new `user_id`. (AC-5.3, 5.11)
+22. Sign in as E3 with the old address. Expected: "Wrong address or password." (no hint that the account was erased). Register a new account with E3's old address. Expected: works; a new `user_id`. (AC-5.3, 5.11)
 23. Keep E3's session open in a second browser during step 16, then navigate. Expected: the sign-in page; no data of E3 loads. (AC-5.3)
 24. Hidden in state, request: with a pending request, the privacy centre shows only "Cancel the erasure"; Swagger `POST /users/me/erasure-request` → 409 `erasure-pending`. (AC-4.3)
 25. Hidden in state, cancel: without a pending request there is no cancel button; `POST …/erasure-request/cancel` → 409 `erasure-not-pending`; after step 16 (erased) the call is 401. (AC-4.4)
 26. Hidden in state, hold: with an active hold, the card offers only "Lift hold"; `POST /users/{id}/legal-holds` → 409 `legal-hold-active`; lifting the same hold twice → 409 `legal-hold-lifted`; placing a hold on E3 after step 16 → 409 `account-erased`. (AC-3.2, 3.3)
 27. Hidden in state, consent: `PUT /users/me/consents/DATA_PROCESSING` → 422 `not-optional`; the UI shows no switch for it. Acknowledge the current version again in Swagger → 200, no new row. (AC-1.6, 1.7)
-28. As `admin` request erasure. Expected: 409 "You are the only system administrator…". As `admin` and `dean.fmi`, `GET /users/<E2>/legal-holds` → 403; as E2 the same → 403. (AC-3.5, 4.3)
-29. Wrong password five times in the erasure dialog. Expected: the fifth answers 423 and the account is locked as after failed sign-ins. (AC-4.3)
+28. As `admin` request erasure. Expected: 409 `last-administrator` "The only system administrator cannot be erased; appoint another one first". As `admin` and `dean.fmi`, `GET /users/<E2>/legal-holds` → 403; as E2 the same → 403. (AC-3.5, 4.3)
+29. Wrong password five times in the erasure dialog. Expected: all five answer 403 `password-mismatch`; after the fifth the account is locked as after failed sign-ins (sign-in answers `LOCKED`, the session is revoked). (AC-4.3)
 30. Raise `app.privacy.notice-versions` with 1.1 (and texts copied), restart the backend with `employee.fmi` signed in. Expected: the next navigation redirects to the 1.1 acknowledgement; `/privacy` and `/privacy-notice` stay reachable without it; the API keeps answering. Open the registration form before the restart and send it after. Expected: 422 and the form asks again. (AC-1.6, 1.8, §5)
-31. Revoked mid-flow, legal hold: `gdpr` has the "Place hold" dialog open for E2 while `admin` revokes the `GDPR_OFFICER` role. Expected: saving ends in the sign-in redirect (session revoked with the role); after signing in, `/admin/users/<E2>` shows no hold card; no hold was written. A second officer would keep full access (none seeded: assign `gdpr` again to check the card returns). (AC-3.5, 3.6)
+31. Revoked mid-flow, legal hold: `gdpr` has the "Place hold" dialog open for E2 while `admin` revokes the `GDPR_OFFICER` role. Expected: saving ends in the sign-in redirect (session revoked with the role); after signing in, `/admin/users/<E2>` answers `/forbidden` (`gdpr` holds no other role); no hold was written. A second officer would keep full access (none seeded: assign `gdpr` again to check the card returns). (AC-3.5, 3.6)
 32. Revoked mid-flow, reviewer: E3 (secretary) has a claimed review open when the erasure runs. Expected: E3's next action 401; `secretary.fmi` finds the request unclaimed and decides it. (AC-5.5)
 33. Revoked mid-flow, delegation: `dean.fmi` delegates to E2 and E2 requests erasure; at the run the delegation ends. Expected: `dean.fmi` sees it ended on `/delegations`, no notification; `DELEGATION_REVOKED` with `reason: erasure`. (AC-5.3)
 34. Stop MinIO during the run of another fresh account with a document. Expected: the erasure completes; the log shows the failed object deletion; after MinIO starts, `DocumentSweeper` removes the object at its next run. (§5)
@@ -340,8 +340,55 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 36. Two tabs on `/privacy`: request erasure in one, then cancel in the other without reloading. Expected: the second tab's cancel works (204) or, if done first, the request tab shows 409 `erasure-pending` after the reload. Cancel in tab A, then cancel again in tab B without reloading. Expected: B shows the `erasure-not-pending` message and the banner disappears after the next navigation. (§5)
 37. Last administrator at execution: `admin` assigns E2 `SYSTEM_ADMIN`; E2 requests erasure (allowed, two administrators); E2 revokes `SYSTEM_ADMIN` from `admin`. Wait past the due time. Expected: request `PENDING` with `postponed_at`, `ERASURE_POSTPONED` with `reason: last-administrator`, no mail. E2 assigns `SYSTEM_ADMIN` to `admin` again. Expected: the next run erases E2. (§7 decision 15)
 38. Stop the backend (Ctrl+C) while the job runs an erasure of a fresh account, start it again. Expected: the request is either `PENDING` (rolled back) and erased by the next run, or `COMPLETED`; never a half-erased account (psql: `account_status` and `erasure_requests.status` agree). (AC-5.10)
-39. Change E1's password on `/profile`, then request erasure with the old password. Expected: 403 `password-mismatch`, one failed sign-in counted; the new password succeeds. (AC-4.3)
+39. Change E1's password (the password-reset mail; `/profile` has no password form), sign in with the new one, then request erasure with the old password. Expected: 403 `password-mismatch`, one failed sign-in counted; the new password succeeds. (AC-4.3)
 40. Signed in with a pending acknowledgement, open `/privacy-notice?acknowledge=true&returnUrl=` with `%2F%2Fexample.com`, `https://example.com`, `/%09/example.com` and `/privacy-notice`. Expected: acknowledging lands on an in-app page (`/` for the rejected values), never another site, and no redirect loop. (AC-1.8)
+
+### Run 2026-10-18
+
+container stack from b196cb6 (develop + SCRUM-94 refactor), APP_ERASURE_GRACE_PERIOD=PT10M, WARNING_BEFORE=PT5M, CRON every minute; steps 30/34/38 also APP_PRIVACY_NOTICE*=1.1 and a one-minute document sweep; defaults restored afterwards. Result: 40 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | type check (2 types), guard triggers on consent_records+audit_logs, partial uniques uk_legal_holds_active/uk_erasure_requests_pending, no audit_logs rules |
+| 2 | PASS | /privacy-notice signed out: 1.0 · 15.10.2026 (uk) / 15/10/2026 (en), selector lists only 1.0 |
+| 3 | PASS | unticked: message 'Confirm that you have read the privacy notice'; ticked: user 829 DATA_PROCESSING 1.0 t t, audit PRIVACY_NOTICE_ACKNOWLEDGED |
+| 4 | PASS | POST /api/v1/auth/register with 0.9: 422 field privacyNoticeVersion code outdated, no user row |
+| 5 | PASS | variant: with notice 1.1 pending (the 1.0 row of employee.fmi stays, deleting it was denied): sign-in -> /privacy-notice?acknowledge=true&returnUrl=%2F, 'Я ознайомився(-лася)…' -> /, second sign-in straight to / |
+| 6 | PASS | /privacy shows six cards (notice, consents, choices 44/0/2/0/1, data, activity with sign-ins, delete); step text says five. Notice line shows 'версію 1.0 · 15.10.2026' (not 'today': seed row of 15.10 stays, step 5 blocked) |
+| 7 | PASS | toggle on/off: history lines granted+withdrawn 11:17; ANALYTICS rows t/f(withdrawn_at set); audit CONSENT_GRANTED, CONSENT_WITHDRAWN |
+| 8 | PASS | export 200 541 kB, consent_history 3 entries; /profile has the privacy link; repeat within a minute: 429 'Your data was exported a moment ago' (checked via API, the UI snackbar not read) |
+| 9 | PASS | gdpr on /admin/users/830: card 'Утримання немає' -> hold placed, card shows reason; audit LEGAL_HOLD_PLACED {holdId 14, reasonLength 34}, no text |
+| 10 | PASS | dialog: 'Ваш обліковий запис зараз не можна видалити через юридичне зобов’язання…'; erasure_requests rows for 830 = 0 |
+| 11 | PASS | lift with reason: history shows both, LEGAL_HOLD_LIFTED; E2 request: request 7 PENDING due 11:30, card 'буде видалено 18.10.2026' (date only), banner on /awards, mail 11:20:29 with date+time and /privacy link |
+| 12 | PASS | request 7 due 11:30:29: warning mail 11:25:54 once (still 1 after 75 s), warning_sent_at set |
+| 13 | PASS | cancel via privacy card: no banner, card back to 'Видалити…'; request 7 CANCELLED; ERASURE_CANCELLED; mail 11:27:45 'Видалення скасовано' |
+| 14 | PASS | E3=831 (A=893 APPROVED PUBLIC + doc 189 shown, B=891 draft+doc 188, C=892 claimed by secretary.fmi, D=894 claimed by E3 as FACULTY_SECRETARY FMI); export format_version 1.6 with erasure_requests entry |
+| 15 | PASS | E3 card 'Подано запит на видалення, строк 11:33'; hold 15 placed; at 11:33:56 request 8 PENDING postponed_at set, mail 'Видалення відкладено', ERASURE_POSTPONED {legal-hold}; sign-in as E3 still worked; hold lifted 11:34:13 (second lift 409 legal-hold-lifted; second place 409 legal-hold-active) |
+| 16 | PASS | request 8 COMPLETED; user 831 DELETED, erased-831@erased.invalid, 'Erased' '#831'; devices/tokens/oauth rows 0; both roles valid_to 2026-10-17 (before valid_from 2026-10-18); completed mail 11:34:56 to e3.mr |
+| 17 | PASS | A=893 APPROVED/PRIVATE, no documents; 890/891/892 gone; D=894 SUBMITTED unclaimed in vw_pending_requests; bucket awards/891 and awards/893 prefixes absent |
+| 18 | PASS | secretary.fmi GET /awards/893 owner 'Erased #831'; 893 absent from /public/achievements (43) and /achievements (97), /achievements/893 404 (checked through the API, approved-list screen not opened) |
+| 19 | PASS | 0 audit rows of 831 with ip/user_agent; users snapshots first_name/last_name/email '[erased]'; AUDIT_REDACTED log 17897 {names 0, values 17, context 15, erasedRecords 22}; consent_records of 831: 1 row, 0 with ip |
+| 20 | PASS | update and delete on audit_logs (rolled-back transactions, as postgres) both raise 'audit_logs rows are immutable' / 'cannot be deleted' from fn_audit_logs_guard |
+| 21 | PASS | award_erasure_runs_total{outcome=completed} 1.0 |
+| 22 | PASS | old address: 'Wrong address or password.' (no erased hint; step text corrected); re-registered e3.mr@chnu.edu.ua verified, new user_id (see query) |
+| 23 | PASS | open E3 browser session ended on /login (also on goto /profile); no E3 data loaded; sign-in with the old credentials BAD_CREDENTIALS |
+| 24 | PASS | pending: card offers only 'Скасувати видалення'; POST erasure-request -> 409 urn:awards:problem:erasure-pending |
+| 25 | PASS | after cancel no cancel button; POST cancel -> 409 erasure-not-pending (401 after erasure covered in step 16/22) |
+| 26 | PASS | active hold: card only 'Зняти утримання'; place again 409 legal-hold-active; lift twice 409 legal-hold-lifted (holds 14, 15); hold on erased 831 409 account-erased |
+| 27 | PASS | PUT consents/DATA_PROCESSING 422 not-optional; consents card has one switch only; POST notice-acknowledgement {version 1.0} again 200, consent_records count unchanged (1) |
+| 28 | PASS | admin POST erasure-request 409 last-administrator ('The only system administrator cannot be erased; appoint another one first' - step text corrected); GET /users/830/legal-holds: admin, dean.fmi, e2.mr 403, gdpr 200 |
+| 29 | PASS | e4.mr: attempts 1-5 each 403 password-mismatch; after the 5th sign-in answers error=LOCKED and the token is revoked (6th call 401). The 5th does not answer 423 itself - step text corrected |
+| 30 | PASS | notice 1.1 via override (APP_PRIVACY_NOTICE*, texts copied into the frontend container): employee.fmi next navigation -> /privacy-notice?acknowledge=true&returnUrl=…; /privacy and /privacy-notice reachable, /profile redirected; GET /awards 200. Form opened under 1.1, stack reset to 1.0, submit -> 422 and 'Повідомлення про конфіденційність змінилося…', box unticked |
+| 31 | PASS | dialog saved after admin ended GDPR_OFFICER (role 3): redirect to /login, legal_holds of 830 still 1 (the lifted one); signed in again /admin/users/830 -> /forbidden (gdpr holds no other role, step text corrected: no card); role re-assigned (id 797), GET legal-holds 200 again |
+| 32 | PASS | E3 (secretary, claimed D=894) erased: D back SUBMITTED unclaimed (reviewer null), E3 browser session 401->/login; secretary.fmi approved D (APPROVED) |
+| 33 | PASS | dean.fmi delegation 26 -> E5 (835): at the 11:49:56 run state 'revoked' (delegate shown as Erased #835), DELEGATION_REVOKED {reason erasure}; no delegation notification or mail to dean.fmi after 11:49 |
+| 34 | PASS | E7 (837) erased with MinIO stopped: log WARN StoredObjectCleanup 'Could not remove 1 document objects, left for the sweep' (UnknownHost minio), request COMPLETED; after restart with sweep cron every minute/age PT1M DocumentSweeper 'removed 1 orphaned objects' 08:53:56 and awards/895 is gone |
+| 35 | PASS | e1b: after the request and after reload/Back from /profile no POST/PUT is sent (no erasure-request call); page reads server state |
+| 36 | PASS | tab B stale request -> dialog 'Видалення вже заплановано. Закрийте вікно, щоб побачити дату.' (409 erasure-pending); after A cancelled, B cancel shows 'Видалення більше не заплановано.' and the card resets, no banner |
+| 37 | PASS | complete: after E6 re-granted SYSTEM_ADMIN to admin (role 796) the next run erased E6 (request COMPLETED, user DELETED); postponement before: reason last-administrator, no mail |
+| 38 | PASS | 5 requests (839-843) due 12:06; backend killed after the first completed (839 DELETED/COMPLETED, 840-843 ACTIVE/PENDING); after restart next run completed all five; 0 accounts where DELETED and COMPLETED disagree |
+| 39 | PASS | e1b.mr (833): password changed through reset (no change form on /profile; step text corrected); old password 403 password-mismatch, new password 201 (then cancelled 204). Failed-sign-in counter not inspected |
+| 40 | PASS | pending 1.1 ack on e2.mr, e1b.mr, dean.fmi, secretary.fmi: returnUrl //example.com, https://example.com, /%09/example.com -> '/'; /privacy-notice -> stays on /privacy-notice (in-app, no loop). Button label 'Я ознайомився(-лася) з повідомленням' |
 
 ## 11. Risks
 
