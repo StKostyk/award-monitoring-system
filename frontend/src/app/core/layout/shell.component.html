@@ -105,6 +105,21 @@
             <span matListItemTitle>{{ 'delegations.title' | transloco }}</span>
           </a>
         }
+        @if (canOpenCompliance()) {
+          <a
+            mat-list-item
+            (click)="closeDrawer()"
+            routerLink="/compliance"
+            routerLinkActive
+            #complianceLink="routerLinkActive"
+            [activated]="complianceLink.isActive"
+            [attr.aria-current]="complianceLink.isActive ? 'page' : null"
+            data-testid="nav-compliance"
+          >
+            <mat-icon matListItemIcon>policy</mat-icon>
+            <span matListItemTitle>{{ 'compliance.title' | transloco }}</span>
+          </a>
+        }
       </mat-nav-list>
     </nav>
   </mat-sidenav>

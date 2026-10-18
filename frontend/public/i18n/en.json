@@ -714,6 +714,105 @@
       "unknown": "The action failed. Try again later."
     }
   },
+  "compliance": {
+    "title": "Compliance",
+    "tabs": {
+      "retention": "Retention",
+      "erasures": "Erasure requests",
+      "holds": "Legal holds"
+    },
+    "retry": "Try again",
+    "columns": {
+      "policy": "Policy",
+      "period": "Retention period",
+      "action": "Action",
+      "affected": "Affected",
+      "held": "Kept for a hold",
+      "outcome": "Outcome",
+      "person": "Person",
+      "origin": "Origin",
+      "status": "Status",
+      "requestedAt": "Requested",
+      "scheduledFor": "Due",
+      "closedAt": "Completed or cancelled",
+      "reason": "Reason",
+      "placed": "Placed",
+      "lifted": "Lifted"
+    },
+    "retention": {
+      "policies": "Policies",
+      "runs": "Nightly runs",
+      "empty": "No retention run yet.",
+      "failures": "Failed policies: {{count}}",
+      "failed": "Failed",
+      "ok": "Done"
+    },
+    "policies": {
+      "notifications": "Notifications",
+      "one-time-tokens": "One-time links",
+      "authorizations": "Sign-in sessions",
+      "devices": "Remembered devices",
+      "audit-partitions": "Audit log partitions ahead",
+      "pending-accounts": "Unconfirmed accounts",
+      "former-staff": "Accounts of former staff",
+      "consent-records": "Consent records",
+      "audit-logs": "Audit log"
+    },
+    "actions": {
+      "delete": "Delete",
+      "erase-account": "Erase the account",
+      "create-partitions": "Create partitions",
+      "drop-partitions": "Drop partitions"
+    },
+    "units": {
+      "years": "{{count}} yr",
+      "months": "{{count}} mo",
+      "weeks": "{{count}} wk",
+      "days": "{{count}} d",
+      "hours": "{{count}} h",
+      "minutes": "{{count}} min",
+      "seconds": "{{count}} s"
+    },
+    "duration": {
+      "hours": "{{hours}} h {{minutes}} min",
+      "minutes": "{{minutes}} min {{seconds}} s",
+      "seconds": "{{seconds}} s"
+    },
+    "runStatus": {
+      "RUNNING": "Running",
+      "COMPLETED": "Completed",
+      "PARTIAL": "Partial",
+      "INTERRUPTED": "Interrupted"
+    },
+    "erasureStatus": {
+      "PENDING": "Pending",
+      "CANCELLED": "Cancelled",
+      "COMPLETED": "Completed"
+    },
+    "origin": {
+      "REQUEST": "Own request",
+      "RETENTION": "Retention"
+    },
+    "erasures": {
+      "filter": "Request status",
+      "all": "All",
+      "postponed": "Postponed",
+      "postponedAt": "postponed {{date}}",
+      "empty": "No erasure requests."
+    },
+    "holds": {
+      "filter": "Holds shown",
+      "active": "Active",
+      "all": "All",
+      "inForce": "In force",
+      "empty": "No legal holds."
+    },
+    "problems": {
+      "failed": "The list could not be loaded.",
+      "denied": "You lack the permission to view this list.",
+      "gone": "The list is no longer available."
+    }
+  },
   "reviews": {
     "title": "Reviews",
     "tabs": {

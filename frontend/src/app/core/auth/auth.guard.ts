@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
-import { canDelegate, canReadDirectory, canReview } from './permissions';
+import { canDelegate, canReadCompliance, canReadDirectory, canReview } from './permissions';
 
 export const authGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
@@ -32,4 +32,11 @@ export const approverGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return canReview(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** The compliance page is open to the GDPR officer only; anybody else ends on the forbidden page. */
+export const complianceGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return canReadCompliance(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };

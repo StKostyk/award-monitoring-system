@@ -87,6 +87,11 @@ export function canReadOwnAwards(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('award:read:own');
 }
 
+/** Whether the caller may open the compliance page: retention runs, erasure requests and legal holds. */
+export function canReadCompliance(permissions: TokenPermissions): boolean {
+  return permissions.hasPermission('compliance:read');
+}
+
 /** Whether the caller may open the user directory. */
 export function canReadDirectory(permissions: TokenPermissions): boolean {
   return DIRECTORY_PERMISSIONS.some((permission) => permissions.hasPermission(permission));

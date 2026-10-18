@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.gdpr.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,11 +95,12 @@ class AccountRetentionIT extends AbstractIntegrationTest {
             + "now() + interval '30 days')", alreadyRequested);
 
         RetentionResult result = pendingAccounts.apply(context(Set.of(held), 1));
+        final Timestamp ranBy = Timestamp.from(Instant.now());
 
         assertThat(result.affected()).isOne();
         assertThat(result.held()).isOne();
         assertThat(jdbc.queryForMap("select origin, requested_at = scheduled_for as due_at_once, "
-            + "scheduled_for <= now() as due from erasure_requests where user_id = ?", abandoned))
+            + "scheduled_for <= ? as due from erasure_requests where user_id = ?", ranBy, abandoned))
             .containsEntry("origin", "RETENTION").containsEntry("due_at_once", true).containsEntry("due", true);
         assertThat(requestsOf(recent)).isZero();
         assertThat(requestsOf(renewed)).isZero();

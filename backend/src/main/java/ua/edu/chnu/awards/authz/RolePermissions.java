@@ -46,6 +46,7 @@ public class RolePermissions {
         entry("data:export", OVERSIGHT),
         entry("consent:manage", EnumSet.of(GDPR_OFFICER)),
         entry("legal-hold:manage", EnumSet.of(GDPR_OFFICER)),
+        entry("compliance:read", EnumSet.of(GDPR_OFFICER)),
         entry("audit:read", OVERSIGHT));
 
     /**

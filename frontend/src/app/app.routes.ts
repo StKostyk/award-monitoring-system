@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import {
   approverGuard,
   authGuard,
+  complianceGuard,
   delegationGuard,
   userDirectoryGuard,
 } from './core/auth/auth.guard';
@@ -136,6 +137,12 @@ export const routes: Routes = [
         canActivate: [authGuard, delegationGuard],
         loadChildren: () =>
           import('./features/delegations/delegations.routes').then((m) => m.DELEGATION_ROUTES),
+      },
+      {
+        path: 'compliance',
+        canActivate: [authGuard, complianceGuard],
+        loadChildren: () =>
+          import('./features/compliance/compliance.routes').then((m) => m.COMPLIANCE_ROUTES),
       },
       { path: '', component: HomeComponent, pathMatch: 'full', canActivate: [authGuard] },
     ],

@@ -8,7 +8,13 @@ import {
 } from '@angular/router';
 import { vi } from 'vitest';
 
-import { approverGuard, authGuard, delegationGuard, userDirectoryGuard } from './auth.guard';
+import {
+  approverGuard,
+  authGuard,
+  complianceGuard,
+  delegationGuard,
+  userDirectoryGuard,
+} from './auth.guard';
 import { AuthService } from './auth.service';
 import { NO_PERMISSIONS, readPermissions } from './permissions';
 
@@ -113,6 +119,28 @@ describe('authGuard', () => {
 
       const refused = TestBed.runInInjectionContext(() =>
         delegationGuard({} as ActivatedRouteSnapshot, state),
+      );
+
+      expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+    }
+  });
+
+  it('ac2_5_lets_the_gdpr_officer_open_the_compliance_page', () => {
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['compliance:read'] })));
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      complianceGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+  });
+
+  it('ac2_5_sends_anybody_else_to_the_forbidden_page', () => {
+    for (const claims of [{ permissions: ['user:read:all', 'user:manage'] }, {}]) {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+
+      const refused = TestBed.runInInjectionContext(() =>
+        complianceGuard({} as ActivatedRouteSnapshot, state),
       );
 
       expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());

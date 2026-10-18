@@ -1,0 +1,89 @@
+.compliance__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 8px;
+}
+
+.compliance__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.compliance__section {
+  font: var(--mat-sys-title-medium);
+  margin: 16px 0 0;
+}
+
+.compliance__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.compliance__table {
+  width: 100%;
+  min-width: 560px;
+}
+
+.compliance__table td {
+  vertical-align: top;
+  padding-block: 8px;
+}
+
+.compliance__filter {
+  align-self: flex-start;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.compliance__run-header {
+  height: auto;
+  min-height: 48px;
+  padding-block: 8px;
+}
+
+.compliance__run-title,
+.compliance__run-description,
+.compliance__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.compliance__chip--warn {
+  --mat-chip-label-text-color: var(--mat-sys-on-error-container);
+  --mat-chip-elevated-container-color: var(--mat-sys-error-container);
+  --mat-chip-outline-color: var(--mat-sys-error);
+}
+
+.compliance__failed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mat-sys-error);
+}
+
+.compliance__row--failed {
+  box-shadow: inset 4px 0 0 var(--mat-sys-error);
+}
+
+.compliance__secondary {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.compliance__reason {
+  min-width: 12rem;
+  overflow-wrap: anywhere;
+}
+
+.compliance__problem {
+  color: var(--mat-sys-error);
+}
+
+.compliance__empty {
+  padding: 24px;
+  text-align: center;
+}

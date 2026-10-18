@@ -2910,8 +2910,7 @@ paths:
       tags: [Compliance]
       summary: Retention policies
       description: >
-        Requires `compliance:read` (GDPR officer). The configured policies in their run order (6.2.2).
-      x-status: planned
+        Requires `compliance:read` (GDPR officer). The configured policies in their run order.
       security:
         - bearerAuth: []
       operationId: listRetentionPolicies
@@ -2935,8 +2934,7 @@ paths:
       summary: Retention runs
       description: >
         Requires `compliance:read`. Runs of the nightly retention job, newest first, with the result of each
-        policy (6.2.2).
-      x-status: planned
+        policy.
       security:
         - bearerAuth: []
       operationId: listRetentionRuns
@@ -2961,8 +2959,7 @@ paths:
       summary: Erasure requests of every account
       description: >
         Requires `compliance:read`. Requests of both origins (the person's own and retention), newest first;
-        an erased person is shown under the pseudonym (6.2.2).
-      x-status: planned
+        an erased person is shown under the pseudonym.
       security:
         - bearerAuth: []
       operationId: listErasureRequests
@@ -2994,8 +2991,7 @@ paths:
       tags: [Compliance]
       summary: Legal holds of every account
       description: >
-        Requires `compliance:read`. Holds newest first; `active=true` lists only holds not yet lifted (6.2.2).
-      x-status: planned
+        Requires `compliance:read`. Holds newest first; `active=true` lists only holds not yet lifted.
       security:
         - bearerAuth: []
       operationId: listAllLegalHolds
@@ -5183,7 +5179,7 @@ components:
           example: notifications
         period:
           type: string
-          description: ISO 8601 period or duration, e.g. `P365D`, `P7Y`; the number of months for `audit-partitions`
+          description: ISO 8601 period or duration, e.g. `P365D`, `P7Y`; for `audit-partitions` how far ahead partitions are created, e.g. `P3M`
         action:
           type: string
           enum: [delete, erase-account, create-partitions, drop-partitions]
