@@ -1,9 +1,7 @@
 package ua.edu.chnu.awards.gdpr.repository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.time.OffsetDateTime;
+import static ua.edu.chnu.awards.common.JdbcRowUtils.instant;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -194,10 +192,5 @@ public class PersonalDataQueries {
         Map<String, Object> parameters = Map.of(USER_ID, userId, "areas", areas, "ownActions", ownActions);
         return jdbc.query(ACTIVITY, parameters, (row, index) -> new ActivityEntry(
             row.getString("action_type"), instant(row, "created_at"), row.getString("ip")));
-    }
-
-    private static Instant instant(ResultSet row, String column) throws SQLException {
-        OffsetDateTime value = row.getObject(column, OffsetDateTime.class);
-        return value == null ? null : value.toInstant();
     }
 }

@@ -1,7 +1,5 @@
 package ua.edu.chnu.awards.audit.service;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -9,6 +7,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.common.JdbcRowUtils;
 import ua.edu.chnu.awards.common.retention.RetentionAction;
 import ua.edu.chnu.awards.common.retention.RetentionContext;
 import ua.edu.chnu.awards.common.retention.RetentionOrderConstants;
@@ -52,13 +51,13 @@ public class AuditLogRetention implements RetentionPolicy {
 
     @Override
     public String period() {
-        return properties.auditLogs().toString();
+        return RetentionPolicy.iso(properties.auditLogs());
     }
 
     @Override
     public RetentionResult apply(RetentionContext context) {
         MapSqlParameterSource params = new MapSqlParameterSource("before",
-            OffsetDateTime.ofInstant(context.before(properties.auditLogs()), ZoneOffset.UTC))
+            JdbcRowUtils.utc(context.before(properties.auditLogs())))
             .addValue("held", context.heldArray());
         AtomicInteger held = new AtomicInteger();
         int dropped = context.inBatches(() -> Objects.requireNonNull(jdbc.queryForObject(DROP, params,

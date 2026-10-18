@@ -1,9 +1,8 @@
 package ua.edu.chnu.awards.common.retention;
 
+import static ua.edu.chnu.awards.common.JdbcRowUtils.utc;
+
 import java.time.Duration;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -32,13 +31,13 @@ public abstract class AbstractDeletePolicy implements RetentionPolicy {
 
     @Override
     public String period() {
-        return RetentionPolicy.days(retained());
+        return RetentionPolicy.iso(retained());
     }
 
     @Override
     public RetentionResult apply(RetentionContext context) {
         MapSqlParameterSource params = new MapSqlParameterSource("now", utc(context.now()))
-            .addValue("before", utc(context.now().minus(retained())))
+            .addValue("before", utc(context.before(retained())))
             .addValue("limit", context.batchSize());
         return RetentionResult.completed(key(), context.inBatches(() -> jdbc.update(deleteBatch(), params)), 0);
     }
@@ -56,8 +55,4 @@ public abstract class AbstractDeletePolicy implements RetentionPolicy {
      * @return the SQL with {@code :now}, {@code :before} and {@code :limit}
      */
     protected abstract String deleteBatch();
-
-    private static OffsetDateTime utc(Instant at) {
-        return at.atOffset(ZoneOffset.UTC);
-    }
 }

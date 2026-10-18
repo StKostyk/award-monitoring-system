@@ -1,8 +1,8 @@
 package ua.edu.chnu.awards.gdpr.repository;
 
+import static ua.edu.chnu.awards.common.JdbcRowUtils.utc;
+
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -110,10 +110,6 @@ public class AccountRetentionCandidates {
             .addValue("pendingBefore", utc(pendingBefore))
             .addValue("formerBefore", utc(formerBefore));
         return Boolean.TRUE.equals(jdbc.queryForObject(sql, params, Boolean.class));
-    }
-
-    private static OffsetDateTime utc(Instant at) {
-        return OffsetDateTime.ofInstant(at, ZoneOffset.UTC);
     }
 
     /**

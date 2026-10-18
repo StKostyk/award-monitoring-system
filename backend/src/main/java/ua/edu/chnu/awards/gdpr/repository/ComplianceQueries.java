@@ -1,9 +1,10 @@
 package ua.edu.chnu.awards.gdpr.repository;
 
+import static ua.edu.chnu.awards.common.JdbcRowUtils.instant;
+import static ua.edu.chnu.awards.gdpr.repository.GdprRowsHelper.ref;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.common.retention.RetentionResult;
 import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.gdpr.dto.ErasureOrigin;
@@ -66,19 +66,8 @@ public class ComplianceQueries {
 
     private static final String HOLD_FILTER = " where not :active or h.lifted_at is null";
 
-    private static final String HOLDS = """
-        select h.hold_id, h.reason, h.placed_at, h.lifted_at, h.lift_reason,
-               u.user_id as person_id, u.first_name || ' ' || u.last_name as person_name,
-               u.email_address as person_email,
-               p.user_id as placed_by_id, p.first_name || ' ' || p.last_name as placed_by_name,
-               p.email_address as placed_by_email,
-               l.user_id as lifted_by_id, l.first_name || ' ' || l.last_name as lifted_by_name,
-               l.email_address as lifted_by_email
-          from legal_holds h
-          join users u on u.user_id = h.user_id
-          join users p on p.user_id = h.placed_by
-          left join users l on l.user_id = h.lifted_by
-        """ + HOLD_FILTER + " order by h.placed_at desc, h.hold_id desc" + PAGE;
+    private static final String HOLDS = GdprRowsHelper.HOLD_SELECT + HOLD_FILTER
+        + " order by h.placed_at desc, h.hold_id desc" + PAGE;
 
     private static final String HOLD_COUNT = "select count(*) from legal_holds h" + HOLD_FILTER;
 
@@ -119,7 +108,7 @@ public class ComplianceQueries {
      */
     public PageResponse<LegalHoldEntry> legalHolds(boolean active, int page, int size) {
         return page(HOLDS, HOLD_COUNT, new MapSqlParameterSource("active", active), page, size,
-            (row, index) -> hold(row));
+            (row, index) -> GdprRowsHelper.holdEntry(row));
     }
 
     private <T> PageResponse<T> page(String select, String count, MapSqlParameterSource params, int page, int size,
@@ -149,22 +138,5 @@ public class ComplianceQueries {
             ErasureOrigin.valueOf(row.getString("origin")), ErasureRequestStatus.valueOf(row.getString("status")),
             instant(row, "requested_at"), instant(row, "scheduled_for"), instant(row, "postponed_at"),
             instant(row, "cancelled_at"), instant(row, "completed_at"));
-    }
-
-    private static LegalHoldEntry hold(ResultSet row) throws SQLException {
-        return new LegalHoldEntry(row.getLong("hold_id"), ref(row, "person"), row.getString("reason"),
-            instant(row, "placed_at"), ref(row, "placed_by"), instant(row, "lifted_at"), ref(row, "lifted_by"),
-            row.getString("lift_reason"));
-    }
-
-    private static UserRef ref(ResultSet row, String prefix) throws SQLException {
-        long id = row.getLong(prefix + "_id");
-        return row.wasNull() ? null
-            : new UserRef(id, row.getString(prefix + "_name"), row.getString(prefix + "_email"));
-    }
-
-    private static Instant instant(ResultSet row, String column) throws SQLException {
-        OffsetDateTime value = row.getObject(column, OffsetDateTime.class);
-        return value == null ? null : value.toInstant();
     }
 }

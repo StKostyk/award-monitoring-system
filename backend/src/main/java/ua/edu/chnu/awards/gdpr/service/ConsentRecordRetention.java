@@ -54,7 +54,7 @@ class ConsentRecordRetention implements RetentionPolicy {
 
     @Override
     public String period() {
-        return properties.consentRecords().toString();
+        return RetentionPolicy.iso(properties.consentRecords());
     }
 
     @Override
