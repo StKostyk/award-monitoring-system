@@ -2,6 +2,7 @@ import {
   approvalScopes,
   canCreateAwards,
   canDelegate,
+  canReadCompliance,
   canReadDirectory,
   canReadOwnAwards,
   canReview,
@@ -48,6 +49,15 @@ describe('permissions', () => {
 
     expect(permissions.permissions).toEqual(['user:read:all', 'user:manage']);
     expect(canReadDirectory(permissions)).toBe(true);
+  });
+
+  it('ac2_5_opens_the_compliance_page_only_with_compliance_read', () => {
+    expect(canReadCompliance(readPermissions(token({ permissions: ['compliance:read'] })))).toBe(
+      true,
+    );
+    expect(
+      canReadCompliance(readPermissions(token({ permissions: ['user:read:all', 'user:manage'] }))),
+    ).toBe(false);
   });
 
   it('yields nothing instead of throwing for a missing or broken token', () => {

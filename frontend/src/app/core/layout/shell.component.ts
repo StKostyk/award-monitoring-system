@@ -15,7 +15,13 @@ import { DelegationsService } from '../../features/delegations/delegations.servi
 import { PrivacyCentreService } from '../../features/privacy/privacy-centre.service';
 import { kyivDate } from '../../shared/date-format';
 import { AuthService } from '../auth/auth.service';
-import { canDelegate, canReadDirectory, canReadOwnAwards, canReview } from '../auth/permissions';
+import {
+  canDelegate,
+  canReadCompliance,
+  canReadDirectory,
+  canReadOwnAwards,
+  canReview,
+} from '../auth/permissions';
 import { BrandService } from '../brand/brand.service';
 import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-scheme.service';
 import { LanguageService } from '../i18n/language.service';
@@ -83,6 +89,9 @@ export class ShellComponent {
   );
   protected readonly canOpenDelegations = computed(
     () => this.auth.isAuthenticated() && canDelegate(this.auth.permissions()),
+  );
+  protected readonly canOpenCompliance = computed(
+    () => this.auth.isAuthenticated() && canReadCompliance(this.auth.permissions()),
   );
   protected readonly actingFor = signal('');
   protected readonly erasureDate = computed(() => {

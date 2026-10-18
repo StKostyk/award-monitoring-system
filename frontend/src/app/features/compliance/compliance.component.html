@@ -1,0 +1,405 @@
+<h1 class="compliance__title">{{ 'compliance.title' | transloco }}</h1>
+
+<mat-tab-group
+  mat-stretch-tabs="false"
+  [selectedIndex]="tabIndex()"
+  (selectedTabChange)="selectTab($event)"
+  data-testid="compliance-tabs"
+>
+  <mat-tab [label]="'compliance.tabs.retention' | transloco">
+    <div class="compliance__panel" data-testid="retention-tab">
+      @if (policiesLoading() || runs().loading) {
+        <mat-progress-bar mode="indeterminate" data-testid="retention-loading" />
+      }
+      @if (policiesProblem() ?? runs().problem; as problem) {
+        <ng-container
+          [ngTemplateOutlet]="problemTemplate"
+          [ngTemplateOutletContext]="{ $implicit: problem, id: 'retention-error' }"
+        />
+      }
+
+      <h2 class="compliance__section">{{ 'compliance.retention.policies' | transloco }}</h2>
+      <div class="compliance__scroll" tabindex="0">
+        <table
+          mat-table
+          [dataSource]="policies()"
+          class="compliance__table"
+          data-testid="policies-table"
+        >
+          <ng-container matColumnDef="policy">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.policy' | transloco }}</th>
+            <td mat-cell *matCellDef="let policy">
+              {{ policyName(policy.key) ? (policyName(policy.key) | transloco) : policy.key }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="period">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.period' | transloco }}</th>
+            <td mat-cell *matCellDef="let policy" data-testid="policy-period">
+              @for (part of period(policy.period); track part.key) {
+                {{ part.key | transloco: part.params }}
+              } @empty {
+                {{ policy.period }}
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.action' | transloco }}</th>
+            <td mat-cell *matCellDef="let policy">
+              {{ 'compliance.actions.' + policy.action | transloco }}
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="policyColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: policyColumns"></tr>
+        </table>
+      </div>
+
+      <h2 class="compliance__section">{{ 'compliance.retention.runs' | transloco }}</h2>
+      @if (!runs().loading && !runs().problem && runs().items.length === 0) {
+        <p class="compliance__empty" data-testid="runs-empty">
+          {{ 'compliance.retention.empty' | transloco }}
+        </p>
+      }
+      <mat-accordion multi data-testid="runs">
+        @for (run of runs().items; track run.id) {
+          <mat-expansion-panel data-testid="run">
+            <mat-expansion-panel-header class="compliance__run-header">
+              <mat-panel-title class="compliance__run-title">
+                <span data-testid="run-started">{{ time(run.startedAt) }}</span>
+                <mat-chip
+                  class="compliance__chip"
+                  [class.compliance__chip--warn]="
+                    run.status !== 'COMPLETED' && run.status !== 'RUNNING'
+                  "
+                  data-testid="run-status"
+                  >{{ 'compliance.runStatus.' + run.status | transloco }}</mat-chip
+                >
+              </mat-panel-title>
+              <mat-panel-description class="compliance__run-description">
+                @if (duration(run); as duration) {
+                  <span data-testid="run-duration">{{
+                    duration.key | transloco: duration.params
+                  }}</span>
+                }
+                @if (failures(run) > 0) {
+                  <span class="compliance__failed">
+                    {{ 'compliance.retention.failures' | transloco: { count: failures(run) } }}
+                  </span>
+                }
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <div class="compliance__scroll" tabindex="0">
+              <table
+                mat-table
+                [dataSource]="run.results"
+                class="compliance__table"
+                data-testid="run-results"
+              >
+                <ng-container matColumnDef="policy">
+                  <th mat-header-cell *matHeaderCellDef>
+                    {{ 'compliance.columns.policy' | transloco }}
+                  </th>
+                  <td mat-cell *matCellDef="let result">
+                    {{
+                      policyName(result.policy)
+                        ? (policyName(result.policy) | transloco)
+                        : result.policy
+                    }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="affected">
+                  <th mat-header-cell *matHeaderCellDef>
+                    {{ 'compliance.columns.affected' | transloco }}
+                  </th>
+                  <td mat-cell *matCellDef="let result">{{ result.affected }}</td>
+                </ng-container>
+                <ng-container matColumnDef="held">
+                  <th mat-header-cell *matHeaderCellDef>
+                    {{ 'compliance.columns.held' | transloco }}
+                  </th>
+                  <td mat-cell *matCellDef="let result">{{ result.held }}</td>
+                </ng-container>
+                <ng-container matColumnDef="outcome">
+                  <th mat-header-cell *matHeaderCellDef>
+                    {{ 'compliance.columns.outcome' | transloco }}
+                  </th>
+                  <td mat-cell *matCellDef="let result">
+                    @if (result.failed) {
+                      <span class="compliance__failed" data-testid="result-failed">
+                        <mat-icon aria-hidden="true" inline>error</mat-icon>
+                        {{ 'compliance.retention.failed' | transloco }}
+                      </span>
+                      @if (result.error) {
+                        <span class="compliance__secondary">{{ result.error }}</span>
+                      }
+                    } @else {
+                      {{ 'compliance.retention.ok' | transloco }}
+                    }
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="resultColumns"></tr>
+                <tr
+                  mat-row
+                  *matRowDef="let row; columns: resultColumns"
+                  [class.compliance__row--failed]="row.failed"
+                ></tr>
+              </table>
+            </div>
+          </mat-expansion-panel>
+        }
+      </mat-accordion>
+      @if (view().tab === 'retention' && runs().total > 0) {
+        <mat-paginator
+          [length]="runs().total"
+          [pageIndex]="view().page"
+          [pageSize]="view().size"
+          [pageSizeOptions]="pageSizes"
+          (page)="changePage($event)"
+          data-testid="runs-paginator"
+        />
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab [label]="'compliance.tabs.erasures' | transloco">
+    <div class="compliance__panel" data-testid="erasures-tab">
+      <mat-button-toggle-group
+        class="compliance__filter"
+        [value]="view().status ?? ''"
+        (change)="filterStatus($event.value)"
+        [attr.aria-label]="'compliance.erasures.filter' | transloco"
+        hideSingleSelectionIndicator
+        data-testid="erasure-filter"
+      >
+        <mat-button-toggle value="">{{ 'compliance.erasures.all' | transloco }}</mat-button-toggle>
+        @for (status of statuses; track status) {
+          <mat-button-toggle [value]="status" [attr.data-testid]="'erasure-filter-' + status">
+            {{ 'compliance.erasureStatus.' + status | transloco }}
+          </mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+
+      @if (erasures().loading) {
+        <mat-progress-bar mode="indeterminate" data-testid="erasures-loading" />
+      }
+      @if (erasures().problem; as problem) {
+        <ng-container
+          [ngTemplateOutlet]="problemTemplate"
+          [ngTemplateOutletContext]="{ $implicit: problem, id: 'erasures-error' }"
+        />
+      }
+
+      <div class="compliance__scroll" tabindex="0">
+        <table
+          mat-table
+          [dataSource]="erasures().items"
+          class="compliance__table"
+          data-testid="erasures-table"
+        >
+          <ng-container matColumnDef="person">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.person' | transloco }}</th>
+            <td mat-cell *matCellDef="let request">
+              <ng-container
+                [ngTemplateOutlet]="personTemplate"
+                [ngTemplateOutletContext]="{ $implicit: request.person }"
+              />
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="origin">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.origin' | transloco }}</th>
+            <td mat-cell *matCellDef="let request" data-testid="erasure-origin">
+              {{ 'compliance.origin.' + request.origin | transloco }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.status' | transloco }}</th>
+            <td mat-cell *matCellDef="let request">
+              <span class="compliance__chips">
+                <mat-chip class="compliance__chip" data-testid="erasure-status">{{
+                  'compliance.erasureStatus.' + request.status | transloco
+                }}</mat-chip>
+                @if (postponed(request)) {
+                  <mat-chip
+                    class="compliance__chip compliance__chip--warn"
+                    data-testid="erasure-postponed"
+                    >{{ 'compliance.erasures.postponed' | transloco }}</mat-chip
+                  >
+                }
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="requestedAt">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'compliance.columns.requestedAt' | transloco }}
+            </th>
+            <td mat-cell *matCellDef="let request">{{ time(request.requestedAt) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="scheduledFor">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'compliance.columns.scheduledFor' | transloco }}
+            </th>
+            <td mat-cell *matCellDef="let request">
+              {{ time(request.scheduledFor) }}
+              @if (postponed(request)) {
+                <span class="compliance__secondary">
+                  {{
+                    'compliance.erasures.postponedAt'
+                      | transloco: { date: time(request.postponedAt) }
+                  }}
+                </span>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="closedAt">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'compliance.columns.closedAt' | transloco }}
+            </th>
+            <td mat-cell *matCellDef="let request">{{ time(closedAt(request)) }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="erasureColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: erasureColumns" data-testid="erasure-row"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            @if (!erasures().loading && !erasures().problem) {
+              <td
+                class="mat-cell compliance__empty"
+                [attr.colspan]="erasureColumns.length"
+                data-testid="erasures-empty"
+              >
+                {{ 'compliance.erasures.empty' | transloco }}
+              </td>
+            }
+          </tr>
+        </table>
+      </div>
+      @if (view().tab === 'erasures' && erasures().total > 0) {
+        <mat-paginator
+          [length]="erasures().total"
+          [pageIndex]="view().page"
+          [pageSize]="view().size"
+          [pageSizeOptions]="pageSizes"
+          (page)="changePage($event)"
+          data-testid="erasures-paginator"
+        />
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab [label]="'compliance.tabs.holds' | transloco">
+    <div class="compliance__panel" data-testid="holds-tab">
+      <mat-button-toggle-group
+        class="compliance__filter"
+        [value]="view().active ? 'active' : 'all'"
+        (change)="filterHolds($event.value)"
+        [attr.aria-label]="'compliance.holds.filter' | transloco"
+        hideSingleSelectionIndicator
+        data-testid="hold-filter"
+      >
+        <mat-button-toggle value="active" data-testid="hold-filter-active">
+          {{ 'compliance.holds.active' | transloco }}
+        </mat-button-toggle>
+        <mat-button-toggle value="all" data-testid="hold-filter-all">
+          {{ 'compliance.holds.all' | transloco }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      @if (holds().loading) {
+        <mat-progress-bar mode="indeterminate" data-testid="holds-loading" />
+      }
+      @if (holds().problem; as problem) {
+        <ng-container
+          [ngTemplateOutlet]="problemTemplate"
+          [ngTemplateOutletContext]="{ $implicit: problem, id: 'holds-error' }"
+        />
+      }
+
+      <div class="compliance__scroll" tabindex="0">
+        <table
+          mat-table
+          [dataSource]="holds().items"
+          class="compliance__table"
+          data-testid="holds-table"
+        >
+          <ng-container matColumnDef="person">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.person' | transloco }}</th>
+            <td mat-cell *matCellDef="let hold">
+              <ng-container
+                [ngTemplateOutlet]="personTemplate"
+                [ngTemplateOutletContext]="{ $implicit: hold.person }"
+              />
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="reason">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.reason' | transloco }}</th>
+            <td mat-cell *matCellDef="let hold" class="compliance__reason">{{ hold.reason }}</td>
+          </ng-container>
+          <ng-container matColumnDef="placed">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.placed' | transloco }}</th>
+            <td mat-cell *matCellDef="let hold">
+              {{ time(hold.placedAt) }}
+              <span class="compliance__secondary">{{ hold.placedBy.name }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="lifted">
+            <th mat-header-cell *matHeaderCellDef>{{ 'compliance.columns.lifted' | transloco }}</th>
+            <td mat-cell *matCellDef="let hold" data-testid="hold-lifted">
+              @if (hold.liftedAt) {
+                {{ time(hold.liftedAt) }}
+                <span class="compliance__secondary">{{ hold.liftedBy?.name }}</span>
+                @if (hold.liftReason) {
+                  <span class="compliance__secondary compliance__reason">{{
+                    hold.liftReason
+                  }}</span>
+                }
+              } @else {
+                <mat-chip class="compliance__chip compliance__chip--warn">{{
+                  'compliance.holds.inForce' | transloco
+                }}</mat-chip>
+              }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="holdColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: holdColumns" data-testid="hold-row"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            @if (!holds().loading && !holds().problem) {
+              <td
+                class="mat-cell compliance__empty"
+                [attr.colspan]="holdColumns.length"
+                data-testid="holds-empty"
+              >
+                {{ 'compliance.holds.empty' | transloco }}
+              </td>
+            }
+          </tr>
+        </table>
+      </div>
+      @if (view().tab === 'holds' && holds().total > 0) {
+        <mat-paginator
+          [length]="holds().total"
+          [pageIndex]="view().page"
+          [pageSize]="view().size"
+          [pageSizeOptions]="pageSizes"
+          (page)="changePage($event)"
+          data-testid="holds-paginator"
+        />
+      }
+    </div>
+  </mat-tab>
+</mat-tab-group>
+
+<ng-template #personTemplate let-person>
+  <a [routerLink]="['/admin/users', person.id]" data-testid="person-link">{{ person.name }}</a>
+  @if (email(person); as email) {
+    <span class="compliance__secondary">{{ email }}</span>
+  }
+</ng-template>
+
+<ng-template #problemTemplate let-problem let-id="id">
+  <p class="compliance__problem" role="alert" [attr.data-testid]="id">
+    {{ 'compliance.problems.' + problem | transloco }}
+    @if (problem === 'failed') {
+      <button mat-button type="button" (click)="retry()" data-testid="compliance-retry">
+        {{ 'compliance.retry' | transloco }}
+      </button>
+    }
+  </p>
+</ng-template>

@@ -714,6 +714,105 @@
       "unknown": "Не вдалося виконати дію. Спробуйте пізніше."
     }
   },
+  "compliance": {
+    "title": "Відповідність",
+    "tabs": {
+      "retention": "Зберігання",
+      "erasures": "Запити на видалення",
+      "holds": "Юридичні утримання"
+    },
+    "retry": "Спробувати ще раз",
+    "columns": {
+      "policy": "Правило",
+      "period": "Строк зберігання",
+      "action": "Дія",
+      "affected": "Оброблено",
+      "held": "Збережено через утримання",
+      "outcome": "Результат",
+      "person": "Особа",
+      "origin": "Джерело",
+      "status": "Стан",
+      "requestedAt": "Подано",
+      "scheduledFor": "Строк",
+      "closedAt": "Виконано або скасовано",
+      "reason": "Підстава",
+      "placed": "Встановлено",
+      "lifted": "Знято"
+    },
+    "retention": {
+      "policies": "Правила",
+      "runs": "Нічні запуски",
+      "empty": "Запусків ще не було.",
+      "failures": "Правил із помилкою: {{count}}",
+      "failed": "Помилка",
+      "ok": "Виконано"
+    },
+    "policies": {
+      "notifications": "Сповіщення",
+      "one-time-tokens": "Одноразові посилання",
+      "authorizations": "Сесії входу",
+      "devices": "Запам'ятовані пристрої",
+      "audit-partitions": "Розділи журналу аудиту наперед",
+      "pending-accounts": "Непідтверджені облікові записи",
+      "former-staff": "Облікові записи колишніх працівників",
+      "consent-records": "Записи згод",
+      "audit-logs": "Журнал аудиту"
+    },
+    "actions": {
+      "delete": "Видалити",
+      "erase-account": "Стерти обліковий запис",
+      "create-partitions": "Створити розділи",
+      "drop-partitions": "Видалити розділи"
+    },
+    "units": {
+      "years": "{{count}} р.",
+      "months": "{{count}} міс.",
+      "weeks": "{{count}} тиж.",
+      "days": "{{count}} дн.",
+      "hours": "{{count}} год",
+      "minutes": "{{count}} хв",
+      "seconds": "{{count}} с"
+    },
+    "duration": {
+      "hours": "{{hours}} год {{minutes}} хв",
+      "minutes": "{{minutes}} хв {{seconds}} с",
+      "seconds": "{{seconds}} с"
+    },
+    "runStatus": {
+      "RUNNING": "Триває",
+      "COMPLETED": "Завершено",
+      "PARTIAL": "Частково",
+      "INTERRUPTED": "Перервано"
+    },
+    "erasureStatus": {
+      "PENDING": "Очікує",
+      "CANCELLED": "Скасовано",
+      "COMPLETED": "Виконано"
+    },
+    "origin": {
+      "REQUEST": "Власний запит",
+      "RETENTION": "Строк зберігання"
+    },
+    "erasures": {
+      "filter": "Стан запиту",
+      "all": "Усі",
+      "postponed": "Відкладено",
+      "postponedAt": "відкладено {{date}}",
+      "empty": "Запитів на видалення немає."
+    },
+    "holds": {
+      "filter": "Які утримання показати",
+      "active": "Чинні",
+      "all": "Усі",
+      "inForce": "Діє",
+      "empty": "Юридичних утримань немає."
+    },
+    "problems": {
+      "failed": "Не вдалося завантажити список.",
+      "denied": "Ви не маєте права переглядати цей список.",
+      "gone": "Список більше не доступний."
+    }
+  },
   "reviews": {
     "title": "На розгляді",
     "tabs": {

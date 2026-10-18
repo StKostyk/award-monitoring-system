@@ -114,6 +114,7 @@ describe('ShellComponent', () => {
                 title: 'Мої делегування',
                 actingFor: 'Діє за дорученням: {{name}}',
               },
+              compliance: { title: 'Відповідність' },
               privacy: {
                 erasure: {
                   banner: 'Ваш обліковий запис буде видалено {{date}}.',
@@ -223,6 +224,23 @@ describe('ShellComponent', () => {
 
     expect(link.getAttribute('href')).toBe('/delegations');
     expect(link.textContent).toContain('Мої делегування');
+  });
+
+  it('ac2_5_shows_the_compliance_entry_only_to_the_gdpr_officer', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['user:read:all'] })));
+    const administrator = TestBed.createComponent(ShellComponent);
+    administrator.detectChanges();
+
+    expect(administrator.nativeElement.querySelector('[data-testid="nav-compliance"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['compliance:read'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const link = fixture.nativeElement.querySelector('[data-testid="nav-compliance"]');
+
+    expect(link.getAttribute('href')).toBe('/compliance');
+    expect(link.textContent).toContain('Відповідність');
   });
 
   it('ac3_6_names_the_delegator_while_a_received_delegation_is_active', () => {

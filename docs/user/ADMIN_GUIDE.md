@@ -369,14 +369,30 @@ system administrator or a dean opening the same user does not.
   text. Both entries appear in the officer's own activity log; the person sees only the dates of the hold in
   their data export.
 
-#### Data Retention
+#### Compliance Page
 
 ```
-Administration → GDPR → Retention
+Navigation → Compliance (/compliance)
 ```
 
-| Data Type | Retention | After Expiry |
-|-----------|-----------|--------------|
+The compliance page shows what the automated retention removes and which erasures and holds are open. Only
+the GDPR officer (permission `compliance:read`) sees the entry; anybody else who opens `/compliance` ends on
+the "Access denied" page. The open tab, its filter and page stay in the address, so a reload or "Back" shows
+the same list read again from the server.
+
+| Tab | What it shows |
+|-----|---------------|
+| Retention | The nine retention policies in run order with their period and action, then the nightly runs newest first: start, status chip (Running, Completed, Partial, Interrupted) and duration. Opening a run lists every policy with the rows removed, the rows kept for a legal hold and, for a failed policy, the error |
+| Erasure requests | Requests of both origins (own request, retention) with status, request date, due date and completion or cancellation; filter All, Pending, Cancelled, Completed. A pending request postponed by a hold or by the last-administrator rule carries a "Postponed" chip. The person links to the user page; an erased person appears under the pseudonym only |
+| Legal holds | Active holds, or all of them, with the person, the reason, who placed and lifted each hold and when, and the lift reason |
+
+- A run that stays "Running" after a restart is marked "Interrupted" by the next run, which also mails the
+  officers; a "Partial" run had at least one failed policy, and its committed batches stay applied.
+- The periods come from the `app.retention.*` settings (DATA_GOVERNANCE §2.1); the page only reads them.
+- Every tab shows a loading bar while it reads, an empty state when there is nothing to list and a message
+  with "Try again" when the list cannot be loaded.
+
+-----------|-----------|--------------|
 | Active awards | Indefinite | N/A |
 | Rejected awards | 3 years | Anonymize |
 | Audit logs | 7 years | Delete |
