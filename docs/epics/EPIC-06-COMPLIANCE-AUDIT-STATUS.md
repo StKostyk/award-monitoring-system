@@ -11,11 +11,11 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 6.1 GDPR consent management and data subject rights (privacy notice, consents, privacy centre, legal hold, erasure) | Done | 2026-10-15 | 2026-10-18 |
-| 6.2 Automated data retention (retention job, compliance page) | Not started | - | - |
+| 6.2 Automated data retention (retention job, compliance page) | Done | 2026-10-18 | 2026-10-18 |
 
 ## Current focus
 
-Feature 6.1 done 2026-10-18: validated 2026-10-17 (PRD §13), manual run of PRD §10 passed 40 of 40. Feature 6.2 PRD approved 2026-10-18 ([feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md)); next: 6.2.1 (SCRUM-91), then 6.2.3 (SCRUM-95), then 6.2.2 (SCRUM-92).
+Both features done. Feature 6.1 done 2026-10-18: validated 2026-10-17 (PRD §13), manual run of PRD §10 passed 40 of 40. Feature 6.2 done 2026-10-18 ([feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md)): validated (PRD §13), manual run of §10 passed 26 of 27, step 9 accepted on the ITs. Next: epic-end reconciliation, then Epic 5.
 
 ## Scope
 
@@ -50,7 +50,7 @@ recorded in the thesis as a limitation).
 | 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 5 | SCRUM-91 | #257 | no | Done |
 | 6a | 6.2.3 Retention of accounts, consent records and audit partitions | 6.2 | 5 | SCRUM-95 | #272 | no | Done |
 | 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | Done |
-| 7a | 6.2.4 Nightly erasure run outside the clock-change hour | 6.2 | 1 | SCRUM-96 | #277 | no | In review |
+| 7a | 6.2.4 Nightly erasure run outside the clock-change hour | 6.2 | 1 | SCRUM-96 | #277 | no | Done |
 
 Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01). 6.1.5 replaces
 2.4.2 "GDPR-compliant award deletion" (moved here at the Epic 2 kickoff, no tracker item existed).
@@ -67,6 +67,7 @@ Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planne
 | 2026-10-17 | Feature 6.1 validated; four detours added to the manual scenario (last administrator at execution, restart mid-run, old password, odd `returnUrl`); lost mails on an outage stay a project-wide finding for Epic 9 | Scenario review found no break in the merged code | PRD 6.1 §13 |
 | 2026-10-18 | Feature 6.1 done after the manual run (40 of 40); step 5 uses a pending notice 1.1 instead of deleting a consent row | Consent rows are append-only, so the scenario no longer removes one | PRD 6.1 §10 |
 | 2026-10-18 | Feature 6.2 PRD approved with deviations 1–10; 6.2.1 split into 6.2.1 (job, technical policies) and 6.2.3 (SCRUM-95: accounts, consent records, audit partitions) | The second part changes guarded tables and the erasure path and gets its own review | PRD 6.2 §7 |
+| 2026-10-18 | Feature 6.2 done after the manual run (26 of 27); step 9 (direct DELETEs on `consent_records` and `audit_logs`) accepted on the ITs | The guards are trigger-level and proven by `ConsentRecordsIT`, `RecordRetentionIT` and `ErasureIT` on every gate | PRD 6.2 §10, §13 |
 
 ## Documentation deviations found at kickoff
 
