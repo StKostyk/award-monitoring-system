@@ -146,6 +146,12 @@ when a module meets the extraction criteria below.**
   transaction and finishes with `audit.service.AuditRedaction` (ADR-024). The PRD placed the contract in a
   `gdpr` named interface; since `gdpr` already depends on `auth`, `user` and `award`, that would have formed
   cycles, so it sits in the open `common` module.
+- Data retention (6.2.1) follows the same pattern: `RetentionPolicy`, `RetentionContext`, `RetentionResult`,
+  `AbstractDeletePolicy`, `RetentionProperties` and `RetentionOrderConstants` live in `common.retention`; the
+  policies sit in the module owning the table (`notification` 10, `auth` tokens 20, authorizations 30, devices 40,
+  `audit` partitions 80) and `gdpr.service.RetentionJob` runs them, each batch in its own transaction. The PRD put
+  `RetentionProperties` in `gdpr`; `notification` needs the notification period when it writes a row and must not
+  depend on `gdpr`, so the properties sit in `common` too.
 - Cross-module repository calls go through lookup services of the owning module whose methods keep the
   repository's names and transaction behaviour.
 - Besides `User` and `Organization`, the entities of `award`, `delegation` and `auth` are readable by other
@@ -206,6 +212,7 @@ when a module meets the extraction criteria below.**
 | 2026-10-13 | Stefan Kostyk | Module list, named interfaces, step 2 done | Story 7.1.2 (SCRUM-65) |
 | 2026-10-15 | Stefan Kostyk | Status Accepted | Boundaries enforced by `ApplicationModules.verify()` through Epic 7 |
 | 2026-10-16 | Stefan Kostyk | Erasure contributor contract in `common.erasure` | Story 6.1.5 (SCRUM-90) |
+| 2026-10-18 | Stefan Kostyk | Retention policy contract in `common.retention` | Story 6.2.1 (SCRUM-91) |
 
 ---
 

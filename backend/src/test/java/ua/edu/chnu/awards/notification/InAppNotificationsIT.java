@@ -12,7 +12,6 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +109,7 @@ class InAppNotificationsIT extends AbstractIntegrationTest {
             "\"reviewer\": \"Ірина Бойко\"", "\"level\": \"FACULTY_SECRETARY\"").doesNotContain("Виправте дату");
         Instant sentAt = ((Timestamp) row.get("sent_at")).toInstant();
         assertThat(((Timestamp) row.get("expires_at")).toInstant())
-            .isEqualTo(sentAt.atZone(ZoneOffset.UTC).plusYears(1).toInstant());
+            .isEqualTo(sentAt.plus(Duration.ofDays(365)));
     }
 
     @Test

@@ -89,7 +89,7 @@ Order: 6.2.1 → 6.2.3 → 6.2.2. 6.2.1 and 6.2.3 are backend only; 6.2.2 splits
 | Case | Expected |
 |------|----------|
 | Backend stops in the middle of a run | The row stays `RUNNING`; the next run marks it `INTERRUPTED` and mails the officers; every committed batch stays committed, no batch is half applied |
-| Two runs at once (manual cron override overlapping a slow run) | One instance (ADR-021); a transaction advisory lock makes the second start skip with a log line, no row |
+| Two runs at once (manual cron override overlapping a slow run) | One instance (ADR-021); a session advisory lock held for the whole run (a run spans many transactions) makes the second start skip with a log line, no row |
 | A policy fails at batch 3 of 5 | Batches 1–2 stay committed; `affected` counts them; `failed` true; run `PARTIAL` |
 | Mail server down when the failure mail is sent | Registry retries (`PublicationRetry`), as every other mail |
 | No GDPR officer exists | No mail; the log names the run |

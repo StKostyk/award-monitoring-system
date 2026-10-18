@@ -28,4 +28,13 @@ public class PrivacyLinks {
     public String privacyCentre() {
         return frontendUrl + "/privacy";
     }
+
+    /**
+     * The compliance page of the data protection officer.
+     *
+     * @return its address
+     */
+    public String compliance() {
+        return frontendUrl + "/compliance";
+    }
 }

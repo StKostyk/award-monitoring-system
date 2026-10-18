@@ -156,6 +156,8 @@ services:
       - APP_ERASURE_GRACE_PERIOD=${APP_ERASURE_GRACE_PERIOD:-P30D}
       - APP_ERASURE_WARNING_BEFORE=${APP_ERASURE_WARNING_BEFORE:-P7D}
       - APP_ERASURE_CRON=${APP_ERASURE_CRON:-0 30 3 * * *}
+      - APP_RETENTION_CRON=${APP_RETENTION_CRON:-0 0 4 * * *}
+      - APP_RETENTION_NOTIFICATIONS=${APP_RETENTION_NOTIFICATIONS:-P365D}
       - AUTH_ALLOWED_ORIGINS=http://localhost,http://localhost:4200,http://localhost:8080
       - AUTH_REDIRECT_URIS=http://localhost/callback,http://localhost:4200/callback,http://localhost/swagger-ui/oauth2-redirect.html,http://localhost:8080/swagger-ui/oauth2-redirect.html
       - AUTH_POST_LOGOUT_REDIRECT_URIS=http://localhost,http://localhost:4200

@@ -175,6 +175,14 @@ app:
     grace-period: ${APP_ERASURE_GRACE_PERIOD:P30D}
     warning-before: ${APP_ERASURE_WARNING_BEFORE:P7D}
     cron: ${APP_ERASURE_CRON:0 30 3 * * *}
+  retention:
+    cron: ${APP_RETENTION_CRON:0 0 4 * * *}
+    batch-size: ${APP_RETENTION_BATCH_SIZE:1000}
+    notifications: ${APP_RETENTION_NOTIFICATIONS:P365D}
+    one-time-tokens: ${APP_RETENTION_ONE_TIME_TOKENS:P30D}
+    authorizations: ${APP_RETENTION_AUTHORIZATIONS:P1D}
+    devices: ${APP_RETENTION_DEVICES:P730D}
+    audit-partitions-ahead: ${APP_RETENTION_AUDIT_PARTITIONS_AHEAD:3}
   privacy:
     # texts: frontend/public/privacy/<version>/<lang>.html; a new version is added here and becomes current
     notice-version: ${APP_PRIVACY_NOTICE_VERSION:1.0}

@@ -98,60 +98,38 @@ system_data:
 | **Award Records** | Legitimate Interest | Permanent (public record) | No | Read-only after employment |
 | **Employee Profiles** | Legitimate Interest | 7 years post-employment | Yes | Profile visibility control |
 | **Contact Information** | Consent | User-controlled | No | Full user control |
-| **Scanned Documents** | Explicit Consent | User-defined (1-10 years) | Yes | User-defined periods |
+| **Scanned Documents** | Explicit Consent | With the award; deleted with the award or the account (6.1.5) | Yes | Delete with the award |
 | **Consent Records** | Legal Obligation | 7 years from withdrawal | Yes | View-only for users |
-| **System Logs** | Legitimate Interest | 3 years | Yes | No user control |
+| **Unverified Registrations** | Legitimate Interest | 30 days after registration (6.2.3) | Yes | Verify or re-register |
+| **Notifications** | Legitimate Interest | 365 days from sending (`app.retention.notifications`) | Yes | No user control |
+| **One-time Tokens** | Legitimate Interest | 30 days after use or expiry (`app.retention.one-time-tokens`) | Yes | No user control |
+| **Authorizations** | Legitimate Interest | 1 day after the last expiry (`app.retention.authorizations`) | Yes | Sign out |
+| **Known Devices** | Legitimate Interest | 2 years after last use (`app.retention.devices`) | Yes | "This was not me" removes all |
+| **System Logs** | Legitimate Interest | Application log files 30 days / 1 GB (logback); container logs per the Epic 9 runbook; the database keeps none | Yes | No user control |
 | **Audit Trails** | Legal Obligation | 7 years | Yes | No user control |
+
+The periods of one-time tokens, authorizations, devices and unverified registrations are assumptions of Feature 6.2 (no regulation names them); each is a property and can be changed without a release.
 
 ### **2.2 Automated Retention Implementation**
 
-```java
-// Data Retention Service Implementation
-@Service
-@Scheduled
-public class DataRetentionService {
-    
-    @Scheduled(cron = "0 0 2 * * ?") // Daily at 2 AM
-    public void processRetentionPolicies() {
-        
-        // Process user-defined document retention
-        processDocumentRetention();
-        
-        // Process employment-based profile retention  
-        processProfileRetention();
-        
-        // Process system log retention
-        processLogRetention();
-        
-        // Process consent record retention
-        processConsentRetention();
-    }
-    
-    private void processDocumentRetention() {
-        List<Document> expiredDocs = documentRepository
-            .findDocumentsWithExpiredRetention(LocalDate.now());
-            
-        for (Document doc : expiredDocs) {
-            if (doc.isEligibleForDeletion()) {
-                securelyDeleteDocument(doc);
-                auditService.logDataDeletion(doc);
-            }
-        }
-    }
-    
-    private void processProfileRetention() {
-        List<User> expiredProfiles = userRepository
-            .findUsersWithExpiredEmployment(LocalDate.now().minusYears(7));
-            
-        for (User user : expiredProfiles) {
-            if (!user.hasActiveAwards()) {
-                anonymizeUserProfile(user);
-                auditService.logProfileAnonymization(user);
-            }
-        }
-    }
-}
-```
+The nightly retention job (Feature 6.2, story 6.2.1) applies every retention policy:
+
+- **Schedule.** `app.retention.cron`, default `0 0 4 * * *` in `Europe/Kyiv`, after the 03:30 erasure run. A session advisory lock keeps one run at a time; a start while another run works is skipped with a log line.
+- **Run record.** Each run is a `retention_runs` row (DATA_DICTIONARY §4.5). A row left `RUNNING` by a stop is marked `INTERRUPTED` by the next run; `results` is saved after each policy.
+- **Policies.** Beans implementing `common.retention.RetentionPolicy` (`key`, `order`, `action`, `period`, `apply`), run in their order:
+
+| Order | Key | Module | Action | Period (property) |
+|-------|-----|--------|--------|-------------------|
+| 10 | `notifications` | notification | delete rows whose `expires_at` has passed | `app.retention.notifications` P365D, written into `expires_at` at sending |
+| 20 | `one-time-tokens` | auth | delete rows used or expired before the period | `app.retention.one-time-tokens` P30D |
+| 30 | `authorizations` | auth | delete rows whose every expiry is null or before the period | `app.retention.authorizations` P1D |
+| 40 | `devices` | auth | delete rows last used before the period | `app.retention.devices` P730D |
+| 80 | `audit-partitions` | audit | create the monthly partitions from the current month ahead | `app.retention.audit-partitions-ahead` 3 |
+
+- **Batches.** A policy changes at most `app.retention.batch-size` (default 1000) rows per transaction and repeats until a batch is short, so a large backlog never locks a table for long and a failure keeps the committed batches.
+- **Failures.** A policy that throws is recorded with `failed` and the exception class only (no message, which could name a person); the other policies still run and the run ends `PARTIAL`.
+- **Legal holds.** The set of people under an active hold is read once at the start and given to every policy. The technical rows above go regardless of a hold, since they prove nothing a hold protects; accounts, consent records and audit rows (6.2.3) stay for held people.
+- **Report.** The run row, the audit row `RETENTION_RUN_COMPLETED` (status and counts, no actor), the metrics `award_retention_runs_total{outcome}` and `award_retention_rows_total{policy}`, and, only for a `PARTIAL` or `INTERRUPTED` run, one mail to the active data protection officers naming the run, the failed policies and the compliance page.
 
 ### **2.3 Data Deletion Procedures**
 
