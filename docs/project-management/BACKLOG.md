@@ -126,7 +126,7 @@ Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-
 | 6.1.7 | Shared erasure guard, postponement enum and consent append helper | 2 | ✅ Done | SCRUM-94 | [#268](https://github.com/StKostyk/award-monitoring-system/issues/268) |
 | 6.2.1 | Nightly retention job with configurable policies | 5 | ✅ Done | SCRUM-91 | [#257](https://github.com/StKostyk/award-monitoring-system/issues/257) |
 | 6.2.2 | Compliance page for retention runs, erasures and legal holds | 5 | 7 | SCRUM-92 | [#258](https://github.com/StKostyk/award-monitoring-system/issues/258) |
-| 6.2.3 | Retention of accounts, consent records and audit partitions | 5 | 👀 In review (7) | SCRUM-95 | [#272](https://github.com/StKostyk/award-monitoring-system/issues/272) |
+| 6.2.3 | Retention of accounts, consent records and audit partitions | 5 | ✅ Done | SCRUM-95 | [#272](https://github.com/StKostyk/award-monitoring-system/issues/272) |
 
 ### Later epics
 | ID | Story | Points | Epic |

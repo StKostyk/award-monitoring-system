@@ -523,6 +523,7 @@ public class TotpService {
 | `data:export` | - | - | - | - | - | ✅ | ✅ |
 | `consent:manage` | - | - | - | - | - | - | ✅ |
 | `legal-hold:manage` | - | - | - | - | - | - | ✅ |
+| `compliance:read` | - | - | - | - | - | - | ✅ |
 | `audit:read` | - | - | - | - | - | ✅ | ✅ |
 
 ### 3.4 RBAC Implementation
@@ -553,6 +554,7 @@ public final class Permissions {
     public static final String DATA_EXPORT = "data:export";
     public static final String CONSENT_MANAGE = "consent:manage";
     public static final String LEGAL_HOLD_MANAGE = "legal-hold:manage";
+    public static final String COMPLIANCE_READ = "compliance:read";
     public static final String AUDIT_READ = "audit:read";
 }
 
