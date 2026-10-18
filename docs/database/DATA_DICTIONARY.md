@@ -186,7 +186,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - A token is redeemable once: `used_at` is set on first use and later attempts are rejected
 - Lifetime by purpose: `EMAIL_VERIFICATION` 24 hours, `PASSWORD_RESET` 1 hour, `SECURITY_REVOKE` 24 hours, `EMAIL_CHANGE` 1 hour
 - An `EMAIL_CHANGE` token carries the requested address in `new_email_address`; a `SECURITY_REVOKE` token may carry the previous sign-in address after an address change (V026), and redeeming it moves the account back there unless another account uses it; no other purpose carries an address. A confirmed change binds the user's unused "not me" links to the old address and issues one more for the notice to the old address; a password reset and the link of a new device cancel only the unbound ones. A new request cancels the user's earlier unused `EMAIL_CHANGE` tokens; a confirmed change cancels the unused `PASSWORD_RESET` tokens
-- Expired and used rows are removed by a scheduled cleanup
+- The `one-time-tokens` retention policy deletes rows used or expired longer ago than `app.retention.one-time-tokens` (default 30 days) in the nightly retention run (6.2.1, §4.5)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -213,6 +213,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - Fingerprint is a SHA-256 digest of browser family, operating-system family and accept-language
 - One row per user and fingerprint; `last_used_at` and `last_ip_address` are refreshed on every sign-in
 - A "this was not me" confirmation (`SECURITY_REVOKE` token) removes every row of the user, so each browser announces itself again after the password is reset; rows are also removed with the user
+- The `devices` retention policy deletes rows with `last_used_at` older than `app.retention.devices` (default 730 days); the next sign-in from such a browser counts as a new device (6.2.1)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -233,7 +234,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ### 1.6 Authorization server tables
 
-`oauth2_registered_client`, `oauth2_authorization` and `oauth2_authorization_consent` follow the reference schema of Spring Authorization Server with the PostgreSQL adjustments it recommends (`blob` → `TEXT`, `timestamp` → `TIMESTAMPTZ`). Their columns are owned by the library and are not listed here; `oauth2_authorization.principal_name` holds the user's email address and is indexed for revocation queries. Token values in `oauth2_authorization` are stored as issued (GDPR: Confidential); access to the table is limited to the application role.
+`oauth2_registered_client`, `oauth2_authorization` and `oauth2_authorization_consent` follow the reference schema of Spring Authorization Server with the PostgreSQL adjustments it recommends (`blob` → `TEXT`, `timestamp` → `TIMESTAMPTZ`). Their columns are owned by the library and are not listed here; `oauth2_authorization.principal_name` holds the user's email address and is indexed for revocation queries. Token values in `oauth2_authorization` are stored as issued (GDPR: Confidential); access to the table is limited to the application role. The `authorizations` retention policy deletes `oauth2_authorization` rows whose every expiry column is null or older than `app.retention.authorizations` (default 1 day), so an authorization with a live refresh token stays (6.2.1).
 
 ---
 
@@ -766,6 +767,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `AWARD_VISIBILITY_CHANGED` - the owner changed who sees an approved personal award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` = `from`, `to`); written only for an effective change and the record of the owner's consent to show the award (4.3.1)
 - `ERASURE_POSTPONED` - a due erasure waits (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId`, `reason` `legal-hold` or `last-administrator`); once per request (6.1.5)
 - `ERASURE_COMPLETED` - the account was erased (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId` and the counts each erasure contributor reported) (6.1.5)
+- `RETENTION_RUN_COMPLETED` - a retention run ended (`entity_type` = `RETENTION`, `entity_id` = the run, no `user_id`; `new_values` = `status` and per policy `policy`, `affected`, `held`, `failed`) (6.2.1)
 - `AUDIT_REDACTED` - written by `fn_redact_audit_subject` after an erasure (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `context`, `values`, `erasedRecords`, `names` row counts) (6.1.5)
 - `DATA_DELETE` - reserved and unused; erasure is written as `ERASURE_COMPLETED`
 - `APPROVAL`, `REJECTION` - reserved and unused; decisions are written as `REVIEW_DECISION`
@@ -779,7 +781,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 
 **Partitioning**:
 - Partitioned by `RANGE (created_at)`
-- Monthly partitions for efficient retention management: `audit_logs_2026_01` … `audit_logs_2027_12` exist (V009, V016) plus `audit_logs_default`; `fn_create_audit_partition()` adds the next month
+- Monthly partitions for efficient retention management: `audit_logs_2026_01` … `audit_logs_2027_12` exist (V009, V016) plus `audit_logs_default`; `fn_create_audit_partition(p_month DATE)` creates the partition of a month and returns whether it was created; the `audit-partitions` retention policy calls it nightly for the current month and `app.retention.audit-partitions-ahead` (default 3) months ahead (6.2.1); the form without an argument creates next month's
 
 **Relationships**:
 - BELONGS TO `users` (N:1) via `user_id`
@@ -897,6 +899,32 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 
 ---
 
+### 4.5 Entity: `retention_runs`
+
+**Description**: Runs of the nightly retention job with the counts of every policy (V044, 6.2.1). Kept without a period: the rows hold counts and policy keys only.
+
+**Business Rules**:
+- The job runs at `app.retention.cron` (default `0 0 4 * * *`, `Europe/Kyiv`) under a session advisory lock (`retention-run`); a start while another run holds it is skipped with a log line and no row
+- Before it starts, the run marks rows still `RUNNING` as `INTERRUPTED` with `finished_at`
+- Policies run in their order (`notifications` 10, `one-time-tokens` 20, `authorizations` 30, `devices` 40, `audit-partitions` 80), each in transactions of at most `app.retention.batch-size` (default 1000) rows; `results` is saved after each policy, so an interrupted run shows what it finished
+- A policy that throws keeps its committed batches, records `failed` and the exception class only (never the message), and the run ends `PARTIAL`; otherwise `COMPLETED`
+- `finished_at` is null exactly while `RUNNING` (`ck_retention_runs_finished`)
+- Audited as `RETENTION_RUN_COMPLETED` (§4.1); a `PARTIAL` or `INTERRUPTED` run mails the active `GDPR_OFFICER` holders after the commit
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `run_id` | `BIGSERIAL` | NO | Auto | PK | Unique run identifier |
+| `started_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the run started |
+| `finished_at` | `TIMESTAMPTZ` | YES | - | CK | When it ended or was found interrupted |
+| `status` | `VARCHAR(20)` | NO | `'RUNNING'` | CK: `RUNNING`, `COMPLETED`, `PARTIAL`, `INTERRUPTED` | Run state |
+| `results` | `JSONB` | NO | `'[]'` | - | Per policy `{policy, affected, held, failed, error}` |
+
+**Indexes**:
+- `pk_retention_runs` - Primary key on `run_id`
+- `idx_retention_runs_started` - On `started_at DESC`
+
+---
+
 ## 5. Notification Domain
 
 ### 5.1 Entity: `notifications`
@@ -912,7 +940,7 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 - Delivery log (7.2.3): before a mail of a notification type is sent, its `EMAIL` row is claimed in one statement (`INSERT … ON CONFLICT (dedupe_key) DO UPDATE … WHERE`): a new row, or a `FAILED` one, or a `SENDING` one older than `app.events.retry-after` (10 minutes) becomes `SENDING` with `sent_at` = now; a `SENT` row or a younger `SENDING` one is left alone and no mail goes out, as for a recipient whose account no longer exists. After the send the row becomes `SENT` with `delivered_at`, or `FAILED` when the mail server refused it (the publication is then retried)
 - `ck_notifications_delivery_status`: `IN_APP` rows carry no `delivery_status`, `EMAIL` rows one of `SENDING`, `SENT`, `FAILED`
 - Security and privacy mails (sign-in, password, export notice, erasure) are not logged here
-- Retention period: 1 year (`expires_at` = `sent_at` + 1 year); the account's deletion removes its rows (`ON DELETE CASCADE`)
+- Retention period: `app.retention.notifications` (default 365 days) from `sent_at`, written into `expires_at` when the row is created, so a changed period applies to new rows only; the `notifications` retention policy deletes rows whose `expires_at` has passed (6.2.1); the account's deletion removes its rows (`ON DELETE CASCADE`)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -927,7 +955,7 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 | `reference_id` | `BIGINT` | YES | - | - | The award, null otherwise |
 | `sent_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the in-app row was written, or when the mail was last claimed for sending |
 | `read_at` | `TIMESTAMPTZ` | YES | - | CK | When marked as read; set with `is_read` |
-| `expires_at` | `TIMESTAMPTZ` | YES | - | - | `sent_at` + 1 year |
+| `expires_at` | `TIMESTAMPTZ` | YES | - | - | `sent_at` + `app.retention.notifications` (default 365 days) |
 | `delivery_status` | `VARCHAR(20)` | YES | - | CK | `EMAIL` rows: `SENDING`, `SENT`, `FAILED`; null for `IN_APP` (V039) |
 | `delivered_at` | `TIMESTAMPTZ` | YES | - | - | `EMAIL` rows: when the mail server accepted the mail; null otherwise (V039) |
 

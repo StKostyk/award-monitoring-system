@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Nightly data retention job (04:00 Kyiv) with configurable policies for notifications, one-time tokens, authorizations, devices and audit partitions; runs recorded, audited, counted and reported to the data protection officers when incomplete (6.2.1)
 - Account erasure runs at the due date across every module: approved awards stay private under a pseudonym, everything else personal is deleted, the audit trail is redacted (ADR-024)
 - Account erasure request from the privacy centre with a 30-day grace period, reminder mail, cancellation and a banner with the date on every page
 - Legal hold on accounts: the GDPR officer places and lifts a hold with a reason on the user detail page; holds are audited without the reason text and listed by date in the personal data export (format 1.5).

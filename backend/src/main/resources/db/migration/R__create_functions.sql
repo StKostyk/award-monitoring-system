@@ -51,14 +51,16 @@ COMMENT ON FUNCTION fn_calculate_impact_score(BIGINT) IS 'Calculates impact scor
 -- ============================================================================
 -- FUNCTION: fn_create_audit_partition
 -- ============================================================================
--- Creates next month's partition for audit_logs table
--- Should be called monthly (on 25th) to prepare for next month
+-- Creates the partition of audit_logs for the month of p_month and returns
+-- true when it was created, false when it already existed. The retention job
+-- calls it nightly for the current month and the months ahead. The form
+-- without an argument creates next month's partition.
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION fn_create_audit_partition()
-RETURNS void AS $$
+CREATE OR REPLACE FUNCTION fn_create_audit_partition(p_month DATE)
+RETURNS BOOLEAN AS $$
 DECLARE
-    partition_date DATE := DATE_TRUNC('month', CURRENT_DATE + INTERVAL '1 month');
+    partition_date DATE := DATE_TRUNC('month', p_month);
     partition_name TEXT;
     start_date TEXT;
     end_date TEXT;
@@ -75,10 +77,19 @@ BEGIN
             'CREATE TABLE %I PARTITION OF audit_logs FOR VALUES FROM (%L) TO (%L)',
             partition_name, start_date, end_date
         );
-        RAISE NOTICE 'Created partition: %', partition_name;
-    ELSE
-        RAISE NOTICE 'Partition already exists: %', partition_name;
+        RETURN TRUE;
     END IF;
+    RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION fn_create_audit_partition(DATE) IS
+    'Creates the audit_logs partition of the given month; true when created, false when it existed';
+
+CREATE OR REPLACE FUNCTION fn_create_audit_partition()
+RETURNS void AS $$
+BEGIN
+    PERFORM fn_create_audit_partition((DATE_TRUNC('month', CURRENT_DATE + INTERVAL '1 month'))::DATE);
 END;
 $$ LANGUAGE plpgsql;
 

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -53,6 +54,8 @@ public class LegalHolds {
 
     private static final String ACTIVE = "select exists (select 1 from legal_holds"
         + " where user_id = :userId and lifted_at is null)";
+
+    private static final String ACTIVE_HOLDERS = "select distinct user_id from legal_holds where lifted_at is null";
 
     private static final String PLACE = """
         insert into legal_holds (user_id, reason, placed_by, placed_at)
@@ -117,6 +120,15 @@ public class LegalHolds {
      */
     public boolean isActive(long userId) {
         return Boolean.TRUE.equals(jdbc.queryForObject(ACTIVE, Map.of(USER_ID, userId), Boolean.class));
+    }
+
+    /**
+     * The people under an active hold.
+     *
+     * @return their account ids
+     */
+    public Set<Long> activeHolders() {
+        return Set.copyOf(jdbc.queryForList(ACTIVE_HOLDERS, Map.of(), Long.class));
     }
 
     /**

@@ -23,6 +23,7 @@ import ua.edu.chnu.awards.common.event.EventProperties;
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 import ua.edu.chnu.awards.common.mail.UndeliveredMailAsyncHandler;
 import ua.edu.chnu.awards.common.privacy.PrivacyNoticeProperties;
+import ua.edu.chnu.awards.common.retention.RetentionProperties;
 
 /**
  * Shared clock (injectable for tests), workflow timing, event publication retry, asynchronous execution for
@@ -30,7 +31,7 @@ import ua.edu.chnu.awards.common.privacy.PrivacyNoticeProperties;
  */
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties({EventProperties.class, PrivacyNoticeProperties.class})
+@EnableConfigurationProperties({EventProperties.class, PrivacyNoticeProperties.class, RetentionProperties.class})
 @EnableScheduling
 public class InfrastructureConfig {
 

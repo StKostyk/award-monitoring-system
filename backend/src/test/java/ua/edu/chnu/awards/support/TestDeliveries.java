@@ -13,6 +13,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import ua.edu.chnu.awards.common.event.EventProperties;
 import ua.edu.chnu.awards.common.mail.MailDelivery;
+import ua.edu.chnu.awards.common.retention.RetentionProperties;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
 import ua.edu.chnu.awards.notification.service.DeliveryLog;
 import ua.edu.chnu.awards.notification.service.DeliveryMetrics;
@@ -24,6 +25,9 @@ import ua.edu.chnu.awards.notification.service.NotificationRows;
  * Delivery logs for unit tests of the mail listeners.
  */
 public final class TestDeliveries {
+
+    private static final RetentionProperties RETENTION = new RetentionProperties(1000, Duration.ofDays(365),
+        Duration.ofDays(30), Duration.ofDays(1), Duration.ofDays(730), 3);
 
     /** The fixed moment of the clock the logs use. */
     public static final Instant NOW = Instant.parse("2026-10-14T10:00:00Z");
@@ -71,6 +75,7 @@ public final class TestDeliveries {
      * @return the rows
      */
     public static NotificationRows rows(ObjectMapper mapper, Instant now) {
-        return new NotificationRows(new NotificationKeys(), mapper, Clock.fixed(now, ZoneOffset.UTC));
+        return new NotificationRows(new NotificationKeys(), mapper, Clock.fixed(now, ZoneOffset.UTC),
+            RETENTION);
     }
 }
