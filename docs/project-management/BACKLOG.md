@@ -113,7 +113,7 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 | 7.2.7 | Out-of-range notification page shows the empty state | 1 | ✅ Done | SCRUM-84 | [#245](https://github.com/StKostyk/award-monitoring-system/issues/245) |
 
 ### Epic 6 — Compliance & Audit System (Jira epic SCRUM-85)
-Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-STATUS.md). Kickoff 2026-10-15; versioned privacy notice and consent records, privacy centre, legal hold, erasure after a 30-day grace period, nightly retention job. Story 6.1.5 replaces 2.4.2. Feature 6.1 PRD approved 2026-10-15: [feature-6.1-consent-data-subject-rights.md](../features/epic-06/feature-6.1-consent-data-subject-rights.md).
+Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-STATUS.md). Kickoff 2026-10-15; versioned privacy notice and consent records, privacy centre, legal hold, erasure after a 30-day grace period, nightly retention job. Story 6.1.5 replaces 2.4.2. Feature 6.1 PRD approved 2026-10-15: [feature-6.1-consent-data-subject-rights.md](../features/epic-06/feature-6.1-consent-data-subject-rights.md). Feature 6.2 PRD approved 2026-10-18: [feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md); 6.2.3 (SCRUM-95, #272) is added when it starts.
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
@@ -124,7 +124,7 @@ Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-
 | 6.1.5 | Erasure across modules with anonymised awards | 8 | ✅ Done | SCRUM-90 | [#256](https://github.com/StKostyk/award-monitoring-system/issues/256) |
 | 6.1.6 | Mails without a reverse DNS lookup per message | 2 | ✅ Done | SCRUM-93 | [#266](https://github.com/StKostyk/award-monitoring-system/issues/266) |
 | 6.1.7 | Shared erasure guard, postponement enum and consent append helper | 2 | ✅ Done | SCRUM-94 | [#268](https://github.com/StKostyk/award-monitoring-system/issues/268) |
-| 6.2.1 | Nightly retention job with configurable policies | 8 | 7 | SCRUM-91 | [#257](https://github.com/StKostyk/award-monitoring-system/issues/257) |
+| 6.2.1 | Nightly retention job with configurable policies | 5 | 7 | SCRUM-91 | [#257](https://github.com/StKostyk/award-monitoring-system/issues/257) |
 | 6.2.2 | Compliance page for retention runs, erasures and legal holds | 5 | 7 | SCRUM-92 | [#258](https://github.com/StKostyk/award-monitoring-system/issues/258) |
 
 ### Later epics

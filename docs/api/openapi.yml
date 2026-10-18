@@ -63,6 +63,8 @@ tags:
     description: In-app notifications and channel preferences (Feature 7.2)
   - name: Privacy
     description: Privacy notice, consents, privacy centre, legal holds and erasure (Feature 6.1)
+  - name: Compliance
+    description: Retention policies and runs, erasure requests and legal holds for the GDPR officer (Feature 6.2)
 
 paths:
   # ============== Authentication ==============
@@ -2902,6 +2904,122 @@ paths:
                 type: string
                 format: binary
 
+  # ============== Compliance ==============
+  /compliance/retention-policies:
+    get:
+      tags: [Compliance]
+      summary: Retention policies
+      description: >
+        Requires `compliance:read` (GDPR officer). The configured policies in their run order (6.2.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listRetentionPolicies
+      responses:
+        '200':
+          description: The policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RetentionPolicy'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /compliance/retention-runs:
+    get:
+      tags: [Compliance]
+      summary: Retention runs
+      description: >
+        Requires `compliance:read`. Runs of the nightly retention job, newest first, with the result of each
+        policy (6.2.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listRetentionRuns
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: One page of runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionRunPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /compliance/erasure-requests:
+    get:
+      tags: [Compliance]
+      summary: Erasure requests of every account
+      description: >
+        Requires `compliance:read`. Requests of both origins (the person's own and retention), newest first;
+        an erased person is shown under the pseudonym (6.2.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listErasureRequests
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PENDING, CANCELLED, COMPLETED]
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: One page of requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErasureRequestEntryPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /compliance/legal-holds:
+    get:
+      tags: [Compliance]
+      summary: Legal holds of every account
+      description: >
+        Requires `compliance:read`. Holds newest first; `active=true` lists only holds not yet lifted (6.2.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listAllLegalHolds
+      parameters:
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: One page of holds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegalHoldEntryPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   # ============== Health ==============
   /actuator/health:
     get:
@@ -5056,6 +5174,131 @@ components:
           format: date-time
           nullable: true
           description: Due date of a pending erasure request (6.1.4)
+
+    RetentionPolicy:
+      type: object
+      properties:
+        key:
+          type: string
+          example: notifications
+        period:
+          type: string
+          description: ISO 8601 period or duration, e.g. `P365D`, `P7Y`; the number of months for `audit-partitions`
+        action:
+          type: string
+          enum: [delete, erase-account, create-partitions, drop-partitions]
+        order:
+          type: integer
+
+    RetentionResult:
+      type: object
+      properties:
+        policy:
+          type: string
+        affected:
+          type: integer
+          description: Rows deleted, requests filed or partitions created or dropped
+        held:
+          type: integer
+          description: Accounts or partitions skipped for an active legal hold
+        failed:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+          description: Exception class of a failed policy; never a message
+
+    RetentionRun:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [RUNNING, COMPLETED, PARTIAL, INTERRUPTED]
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RetentionResult'
+
+    RetentionRunPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/RetentionRun'
+
+    ErasureRequestEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        person:
+          $ref: '#/components/schemas/UserRef'
+        origin:
+          type: string
+          enum: [REQUEST, RETENTION]
+        status:
+          type: string
+          enum: [PENDING, CANCELLED, COMPLETED]
+        requestedAt:
+          type: string
+          format: date-time
+        scheduledFor:
+          type: string
+          format: date-time
+        postponedAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ErasureRequestEntryPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ErasureRequestEntry'
+
+    LegalHoldEntry:
+      allOf:
+        - $ref: '#/components/schemas/LegalHold'
+        - type: object
+          properties:
+            person:
+              $ref: '#/components/schemas/UserRef'
+
+    LegalHoldEntryPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/LegalHoldEntry'
 
     ErasureConfirmation:
       type: object
