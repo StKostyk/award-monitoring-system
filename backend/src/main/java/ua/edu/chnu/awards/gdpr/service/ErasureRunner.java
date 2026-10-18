@@ -82,23 +82,24 @@ public class ErasureRunner {
 
     private Outcome erase(long requestId, Instant now) {
         requests.serialize();
-        Optional<ErasureRequests.Locked> locked = requests.lockDue(requestId, now);
-        if (locked.isEmpty()) {
+        Optional<ErasureRequests.Locked> due = requests.lockDue(requestId, now);
+        if (due.isEmpty()) {
             return Outcome.SKIPPED;
         }
-        long userId = locked.get().userId();
-        User user = users.findByIdForUpdate(userId)
+        ErasureRequests.Locked request = due.get();
+        User user = users.findByIdForUpdate(request.userId())
             .orElseThrow(() -> new IllegalStateException("Erasure request " + requestId + " has no account"));
-        if (guard.cancelIfLapsed(locked.get(), now)) {
+        if (guard.cancelIfLapsed(request, now)) {
             return Outcome.CANCELLED;
         }
-        final String origin = locked.get().origin().code();
-        final boolean mails = locked.get().byPerson();
         LocalDate day = LocalDate.now(clock);
-        Optional<ErasureBlocker> blocker = guard.blocker(userId, day);
-        if (blocker.isPresent()) {
-            return postpone(requestId, user, blocker.get(), origin, mails, now);
-        }
+        return guard.blocker(request.userId(), day)
+            .map(reason -> postpone(request, user, reason, now))
+            .orElseGet(() -> complete(request, user, now, day));
+    }
+
+    private Outcome complete(ErasureRequests.Locked request, User user, Instant now, LocalDate day) {
+        long userId = request.userId();
         final String email = user.getEmailAddress();
         final String firstName = user.getFirstName();
         Set<String> names = new LinkedHashSet<>();
@@ -109,25 +110,25 @@ public class ErasureRunner {
             .sorted(Comparator.comparingInt(ErasureContributor::order))
             .forEach(contributor -> contributor.erase(context));
         Map<String, Object> details = new LinkedHashMap<>();
-        details.put(REQUEST_ID, requestId);
-        details.put(ORIGIN, origin);
+        details.put(REQUEST_ID, request.requestId());
+        details.put(ORIGIN, request.origin().code());
         details.putAll(context.counts());
         audit.record(AuditAction.ERASURE_COMPLETED, AuditEntityConstants.GDPR, userId, userId, details);
         redaction.redactSubject(userId, context.names(), context.erasedRecords());
-        requests.markCompleted(requestId, now);
-        if (mails) {
+        requests.markCompleted(request.requestId(), now);
+        if (request.byPerson()) {
             events.publishEvent(new ErasureCompleted(email, firstName));
         }
-        log.info("Erased account {} (request {})", userId, requestId);
+        log.info("Erased account {} (request {})", userId, request.requestId());
         return Outcome.COMPLETED;
     }
 
-    private Outcome postpone(long requestId, User user, ErasureBlocker reason, String origin, boolean mails,
-                             Instant now) {
-        if (requests.markPostponed(requestId, now)) {
-            audit.record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, user.getId(), user.getId(),
-                Map.of(REQUEST_ID, requestId, "reason", reason.code(), ORIGIN, origin));
-            if (reason.notifies() && mails) {
+    private Outcome postpone(ErasureRequests.Locked request, User user, ErasureBlocker reason, Instant now) {
+        if (requests.markPostponed(request.requestId(), now)) {
+            audit.record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, request.userId(),
+                request.userId(), Map.of(REQUEST_ID, request.requestId(), "reason", reason.code(), ORIGIN,
+                    request.origin().code()));
+            if (reason.notifies() && request.byPerson()) {
                 events.publishEvent(new ErasurePostponed(user.getEmailAddress(), user.getFirstName()));
             }
         }

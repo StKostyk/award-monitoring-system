@@ -3,29 +3,18 @@ package ua.edu.chnu.awards.gdpr.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.audit.service.AuditLogRetention;
-import ua.edu.chnu.awards.common.retention.RetentionContext;
 import ua.edu.chnu.awards.common.retention.RetentionResult;
-import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
-import ua.edu.chnu.awards.support.AbstractIntegrationTest;
-import ua.edu.chnu.awards.support.ConsentRows;
-import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.repository.UserRepository;
 
-class RecordRetentionIT extends AbstractIntegrationTest {
+class RecordRetentionIT extends AbstractRetentionIT {
 
     private static final List<String> OLD_PARTITIONS =
         List.of("audit_logs_2018_01", "audit_logs_2018_02", "audit_logs_2018_03");
@@ -36,27 +25,8 @@ class RecordRetentionIT extends AbstractIntegrationTest {
     @Autowired
     private AuditLogRetention auditLogs;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private JdbcTemplate jdbc;
-
-    @Autowired
-    private TransactionTemplate transactions;
-
-    private final List<Long> people = new ArrayList<>();
-
     @AfterEach
-    void cleanUp() {
-        people.forEach(id -> {
-            jdbc.update("delete from erasure_requests where user_id = ?", id);
-            ConsentRows.purge(jdbc, id);
-        });
-        userRepository.deleteAllById(people);
+    void dropPartitions() {
         OLD_PARTITIONS.forEach(name -> jdbc.execute("drop table if exists " + name));
     }
 
@@ -79,7 +49,7 @@ class RecordRetentionIT extends AbstractIntegrationTest {
         final long held = person();
         consent(held, "ANALYTICS", false, "8 years");
 
-        RetentionResult result = consents.apply(context(Set.of(held)));
+        RetentionResult result = consents.apply(context(Set.of(held), 1000));
 
         assertThat(result.affected()).isEqualTo(3);
         assertThat(result.held()).isOne();
@@ -95,7 +65,7 @@ class RecordRetentionIT extends AbstractIntegrationTest {
     void ac3_5_aDirectDeleteStillRaisesAfterAPurge() {
         final long withdrawn = person();
         consent(withdrawn, "DATA_PROCESSING", true, "1 day");
-        consents.apply(context(Set.of()));
+        consents.apply(context(Set.of(), 1000));
 
         assertThatThrownBy(() -> jdbc.update("delete from consent_records where user_id = ?", withdrawn))
             .isInstanceOf(DataAccessException.class).hasMessageContaining("append-only");
@@ -114,7 +84,7 @@ class RecordRetentionIT extends AbstractIntegrationTest {
         audit("2018-02-15", held, "awards", "{\"title\": \"Signed in\"}");
         audit("2018-03-15", null, "consent_records", "{\"user_id\": " + held + "}");
 
-        RetentionResult result = auditLogs.apply(context(Set.of(held)));
+        RetentionResult result = auditLogs.apply(context(Set.of(held), 1000));
 
         assertThat(result.affected()).isOne();
         assertThat(result.held()).isEqualTo(2);
@@ -128,15 +98,8 @@ class RecordRetentionIT extends AbstractIntegrationTest {
         assertThat(auditLogs.period()).isEqualTo("P7Y");
     }
 
-    private RetentionContext context(Set<Long> held) {
-        return new RetentionContext(Instant.now(), held, 1000, transactions);
-    }
-
     private long person() {
-        long id = userRepository.save(TestUsers.user("it.record.retention." + UUID.randomUUID() + "@chnu.edu.ua",
-            organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow())).getId();
-        people.add(id);
-        return id;
+        return newPerson("it.record.retention.");
     }
 
     private void consent(long userId, String type, boolean granted, String age) {

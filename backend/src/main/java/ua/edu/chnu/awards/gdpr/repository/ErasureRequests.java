@@ -1,12 +1,13 @@
 package ua.edu.chnu.awards.gdpr.repository;
 
+import static ua.edu.chnu.awards.common.JdbcRowUtils.instant;
+import static ua.edu.chnu.awards.common.JdbcRowUtils.utc;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -246,15 +247,6 @@ public class ErasureRequests {
     private static ErasureRequest request(ResultSet row) throws SQLException {
         return new ErasureRequest(row.getLong("request_id"), instant(row, "requested_at"),
             instant(row, "scheduled_for"), row.getObject("postponed_at") != null);
-    }
-
-    private static OffsetDateTime utc(Instant at) {
-        return OffsetDateTime.ofInstant(at, ZoneOffset.UTC);
-    }
-
-    private static Instant instant(ResultSet row, String column) throws SQLException {
-        OffsetDateTime value = row.getObject(column, OffsetDateTime.class);
-        return value == null ? null : value.toInstant();
     }
 
     /**

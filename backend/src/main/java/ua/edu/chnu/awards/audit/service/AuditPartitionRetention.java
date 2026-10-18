@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.audit.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -47,7 +48,7 @@ public class AuditPartitionRetention implements RetentionPolicy {
 
     @Override
     public String period() {
-        return "P" + properties.auditPartitionsAhead() + "M";
+        return RetentionPolicy.iso(Period.ofMonths(properties.auditPartitionsAhead()));
     }
 
     @Override

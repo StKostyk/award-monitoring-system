@@ -1,8 +1,8 @@
 package ua.edu.chnu.awards.common.retention;
 
 import java.time.Instant;
-import java.time.Period;
 import java.time.ZoneOffset;
+import java.time.temporal.TemporalAmount;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntSupplier;
@@ -83,12 +83,12 @@ public final class RetentionContext {
     }
 
     /**
-     * The moment a period before the run, counted in UTC calendar units.
+     * The moment a period before the run, a {@link java.time.Period} counted in UTC calendar units.
      *
-     * @param period the period
+     * @param period a {@link java.time.Duration} or a {@link java.time.Period}
      * @return the cut-off
      */
-    public Instant before(Period period) {
+    public Instant before(TemporalAmount period) {
         return now.atOffset(ZoneOffset.UTC).minus(period).toInstant();
     }
 

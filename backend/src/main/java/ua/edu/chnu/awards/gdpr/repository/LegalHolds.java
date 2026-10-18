@@ -1,10 +1,9 @@
 package ua.edu.chnu.awards.gdpr.repository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import static ua.edu.chnu.awards.gdpr.repository.GdprRowsHelper.HOLD_SELECT;
+import static ua.edu.chnu.awards.gdpr.repository.GdprRowsHelper.hold;
+
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,7 +14,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import ua.edu.chnu.awards.award.dto.UserRef;
+import ua.edu.chnu.awards.common.JdbcRowUtils;
 import ua.edu.chnu.awards.gdpr.dto.LegalHold;
 
 import lombok.RequiredArgsConstructor;
@@ -32,23 +31,12 @@ public class LegalHolds {
     private static final String LOCK_ACCOUNT =
         "select account_status from users where user_id = :userId for update";
 
-    private static final String SELECT = """
-        select h.hold_id, h.reason, h.placed_at, h.lifted_at, h.lift_reason,
-               p.user_id as placed_by_id, p.first_name || ' ' || p.last_name as placed_by_name,
-               p.email_address as placed_by_email,
-               l.user_id as lifted_by_id, l.first_name || ' ' || l.last_name as lifted_by_name,
-               l.email_address as lifted_by_email
-          from legal_holds h
-          join users p on p.user_id = h.placed_by
-          left join users l on l.user_id = h.lifted_by
-        """;
-
-    private static final String OF_USER = SELECT + """
+    private static final String OF_USER = HOLD_SELECT + """
          where h.user_id = :userId
          order by h.placed_at desc, h.hold_id desc
         """;
 
-    private static final String ONE = SELECT + " where h.user_id = :userId and h.hold_id = :holdId";
+    private static final String ONE = HOLD_SELECT + " where h.user_id = :userId and h.hold_id = :holdId";
 
     private static final String EXISTS = "select exists (select 1 from users where user_id = :userId)";
 
@@ -144,7 +132,7 @@ public class LegalHolds {
         MapSqlParameterSource params = new MapSqlParameterSource(USER_ID, userId)
             .addValue("reason", reason)
             .addValue("by", by)
-            .addValue("at", OffsetDateTime.ofInstant(at, ZoneOffset.UTC));
+            .addValue("at", JdbcRowUtils.utc(at));
         return Objects.requireNonNull(jdbc.queryForObject(PLACE, params, Long.class));
     }
 
@@ -161,23 +149,7 @@ public class LegalHolds {
         MapSqlParameterSource params = new MapSqlParameterSource("holdId", holdId)
             .addValue("reason", reason)
             .addValue("by", by)
-            .addValue("at", OffsetDateTime.ofInstant(at, ZoneOffset.UTC));
+            .addValue("at", JdbcRowUtils.utc(at));
         return jdbc.update(LIFT, params) == 1;
-    }
-
-    private static LegalHold hold(ResultSet row) throws SQLException {
-        return new LegalHold(row.getLong("hold_id"), row.getString("reason"), instant(row, "placed_at"),
-            ref(row, "placed_by"), instant(row, "lifted_at"), ref(row, "lifted_by"), row.getString("lift_reason"));
-    }
-
-    private static UserRef ref(ResultSet row, String prefix) throws SQLException {
-        long id = row.getLong(prefix + "_id");
-        return row.wasNull() ? null
-            : new UserRef(id, row.getString(prefix + "_name"), row.getString(prefix + "_email"));
-    }
-
-    private static Instant instant(ResultSet row, String column) throws SQLException {
-        OffsetDateTime value = row.getObject(column, OffsetDateTime.class);
-        return value == null ? null : value.toInstant();
     }
 }

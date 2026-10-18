@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -18,8 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import ua.edu.chnu.awards.audit.service.AuditPartitionRetention;
 import ua.edu.chnu.awards.auth.service.AuthorizationRetention;
@@ -29,12 +26,8 @@ import ua.edu.chnu.awards.common.retention.RetentionContext;
 import ua.edu.chnu.awards.common.retention.RetentionPolicy;
 import ua.edu.chnu.awards.common.retention.RetentionResult;
 import ua.edu.chnu.awards.notification.service.NotificationRetention;
-import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
-import ua.edu.chnu.awards.support.AbstractIntegrationTest;
-import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.repository.UserRepository;
 
-class RetentionIT extends AbstractIntegrationTest {
+class RetentionIT extends AbstractRetentionIT {
 
     private static final int SMALL_BATCH = 2;
     private static final List<String> FUTURE_PARTITIONS =
@@ -59,33 +52,19 @@ class RetentionIT extends AbstractIntegrationTest {
     private AuditPartitionRetention partitions;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private JdbcTemplate jdbc;
-
-    @Autowired
-    private TransactionTemplate transactions;
-
-    @Autowired
     private DataSource dataSource;
 
     private long userId;
 
     @BeforeEach
     void createPerson() {
-        userId = userRepository.save(TestUsers.user("it.retention." + UUID.randomUUID() + "@chnu.edu.ua",
-            organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow())).getId();
+        userId = newPerson("it.retention.");
     }
 
     @AfterEach
     void cleanUp() {
         jdbc.update("delete from oauth2_authorization where principal_name like 'it.retention.%'");
         jdbc.update("delete from notifications where user_id = ?", userId);
-        userRepository.deleteById(userId);
         jdbc.update("delete from retention_runs");
         FUTURE_PARTITIONS.forEach(name -> jdbc.execute("drop table if exists " + name));
     }
@@ -145,7 +124,7 @@ class RetentionIT extends AbstractIntegrationTest {
             device("old-" + device, "800 days");
         }
 
-        RetentionResult result = devices.apply(context(SMALL_BATCH));
+        RetentionResult result = devices.apply(context(Set.of(), SMALL_BATCH));
 
         assertThat(result).isEqualTo(RetentionResult.completed("devices", 5, 0));
         assertThat(devicesOf()).isEmpty();
@@ -216,11 +195,7 @@ class RetentionIT extends AbstractIntegrationTest {
     }
 
     private RetentionResult apply(RetentionPolicy policy) {
-        return policy.apply(context(1000));
-    }
-
-    private RetentionContext context(int batchSize) {
-        return new RetentionContext(Instant.now(), Set.of(), batchSize, transactions);
+        return policy.apply(context(Set.of(), 1000));
     }
 
     private void notification(String name, String expiresAt) {

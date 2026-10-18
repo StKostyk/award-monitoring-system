@@ -1,12 +1,13 @@
 package ua.edu.chnu.awards.gdpr.repository;
 
+import static ua.edu.chnu.awards.common.JdbcRowUtils.instant;
+import static ua.edu.chnu.awards.common.JdbcRowUtils.utc;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -151,14 +152,6 @@ public class RetentionRuns {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Retention results cannot be read", e);
         }
-    }
-
-    private static OffsetDateTime utc(Instant at) {
-        return at.atOffset(ZoneOffset.UTC);
-    }
-
-    private static Instant instant(ResultSet row, String column) throws SQLException {
-        return row.getObject(column, OffsetDateTime.class).toInstant();
     }
 
     /**

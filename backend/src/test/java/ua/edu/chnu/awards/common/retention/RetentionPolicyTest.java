@@ -13,9 +13,11 @@ import org.springframework.transaction.support.TransactionOperations;
 class RetentionPolicyTest {
 
     @Test
-    void ac3_2_periodsOfWholeDaysAreWrittenInDaysAndShorterOnesAsTheyAre() {
-        assertThat(RetentionPolicy.days(Duration.ofDays(30))).isEqualTo("P30D");
-        assertThat(RetentionPolicy.days(Duration.ofMinutes(5))).isEqualTo("PT5M");
+    void ac3_2_periodsOfWholeDaysAreWrittenInDaysAndShorterOnesAndCalendarPeriodsAsTheyAre() {
+        assertThat(RetentionPolicy.iso(Duration.ofDays(30))).isEqualTo("P30D");
+        assertThat(RetentionPolicy.iso(Duration.ofMinutes(5))).isEqualTo("PT5M");
+        assertThat(RetentionPolicy.iso(Period.ofYears(7))).isEqualTo("P7Y");
+        assertThat(RetentionPolicy.iso(Period.ofMonths(3))).isEqualTo("P3M");
     }
 
     @Test

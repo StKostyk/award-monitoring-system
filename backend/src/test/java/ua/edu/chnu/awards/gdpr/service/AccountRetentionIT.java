@@ -5,27 +5,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.TransactionTemplate;
 
-import ua.edu.chnu.awards.common.retention.RetentionContext;
 import ua.edu.chnu.awards.common.retention.RetentionResult;
-import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
-import ua.edu.chnu.awards.support.AbstractIntegrationTest;
-import ua.edu.chnu.awards.support.ConsentRows;
-import ua.edu.chnu.awards.support.TestUsers;
-import ua.edu.chnu.awards.user.repository.UserRepository;
 
-class AccountRetentionIT extends AbstractIntegrationTest {
+class AccountRetentionIT extends AbstractRetentionIT {
 
     private static final String STATUS = "select status from erasure_requests where user_id = ? order by request_id "
         + "desc limit 1";
@@ -38,31 +27,6 @@ class AccountRetentionIT extends AbstractIntegrationTest {
 
     @Autowired
     private ErasureRunner runner;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private JdbcTemplate jdbc;
-
-    @Autowired
-    private TransactionTemplate transactions;
-
-    private final List<Long> people = new ArrayList<>();
-
-    @AfterEach
-    void deletePeople() {
-        people.forEach(id -> {
-            jdbc.update("delete from erasure_requests where user_id = ?", id);
-            jdbc.update("delete from legal_holds where user_id = ?", id);
-            jdbc.update("delete from one_time_tokens where user_id = ?", id);
-            ConsentRows.purge(jdbc, id);
-        });
-        userRepository.deleteAllById(people);
-    }
 
     @Test
     void ac3_1_theStatusChangeTimeIsSetOnAChangeOnlyAndTheOriginIsChecked() {
@@ -203,15 +167,9 @@ class AccountRetentionIT extends AbstractIntegrationTest {
         assertThat(requestsOf(abandoned)).isOne();
     }
 
-    private RetentionContext context(Set<Long> held, int batchSize) {
-        return new RetentionContext(Instant.now(), held, batchSize, transactions);
-    }
-
     private long person(String status) {
-        long id = userRepository.save(TestUsers.user("it.account.retention." + UUID.randomUUID() + "@chnu.edu.ua",
-            organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow())).getId();
+        long id = newPerson("it.account.retention.");
         jdbc.update("update users set account_status = ? where user_id = ?", status, id);
-        people.add(id);
         return id;
     }
 

@@ -1,10 +1,22 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { Action } from '@ngrx/store';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
-import { readProblem } from '../../../core/api/problem';
+import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { ComplianceService } from '../compliance.service';
 import { ComplianceActions } from './compliance.actions';
+
+function load<T>(
+  source: Observable<T>,
+  loaded: (value: T) => Action,
+  failed: (problem: ReadProblem) => Action,
+): Observable<Action> {
+  return source.pipe(
+    map(loaded),
+    catchError((error: unknown) => of(failed(readProblem(error)))),
+  );
+}
 
 @Injectable()
 export class ComplianceEffects {
@@ -15,11 +27,10 @@ export class ComplianceEffects {
     this.actions$.pipe(
       ofType(ComplianceActions.retentionOpened),
       switchMap(() =>
-        this.compliance.policies().pipe(
-          map((policies) => ComplianceActions.policiesLoaded({ policies })),
-          catchError((error: unknown) =>
-            of(ComplianceActions.policiesLoadFailed({ problem: readProblem(error) })),
-          ),
+        load(
+          this.compliance.policies(),
+          (policies) => ComplianceActions.policiesLoaded({ policies }),
+          (problem) => ComplianceActions.policiesLoadFailed({ problem }),
         ),
       ),
     ),
@@ -29,11 +40,10 @@ export class ComplianceEffects {
     this.actions$.pipe(
       ofType(ComplianceActions.retentionOpened),
       switchMap(({ request }) =>
-        this.compliance.runs(request).pipe(
-          map((page) => ComplianceActions.runsLoaded({ page })),
-          catchError((error: unknown) =>
-            of(ComplianceActions.runsLoadFailed({ problem: readProblem(error) })),
-          ),
+        load(
+          this.compliance.runs(request),
+          (page) => ComplianceActions.runsLoaded({ page }),
+          (problem) => ComplianceActions.runsLoadFailed({ problem }),
         ),
       ),
     ),
@@ -43,11 +53,10 @@ export class ComplianceEffects {
     this.actions$.pipe(
       ofType(ComplianceActions.erasuresOpened),
       switchMap(({ request, status }) =>
-        this.compliance.erasureRequests(request, status).pipe(
-          map((page) => ComplianceActions.erasuresLoaded({ page })),
-          catchError((error: unknown) =>
-            of(ComplianceActions.erasuresLoadFailed({ problem: readProblem(error) })),
-          ),
+        load(
+          this.compliance.erasureRequests(request, status),
+          (page) => ComplianceActions.erasuresLoaded({ page }),
+          (problem) => ComplianceActions.erasuresLoadFailed({ problem }),
         ),
       ),
     ),
@@ -57,11 +66,10 @@ export class ComplianceEffects {
     this.actions$.pipe(
       ofType(ComplianceActions.holdsOpened),
       switchMap(({ request, active }) =>
-        this.compliance.legalHolds(request, active).pipe(
-          map((page) => ComplianceActions.holdsLoaded({ page })),
-          catchError((error: unknown) =>
-            of(ComplianceActions.holdsLoadFailed({ problem: readProblem(error) })),
-          ),
+        load(
+          this.compliance.legalHolds(request, active),
+          (page) => ComplianceActions.holdsLoaded({ page }),
+          (problem) => ComplianceActions.holdsLoadFailed({ problem }),
         ),
       ),
     ),

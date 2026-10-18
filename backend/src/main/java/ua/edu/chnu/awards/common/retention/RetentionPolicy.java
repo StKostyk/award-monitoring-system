@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.common.retention;
 
 import java.time.Duration;
+import java.time.temporal.TemporalAmount;
 
 /**
  * One rule of the nightly retention run. The run calls every policy in ascending {@link #order()}; a policy works
@@ -45,13 +46,13 @@ public interface RetentionPolicy {
     RetentionResult apply(RetentionContext context);
 
     /**
-     * Writes a period as an ISO-8601 period, in days when it is a whole number of days.
+     * Writes a period as an ISO-8601 period, a duration of whole days in days.
      *
-     * @param period the period
-     * @return the period, such as {@code P30D}, or {@code PT5M} for a part of a day
+     * @param period a {@link Duration} or a {@link java.time.Period}
+     * @return the period, such as {@code P30D}, {@code P7Y}, or {@code PT5M} for a part of a day
      */
-    static String days(Duration period) {
-        return period.toSeconds() % Duration.ofDays(1).toSeconds() == 0 ? "P" + period.toDays() + "D"
-            : period.toString();
+    static String iso(TemporalAmount period) {
+        return period instanceof Duration duration && duration.toSeconds() % Duration.ofDays(1).toSeconds() == 0
+            ? "P" + duration.toDays() + "D" : period.toString();
     }
 }
