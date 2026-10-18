@@ -7,19 +7,36 @@
     each pair, the English file in the working tree is compared with the commit that last touched the Ukrainian
     copy; any change since then, committed or not, is drift. With -Missing, English documents in mirrored folders that have no Ukrainian copy are listed as
     well. The exit code is 1 when drift is found, so the check can gate an epic close.
+    docs/ua/drift-baseline.txt holds "<English path> <commit>" lines: a change I reviewed and decided needs no
+    translation (wording, a table row the copy leaves out). Drift is then counted from that commit when it is
+    newer than the copy. -Accept <English path> records the current commit for that document.
 
 .EXAMPLE
     .\tools\ua-drift.ps1
     .\tools\ua-drift.ps1 -Missing
+    .\tools\ua-drift.ps1 -Accept docs/security/AUTHENTICATION_AUTHORIZATION.md
 #>
 [CmdletBinding()]
 param(
-    [switch]$Missing
+    [switch]$Missing,
+    [string[]]$Accept
 )
 
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
+    $baselineFile = 'docs/ua/drift-baseline.txt'
+    $baseline = @{}
+    if (Test-Path $baselineFile) {
+        Get-Content $baselineFile | Where-Object { $_ -match '^\S+\s+[0-9a-f]+$' } |
+            ForEach-Object { $parts = $_ -split '\s+'; $baseline[$parts[0]] = $parts[1] }
+    }
+    if ($Accept) {
+        $head = git rev-parse --short HEAD
+        foreach ($path in $Accept) { $baseline[($path -replace '\\', '/')] = $head }
+        $baseline.Keys | Sort-Object | ForEach-Object { "$_ $($baseline[$_])" } | Set-Content $baselineFile
+        Write-Host "Accepted at ${head}: $($Accept -join ', ')"
+    }
     $uaFiles = git ls-files docs/ua | Where-Object {
         ($_ -match '[_-]ua\.md$' -or $_ -match '\.puml$') -and $_ -notmatch '/templates/'
     }
@@ -32,6 +49,10 @@ try {
             continue
         }
         $base = git log -1 --format=%h -- $ua
+        if ($baseline.ContainsKey($en)) {
+            git merge-base --is-ancestor $base $baseline[$en] 2>$null
+            if ($LASTEXITCODE -eq 0) { $base = $baseline[$en] }
+        }
         $stat = git diff --shortstat $base -- $en
         if ($stat) {
             $drift += [pscustomobject]@{

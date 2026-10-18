@@ -10,19 +10,24 @@
     under docs/epics becomes "In review" and its BACKLOG row "👀 In review (<sprint>)"; -Changelog adds one
     bullet at the top of the -ChangelogSection (default Added) under CHANGELOG.md [Unreleased]. All of these are
     part of the commit. The pull request targets -Base (default develop) with the title "<KEY>: <Title>" and the
-    body file.
+    body file; a leading "<KEY>:" in -Title is dropped. Without a key (a chore or docs branch) no tracker row,
+    Jira or GitHub item is touched and the title stays as given. A rerun after a failed push or pull request
+    continues: the commit is skipped when the tree is clean and HEAD already carries -Commit, the pull request
+    when one is open for the branch.
 
 .EXAMPLE
     .\tools\story-ship.ps1 SCRUM-49 -Title "Reviewer queue with claim and hand-over" `
         -Commit "feat(reviews): add the reviewer queue" -BodyFile build/pr-scrum-49.md `
         -Changelog "Reviewer queue «На розгляді» ..."
+    .	ools\story-ship.ps1 -Title "chore(tools): tooling fixes" -Commit "chore(tools): fix the story scripts" `
+        -BodyFile build/pr-tools.md -SkipGate
 #>
 #Requires -Version 7
 
 [CmdletBinding()]
 param(
-    [Parameter(Position = 0, Mandatory = $true)]
-    [ValidatePattern('^[A-Z]+-\d+$')]
+    [Parameter(Position = 0)]
+    [ValidatePattern('^([A-Z]+-\d+)?$')]
     [string]$Key,
     [Parameter(Mandatory = $true)]
     [string]$Title,
@@ -46,7 +51,9 @@ Set-Location $root
 . "$PSScriptRoot\story-common.ps1"
 
 $branch = git branch --show-current
-if ($branch -notmatch [regex]::Escape($Key)) { throw "Branch $branch does not belong to $Key" }
+if ($Key -and $branch -notmatch [regex]::Escape($Key)) { throw "Branch $branch does not belong to $Key" }
+if ($Key) { $Title = $Title -replace "^\s*$([regex]::Escape($Key))\s*:\s*", '' }
+$prTitle = if ($Key) { "${Key}: $Title" } else { $Title }
 if (-not (Test-Path $BodyFile)) { throw "No pull request body at $BodyFile" }
 
 if (-not $SkipGate) {
@@ -65,16 +72,24 @@ if (-not $SkipGate) {
     }
 }
 
-$row = Find-StoryRow $Key
-$issue = if ($row) { $row.Issue } else { 0 }
-$null = Set-TrackerStatus $Key 'In review'
-$null = Set-BacklogStatus $Key 'In review'
+$issue = 0
+if ($Key) {
+    $row = Find-StoryRow $Key
+    if ($row) { $issue = $row.Issue }
+    $null = Set-TrackerStatus $Key 'In review'
+    $null = Set-BacklogStatus $Key 'In review'
+}
 if ($Changelog) { Add-ChangelogLine $ChangelogSection $Changelog }
 
 Remove-StaleGitLock
-git add -A
-if ($CommitBody) { git commit -q -m $Commit -m $CommitBody } else { git commit -q -m $Commit }
-if ($LASTEXITCODE) { throw 'Commit failed (hook or nothing to commit).' }
+$resumed = -not (git status --porcelain) -and (git log -1 --format=%s) -eq $Commit
+if ($resumed) {
+    Write-Host "Commit:  already made ($Commit); continuing with push and pull request"
+} else {
+    git add -A
+    if ($CommitBody) { git commit -q -m $Commit -m $CommitBody } else { git commit -q -m $Commit }
+    if ($LASTEXITCODE) { throw 'Commit failed (hook or nothing to commit).' }
+}
 git push -u origin $branch
 if ($LASTEXITCODE) { throw 'Push failed; is the SSH key loaded?' }
 if ($Base -ne 'develop') {
@@ -84,10 +99,15 @@ if ($Base -ne 'develop') {
         $Base = 'develop'
     }
 }
-$url = gh pr create --base $Base --head $branch --title "${Key}: $Title" --body-file $BodyFile
-if ($LASTEXITCODE) { throw 'Pull request was not created.' }
+$url = gh pr view $branch --json url,state -q 'select(.state == "OPEN") | .url' 2>$null
+if ($url) {
+    Write-Host 'PR:      already open for this branch'
+} else {
+    $url = gh pr create --base $Base --head $branch --title $prTitle --body-file $BodyFile
+    if ($LASTEXITCODE) { throw 'Pull request was not created.' }
+}
 
-if (-not $NoTracker) {
+if ($Key -and -not $NoTracker) {
     if ($issue) {
         Invoke-TrackerSync status -Jira $Key -GitHub $issue -Status InReview
     } else {

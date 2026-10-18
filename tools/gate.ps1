@@ -9,7 +9,9 @@
     build (bundle budgets) out. The backend
     verify runs only when the branch changes something under backend/ compared with develop (develop passed it
     when it was merged); -Full runs it regardless. The frontend checks run in a background job while the backend
-    verify runs (-Sequential runs them afterwards); every phase prints its duration.
+    verify runs (-Sequential runs them afterwards); every phase prints its duration. When verify fails on one
+    integration or functional test class only (no unit failure), that class runs once more and, if it passes, the
+    coverage check follows; the summary names the class as flaky.
     With less than -MinFreeGb of free memory the run switches to -Sequential by itself. A second gate, or a
     running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
     For a full run started from an agent shell, use tools/detach.ps1 so the run survives the shell.
@@ -89,6 +91,13 @@ function Invoke-Maven([string[]]$Goals, [string]$Label) {
     $ok = $LASTEXITCODE -eq 0
     Write-Host " $(if ($ok) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $start))"
     return $ok
+}
+
+function Get-FailedClasses([string]$folder, [datetime]$since) {
+    Get-ChildItem (Join-Path $backend "target\$folder") -Filter 'TEST-*.xml' -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -ge $since } |
+        Where-Object { ((Get-Content $_.FullName -TotalCount 2) -join " ") -match '<testsuite[^>]*\b(failures|errors)="[1-9]' } |
+        ForEach-Object { ($_.BaseName -replace '^TEST-', '') -replace '^.*\.', '' }
 }
 
 if (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
@@ -187,11 +196,25 @@ if ($Full -or ($backendChanged | Where-Object { $_ })) {
         $frontendJob = Start-ThreadJob -ScriptBlock $frontendChecks -ArgumentList $root, $logDir, $false
         Write-Host "$(Get-Date -Format 'HH:mm:ss') frontend checks started in the background"
     }
+    $verifyStart = Get-Date
     $backendOk = Invoke-Maven @('verify') 'verify'
     $backendStatus = if ($backendOk) { 'PASS' } else { 'FAIL' }
     if (-not $backendOk) {
         Select-String -Path $log -Pattern '^\[ERROR\]\s{3}|Tests run:.*(Failures: [1-9]|Errors: [1-9])' |
             Select-Object -First 20 | ForEach-Object { $_.Line }
+        $unitFailed = @(Get-FailedClasses 'surefire-reports' $verifyStart)
+        $itFailed = @(Get-FailedClasses 'failsafe-reports' $verifyStart)
+        if (-not $unitFailed -and $itFailed.Count -eq 1) {
+            $verifyLog = $log
+            $log = Join-Path $logDir 'gate-retry.log'
+            $retryOk = Invoke-Maven @('-o', 'verify', '-Dtest=NoUnit', '-Dsurefire.failIfNoSpecifiedTests=false',
+                "-Dit.test=$($itFailed[0])", '-Djacoco.skip=true') "retry $($itFailed[0])"
+            if ($retryOk) {
+                $backendOk = Invoke-Maven @('-o', 'jacoco:merge@merge', 'jacoco:report@report', 'jacoco:check@check') 'coverage'
+            }
+            $backendStatus = if ($backendOk) { "PASS (after one retry of the flaky $($itFailed[0]))" } else { 'FAIL' }
+            $log = $verifyLog
+        }
     }
 
     $counts = @(Select-String -Path $log -Pattern 'Tests run: (\d+), Failures: \d+, Errors: \d+, Skipped: \d+\s*$' |

@@ -38,7 +38,8 @@ function Find-StoryRow([string]$key) {
     return $null
 }
 
-function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$epic, [int]$issue, [string]$id = '') {
+function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$epic, [int]$issue, [string]$id = '',
+        [string]$sprintHint = '') {
     $tracker = Get-ChildItem docs/epics -Filter 'EPIC-*.md' |
         Where-Object { Select-String -Path $_.FullName -Pattern "Jira epic\*\*:\s*$epic\b" -Quiet } |
         Select-Object -First 1
@@ -81,7 +82,7 @@ function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$ep
     if ($after -lt 0) { throw "No BACKLOG row of feature $feature and no Epic table to add it to" }
     $sprint = if ($backlog[$after] -match '\((Sprint \d+)\)\s*\|') { $Matches[1] }
         elseif ($backlog[$after + 1] -match '\|\s*(Sprint \d+)\s*\|') { $Matches[1] }
-        else { '' }
+        else { $sprintHint }
     $repo = gh repo view --json url -q .url
     $backlog.Insert($after + 1, "| $id | $summary | $points | $sprint | $key | [#$issue]($repo/issues/$issue) |")
     Write-Lines $path $backlog.ToArray()
@@ -94,6 +95,67 @@ function Find-StoriesWithStatus([string]$status) {
             if ($line -match "^\|.*\|\s*([A-Z]+-\d+)\s*\|\s*#(\d+)\s*\|.*\|\s*$status\s*\|\s*$") {
                 [pscustomobject]@{ Key = $Matches[1]; Issue = [int]$Matches[2] }
             }
+        }
+    }
+}
+
+function Find-MergedStories {
+    $inReview = @(Find-StoriesWithStatus 'In review')
+    if (-not $inReview) { return }
+    $merged = Invoke-WithRetry { gh pr list --state merged --limit 100 --json number,headRefName } | ConvertFrom-Json
+    foreach ($story in $inReview) {
+        $pr = $merged | Where-Object { $_.headRefName -like "feature/$($story.Key)-*" } | Select-Object -First 1
+        if ($pr) { $story | Add-Member -PassThru Pr $pr.number | Add-Member -PassThru Branch $pr.headRefName }
+    }
+}
+
+function Close-Story($story, [switch]$NoTracker) {
+    if (-not $NoTracker) {
+        Invoke-TrackerSync status -Jira $story.Key -GitHub $story.Issue -Status Done
+    }
+    $null = Set-TrackerStatus $story.Key 'Done'
+    $null = Set-BacklogStatus $story.Key 'Done'
+    if (git branch --list $story.Branch) {
+        git branch -d $story.Branch
+        if ($LASTEXITCODE) { Write-Warning "Branch $($story.Branch) kept: not merged locally" }
+    }
+    Write-Host "Closed:  $($story.Key) (PR #$($story.Pr) merged)"
+}
+
+function Invoke-WithRetry([scriptblock]$command) {
+    $output = & $command
+    if (-not $LASTEXITCODE) { return $output }
+    Write-Warning 'Command failed (network or DNS?); retrying once in 10 s'
+    Start-Sleep -Seconds 10
+    $output = & $command
+    if ($LASTEXITCODE) { throw "Command failed twice: $command" }
+    return $output
+}
+
+function Get-PrdFacts([string]$key) {
+    $prd = Get-PrdSection $key
+    if (-not $prd) { return $null }
+    $number = if ($prd.Lines[0] -match '^###\s+(\d+\.\d+\.\d+)\s') { $Matches[1] } else { '' }
+    $head = [IO.File]::ReadAllLines($prd.Path, $script:Utf8) | Select-Object -First 15
+    $sprint = ($head | Where-Object { $_ -match '\*\*Sprint\*\*:\s*(\d+)' } | Select-Object -First 1) -replace '.*\*\*Sprint\*\*:\s*(\d+).*', 'Sprint $1'
+    return [pscustomobject]@{ Number = $number; Sprint = [string]$sprint }
+}
+
+function Set-StoryPoints([string]$key, [int]$points) {
+    foreach ($file in Get-ChildItem docs/epics -Filter 'EPIC-*.md') {
+        $null = Set-RowCell $file.FullName $key {
+            param($l)
+            $cells = $l.Trim().Trim('|').Split('|')
+            $cells[3] = " $points "
+            '|' + ($cells -join '|') + '|'
+        }
+    }
+    if (Test-Path $script:Backlog) {
+        $null = Set-RowCell (Resolve-Path $script:Backlog) $key {
+            param($l)
+            $cells = $l.Trim().Trim('|').Split('|')
+            $cells[2] = " $points "
+            '|' + ($cells -join '|') + '|'
         }
     }
 }

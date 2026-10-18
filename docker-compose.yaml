@@ -158,6 +158,9 @@ services:
       - APP_ERASURE_CRON=${APP_ERASURE_CRON:-0 30 2 * * *}
       - APP_RETENTION_CRON=${APP_RETENTION_CRON:-0 0 4 * * *}
       - APP_RETENTION_NOTIFICATIONS=${APP_RETENTION_NOTIFICATIONS:-P365D}
+      - APP_RETENTION_DEVICES=${APP_RETENTION_DEVICES:-P730D}
+      - APP_RETENTION_PENDING_ACCOUNTS=${APP_RETENTION_PENDING_ACCOUNTS:-P30D}
+      - APP_RETENTION_BATCH_SIZE=${APP_RETENTION_BATCH_SIZE:-1000}
       - AUTH_ALLOWED_ORIGINS=http://localhost,http://localhost:4200,http://localhost:8080
       - AUTH_REDIRECT_URIS=http://localhost/callback,http://localhost:4200/callback,http://localhost/swagger-ui/oauth2-redirect.html,http://localhost:8080/swagger-ui/oauth2-redirect.html
       - AUTH_POST_LOGOUT_REDIRECT_URIS=http://localhost,http://localhost:4200

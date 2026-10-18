@@ -15,7 +15,7 @@
     Path of the script to run, relative to the repository root.
 
 .PARAMETER Arguments
-    Arguments passed on to the script.
+    Arguments passed on to the script; parameter names (-Grep, -Full) stay names, values are quoted.
 
 .EXAMPLE
     .\tools\detach.ps1 gate tools\gate.ps1
@@ -45,7 +45,9 @@ if (Test-Path $pidFile) {
 Remove-Item $exitFile, $runLog -ErrorAction SilentlyContinue
 
 $target = Join-Path $root $Script
-$quoted = ($Arguments | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }) -join ' '
+$quoted = ($Arguments | ForEach-Object {
+        if ($_ -match '^-[A-Za-z][A-Za-z0-9]*:?$') { $_ } else { "'" + ($_ -replace "'", "''") + "'" }
+    }) -join ' '
 $command = "Set-Location '$root'; `$code = 1; try { & '$target' $quoted *> '$runLog'; " +
     "`$code = if (`$null -eq `$LASTEXITCODE) { 0 } else { `$LASTEXITCODE } } " +
     "finally { Set-Content -Path '$exitFile' -Value `$code }"
