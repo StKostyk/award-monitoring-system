@@ -78,8 +78,7 @@ public class LegalHoldService {
                 "The account is already under a legal hold");
         }
         long holdId = holds.place(userId, text, officerId, clock.instant());
-        audit.record(AuditAction.LEGAL_HOLD_PLACED, AuditEntityConstants.GDPR, officerId, userId,
-            Map.of("holdId", holdId, "reasonLength", text.length()));
+        audit(AuditAction.LEGAL_HOLD_PLACED, officerId, userId, holdId, text);
         return holds.find(userId, holdId).orElseThrow();
     }
 
@@ -103,9 +102,13 @@ public class LegalHoldService {
         if (!hold.active() || !holds.lift(holdId, text, officerId, clock.instant())) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "legal-hold-lifted", "The hold is already lifted");
         }
-        audit.record(AuditAction.LEGAL_HOLD_LIFTED, AuditEntityConstants.GDPR, officerId, userId,
-            Map.of("holdId", holdId, "reasonLength", text.length()));
+        audit(AuditAction.LEGAL_HOLD_LIFTED, officerId, userId, holdId, text);
         return holds.find(userId, holdId).orElseThrow();
+    }
+
+    private void audit(AuditAction action, long officerId, long userId, long holdId, String reason) {
+        audit.record(action, AuditEntityConstants.GDPR, officerId, userId,
+            Map.of("holdId", holdId, "reasonLength", reason.length()));
     }
 
     private static String reason(String sent) {

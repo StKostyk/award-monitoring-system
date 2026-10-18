@@ -66,8 +66,8 @@ class ErasureRequestServiceTest {
     private final User user = User.builder().id(USER_ID).emailAddress(EMAIL).firstName("Петро").passwordHash(HASH)
         .accountStatus(AccountStatus.ACTIVE).build();
     private final ErasureRequestService service = new ErasureRequestService(new UserAccounts(userRepository),
-        requests, holds, passwordEncoder, attempts, sessions, new ErasureProperties(GRACE_PERIOD, WARNING_BEFORE),
-        audit, events, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
+        requests, new ErasureGuard(holds, requests), passwordEncoder, attempts, sessions,
+        new ErasureProperties(GRACE_PERIOD, WARNING_BEFORE), audit, events, Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
     @BeforeEach
     void setUp() {

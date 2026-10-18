@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -79,16 +80,11 @@ public class ConsentService {
                 List.of(new FieldViolation("type", "not-optional",
                     "The acknowledgement of the privacy notice cannot be withdrawn")));
         }
-        records.lockOwner(userId);
-        List<HistoryEntry> history = new ArrayList<>(records.history(userId));
-        boolean current = latest(history, type).map(HistoryEntry::granted).orElse(false);
-        if (current != granted) {
-            String version = noticeVersions.current().version();
-            history.add(append(userId, new HistoryEntry(type, version, granted, Instant.now(clock))));
-            audit.record(granted ? AuditAction.CONSENT_GRANTED : AuditAction.CONSENT_WITHDRAWN,
-                AuditEntityConstants.GDPR, userId, Map.of("type", type.name(), "version", version));
-        }
-        return overviewOf(history);
+        String version = noticeVersions.current().version();
+        return overviewOf(appendIfChanged(userId, new Change(type, version, granted),
+            entry -> entry.granted() == granted,
+            granted ? AuditAction.CONSENT_GRANTED : AuditAction.CONSENT_WITHDRAWN,
+            Map.of("type", type.name(), "version", version)));
     }
 
     /**
@@ -102,25 +98,26 @@ public class ConsentService {
     }
 
     private List<HistoryEntry> appendAcknowledgement(long userId, String version) {
-        records.lockOwner(userId);
-        List<HistoryEntry> history = new ArrayList<>(records.history(userId));
-        boolean acknowledged = latest(history, ConsentType.DATA_PROCESSING)
-            .filter(entry -> entry.version().equals(version))
-            .isPresent();
-        if (!acknowledged) {
-            history.add(append(userId, new HistoryEntry(ConsentType.DATA_PROCESSING, version, true,
-                Instant.now(clock))));
-            audit.record(AuditAction.PRIVACY_NOTICE_ACKNOWLEDGED, AuditEntityConstants.GDPR, userId,
-                Map.of("version", version));
-        }
-        return history;
+        return appendIfChanged(userId, new Change(ConsentType.DATA_PROCESSING, version, true),
+            entry -> entry.version().equals(version), AuditAction.PRIVACY_NOTICE_ACKNOWLEDGED,
+            Map.of("version", version));
     }
 
-    private HistoryEntry append(long userId, HistoryEntry entry) {
-        ClientRequest client = ClientRequest.current();
-        records.append(userId, entry, client.address() == null ? null : client.address().getHostAddress(),
-            client.userAgent());
-        return entry;
+    private List<HistoryEntry> appendIfChanged(long userId, Change change, Predicate<HistoryEntry> same,
+            AuditAction action, Map<String, Object> details) {
+        records.lockOwner(userId);
+        List<HistoryEntry> history = new ArrayList<>(records.history(userId));
+        boolean unchanged = latest(history, change.type()).map(same::test).orElse(!change.granted());
+        if (!unchanged) {
+            HistoryEntry entry = new HistoryEntry(change.type(), change.version(), change.granted(),
+                Instant.now(clock));
+            ClientRequest client = ClientRequest.current();
+            records.append(userId, entry, client.address() == null ? null : client.address().getHostAddress(),
+                client.userAgent());
+            history.add(entry);
+            audit.record(action, AuditEntityConstants.GDPR, userId, details);
+        }
+        return history;
     }
 
     private ConsentOverview overviewOf(List<HistoryEntry> history) {
@@ -139,5 +136,8 @@ public class ConsentService {
 
     private static Optional<HistoryEntry> latest(List<HistoryEntry> history, ConsentType type) {
         return history.reversed().stream().filter(entry -> entry.type() == type).findFirst();
+    }
+
+    private record Change(ConsentType type, String version, boolean granted) {
     }
 }
