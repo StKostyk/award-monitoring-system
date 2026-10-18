@@ -224,18 +224,52 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 
 14. Direct URL `http://localhost:4200/compliance` as `employee.fmi`. Expected: `/forbidden`; no navigation entry. (AC-2.5)
 15. Stop the backend (Ctrl+C) while a run is `RUNNING` (set `APP_RETENTION_BATCH_SIZE=1` and insert 200 expired notifications), start it again. Expected: the old row `INTERRUPTED` with `finished_at`; Mailpit the failure mail to `gdpr`; deleted notifications stay deleted, the rest go in the new run. (§5, AC-1.4)
-16. Failing policy: psql as `postgres` `revoke delete on user_devices from <application role>;` and wait one minute. Expected: run `PARTIAL`, `devices` failed with the exception class, the other policies counted; one mail to `gdpr`; the "Retention" tab marks the policy. `grant delete on user_devices to <application role>;` Expected: the next run `COMPLETED`, no mail. (AC-1.3, 1.4, 2.5)
+16. Failing policy: psql: the application connects as the superuser `postgres`, so a revoke has no effect; create a failing delete instead (`create function mr_block() returns trigger as $$ begin raise exception 'blocked'; end $$ language plpgsql; create trigger mr_block before delete on user_devices for each row execute function mr_block();`), age one device to 40 days and wait one minute. Expected: run `PARTIAL`, `devices` failed with the exception class, the other policies counted; one mail to `gdpr`; the "Retention" tab marks the policy. `drop trigger mr_block on user_devices; drop function mr_block();` Expected: the next run `COMPLETED`, no mail. (AC-1.3, 1.4, 2.5)
 17. Hidden in state, retention request: R4 requests its own erasure in the privacy centre; then psql puts R4 to `RETIRED` and `status_changed_at` 8 years back as in step 6. Expected: no second request; R4's own request stays the only pending one and runs on its date. (§5)
 18. Revoked mid-flow, account retention: restart the backend with the default erasure cron; register R6 and leave it unverified; after six minutes a `RETENTION` request exists. Verify R6 through Mailpit, then restart with `APP_ERASURE_CRON='30 * * * * *'`. Expected: at the next erasure run the request is `CANCELLED` without a mail; R6 stays `ACTIVE`. (§5)
 19. Revoked mid-flow, legal hold: after a `RETENTION` request for a `RETIRED` account is filed, `gdpr` places a hold before the erasure run. Expected: `PENDING` with `postponed_at`, `ERASURE_POSTPONED` `origin: retention`, no mail; the "Erasure requests" tab shows "Postponed". (AC-3.4)
 20. Revoked mid-flow, officer: `gdpr` has `/compliance` open while `admin` revokes `GDPR_OFFICER`. Expected: the next tab switch or filter ends in the sign-in redirect; after signing in `/compliance` answers `/forbidden`. Assign the role again. (AC-2.5)
 21. Reload and Back on `/compliance` with a filter set. Expected: the page reads the server state again; the tab and filter are kept in the URL. (AC-2.5)
-22. Two overlapping runs: set `APP_RETENTION_CRON='*/10 * * * * *'` with a batch size of 1 and many rows. Expected: only one run row at a time; the log notes the skipped start. (§5)
+22. Two overlapping runs: set `APP_RETENTION_CRON='*/10 * * * * *'` with a batch size of 1 and 3000 expired notifications. Expected: only one run row at a time, the next tick waits for the run (one scheduler thread). To reach the skip path, hold the lock in a psql session (`select pg_advisory_lock(hashtext('retention-run')); select pg_sleep(25);`): the log notes "Retention run skipped: another run is still working" and no run row is added. (§5)
 23. Mailpit stopped during a failing run (detour 16 with Mailpit down), then started. Expected: the mail arrives after the publication retry. (§5)
 24. Hold lifted after a postponement: continue detour 19, lift the hold as `gdpr`. Expected: the next erasure run erases the account (`COMPLETED`, `origin: retention`), still one request, no mail. (AC-3.4; `AccountRetentionIT`)
-25. Registration taken over after filing: register R7, leave it unverified until its `RETENTION` request exists (six minutes, default erasure cron), then register again with R7's address. Expected: at the next erasure run the request is `CANCELLED`; R7 stays `PENDING` with the new link working. (§5; `AccountRetentionIT`)
+25. Registration taken over after filing: register R7, leave it unverified until its `RETENTION` request exists (six minutes, default erasure cron), then expire its verification link in psql (`update one_time_tokens set expires_at = now() - interval '1 minute' where purpose = 'EMAIL_VERIFICATION' and user_id = <R7>;`, a takeover needs an expired link) and register again with R7's address before the erasure run. Expected: at the next erasure run the request is `CANCELLED`; R7 stays `PENDING` with the new link working. (§5; `AccountRetentionIT`)
 26. Malformed URL: `http://localhost:4200/compliance?tab=bogus&page=-1&status=POSTPONED`. Expected: the "Retention" tab with defaults, no error. Swagger as `gdpr`: `GET /compliance/legal-holds?active=maybe` and `GET /compliance/retention-runs?size=abc` → 400 `invalid-parameter`; `?page=-1&size=0` → 200, page 0 of size 1. (AC-2.1–2.4; `ComplianceFT`)
 27. Hold placed while a run works (batch size 1, 200 expired notifications as in detour 15): place a hold on R5 during the run. Expected, per decision 7: this run may still act on R5's consent and audit rows; the next run skips R5. Record what happened.
+
+### Run 2026-10-18
+
+container stack from develop ee2e7d4 (rebuilt), APP_RETENTION_CRON 0 * * * * *, APP_ERASURE_CRON 30 * * * * *, pending accounts PT5M, devices P30D, events retry PT30S; batch size 1 and cron */10 for the overlap detours; defaults restored after the run. Result: 26 pass, 1 blocked.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | retention_runs checks, users.status_changed_at, erasure_requests.origin, trg_users_status_changed present |
+| 2 | PASS | run 1 COMPLETED, 9 results, RETENTION_RUN_COMPLETED audited, partitions 2026_01..2027_12 (>=3 months ahead) |
+| 3 | PASS | run 3 affected notifications/one-time-tokens/authorizations/devices = 1 each; seeded rows gone; 658 live authorizations of employee.fmi remain |
+| 4 | PASS | sign-in from the purged device at 21:40 -> Mailpit 'New sign-in to your account' to employee.fmi |
+| 5 | PASS | R1=957: RETENTION request requested_at=scheduled_for, DELETED/'Erased #957' at next erasure run, ERASURE_COMPLETED origin retention, Mailpit only the 21:38 verification mail (no erasure mail) |
+| 6 | PASS | R2=958 RETIRED -> status_changed_at now (trigger); backdated 8y; erased by retention request (COMPLETED, requested_at=scheduled_for, ERASURE_COMPLETED origin retention); award 984 APPROVED/PRIVATE by 'Erased #958' |
+| 7 | PASS | run 5: R3=959 ANALYTICS rows 2->0, DATA_PROCESSING kept; R4=960 keeps 3 ANALYTICS + 1; consent-records affected 2 |
+| 8 | PASS | run 5: audit_logs_2018_02 dropped, _01 kept, audit-logs affected 1 held 1; hold 20 on R5=961 lifted -> next run dropped _01 |
+| 9 | BLOCKED | not run in this session: the DELETEs on consent_records and audit_logs were not executed; the guards are covered by the ITs, repeat by hand in psql |
+| 10 | PASS | award_retention_runs_total{outcome=completed}=6; award_retention_rows_total{policy=notifications}=1 present (all nine policies) |
+| 11 | PASS | gdpr nav 'Відповідність' -> /compliance; Retention tab: 9 policies with periods, 8 runs newest first; run 21:40 expands to 1/1/1/1, run 21:42 to consent 2, audit 1 processed/1 held |
+| 12 | PASS | Erasure requests: R1 #957, R2 #958 origin Строк зберігання, Виконано, 'Erased #id'; Pending filter empty ('Запитів на видалення немає'); Holds All: R5 hold with set/lift dates and both reasons. Note: tab switch keeps status=PENDING in the holds URL |
+| 13 | PASS | admin/employee.fmi: retention-policies, retention-runs, erasure-requests, legal-holds all 403 (via API); gdpr erasure-requests?status=X -> 400 invalid-parameter |
+| 14 | PASS | employee.fmi: no Відповідність nav entry; /compliance -> /forbidden |
+| 15 | PASS | docker kill during run 21 (941 of 3000 notifications gone), restart: run 21 INTERRUPTED with finished_at, failure mail to gdpr 22:00 (run 21), the remaining notifications deleted by run 22 (COMPLETED) |
+| 16 | PASS | step text adapted: app role is the superuser (REVOKE has no effect), so a BEFORE DELETE trigger raising on user_devices simulated the failure: run 11 PARTIAL, devices failed (UncategorizedSQLException), others counted, one mail to gdpr 21:48, tab shows 'Правил із помилкою: 1'; trigger dropped -> next run COMPLETED, device deleted, no mail |
+| 17 | PASS | R4=960 own erasure request 48 (REQUEST, PENDING, due 2026-11-17); RETIRED + 8y back -> retention run left it the only request (no RETENTION row); R4 still RETIRED |
+| 18 | PASS | R6 unverified: RETENTION request filed 22:11 (5 min after resend), verified through Mailpit link (ACTIVE), erasure cron restarted at 30 s: request CANCELLED, R6 ACTIVE, no mail to R6. Note: resend-verification restarts the 5-minute window |
+| 19 | PASS | R8=962 RETIRED+8y: RETENTION request PENDING with postponed_at after hold at 21:51, ERASURE_POSTPONED origin retention audited, no mail to R8; tab shows 'Відкладено' chip next to 'Очікує' |
+| 20 | PASS | gdpr on /compliance, admin DELETE role 797 (204); next filter click -> /login; after sign-in /compliance -> /forbidden; role re-granted (POST roles, new id 902) |
+| 21 | PASS | filter + tab in URL (tab=holds&status=COMPLETED&holds=all); reload keeps tab and reloads 20 rows; Back returns to previous URL state. Note: status param of the erasure tab stays in the holds URL |
+| 22 | PASS | step text to correct: one scheduler thread never overlaps ticks (run 30 took 18 s, ticks at :10/:20 simply waited, one row at a time); the skip path was reached by holding the advisory lock 'retention-run' in a psql session for 25 s: 'Retention run skipped: another run is still working' logged twice, no extra run row |
+| 23 | PASS | Mailpit stopped, failing run 23 (device delete trigger): first delivery failed; Mailpit started 22:03:05 -> failure mail for run 23 to gdpr arrived 22:03:13 after the publication retry (retry interval PT30S); trigger dropped |
+| 24 | PASS | hold 21 on R8=962 lifted -> next erasure run: DELETED, request COMPLETED origin RETENTION, still one request, no mail |
+| 25 | PASS | step text corrected: R9 request filed 22:18; takeover needs an expired link, so the verification token was expired in psql, then re-registration 201; at the next erasure run request CANCELLED, R9 PENDING, new link verify 200, no erasure mail |
+| 26 | PASS | UI: ?tab=bogus&page=-1&status=POSTPONED -> Retention tab, no error; API: legal-holds?active=maybe and retention-runs?size=abc -> 400 invalid-parameter; page=-1&size=0 -> 200 number 0 size 1 |
+| 27 | PASS | hold on R5=961 placed 1 s into a 19 s run (3000 notifications, batch 1): that run still deleted R5's 2 ANALYTICS rows (consent-records affected 2, held 0); fresh rows afterwards: next run held 1, rows kept (2) |
 
 ## 11. Risks
 
