@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.gdpr.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -19,6 +20,7 @@ class ErasureGuard {
 
     private final LegalHolds holds;
     private final ErasureRequests requests;
+    private final AccountRetentionRule retention;
 
     /**
      * What keeps the account from erasure on the day, a legal hold first.
@@ -35,5 +37,16 @@ class ErasureGuard {
             return Optional.of(ErasureBlocker.LAST_ADMINISTRATOR);
         }
         return Optional.empty();
+    }
+
+    /**
+     * Cancels a due retention request whose account no longer meets the retention condition.
+     *
+     * @param request the due request, its row and its account locked by the caller
+     * @param now     the moment of the erasure run
+     * @return true when the request was cancelled
+     */
+    boolean cancelIfLapsed(ErasureRequests.Locked request, Instant now) {
+        return retention.cancelIfLapsed(request, now);
     }
 }

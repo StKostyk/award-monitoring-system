@@ -22,7 +22,7 @@ class ErasureGuardTest {
 
     private final LegalHolds holds = mock(LegalHolds.class);
     private final ErasureRequests requests = mock(ErasureRequests.class);
-    private final ErasureGuard guard = new ErasureGuard(holds, requests);
+    private final ErasureGuard guard = new ErasureGuard(holds, requests, mock(AccountRetentionRule.class));
 
     @Test
     void anAccountWithoutHoldThatIsNotTheOnlyAdministratorIsErasable() {

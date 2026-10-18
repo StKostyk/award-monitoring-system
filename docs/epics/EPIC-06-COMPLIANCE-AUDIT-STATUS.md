@@ -47,7 +47,8 @@ recorded in the thesis as a limitation).
 | 5 | 6.1.5 Erasure across modules with anonymised awards | 6.1 | 8 | SCRUM-90 | #256 | no | Done |
 | 5a | 6.1.6 Mails without a reverse DNS lookup per message | 6.1 | 2 | SCRUM-93 | #266 | no | Done |
 | 5b | 6.1.7 Shared erasure guard, postponement enum and consent append helper | 6.1 | 2 | SCRUM-94 | #268 | no | Done |
-| 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 5 | SCRUM-91 | #257 | no | In review |
+| 6 | 6.2.1 Nightly retention job with configurable policies | 6.2 | 5 | SCRUM-91 | #257 | no | Done |
+| 6a | 6.2.3 Retention of accounts, consent records and audit partitions | 6.2 | 5 | SCRUM-95 | #272 | no | In review |
 | 7 | 6.2.2 Compliance page for retention runs, erasures and legal holds | 6.2 | 5 | SCRUM-92 | #258 | yes | To do |
 
 Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01). 6.1.5 replaces
@@ -82,6 +83,7 @@ Total: 45 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planne
    optional consent type. Settled in the 6.1 PRD.
 4. DATA_GOVERNANCE §2.1 keeps profiles "seven years post-employment"; `users` stores no date of the change to
    `RETIRED`. The 6.2 PRD adds `users.status_changed_at`, set by a trigger (PRD 6.2 §7 decision 2, story 6.2.3).
+   Closed 2026-10-18: V045 adds the column and `trg_users_status_changed`; the `former-staff` policy counts from it.
 5. USER_STORIES.md titles the next section "Epic 6: Mobile & Accessibility"; the roadmap numbers compliance as Epic 6
    and mobile as Epic 8. The heading is corrected in the 6.1 PRD.
 6. PRIVACY_BY_DESIGN §9.2 promises CSV and PDF exports "with Epic 6"; JSON stays the only format, and the row is

@@ -118,7 +118,8 @@ class RetentionIT extends AbstractIntegrationTest {
             run.get())).isEqualTo("COMPLETED");
         assertThat(jdbc.queryForList("select r ->> 'policy' from retention_runs, jsonb_array_elements(results) r "
             + "where run_id = ?", String.class, run.get()))
-            .containsExactly("notifications", "one-time-tokens", "authorizations", "devices", "audit-partitions");
+            .containsExactly("notifications", "one-time-tokens", "authorizations", "devices", "pending-accounts",
+                "former-staff", "consent-records", "audit-partitions", "audit-logs");
         assertThat(jdbc.queryForObject("select new_values ->> 'status' from audit_logs where action_type = "
             + "'RETENTION_RUN_COMPLETED' and entity_type = 'RETENTION' and entity_id = ? and user_id is null",
             String.class, run.get())).isEqualTo("COMPLETED");

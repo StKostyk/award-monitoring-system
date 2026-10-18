@@ -23,7 +23,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,6 +35,7 @@ import ua.edu.chnu.awards.audit.service.AuditRedaction;
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.common.erasure.ErasureContext;
 import ua.edu.chnu.awards.common.erasure.ErasureContributor;
+import ua.edu.chnu.awards.gdpr.dto.ErasureOrigin;
 import ua.edu.chnu.awards.gdpr.event.ErasureCompleted;
 import ua.edu.chnu.awards.gdpr.event.ErasurePostponed;
 import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
@@ -54,6 +54,7 @@ class ErasureRunnerTest {
 
     private final ErasureRequests requests = mock(ErasureRequests.class);
     private final LegalHolds holds = mock(LegalHolds.class);
+    private final AccountRetentionRule retention = mock(AccountRetentionRule.class);
     private final UserAccounts users = mock(UserAccounts.class);
     private final AuditService audit = mock(AuditService.class);
     private final AuditRedaction redaction = mock(AuditRedaction.class);
@@ -65,16 +66,16 @@ class ErasureRunnerTest {
         .build();
 
     private ErasureRunner runner(ErasureContributor... contributors) {
-        return new ErasureRunner(requests, new ErasureGuard(holds, requests), users, List.of(contributors), audit,
-            redaction, events, new TransactionTemplate(transactionManager), new ErasureMetrics(meters),
-            Clock.fixed(NOW, KYIV));
+        return new ErasureRunner(requests, new ErasureGuard(holds, requests, retention), users,
+            List.of(contributors), audit, redaction, events, new TransactionTemplate(transactionManager),
+            new ErasureMetrics(meters), Clock.fixed(NOW, KYIV));
     }
 
     @BeforeEach
     void dueRequest() {
         when(requests.due(NOW)).thenReturn(List.of(REQUEST_ID));
         when(requests.lockDue(REQUEST_ID, NOW)).thenReturn(Optional.of(new ErasureRequests.Locked(REQUEST_ID,
-            USER_ID)));
+            USER_ID, ErasureOrigin.REQUEST)));
         when(users.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         when(redaction.formerNames(USER_ID)).thenReturn(List.of("Петро Іваненко", "Петро Коваль"));
     }
@@ -88,14 +89,15 @@ class ErasureRunnerTest {
         assertThat(calls).containsExactly("auth", "awards", "account");
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, Object>> details = ArgumentCaptor.forClass(Map.class);
-        InOrder order = inOrder(requests, audit, redaction, events);
+        var order = inOrder(requests, audit, redaction, events);
         order.verify(requests).serialize();
         order.verify(audit).record(eq(AuditAction.ERASURE_COMPLETED), eq(AuditEntityConstants.GDPR), eq(USER_ID),
             eq(USER_ID), details.capture());
         order.verify(redaction).redactSubject(eq(USER_ID), any(), any());
         order.verify(requests).markCompleted(REQUEST_ID, NOW);
         order.verify(events).publishEvent(new ErasureCompleted(EMAIL, "Петро"));
-        assertThat(details.getValue()).containsEntry("requestId", REQUEST_ID).containsEntry("auth", 1)
+        assertThat(details.getValue()).containsEntry("requestId", REQUEST_ID).containsEntry("origin", "request")
+            .containsEntry("auth", 1)
             .containsEntry("account", 1);
         assertThat(meters.counter(ErasureMetrics.RUNS, "outcome", "completed").count()).isEqualTo(1.0);
     }
@@ -128,7 +130,7 @@ class ErasureRunnerTest {
 
         assertThat(calls).isEmpty();
         verify(audit).record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, USER_ID, USER_ID,
-            Map.of("requestId", REQUEST_ID, "reason", "legal-hold"));
+            Map.of("requestId", REQUEST_ID, "reason", "legal-hold", "origin", "request"));
         verify(events).publishEvent(new ErasurePostponed(EMAIL, "Петро"));
         verify(requests, never()).markCompleted(REQUEST_ID, NOW);
     }
@@ -142,7 +144,7 @@ class ErasureRunnerTest {
 
         assertThat(calls).isEmpty();
         verify(audit).record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, USER_ID, USER_ID,
-            Map.of("requestId", REQUEST_ID, "reason", "last-administrator"));
+            Map.of("requestId", REQUEST_ID, "reason", "last-administrator", "origin", "request"));
         verify(events, never()).publishEvent(any(Object.class));
     }
 
@@ -172,6 +174,53 @@ class ErasureRunnerTest {
 
         assertThat(calls).isEmpty();
         verify(users, never()).findByIdForUpdate(USER_ID);
+    }
+
+    @Test
+    void ac3_4_aRetentionErasureIsCompletedWithItsOriginAndWithoutAMail() {
+        retentionRequest();
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> details = ArgumentCaptor.forClass(Map.class);
+
+        assertThat(runner(contributor(10, "auth")).runDue(NOW)).isOne();
+
+        verify(audit).record(eq(AuditAction.ERASURE_COMPLETED), eq(AuditEntityConstants.GDPR), eq(USER_ID),
+            eq(USER_ID), details.capture());
+        assertThat(details.getValue()).containsEntry("origin", "retention");
+        verify(requests).markCompleted(REQUEST_ID, NOW);
+        verify(events, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    void ac3_4_aHeldRetentionErasureIsPostponedWithoutAMail() {
+        retentionRequest();
+        when(holds.isActive(USER_ID)).thenReturn(true);
+        when(requests.markPostponed(REQUEST_ID, NOW)).thenReturn(true);
+
+        assertThat(runner(contributor(10, "auth")).runDue(NOW)).isZero();
+
+        verify(audit).record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, USER_ID, USER_ID,
+            Map.of("requestId", REQUEST_ID, "reason", "legal-hold", "origin", "retention"));
+        verify(events, never()).publishEvent(any(Object.class));
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void ac3_4_aRetentionErasureWhoseConditionLapsedErasesNothingAndSendsNoMail() {
+        retentionRequest();
+        when(retention.cancelIfLapsed(any(), eq(NOW))).thenReturn(true);
+
+        assertThat(runner(contributor(10, "auth")).runDue(NOW)).isZero();
+
+        assertThat(calls).isEmpty();
+        verify(requests, never()).markCompleted(REQUEST_ID, NOW);
+        verify(audit, never()).record(eq(AuditAction.ERASURE_COMPLETED), any(), any(), any(), anyMap());
+        verify(events, never()).publishEvent(any(Object.class));
+    }
+
+    private void retentionRequest() {
+        when(requests.lockDue(REQUEST_ID, NOW)).thenReturn(Optional.of(new ErasureRequests.Locked(REQUEST_ID,
+            USER_ID, ErasureOrigin.RETENTION)));
     }
 
     private ErasureContributor contributor(int order, String name) {

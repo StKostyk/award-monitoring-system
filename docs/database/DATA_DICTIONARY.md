@@ -51,6 +51,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `last_login_at` | `TIMESTAMPTZ` | YES | - | - | Last successful authentication timestamp |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
+| `status_changed_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When `account_status` last changed: set by `trg_users_status_changed` (`fn_users_status_changed`, `BEFORE UPDATE OF account_status`, only when the value differs); backfilled with `updated_at` (V045, 6.2.3); the `former-staff` retention policy counts its period from it |
 | `version` | `BIGINT` | NO | `1` | - | Optimistic locking version |
 
 **Status Values** (`account_status`):
@@ -69,6 +70,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `uk_users_email` - Unique on `email_address`
 - `idx_users_organization` - B-tree on `organization_id`
 - `idx_users_status` - B-tree on `account_status`
+- `idx_users_status_changed` - Composite on `(account_status, status_changed_at)` (V045)
 - `uk_users_email_lower` - Unique expression index on `LOWER(email_address)` (V015); addresses are stored lower-case
 
 **Relationships**:
@@ -724,7 +726,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 - Trigger rows take `entity_id` from the changed record's own key for `INSERT`, `UPDATE` and, since V023, `DELETE` (V013 used `user_id` of the deleted row, so older `DELETE` rows of `awards` point at the owner and of `user_roles` at the user)
 - Logs are append-only (V043, ADR-024): `trg_audit_logs_guard` (`fn_audit_logs_guard`, `BEFORE UPDATE OR DELETE … FOR EACH ROW`, inherited by every partition) raises on every `DELETE` and on every `UPDATE` unless the transaction-local setting `app.audit_redaction` is `on` and only `old_values`, `new_values`, `ip_address` and `user_agent` change; the rules `audit_logs_no_update` and `audit_logs_no_delete` of V009 are gone
 - Only `fn_redact_audit_subject(p_user_id, p_names, p_entities)` sets the flag (`SECURITY DEFINER`, called last in an erasure, 6.1.5): the person's own rows lose `ip_address` and `user_agent`; rows about the person (`users`, `USER`, `AUTHENTICATION`, `AUTHORIZATION`, `GDPR` with `entity_id` the person, and trigger rows of `consent_records`, `notification_preferences`, `notifications`, `user_roles`, `role_delegations`, `one_time_tokens`, `legal_holds`, `erasure_requests` whose snapshot `user_id`, `delegator_id` or `delegate_id` is the person) get `"[erased]"` for the personal keys listed in `fn_redact_audit_values`; rows of the awards, requests and documents deleted at the erasure, and decisions on those requests, become `{"erased": true}`; the person's names in the listed notifications of others become `Erased #<id>` (`fn_jsonb_replace_strings`); one `AUDIT_REDACTED` row records the counts
-- Retention period: 7 years (per GDPR requirements)
+- Retention period: 7 years after the end of the month (`app.retention.audit-logs`, default `P7Y`), applied by whole partitions (6.2.3): the `audit-logs` policy calls `fn_drop_expired_audit_partitions(p_before, p_held)` (`SECURITY DEFINER`, `EXECUTE` revoked from `PUBLIC`), which detaches and drops every monthly partition whose upper bound is at or before `p_before`, except one holding a row by a held person (`user_id`) or about one (the person keys of `fn_redact_audit_subject`); the default partition is never dropped, single rows never deleted; it writes `AUDIT_PARTITIONS_DROPPED` and returns `dropped` and `held` partition names
 - Partition by month for performance
 - Stores both old and new values for change tracking
 
@@ -765,9 +767,10 @@ The minimum approval level is the lowest role that may give the final approval; 
 - `REVIEW_OVERDUE_NOTICED` - the hourly overdue job marked an open request past its deadline (`entity_type` = `awards`, `entity_id` = the award, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = user ids e-mailed, empty at the rector or without a reviewer above); once per level (4.2.2)
 - `AWARD_CORRECTED` - a reviewer corrected the fields of a pending award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the reviewer; `new_values` = `requestId`, `level`, `changes` = list of `field`, `from`, `to`, `reason`, `delegatorId` under a delegation); preceded by `REVIEW_CLAIMED` when the correction claimed the request (4.2, story 2.4.1)
 - `AWARD_VISIBILITY_CHANGED` - the owner changed who sees an approved personal award (`entity_type` = `awards`, `entity_id` = the award, `user_id` = the owner; `new_values` = `from`, `to`); written only for an effective change and the record of the owner's consent to show the award (4.3.1)
-- `ERASURE_POSTPONED` - a due erasure waits (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId`, `reason` `legal-hold` or `last-administrator`); once per request (6.1.5)
-- `ERASURE_COMPLETED` - the account was erased (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId` and the counts each erasure contributor reported) (6.1.5)
+- `ERASURE_POSTPONED` - a due erasure waits (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId`, `reason` `legal-hold` or `last-administrator`, `origin` `request` or `retention` (6.2.3)); once per request (6.1.5)
+- `ERASURE_COMPLETED` - the account was erased (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `requestId`, `origin` (6.2.3) and the counts each erasure contributor reported) (6.1.5)
 - `RETENTION_RUN_COMPLETED` - a retention run ended (`entity_type` = `RETENTION`, `entity_id` = the run, no `user_id`; `new_values` = `status` and per policy `policy`, `affected`, `held`, `failed`) (6.2.1)
+- `AUDIT_PARTITIONS_DROPPED` - written by `fn_drop_expired_audit_partitions` when it dropped at least one partition (`entity_type` = `RETENTION`, no `user_id` or `entity_id`; `new_values` = `dropped` and `held` partition names) (6.2.3)
 - `AUDIT_REDACTED` - written by `fn_redact_audit_subject` after an erasure (`entity_type` = `GDPR`, `entity_id` = the account; `new_values` = `context`, `values`, `erasedRecords`, `names` row counts) (6.1.5)
 - `DATA_DELETE` - reserved and unused; erasure is written as `ERASURE_COMPLETED`
 - `APPROVAL`, `REJECTION` - reserved and unused; decisions are written as `REVIEW_DECISION`
@@ -793,7 +796,8 @@ The minimum approval level is the lowest role that may give the final approval; 
 **Description**: Append-only history of privacy notice acknowledgements and of the optional `ANALYTICS` consent (V040, 6.1.1). The newest row per user and type is the current state.
 
 **Business Rules**:
-- Rows are only appended: `trg_consent_records_guard` (`fn_consent_records_guard`) raises on `DELETE` and on any `UPDATE` other than setting `ip_address` and `user_agent` to NULL (kept for erasure)
+- Rows are only appended: `trg_consent_records_guard` (`fn_consent_records_guard`) raises on `DELETE` and on any `UPDATE` other than setting `ip_address` and `user_agent` to NULL (kept for erasure); the one exception is the retention purge below
+- Retention (`app.retention.consent-records`, default `P7Y`, 6.2.3): the `consent-records` policy calls `fn_purge_consent_records(p_before, p_held)` (`SECURITY DEFINER`, `EXECUTE` revoked from `PUBLIC`), which sets `app.consent_retention` for the transaction, deletes the rows `fn_consent_purge_candidates(p_before)` lists except those of held persons, and resets the flag. Candidates are every `ANALYTICS` row of a person whose latest `ANALYTICS` row is a withdrawal written before `p_before` (the whole chain goes, so no grant remains without its withdrawal), and every row of an account whose erasure completed before `p_before`; `DATA_PROCESSING` rows of living accounts stay as proof
 - Registration writes a `DATA_PROCESSING` row for the notice version the person acknowledged, in the same transaction as the account; a later notice version asks for a new acknowledgement (another `DATA_PROCESSING` row)
 - An acknowledgement of the version already acknowledged, or an `ANALYTICS` choice equal to the current state, appends nothing; changes of one person are serialised by a row lock on `users`
 - A withdrawal is a row with `is_granted` false and `withdrawn_at`; `granted_at` is set on grants only
@@ -868,7 +872,8 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 
 **Business Rules**:
 - At most one pending request per account (`uk_erasure_requests_pending`); a second request gives 409 `erasure-pending`
-- `scheduled_for` = `requested_at` + `app.erasure.grace-period` (default 30 days)
+- `scheduled_for` = `requested_at` + `app.erasure.grace-period` (default 30 days); a `RETENTION` request is due at once (`requested_at` = `scheduled_for`)
+- `RETENTION` requests (6.2.3) are filed by the `pending-accounts` policy (`PENDING` accounts created before `app.retention.pending-accounts`, default `P30D`, without an `EMAIL_VERIFICATION` token created since) and the `former-staff` policy (`RETIRED` or `MEMORIAL` accounts with `status_changed_at` before `app.retention.former-staff`, default `P7Y`), for accounts without a pending request and without an active legal hold. The erasure run sends no mail for them (no request, reminder, postponement or completion mail) and, under the row locks, cancels one whose account no longer meets the condition (audited `ERASURE_CANCELLED` with `origin` `retention`, `reason` `no-longer-applies`)
 - A request needs the current password and is refused under an active legal hold (409 `legal-hold`) and for the only active `SYSTEM_ADMIN` (409 `last-administrator`)
 - `cancelled_at` is set exactly when `CANCELLED`, `completed_at` exactly when `COMPLETED` (`ck_erasure_requests_dates`)
 - The nightly job mails one reminder `app.erasure.warning-before` (default 7 days) before `scheduled_for` and sets `warning_sent_at`; a request made with less time left gets none
@@ -882,6 +887,7 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 | `request_id` | `BIGSERIAL` | NO | Auto | PK | Unique request identifier |
 | `user_id` | `BIGINT` | NO | - | FK→users (RESTRICT) | The account to erase |
 | `status` | `VARCHAR(20)` | NO | `'PENDING'` | CK: `PENDING`, `CANCELLED`, `COMPLETED` | Request state |
+| `origin` | `VARCHAR(20)` | NO | `'REQUEST'` | CK `ck_erasure_requests_origin`: `REQUEST`, `RETENTION` | Who filed it: the person, or the retention job (V045, 6.2.3) |
 | `requested_at` | `TIMESTAMPTZ` | NO | `now()` | - | When the person asked |
 | `scheduled_for` | `TIMESTAMPTZ` | NO | - | - | When the account is erased |
 | `warning_sent_at` | `TIMESTAMPTZ` | YES | - | - | When the reminder was mailed |

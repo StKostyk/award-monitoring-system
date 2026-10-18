@@ -45,12 +45,13 @@ public interface RetentionPolicy {
     RetentionResult apply(RetentionContext context);
 
     /**
-     * Writes a period of whole days as an ISO-8601 period.
+     * Writes a period as an ISO-8601 period, in days when it is a whole number of days.
      *
      * @param period the period
-     * @return the period in days, such as {@code P30D}
+     * @return the period, such as {@code P30D}, or {@code PT5M} for a part of a day
      */
     static String days(Duration period) {
-        return "P" + period.toDays() + "D";
+        return period.toSeconds() % Duration.ofDays(1).toSeconds() == 0 ? "P" + period.toDays() + "D"
+            : period.toString();
     }
 }

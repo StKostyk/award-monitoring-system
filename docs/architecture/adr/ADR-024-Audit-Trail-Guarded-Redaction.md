@@ -96,6 +96,13 @@ silently ignores updates cannot be relaxed for one purpose only.
   `oldEmail`, `restoredEmail`, `replacedEmail`, `first_name`, `last_name`, `firstName`, `lastName`,
   `password_hash`, `ip_address`, `ip`, `user_agent`, `userAgent`, `payload`.
 - Tests: `ErasureIT` (AC-5.8, AC-5.9), `SchemaIT` (V026 path now raises on a direct update).
+- V045 (6.2.3) adds two more guarded functions of the same shape for retention.
+  `fn_drop_expired_audit_partitions(p_before, p_held)` detaches and drops whole monthly partitions that ended before the period unless they hold a row by or about
+  a held person (the person keys above); `DELETE` of single rows still raises, and the drop is recorded as
+  `AUDIT_PARTITIONS_DROPPED`. `fn_purge_consent_records(p_before, p_held)` sets `app.consent_retention` for the
+  transaction, which `fn_consent_records_guard` honours for `DELETE` only, and deletes the withdrawn `ANALYTICS`
+  chains and the records of accounts erased before the period. Both are `SECURITY DEFINER` with `EXECUTE`
+  revoked from `PUBLIC`; the security note below applies to them as well.
 
 ---
 
@@ -128,6 +135,7 @@ silently ignores updates cannot be relaxed for one purpose only.
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2026-10-16 | Stefan Kostyk | Initial version (accepted) | Story 6.1.5 (SCRUM-90) |
+| 2026-10-18 | Stefan Kostyk | Retention functions of V045 | Story 6.2.3 (SCRUM-95) |
 
 ---
 

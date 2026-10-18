@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import ua.edu.chnu.awards.gdpr.dto.ErasureOrigin;
 import ua.edu.chnu.awards.gdpr.dto.ErasureRequest;
 
 import lombok.RequiredArgsConstructor;
@@ -80,7 +81,7 @@ public class ErasureRequests {
         """;
 
     private static final String LOCK_DUE = """
-        select request_id, user_id from erasure_requests
+        select request_id, user_id, origin from erasure_requests
          where request_id = :requestId and status = 'PENDING' and scheduled_for <= :now
            for update skip locked
         """;
@@ -89,6 +90,11 @@ public class ErasureRequests {
 
     private static final String MARK_POSTPONED =
         "update erasure_requests set postponed_at = :at where request_id = :requestId and postponed_at is null";
+
+    private static final String CANCEL_REQUEST = """
+        update erasure_requests set status = 'CANCELLED', cancelled_at = :at
+         where request_id = :requestId and status = 'PENDING'
+        """;
 
     private static final String MARK_COMPLETED = """
         update erasure_requests set status = 'COMPLETED', completed_at = :at
@@ -201,7 +207,7 @@ public class ErasureRequests {
     public Optional<Locked> lockDue(long requestId, Instant now) {
         MapSqlParameterSource params = new MapSqlParameterSource(REQUEST_ID, requestId).addValue("now", utc(now));
         return jdbc.query(LOCK_DUE, params, (row, index) -> new Locked(row.getLong("request_id"),
-            row.getLong("user_id"))).stream().findFirst();
+            row.getLong("user_id"), ErasureOrigin.valueOf(row.getString("origin")))).stream().findFirst();
     }
 
     /**
@@ -214,6 +220,17 @@ public class ErasureRequests {
     public boolean markPostponed(long requestId, Instant at) {
         return jdbc.update(MARK_POSTPONED, new MapSqlParameterSource(REQUEST_ID, requestId)
             .addValue("at", utc(at))) > 0;
+    }
+
+    /**
+     * Cancels a pending request by its identifier, as the erasure run does when a retention request no longer
+     * applies.
+     *
+     * @param requestId the request
+     * @param at        when
+     */
+    public void cancelRequest(long requestId, Instant at) {
+        jdbc.update(CANCEL_REQUEST, new MapSqlParameterSource(REQUEST_ID, requestId).addValue("at", utc(at)));
     }
 
     /**
@@ -256,7 +273,17 @@ public class ErasureRequests {
      *
      * @param requestId the request
      * @param userId    the account
+     * @param origin    who filed it
      */
-    public record Locked(long requestId, long userId) {
+    public record Locked(long requestId, long userId, ErasureOrigin origin) {
+
+        /**
+         * Whether the person asked for the erasure, and so hears of it by mail.
+         *
+         * @return true for a request of the person, false for one of the retention job
+         */
+        public boolean byPerson() {
+            return origin == ErasureOrigin.REQUEST;
+        }
     }
 }

@@ -413,10 +413,12 @@ Showing documents to colleagues (4.3.8) follows the award's visibility choice (4
 | **Awards** | Approved: kept `PRIVATE` under the pseudonym; all others deleted with requests, decisions and versions | 30 days | Public record retention |
 | **Documents** | Full deletion, stored objects after the commit | 30 days | None |
 | **Notifications** | Own deleted; the person's names in related notifications of others replaced by the pseudonym | 30 days | None |
-| **Consent Records** | Kept without IP address and user agent | 30 days | 7-year retention (proof of acknowledgement) |
+| **Consent Records** | Kept without IP address and user agent; deleted seven years after the erasure (`fn_purge_consent_records`, 6.2.3) | 30 days | 7-year retention (proof of acknowledgement) |
 | **Audit Logs** | Guarded redaction of values (`fn_redact_audit_subject`, ADR-024): personal keys `"[erased]"`, snapshots of deleted records `{"erased": true}`, own IP address and user agent removed; rows, actions and times kept; `AUDIT_REDACTED` records the counts | 30 days | 7-year retention for compliance |
 | **Backups** | Marked for exclusion | Next backup cycle | Compliance requirements |
 | **Analytics** | Anonymization | Immediate | Already anonymized |
+
+The same erasure runs without a request of the person when the retention job files one (`erasure_requests.origin` `RETENTION`, 6.2.3): an unverified registration 30 days after its last verification link, a retired or memorial account seven years after its status changed. Such a request is due at once and carried out at the next 03:30 run with the same holds, last-administrator check and audit redaction, but without any mail (an unverified address was never confirmed, a former employee's is usually gone); `ERASURE_COMPLETED` and `ERASURE_POSTPONED` carry `origin: retention`, and a request whose account was verified, renewed or returned to service meanwhile is cancelled under the row locks.
 
 ### 5.3 Technical Implementation
 
