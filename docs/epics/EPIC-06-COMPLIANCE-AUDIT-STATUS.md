@@ -119,6 +119,12 @@ Total: 46 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planne
   with erasures; the erasure card shows a date where the mail shows a time. Noted by the 6.2 sweep and left: a JDBC
   page helper, `UserRef` in `shared/`, the policy-key list, the double `queryParamMap` read on the compliance page,
   the pass-through `ComplianceService`.
+- Epic sweep (2026-10-18), left after the `refactor(epic-06)` PR: raw SQL fixture inserts for `audit_logs`,
+  `consent_records`, `legal_holds` and `erasure_requests` copied across about ten gdpr tests (a `GdprRows` support
+  class next to `ConsentRows`); the setup, clean-up and `request` helper shared by `ErasureFT` and `ErasureRequestFT`
+  (an `AbstractFunctionalTest.deleteAccounts`); three error-handling styles on the privacy centre page (use
+  `knownProblem` with a list per action); one account lock path for `LegalHoldService`, `ErasureRequestService` and
+  `ErasureRunner` (check the lock order first).
 
 ## Risks
 
