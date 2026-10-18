@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Period;
 import java.time.ZoneOffset;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +28,8 @@ import ua.edu.chnu.awards.notification.service.NotificationRows;
 public final class TestDeliveries {
 
     private static final RetentionProperties RETENTION = new RetentionProperties(1000, Duration.ofDays(365),
-        Duration.ofDays(30), Duration.ofDays(1), Duration.ofDays(730), 3);
+        Duration.ofDays(30), Duration.ofDays(1), Duration.ofDays(730), 3, Duration.ofDays(30), Period.ofYears(7),
+        Period.ofYears(7), Period.ofYears(7));
 
     /** The fixed moment of the clock the logs use. */
     public static final Instant NOW = Instant.parse("2026-10-14T10:00:00Z");

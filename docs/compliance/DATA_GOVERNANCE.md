@@ -96,17 +96,17 @@ system_data:
 | **Data Category** | **Legal Basis** | **Retention Period** | **Auto-Delete** | **User Control** |
 |-------------------|-----------------|---------------------|-----------------|------------------|
 | **Award Records** | Legitimate Interest | Permanent (public record) | No | Read-only after employment |
-| **Employee Profiles** | Legitimate Interest | 7 years post-employment | Yes | Profile visibility control |
+| **Employee Profiles** | Legitimate Interest | 7 years after the account became `RETIRED` or `MEMORIAL` (`app.retention.former-staff`, 6.2.3); then erased as in 6.1.5, approved awards kept `PRIVATE` | Yes | Profile visibility control |
 | **Contact Information** | Consent | User-controlled | No | Full user control |
 | **Scanned Documents** | Explicit Consent | With the award; deleted with the award or the account (6.1.5) | Yes | Delete with the award |
-| **Consent Records** | Legal Obligation | 7 years from withdrawal | Yes | View-only for users |
-| **Unverified Registrations** | Legitimate Interest | 30 days after registration (6.2.3) | Yes | Verify or re-register |
+| **Consent Records** | Legal Obligation | 7 years from the withdrawal of the `ANALYTICS` consent (the whole chain), or from the erasure of the account (`app.retention.consent-records`, 6.2.3); acknowledgements of a living account stay | Yes | View-only for users |
+| **Unverified Registrations** | Legitimate Interest | 30 days after registration or the last verification link (`app.retention.pending-accounts`, 6.2.3); then erased as in 6.1.5 | Yes | Verify or re-register |
 | **Notifications** | Legitimate Interest | 365 days from sending (`app.retention.notifications`) | Yes | No user control |
 | **One-time Tokens** | Legitimate Interest | 30 days after use or expiry (`app.retention.one-time-tokens`) | Yes | No user control |
 | **Authorizations** | Legitimate Interest | 1 day after the last expiry (`app.retention.authorizations`) | Yes | Sign out |
 | **Known Devices** | Legitimate Interest | 2 years after last use (`app.retention.devices`) | Yes | "This was not me" removes all |
 | **System Logs** | Legitimate Interest | Application log files 30 days / 1 GB (logback); container logs per the Epic 9 runbook; the database keeps none | Yes | No user control |
-| **Audit Trails** | Legal Obligation | 7 years | Yes | No user control |
+| **Audit Trails** | Legal Obligation | 7 years after the end of the month, by whole monthly partitions (`app.retention.audit-logs`, 6.2.3) | Yes | No user control |
 
 The periods of one-time tokens, authorizations, devices and unverified registrations are assumptions of Feature 6.2 (no regulation names them); each is a property and can be changed without a release.
 
@@ -124,11 +124,16 @@ The nightly retention job (Feature 6.2, story 6.2.1) applies every retention pol
 | 20 | `one-time-tokens` | auth | delete rows used or expired before the period | `app.retention.one-time-tokens` P30D |
 | 30 | `authorizations` | auth | delete rows whose every expiry is null or before the period | `app.retention.authorizations` P1D |
 | 40 | `devices` | auth | delete rows last used before the period | `app.retention.devices` P730D |
+| 50 | `pending-accounts` | gdpr | file a `RETENTION` erasure request, due at once, for `PENDING` accounts created before the period and without a verification link since | `app.retention.pending-accounts` P30D |
+| 60 | `former-staff` | gdpr | file a `RETENTION` erasure request for `RETIRED` and `MEMORIAL` accounts whose status changed before the period | `app.retention.former-staff` P7Y |
+| 70 | `consent-records` | gdpr | delete withdrawn `ANALYTICS` chains and the records of accounts erased before the period (`fn_purge_consent_records`) | `app.retention.consent-records` P7Y |
 | 80 | `audit-partitions` | audit | create the monthly partitions from the current month ahead | `app.retention.audit-partitions-ahead` 3 |
+| 90 | `audit-logs` | audit | detach and drop monthly partitions that ended before the period (`fn_drop_expired_audit_partitions`) | `app.retention.audit-logs` P7Y |
 
 - **Batches.** A policy changes at most `app.retention.batch-size` (default 1000) rows per transaction and repeats until a batch is short, so a large backlog never locks a table for long and a failure keeps the committed batches.
 - **Failures.** A policy that throws is recorded with `failed` and the exception class only (no message, which could name a person); the other policies still run and the run ends `PARTIAL`.
-- **Legal holds.** The set of people under an active hold is read once at the start and given to every policy. The technical rows above go regardless of a hold, since they prove nothing a hold protects; accounts, consent records and audit rows (6.2.3) stay for held people.
+- **Legal holds.** The set of people under an active hold is read once at the start and given to every policy. The technical rows above go regardless of a hold, since they prove nothing a hold protects; accounts, consent records and audit partitions stay for held people and are counted as `held`.
+- **Accounts.** The two account policies only file requests; the 03:30 erasure run carries them out the next night through the one erasure path of §2.3, with its holds, last-administrator check, rollback and audit redaction, but without any mail. Under the row locks it cancels a request whose account was verified, renewed or returned to service meanwhile.
 - **Report.** The run row, the audit row `RETENTION_RUN_COMPLETED` (status and counts, no actor), the metrics `award_retention_runs_total{outcome}` and `award_retention_rows_total{policy}`, and, only for a `PARTIAL` or `INTERRUPTED` run, one mail to the active data protection officers naming the run, the failed policies and the compliance page.
 
 ### **2.3 Data Deletion Procedures**

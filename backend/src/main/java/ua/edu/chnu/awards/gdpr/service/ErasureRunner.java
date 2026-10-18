@@ -35,7 +35,8 @@ import lombok.extern.slf4j.Slf4j;
  * Carries out due erasures, one transaction per request: every contributor in its order, the audit row with their
  * counts, the redaction of the trail, the request marked completed and the confirmation mail after the commit. A
  * request whose account is under a legal hold, or whose holder is the only system administrator, is postponed; a
- * failure rolls the whole erasure back and the next run tries again.
+ * failure rolls the whole erasure back and the next run tries again. A request filed by the retention job sends no
+ * mail and is cancelled when its account no longer meets the retention condition.
  */
 @Slf4j
 @Component
@@ -43,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ErasureRunner {
 
     private static final String REQUEST_ID = "requestId";
+    private static final String ORIGIN = "origin";
 
     private final ErasureRequests requests;
     private final ErasureGuard guard;
@@ -87,10 +89,15 @@ public class ErasureRunner {
         long userId = locked.get().userId();
         User user = users.findByIdForUpdate(userId)
             .orElseThrow(() -> new IllegalStateException("Erasure request " + requestId + " has no account"));
+        if (guard.cancelIfLapsed(locked.get(), now)) {
+            return Outcome.CANCELLED;
+        }
+        final String origin = locked.get().origin().code();
+        final boolean mails = locked.get().byPerson();
         LocalDate day = LocalDate.now(clock);
         Optional<ErasureBlocker> blocker = guard.blocker(userId, day);
         if (blocker.isPresent()) {
-            return postpone(requestId, user, blocker.get(), now);
+            return postpone(requestId, user, blocker.get(), origin, mails, now);
         }
         final String email = user.getEmailAddress();
         final String firstName = user.getFirstName();
@@ -103,20 +110,24 @@ public class ErasureRunner {
             .forEach(contributor -> contributor.erase(context));
         Map<String, Object> details = new LinkedHashMap<>();
         details.put(REQUEST_ID, requestId);
+        details.put(ORIGIN, origin);
         details.putAll(context.counts());
         audit.record(AuditAction.ERASURE_COMPLETED, AuditEntityConstants.GDPR, userId, userId, details);
         redaction.redactSubject(userId, context.names(), context.erasedRecords());
         requests.markCompleted(requestId, now);
-        events.publishEvent(new ErasureCompleted(email, firstName));
+        if (mails) {
+            events.publishEvent(new ErasureCompleted(email, firstName));
+        }
         log.info("Erased account {} (request {})", userId, requestId);
         return Outcome.COMPLETED;
     }
 
-    private Outcome postpone(long requestId, User user, ErasureBlocker reason, Instant now) {
+    private Outcome postpone(long requestId, User user, ErasureBlocker reason, String origin, boolean mails,
+                             Instant now) {
         if (requests.markPostponed(requestId, now)) {
             audit.record(AuditAction.ERASURE_POSTPONED, AuditEntityConstants.GDPR, user.getId(), user.getId(),
-                Map.of(REQUEST_ID, requestId, "reason", reason.code()));
-            if (reason.notifies()) {
+                Map.of(REQUEST_ID, requestId, "reason", reason.code(), ORIGIN, origin));
+            if (reason.notifies() && mails) {
                 events.publishEvent(new ErasurePostponed(user.getEmailAddress(), user.getFirstName()));
             }
         }
@@ -126,6 +137,7 @@ public class ErasureRunner {
     private enum Outcome {
         COMPLETED,
         POSTPONED,
+        CANCELLED,
         SKIPPED
     }
 }

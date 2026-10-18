@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Retention of unverified and former accounts (erased through the erasure run without mails), withdrawn consent chains and expired audit partitions (6.2.3)
 - Nightly data retention job (04:00 Kyiv) with configurable policies for notifications, one-time tokens, authorizations, devices and audit partitions; runs recorded, audited, counted and reported to the data protection officers when incomplete (6.2.1)
 - Account erasure runs at the due date across every module: approved awards stay private under a pseudonym, everything else personal is deleted, the audit trail is redacted (ADR-024)
 - Account erasure request from the privacy centre with a 30-day grace period, reminder mail, cancellation and a banner with the date on every page

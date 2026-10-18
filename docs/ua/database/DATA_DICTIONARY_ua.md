@@ -51,6 +51,7 @@
 | `last_login_at` | `TIMESTAMPTZ` | ТАК | - | - | Мітка часу останньої успішної автентифікації |
 | `created_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу створення запису |
 | `updated_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу останньої модифікації |
+| `status_changed_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Коли `account_status` останній раз змінився: встановлюється `trg_users_status_changed` (`fn_users_status_changed`, `BEFORE UPDATE OF account_status`, тільки коли значення відрізняється); заповнено назад `updated_at` (V045, 6.2.3); політика утримання `former-staff` рахує період від цього |
 | `version` | `BIGINT` | НІ | `1` | - | Версія оптимістичного блокування |
 
 **Значення Статусу** (`account_status`):
@@ -69,6 +70,7 @@
 - `uk_users_email` - Унікальний на `email_address`
 - `idx_users_organization` - B-tree на `organization_id`
 - `idx_users_status` - B-tree на `account_status`
+- `idx_users_status_changed` - Композитний на `(account_status, status_changed_at)` (V045)
 - `uk_users_email_lower` - Унікальний індекс виразу на `LOWER(email_address)` (V015); адреси зберігаються в нижньому регістрі
 
 **Зв'язки**:
@@ -715,7 +717,7 @@
 - Рядки тригерів беруть `entity_id` з власного ключа зміненого запису для `INSERT`, `UPDATE` і, починаючи з V023, `DELETE` (V013 брала `user_id` видаленого рядка, тож старіші рядки `DELETE` для `awards` вказують на власника, а для `user_roles` — на користувача)
 - Журнали додатки (V043, ADR-024): `trg_audit_logs_guard` (`fn_audit_logs_guard`, `BEFORE UPDATE OR DELETE … FOR EACH ROW`, спадкується кожною розділією) викидає на кожен `DELETE` та на кожне `UPDATE`, якщо локальна для транзакції настройка `app.audit_redaction` не активна (`on`) та змінюються лише `old_values`, `new_values`, `ip_address` та `user_agent`; правила `audit_logs_no_update` і `audit_logs_no_delete` V009 видалені
 - Лише `fn_redact_audit_subject(p_user_id, p_names, p_entities)` встановлює прапор (`SECURITY DEFINER`, вихідна функція видалення, 6.1.5): власні рядки людини втрачають `ip_address` та `user_agent`; рядки про людину (`users`, `USER`, `AUTHENTICATION`, `AUTHORIZATION`, `GDPR` з `entity_id` — людина, й рядки тригерів `consent_records`, `notification_preferences`, `notifications`, `user_roles`, `role_delegations`, `one_time_tokens`, `legal_holds`, `erasure_requests`, у яких знімок містить `user_id`, `delegator_id` чи `delegate_id` — людина) отримують `"[erased]"` за особистими ключами, перелічених у `fn_redact_audit_values`; рядки нагород, запитів і документів, видалені при видаленні, і рішення на цих запитах стають `{"erased": true}`; імена людини в перелічених сповіщеннях інших стають `Erased #<id>` (`fn_jsonb_replace_strings`); один рядок `AUDIT_REDACTED` записує кількості
-- Період зберігання: 7 років (згідно вимог GDPR)
+- Період зберігання: 7 років після закінчення місяця (`app.retention.audit-logs`, типово `P7Y`), застосовується цілими розділами (6.2.3): політика `audit-logs` викликає `fn_drop_expired_audit_partitions(p_before, p_held)` (`SECURITY DEFINER`, `EXECUTE` відкликана від `PUBLIC`), яка відокремлює й видаляє кожну місячну розділ, чия верхня межа на або до `p_before`, крім однієї, що містить рядок від утримуваної людини (`user_id`) чи про неї (особисті ключі `fn_redact_audit_subject`); типова розділ ніколи не видаляється, окремі рядки ніколи не видаляються; вона записує `AUDIT_PARTITIONS_DROPPED` і повертає назви опущених та утримуваних розділів
 - Партиціонування за місяць для продуктивності
 - Зберігає як старі так і нові значення для відстеження змін
 
@@ -755,9 +757,10 @@
 - `REVIEW_OVERDUE_NOTICED` - щогодинне завдання позначило відкритий запит із минулим терміном (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` NULL; `new_values` = `requestId`, `level`, `deadline`, `recipients` = id адресатів листа, порожньо на рівні ректора чи без рецензента вище); один раз на рівень (4.2.2)
 - `AWARD_CORRECTED` - рецензент виправив поля нагороди на розгляді (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = рецензент; `new_values` = `requestId`, `level`, `changes` = список `field`, `from`, `to`, `reason`, а за делегування `delegatorId`); якщо виправлення взяло заявку в роботу, йому передує `REVIEW_CLAIMED` (4.2, історія 2.4.1)
 - `AWARD_VISIBILITY_CHANGED` - власник змінив, хто бачить схвалену особисту нагороду (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = власник; `new_values` = `from`, `to`); записується лише для дійсної зміни й є записом про згоду власника показувати нагороду (4.3.1)
-- `ERASURE_POSTPONED` - видалення чекало (`entity_type` = `GDPR`, `entity_id` = обліковий запис; `new_values` = `requestId`, `reason` `legal-hold` чи `last-administrator`); один раз за запит (6.1.5)
-- `ERASURE_COMPLETED` - обліковий запис видалено (`entity_type` = `GDPR`, `entity_id` = обліковий запис; `new_values` = `requestId` і кількості, які повідомив кожен учасник видалення) (6.1.5)
+- `ERASURE_POSTPONED` - видалення чекало (`entity_type` = `GDPR`, `entity_id` = обліковий запис; `new_values` = `requestId`, `reason` `legal-hold` чи `last-administrator`, `origin` `request` чи `retention` (6.2.3)); один раз за запит (6.1.5)
+- `ERASURE_COMPLETED` - обліковий запис видалено (`entity_type` = `GDPR`, `entity_id` = обліковий запис; `new_values` = `requestId`, `origin` (6.2.3) і кількості, які повідомив кожен учасник видалення) (6.1.5)
 - `RETENTION_RUN_COMPLETED` - робота утримання завершилася (`entity_type` = `RETENTION`, `entity_id` = робота, нема `user_id`; `new_values` = `status` і за кожною політикою `policy`, `affected`, `held`, `failed`) (6.2.1)
+- `AUDIT_PARTITIONS_DROPPED` - записується `fn_drop_expired_audit_partitions`, коли видалила принаймні одну розділ (`entity_type` = `RETENTION`, нема `user_id` чи `entity_id`; `new_values` = назви опущених та утримуваних розділів) (6.2.3)
 - `AUDIT_REDACTED` - записується `fn_redact_audit_subject` після видалення (`entity_type` = `GDPR`, `entity_id` = обліковий запис; `new_values` = `context`, `values`, `erasedRecords`, `names` — кількості рядків) (6.1.5)
 - `DATA_DELETE` - зарезервовано й не використовується; видалення записується як `ERASURE_COMPLETED`
 - `APPROVAL`, `REJECTION` - зарезервовані й не використовуються; рішення записуються як `REVIEW_DECISION`
@@ -783,12 +786,13 @@
 **Опис**: Історія, до якої записи лише додаються: підтвердження ознайомлення з повідомленням про конфіденційність і необов'язкова згода `ANALYTICS` (V040, 6.1.1). Найновіший рядок для користувача й типу задає поточний стан.
 
 **Бізнес-Правила**:
-- Записи лише додаються: `trg_consent_records_guard` (`fn_consent_records_guard`) відхиляє `DELETE` і будь-який `UPDATE`, крім встановлення `ip_address` і `user_agent` у NULL (для видалення акаунта)
+- Записи лише додаються: `trg_consent_records_guard` (`fn_consent_records_guard`) відхиляє `DELETE` і будь-який `UPDATE`, крім встановлення `ip_address` і `user_agent` у NULL (для видалення акаунта); єдиним винятком є очищення утримання нижче
 - Реєстрація записує рядок `DATA_PROCESSING` з версією повідомлення, з якою людина ознайомилася, в одній транзакції з акаунтом; нова версія повідомлення потребує нового підтвердження (ще одного рядка `DATA_PROCESSING`)
 - Повторне підтвердження вже підтвердженої версії або вибір `ANALYTICS`, що збігається з поточним станом, нічого не додає; зміни однієї людини впорядковуються блокуванням рядка в `users`
 - Відкликання — це рядок з `is_granted` false і `withdrawn_at`; `granted_at` заповнюється лише при наданні
 - Сама обробка ґрунтується на законному інтересі (PRIVACY_BY_DESIGN §4.2): `DATA_PROCESSING` фіксує ознайомлення з повідомленням, а не згоду, яку можна відкликати
 - Аудит: `PRIVACY_NOTICE_ACKNOWLEDGED`, `CONSENT_GRANTED`, `CONSENT_WITHDRAWN` (тип сутності `GDPR`)
+- Утримання (`app.retention.consent-records`, типово `P7Y`, 6.2.3): політика `consent-records` викликає `fn_purge_consent_records(p_before, p_held)` (`SECURITY DEFINER`, `EXECUTE` відкликана від `PUBLIC`), яка встановлює `app.consent_retention` для транзакції, видаляє рядки зі списку `fn_consent_purge_candidates(p_before)`, крім рядків утримуваних людей, і скидає прапор. Кандидатами є кожен рядок `ANALYTICS` людини, чиїй останній рядок `ANALYTICS` — це відкликання, написане до `p_before` (весь ланцюг йде, тому жодна згода не залишається без свого відкликання), й кожен рядок облікового запису, чиєю видалення завершилося до `p_before`; рядки `DATA_PROCESSING` живих облікових записів лишаються як доказ
 
 | **Колонка** | **Тип Даних** | **Nullable** | **За Замовч.** | **Обмеження** | **Опис** |
 |-------------|---------------|--------------|----------------|---------------|----------|
@@ -816,6 +820,77 @@
 - `idx_consent_records_user` - B-tree на `user_id`
 - `idx_consent_records_user_type` - Композитний на `(user_id, consent_type)`
 - `idx_consent_records_active` - Частковий для активних згод
+
+**Зв'язки**:
+- НАЛЕЖИТЬ ДО `users` (N:1) через `user_id`
+
+---
+
+### 4.3 Сутність: `legal_holds`
+
+**Опис**: Юридичні утримання, які офіцер з питань GDPR накладає на облікові записи (V041, 6.1.3). Активне утримання (`lifted_at` порожньо) блокує видалення облікового запису (6.1.5); зняте утримання лишається як історія.
+
+**Бізнес-Правила**:
+- Щонайбільше одне активне утримання на обліковий запис (`uk_legal_holds_active`); накладення другого дає 409 `legal-hold-active`, накладення на видалений `DELETED` обліковий запис — 409 `account-erased`
+- `reason` і `lift_reason` мають 10–500 символів після обрізання; зняття встановлює `lifted_by`, `lifted_at` та `lift_reason` разом (`ck_legal_holds_lifted`) і не може бути скасовано
+- Зміни утримань одного облікового запису впорядковуються блокуванням рядка в `users`
+- Аудирується як `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` (тип сутності `GDPR`, `user_id` офіцер, `entity_id` обліковий запис, `reasonLength` без тексту); `trg_legal_holds_audit` записує зміни рядків без `reason` і `lift_reason` у знімках
+- Експорт особи (формат 1.5 і пізніше) перелічує лише `placed_at` і `lifted_at`
+
+| **Колонка** | **Тип Даних** | **Nullable** | **За Замовч.** | **Обмеження** | **Опис** |
+|------------|---------------|--------------|----------------|---------------|----------|
+| `hold_id` | `BIGSERIAL` | НІ | Авто | PK | Унікальний ідентифікатор утримання |
+| `user_id` | `BIGINT` | НІ | - | FK→users (RESTRICT) | Обліковий запис під утриманням |
+| `reason` | `VARCHAR(500)` | НІ | - | - | Чому утримання було накладено |
+| `placed_by` | `BIGINT` | НІ | - | FK→users (RESTRICT) | Офіцер з питань GDPR, який накладав |
+| `placed_at` | `TIMESTAMPTZ` | НІ | `now()` | - | Коли воно було накладено |
+| `lifted_by` | `BIGINT` | ТАК | - | FK→users (RESTRICT), CK | Офіцер з питань GDPR, який знімав |
+| `lifted_at` | `TIMESTAMPTZ` | ТАК | - | CK | Коли воно було знято; порожньо під час активного |
+| `lift_reason` | `VARCHAR(500)` | ТАК | - | CK | Чому воно було знято |
+
+**Індекси**:
+- `legal_holds_pkey` - Первинний ключ на `hold_id`
+- `uk_legal_holds_active` - Унікальний частковий на `user_id` де `lifted_at IS NULL`
+- `idx_legal_holds_user` - Композитний на `(user_id, placed_at DESC)`
+
+**Зв'язки**:
+- НАЛЕЖИТЬ ДО `users` (N:1) через `user_id`, `placed_by`, `lifted_by`
+
+---
+
+### 4.4 Сутність: `erasure_requests`
+
+**Опис**: Запити людей на видалення свого облікового запису після періоду очікування (V042, 6.1.4). Запит лишається `PENDING`, поки людина не скасує його чи фонова робота видалення не завершить його (6.1.5).
+
+**Бізнес-Правила**:
+- Щонайбільше один очікуючий запит на обліковий запис (`uk_erasure_requests_pending`); другий запит дає 409 `erasure-pending`
+- `scheduled_for` = `requested_at` + `app.erasure.grace-period` (типово 30 днів); запит `RETENTION` настає одразу (`requested_at` = `scheduled_for`)
+- Запити `RETENTION` (6.2.3) подають політики `pending-accounts` (облікові записи `PENDING`, створені до `app.retention.pending-accounts`, типово `P30D`, без токена `EMAIL_VERIFICATION`, створеного з того часу) і `former-staff` (облікові записи `RETIRED` чи `MEMORIAL` із `status_changed_at` до `app.retention.former-staff`, типово `P7Y`), для облікових записів без очікуючого запиту й без активного юридичного утримання. Фонова робота видалення не надсилає листів для них (ніяких запитів, нагадувань, відкладень чи листів про завершення) і, під блокуванням рядків, скасовує той, чий обліковий запис більше не відповідає умові (аудирується `ERASURE_CANCELLED` із `origin` `retention`, `reason` `no-longer-applies`)
+- Запит потребує поточного пароля й відхиляється під активним юридичним утриманням (409 `legal-hold`) і для єдиного активного `SYSTEM_ADMIN` (409 `last-administrator`)
+- `cancelled_at` встановлюється рівно коли `CANCELLED`, `completed_at` рівно коли `COMPLETED` (`ck_erasure_requests_dates`)
+- Нічна фонова робота надсилає одне нагадування `app.erasure.warning-before` (типово 7 днів) до `scheduled_for` й встановлює `warning_sent_at`; запит, зроблений з меншим часом, не отримує жодне
+- Запити й скасування одного облікового запису серіалізуються блокуванням рядка в `users`
+- При першому запуску фонової роботи після `scheduled_for` робота блокує запит (`FOR UPDATE SKIP LOCKED`, видалення серіалізується консультативним замком на транзакцію) і видаляє обліковий запис в одній транзакції, потім встановлює `COMPLETED`; збій лишає його `PENDING` для наступного запуску (6.1.5)
+- Аудирується як `ERASURE_REQUESTED` (`requestId`, `scheduledFor`), `ERASURE_CANCELLED` (`requestId`), `ERASURE_POSTPONED`, `ERASURE_COMPLETED`, тип сутності `GDPR`, `entity_id` — обліковий запис; `trg_erasure_requests_audit` записує зміни рядків за ключем `request_id`
+- Експорт особи (формат 1.6) перелічує кожен запит без `completed_at`
+
+| **Колонка** | **Тип Даних** | **Nullable** | **За Замовч.** | **Обмеження** | **Опис** |
+|------------|---------------|--------------|----------------|---------------|----------|
+| `request_id` | `BIGSERIAL` | НІ | Авто | PK | Унікальний ідентифікатор запиту |
+| `user_id` | `BIGINT` | НІ | - | FK→users (RESTRICT) | Обліковий запис для видалення |
+| `status` | `VARCHAR(20)` | НІ | `'PENDING'` | CK: `PENDING`, `CANCELLED`, `COMPLETED` | Стан запиту |
+| `origin` | `VARCHAR(20)` | НІ | `'REQUEST'` | CK `ck_erasure_requests_origin`: `REQUEST`, `RETENTION` | Хто подав: людина, або фонова робота утримання (V045, 6.2.3) |
+| `requested_at` | `TIMESTAMPTZ` | НІ | `now()` | - | Коли людина попросила |
+| `scheduled_for` | `TIMESTAMPTZ` | НІ | - | - | Коли обліковий запис видалено |
+| `warning_sent_at` | `TIMESTAMPTZ` | ТАК | - | - | Коли нагадування було надіслано |
+| `postponed_at` | `TIMESTAMPTZ` | ТАК | - | - | Коли видалення було вперше відкладено: активне юридичне утримання, або єдиний системний адміністратор (6.1.5) |
+| `cancelled_at` | `TIMESTAMPTZ` | ТАК | - | CK | Коли людина скасувала |
+| `completed_at` | `TIMESTAMPTZ` | ТАК | - | CK | Коли обліковий запис видалено (6.1.5) |
+
+**Індекси**:
+- `erasure_requests_pkey` - Первинний ключ на `request_id`
+- `uk_erasure_requests_pending` - Унікальний частковий на `user_id` де `status = 'PENDING'`
+- `idx_erasure_requests_due` - Частковий на `scheduled_for` де `status = 'PENDING'`
 
 **Зв'язки**:
 - НАЛЕЖИТЬ ДО `users` (N:1) через `user_id`

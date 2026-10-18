@@ -17,6 +17,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -67,7 +68,8 @@ class RetentionJobTest {
     private final RetentionMetrics metrics = mock(RetentionMetrics.class);
     private final List<String> calls = new ArrayList<>();
     private final RetentionProperties properties = new RetentionProperties(BATCH_SIZE, Duration.ofDays(365),
-        Duration.ofDays(30), Duration.ofDays(1), Duration.ofDays(730), 3);
+        Duration.ofDays(30), Duration.ofDays(1), Duration.ofDays(730), 3, Duration.ofDays(30), Period.ofYears(7),
+        Period.ofYears(7), Period.ofYears(7));
 
     private RetentionJob job(RetentionPolicy... policies) {
         return new RetentionJob(runs, holds, List.of(policies), new RetentionReport(runs, roleHolders, audit, events),

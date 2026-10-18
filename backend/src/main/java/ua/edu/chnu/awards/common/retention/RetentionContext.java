@@ -1,9 +1,12 @@
 package ua.edu.chnu.awards.common.retention;
 
 import java.time.Instant;
+import java.time.Period;
+import java.time.ZoneOffset;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntSupplier;
+import java.util.stream.Collectors;
 
 import org.springframework.transaction.support.TransactionOperations;
 
@@ -68,6 +71,25 @@ public final class RetentionContext {
      */
     public Set<Long> heldUserIds() {
         return heldUserIds;
+    }
+
+    /**
+     * The people under an active legal hold as a PostgreSQL array literal, for {@code cast(:held as bigint[])}.
+     *
+     * @return the literal, such as {@code {4,17}}
+     */
+    public String heldArray() {
+        return heldUserIds.stream().sorted().map(String::valueOf).collect(Collectors.joining(",", "{", "}"));
+    }
+
+    /**
+     * The moment a period before the run, counted in UTC calendar units.
+     *
+     * @param period the period
+     * @return the cut-off
+     */
+    public Instant before(Period period) {
+        return now.atOffset(ZoneOffset.UTC).minus(period).toInstant();
     }
 
     /**
