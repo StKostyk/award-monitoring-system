@@ -76,9 +76,8 @@ public class RetentionReport {
         audit.record(AuditAction.RETENTION_RUN_COMPLETED, AuditEntityConstants.RETENTION, null, runId,
             details(outcome, results));
         if (outcome == RetentionStatus.PARTIAL) {
-            List<String> failed = results.stream().filter(RetentionResult::failed).map(RetentionResult::policy)
-                .toList();
-            tell(officers, new RetentionRunIncomplete(runId, startedAt, outcome.name(), failed, officers));
+            tell(officers, new RetentionRunIncomplete(runId, startedAt, outcome.name(),
+                RetentionResult.failedPolicies(results), officers));
         }
     }
 

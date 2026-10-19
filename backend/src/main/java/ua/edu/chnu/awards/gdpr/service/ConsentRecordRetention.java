@@ -1,14 +1,13 @@
 package ua.edu.chnu.awards.gdpr.service;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.common.JdbcRowUtils;
 import ua.edu.chnu.awards.common.retention.RetentionAction;
 import ua.edu.chnu.awards.common.retention.RetentionContext;
 import ua.edu.chnu.awards.common.retention.RetentionOrderConstants;
@@ -60,8 +59,8 @@ class ConsentRecordRetention implements RetentionPolicy {
     @Override
     public RetentionResult apply(RetentionContext context) {
         Instant before = context.before(properties.consentRecords());
-        MapSqlParameterSource params = new MapSqlParameterSource("before", OffsetDateTime.ofInstant(before,
-            ZoneOffset.UTC)).addValue("held", context.heldArray());
+        MapSqlParameterSource params = new MapSqlParameterSource("before", JdbcRowUtils.utc(before))
+            .addValue("held", context.heldArray());
         int held = Objects.requireNonNull(jdbc.queryForObject(HELD, params, Integer.class));
         int deleted = context.inBatches(() -> Objects.requireNonNull(jdbc.queryForObject(PURGE, params,
             Integer.class)));

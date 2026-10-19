@@ -1,8 +1,6 @@
 package ua.edu.chnu.awards.gdpr.service;
 
 import java.time.Instant;
-import java.time.Period;
-import java.time.ZoneOffset;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -10,6 +8,7 @@ import org.springframework.stereotype.Component;
 import ua.edu.chnu.awards.audit.entity.AuditAction;
 import ua.edu.chnu.awards.audit.entity.AuditEntityConstants;
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.common.retention.RetentionContext;
 import ua.edu.chnu.awards.common.retention.RetentionProperties;
 import ua.edu.chnu.awards.gdpr.dto.ErasureOrigin;
 import ua.edu.chnu.awards.gdpr.repository.AccountRetentionCandidates;
@@ -42,7 +41,8 @@ class AccountRetentionRule {
      */
     boolean cancelIfLapsed(ErasureRequests.Locked request, Instant now) {
         if (request.byPerson() || candidates.applies(request.userId(),
-            now.minus(properties.pendingAccounts()), before(now, properties.formerStaff()))) {
+            RetentionContext.cutoff(now, properties.pendingAccounts()),
+            RetentionContext.cutoff(now, properties.formerStaff()))) {
             return false;
         }
         requests.cancelRequest(request.requestId(), now);
@@ -52,9 +52,5 @@ class AccountRetentionRule {
         log.info("Cancelled retention erasure {} of account {}: the account no longer qualifies",
             request.requestId(), request.userId());
         return true;
-    }
-
-    private static Instant before(Instant now, Period period) {
-        return now.atOffset(ZoneOffset.UTC).minus(period).toInstant();
     }
 }

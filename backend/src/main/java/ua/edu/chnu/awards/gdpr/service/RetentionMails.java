@@ -1,9 +1,9 @@
 package ua.edu.chnu.awards.gdpr.service;
 
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.SEPARATOR;
+import static ua.edu.chnu.awards.common.mail.MailTextHelper.dateTime;
 
 import java.time.Clock;
-import java.time.format.DateTimeFormatter;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -21,8 +21,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RetentionMails {
 
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-
     private final MailDelivery delivery;
     private final PrivacyLinks links;
     private final Clock clock;
@@ -36,7 +34,7 @@ public class RetentionMails {
     @TransactionalEventListener
     public void onRunIncomplete(RetentionRunIncomplete event) {
         delivery.send(event.recipients(), subject(event.runId()),
-            body(event, DATE.withZone(clock.getZone()).format(event.startedAt()), links.compliance()));
+            body(event, dateTime(event.startedAt(), clock.getZone()), links.compliance()));
     }
 
     static String subject(long runId) {
