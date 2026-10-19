@@ -61,8 +61,8 @@ Common definitions: an award **counts** when it is `APPROVED`, personal (`recipi
 - **AC-1.5** Given `from` after `to`, a year outside 1950..2100 or a non-numeric year, when the analytics are read, then 400 `invalid-parameter` names the parameter.
 - **AC-1.6** Given the caller's latest `ANALYTICS` row is a grant and the department has at least `app.analytics.min-group-size` (default 5) `ACTIVE` accounts, when the analytics are read, then `rank` is `RANKED` with `position` (competition ranking: equal counts share a position, the next position skips), `groupSize`, `sharedWith` (other members with the same count) and the department; members are every `ACTIVE` account of the department, with or without the consent and with or without awards, ranked by their counted awards in the same period.
 - **AC-1.7** Given no `ANALYTICS` grant (never given, or withdrawn), when the analytics are read, then `rank.status` is `CONSENT_REQUIRED` and no position or group size is returned; given the consent but a unit of another type or fewer members than the minimum, `NO_DEPARTMENT` or `GROUP_TOO_SMALL`, again without figures.
-- **AC-1.8** Given seeded data of 10 000 approved awards over 200 accounts of one department, when the analytics are read, then the response arrives within 1 s in the IT (US-008 DoD: dashboard under 3 s), with the plan using `idx_awards_user_status` and `idx_users_organization`.
-- **AC-1.9** Given the `local` or `docker` profile, when the database is migrated, then `R__seed_analytics_demo.sql` adds the account `lecturer.fmi@chnu.edu.ua` (Department of Algebra and Informatics, `EMPLOYEE`, `ANALYTICS` granted) with approved awards in at least five years and four levels, eleven colleagues there and six in a second ФМІ department with approved awards 2019–2026, some with `ANALYTICS`; reruns add nothing; the seeded awards are `PRIVATE` except two `PUBLIC` awards of `lecturer.fmi`; `employee.fmi` is unchanged.
+- **AC-1.8** Given seeded data of 10 000 approved awards over 200 accounts of one department, when the analytics are read, then the response arrives within 1 s in the IT (US-008 DoD: dashboard under 3 s), with the plan reading the awards of each member through a `user_id` index (`idx_awards_user` or `idx_awards_user_status`), never a sequential scan of `awards` (the small `users` table may be scanned).
+- **AC-1.9** Given the `local` or `docker` profile, when the database is migrated, then `R__seed_users_dev_analytics.sql` adds the account `lecturer.fmi@chnu.edu.ua` (Department of Algebra and Informatics, `EMPLOYEE`, `ANALYTICS` granted) with approved awards in at least five years and four levels, eleven colleagues there and six in a second ФМІ department with approved awards 2019–2026, some with `ANALYTICS`; reruns add nothing; the seeded awards are `PRIVATE` except two `PUBLIC` awards of `lecturer.fmi`; `employee.fmi` is unchanged.
 - **AC-1.10** Given the new permission, when the docs are read, then `analytics:read:own` (every role) is in `RolePermissions`, AUTHENTICATION_AUTHORIZATION §3.3 and RBAC_matrix §4 ("View Personal Analytics" for every role, deviation 2 of the tracker); ADR-022 lists the `analytics` module and the exposed `gdpr` and `award` types; `ModularityTest` passes.
 
 ### 5.1.2 Personal dashboard with charts and widget choice (SCRUM-99)
@@ -110,7 +110,7 @@ Common definitions: an award **counts** when it is `APPROVED`, personal (`recipi
 |-------|--------|
 | `awards`, `award_categories`, `users`, `organizations`, `consent_records` | Read only (5.1.1) |
 | `dashboard_preferences` | New, V046 (5.1.2) |
-| Seed `db/seed/local/R__seed_analytics_demo.sql` | New, local and docker profiles (5.1.1) |
+| Seed `db/seed/local/R__seed_users_dev_analytics.sql` | New, local and docker profiles (5.1.1) |
 
 ### Endpoints
 
@@ -157,7 +157,7 @@ Inherited: tracker decisions of 2026-10-19 (approved awards only, `ANALYTICS` fo
 7. **New module `analytics`** depending on `common`, `authz`, `organization`, `user`, `award`, `gdpr`; nothing depends on it. `gdpr` exposes `ConsentLookup` in its base package (like `award`'s `AwardDocuments`) rather than opening its whole `service` package; `award` adds `AwardStatistics` to its `service` interface. ADR-022 table updated in 5.1.1.
 8. **Widget choice stored on the server** (`dashboard_preferences`, `user` module) so it follows the account across browsers; it is personal data, so it joins the export and the erasure. Visibility only, fixed order. Not audited: it records a display choice, not a processing decision.
 9. **Points**: 5.1.2 goes from 5 to 8 for the preferences backend (migration, endpoint, export, erasure) next to the dashboard UI; the feature totals 16, the epic 49. Keeping 5 would mean storing the choice in the browser only.
-10. **Seed under `db/seed/local`** as a repeatable script with `WHERE NOT EXISTS` guards; a new account `lecturer.fmi` carries the demo awards so the e2e specs that rely on `employee.fmi` keep their data.
+10. **Seed under `db/seed/local`** as a repeatable script with `WHERE NOT EXISTS` guards; a new account `lecturer.fmi` carries the demo awards so the e2e specs that rely on `employee.fmi` keep their data. The file is named `R__seed_users_dev_analytics.sql` because Flyway runs repeatable scripts in description order: the name sorts after the organisation, category and dev-user seeds it builds on. The colleagues sit in DAI and DMA (Department of Mathematical Analysis).
 11. **Permission `analytics:read:own` for every role** (tracker deviation 2): every role holder can own awards; RBAC_matrix §4 limited it to employees.
 12. **Shareable link = public achievements filtered by person** (tracker decision: printable page plus link). Only awards the owner already made `PUBLIC` appear; unknown and inactive ids return an empty page.
 13. **Period in calendar years**, not dates: attestations and the trend charts use years; `from`/`to` keep the API and the URL short.
@@ -189,7 +189,7 @@ Schemas:
 | File | Story | Content |
 |------|-------|---------|
 | `V046__dashboard_preferences.sql` | 5.1.2 | `dashboard_preferences`: `user_id BIGINT` PK, FK `users(user_id)` ON DELETE CASCADE; `hidden_widgets TEXT[] NOT NULL DEFAULT '{}'`; `updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP`; no audit trigger; `GRANT` as the other tables |
-| `db/seed/local/R__seed_analytics_demo.sql` | 5.1.1 | Accounts (`ACTIVE`, seed password), `EMPLOYEE` roles, `DATA_PROCESSING` and some `ANALYTICS` rows, approved awards with `award_requests` `APPROVED`, guarded by `WHERE NOT EXISTS` on e-mail and on (owner, `title_uk`) |
+| `db/seed/local/R__seed_users_dev_analytics.sql` | 5.1.1 | Accounts (`ACTIVE`, seed password), `EMPLOYEE` roles, `DATA_PROCESSING` and some `ANALYTICS` rows, approved awards with `award_requests` `APPROVED`, guarded by `WHERE NOT EXISTS` on e-mail and on (owner, `title_uk`) |
 
 No index is added: `idx_awards_user_status`, `idx_awards_user_date` and `idx_users_organization` cover the queries (checked by the plan in AC-1.8).
 
