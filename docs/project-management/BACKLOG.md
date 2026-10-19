@@ -4,7 +4,7 @@
 > **Last Updated**: October 2026  
 > **Story Points**: about 312 delivered (Epics 1 to 4, 6 and 7); stories of later epics are sized at their epic kickoff  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
-> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47, Epic 6 = SCRUM-85, Epic 7 = SCRUM-63
+> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47, Epic 5 = SCRUM-97, Epic 6 = SCRUM-85, Epic 7 = SCRUM-63
 
 Every story is tracked twice: a Jira issue for the sprint board and a GitHub issue that the pull request closes.
 
@@ -129,13 +129,27 @@ Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-
 | 6.2.3 | Retention of accounts, consent records and audit partitions | 5 | ✅ Done | SCRUM-95 | [#272](https://github.com/StKostyk/award-monitoring-system/issues/272) |
 | 6.2.4 | Nightly erasure run outside the clock-change hour | 1 | ✅ Done | SCRUM-96 | [#277](https://github.com/StKostyk/award-monitoring-system/issues/277) |
 
+### Epic 5 — Analytics & Reporting Dashboard (Jira epic SCRUM-97)
+Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPORTING-STATUS.md). Kickoff 2026-10-19; personal, faculty and executive dashboards over approved awards, report exports, full-text award search on PostgreSQL (ADR-007).
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 5.1.1 | Personal analytics API with a consented department rank | 5 | 6 | SCRUM-98 | [#285](https://github.com/StKostyk/award-monitoring-system/issues/285) |
+| 5.1.2 | Personal dashboard with charts and widget choice | 5 | 6 | SCRUM-99 | [#286](https://github.com/StKostyk/award-monitoring-system/issues/286) |
+| 5.1.3 | Shareable achievement summary | 3 | 6 | SCRUM-100 | [#287](https://github.com/StKostyk/award-monitoring-system/issues/287) |
+| 5.2.1 | Unit analytics API for departments and faculties with period comparison | 5 | 6 | SCRUM-101 | [#288](https://github.com/StKostyk/award-monitoring-system/issues/288) |
+| 5.2.2 | Faculty analytics page with department comparison and top performers | 5 | 6 | SCRUM-102 | [#289](https://github.com/StKostyk/award-monitoring-system/issues/289) |
+| 5.2.3 | Analytics report export to CSV, Excel and PDF | 5 | 7 | SCRUM-103 | [#290](https://github.com/StKostyk/award-monitoring-system/issues/290) |
+| 5.3.1 | University analytics API with trends and a compliance summary | 5 | 7 | SCRUM-104 | [#291](https://github.com/StKostyk/award-monitoring-system/issues/291) |
+| 5.3.2 | Executive dashboard | 5 | 7 | SCRUM-105 | [#292](https://github.com/StKostyk/award-monitoring-system/issues/292) |
+| 5.3.3 | Presentation-ready board report | 3 | 7 | SCRUM-106 | [#293](https://github.com/StKostyk/award-monitoring-system/issues/293) |
+| 5.4.1 | Full-text award search on PostgreSQL | 5 | 7 | SCRUM-107 | [#294](https://github.com/StKostyk/award-monitoring-system/issues/294) |
+
 ### Later epics
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
 | US-006 | AI-Powered Document Parsing (deferred) | 21 | Documents |
 | US-007 | Confidence Score Display (deferred) | 8 | Documents |
-| US-008 | Personal Dashboard | 13 | Analytics |
-| US-010 | Executive Dashboard | 21 | Analytics |
 | — | Production hardening: backend-for-frontend with an HttpOnly cookie, refresh tokens hashed at rest, rate limits for a campus NAT, Spring Session on Redis (design review 2026-10-04) | - | Epic 9 |
 
 ---
