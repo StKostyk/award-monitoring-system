@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import {
+  analyticsGuard,
   approverGuard,
   authGuard,
   complianceGuard,
@@ -84,6 +85,12 @@ export const routes: Routes = [
         path: 'awards',
         canActivate: [authGuard, ownAwardsGuard],
         loadChildren: () => import('./features/awards/awards.routes').then((m) => m.AWARD_ROUTES),
+      },
+      {
+        path: 'dashboard',
+        canActivate: [authGuard, analyticsGuard],
+        loadChildren: () =>
+          import('./features/analytics/analytics.routes').then((m) => m.ANALYTICS_ROUTES),
       },
       {
         path: 'achievements',

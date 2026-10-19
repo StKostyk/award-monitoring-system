@@ -40,7 +40,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 5.1.1 Personal analytics API with a consented department rank | 5.1 | 5 | SCRUM-98 | #285 | no | Done |
-| 2 | 5.1.2 Personal dashboard with charts and widget choice | 5.1 | 8 | SCRUM-99 | #286 | yes | In progress |
+| 2 | 5.1.2 Personal dashboard with charts and widget choice | 5.1 | 8 | SCRUM-99 | #286 | yes | In review |
 | 3 | 5.1.3 Shareable achievement summary | 5.1 | 3 | SCRUM-100 | #287 | no | Planned |
 | 4 | 5.2.1 Unit analytics API for departments and faculties with period comparison | 5.2 | 5 | SCRUM-101 | #288 | no | Planned |
 | 5 | 5.2.2 Faculty analytics page with department comparison and top performers | 5.2 | 5 | SCRUM-102 | #289 | yes | Planned |

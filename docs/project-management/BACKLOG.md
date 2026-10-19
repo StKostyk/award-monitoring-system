@@ -135,7 +135,7 @@ Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPO
 | ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 5.1.1 | Personal analytics API with a consented department rank | 5 | ✅ Done | SCRUM-98 | [#285](https://github.com/StKostyk/award-monitoring-system/issues/285) |
-| 5.1.2 | Personal dashboard with charts and widget choice | 8 | 6 | SCRUM-99 | [#286](https://github.com/StKostyk/award-monitoring-system/issues/286) |
+| 5.1.2 | Personal dashboard with charts and widget choice | 8 | 👀 In review (6) | SCRUM-99 | [#286](https://github.com/StKostyk/award-monitoring-system/issues/286) |
 | 5.1.3 | Shareable achievement summary | 3 | 6 | SCRUM-100 | [#287](https://github.com/StKostyk/award-monitoring-system/issues/287) |
 | 5.2.1 | Unit analytics API for departments and faculties with period comparison | 5 | 6 | SCRUM-101 | [#288](https://github.com/StKostyk/award-monitoring-system/issues/288) |
 | 5.2.2 | Faculty analytics page with department comparison and top performers | 5 | 6 | SCRUM-102 | [#289](https://github.com/StKostyk/award-monitoring-system/issues/289) |

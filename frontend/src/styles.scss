@@ -1,5 +1,6 @@
 @use './styles/brands/chnu/brand' as chnu;
 @use './styles/brands/neutral/brand' as neutral;
+@use './styles/charts';
 @use './styles/status';
 
 html {
@@ -7,6 +8,7 @@ html {
   color-scheme: light dark;
   @include neutral.theme();
   @include status.tokens();
+  @include charts.tokens();
 
   &.brand-chnu {
     @include chnu.theme();
@@ -28,6 +30,8 @@ body {
   margin: 0;
   height: 100%;
 }
+
+@include charts.tables();
 
 app-root {
   display: block;

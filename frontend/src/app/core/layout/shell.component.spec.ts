@@ -209,6 +209,23 @@ describe('ShellComponent', () => {
     ).toBe('/awards');
   });
 
+  it('ac2_4_shows_my_dashboard_to_a_holder_of_analytics_read_own', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+    const without = TestBed.createComponent(ShellComponent);
+    without.detectChanges();
+
+    expect(without.nativeElement.querySelector('[data-testid="nav-dashboard"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['analytics:read:own'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="nav-dashboard"]').getAttribute('href'),
+    ).toBe('/dashboard');
+  });
+
   it('ac3_6_shows_the_delegations_entry_only_to_a_holder_of_an_approval_role', () => {
     auth.isAuthenticated.set(true);
     auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));

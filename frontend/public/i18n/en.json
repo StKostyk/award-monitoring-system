@@ -1383,5 +1383,99 @@
         "failed": "The notification settings could not be saved. Try again later."
       }
     }
+  },
+  "analytics": {
+    "title": "My dashboard",
+    "failed": "The dashboard could not be loaded.",
+    "retry": "Try again",
+    "period": {
+      "label": "Period",
+      "from": "From",
+      "to": "To",
+      "any": "First award",
+      "now": "This year",
+      "allYears": "All years"
+    },
+    "widgets": {
+      "SUMMARY": "Summary",
+      "TIMELINE": "Timeline",
+      "YEAR_TREND": "Awards by year",
+      "BY_CATEGORY": "By category",
+      "BY_LEVEL": "By level",
+      "RANK": "Place in the department"
+    },
+    "summary": {
+      "approved": "Approved awards",
+      "verified": "With documents verified",
+      "highestLevel": "Highest level",
+      "firstAward": "First award",
+      "latestAward": "Latest award"
+    },
+    "bands": {
+      "UNIT": "Unit levels",
+      "UNIVERSITY": "University",
+      "REGIONAL": "Regional",
+      "NATIONAL": "National",
+      "INTERNATIONAL": "International"
+    },
+    "trend": {
+      "title": "Approved awards by year and level",
+      "description": "Bar chart of approved awards by year from {{from}} to {{to}}, stacked by level; {{total}} in total."
+    },
+    "categories": {
+      "title": "Approved awards by category",
+      "description": "Bar chart of approved awards in {{count}} categories; most in «{{top}}»: {{topCount}}."
+    },
+    "levels": {
+      "title": "Approved awards by level",
+      "description": "Bar chart of approved awards by level: {{list}}."
+    },
+    "timeline": {
+      "title": "Approved awards over time",
+      "description": "Chart of {{count}} approved awards by date and level; the latest is «{{latest}}». Switch to the table to open an award.",
+      "truncated": "Only the newest {{count}} awards are shown."
+    },
+    "table": {
+      "year": "Year",
+      "total": "Total",
+      "count": "Awards",
+      "category": "Category",
+      "level": "Level",
+      "date": "Date",
+      "award": "Award",
+      "organization": "Awarded by"
+    },
+    "rank": {
+      "position": "{{position}} of {{groupSize}} in {{department}}",
+      "sharedWith": "Shared with colleagues who have the same number of awards: {{count}}",
+      "basis": "By the number of approved personal awards in the period, among all active members of the department.",
+      "consentRequired": "Your place in the department is shown only with the consent to rankings and comparisons. You can give it in the privacy centre.",
+      "openPrivacy": "Open the privacy centre",
+      "groupTooSmall": "{{department}} has too few members for a ranking that keeps colleagues anonymous.",
+      "noDepartment": "Your unit is not a department, so there is no place to show."
+    },
+    "empty": {
+      "periodTitle": "No approved awards in this period",
+      "firstTitle": "No approved awards yet",
+      "stepEnter": "Enter the award: title, category, awarding organisation and date.",
+      "stepDocuments": "Attach the supporting documents.",
+      "stepSubmit": "Submit it for review; once approved, it appears here.",
+      "pending": "Awards in review: {{count}}.",
+      "drafts": "Drafts: {{count}}.",
+      "openAwards": "Open my awards",
+      "newAward": "Enter an award"
+    },
+    "customise": {
+      "open": "Customise",
+      "title": "Customise the dashboard",
+      "hint": "Choose the widgets to show. The choice is kept for your account.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "failed": "The widget choice could not be saved. Please try again.",
+      "allHidden": "All widgets are hidden. Choose the ones to show."
+    }
+  },
+  "charts": {
+    "showTable": "Show as table"
   }
 }

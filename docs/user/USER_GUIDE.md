@@ -16,9 +16,10 @@
 4. [Tracking Award Status](#tracking-award-status)
 5. [Reviewing Awards](#reviewing-awards)
 6. [Achievements and Visibility](#achievements-and-visibility)
-7. [Managing Your Profile](#managing-your-profile)
-8. [Notifications](#notifications)
-9. [FAQ](#faq)
+7. [My dashboard](#my-dashboard)
+8. [Managing Your Profile](#managing-your-profile)
+9. [Notifications](#notifications)
+10. [FAQ](#faq)
 
 ---
 
@@ -34,14 +35,8 @@
 
 ### Dashboard Overview
 
-After login, you'll see your personal dashboard:
-
-| Section | Description |
-|---------|-------------|
-| **My Awards** | Awards you've submitted |
-| **Pending Actions** | Items requiring your attention |
-| **Recent Activity** | Latest updates on your awards |
-| **Quick Stats** | Summary of your award statistics |
+After login, the navigation leads to your awards (**Мої нагороди**), your statistics (**Мій дашборд**, see
+[My dashboard](#my-dashboard)) and the achievements shared with colleagues (**Досягнення**).
 
 ---
 
@@ -300,6 +295,28 @@ awards with «Колегам» or «Публічно». A unit award is visible 
 - **Публічна сторінка** opens the same list as the public sees it (`/public/achievements`); on a public page,
   **Переглянути як співробітник** leads back. Public pages need no sign-in and offer **Увійти** and the language
   switch.
+
+---
+
+## My dashboard
+
+**Мій дашборд** in the navigation (`/dashboard`) summarises your approved personal awards. Drafts, pending and
+rejected awards and unit awards are not counted.
+
+- **Period**: «З» and «По» choose the first and last year; «Усі роки» clears both. The period stays in the address
+  (`/dashboard?from=2022&to=2025`), so a view can be bookmarked.
+- **Widgets**, in this order: the summary (approved, with documents verified, highest level, first and latest
+  award), the timeline of your awards by date and level, awards by year stacked by level (the levels below the
+  university share one colour), by category, by level, and your place in the department.
+- **Show as table** («Показати таблицею») above each chart shows the same figures as a table. In the timeline
+  table each title opens the award; a point of the timeline chart does the same.
+- **Place in the department** is shown only with the consent «Рейтинги й порівняння» in the privacy centre, and
+  only in a department with at least five active members. It counts every active member of the department, with
+  or without the consent; colleagues are never named. Without the consent the card links to the privacy centre.
+- **Customise** («Налаштувати») chooses which widgets to show. The choice is stored for your account, so it follows
+  you to another browser, and it is part of your data export.
+- **Without approved awards** the dashboard lists the steps to a first award, with **Внести нагороду** and the
+  number of awards in review or drafts. When only the chosen period is empty, **Усі роки** goes back to all years.
 
 ---
 

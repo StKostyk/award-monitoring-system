@@ -45,6 +45,21 @@
             <span matListItemTitle>{{ 'awards.title' | transloco }}</span>
           </a>
         }
+        @if (canOpenDashboard()) {
+          <a
+            mat-list-item
+            (click)="closeDrawer()"
+            routerLink="/dashboard"
+            routerLinkActive
+            #dashboardLink="routerLinkActive"
+            [activated]="dashboardLink.isActive"
+            [attr.aria-current]="dashboardLink.isActive ? 'page' : null"
+            data-testid="nav-dashboard"
+          >
+            <mat-icon matListItemIcon>insights</mat-icon>
+            <span matListItemTitle>{{ 'analytics.title' | transloco }}</span>
+          </a>
+        }
         @if (auth.isAuthenticated()) {
           <a
             mat-list-item

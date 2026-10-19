@@ -87,6 +87,11 @@ export function canReadOwnAwards(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('award:read:own');
 }
 
+/** Whether the caller may open their personal dashboard. */
+export function canReadOwnAnalytics(permissions: TokenPermissions): boolean {
+  return permissions.hasPermission('analytics:read:own');
+}
+
 /** Whether the caller may open the compliance page: retention runs, erasure requests and legal holds. */
 export function canReadCompliance(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('compliance:read');

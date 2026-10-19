@@ -15,6 +15,7 @@ export const SEED = {
   secretary: 'secretary.fmi@chnu.edu.ua',
   dean: 'dean.fmi@chnu.edu.ua',
   gdpr: 'gdpr@chnu.edu.ua',
+  lecturer: 'lecturer.fmi@chnu.edu.ua',
 } as const;
 
 /** Password of the accounts the tests register themselves. */
