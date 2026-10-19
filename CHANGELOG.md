@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Printable achievement summary of a period on the personal dashboard, with a link to a public page of the account's public awards (5.1.3)
 - Personal dashboard at /dashboard: summary, timeline, awards by year, category and level, place in the department, a table view of every chart and a widget choice kept per account (5.1.2)
 - Personal analytics API (GET /api/v1/analytics/me): approved personal awards by year, level and category, the timeline, open drafts and a department rank shown only with the analytics consent and at least five active colleagues; local demo seed for lecturer.fmi (SCRUM-98)
 - Compliance page for the GDPR officer: retention policies and nightly runs, erasure requests of both origins and legal holds of every account.

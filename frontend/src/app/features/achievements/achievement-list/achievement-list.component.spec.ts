@@ -48,6 +48,7 @@ const translations = {
       problems: { failed: 'Не вдалося завантажити досягнення.', gone: 'Такого підрозділу немає.' },
       title: 'Досягнення',
       publicTitle: 'Досягнення університету',
+      personTitle: 'Досягнення: {{name}}',
       publicPage: 'Публічна сторінка',
       viewAsStaff: 'Переглянути як співробітник',
     },
@@ -280,6 +281,49 @@ describe('AchievementListComponent', () => {
     expect(link?.getAttribute('href')).toBe('/public/achievements?unit=9&level=NATIONAL');
     expect(element(fixture, 'achievement-unit')?.getAttribute('href')).toBe(
       '/units/64/achievements',
+    );
+  });
+
+  it('ac3_5_the_public_page_of_a_person_names_the_person_and_keeps_the_other_filters', async () => {
+    signedIn.set(false);
+    params.next(convertToParamMap({ person: '12', year: '2025' }));
+    const fixture = await open('public');
+
+    expect(service.list).toHaveBeenCalledWith(
+      { filters: { ...NO_ACHIEVEMENT_FILTERS, person: 12, year: 2025 }, page: 0, size: 20 },
+      'public',
+    );
+    expect(element(fixture, 'achievements-title')?.textContent).toContain(
+      'Досягнення: Анастасія Коваль',
+    );
+  });
+
+  it('ac3_5_a_person_page_without_awards_keeps_the_public_heading', async () => {
+    params.next(convertToParamMap({ person: '12' }));
+    service.list.mockReturnValue(of(page([])));
+    const fixture = await open('public');
+
+    expect(element(fixture, 'achievements-title')?.textContent).toContain(
+      'Досягнення університету',
+    );
+  });
+
+  it('ac3_5_the_staff_link_of_a_person_page_drops_the_person', async () => {
+    params.next(convertToParamMap({ person: '12', year: '2025' }));
+    const fixture = await open('public');
+
+    expect(element(fixture, 'achievements-counterpart')?.getAttribute('href')).toBe(
+      '/achievements?year=2025',
+    );
+  });
+
+  it('ac3_5_the_staff_list_ignores_a_person_in_the_address_bar', async () => {
+    params.next(convertToParamMap({ person: '12' }));
+    await open();
+
+    expect(service.list).toHaveBeenCalledWith(
+      { filters: NO_ACHIEVEMENT_FILTERS, page: 0, size: 20 },
+      'signed-in',
     );
   });
 });

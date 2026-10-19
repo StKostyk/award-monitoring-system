@@ -34,6 +34,7 @@ public class PublicAchievementController {
      * @param year      calendar year of the award date
      * @param level     recognition level of the category
      * @param recipient personal or unit awards only
+     * @param person    the owner of the personal awards; an unknown or inactive account gives an empty page
      * @param page      0-based page
      * @param size      page size, capped at 100
      * @return the page
@@ -43,10 +44,11 @@ public class PublicAchievementController {
                                                           @RequestParam(required = false) Integer year,
                                                           @RequestParam(required = false) RecognitionLevel level,
                                                           @RequestParam(required = false) RecipientType recipient,
+                                                          @RequestParam(required = false) Long person,
                                                           @RequestParam(defaultValue = "0") int page,
                                                           @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-            .body(PageResponse.of(achievements.published(new AchievementQuery(unit, year, level, recipient), page,
-                size)));
+            .body(PageResponse.of(achievements.published(new AchievementQuery(unit, year, level, recipient,
+                person), page, size)));
     }
 }

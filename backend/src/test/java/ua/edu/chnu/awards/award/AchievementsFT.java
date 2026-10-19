@@ -74,6 +74,7 @@ class AchievementsFT extends AbstractFunctionalTest {
     private long approvedId;
     private long pendingId;
     private long unitAwardId;
+    private long secretaryId;
 
     @BeforeAll
     void createAwards() {
@@ -82,7 +83,7 @@ class AchievementsFT extends AbstractFunctionalTest {
         Organization other = organizationRepository.findById(OTHER_FACULTY_ID).orElseThrow();
         ownerId = withRole(OWNER, department, RoleType.EMPLOYEE, department);
         withRole(COLLEAGUE, other, RoleType.EMPLOYEE, other);
-        long secretaryId = withRole(SECRETARY, faculty, RoleType.FACULTY_SECRETARY, faculty);
+        secretaryId = withRole(SECRETARY, faculty, RoleType.FACULTY_SECRETARY, faculty);
         LocalDate date = LocalDate.of(YEAR, 3, 1);
         approvedId = AwardRows.award(jdbc, ownerId).title("Shared letter").status("APPROVED").awardDate(date)
             .insert();
@@ -228,6 +229,36 @@ class AchievementsFT extends AbstractFunctionalTest {
             .statusCode(HttpStatus.OK.value());
         RestAssured.given().header("X-Forwarded-For", BURST_IP).accept("text/html").get("/login").then()
             .statusCode(HttpStatus.OK.value());
+    }
+
+    @Test
+    void ac3_3_thePersonFilterListsOnlyThatAccountsPublicPersonalAwards() {
+        published(Map.of("person", ownerId)).body("content", empty());
+
+        share(OWNER, approvedId, "UNIVERSITY").then().statusCode(HttpStatus.OK.value());
+        published(Map.of("person", ownerId)).body("content", empty());
+
+        share(OWNER, approvedId, "PUBLIC").then().statusCode(HttpStatus.OK.value());
+        published(Map.of("person", ownerId)).body("content.awardId", contains((int) approvedId));
+        published(Map.of("person", ownerId, "year", YEAR)).body("content.awardId", contains((int) approvedId));
+        published(Map.of("person", ownerId, "year", YEAR + 1)).body("content", empty());
+        published(Map.of("person", ownerId, "recipient", "UNIT")).body("content", empty());
+        published(Map.of("person", secretaryId)).body("content", empty());
+        published(Map.of("person", Long.MAX_VALUE)).body("content", empty());
+    }
+
+    @Test
+    void ac3_3_aPersonWhoseAccountIsNotActiveHasNoPublicAwards() {
+        share(OWNER, approvedId, "PUBLIC").then().statusCode(HttpStatus.OK.value());
+        try {
+            jdbc.update("update users set account_status = 'SUSPENDED' where user_id = ?", ownerId);
+
+            published(Map.of("person", ownerId)).body("content", empty());
+        } finally {
+            jdbc.update("update users set account_status = 'ACTIVE' where user_id = ?", ownerId);
+        }
+        RestAssured.given().queryParam("person", "someone").get(PUBLIC_ACHIEVEMENTS).then()
+            .statusCode(HttpStatus.BAD_REQUEST.value()).body("type", equalTo(PROBLEM + "invalid-parameter"));
     }
 
     @Test

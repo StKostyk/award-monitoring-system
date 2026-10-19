@@ -62,6 +62,8 @@ export interface AchievementFilters {
   year: number | null;
   level: RecognitionLevel | null;
   recipient: RecipientType | null;
+  /** The account whose public awards to list; the public set only. */
+  person: number | null;
 }
 
 /** The filters with their page, as kept in the address bar. */
@@ -82,6 +84,7 @@ export const NO_ACHIEVEMENT_FILTERS: AchievementFilters = {
   year: null,
   level: null,
   recipient: null,
+  person: null,
 };
 
 /** Recognition levels, broadest first. */
@@ -184,6 +187,7 @@ export function readQuery(params: ParamMap): AchievementQuery {
       year: number('year'),
       level: level && RECOGNITION_LEVELS.includes(level) ? level : null,
       recipient: recipient && RECIPIENT_TYPES.includes(recipient) ? recipient : null,
+      person: number('person'),
     },
     page: number('page') ?? 0,
     size: size !== null && PAGE_SIZES.includes(size) ? size : PAGE_SIZES[0],

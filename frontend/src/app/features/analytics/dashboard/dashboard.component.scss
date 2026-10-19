@@ -7,6 +7,12 @@
   margin-bottom: 8px;
 }
 
+.dashboard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .dashboard__title {
   font: var(--mat-sys-headline-small);
   margin: 0;

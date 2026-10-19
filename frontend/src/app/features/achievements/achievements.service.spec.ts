@@ -126,13 +126,14 @@ describe('AchievementsService', () => {
         year: '2025',
         level: 'NATIONAL',
         recipient: 'PERSON',
+        person: '12',
         page: '2',
         size: '50',
       }),
     );
 
     expect(query).toEqual({
-      filters: { unit: 9, year: 2025, level: 'NATIONAL', recipient: 'PERSON' },
+      filters: { unit: 9, year: 2025, level: 'NATIONAL', recipient: 'PERSON', person: 12 },
       page: 2,
       size: 50,
     });
@@ -145,6 +146,7 @@ describe('AchievementsService', () => {
         year: '-1',
         level: 'GALACTIC',
         recipient: 'NOBODY',
+        person: 'abc',
         size: '7',
       }),
     );
