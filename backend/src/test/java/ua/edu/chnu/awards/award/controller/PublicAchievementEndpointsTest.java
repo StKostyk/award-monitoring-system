@@ -80,12 +80,23 @@ class PublicAchievementEndpointsTest extends AbstractAwardEndpointsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"year=abc", "level=GALACTIC", "recipient=TEAM", "unit=x"})
+    @ValueSource(strings = {"year=abc", "level=GALACTIC", "recipient=TEAM", "unit=x", "person=abc"})
     void ac2_1_aMalformedFilterIsAnInvalidParameter(String filter) throws Exception {
         mockMvc.perform(get(PUBLIC_ACHIEVEMENTS + "?" + filter))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.type").value("urn:awards:problem:invalid-parameter"));
         verifyNoInteractions(achievements);
+    }
+
+    @Test
+    void ac3_3_thePersonFilterIsPassedWithTheOtherFilters() throws Exception {
+        when(achievements.published(new AchievementQuery(null, 2025, null, RecipientType.UNIT, 7L), 0, 20))
+            .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get(PUBLIC_ACHIEVEMENTS).param("person", "7").param("year", "2025")
+                .param("recipient", "UNIT"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isEmpty());
     }
 
     @Test

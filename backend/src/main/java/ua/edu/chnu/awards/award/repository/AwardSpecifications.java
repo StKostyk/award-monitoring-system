@@ -28,6 +28,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
 public class AwardSpecifications {
 
     private static final String AWARD_DATE = "awardDate";
+    private static final String OWNER = "owner";
     private static final String RECIPIENT_UNIT = "recipientOrganizationId";
 
     /**
@@ -40,7 +41,7 @@ public class AwardSpecifications {
     public Specification<Award> ownedBy(long ownerId, AwardQuery query) {
         return (root, criteria, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
-            predicates.add(builder.equal(root.get("owner").get("id"), ownerId));
+            predicates.add(builder.equal(root.get(OWNER).get("id"), ownerId));
             if (query.status() != null) {
                 predicates.add(builder.equal(root.get("status"), query.status()));
             }
@@ -59,7 +60,8 @@ public class AwardSpecifications {
 
     /**
      * Approved awards shared at one of the given visibilities, and approved unit awards, matching the filters.
-     * Personal awards of a deleted account are left out; a faculty includes its departments.
+     * Personal awards of a deleted account are left out; a faculty includes its departments. A person narrows the
+     * list to the personal awards of that account while it is active.
      *
      * @param visibilities the visibilities of personal awards to include
      * @param query        the filters
@@ -71,7 +73,7 @@ public class AwardSpecifications {
             predicates.add(builder.equal(root.get("status"), AwardStatus.APPROVED));
             predicates.add(builder.or(builder.isNotNull(root.get(RECIPIENT_UNIT)), builder.and(
                 root.get("visibility").in(visibilities),
-                builder.notEqual(root.get("owner").get("accountStatus"), AccountStatus.DELETED))));
+                builder.notEqual(root.get(OWNER).get("accountStatus"), AccountStatus.DELETED))));
             if (query.unit() != null) {
                 Join<Award, Organization> unit = root.join("organization");
                 Join<Organization, Organization> parent = unit.join("parent", JoinType.LEFT);
@@ -88,6 +90,11 @@ public class AwardSpecifications {
             if (query.recipient() != null) {
                 predicates.add(query.recipient() == RecipientType.UNIT ? builder.isNotNull(root.get(RECIPIENT_UNIT))
                     : builder.isNull(root.get(RECIPIENT_UNIT)));
+            }
+            if (query.person() != null) {
+                predicates.add(builder.isNull(root.get(RECIPIENT_UNIT)));
+                predicates.add(builder.equal(root.get(OWNER).get("id"), query.person()));
+                predicates.add(builder.equal(root.get(OWNER).get("accountStatus"), AccountStatus.ACTIVE));
             }
             return builder.and(predicates.toArray(Predicate[]::new));
         };

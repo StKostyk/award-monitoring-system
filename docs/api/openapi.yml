@@ -2370,7 +2370,7 @@ paths:
         Anonymous; a bearer token, valid or not, is ignored. At most
         `app.auth.protection.public-requests-per-minute` (default 120, `PUBLIC_RATE_LIMIT_PER_MINUTE`) requests per
         client address and minute, counted apart from the authentication endpoints. Answered with
-        `Cache-Control: no-store`. Story 4.3.2.
+        `Cache-Control: no-store`. Story 4.3.2; the `person` filter (link from the achievement summary), story 5.1.3.
       security: []
       operationId: listPublicAchievements
       parameters:
@@ -3202,9 +3202,9 @@ components:
       name: person
       in: query
       description: >
-        Owner of personal awards: only that account's public awards, none for an unknown or inactive account (an
-        empty page, not 404); empty together with `recipient=UNIT` (planned, 5.1.3)
-      x-status: planned
+        Owner of personal awards: only that account's public awards while its status is `ACTIVE`, none for an
+        unknown or inactive account (an empty page, not 404, and no separate lookup); empty together with
+        `recipient=UNIT`
       schema:
         type: integer
         format: int64
