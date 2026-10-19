@@ -1,7 +1,7 @@
 @startuml C4_Container_As_Built
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-title Award Monitoring & Tracking System - Container Diagram, as built after Epic 7 (2026-10)
+title Award Monitoring & Tracking System - Container Diagram, as built after Epic 6 (2026-10)
 
 LAYOUT_WITH_LEGEND()
 
@@ -13,7 +13,7 @@ System_Boundary(award_system, "Award Monitoring & Tracking System (docker-compos
 
     Container(frontend, "Frontend", "nginx, Angular 21, NgRx, Angular Material, Transloco", "Serves the single-page application (uk, en) and proxies /api, /oauth2, /connect, /.well-known, /login, /logout to the backend")
 
-    Container(backend, "Backend", "Spring Boot 3.5, Java 21", "Modular monolith: embedded Spring Authorization Server (OAuth 2.1 / OIDC, PKCE, RS256 JWKS), resource server /api/v1, users, roles, delegations, awards, categories, version history, status, documents (upload, download, malware scan, quotas), review workflow (queue, claims, decisions, batches, corrections, hourly overdue job), shared and public achievements (anonymous /api/v1/public chain), notifications (in-app centre, per-type e-mail and in-app preferences, delivery log; events on the Spring Modulith publication registry, modules verified by test), GDPR export, audit")
+    Container(backend, "Backend", "Spring Boot 3.5, Java 21", "Modular monolith: embedded Spring Authorization Server (OAuth 2.1 / OIDC, PKCE, RS256 JWKS), resource server /api/v1, users, roles, delegations, awards, categories, version history, status, documents (upload, download, malware scan, quotas), review workflow (queue, claims, decisions, batches, corrections, hourly overdue job), shared and public achievements (anonymous /api/v1/public chain), notifications (in-app centre, per-type e-mail and in-app preferences, delivery log; events on the Spring Modulith publication registry, modules verified by test), GDPR (privacy notice and consents, privacy centre, export, legal holds, erasure after a 30-day grace period, nightly retention job, compliance page), audit")
 
     ContainerDb(postgres, "PostgreSQL", "PostgreSQL 17, Flyway", "Users, organisations, roles, delegations, awards, requests, versions, audit logs (partitioned), document metadata, authorization-server state, notifications and preferences, event publications")
     ContainerDb(redis, "Redis", "Redis 7", "Security state: revoked-token instants, sign-in lockout and attempt counters, rate limits (sign-in, uploads, public API), rotated refresh-token markers")

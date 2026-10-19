@@ -22,7 +22,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
-| **Compliance Domain** | `audit_logs`, `consent_records`, `legal_holds`, `erasure_requests` | GDPR compliance, audit trails |
+| **Compliance Domain** | `audit_logs`, `consent_records`, `legal_holds`, `erasure_requests`, `retention_runs` | GDPR compliance, audit trails, erasure and retention |
 | **Notification Domain** | `notifications`, `notification_preferences`, `event_publication` | Communication, user preferences, event publication registry |
 
 ---
@@ -912,7 +912,7 @@ The types `PUBLIC_VISIBILITY`, `EMAIL_NOTIFICATIONS` and `SMS_NOTIFICATIONS` wer
 **Business Rules**:
 - The job runs at `app.retention.cron` (default `0 0 4 * * *`, `Europe/Kyiv`) under a session advisory lock (`retention-run`); a start while another run holds it is skipped with a log line and no row
 - Before it starts, the run marks rows still `RUNNING` as `INTERRUPTED` with `finished_at`
-- Policies run in their order (`notifications` 10, `one-time-tokens` 20, `authorizations` 30, `devices` 40, `audit-partitions` 80), each in transactions of at most `app.retention.batch-size` (default 1000) rows; `results` is saved after each policy, so an interrupted run shows what it finished
+- Policies run in their order (`notifications` 10, `one-time-tokens` 20, `authorizations` 30, `devices` 40, `pending-accounts` 50, `former-staff` 60, `consent-records` 70, `audit-partitions` 80, `audit-logs` 90), each in transactions of at most `app.retention.batch-size` (default 1000) rows; `results` is saved after each policy, so an interrupted run shows what it finished
 - A policy that throws keeps its committed batches, records `failed` and the exception class only (never the message), and the run ends `PARTIAL`; otherwise `COMPLETED`
 - `finished_at` is null exactly while `RUNNING` (`ck_retention_runs_finished`)
 - Audited as `RETENTION_RUN_COMPLETED` (§4.1); a `PARTIAL` or `INTERRUPTED` run mails the active `GDPR_OFFICER` holders after the commit
@@ -1097,6 +1097,8 @@ Legal basis is that of the change that caused the mail.
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |
 | `legal_holds` | → users (N:1, held account and officers) |
+| `erasure_requests` | → users (N:1) |
+| `retention_runs` | none (run log) |
 | `notifications` | → users (N:1) |
 | `notification_preferences` | → users (N:1) |
 | `event_publication` | none (event registry) |

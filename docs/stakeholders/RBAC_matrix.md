@@ -157,11 +157,14 @@ No level requires the rector. The review period of each level is counted in work
 | Export Audit Reports | ❌ | ❌ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | View and Export Award Audit Trail³ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ |
 | Configure Audit Rules | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
-| Manage Data Retention | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
-| Handle Data Requests | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
-| Process GDPR Requests | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
+| Manage Data Retention¹⁷ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
+| Handle Data Requests¹⁷ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
+| Process GDPR Requests¹⁷ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ | ❌ | ✓ |
 
 ³ `audit:read` (system administrator, GDPR officer): the `audit_logs` rows about one award, also of a deleted draft (Feature 2.2 D-5), shown as the «Журнал аудиту» tab of the award page and downloadable as CSV (`GET /awards/{id}/audit-trail/export`, audited as `AUDIT_EXPORT`). The wider audit rows above describe the Epic 6 compliance dashboard.
+
+
+¹⁷ As built (Epic 6): the GDPR officer alone holds `legal-hold:manage` (place and lift a legal hold on an account, which blocks its erasure and its retention) and `compliance:read` (the compliance page with retention policies and runs, erasure requests and legal holds). Retention periods are application properties, changed by configuration and a restart; no screen edits them. Every user can request and cancel the erasure of their own account and withdraw their optional consents; the officer does not erase accounts by hand.
 
 ## 4. Reporting & Analytics Permissions Matrix
 

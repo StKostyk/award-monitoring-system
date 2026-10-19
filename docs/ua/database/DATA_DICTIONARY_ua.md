@@ -22,7 +22,7 @@
 | **Домен Автентифікації** | `one_time_tokens`, `user_devices`, `oauth2_*` | Посилання з листів, відомі браузери, стан сервера авторизації |
 | **Домен Нагород** | `awards`, `award_versions`, `award_categories`, `documents` | Основні бізнес-сутності для управління нагородами |
 | **Домен Робочого Процесу** | `award_requests`, `review_decisions`, `review_templates` | Відстеження багаторівневого робочого процесу затвердження |
-| **Домен Відповідності** | `audit_logs`, `consent_records` | Відповідність GDPR, аудиторські сліди |
+| **Домен Відповідності** | `audit_logs`, `consent_records`, `legal_holds`, `erasure_requests`, `retention_runs` | Відповідність GDPR, аудиторські сліди, видалення й утримання даних |
 | **Домен Сповіщень** | `notifications`, `notification_preferences`, `event_publication` | Комунікація, налаштування користувачів, реєстр публікацій подій |
 
 ---
@@ -904,7 +904,7 @@
 **Бізнес-Правила**:
 - Робота запускається в `app.retention.cron` (типово `0 0 4 * * *`, `Europe/Kyiv`) під сеансовим консультативним замком (`retention-run`); старт під час того, як інший запуск утримує замок, пропускається з рядком журналу й без рядка
 - Перед стартом робота позначає рядки, які залишаються `RUNNING`, як `INTERRUPTED` із `finished_at`
-- Політики запускаються в їхньому порядку (`notifications` 10, `one-time-tokens` 20, `authorizations` 30, `devices` 40, `audit-partitions` 80), кожна в транзакціях щонайбільше `app.retention.batch-size` (типово 1000) рядків; `results` зберігається після кожної політики, тож перервана робота показує, що вона завершила
+- Політики запускаються в їхньому порядку (`notifications` 10, `one-time-tokens` 20, `authorizations` 30, `devices` 40, `pending-accounts` 50, `former-staff` 60, `consent-records` 70, `audit-partitions` 80, `audit-logs` 90), кожна в транзакціях щонайбільше `app.retention.batch-size` (типово 1000) рядків; `results` зберігається після кожної політики, тож перервана робота показує, що вона завершила
 - Політика, що викидає, зберігає свої закомічені партії, записує `failed` і лише клас винятку (ніколи не повідомлення), і робота закінчується `PARTIAL`; інакше `COMPLETED`
 - `finished_at` порожній рівно під час `RUNNING` (`ck_retention_runs_finished`)
 - Аудирована як `RETENTION_RUN_COMPLETED` (§4.1); робота `PARTIAL` чи `INTERRUPTED` листує активних утримувачів `GDPR_OFFICER` після коміту
@@ -1088,6 +1088,9 @@
 | `review_templates` | немає (довідкові дані) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |
+| `legal_holds` | → users (N:1, заблокований обліковий запис і посадовці) |
+| `erasure_requests` | → users (N:1) |
+| `retention_runs` | немає (журнал запусків) |
 | `notifications` | → users (N:1) |
 | `notification_preferences` | → users (N:1) |
 | `event_publication` | немає (реєстр подій) |

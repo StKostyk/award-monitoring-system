@@ -41,7 +41,7 @@ ua.edu.chnu.awards
 ├── auth/                                  authorization server pieces: user lookup, status checks, claims, refresh-token guard, login page
 ├── authz/                                 organisation scopes, role levels, delegated scopes, access-denied auditing
 ├── audit/                                 audit_logs writer and the per-award audit trail
-└── <domain>/                              user, delegation, award (submission, review workflow, shared achievements), document, gdpr (notification and compliance follow in later epics; a separate workflow package is not planned, ADR-023)
+└── <domain>/                              user, delegation, award (submission, review workflow, shared achievements), document, notification, gdpr (privacy notice, consents, privacy centre, export, legal holds, erasure, retention, compliance page; a separate workflow package is not planned, ADR-023)
     ├── controller/                        REST endpoints (thin, validation and mapping only)
     ├── service/                           business logic, transactions
     ├── repository/                        Spring Data JPA

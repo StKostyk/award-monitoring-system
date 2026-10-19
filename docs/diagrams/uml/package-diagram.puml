@@ -7,7 +7,7 @@ skinparam package {
     BackgroundColor<<config>> LightGray
 }
 
-title Award Monitoring & Tracking System - Package Diagram (Java backend, Spring Modulith modules after Epic 7)
+title Award Monitoring & Tracking System - Package Diagram (Java backend, Spring Modulith modules after Epics 6 and 7)
 
 ' Package by domain: each top-level package is an application module (ADR-022); others use only its base
 ' package and its named interfaces (dto, event, entity, service), never its repository, controller or mapper
@@ -186,6 +186,16 @@ package "ua.edu.chnu.awards" {
         class ConsentController
         class ConsentService
         class PrivacyNoticeController
+        class PrivacyCentreController
+        class ErasureController
+        class ErasureRequestService
+        class ErasureRunner
+        class ErasureJob
+        class LegalHoldController
+        class LegalHoldService
+        class RetentionJob
+        class ComplianceController
+        class ComplianceService
     }
 
     package "notification" <<domain>> {

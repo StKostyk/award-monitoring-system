@@ -3,9 +3,9 @@
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
 
-title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіку 7)
+title Система Моніторингу та Відстеження Нагород - Діаграма Класів Домену (реалізація після епіків 6 і 7)
 
-' Сутності JPA пакета ua.edu.chnu.awards; класи з позначкою <<planned>> існують лише як таблиці
+' Сутності JPA пакета ua.edu.chnu.awards; класи з позначкою <<table>> існують лише як таблиці (без сутності JPA)
 
 package "user" <<Rectangle>> {
 
@@ -371,13 +371,32 @@ package "notification" <<Rectangle>> {
     }
 }
 
-package "заплановано (лише таблиці)" <<Rectangle>> {
+package "gdpr (лише таблиці, читаються й пишуться через JDBC)" <<Rectangle>> {
 
-    class ConsentRecord <<planned епік 6>> {
+    class ConsentRecord <<table>> {
         -userId: Long
         -consentType: String
         -consentVersion: String
         -granted: boolean
+    }
+
+    class LegalHold <<table>> {
+        -userId: Long
+        -placedBy: Long
+        -liftedBy: Long
+        -reason: String
+    }
+
+    class ErasureRequest <<table>> {
+        -userId: Long
+        -status: String
+        -origin: String
+        -scheduledFor: Instant
+    }
+
+    class RetentionRun <<table>> {
+        -status: String
+        -results: Map
     }
 }
 
@@ -419,6 +438,8 @@ Document "*" --> "1" User : завантажив
 Document --> DocumentFormat
 Document --> DocumentType
 ConsentRecord ..> User
+LegalHold ..> User : обліковий запис, посадовці
+ErasureRequest ..> User
 Notification "*" --> "1" User : одержувач
 Notification --> NotificationType
 Notification --> NotificationChannel

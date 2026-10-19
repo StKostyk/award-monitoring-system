@@ -2,9 +2,9 @@
 ## Award Monitoring & Tracking System
 
 > **Last Updated**: October 2026  
-> **Story Points**: 167 delivered, 133 estimated in the backlog (later-epic stories are sized at their epic kickoff)  
+> **Story Points**: about 312 delivered (Epics 1 to 4, 6 and 7); stories of later epics are sized at their epic kickoff  
 > **GitHub Issues**: [Project Board](https://github.com/users/StKostyk/projects/1/views/1)  
-> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47, Epic 7 = SCRUM-63
+> **Jira**: project `SCRUM`, Epic 1 = SCRUM-5, Epic 2 = SCRUM-20, Epic 3 = SCRUM-34, Epic 4 = SCRUM-47, Epic 6 = SCRUM-85, Epic 7 = SCRUM-63
 
 Every story is tracked twice: a Jira issue for the sprint board and a GitHub issue that the pull request closes.
 
@@ -42,7 +42,7 @@ Completed Points: 91 (these stories plus 3.0.2–3.0.4, 3.1.1 and 3.1.2 from Epi
 ### Epic 1 — User Management fixes (Jira epic SCRUM-5)
 Features 1.1–1.3 done (Sprints 2–3); this table holds the fixes found in their later manual runs. Tracker: [EPIC-01-USER-MANAGEMENT-STATUS.md](../epics/EPIC-01-USER-MANAGEMENT-STATUS.md).
 
-| ID | Story | Points | Sprint | Jira | Issue |
+| ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 1.1.7 | Forgot-password 429 shows a raw translation key | 1 | ✅ Done | SCRUM-80 | [#207](https://github.com/StKostyk/award-monitoring-system/issues/207) |
 | 1.2.5 | Repeated department move answers role-already-assigned | 1 | ✅ Done | SCRUM-81 | [#209](https://github.com/StKostyk/award-monitoring-system/issues/209) |
@@ -53,7 +53,7 @@ Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validatio
 ### Epic 3 — Document Processing (Jira epic SCRUM-34)
 Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCESSING-STATUS.md). Upload only in this delivery; OCR and confidence scoring (US-006, US-007) are deferred until after Epic 8. Feature 3.1 PRD approved 2026-10-02: [feature-3.1-document-upload-storage.md](../features/epic-03/feature-3.1-document-upload-storage.md). Feature 3.1 validated 2026-10-05 and its fixes merged (3.1.5); documentation synced with the code on 2026-10-05; the epic closes after the manual run of 2026-10-11.
 
-| ID | Story | Points | Sprint | Jira | Issue |
+| ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 3.1.1 | Document storage and upload API | 8 | ✅ Done | SCRUM-35 | [#111](https://github.com/StKostyk/award-monitoring-system/issues/111) |
 | 3.1.2 | Certificate upload in the award form and award page | 5 | ✅ Done | SCRUM-36 | [#112](https://github.com/StKostyk/award-monitoring-system/issues/112) |
@@ -68,7 +68,7 @@ Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCE
 ### Epic 4 — Approval Workflow Engine (Jira epic SCRUM-47)
 Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLOW-STATUS.md). Kickoff 2026-10-06; the organisational award model comes first, the achievement pages last. Story 2.4.1 from Epic 2 belongs here. Feature 4.1 PRD approved 2026-10-06: [feature-4.1-workflow-engine-core.md](../features/epic-04/feature-4.1-workflow-engine-core.md). Feature 4.2 PRD approved 2026-10-08: [feature-4.2-review-period-escalation.md](../features/epic-04/feature-4.2-review-period-escalation.md).
 
-| ID | Story | Points | Sprint | Jira | Issue |
+| ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 4.1.0 | Organisational awards: unit recipients and submitter | 5 | ✅ Done | SCRUM-48 | [#142](https://github.com/StKostyk/award-monitoring-system/issues/142) |
 | 4.1.1 | Reviewer queue with claim, release and hand-over | 8 | ✅ Done | SCRUM-49 | [#143](https://github.com/StKostyk/award-monitoring-system/issues/143) |
@@ -98,7 +98,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 ### Epic 7 — Notification & Communication System (Jira epic SCRUM-63)
 Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS.md). Kickoff 2026-10-09; Spring events on the Spring Modulith publication registry (no Kafka), e-mail and in-app channels (SMS out of scope, push with Epic 8). Story 1.3.2 from Epic 1 belongs here.
 
-| ID | Story | Points | Sprint | Jira | Issue |
+| ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 7.1.1 | Event publication registry for the after-commit mails | 5 | ✅ Done | SCRUM-64 | [#181](https://github.com/StKostyk/award-monitoring-system/issues/181) |
 | 7.1.2 | Module boundaries checked by Spring Modulith | 8 | ✅ Done | SCRUM-65 | [#182](https://github.com/StKostyk/award-monitoring-system/issues/182) |
@@ -115,7 +115,7 @@ Tracker: [EPIC-07-NOTIFICATIONS-STATUS.md](../epics/EPIC-07-NOTIFICATIONS-STATUS
 ### Epic 6 — Compliance & Audit System (Jira epic SCRUM-85)
 Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-STATUS.md). Kickoff 2026-10-15; versioned privacy notice and consent records, privacy centre, legal hold, erasure after a 30-day grace period, nightly retention job. Story 6.1.5 replaces 2.4.2. Feature 6.1 PRD approved 2026-10-15: [feature-6.1-consent-data-subject-rights.md](../features/epic-06/feature-6.1-consent-data-subject-rights.md). Feature 6.2 PRD approved 2026-10-18: [feature-6.2-automated-data-retention.md](../features/epic-06/feature-6.2-automated-data-retention.md). Both features done 2026-10-18.
 
-| ID | Story | Points | Sprint | Jira | Issue |
+| ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 6.1.1 | Versioned privacy notice and consent records | 5 | ✅ Done | SCRUM-86 | [#252](https://github.com/StKostyk/award-monitoring-system/issues/252) |
 | 6.1.2 | Privacy centre in the profile | 5 | ✅ Done | SCRUM-87 | [#253](https://github.com/StKostyk/award-monitoring-system/issues/253) |
@@ -148,7 +148,7 @@ Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-
 | Sprint 2 | Feature 1.1 Core Authentication (1.1.0–1.1.6), Feature 1.2 RBAC (1.2.1–1.2.3) | 46 |
 | Sprint 3 | Feature 1.2 fixes (1.2.4), Feature 2.1 Award Creation & Validation (2.1.0–2.1.6), Feature 1.3 User Profile Management (1.3.1, 1.3.3, 1.3.4), Feature 2.2 Award Version History & Audit Trail (2.2.1–2.2.3), Feature 2.3 Award Status Tracking (2.3.1, 2.3.2), Feature 3.0 deployment preparation (3.0.1–3.0.4), document upload (3.1.1, 3.1.2) | 91 |
 
-Total Completed: 167 points (Epics 1 and 2 except the stories moved to later epics, Feature 3.0, Feature 3.1); Sprint 4 so far: 2.1.7 (3), 2.1.8 (8), 3.1.3 (3), 3.1.4 (1), 3.1.5 (3), 3.1.6 (1), Feature 4.1 4.1.0–4.1.5 (32), Feature 4.2 4.2.1–4.2.3 and 2.4.1 (15), Feature 4.3 4.3.1–4.3.2 (10)
+From Sprint 4 on, completed stories are not summed here: the epic trackers and the sprint summaries hold the points per story, and the rows above carry the status.
 
 ---
 

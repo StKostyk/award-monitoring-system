@@ -345,6 +345,8 @@ ALTER TABLE users DROP COLUMN last_name;
 | `consent_records` | 7 years from withdrawal | Age from `withdrawn_at` | Archive to cold storage |
 | `users` (DELETED) | 30 days grace + 7 years | Deletion request | Anonymize + archive |
 
+**As built (Epic 6)**: nothing is archived to cold storage; the nightly retention job (`app.retention.*`, ADR-022 and DATA_DICTIONARY §4.5) deletes. `notifications` go after `P365D`; monthly `audit_logs` partitions that end before `P7Y` are dropped, except a partition holding a row of a person under legal hold; `ANALYTICS` consent rows of a person who withdrew are deleted `P7Y` after the withdrawal, and every consent row of an erased account `P7Y` after the erasure. An erased account stays as a `users` row with status `DELETED`, anonymised by the erasure run 30 days after the request. There is no separate 90-day rule for orphaned documents: documents go with their award or at the erasure.
+
 ### 3.2 Archival Implementation Strategy
 
 ```
