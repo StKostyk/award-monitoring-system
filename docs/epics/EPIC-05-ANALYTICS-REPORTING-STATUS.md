@@ -17,7 +17,7 @@
 
 ## Current focus
 
-Kickoff done 2026-10-19. Next: the Feature 5.1 PRD.
+Feature 5.1 PRD approved 2026-10-19 ([feature-5.1-personal-achievement-dashboard.md](../features/epic-05/feature-5.1-personal-achievement-dashboard.md)). Next: 5.1.1 (SCRUM-98).
 
 ## Scope
 
@@ -40,7 +40,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 5.1.1 Personal analytics API with a consented department rank | 5.1 | 5 | SCRUM-98 | #285 | no | Planned |
-| 2 | 5.1.2 Personal dashboard with charts and widget choice | 5.1 | 5 | SCRUM-99 | #286 | yes | Planned |
+| 2 | 5.1.2 Personal dashboard with charts and widget choice | 5.1 | 8 | SCRUM-99 | #286 | yes | Planned |
 | 3 | 5.1.3 Shareable achievement summary | 5.1 | 3 | SCRUM-100 | #287 | no | Planned |
 | 4 | 5.2.1 Unit analytics API for departments and faculties with period comparison | 5.2 | 5 | SCRUM-101 | #288 | no | Planned |
 | 5 | 5.2.2 Faculty analytics page with department comparison and top performers | 5.2 | 5 | SCRUM-102 | #289 | yes | Planned |
@@ -50,7 +50,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Planned |
 | 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Planned |
 
-Total: 46 points (roadmap estimate 55), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
+Total: 49 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
 
 ## Decisions
 
@@ -63,6 +63,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-19 | Aggregation on demand in SQL over `awards`, cached in Redis with a short TTL; no materialised views | Tens of thousands of awards per university; the 3/5/10 s targets hold without a refresh pipeline | ADR-005, BRD §5.1 |
 | 2026-10-19 | Award search on PostgreSQL: `tsvector` (Ukrainian and English) with a GIN index plus `pg_trgm`; Elasticsearch stays out | ADR-007 addendum 2026-10-05; one store, same access rules | ADR-007 |
 | 2026-10-19 | The shareable summary is a printable page (print CSS) with a link to the published achievements; server-side PDF starts at 5.2.3 | One PDF library, introduced once | US-008 |
+| 2026-10-19 | Charts with ngx-echarts 21 on ECharts 6 (SVG renderer, ARIA, table view per chart); personal analytics uncached; rank by count of approved awards under the person's own `ANALYTICS` consent, minimum group 5; widget choice stored per account (`dashboard_preferences`, V046) | Accessible and printable charts; fresh personal figures; no colleague named or derivable | PRD 5.1 §7 |
 
 ## Documentation deviations found at kickoff
 
