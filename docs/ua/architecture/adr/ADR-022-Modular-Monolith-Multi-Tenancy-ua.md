@@ -141,9 +141,10 @@
 | `user` | common, audit, organization, authz | базовий пакет (`AccountSessions`, `LentAuthority`), `entity`, `dto`, `event`, `service` (`UserAccounts`, `RoleHolders`) |
 | `delegation` | common, audit, organization, authz, user | `entity`, `dto`, `event`, `service` (`DelegationLookup`) |
 | `auth` | common, audit, organization, authz, user, delegation | `entity`, `dto`, `event`, `service` (`DeviceLookup`) |
-| `award` | common, audit, organization, authz, user, delegation | базовий пакет (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`) |
+| `award` | common, audit, organization, authz, user, delegation | базовий пакет (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
-| `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | `dto`, `event` |
+| `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | базовий пакет (`ConsentLookup`), `dto`, `event` |
+| `analytics` | common, organization, user, award, gdpr | — |
 | `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` для експорту даних) |
 | `metrics` | — | — |
 | `config` | common, audit | — (від нього не залежить жоден) |

@@ -171,13 +171,15 @@ No level requires the rector. The review period of each level is counted in work
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Reports & Analytics** |
-| View Personal Analytics | ✓ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| View Personal Analytics¹⁸ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
 | View Department Analytics | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View Faculty Analytics | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View University Analytics | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Export Reports (CSV/PDF) | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Create Custom Reports | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Access Raw Data | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ |
+
+¹⁸ Feature 5.1.1 (`PersonalAnalyticsService`, `GET /analytics/me`): every role holds `analytics:read:own`, since approvers, administrators and GDPR officers can own personal awards too (Epic 5 tracker, deviation 2); an account without a role (membership not confirmed) gets 403. Only the caller's own approved personal awards are read, with no parameter naming another person. The rank in the department carries figures only when the caller's latest `ANALYTICS` consent is a grant and the department has at least `app.analytics.min-group-size` (5) active accounts; every active account of the department counts in the group, with or without the consent.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

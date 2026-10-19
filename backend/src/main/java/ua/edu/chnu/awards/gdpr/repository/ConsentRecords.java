@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ConsentRecords {
 
+    private static final String USER_ID = "userId";
+
     private static final String LOCK_OWNER = "select user_id from users where user_id = :userId for update";
 
     private static final String HISTORY = """
@@ -28,6 +30,14 @@ public class ConsentRecords {
           from consent_records
          where user_id = :userId
          order by created_at, consent_id
+        """;
+
+    private static final String LATEST = """
+        select is_granted
+          from consent_records
+         where user_id = :userId and consent_type = :type
+         order by created_at desc, consent_id desc
+         limit 1
         """;
 
     private static final String APPEND = """
@@ -45,7 +55,7 @@ public class ConsentRecords {
      * @param userId the person
      */
     public void lockOwner(long userId) {
-        jdbc.queryForList(LOCK_OWNER, Map.of("userId", userId), Long.class);
+        jdbc.queryForList(LOCK_OWNER, Map.of(USER_ID, userId), Long.class);
     }
 
     /**
@@ -55,9 +65,21 @@ public class ConsentRecords {
      * @return the records, oldest first
      */
     public List<HistoryEntry> history(long userId) {
-        return jdbc.query(HISTORY, Map.of("userId", userId), (row, index) -> new HistoryEntry(
+        return jdbc.query(HISTORY, Map.of(USER_ID, userId), (row, index) -> new HistoryEntry(
             ConsentType.valueOf(row.getString("consent_type")), row.getString("consent_version"),
             row.getBoolean("is_granted"), row.getObject("at", OffsetDateTime.class).toInstant()));
+    }
+
+    /**
+     * Whether the newest record of one type is a grant.
+     *
+     * @param userId the person
+     * @param type   the consent
+     * @return false when the person never chose or withdrew
+     */
+    public boolean granted(long userId, ConsentType type) {
+        return jdbc.queryForList(LATEST, Map.of(USER_ID, userId, "type", type.name()), Boolean.class).stream()
+            .findFirst().orElse(false);
     }
 
     /**
@@ -71,7 +93,7 @@ public class ConsentRecords {
     public void append(long userId, HistoryEntry entry, String ip, String userAgent) {
         Timestamp at = Timestamp.from(entry.at());
         Map<String, Object> params = new HashMap<>();
-        params.put("userId", userId);
+        params.put(USER_ID, userId);
         params.put("type", entry.type().name());
         params.put("version", entry.version());
         params.put("granted", entry.granted());

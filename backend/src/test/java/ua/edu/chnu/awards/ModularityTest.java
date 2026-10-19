@@ -21,7 +21,7 @@ class ModularityTest {
     @Test
     void ac21_theApplicationConsistsOfTheAgreedModulesAndVerifies() {
         assertThat(MODULES.stream().map(ApplicationModule::getIdentifier).map(Object::toString))
-            .containsExactlyInAnyOrder("audit", "auth", "authz", "award", "common", "config", "delegation",
+            .containsExactlyInAnyOrder("analytics", "audit", "auth", "authz", "award", "common", "config", "delegation",
                 "document", "gdpr", "metrics", "notification", "organization", "user");
 
         MODULES.verify();

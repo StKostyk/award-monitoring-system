@@ -16,7 +16,7 @@ class RolePermissionsTest {
             assertThat(permissions.of(role)).as(role.name()).isNotEmpty();
         }
         assertThat(permissions.of(RoleType.EMPLOYEE)).containsExactlyInAnyOrder(
-            "award:read:own", "award:create", "award:update:own");
+            "award:read:own", "award:create", "award:update:own", "analytics:read:own");
         assertThat(permissions.of(RoleType.RECTOR)).contains("award:approve:final");
         assertThat(permissions.of(RoleType.SYSTEM_ADMIN)).contains("user:manage", "system:configure")
             .doesNotContain("award:create");

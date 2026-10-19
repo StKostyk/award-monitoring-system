@@ -506,6 +506,7 @@ public class TotpService {
 | **Дозвіл** | **EMPLOYEE** | **FAC_SEC** | **DEAN** | **RECT_SEC** | **RECTOR** | **ADMIN** | **GDPR** |
 |------------|:------------:|:-----------:|:--------:|:------------:|:----------:|:---------:|:--------:|
 | `award:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `analytics:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `award:read:department` | - | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `award:read:faculty` | - | - | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `award:read:all` | - | - | - | ✅ | ✅ | ✅ | ✅ |

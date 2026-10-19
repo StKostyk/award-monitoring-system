@@ -17,11 +17,19 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
+import ua.edu.chnu.awards.analytics.dto.AnalyticsTotals;
+import ua.edu.chnu.awards.analytics.dto.PersonalAnalytics;
+import ua.edu.chnu.awards.analytics.dto.PersonalRank;
+import ua.edu.chnu.awards.analytics.dto.RankStatus;
+import ua.edu.chnu.awards.analytics.dto.YearCount;
 import ua.edu.chnu.awards.auth.dto.EmailChangeConfirmRequest;
 import ua.edu.chnu.awards.auth.dto.EmailChangeRequest;
 import ua.edu.chnu.awards.award.dto.AwardCategoryResponse;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.OpenAwards;
+import ua.edu.chnu.awards.award.dto.TimelineEntry;
+import ua.edu.chnu.awards.award.dto.YearRange;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
@@ -183,6 +191,35 @@ class OpenApiContractTest {
             .extractingByKey("items").asInstanceOf(MAP)
             .extractingByKey("properties").asInstanceOf(MAP)
             .containsKeys("field", "code", "message");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac1_4_ac1_6_personalAnalyticsSchemasMatchTheResponse() throws IOException {
+        Map<String, Object> schemas = schemas();
+        Map<String, Object> analytics = property((Map<String, Object>) schemas.get("PersonalAnalytics"),
+            "properties");
+        Map<String, Object> rank = property((Map<String, Object>) schemas.get("PersonalRank"), "properties");
+
+        assertThat(analytics.keySet()).containsExactlyInAnyOrderElementsOf(components(PersonalAnalytics.class));
+        assertThat(property(property(analytics, "totals"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(AnalyticsTotals.class));
+        assertThat(property(property(analytics, "inProgress"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(OpenAwards.class));
+        assertThat(property(property(analytics, "period"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(YearRange.class));
+        assertThat(property(property(property(analytics, "byYear"), "items"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(YearCount.class));
+        assertThat(property((Map<String, Object>) schemas.get("TimelineEntry"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(TimelineEntry.class));
+        assertThat(rank.keySet()).containsExactlyInAnyOrderElementsOf(components(PersonalRank.class));
+        assertThat((List<String>) property(rank, "status").get("enum")).containsExactlyElementsOf(
+            Arrays.stream(RankStatus.values()).map(RankStatus::name).toList());
+        assertThat(schemas.get("PersonalAnalytics").toString()).doesNotContain("x-status");
+    }
+
+    private static List<String> components(Class<? extends Record> type) {
+        return Stream.of(type.getRecordComponents()).map(RecordComponent::getName).toList();
     }
 
     @SuppressWarnings("unchecked")

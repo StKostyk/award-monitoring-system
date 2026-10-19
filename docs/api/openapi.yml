@@ -2909,7 +2909,6 @@ paths:
         drafts and pending awards, and the rank in the caller's department. The rank carries figures only when the
         caller's latest `ANALYTICS` consent is a grant and the department has at least
         `app.analytics.min-group-size` active accounts. Needs `analytics:read:own` (5.1.1).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: getPersonalAnalytics
@@ -4430,8 +4429,7 @@ components:
 
     PersonalAnalytics:
       type: object
-      description: The caller's approved personal awards in a period (5.1.1, planned)
-      x-status: planned
+      description: The caller's approved personal awards in a period (5.1.1)
       properties:
         period:
           type: object
@@ -4534,7 +4532,7 @@ components:
       description: >
         `RANKED` carries the figures; `CONSENT_REQUIRED` (no `ANALYTICS` grant), `NO_DEPARTMENT` (the account's unit
         is not a department) and `GROUP_TOO_SMALL` (fewer active accounts than `app.analytics.min-group-size`) carry
-        none. Competition ranking by the count of approved personal awards in the period over every active account
+        no figures; `department` is set for `RANKED` and `GROUP_TOO_SMALL`. Competition ranking by the count of approved personal awards in the period over every active account
         of the department.
       properties:
         status:

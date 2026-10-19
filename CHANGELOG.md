@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Personal analytics API (GET /api/v1/analytics/me): approved personal awards by year, level and category, the timeline, open drafts and a department rank shown only with the analytics consent and at least five active colleagues; local demo seed for lecturer.fmi (SCRUM-98)
 - Compliance page for the GDPR officer: retention policies and nightly runs, erasure requests of both origins and legal holds of every account.
 - Retention of unverified and former accounts (erased through the erasure run without mails), withdrawn consent chains and expired audit partitions (6.2.3)
 - Nightly data retention job (04:00 Kyiv) with configurable policies for notifications, one-time tokens, authorizations, devices and audit partitions; runs recorded, audited, counted and reported to the data protection officers when incomplete (6.2.1)
