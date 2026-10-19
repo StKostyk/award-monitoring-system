@@ -317,6 +317,13 @@ rejected awards and unit awards are not counted.
   you to another browser, and it is part of your data export.
 - **Without approved awards** the dashboard lists the steps to a first award, with **Внести нагороду** and the
   number of awards in review or drafts. When only the chosen period is empty, **Усі роки** goes back to all years.
+- **Summary** («Підсумок») opens a printable page of the chosen period (`/dashboard/summary?from=2022&to=2025`):
+  your name and department, the totals, the counts by level, every counted award with its verification mark and
+  the date the page was produced. **Друкувати** or the browser print leaves out the navigation and the buttons
+  (A4 portrait).
+- **Copy link to my public achievements** («Копіювати посилання на мої публічні досягнення») on the summary copies
+  the address of the public page with only your public awards (`/public/achievements?person=<id>`). The button
+  appears once at least one of your approved awards is public; until then a hint explains why it is missing.
 
 ---
 

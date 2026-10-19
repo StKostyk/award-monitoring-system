@@ -58,3 +58,40 @@ app-root {
   width: min(400px, calc(100vw - 32px));
   max-width: min(400px, calc(100vw - 32px));
 }
+
+@page {
+  size: A4 portrait;
+  margin: 18mm 16mm;
+}
+
+@media print {
+  html,
+  body,
+  app-root {
+    height: auto;
+    background: #fff;
+    color: #000;
+  }
+
+  .shell__drawer,
+  .shell__toolbar,
+  .shell__erasure,
+  .mat-drawer-backdrop,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  .mat-drawer-container,
+  .mat-drawer-content,
+  .shell__main {
+    height: auto !important;
+    margin-left: 0 !important;
+    overflow: visible !important;
+  }
+
+  .shell__content {
+    max-width: none;
+    padding: 0;
+  }
+}

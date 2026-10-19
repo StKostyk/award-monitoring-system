@@ -7,7 +7,7 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
@@ -56,6 +56,7 @@ export function yearParameter(params: ParamMap, name: string): number | null {
     MatProgressBar,
     MatSelect,
     RankCardComponent,
+    RouterLink,
     SummaryTilesComponent,
     TimelineChartComponent,
     TranslocoPipe,

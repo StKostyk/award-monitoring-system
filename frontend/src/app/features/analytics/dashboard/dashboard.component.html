@@ -1,9 +1,25 @@
 <div class="dashboard__header">
   <h1 class="dashboard__title">{{ 'analytics.title' | transloco }}</h1>
-  <button mat-stroked-button type="button" (click)="customise()" data-testid="dashboard-customise">
-    <mat-icon>tune</mat-icon>
-    {{ 'analytics.customise.open' | transloco }}
-  </button>
+  <div class="dashboard__actions">
+    <a
+      mat-stroked-button
+      routerLink="/dashboard/summary"
+      [queryParams]="{ from: period().from, to: period().to }"
+      data-testid="dashboard-summary"
+    >
+      <mat-icon>description</mat-icon>
+      {{ 'analytics.report.open' | transloco }}
+    </a>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="customise()"
+      data-testid="dashboard-customise"
+    >
+      <mat-icon>tune</mat-icon>
+      {{ 'analytics.customise.open' | transloco }}
+    </button>
+  </div>
 </div>
 
 <div

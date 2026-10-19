@@ -115,9 +115,16 @@ export class AchievementListComponent implements OnInit {
     const unit = this.achievements().find((item) => item.recipient.unit.id === id)?.recipient.unit;
     return unit ? organizationName(unit, this.language.current()) : null;
   });
+  /** The person whose public awards the page lists, named as the listed awards carry it. */
+  protected readonly personName = computed(() =>
+    this.query().filters.person === null
+      ? null
+      : (this.achievements()[0]?.recipient.personName ?? null),
+  );
   protected readonly counterpart = computed<CounterpartLink | null>(() => {
     const unit = this.fixedUnit();
-    const queryParams = writeQuery(this.withoutFixedUnit(this.query()));
+    const query = this.withoutFixedUnit(this.query());
+    const queryParams = writeQuery({ ...query, filters: { ...query.filters, person: null } });
     if (this.scope === 'signed-in') {
       const path =
         unit === null ? ['/public/achievements'] : ['/public/units', unit, 'achievements'];
@@ -138,7 +145,11 @@ export class AchievementListComponent implements OnInit {
         map(({ id, query }) => {
           const unit = id === null ? null : Number(id);
           this.fixedUnit.set(unit);
-          return unit === null ? query : { ...query, filters: { ...query.filters, unit } };
+          const person = this.scope === 'public' ? query.filters.person : null;
+          return {
+            ...query,
+            filters: { ...query.filters, unit: unit ?? query.filters.unit, person },
+          };
         }),
         tap((query) => this.query.set(query)),
         switchMap((query) =>

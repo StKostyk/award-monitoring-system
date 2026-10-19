@@ -1,0 +1,120 @@
+@if (invalid()) {
+  <section class="summary__problem" role="alert" data-testid="summary-invalid">
+    <p>{{ 'analytics.report.invalidPeriod' | transloco }}</p>
+    <a mat-stroked-button routerLink="/dashboard" data-testid="summary-back">
+      {{ 'analytics.report.back' | transloco }}
+    </a>
+  </section>
+} @else {
+  <div class="summary__actions no-print">
+    <a
+      mat-button
+      routerLink="/dashboard"
+      [queryParams]="{ from: period().from, to: period().to }"
+      data-testid="summary-back"
+    >
+      <mat-icon>arrow_back</mat-icon>
+      {{ 'analytics.report.back' | transloco }}
+    </a>
+    <button mat-flat-button type="button" (click)="print()" data-testid="summary-print">
+      <mat-icon>print</mat-icon>
+      {{ 'analytics.report.print' | transloco }}
+    </button>
+    @if (shared()) {
+      <button mat-stroked-button type="button" (click)="copyLink()" data-testid="summary-copy-link">
+        <mat-icon>link</mat-icon>
+        {{ 'analytics.report.copyLink' | transloco }}
+      </button>
+    }
+  </div>
+  <p class="summary__note no-print" role="status" aria-live="polite">
+    @if (copied()) {
+      <span data-testid="summary-copied">{{ 'analytics.report.copied' | transloco }}</span>
+    } @else if (!shared()) {
+      <span data-testid="summary-public-hint">{{ 'analytics.report.publicHint' | transloco }}</span>
+    }
+  </p>
+
+  @if (loading()) {
+    <mat-progress-bar
+      class="no-print"
+      mode="indeterminate"
+      [attr.aria-label]="'app.loading' | transloco"
+    />
+  }
+
+  @if (problem()) {
+    <div class="summary__problem" role="alert" data-testid="summary-error">
+      <p>{{ 'analytics.failed' | transloco }}</p>
+      <button mat-stroked-button type="button" (click)="retry()">
+        {{ 'analytics.retry' | transloco }}
+      </button>
+    </div>
+  } @else if (analytics(); as data) {
+    <article class="summary" data-testid="summary">
+      <header class="summary__header">
+        <h1 class="summary__title">{{ 'analytics.report.title' | transloco }}</h1>
+        <p class="summary__name" data-testid="summary-name">{{ name() }}</p>
+        <p data-testid="summary-department">{{ department() }}</p>
+        <p data-testid="summary-period">
+          {{ 'analytics.report.period' | transloco }}: {{ data.period.from }}–{{ data.period.to }}
+        </p>
+      </header>
+
+      <section class="summary__section">
+        <h2>{{ 'analytics.widgets.SUMMARY' | transloco }}</h2>
+        <dl class="summary__figures">
+          <div data-testid="summary-approved">
+            <dt>{{ 'analytics.summary.approved' | transloco }}</dt>
+            <dd>{{ data.totals.approved }}</dd>
+          </div>
+          <div data-testid="summary-verified">
+            <dt>{{ 'analytics.summary.verified' | transloco }}</dt>
+            <dd>{{ data.totals.verified }}</dd>
+          </div>
+          @for (row of data.byLevel; track row.level) {
+            <div [attr.data-testid]="'summary-level-' + row.level">
+              <dt>{{ 'categories.levels.' + row.level | transloco }}</dt>
+              <dd>{{ row.count }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="summary__section">
+        <h2>{{ 'analytics.report.awards' | transloco }}</h2>
+        @if (data.timeline.length === 0) {
+          <p data-testid="summary-empty">{{ 'analytics.report.empty' | transloco }}</p>
+        } @else {
+          <ol class="summary__awards">
+            @for (entry of data.timeline; track entry.awardId) {
+              <li class="summary__award" data-testid="summary-award">
+                <p class="summary__award-title">{{ title(entry) }}</p>
+                <p class="summary__award-meta">
+                  {{ entry.awardingOrganization }} · {{ entry.awardDate | kyivDate }} ·
+                  {{ 'categories.levels.' + entry.category.level | transloco }}
+                  @if (entry.verified) {
+                    ·
+                    <span class="summary__verified" data-testid="summary-verified-badge">
+                      <mat-icon aria-hidden="true">verified</mat-icon>
+                      {{ 'achievements.verified' | transloco }}
+                    </span>
+                  }
+                </p>
+              </li>
+            }
+          </ol>
+          @if (data.timelineTruncated) {
+            <p class="summary__note">
+              {{ 'analytics.timeline.truncated' | transloco: { count: data.timeline.length } }}
+            </p>
+          }
+        }
+      </section>
+
+      <footer class="summary__footer" data-testid="summary-produced">
+        {{ 'analytics.report.produced' | transloco }}: {{ produced | kyivDate }}
+      </footer>
+    </article>
+  }
+}

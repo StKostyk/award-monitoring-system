@@ -3,7 +3,11 @@
   <app-unit-header [unitId]="unit" [scope]="scope" [fallback]="unitFallback()" />
 } @else {
   <h1 class="achievements__title" data-testid="achievements-title">
-    {{ (scope === 'public' ? 'achievements.publicTitle' : 'achievements.title') | transloco }}
+    @if (personName(); as name) {
+      {{ 'achievements.personTitle' | transloco: { name } }}
+    } @else {
+      {{ (scope === 'public' ? 'achievements.publicTitle' : 'achievements.title') | transloco }}
+    }
   </h1>
 }
 @if (counterpart(); as link) {

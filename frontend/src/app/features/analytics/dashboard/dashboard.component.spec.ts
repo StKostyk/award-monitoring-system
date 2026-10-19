@@ -96,6 +96,15 @@ describe('DashboardComponent', () => {
     );
   });
 
+  it('ac3_1_the_summary_link_carries_the_period', () => {
+    queryParams.next(convertToParamMap({ from: '2024', to: '2025' }));
+    fixture.detectChanges();
+
+    expect(element('dashboard-summary')?.getAttribute('href')).toBe(
+      '/dashboard/summary?from=2024&to=2025',
+    );
+  });
+
   it('ac2_5_ignores_years_outside_the_allowed_range', () => {
     expect(yearParameter(convertToParamMap({ from: '1949' }), 'from')).toBeNull();
     expect(yearParameter(convertToParamMap({ from: 'abc' }), 'from')).toBeNull();

@@ -134,3 +134,59 @@ test.describe('personal dashboard', () => {
     await expect(page).toHaveURL(/\/forbidden$/);
   });
 });
+
+test.describe('shareable achievement summary', () => {
+  test('ac3_1 ac3_2 ac3_4 ac3_5 the summary prints and shares the public achievements', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/dashboard?from=2020');
+    await page.getByTestId('dashboard-summary').click();
+    await expect(page).toHaveURL(/\/dashboard\/summary\?from=2020$/);
+
+    await expect(page.getByTestId('summary-name')).not.toBeEmpty();
+    await expect(page.getByTestId('summary-department')).not.toBeEmpty();
+    await expect(page.getByTestId('summary-period')).toContainText('2020–');
+    await expect(page.getByTestId('summary-award').first()).toBeVisible();
+    await expect(page.getByTestId('summary-produced')).not.toBeEmpty();
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('.shell__toolbar')).toBeHidden();
+    await expect(page.getByTestId('nav-dashboard')).toBeHidden();
+    await expect(page.getByTestId('summary-print')).toBeHidden();
+    await expect(page.getByTestId('summary-award').first()).toHaveCSS('break-inside', 'avoid');
+    await page.emulateMedia({ media: 'screen' });
+
+    await page.getByTestId('summary-copy-link').click();
+    await expect(page.getByTestId('summary-copied')).toBeVisible();
+    const link = await page.evaluate(() => navigator.clipboard.readText());
+    expect(link).toMatch(/^http:\/\/[^/]+\/public\/achievements\?person=\d+$/);
+    const name = (await page.getByTestId('summary-name').textContent())!.trim();
+
+    const visitor = await (await browser.newContext()).newPage();
+    await visitor.goto(new URL(link).pathname + new URL(link).search);
+    await expect(visitor.getByTestId('achievements-title')).toContainText(name);
+    await expect(visitor.getByTestId('achievement-card').first()).toBeVisible();
+    const recipients = await visitor.getByTestId('achievement-recipient').allTextContents();
+    expect(recipients.every((recipient) => recipient.includes(name))).toBe(true);
+    expect(await seriousViolations(visitor)).toEqual([]);
+  });
+
+  test('ac3_1 ac3_4 a new employee gets the hint and a period that is not valid is refused', async ({
+    browser,
+  }) => {
+    const email = await freshEmployee(browser, 'summary');
+    const page = await signedInAs(browser, email, FRESH_PASSWORD);
+    await page.goto('/dashboard/summary');
+    await expect(page.getByTestId('summary-empty')).toBeVisible();
+    await expect(page.getByTestId('summary-public-hint')).toBeVisible();
+    await expect(page.getByTestId('summary-copy-link')).toHaveCount(0);
+
+    await page.goto('/dashboard/summary?from=2026&to=2020');
+    await expect(page.getByTestId('summary-invalid')).toBeVisible();
+    await page.getByTestId('summary-back').click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+});
