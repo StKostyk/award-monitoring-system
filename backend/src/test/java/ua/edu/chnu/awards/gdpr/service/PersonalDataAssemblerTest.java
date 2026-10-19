@@ -34,12 +34,12 @@ import ua.edu.chnu.awards.delegation.entity.RoleDelegation;
 import ua.edu.chnu.awards.delegation.service.DelegationLookup;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ActivityEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DashboardPreferenceEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DecisionMadeEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DelegationEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ReviewDecisionEntry;
 import ua.edu.chnu.awards.gdpr.mapper.PersonalDataMapper;
 import ua.edu.chnu.awards.gdpr.repository.PersonalDataQueries;
-import ua.edu.chnu.awards.notification.service.NotificationLookup;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.entity.OrganizationType;
 import ua.edu.chnu.awards.support.TestUsers;
@@ -57,10 +57,9 @@ class PersonalDataAssemblerTest {
     private final AwardVersionLookup versions = mock(AwardVersionLookup.class);
     private final DeviceLookup devices = mock(DeviceLookup.class);
     private final PersonalDataQueries queries = mock(PersonalDataQueries.class);
-    private final NotificationLookup notifications = mock(NotificationLookup.class);
     private final PersonalDataAssembler assembler = new PersonalDataAssembler(roleHolders,
         delegations, awards, versions,
-        devices, notifications, queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
+        devices, mock(), queries, new PersonalDataMapper(), Clock.fixed(NOW, ZoneId.of("Europe/Kyiv")));
 
     private Organization faculty;
     private Organization department;
@@ -79,7 +78,7 @@ class PersonalDataAssemblerTest {
     void ac32_theMetadataAndProfileDescribeThePersonWithDepartmentAndFaculty() {
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.6",
+        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.7",
             "Article 20 - Right to Data Portability"));
         PersonalDataFile.Profile profile = file.personalData().profile();
         assertThat(profile.email()).isEqualTo("employee.fmi@chnu.edu.ua");
@@ -112,6 +111,17 @@ class PersonalDataAssemblerTest {
             "documents", "review_decisions", "decisions_made", "consent_history", "legal_holds", "erasure_requests",
             "devices", "activity_log", "notifications", "notification_preferences")
             .allSatisfy((key, count) -> assertThat(count).isEqualTo(0));
+    }
+
+    @Test
+    void ac2_3_theDashboardChoiceIsCopiedIntoFormatOnePointSeven() {
+        DashboardPreferenceEntry choice = new DashboardPreferenceEntry(List.of("TIMELINE", "BY_LEVEL"), NOW);
+        when(queries.dashboardPreferences(5L)).thenReturn(choice);
+
+        PersonalDataFile file = assembler.assemble(user);
+
+        assertThat(file.exportMetadata().formatVersion()).isEqualTo("1.7");
+        assertThat(file.dashboardPreferences()).isEqualTo(choice);
     }
 
     @Test

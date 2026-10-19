@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.gdpr;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -48,6 +49,8 @@ class DataExportFT extends AbstractFunctionalTest {
             + " 'SENT', now())", exporter.getId(), "ft-export-" + exporter.getId());
         jdbc.update("INSERT INTO notification_preferences (user_id, event_type, email_enabled, in_app_enabled)"
             + " VALUES (?, 'AWARD_RETURNED', false, true)", exporter.getId());
+        jdbc.update("INSERT INTO dashboard_preferences (user_id, hidden_widgets) VALUES (?, '{TIMELINE,BY_LEVEL}')",
+            exporter.getId());
     }
 
     @AfterAll
@@ -55,6 +58,7 @@ class DataExportFT extends AbstractFunctionalTest {
         jdbc.update("delete from awards where user_id = ?", exporter.getId());
         jdbc.update("delete from notifications where user_id = ?", exporter.getId());
         jdbc.update("delete from notification_preferences where user_id = ?", exporter.getId());
+        jdbc.update("delete from dashboard_preferences where user_id = ?", exporter.getId());
         userRepository.deleteById(exporter.getId());
         redis.delete(DataExportService.THROTTLE_KEY_PREFIX + exporter.getId());
     }
@@ -78,7 +82,7 @@ class DataExportFT extends AbstractFunctionalTest {
             .body("awards[0].visibility", equalTo("PRIVATE"))
             .body("roles", hasSize(0))
             .body("activity_log.action", hasItem("LOGIN_SUCCESS"))
-            .body("export_metadata.format_version", equalTo("1.6"))
+            .body("export_metadata.format_version", equalTo("1.7"))
             .body("notifications", hasSize(1))
             .body("notifications[0].channel", equalTo("EMAIL"))
             .body("notifications[0].delivery_status", equalTo("SENT"))
@@ -86,7 +90,9 @@ class DataExportFT extends AbstractFunctionalTest {
             .body("notifications[0].delivered_at", notNullValue())
             .body("notification_preferences[0].type", equalTo("AWARD_RETURNED"))
             .body("notification_preferences[0].email", equalTo(false))
-            .body("notification_preferences[0].in_app", equalTo(true));
+            .body("notification_preferences[0].in_app", equalTo(true))
+            .body("dashboard_preferences.hidden_widgets", contains("TIMELINE", "BY_LEVEL"))
+            .body("dashboard_preferences.updated_at", notNullValue());
         assertThat(export.asString()).doesNotContain("password", "$2a$", "token");
 
         String notice = mailpit.latestTextTo(EXPORTER, "Your data was exported");

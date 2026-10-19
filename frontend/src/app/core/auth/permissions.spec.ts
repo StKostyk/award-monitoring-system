@@ -4,6 +4,7 @@ import {
   canDelegate,
   canReadCompliance,
   canReadDirectory,
+  canReadOwnAnalytics,
   canReadOwnAwards,
   canReview,
   delegatableOrganizations,
@@ -58,6 +59,15 @@ describe('permissions', () => {
     expect(
       canReadCompliance(readPermissions(token({ permissions: ['user:read:all', 'user:manage'] }))),
     ).toBe(false);
+  });
+
+  it('ac2_4_opens_the_dashboard_only_with_analytics_read_own', () => {
+    expect(
+      canReadOwnAnalytics(readPermissions(token({ permissions: ['analytics:read:own'] }))),
+    ).toBe(true);
+    expect(canReadOwnAnalytics(readPermissions(token({ permissions: ['award:read:own'] })))).toBe(
+      false,
+    );
   });
 
   it('yields nothing instead of throwing for a missing or broken token', () => {

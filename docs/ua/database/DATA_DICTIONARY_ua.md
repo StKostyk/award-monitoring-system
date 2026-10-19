@@ -18,7 +18,7 @@
 
 | **Домен** | **Сутності** | **Призначення** |
 |-----------|--------------|-----------------|
-| **Домен Користувачів** | `users`, `user_roles`, `role_delegations`, `organizations` | Ідентичність, контроль доступу, передача повноважень затвердження колезі, організаційна структура |
+| **Домен Користувачів** | `users`, `user_roles`, `role_delegations`, `organizations`, `dashboard_preferences` | Ідентичність, контроль доступу, передача повноважень затвердження колезі, організаційна структура, вибір віджетів панелі |
 | **Домен Автентифікації** | `one_time_tokens`, `user_devices`, `oauth2_*` | Посилання з листів, відомі браузери, стан сервера авторизації |
 | **Домен Нагород** | `awards`, `award_versions`, `award_categories`, `documents` | Основні бізнес-сутності для управління нагородами |
 | **Домен Робочого Процесу** | `award_requests`, `review_decisions`, `review_templates` | Відстеження багаторівневого робочого процесу затвердження |
@@ -281,6 +281,28 @@
 **Зв'язки**:
 - НАЛЕЖИТЬ ДО `users` (N:1) через `delegator_id`, `delegate_id` і `revoked_by`
 - НАЛЕЖИТЬ ДО `organizations` (N:1) через `organization_id`
+
+---
+
+### 1.8 Сутність: `dashboard_preferences`
+
+**Опис**: Віджети, які особа приховала на особистій панелі (V046, 5.1.2). Немає рядка — показано всі віджети.
+
+**Бізнес-Правила**:
+- Не більше одного рядка на обліковий запис; збереження замінює весь список (`insert ... on conflict (user_id) do update`), перемагає останній запис
+- `hidden_widgets` містить лише назви `DashboardWidget` (`SUMMARY`, `TIMELINE`, `YEAR_TREND`, `BY_CATEGORY`, `BY_LEVEL`, `RANK`), без повторів і в порядку відображення; будь-яке інше значення сервіс відхиляє з `invalid-parameter`
+- Не аудитується (без тригера й рядка аудиту): це вибір відображення, а не рішення щодо обробки
+- Персональні дані: входять до експорту (`dashboard_preferences`, формат 1.7 і новіші, з `updated_at`) і видаляються при видаленні облікового запису (`RoleErasure`, порядок 20, лічильник `dashboardPreferencesDeleted`)
+
+| **Колонка** | **Тип Даних** | **Nullable** | **За Замовч.** | **Обмеження** | **Опис** |
+|-------------|---------------|--------------|----------------|---------------|----------|
+| `user_id` | `BIGINT` | NO | - | PK, FK→users (`ON DELETE CASCADE`) | Обліковий запис, якому належить вибір |
+| `hidden_widgets` | `TEXT[]` | NO | `'{}'` | - | Назви прихованих віджетів |
+| `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Коли вибір збережено востаннє |
+
+**Індекси**: `pk_dashboard_preferences`
+
+**Зв'язки**: НАЛЕЖИТЬ ДО `users` (1:1) через `user_id`, видаляється разом із користувачем
 
 ---
 
@@ -1085,6 +1107,7 @@
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
 | `review_decisions` | → award_requests (N:1), → users (N:1), → users (N:1, делегатор, необов'язково) |
 | `role_delegations` | → users (N:1, делегатор), → users (N:1, делегат), → organizations (N:1) |
+| `dashboard_preferences` | → users (1:1) |
 | `review_templates` | немає (довідкові дані) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |

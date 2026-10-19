@@ -57,7 +57,7 @@ class DataExportServiceTest {
     private final PersonalDataFile file = new PersonalDataFile(
         new PersonalDataFile.Metadata(LATE_EVENING_UTC, 5L, "1.2", "Article 20"), null, List.of(), List.of(),
         List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-        List.of(), List.of());
+        List.of(), List.of(), null);
 
     @BeforeEach
     void bindRequest() {

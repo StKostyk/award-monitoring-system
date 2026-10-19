@@ -1,0 +1,28 @@
+<dl class="tiles">
+  <div class="tile" data-testid="tile-approved">
+    <dt>{{ 'analytics.summary.approved' | transloco }}</dt>
+    <dd class="tile__value">{{ totals().approved }}</dd>
+  </div>
+  <div class="tile" data-testid="tile-verified">
+    <dt>{{ 'analytics.summary.verified' | transloco }}</dt>
+    <dd class="tile__value">{{ totals().verified }}</dd>
+  </div>
+  <div class="tile" data-testid="tile-highest">
+    <dt>{{ 'analytics.summary.highestLevel' | transloco }}</dt>
+    <dd class="tile__value tile__value--text">
+      @if (totals().highestLevel; as level) {
+        {{ 'categories.levels.' + level | transloco }}
+      } @else {
+        —
+      }
+    </dd>
+  </div>
+  <div class="tile" data-testid="tile-first">
+    <dt>{{ 'analytics.summary.firstAward' | transloco }}</dt>
+    <dd class="tile__value tile__value--text">{{ totals().firstAwardDate | kyivDate }}</dd>
+  </div>
+  <div class="tile" data-testid="tile-latest">
+    <dt>{{ 'analytics.summary.latestAward' | transloco }}</dt>
+    <dd class="tile__value tile__value--text">{{ totals().latestAwardDate | kyivDate }}</dd>
+  </div>
+</dl>

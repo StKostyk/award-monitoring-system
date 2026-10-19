@@ -19,6 +19,7 @@ import {
   canDelegate,
   canReadCompliance,
   canReadDirectory,
+  canReadOwnAnalytics,
   canReadOwnAwards,
   canReview,
 } from '../auth/permissions';
@@ -80,6 +81,9 @@ export class ShellComponent {
   );
   protected readonly canOpenAwards = computed(
     () => this.auth.isAuthenticated() && canReadOwnAwards(this.auth.permissions()),
+  );
+  protected readonly canOpenDashboard = computed(
+    () => this.auth.isAuthenticated() && canReadOwnAnalytics(this.auth.permissions()),
   );
   protected readonly canOpenUsers = computed(
     () => this.auth.isAuthenticated() && canReadDirectory(this.auth.permissions()),

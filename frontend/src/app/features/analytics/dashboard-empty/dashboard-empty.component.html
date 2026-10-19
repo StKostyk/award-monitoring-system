@@ -1,0 +1,40 @@
+@if (periodOnly()) {
+  <section class="empty" data-testid="dashboard-empty-period">
+    <h2>{{ 'analytics.empty.periodTitle' | transloco }}</h2>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="allYears.emit()"
+      data-testid="empty-all-years"
+    >
+      {{ 'analytics.period.allYears' | transloco }}
+    </button>
+  </section>
+} @else {
+  <section class="empty" data-testid="dashboard-empty-first">
+    <h2>{{ 'analytics.empty.firstTitle' | transloco }}</h2>
+    <ol>
+      <li>{{ 'analytics.empty.stepEnter' | transloco }}</li>
+      <li>{{ 'analytics.empty.stepDocuments' | transloco }}</li>
+      <li>{{ 'analytics.empty.stepSubmit' | transloco }}</li>
+    </ol>
+    @if (pending() > 0 || drafts() > 0) {
+      <p data-testid="empty-in-progress">
+        @if (pending() > 0) {
+          {{ 'analytics.empty.pending' | transloco: { count: pending() } }}
+        }
+        @if (drafts() > 0) {
+          {{ 'analytics.empty.drafts' | transloco: { count: drafts() } }}
+        }
+        <a routerLink="/awards" data-testid="empty-awards-link">{{
+          'analytics.empty.openAwards' | transloco
+        }}</a>
+      </p>
+    }
+    @if (canCreate()) {
+      <a mat-flat-button routerLink="/awards/new" data-testid="empty-new-award">
+        {{ 'analytics.empty.newAward' | transloco }}
+      </a>
+    }
+  </section>
+}

@@ -9,6 +9,7 @@ import {
 import { vi } from 'vitest';
 
 import {
+  analyticsGuard,
   approverGuard,
   authGuard,
   complianceGuard,
@@ -145,5 +146,23 @@ describe('authGuard', () => {
 
       expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
     }
+  });
+
+  it('ac2_4_opens_the_dashboard_with_analytics_read_own_and_refuses_anybody_else', () => {
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['analytics:read:own'] })));
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      analyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+
+    const refused = TestBed.runInInjectionContext(() =>
+      analyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
   });
 });

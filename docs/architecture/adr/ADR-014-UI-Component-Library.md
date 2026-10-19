@@ -161,6 +161,26 @@ $theme: mat.define-light-theme((
 
 ---
 
+## Addendum 2026-10: Chart library
+
+Angular Material has no charts. The personal dashboard (Feature 5.1) uses **ngx-echarts 21 on ECharts 6**:
+
+- **SVG renderer**: crisp in print and at any zoom, and every mark is a DOM node that tests and audits can inspect.
+  ng2-charts draws on canvas, which gives screen readers nothing and prints blurred, and its peer range already
+  requires Angular 22.
+- **Bundle**: tree-shaken imports from `echarts/core` (bar and scatter charts; grid, tooltip, legend and aria
+  components; the SVG renderer) loaded with the lazy `dashboard` route (`provideEchartsCore` with a dynamic
+  import), so the initial bundle does not grow.
+- **Wrapper**: `shared/charts/ChartComponent` adds the ARIA description, theme text colours, no animation under
+  `prefers-reduced-motion`, and a "Show as table" switch that replaces the chart with a table of the same figures.
+- **Colours**: theme tokens `--app-chart-bar` and `--app-chart-band-1..5` (one blue hue, five steps per scheme,
+  checked for monotone lightness, visible step gaps and at least 2:1 against the surface in light and dark), read
+  by `ChartThemeService` and re-read when the colour scheme changes. Nine recognition levels cannot be told apart in
+  one hue, so stacked charts fold the five levels below the university into one band; tables and the level chart
+  keep all nine.
+
+---
+
 ## Related Documents
 
 - **Technology Stack**: [Technology Stack Selection](../TECH_STACK.md)
@@ -174,6 +194,7 @@ $theme: mat.define-light-theme((
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-10-19 | Stefan Kostyk | Addendum: chart library | Personal dashboard (Feature 5.1) |
 
 ---
 

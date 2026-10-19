@@ -13,6 +13,7 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ActivityEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ConsentEntry;
+import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DashboardPreferenceEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DecisionMadeEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.DocumentEntry;
 import ua.edu.chnu.awards.gdpr.dto.PersonalDataFile.ErasureRequestEntry;
@@ -95,6 +96,12 @@ public class PersonalDataQueries {
           from audit_logs
          where user_id = :userId and entity_type in (:areas)
          order by created_at desc, log_id desc
+        """;
+
+    private static final String DASHBOARD_PREFERENCES = """
+        select array_to_string(hidden_widgets, ',') as widgets, updated_at
+          from dashboard_preferences
+         where user_id = :userId
         """;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -192,5 +199,21 @@ public class PersonalDataQueries {
         Map<String, Object> parameters = Map.of(USER_ID, userId, "areas", areas, "ownActions", ownActions);
         return jdbc.query(ACTIVITY, parameters, (row, index) -> new ActivityEntry(
             row.getString("action_type"), instant(row, "created_at"), row.getString("ip")));
+    }
+
+    /**
+     * The widget choice of the personal dashboard.
+     *
+     * @param userId the person
+     * @return the hidden widgets with the time of the choice; none and no time when never saved
+     */
+    public DashboardPreferenceEntry dashboardPreferences(long userId) {
+        return jdbc.query(DASHBOARD_PREFERENCES, Map.of(USER_ID, userId), (row, index) -> new DashboardPreferenceEntry(
+                widgets(row.getString("widgets")), instant(row, "updated_at")))
+            .stream().findFirst().orElseGet(() -> new DashboardPreferenceEntry(List.of(), null));
+    }
+
+    private static List<String> widgets(String joined) {
+        return joined.isEmpty() ? List.of() : List.of(joined.split(","));
     }
 }

@@ -1,0 +1,25 @@
+<app-chart [option]="option()" [description]="description()" [height]="height()">
+  <table class="analytics-table" data-testid="category-table">
+    <caption>
+      {{
+        'analytics.categories.title' | transloco
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'analytics.table.category' | transloco }}</th>
+        <th scope="col">{{ 'analytics.table.level' | transloco }}</th>
+        <th scope="col">{{ 'analytics.table.count' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.id) {
+        <tr>
+          <th scope="row">{{ row.name }}</th>
+          <td>{{ 'categories.levels.' + row.level | transloco }}</td>
+          <td>{{ row.count }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</app-chart>

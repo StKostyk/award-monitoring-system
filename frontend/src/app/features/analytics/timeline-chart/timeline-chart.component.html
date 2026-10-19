@@ -1,0 +1,44 @@
+<app-chart [option]="option()" [description]="description()" (pointClicked)="open($event)">
+  <table class="analytics-table" data-testid="timeline-table">
+    <caption>
+      {{
+        'analytics.timeline.title' | transloco
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'analytics.table.date' | transloco }}</th>
+        <th scope="col">{{ 'analytics.table.award' | transloco }}</th>
+        <th scope="col">{{ 'analytics.table.category' | transloco }}</th>
+        <th scope="col">{{ 'analytics.table.organization' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.awardId) {
+        <tr>
+          <td>{{ row.awardDate | kyivDate }}</td>
+          <th scope="row">
+            <a [routerLink]="['/awards', row.awardId]" data-testid="timeline-link">{{
+              row.shownTitle
+            }}</a>
+            @if (row.verified) {
+              <span class="analytics-verified">
+                <mat-icon aria-hidden="true" inline>verified</mat-icon>
+                {{ 'achievements.verified' | transloco }}
+              </span>
+            }
+          </th>
+          <td>
+            {{ row.categoryName }} ({{ 'categories.levels.' + row.category.level | transloco }})
+          </td>
+          <td>{{ row.awardingOrganization }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</app-chart>
+@if (truncated()) {
+  <p class="analytics-note" data-testid="timeline-truncated">
+    {{ 'analytics.timeline.truncated' | transloco: { count: timeline().length } }}
+  </p>
+}

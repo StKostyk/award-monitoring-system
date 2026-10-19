@@ -1,0 +1,53 @@
+@mixin tokens() {
+  --app-chart-bar: light-dark(#2a78d6, #3987e5);
+  --app-chart-band-1: light-dark(#86b6ef, #184f95);
+  --app-chart-band-2: light-dark(#3987e5, #2a78d6);
+  --app-chart-band-3: light-dark(#256abf, #5598e7);
+  --app-chart-band-4: light-dark(#184f95, #86b6ef);
+  --app-chart-band-5: light-dark(#0d366b, #cde2fb);
+}
+
+@mixin tables() {
+  .analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--mat-sys-body-medium);
+
+    caption {
+      text-align: start;
+      font: var(--mat-sys-title-small);
+      padding-bottom: 8px;
+    }
+
+    th,
+    td {
+      text-align: start;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      vertical-align: top;
+    }
+
+    thead th {
+      font: var(--mat-sys-label-large);
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    tbody th {
+      font-weight: normal;
+    }
+  }
+
+  .analytics-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-inline-start: 8px;
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .analytics-note {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}

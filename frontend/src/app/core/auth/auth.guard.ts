@@ -2,7 +2,13 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
-import { canDelegate, canReadCompliance, canReadDirectory, canReview } from './permissions';
+import {
+  canDelegate,
+  canReadCompliance,
+  canReadDirectory,
+  canReadOwnAnalytics,
+  canReview,
+} from './permissions';
 
 export const authGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
@@ -39,4 +45,11 @@ export const complianceGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return canReadCompliance(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** The personal dashboard needs `analytics:read:own`; without it the route ends on the forbidden page. */
+export const analyticsGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return canReadOwnAnalytics(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };
