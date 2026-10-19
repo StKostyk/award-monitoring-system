@@ -3,7 +3,7 @@
 > **Epic**: 5 — Analytics & Reporting Dashboard (SCRUM-97)
 > **Sprint**: 6 (2026-10-19 → 2026-10-25)
 > **Points**: 16 (three stories; 13 at kickoff, see deviation 9)
-> **Status**: Approved 2026-10-19
+> **Status**: Validated 2026-10-19, pending 5.1.4 (SCRUM-108) and the manual run of §10
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-05 tracker (decisions of 2026-10-19, deviations 2 and 8, technical notes, risks), US-008, roadmap Feature 5.1, RBAC_matrix §4, AUTHENTICATION_AUTHORIZATION §3.3, PRIVACY_BY_DESIGN §4.2 (`ANALYTICS`), DATA_DICTIONARY §1.1, §1.3, §2.1, §2.2, §4.2, ADR-005, ADR-013, ADR-014, ADR-015, ADR-022 (modules), `Achievements`, `ConsentService`, `PersonalDataAssembler` (format 1.6), `ErasureContributor`, `openapi.yml` (`/achievements`, `/public/achievements`, `/users/me/*`)
 
@@ -45,6 +45,7 @@ An employee sees her awards as a list of records with workflow states (`/awards`
 | SCRUM-98 (#285) | 5.1.1 Personal analytics API with a consented department rank | 5 | no | — |
 | SCRUM-99 (#286) | 5.1.2 Personal dashboard with charts and widget choice | 8 | yes | 5.1.1 (`/analytics/me`) |
 | SCRUM-100 (#287) | 5.1.3 Shareable achievement summary | 3 | no | 5.1.2 (dashboard, period state) |
+| SCRUM-108 (#300) | 5.1.4 Dashboard period and failure states (validation fix) | 5 | no | 5.1.3 |
 
 5.1.1 is backend only (with the seed). 5.1.2 has a backend part (preferences, V046, export, erasure) and splits at the green backend gate; its UI can start from the `/analytics/me` stub while 5.1.1 is built. 5.1.3 has a small backend part (`person` filter) and splits likewise.
 
@@ -86,6 +87,17 @@ Common definitions: an award **counts** when it is `APPROVED`, personal (`recipi
 - **AC-3.3** Given `GET /public/achievements?person=<id>`, when it is called, then it lists only that account's approved personal awards with visibility `PUBLIC` (none for a non-`ACTIVE` account and none for an unknown id: an empty page, not 404, so ids cannot be probed); combined with `recipient=UNIT` the page is empty.
 - **AC-3.4** Given at least one counted award with visibility `PUBLIC`, when the summary shows, then "Copy link to my public achievements" copies `<origin>/public/achievements?person=<id>` and confirms; without such an award the button is absent and a hint explains that only awards shared publicly appear there.
 - **AC-3.5** Given the public page opened with `person`, when it renders, then it lists the person's public awards with the person's name in the heading, and the other filters still apply.
+
+### 5.1.4 Dashboard period and failure states (SCRUM-108)
+
+Added by the validation of 2026-10-19 (§13, scenario review and edge-case check). Frontend, plus one backend unit test (AC-4.6).
+
+- **AC-4.1** Given a year after the current Kyiv year, or `from` after `to`, on `/dashboard` or `/dashboard/summary`, when the page opens, then it shows "The period is not valid" with a way back to all years instead of the load error with Retry; both screens read the period through one shared parser (today `summary.component.ts` imports `yearParameter` from `dashboard.component.ts` and parses again in `readPeriod`).
+- **AC-4.2** Given the widget choice failed to load (`preferencesLoadFailed` has no reducer case, so `hidden` stays `[]`), when the account opens "Customise", then saving cannot overwrite the stored choice with an empty list: the dialog is unavailable or reloads the choice first.
+- **AC-4.3** Given the check for public awards fails on the summary (today `catchError(() => of(false))`), when it renders, then an error state shows instead of the hint that only publicly shared awards appear.
+- **AC-4.4** Given the summary is loading a new period, when it renders, then "Print" is unavailable until the figures of that period are shown.
+- **AC-4.5** Given more than 12 categories in the period, when the category chart renders, then the 12 largest are drawn and the rest form one "Other" bar, while the table view lists every category (§5 Accessibility, not implemented in 5.1.2).
+- **AC-4.6** Given the clock at 31 December 22:30 UTC (1 January in Kyiv), when the analytics are read without `to`, then the period ends in the new Kyiv year (unit test with a fixed clock).
 
 ## 5. Edge cases
 
@@ -222,7 +234,7 @@ Coverage 85 % lines; static clean. Security review for 5.1.1 (new permission, co
 
 ## 10. Manual verification
 
-Draft; expected texts quote the planned wording and are checked against the merged i18n files at validation.
+Expected texts quote the English i18n file as merged (checked at the validation of 2026-10-19). Local e2e runs register fresh accounts in the e2e unit, so the local group size of `lecturer.fmi` can be far above the seeded 12; compare positions with psql rather than with fixed numbers.
 
 Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backend in `backend/` with `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` (applies the analytics seed); frontend `npm start` on `http://localhost:4200`. psql `docker compose exec postgres psql -U postgres award_monitoring`; Swagger `http://localhost:8080/swagger-ui.html`. Seed accounts (password `Passw0rd-demo`, `@chnu.edu.ua`): `lecturer.fmi` (seeded awards, `ANALYTICS` granted), `employee.fmi`, `secretary.fmi`, `dean.fmi`, `admin`, `gdpr`. A fresh account E1 is registered in the steps (Department of Algebra and Informatics, verified through Mailpit `http://localhost:8025`, `EMPLOYEE` confirmed by `secretary.fmi`).
 
@@ -237,8 +249,8 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 9. Untick every widget. Expected: the hint and the "Customise" button only; restore all. (AC-2.9)
 10. Download the data from `/privacy`. Expected: format `1.7` with `dashboard_preferences.hidden_widgets` = `["TIMELINE", "BY_LEVEL"]` and its `updated_at`. (AC-2.3)
 11. Register E1 and have `secretary.fmi` confirm the membership; open `/dashboard`. Expected: guidance to enter the first award with "Enter an award"; enter and submit one award; reload. Expected: "Awards in review: 1." with a link to `/awards`. (AC-2.8)
-12. As `secretary.fmi` approve E1's award; E1 reloads. Expected: the charts with one award; rank card "Rank not shown" with the consent explanation and a link to `/privacy`. (AC-1.7, 2.7, 2.8)
-13. E1 on `/privacy` turns analytics on, back to `/dashboard`. Expected: rank "<n> of <m> in Department of Algebra and Informatics"; with one award E1 may share a position: "shared with N colleagues". (AC-1.6, 2.7)
+12. As `secretary.fmi` approve E1's award; E1 reloads. Expected: the charts with one award; rank card "Your place in the department is shown only with the consent to rankings and comparisons. …" with "Open the privacy centre" linking to `/privacy`. (AC-1.7, 2.7, 2.8)
+13. E1 on `/privacy` turns analytics on, back to `/dashboard`. Expected: rank "<n> of <m> in Department of Algebra and Informatics"; with one award E1 may share a position: "Shared with colleagues who have the same number of awards: N". (AC-1.6, 2.7)
 14. Choose a period with no award of E1 (e.g. 2019–2020). Expected: "No approved awards in this period" and "All years". (AC-2.8)
 15. Screen check of `/dashboard` at 360 and 1280 px, uk/en, light/dark. Expected: no horizontal scroll, translated axes and tooltips, no serious axe finding; with "reduce motion" emulated: no chart animation. (AC-2.6, 2.10)
 16. As `lecturer.fmi` choose "Summary" with 2019–2026. Expected: `/dashboard/summary?from=2019&to=2026` with name, department, period, totals, counts by level, the award list and the production date; "Print" preview without the shell, A4 portrait. (AC-3.1, 3.2)
@@ -254,12 +266,18 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 23. Let the access token expire with the dashboard open, then change the period. Expected: silent refresh, data loads; reload after expiry: the dashboard opens without a sign-in. (AC-2.5)
 24. Hidden in state, rank: with `ANALYTICS` withdrawn the rank card shows no figures and `GET /analytics/me` returns `rank` without `position`/`groupSize`. (AC-1.7)
 25. Hidden in state, copy link: for E1 (no public award) the summary has no "Copy link" button, only the hint; `GET /public/achievements?person=<E1>` returns an empty page. (AC-3.4)
-26. Hidden in state, small group: restart the backend with `ANALYTICS_MIN_GROUP_SIZE=50`. Expected: `lecturer.fmi` rank card "Your department is too small for a rank"; API `GROUP_TOO_SMALL` without figures; restore. (AC-1.7)
+26. Hidden in state, small group: restart the backend with `ANALYTICS_MIN_GROUP_SIZE=50`. Expected: `lecturer.fmi` rank card "Department of Algebra and Informatics has too few members for a ranking that keeps colleagues anonymous."; API `GROUP_TOO_SMALL` without figures; restore. (AC-1.7)
 27. Revoked mid-flow, consent: `lecturer.fmi` has `/dashboard` open in tab A, withdraws analytics in tab B. Expected: tab A keeps the rank until its next load; changing the period hides it; colleagues' positions are unchanged (she still counts in the group). (AC-1.6, 1.7)
 28. Revoked mid-flow, role: `admin` revokes E1's only role while E1 has `/dashboard` open. Expected: E1 is signed out everywhere (role revocation ends sessions); after signing in again the entry is gone and the URL gives `/forbidden`; the rank of `lecturer.fmi` is unchanged while E1 stays `ACTIVE` (members are accounts, not roles). (AC-1.1, 1.6, 2.4)
 29. Department transfer: `admin` moves E1 to another department. Expected: E1's rank now names the new department and its group size; the awards still count as E1's. (AC-1.6)
 30. Save the customise dialog twice with the same choice, then from two browsers with different choices. Expected: no error; the last save wins on reload in both. (AC-2.2)
 31. Erasure of E1 (with `APP_ERASURE_GRACE_PERIOD=PT10M`, as in Feature 6.1 §10): after completion psql `select * from dashboard_preferences where user_id = <E1>;` → no row; the group size of `lecturer.fmi` drops by one. (AC-2.3, §5)
+32. Direct URLs `/dashboard?from=2027`, `/dashboard?from=2026&to=2021` and `/dashboard/summary?from=2027`. Expected after 5.1.4: "The period is not valid." with a way back to all years, no Retry loop; before 5.1.4 the load error with a Retry that cannot succeed. (AC-1.5, 4.1)
+33. With DevTools blocking `GET /api/v1/users/me/dashboard-preferences`, open `/dashboard` and "Customise". Expected after 5.1.4: no save that empties the stored choice; psql `hidden_widgets` unchanged. (AC-2.2, 4.2)
+34. With DevTools blocking `GET /api/v1/public/achievements`, open `/dashboard/summary` as `lecturer.fmi`. Expected after 5.1.4: an error state, not the hint that none of the awards is shared publicly. (AC-3.4, 4.3)
+35. With network throttling, change the summary period and press "Print" at once. Expected after 5.1.4: "Print" waits for the figures of the new period. (AC-3.2, 4.4)
+36. `admin` revokes the only role of E1 while E1 keeps `/dashboard` open, then E1 changes the period without reloading. Expected: the request answers 403; note whether the page shows the load error or `/forbidden` (accepted as the load error unless 5.1.4 changes it). (AC-1.1, 2.4)
+37. Stop Redis (`docker compose stop redis`), call `GET /public/achievements?person=<lecturer.fmi id>` signed out, and open `/dashboard`. Expected: both answer (the rate limit fails open without Redis, personal analytics are uncached); start Redis again. (§5 External)
 
 ## 11. Risks
 
@@ -278,3 +296,80 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 - Security review for 5.1.1, 5.1.2 and 5.1.3
 - `openapi.yml` without `x-status: planned` on the four operations; DATA_DICTIONARY (`dashboard_preferences`, export format); AUTHENTICATION_AUTHORIZATION §3.3; RBAC_matrix §4; ADR-014 addendum; ADR-022 module table; user guide "My dashboard"; CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation (2026-10-19, `develop` at 3f5262c)
+
+PRs #297, #298, #299 merged. Result: **passed with notes**, pending 5.1.4 (SCRUM-108) and the manual run of §10. The scenario review found three defects in the failure paths of the UI, none in the API: a period the server refuses but the screens accept, a widget-choice save after a failed load, and a failed public-awards check shown as "none shared"; The edge-case check found the "Other" bar of §5 missing and no test of the Kyiv New Year. 5.1.4 covers all of them (AC-4.1–4.6), and §10 gains detours 32–37.
+
+| Layer | Result |
+|-------|--------|
+| Backend unit / IT + FT | 1182 / 468 on `develop`, all green (`gate.ps1 -Full`, 2026-10-19 15:13) |
+| Coverage, static | 98.7 % lines (5132/5200); Checkstyle, PMD, SpotBugs 0 |
+| Frontend | lint clean, 822 tests, initial bundle 952.99 kB |
+| Integration | Containers built from a tree equal to `develop` (`git diff 42b7ff9 3f5262c` empty), healthy; Flyway at V046; `/v3/api-docs` lists `GET /analytics/me` (`from`, `to`), `GET`/`PUT /users/me/dashboard-preferences` and `person` on `GET /public/achievements`, as in `openapi.yml`; the three operations still `x-status: planned` belong to 5.2 and 5.3 |
+| Playwright | Full run 2026-10-19: 102 of 109; `dashboard.spec` 7/8 in the run and 8/8 alone, with `awards.spec:231` green alone too (sign-in redirect timing under 2 workers). The other five are the known `auth.spec:85` (local seed), `reviews.spec:174/387`, `notifications.spec:162`, `overdue-notice.spec:62`, none in this feature |
+| Security | Reviews of #297, #298 (migration, erasure contributor) and #299 (public filter): no finding of medium or higher |
+
+### AC evidence
+
+| AC | Unit | IT / FT | E2E |
+|----|------|---------|-----|
+| 1.1 | `RolePermissionsTest.ac14_*` | `PersonalAnalyticsFT.ac1_1_everyRoleReadsItsOwnAnalytics`, `ac1_1_anAccountWithoutARoleOrTokenIsRefused` | `dashboard.spec` ac2_4 (no role) |
+| 1.2 | `PersonalAnalyticsServiceTest.ac1_2_*` | `AwardStatisticsIT.ac1_2_onlyApprovedPersonalAwardsInThePeriodCount`, `PersonalAnalyticsFT.ac1_2_*` | |
+| 1.3 | `AwardCountsHelperTest.ac1_3_*` (3), `PersonalAnalyticsServiceTest.ac1_3_*` (2) | `AwardStatisticsIT.ac1_3_countsAreGroupedByYearAndCategory` | |
+| 1.4 | `PersonalAnalyticsServiceTest.ac1_4_theTimelineIsCutAtTheLimit` | `AwardStatisticsIT.ac1_4_*`, `OpenApiContractTest.ac1_4_ac1_6_*` | |
+| 1.5 | `PersonalAnalyticsServiceTest.ac1_5_*` | `PersonalAnalyticsFT.ac1_5_invalidYearsNameTheParameter` | `dashboard.spec` ac3_1 ac3_4 (invalid period) |
+| 1.6 | `PersonalAnalyticsServiceTest.ac1_6_competitionRankingSharesThePositionOfEqualCounts` | `AwardStatisticsIT.ac1_6_activeMembersWithoutAwardsCountAndInactiveOnesDoNot`, `PersonalAnalyticsFT.ac1_6_ac1_7_theRankFollowsTheConsent` | |
+| 1.7 | `PersonalAnalyticsServiceTest.ac1_7_*` (4) | `PersonalAnalyticsFT.ac1_6_ac1_7_*` | |
+| 1.8 | | `AwardStatisticsIT.ac1_8_tenThousandAwardsOfTwoHundredAccountsAnswerWithinASecond` (time and plan) | |
+| 1.9 | | `DevSeedIT.ac1_9_theAnalyticsSeedFillsTwoDepartmentsOnceAndLeavesEmployeeFmiAlone` | psql in §10 step 1 |
+| 1.10 | `RolePermissionsTest` | `ModularityTest.ac21_*` | doc review ✓ |
+| 2.1 | | `DashboardPreferenceQueriesIT.ac2_1_*` | |
+| 2.2 | `DashboardPreferenceServiceTest.ac2_2_*` (6) | `DashboardPreferenceQueriesIT.ac2_2_*` (2), `DashboardPreferenceFT.ac2_2_*` (5) | |
+| 2.3 | `PersonalDataAssemblerTest.ac2_3_*` | `DataExportFT` (format 1.7), `ErasureIT.ac5_1_*` (row deleted, counted), `DashboardPreferenceQueriesIT.ac2_3_*` | |
+| 2.4 | `auth.guard.spec`, `permissions.spec`, `shell.component.spec` ac2_4 | | `dashboard.spec` ac2_4 (2) |
+| 2.5 | `dashboard.component.spec` (5), `analytics.effects.spec` (3), `analytics.service.spec` (2), chart specs (4) | | `dashboard.spec` ac2_5 (2) |
+| 2.6 | `chart.component.spec` (3), `chart-theme.service.spec` (3), `timeline-chart.component.spec` (4), `year-trend-chart.component.spec` | | `dashboard.spec` ac2_6 |
+| 2.7 | `rank-card.component.spec` (4) | | |
+| 2.8 | `dashboard-empty.component.spec` (3), `dashboard.component.spec` | | `dashboard.spec` ac2_5 ac2_8, ac2_8 ac2_9 |
+| 2.9 | `customise-dialog.component.spec`, `dashboard.component.spec` (2), `analytics.effects.spec` (3) | | `dashboard.spec` ac2_8 ac2_9 (two browsers) |
+| 2.10 | | | `dashboard.spec` ac2_10 (360 px, dark, en, axe); screen check in #298 and #299; doc review ✓ |
+| 2.11 | | | `dashboard.spec` ac2_4 ac2_5 ac2_11 (under 3 s) |
+| 3.1 | `summary.component.spec` (6) | | `dashboard.spec` ac3_1 ac3_2 ac3_4 ac3_5, ac3_1 ac3_4 |
+| 3.2 | `summary.component.spec` | | `dashboard.spec` ac3_1 ac3_2 … (print media) |
+| 3.3 | | `AchievementsFT.ac3_3_*` (2), `PublicAchievementEndpointsTest.ac3_3_*` | |
+| 3.4 | `summary.component.spec` (2) | | `dashboard.spec` ac3_1 ac3_2 ac3_4 ac3_5, ac3_1 ac3_4 (hint) |
+| 3.5 | `achievement-list.component.spec` ac3_5 (4) | | `dashboard.spec` ac3_1 ac3_2 ac3_4 ac3_5 |
+
+### Edge cases (§5)
+
+| Edge case | Covered by |
+|-----------|------------|
+| Kyiv year, `from` without `to`, `to` before the first award | `PersonalAnalyticsServiceTest.ac1_3_*` (clock fixed in `Europe/Kyiv`); open: no case at 31 December 22:30 UTC (already the new year in Kyiv), → 5.1.4 AC-4.6 |
+| Large ranges | `AwardCountsHelperTest.ac1_3_everyYearOfThePeriodIsListedWithItsLevels` |
+| Consent changes | `PersonalAnalyticsFT.ac1_6_ac1_7_*`; §10 steps 24, 27 |
+| Department change | §10 step 29 (manual) |
+| Erased and inactive colleagues | `AwardStatisticsIT.ac1_6_*`, `PersonalAnalyticsServiceTest.ac1_7_anAccountThatIsNoLongerActiveHasNoRank`; §10 step 31 |
+| Small groups | `PersonalAnalyticsServiceTest.ac1_7_aSmallGroupHasNoFigures`; §10 step 26 |
+| Unit awards | `AwardStatisticsIT.ac1_2_*` |
+| Category or level changed | no test; counts join `award_categories` at query time (`AwardStatistics`), so the current category and level count |
+| Concurrency of `PUT` | `DashboardPreferenceQueriesIT.ac2_2_aChoiceIsInsertedThenReplacedByTheLastWrite`; §10 step 30 |
+| Authorization | `PersonalAnalyticsFT.ac1_1_*`, `AchievementsFT.ac3_3_*`, `dashboard.spec` ac2_4 |
+| External (rate limit, `no-store`) | `PublicAchievementEndpointsTest.ac2_1_*`, `AchievementsFT.ac2_3_*`; Redis down fails open (`FixedWindowCounter`), §10 step 37 |
+| More than 12 categories | open: not implemented (the chart draws every category), → 5.1.4 AC-4.5 |
+
+### Security (OWASP)
+
+- **A01**: `GET /analytics/me` needs `analytics:read:own` (`@access.require`) and reads the token subject only, with no person parameter. The preferences endpoints are `isAuthenticated()` on the caller's own row. `person` on the public list only narrows the published query (`PUBLIC`, `APPROVED`, personal, owner `ACTIVE`); unknown ids return an empty page.
+- **A02**: no new secrets or crypto. The rank exposes no colleague's identity, and no figures below `app.analytics.min-group-size`.
+- **A03**: `AwardStatistics` uses `NamedParameterJdbcTemplate` with bound `:userId`, `:from`, `:to` (the only concatenation is the constant `COUNTED`). The `DashboardWidget` enum rejects unknown values with 400.
+- **A07**: no change to authentication. The rate limit of the public endpoint applies to the `person` queries too.
+
+### Findings
+
+1. Defects in the failure paths, the missing "Other" bar and the untested Kyiv New Year: → 5.1.4 (SCRUM-108), AC-4.1–4.6.
+2. Refactor sweep, worth a PR:
+   - The category and level charts duplicate the horizontal-bar option and height; a `horizontalBarOption`/`barChartHeight` helper in `shared/charts/chart-style.ts` comes with 5.1.4, since AC-4.5 changes the category chart.
+   - The period parsing is shared through `dashboard.component.ts`; it moves with AC-4.1.
+   - The other notes are in the tracker's technical notes.
+3. The analytics FTs repeat the `like 'prefix%'` teardown seen in about ten FTs; this becomes a repo-wide chore, not part of this feature.
