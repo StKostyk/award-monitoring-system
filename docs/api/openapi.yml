@@ -57,6 +57,8 @@ tags:
     description: Document upload and management
   - name: Reports
     description: Analytics and reporting endpoints
+  - name: Analytics
+    description: Dashboards over approved awards (Epic 5)
   - name: Achievements
     description: Approved awards shared with colleagues or published (Feature 4.3)
   - name: Notifications
@@ -2378,6 +2380,7 @@ paths:
         - $ref: '#/components/parameters/AchievementYearParam'
         - $ref: '#/components/parameters/AchievementLevelParam'
         - $ref: '#/components/parameters/AchievementRecipientParam'
+        - $ref: '#/components/parameters/AchievementPersonParam'
       responses:
         '200':
           description: A page of public achievements
@@ -2846,6 +2849,103 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
+  /users/me/dashboard-preferences:
+    get:
+      tags: [Analytics]
+      summary: The caller's dashboard widget choice
+      description: An empty `hiddenWidgets` list until a choice was saved (5.1.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getDashboardPreferences
+      responses:
+        '200':
+          description: The choice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardPreferences'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags: [Analytics]
+      summary: Save the caller's dashboard widget choice
+      description: Replaces the stored list (duplicates collapsed); not audited (5.1.2).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: setDashboardPreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardPreferences'
+      responses:
+        '200':
+          description: The stored choice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardPreferences'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `hiddenWidgets` (unknown widget)"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============== Analytics ==============
+  /analytics/me:
+    get:
+      tags: [Analytics]
+      summary: The caller's personal analytics
+      description: >
+        Approved personal awards of the caller whose award year lies in `from`..`to` (Kyiv calendar years; `from`
+        defaults to the year of the first such award, `to` to the current year): totals, counts by year split by
+        level, by category and by level, the timeline (newest first, at most `app.analytics.timeline-limit`), own
+        drafts and pending awards, and the rank in the caller's department. The rank carries figures only when the
+        caller's latest `ANALYTICS` consent is a grant and the department has at least
+        `app.analytics.min-group-size` active accounts. Needs `analytics:read:own` (5.1.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getPersonalAnalytics
+      parameters:
+        - name: from
+          in: query
+          description: First calendar year of the period
+          schema:
+            type: integer
+            minimum: 1950
+            maximum: 2100
+        - name: to
+          in: query
+          description: Last calendar year of the period; not before `from`
+          schema:
+            type: integer
+            minimum: 1950
+            maximum: 2100
+      responses:
+        '200':
+          description: The analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalAnalytics'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `from` or `to`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   # ============== Reports ==============
   /reports/awards/summary:
     get:
@@ -3100,6 +3200,17 @@ components:
       schema:
         type: string
         enum: [PERSON, UNIT]
+
+    AchievementPersonParam:
+      name: person
+      in: query
+      description: >
+        Owner of personal awards: only that account's public awards, none for an unknown or inactive account (an
+        empty page, not 404); empty together with `recipient=UNIT` (planned, 5.1.3)
+      x-status: planned
+      schema:
+        type: integer
+        format: int64
 
     SortParam:
       name: sort
@@ -4316,6 +4427,145 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Achievement'
+
+    PersonalAnalytics:
+      type: object
+      description: The caller's approved personal awards in a period (5.1.1, planned)
+      x-status: planned
+      properties:
+        period:
+          type: object
+          properties:
+            from:
+              type: integer
+            to:
+              type: integer
+        totals:
+          type: object
+          properties:
+            approved:
+              type: integer
+            verified:
+              type: integer
+            highestLevel:
+              oneOf:
+                - $ref: '#/components/schemas/RecognitionLevel'
+                - type: 'null'
+            firstAwardDate:
+              type: [string, 'null']
+              format: date
+            latestAwardDate:
+              type: [string, 'null']
+              format: date
+        inProgress:
+          type: object
+          description: Own drafts and pending personal awards, whatever the period
+          properties:
+            drafts:
+              type: integer
+            pending:
+              type: integer
+        byYear:
+          type: array
+          description: Every year of the period in order, zeros included
+          items:
+            type: object
+            properties:
+              year:
+                type: integer
+              total:
+                type: integer
+              byLevel:
+                type: object
+                description: Non-zero counts keyed by `RecognitionLevel`
+                additionalProperties:
+                  type: integer
+        byCategory:
+          type: array
+          description: Highest count first, then by English name
+          items:
+            type: object
+            properties:
+              category:
+                $ref: '#/components/schemas/AwardCategoryRef'
+              count:
+                type: integer
+        byLevel:
+          type: array
+          description: Non-zero levels in `RecognitionLevel` order
+          items:
+            type: object
+            properties:
+              level:
+                $ref: '#/components/schemas/RecognitionLevel'
+              count:
+                type: integer
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineEntry'
+        timelineTruncated:
+          type: boolean
+        rank:
+          $ref: '#/components/schemas/PersonalRank'
+
+    TimelineEntry:
+      type: object
+      properties:
+        awardId:
+          type: integer
+          format: int64
+        title:
+          type: [string, 'null']
+        titleUk:
+          type: [string, 'null']
+        awardDate:
+          type: string
+          format: date
+        category:
+          $ref: '#/components/schemas/AwardCategoryRef'
+        awardingOrganization:
+          type: string
+        verified:
+          type: boolean
+
+    PersonalRank:
+      type: object
+      description: >
+        `RANKED` carries the figures; `CONSENT_REQUIRED` (no `ANALYTICS` grant), `NO_DEPARTMENT` (the account's unit
+        is not a department) and `GROUP_TOO_SMALL` (fewer active accounts than `app.analytics.min-group-size`) carry
+        none. Competition ranking by the count of approved personal awards in the period over every active account
+        of the department.
+      properties:
+        status:
+          type: string
+          enum: [RANKED, CONSENT_REQUIRED, NO_DEPARTMENT, GROUP_TOO_SMALL]
+        position:
+          type: [integer, 'null']
+        groupSize:
+          type: [integer, 'null']
+        sharedWith:
+          type: [integer, 'null']
+          description: Other members with the same count
+        department:
+          oneOf:
+            - $ref: '#/components/schemas/OrganizationRef'
+            - type: 'null'
+
+    DashboardWidget:
+      type: string
+      enum: [SUMMARY, TIMELINE, YEAR_TREND, BY_CATEGORY, BY_LEVEL, RANK]
+
+    DashboardPreferences:
+      type: object
+      description: Widgets the account hid on its dashboard (5.1.2, planned)
+      x-status: planned
+      required: [hiddenWidgets]
+      properties:
+        hiddenWidgets:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardWidget'
 
     AwardPage:
       allOf:
