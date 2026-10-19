@@ -16,6 +16,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { chartStub } from '../../../shared/charts/chart.testing';
+import { currentKyivYear } from '../../../shared/date-format';
 import { DashboardWidget } from '../analytics.service';
 import {
   emptyAnalytics,
@@ -26,7 +27,7 @@ import {
 } from '../analytics.testing';
 import { AnalyticsActions } from '../store/analytics.actions';
 import { analyticsFeature } from '../store/analytics.feature';
-import { DashboardComponent, yearParameter } from './dashboard.component';
+import { DashboardComponent } from './dashboard.component';
 
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
@@ -105,12 +106,60 @@ describe('DashboardComponent', () => {
     );
   });
 
-  it('ac2_5_ignores_years_outside_the_allowed_range', () => {
-    expect(yearParameter(convertToParamMap({ from: '1949' }), 'from')).toBeNull();
-    expect(yearParameter(convertToParamMap({ from: 'abc' }), 'from')).toBeNull();
-    expect(yearParameter(convertToParamMap({ from: '2020.5' }), 'from')).toBeNull();
-    expect(yearParameter(convertToParamMap({}), 'from')).toBeNull();
-    expect(yearParameter(convertToParamMap({ to: '2100' }), 'to')).toBe(2100);
+  it('ac4_1_refuses_a_period_that_is_not_valid_and_leads_back_to_all_years', () => {
+    load();
+    dispatch.mockClear();
+
+    for (const params of [
+      { from: String(currentKyivYear() + 1) },
+      { from: '2024', to: '2020' },
+      { from: 'abc' },
+    ]) {
+      queryParams.next(convertToParamMap(params));
+      fixture.detectChanges();
+
+      expect(element('dashboard-invalid')?.textContent).toContain('The period is not valid.');
+      expect(element('dashboard-error')).toBeNull();
+      expect(widgets()).toEqual([]);
+    }
+    expect(dispatch).not.toHaveBeenCalled();
+
+    element('dashboard-invalid')!.querySelector('button')!.click();
+
+    expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: {} }));
+
+    queryParams.next(convertToParamMap({ from: '2020' }));
+    fixture.detectChanges();
+
+    expect(element('dashboard-invalid')).toBeNull();
+    expect(dispatch).toHaveBeenCalledWith(
+      AnalyticsActions.periodSelected({ period: { from: 2020, to: null } }),
+    );
+  });
+
+  it('ac4_2_keeps_the_dialog_closed_while_the_widget_choice_is_not_loaded', () => {
+    store.dispatch(AnalyticsActions.preferencesLoadFailed());
+    store.dispatch(AnalyticsActions.analyticsLoaded({ analytics: sampleAnalytics() }));
+    fixture.detectChanges();
+
+    expect(element('dashboard-preferences-error')?.textContent).toContain(
+      'The widget choice could not be loaded.',
+    );
+    expect((element('dashboard-customise') as HTMLButtonElement).disabled).toBe(true);
+    element('dashboard-customise')!.click();
+
+    expect(dialog.open).not.toHaveBeenCalled();
+
+    dispatch.mockClear();
+    element('dashboard-preferences-error')!.querySelector('button')!.click();
+
+    expect(dispatch).toHaveBeenCalledWith(AnalyticsActions.preferencesRetried());
+
+    store.dispatch(AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
+    fixture.detectChanges();
+
+    expect(element('dashboard-preferences-error')).toBeNull();
+    expect((element('dashboard-customise') as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('ac2_5_shows_the_widgets_in_order_and_keeps_the_choice_in_the_url', () => {

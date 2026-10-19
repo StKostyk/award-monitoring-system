@@ -273,8 +273,8 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 30. Save the customise dialog twice with the same choice, then from two browsers with different choices. Expected: no error; the last save wins on reload in both. (AC-2.2)
 31. Erasure of E1 (with `APP_ERASURE_GRACE_PERIOD=PT10M`, as in Feature 6.1 §10): after completion psql `select * from dashboard_preferences where user_id = <E1>;` → no row; the group size of `lecturer.fmi` drops by one. (AC-2.3, §5)
 32. Direct URLs `/dashboard?from=2027`, `/dashboard?from=2026&to=2021` and `/dashboard/summary?from=2027`. Expected after 5.1.4: "The period is not valid." with a way back to all years, no Retry loop; before 5.1.4 the load error with a Retry that cannot succeed. (AC-1.5, 4.1)
-33. With DevTools blocking `GET /api/v1/users/me/dashboard-preferences`, open `/dashboard` and "Customise". Expected after 5.1.4: no save that empties the stored choice; psql `hidden_widgets` unchanged. (AC-2.2, 4.2)
-34. With DevTools blocking `GET /api/v1/public/achievements`, open `/dashboard/summary` as `lecturer.fmi`. Expected after 5.1.4: an error state, not the hint that none of the awards is shared publicly. (AC-3.4, 4.3)
+33. With DevTools blocking `GET /api/v1/users/me/dashboard-preferences`, open `/dashboard` and "Customise". Expected after 5.1.4: "The widget choice could not be loaded." with Retry, "Customise" disabled until the choice loads; psql `hidden_widgets` unchanged. (AC-2.2, 4.2)
+34. With DevTools blocking `GET /api/v1/public/achievements`, open `/dashboard/summary` as `lecturer.fmi`. Expected after 5.1.4: "It could not be checked whether your awards are public. Reload the page to try again.", not the hint that none of the awards is shared publicly, and no copy-link button. (AC-3.4, 4.3)
 35. With network throttling, change the summary period and press "Print" at once. Expected after 5.1.4: "Print" waits for the figures of the new period. (AC-3.2, 4.4)
 36. `admin` revokes the only role of E1 while E1 keeps `/dashboard` open, then E1 changes the period without reloading. Expected: the request answers 403; note whether the page shows the load error or `/forbidden` (accepted as the load error unless 5.1.4 changes it). (AC-1.1, 2.4)
 37. Stop Redis (`docker compose stop redis`), call `GET /public/achievements?person=<lecturer.fmi id>` signed out, and open `/dashboard`. Expected: both answer (the rate limit fails open without Redis, personal analytics are uncached); start Redis again. (§5 External)
@@ -345,7 +345,7 @@ PRs #297, #298, #299 merged. Result: **passed with notes**, pending 5.1.4 (SCRUM
 
 | Edge case | Covered by |
 |-----------|------------|
-| Kyiv year, `from` without `to`, `to` before the first award | `PersonalAnalyticsServiceTest.ac1_3_*` (clock fixed in `Europe/Kyiv`); open: no case at 31 December 22:30 UTC (already the new year in Kyiv), → 5.1.4 AC-4.6 |
+| Kyiv year, `from` without `to`, `to` before the first award | `PersonalAnalyticsServiceTest.ac1_3_*` (clock fixed in `Europe/Kyiv`); 31 December 22:30 UTC: `ac4_6_onNewYearsEveInUtcThePeriodEndsInTheNewKyivYear`; frontend `analytics-period.spec.ts` `ac4_1_takes_the_current_year_in_kyiv` |
 | Large ranges | `AwardCountsHelperTest.ac1_3_everyYearOfThePeriodIsListedWithItsLevels` |
 | Consent changes | `PersonalAnalyticsFT.ac1_6_ac1_7_*`; §10 steps 24, 27 |
 | Department change | §10 step 29 (manual) |
@@ -356,7 +356,7 @@ PRs #297, #298, #299 merged. Result: **passed with notes**, pending 5.1.4 (SCRUM
 | Concurrency of `PUT` | `DashboardPreferenceQueriesIT.ac2_2_aChoiceIsInsertedThenReplacedByTheLastWrite`; §10 step 30 |
 | Authorization | `PersonalAnalyticsFT.ac1_1_*`, `AchievementsFT.ac3_3_*`, `dashboard.spec` ac2_4 |
 | External (rate limit, `no-store`) | `PublicAchievementEndpointsTest.ac2_1_*`, `AchievementsFT.ac2_3_*`; Redis down fails open (`FixedWindowCounter`), §10 step 37 |
-| More than 12 categories | open: not implemented (the chart draws every category), → 5.1.4 AC-4.5 |
+| More than 12 categories | `category-chart.component.spec.ts` `ac4_5_draws_the_twelve_largest_categories_and_one_other_bar` (5.1.4) |
 
 ### Security (OWASP)
 

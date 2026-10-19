@@ -189,4 +189,32 @@ test.describe('shareable achievement summary', () => {
     await page.getByTestId('summary-back').click();
     await expect(page).toHaveURL(/\/dashboard$/);
   });
+
+  test('ac4_1 ac4_3 a future year is refused on both screens and a failed public check is reported', async ({
+    browser,
+  }) => {
+    const nextYear =
+      Number(
+        new Intl.DateTimeFormat('en', { timeZone: 'Europe/Kyiv', year: 'numeric' }).format(
+          new Date(),
+        ),
+      ) + 1;
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.goto(`/dashboard?from=${nextYear}`);
+    await expect(page.getByTestId('dashboard-invalid')).toContainText('Період некоректний.');
+    await expect(page.getByTestId('dashboard-error')).toHaveCount(0);
+    await page.getByTestId('dashboard-invalid').getByRole('button').click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByTestId('widget-SUMMARY')).toBeVisible();
+
+    await page.goto(`/dashboard/summary?to=${nextYear}`);
+    await expect(page.getByTestId('summary-invalid')).toBeVisible();
+
+    await page.route('**/public/achievements?**', (route) => route.abort());
+    await page.goto('/dashboard/summary');
+    await expect(page.getByTestId('summary')).toBeVisible();
+    await expect(page.getByTestId('summary-public-failed')).toBeVisible();
+    await expect(page.getByTestId('summary-public-hint')).toHaveCount(0);
+    expect(await seriousViolations(page)).toEqual([]);
+  });
 });

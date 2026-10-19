@@ -11,6 +11,7 @@ export const AnalyticsActions = createActionGroup({
     'Analytics Load Failed': props<{ problem: string }>(),
     'Preferences Loaded': props<{ hidden: DashboardWidget[] }>(),
     'Preferences Load Failed': emptyProps(),
+    'Preferences Retried': emptyProps(),
     'Save Requested': props<{ hidden: DashboardWidget[] }>(),
     Saved: props<{ hidden: DashboardWidget[] }>(),
     'Save Failed': props<{ problem: string }>(),

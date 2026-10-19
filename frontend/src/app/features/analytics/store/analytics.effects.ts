@@ -27,7 +27,7 @@ export class AnalyticsEffects {
 
   readonly preferences$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AnalyticsActions.opened),
+      ofType(AnalyticsActions.opened, AnalyticsActions.preferencesRetried),
       switchMap(() =>
         this.analytics.hiddenWidgets().pipe(
           map((hidden) => AnalyticsActions.preferencesLoaded({ hidden })),

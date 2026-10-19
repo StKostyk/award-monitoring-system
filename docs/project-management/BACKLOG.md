@@ -137,7 +137,7 @@ Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPO
 | 5.1.1 | Personal analytics API with a consented department rank | 5 | ✅ Done | SCRUM-98 | [#285](https://github.com/StKostyk/award-monitoring-system/issues/285) |
 | 5.1.2 | Personal dashboard with charts and widget choice | 8 | ✅ Done | SCRUM-99 | [#286](https://github.com/StKostyk/award-monitoring-system/issues/286) |
 | 5.1.3 | Shareable achievement summary | 3 | ✅ Done | SCRUM-100 | [#287](https://github.com/StKostyk/award-monitoring-system/issues/287) |
-| 5.1.4 | Dashboard period and failure states | 5 | 6 | SCRUM-108 | [#300](https://github.com/StKostyk/award-monitoring-system/issues/300) |
+| 5.1.4 | Dashboard period and failure states | 5 | 👀 In review (6) | SCRUM-108 | [#300](https://github.com/StKostyk/award-monitoring-system/issues/300) |
 | 5.2.1 | Unit analytics API for departments and faculties with period comparison | 5 | 6 | SCRUM-101 | [#288](https://github.com/StKostyk/award-monitoring-system/issues/288) |
 | 5.2.2 | Faculty analytics page with department comparison and top performers | 5 | 6 | SCRUM-102 | [#289](https://github.com/StKostyk/award-monitoring-system/issues/289) |
 | 5.2.3 | Analytics report export to CSV, Excel and PDF | 5 | 7 | SCRUM-103 | [#290](https://github.com/StKostyk/award-monitoring-system/issues/290) |

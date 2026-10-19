@@ -14,6 +14,7 @@ import {
   AchievementsService,
   NO_ACHIEVEMENT_FILTERS,
 } from '../../achievements/achievements.service';
+import { currentKyivYear } from '../../../shared/date-format';
 import { languageStub, sampleAnalytics, translations } from '../analytics.testing';
 import { AnalyticsActions } from '../store/analytics.actions';
 import { analyticsFeature } from '../store/analytics.feature';
@@ -150,6 +151,13 @@ describe('SummaryComponent', () => {
     expect(element('summary-invalid')).not.toBeNull();
   });
 
+  it('ac4_1_a_year_after_the_current_kyiv_year_is_reported', async () => {
+    await open({ to: String(currentKyivYear() + 1) });
+
+    expect(text('summary-invalid')).toContain('The period is not valid.');
+    expect(element('summary-error')).toBeNull();
+  });
+
   it('ac3_2_print_opens_the_browser_print', async () => {
     const print = vi.fn();
     vi.stubGlobal('print', print);
@@ -159,6 +167,24 @@ describe('SummaryComponent', () => {
     element('summary-print')?.click();
 
     expect(print).toHaveBeenCalled();
+  });
+
+  it('ac4_4_print_waits_for_the_figures_of_a_new_period', async () => {
+    await open();
+    load();
+    queryParams.next(convertToParamMap({ from: '2024', to: '2025' }));
+    fixture.detectChanges();
+
+    expect((element('summary-print') as HTMLButtonElement).disabled).toBe(true);
+
+    load();
+
+    expect((element('summary-print') as HTMLButtonElement).disabled).toBe(false);
+
+    store.dispatch(AnalyticsActions.analyticsLoadFailed({ problem: 'unknown' }));
+    fixture.detectChanges();
+
+    expect((element('summary-print') as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('ac3_4_copies_the_link_to_the_public_achievements_and_confirms', async () => {
@@ -187,12 +213,15 @@ describe('SummaryComponent', () => {
     expect(element('summary-public-hint')).not.toBeNull();
   });
 
-  it('edge_a_failed_public_check_shows_the_hint', async () => {
+  it('ac4_3_a_failed_public_check_is_reported_instead_of_the_hint', async () => {
     achievements.list.mockReturnValue(throwError(() => new Error('offline')));
     await open();
     load();
 
     expect(element('summary-copy-link')).toBeNull();
-    expect(element('summary-public-hint')).not.toBeNull();
+    expect(element('summary-public-hint')).toBeNull();
+    expect(text('summary-public-failed')).toBe(
+      'It could not be checked whether your awards are public. Reload the page to try again.',
+    );
   });
 });

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
@@ -7,13 +7,14 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
-import { kyivToday } from '../../../shared/date-format';
+import { currentKyivYear } from '../../../shared/date-format';
+import { FIRST_YEAR, readPeriod } from '../analytics-period';
 import { AnalyticsPeriod, DASHBOARD_WIDGETS, DashboardWidget } from '../analytics.service';
 import { CategoryChartComponent } from '../category-chart/category-chart.component';
 import { CustomiseDialogComponent } from '../customise-dialog/customise-dialog.component';
@@ -25,17 +26,6 @@ import { analyticsFeature } from '../store/analytics.feature';
 import { SummaryTilesComponent } from '../summary-tiles/summary-tiles.component';
 import { TimelineChartComponent } from '../timeline-chart/timeline-chart.component';
 import { YearTrendChartComponent } from '../year-trend-chart/year-trend-chart.component';
-
-export const FIRST_YEAR = 1950;
-export const LAST_YEAR = 2100;
-
-/** A year query parameter within 1950..2100, or null. */
-export function yearParameter(params: ParamMap, name: string): number | null {
-  const value = Number(params.get(name));
-  return params.has(name) && Number.isInteger(value) && value >= FIRST_YEAR && value <= LAST_YEAR
-    ? value
-    : null;
-}
 
 /** The personal dashboard: period choice, the widgets the account keeps, guidance when nothing counts. */
 @Component({
@@ -73,7 +63,7 @@ export class DashboardComponent {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly canCreate = canCreateAwards(inject(AuthService).permissions());
-  protected readonly years = yearsDescending(Number(kyivToday().slice(0, 4)));
+  protected readonly years = yearsDescending(currentKyivYear());
 
   readonly period = this.store.selectSignal(analyticsFeature.selectPeriod);
   readonly analytics = this.store.selectSignal(analyticsFeature.selectAnalytics);
@@ -81,6 +71,8 @@ export class DashboardComponent {
   readonly problem = this.store.selectSignal(analyticsFeature.selectProblem);
   readonly hidden = this.store.selectSignal(analyticsFeature.selectHidden);
   readonly saveProblem = this.store.selectSignal(analyticsFeature.selectSaveProblem);
+  readonly preferences = this.store.selectSignal(analyticsFeature.selectPreferences);
+  readonly invalid = signal(false);
 
   protected readonly visible = computed(() => {
     const hidden = this.hidden();
@@ -93,13 +85,13 @@ export class DashboardComponent {
 
   constructor() {
     this.store.dispatch(AnalyticsActions.opened());
-    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) =>
-      this.store.dispatch(
-        AnalyticsActions.periodSelected({
-          period: { from: yearParameter(params, 'from'), to: yearParameter(params, 'to') },
-        }),
-      ),
-    );
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const period = readPeriod(params);
+      this.invalid.set(period === null);
+      if (period) {
+        this.store.dispatch(AnalyticsActions.periodSelected({ period }));
+      }
+    });
   }
 
   protected choose(change: Partial<AnalyticsPeriod>): void {
@@ -116,6 +108,10 @@ export class DashboardComponent {
 
   protected retry(): void {
     this.store.dispatch(AnalyticsActions.periodSelected({ period: this.period() }));
+  }
+
+  protected reloadPreferences(): void {
+    this.store.dispatch(AnalyticsActions.preferencesRetried());
   }
 
   protected customise(): void {

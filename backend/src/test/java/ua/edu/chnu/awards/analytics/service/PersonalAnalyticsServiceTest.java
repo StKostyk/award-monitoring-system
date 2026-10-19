@@ -121,6 +121,24 @@ class PersonalAnalyticsServiceTest {
     }
 
     @Test
+    void ac4_6_onNewYearsEveInUtcThePeriodEndsInTheNewKyivYear() {
+        YearRange period = new YearRange(2023, 2027);
+        when(statistics.firstYear(USER_ID)).thenReturn(OptionalInt.of(2023));
+        when(statistics.totals(USER_ID, period)).thenReturn(new CountedTotals(0, 0, null, null));
+        when(statistics.openAwards(USER_ID)).thenReturn(new OpenAwards(0, 0));
+        withoutConsent();
+        Clock newYearInKyiv = Clock.fixed(Instant.parse("2026-12-31T22:30:00Z"), ZoneId.of("Europe/Kyiv"));
+        AnalyticsProperties properties = new AnalyticsProperties(MIN_GROUP_SIZE, TIMELINE_LIMIT);
+        PersonalAnalyticsService atNewYear = new PersonalAnalyticsService(statistics,
+            new DepartmentRanking(statistics, consents, users, properties), properties, newYearInKyiv);
+
+        PersonalAnalytics analytics = atNewYear.of(USER_ID, null, null);
+
+        assertThat(analytics.period()).isEqualTo(period);
+        assertThat(analytics.byYear()).extracting(YearCount::year).last().isEqualTo(2027);
+    }
+
+    @Test
     void ac1_3_anEndBeforeTheFirstAwardStartsThePeriodThere() {
         when(statistics.firstYear(USER_ID)).thenReturn(OptionalInt.of(2023));
         when(statistics.totals(USER_ID, new YearRange(2020, 2020))).thenReturn(new CountedTotals(0, 0, null, null));

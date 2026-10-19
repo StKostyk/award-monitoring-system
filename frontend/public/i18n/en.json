@@ -1425,7 +1425,8 @@
     },
     "categories": {
       "title": "Approved awards by category",
-      "description": "Bar chart of approved awards in {{count}} categories; most in «{{top}}»: {{topCount}}."
+      "description": "Bar chart of approved awards in {{count}} categories; most in «{{top}}»: {{topCount}}.",
+      "other": "Other"
     },
     "levels": {
       "title": "Approved awards by level",
@@ -1473,6 +1474,7 @@
       "save": "Save",
       "cancel": "Cancel",
       "failed": "The widget choice could not be saved. Please try again.",
+      "loadFailed": "The widget choice could not be loaded.",
       "allHidden": "All widgets are hidden. Choose the ones to show."
     },
     "report": {
@@ -1487,7 +1489,8 @@
       "copyLink": "Copy link to my public achievements",
       "copied": "The link to your public achievements is copied.",
       "publicHint": "Only awards shared publicly appear on the public page; none of yours is shared publicly yet.",
-      "invalidPeriod": "The period is not valid."
+      "invalidPeriod": "The period is not valid.",
+      "publicCheckFailed": "It could not be checked whether your awards are public. Reload the page to try again."
     }
   },
   "charts": {

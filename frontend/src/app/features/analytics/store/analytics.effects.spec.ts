@@ -72,6 +72,12 @@ describe('AnalyticsEffects', () => {
     actions$.next(AnalyticsActions.opened());
 
     expect(await failed).toEqual(AnalyticsActions.preferencesLoadFailed());
+
+    api.hiddenWidgets.mockReturnValue(of(['RANK']));
+    const retried = firstValueFrom(effects.preferences$);
+    actions$.next(AnalyticsActions.preferencesRetried());
+
+    expect(await retried).toEqual(AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
   });
 
   it('ac2_9_saves_the_widget_choice', async () => {
@@ -136,5 +142,21 @@ describe('analyticsFeature', () => {
     const saved = reducer(saving, AnalyticsActions.saved({ hidden: [] }));
 
     expect(saved).toMatchObject({ saving: false, hidden: [] });
+  });
+
+  it('ac4_2_knows_whether_the_widget_choice_is_loaded', () => {
+    expect(initialState.preferences).toBe('loading');
+
+    const failed = reducer(initialState, AnalyticsActions.preferencesLoadFailed());
+
+    expect(failed).toMatchObject({ preferences: 'failed', hidden: [] });
+
+    const retrying = reducer(failed, AnalyticsActions.preferencesRetried());
+
+    expect(retrying.preferences).toBe('loading');
+
+    const loaded = reducer(retrying, AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
+
+    expect(loaded).toMatchObject({ preferences: 'loaded', hidden: ['RANK'] });
   });
 });

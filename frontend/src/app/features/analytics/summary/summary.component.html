@@ -16,11 +16,17 @@
       <mat-icon>arrow_back</mat-icon>
       {{ 'analytics.report.back' | transloco }}
     </a>
-    <button mat-flat-button type="button" (click)="print()" data-testid="summary-print">
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="loading() || !analytics()"
+      (click)="print()"
+      data-testid="summary-print"
+    >
       <mat-icon>print</mat-icon>
       {{ 'analytics.report.print' | transloco }}
     </button>
-    @if (shared()) {
+    @if (shared() === 'shared') {
       <button mat-stroked-button type="button" (click)="copyLink()" data-testid="summary-copy-link">
         <mat-icon>link</mat-icon>
         {{ 'analytics.report.copyLink' | transloco }}
@@ -30,8 +36,12 @@
   <p class="summary__note no-print" role="status" aria-live="polite">
     @if (copied()) {
       <span data-testid="summary-copied">{{ 'analytics.report.copied' | transloco }}</span>
-    } @else if (!shared()) {
+    } @else if (shared() === 'none') {
       <span data-testid="summary-public-hint">{{ 'analytics.report.publicHint' | transloco }}</span>
+    } @else if (shared() === 'failed') {
+      <span data-testid="summary-public-failed">
+        {{ 'analytics.report.publicCheckFailed' | transloco }}
+      </span>
     }
   </p>
 
