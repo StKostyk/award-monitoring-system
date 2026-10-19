@@ -1,5 +1,7 @@
 package ua.edu.chnu.awards.common.retention;
 
+import java.util.List;
+
 /**
  * The counts of one policy in one run.
  *
@@ -33,5 +35,15 @@ public record RetentionResult(String policy, int affected, int held, boolean fai
      */
     public static RetentionResult failed(String policy, int affected, Throwable error) {
         return new RetentionResult(policy, affected, 0, true, error.getClass().getName());
+    }
+
+    /**
+     * The policies of a run that stopped on an error.
+     *
+     * @param results the results of the run
+     * @return the keys of the failed policies, in run order
+     */
+    public static List<String> failedPolicies(List<RetentionResult> results) {
+        return results.stream().filter(RetentionResult::failed).map(RetentionResult::policy).toList();
     }
 }

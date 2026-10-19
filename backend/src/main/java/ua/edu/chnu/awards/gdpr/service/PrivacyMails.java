@@ -1,12 +1,12 @@
 package ua.edu.chnu.awards.gdpr.service;
 
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.SEPARATOR;
+import static ua.edu.chnu.awards.common.mail.MailTextHelper.dateTime;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloEn;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloUk;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -30,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 public class PrivacyMails {
 
     private static final String SENTENCE_END = ".\n\n";
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final MailDelivery delivery;
     private final PrivacyLinks links;
@@ -175,7 +174,7 @@ public class PrivacyMails {
     }
 
     private String date(Instant at) {
-        return DATE.withZone(clock.getZone()).format(at);
+        return dateTime(at, clock.getZone());
     }
 
     static String exportBody(DataExported event) {

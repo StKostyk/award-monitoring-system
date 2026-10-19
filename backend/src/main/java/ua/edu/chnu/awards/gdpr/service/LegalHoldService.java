@@ -18,6 +18,7 @@ import ua.edu.chnu.awards.gdpr.dto.LegalHold;
 import ua.edu.chnu.awards.gdpr.dto.LegalHoldOverview;
 import ua.edu.chnu.awards.gdpr.repository.ErasureRequests;
 import ua.edu.chnu.awards.gdpr.repository.LegalHolds;
+import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.service.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,6 @@ public class LegalHoldService {
     static final int REASON_MIN = 10;
     static final int REASON_MAX = 500;
     private static final String REASON = "reason";
-    private static final String DELETED = "DELETED";
 
     private final LegalHolds holds;
     private final ErasureRequests erasureRequests;
@@ -70,7 +70,7 @@ public class LegalHoldService {
     public LegalHold place(long userId, String reason, long officerId) {
         String text = reason(reason);
         String status = holds.lockAccount(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        if (DELETED.equals(status)) {
+        if (AccountStatus.DELETED.name().equals(status)) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "account-erased", "The account is erased");
         }
         if (holds.isActive(userId)) {

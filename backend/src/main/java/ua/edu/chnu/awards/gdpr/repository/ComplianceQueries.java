@@ -16,11 +16,6 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ua.edu.chnu.awards.common.retention.RetentionResult;
 import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.gdpr.dto.ErasureOrigin;
 import ua.edu.chnu.awards.gdpr.dto.ErasureRequestEntry;
@@ -38,9 +33,6 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 public class ComplianceQueries {
-
-    private static final TypeReference<List<RetentionResult>> RESULT_LIST = new TypeReference<>() {
-    };
 
     private static final String PAGE = " limit :limit offset :offset";
 
@@ -72,7 +64,7 @@ public class ComplianceQueries {
     private static final String HOLD_COUNT = "select count(*) from legal_holds h" + HOLD_FILTER;
 
     private final NamedParameterJdbcTemplate jdbc;
-    private final ObjectMapper mapper;
+    private final RetentionResultsJson resultsJson;
 
     /**
      * The runs of the retention job.
@@ -122,15 +114,7 @@ public class ComplianceQueries {
 
     private RetentionRunEntry run(ResultSet row) throws SQLException {
         return new RetentionRunEntry(row.getLong("run_id"), RetentionStatus.valueOf(row.getString("status")),
-            instant(row, "started_at"), instant(row, "finished_at"), results(row.getString("results")));
-    }
-
-    private List<RetentionResult> results(String results) {
-        try {
-            return mapper.readValue(results, RESULT_LIST);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Retention results cannot be read", e);
-        }
+            instant(row, "started_at"), instant(row, "finished_at"), resultsJson.read(row.getString("results")));
     }
 
     private static ErasureRequestEntry request(ResultSet row) throws SQLException {

@@ -89,7 +89,18 @@ public final class RetentionContext {
      * @return the cut-off
      */
     public Instant before(TemporalAmount period) {
-        return now.atOffset(ZoneOffset.UTC).minus(period).toInstant();
+        return cutoff(now, period);
+    }
+
+    /**
+     * The moment a period before a given instant, a {@link java.time.Period} counted in UTC calendar units.
+     *
+     * @param at     the instant to count back from
+     * @param period a {@link java.time.Duration} or a {@link java.time.Period}
+     * @return the cut-off
+     */
+    public static Instant cutoff(Instant at, TemporalAmount period) {
+        return at.atOffset(ZoneOffset.UTC).minus(period).toInstant();
     }
 
     /**

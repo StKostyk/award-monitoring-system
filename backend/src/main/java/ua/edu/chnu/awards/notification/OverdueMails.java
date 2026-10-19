@@ -1,12 +1,12 @@
 package ua.edu.chnu.awards.notification;
 
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.SEPARATOR;
+import static ua.edu.chnu.awards.common.mail.MailTextHelper.dateTime;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloEn;
 import static ua.edu.chnu.awards.common.mail.MailTextHelper.helloUk;
 
 import java.time.Clock;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.function.LongFunction;
 
 import org.springframework.scheduling.annotation.Async;
@@ -28,8 +28,6 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class OverdueMails {
-
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final DeliveryLog deliveries;
     private final NotificationDrafts drafts;
@@ -57,13 +55,12 @@ public class OverdueMails {
     }
 
     static String body(OverdueNoticed event, LongFunction<String> awardLink, ZoneId zone) {
-        DateTimeFormatter dates = DATE.withZone(zone);
         StringBuilder uk = new StringBuilder(helloUk(event.name()))
             .append("Термін розгляду цих заявок минув на нижчому рівні:\n\n");
         StringBuilder en = new StringBuilder(helloEn(event.name()))
             .append("The review period of these requests has passed at the level below:\n\n");
         for (OverdueNoticed.Item item : event.requests()) {
-            String deadline = dates.format(item.deadline());
+            String deadline = dateTime(item.deadline(), zone);
             String link = awardLink.apply(item.awardId());
             uk.append("- «").append(item.titleUk()).append("», ").append(item.owner())
                 .append("; рівень: ").append(LevelNamesHelper.uk(item.level()))

@@ -18,10 +18,6 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ua.edu.chnu.awards.common.retention.RetentionResult;
 import ua.edu.chnu.awards.gdpr.dto.RetentionStatus;
 
@@ -36,8 +32,6 @@ public class RetentionRuns {
 
     private static final String RUN_ID = "runId";
     private static final String RESULTS = "results";
-    private static final TypeReference<List<RetentionResult>> RESULT_LIST = new TypeReference<>() {
-    };
 
     private static final String TRY_LOCK = "select pg_try_advisory_lock(hashtext('retention-run'))";
 
@@ -60,7 +54,7 @@ public class RetentionRuns {
         """;
 
     private final NamedParameterJdbcTemplate jdbc;
-    private final ObjectMapper mapper;
+    private final RetentionResultsJson resultsJson;
 
     /**
      * Runs the work while this connection holds the run lock; a second start meanwhile does nothing.
@@ -90,7 +84,8 @@ public class RetentionRuns {
      */
     public List<Interrupted> interruptRunning(Instant at) {
         return jdbc.query(INTERRUPT, new MapSqlParameterSource("at", utc(at)), (row, index) ->
-            new Interrupted(row.getLong("run_id"), instant(row, "started_at"), failed(row.getString(RESULTS))));
+            new Interrupted(row.getLong("run_id"), instant(row, "started_at"),
+                RetentionResult.failedPolicies(resultsJson.read(row.getString(RESULTS)))));
     }
 
     /**
@@ -111,7 +106,7 @@ public class RetentionRuns {
      * @param results the results so far
      */
     public void progress(long runId, List<RetentionResult> results) {
-        jdbc.update(PROGRESS, new MapSqlParameterSource(RUN_ID, runId).addValue(RESULTS, json(results)));
+        jdbc.update(PROGRESS, new MapSqlParameterSource(RUN_ID, runId).addValue(RESULTS, resultsJson.write(results)));
     }
 
     /**
@@ -125,32 +120,13 @@ public class RetentionRuns {
     public void finish(long runId, RetentionStatus status, List<RetentionResult> results, Instant at) {
         jdbc.update(FINISH, new MapSqlParameterSource(RUN_ID, runId)
             .addValue("status", status.name())
-            .addValue(RESULTS, json(results))
+            .addValue(RESULTS, resultsJson.write(results))
             .addValue("at", utc(at)));
     }
 
     private static boolean lock(Connection connection, String sql) throws SQLException {
         try (Statement statement = connection.createStatement(); ResultSet row = statement.executeQuery(sql)) {
             return row.next() && row.getBoolean(1);
-        }
-    }
-
-    private String json(List<RetentionResult> results) {
-        try {
-            return mapper.writeValueAsString(results);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Retention results cannot be written", e);
-        }
-    }
-
-    private List<String> failed(String results) {
-        try {
-            return mapper.readValue(results, RESULT_LIST).stream()
-                .filter(RetentionResult::failed)
-                .map(RetentionResult::policy)
-                .toList();
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Retention results cannot be read", e);
         }
     }
 
