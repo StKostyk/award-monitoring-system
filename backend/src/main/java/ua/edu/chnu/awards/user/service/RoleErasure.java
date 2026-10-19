@@ -8,13 +8,15 @@ import ua.edu.chnu.awards.common.erasure.ErasureContext;
 import ua.edu.chnu.awards.common.erasure.ErasureContributor;
 import ua.edu.chnu.awards.common.erasure.ErasureOrderConstants;
 import ua.edu.chnu.awards.user.entity.UserRole;
+import ua.edu.chnu.awards.user.repository.DashboardPreferenceQueries;
 import ua.edu.chnu.awards.user.repository.UserRoleRepository;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * Erasure of the person's authority: every current or future role assignment ends, audited as
- * {@code ROLE_REVOKED} with the reason {@code erasure} and without a message.
+ * Erasure of the person's authority and display choices: every current or future role assignment ends, audited
+ * as {@code ROLE_REVOKED} with the reason {@code erasure} and without a message, and the dashboard widget choice
+ * is deleted.
  */
 @Component
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class RoleErasure implements ErasureContributor {
 
     private final UserRoleRepository roles;
     private final RoleChangeRecorder recorder;
+    private final DashboardPreferenceQueries dashboardPreferences;
 
     @Override
     public int order() {
@@ -39,5 +42,6 @@ public class RoleErasure implements ErasureContributor {
         });
         roles.saveAllAndFlush(active);
         context.count("rolesEnded", active.size());
+        context.count("dashboardPreferencesDeleted", dashboardPreferences.delete(context.userId()));
     }
 }

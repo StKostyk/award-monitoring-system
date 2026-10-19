@@ -2854,7 +2854,6 @@ paths:
       tags: [Analytics]
       summary: The caller's dashboard widget choice
       description: An empty `hiddenWidgets` list until a choice was saved (5.1.2).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: getDashboardPreferences
@@ -2870,8 +2869,7 @@ paths:
     put:
       tags: [Analytics]
       summary: Save the caller's dashboard widget choice
-      description: Replaces the stored list (duplicates collapsed); not audited (5.1.2).
-      x-status: planned
+      description: Replaces the stored list (duplicates collapsed, display order kept); not audited (5.1.2).
       security:
         - bearerAuth: []
       operationId: setDashboardPreferences
@@ -3499,14 +3497,14 @@ components:
 
     PersonalDataExport:
       type: object
-      description: GDPR Article 20 export, format version 1.6; every list is present, possibly empty
+      description: GDPR Article 20 export, format version 1.7; every section is present, possibly empty
       required: [export_metadata, personal_data, roles, delegations, awards, award_versions, documents,
                  review_decisions, decisions_made, consent_history, legal_holds, erasure_requests, devices, activity_log,
-                 notifications, notification_preferences]
+                 notifications, notification_preferences, dashboard_preferences]
       properties:
         export_metadata:
           type: object
-          description: '`export_date` (instant), `user_id`, `format_version` (`1.6`), `gdpr_article`'
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.7`), `gdpr_article`'
         personal_data:
           type: object
           description: |
@@ -3609,6 +3607,11 @@ components:
           description: 'Types the caller changed from the default (both channels on): `type`, `email`, `in_app`'
           items:
             type: object
+        dashboard_preferences:
+          type: object
+          description: >-
+            Dashboard widget choice (since 1.7): `hidden_widgets` (widget names, empty when every widget is shown),
+            `updated_at` (null when never saved)
 
     EmailChangeConfirmRequest:
       type: object
@@ -4556,8 +4559,7 @@ components:
 
     DashboardPreferences:
       type: object
-      description: Widgets the account hid on its dashboard (5.1.2, planned)
-      x-status: planned
+      description: Widgets the account hid on its dashboard (5.1.2)
       required: [hiddenWidgets]
       properties:
         hiddenWidgets:

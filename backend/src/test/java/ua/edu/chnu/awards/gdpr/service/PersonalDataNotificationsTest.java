@@ -50,7 +50,7 @@ class PersonalDataNotificationsTest {
 
         PersonalDataFile file = assembler.assemble(person());
 
-        assertThat(file.exportMetadata().formatVersion()).isEqualTo("1.6");
+        assertThat(file.exportMetadata().formatVersion()).isEqualTo("1.7");
         assertThat(file.notifications()).containsExactly(
             new NotificationEntry("AWARD_RETURNED", "EMAIL", PAYLOAD, false, SENT, null, NOW, "SENT"),
             new NotificationEntry("AWARD_RETURNED", "IN_APP", PAYLOAD, true, SENT, NOW, null, null));

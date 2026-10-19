@@ -31,8 +31,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param awardVersions   every saved state of those awards, oldest first per award
  * @param documents       metadata of the documents of those awards
  * @param reviewDecisions reviewer decisions on those awards, oldest first
- * @param decisionsMade   decisions the person made as a reviewer or that were made under a role the person
- *                        lent, oldest first
+ * @param decisionsMade   decisions made as a reviewer or under a role the person lent, oldest first
  * @param consentHistory  every consent record
  * @param legalHolds      legal holds placed on the account, newest first
  * @param erasureRequests requests to erase the account, newest first
@@ -40,6 +39,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param activityLog     the person's own application events, newest first
  * @param notifications   in-app notifications and the delivery log of mails, newest first
  * @param notificationPreferences the notification choices the person changed from the default
+ * @param dashboardPreferences    the widgets hidden on the personal dashboard; none and no time when never saved
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PersonalDataFile(Metadata exportMetadata, PersonalData personalData, List<RoleEntry> roles,
@@ -49,7 +49,8 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
                                List<ConsentEntry> consentHistory, List<LegalHoldEntry> legalHolds,
                                List<ErasureRequestEntry> erasureRequests, List<DeviceEntry> devices,
                                List<ActivityEntry> activityLog, List<NotificationEntry> notifications,
-                               List<NotificationPreferenceEntry> notificationPreferences) {
+                               List<NotificationPreferenceEntry> notificationPreferences,
+                               DashboardPreferenceEntry dashboardPreferences) {
 
     /**
      * Keeps unmodifiable copies of the sections.
@@ -403,5 +404,22 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
      */
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record NotificationPreferenceEntry(String type, boolean email, boolean inApp) {
+    }
+
+    /**
+     * The widget choice of the personal dashboard.
+     *
+     * @param hiddenWidgets the hidden widget names, empty when every widget is shown
+     * @param updatedAt     when the choice was saved, null when never
+     */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record DashboardPreferenceEntry(List<String> hiddenWidgets, Instant updatedAt) {
+
+        /**
+         * Keeps an unmodifiable copy of the names.
+         */
+        public DashboardPreferenceEntry {
+            hiddenWidgets = List.copyOf(hiddenWidgets);
+        }
     }
 }

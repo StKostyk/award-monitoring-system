@@ -349,6 +349,7 @@ In the privacy centre, **Your data** → **Download my data** saves a JSON file 
 - `notification_preferences`: the notification types you changed from the default
 - `legal_holds` (since 1.5): the dates of legal holds on your account, without their reasons
 - `erasure_requests` (since 1.6): your erasure requests with their dates and status
+- `dashboard_preferences` (since 1.7): the widgets you hid on **My dashboard** and when you saved that choice
 
 You can download the file once a minute; each download is announced to you by e-mail.
 

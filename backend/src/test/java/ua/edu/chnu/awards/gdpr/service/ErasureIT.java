@@ -100,9 +100,13 @@ class ErasureIT extends AbstractIntegrationTest {
         assertThat(jdbc.queryForObject("select status from erasure_requests where user_id = ?", String.class,
             personId)).isEqualTo("COMPLETED");
         Map<String, Object> counts = jdbc.queryForMap("select new_values ->> 'awardsDeleted' as deleted, "
-            + "new_values ->> 'rolesEnded' as roles, new_values ->> 'documentsDeleted' as documents "
+            + "new_values ->> 'rolesEnded' as roles, new_values ->> 'documentsDeleted' as documents, "
+            + "new_values ->> 'dashboardPreferencesDeleted' as dashboard "
             + "from audit_logs where action_type = 'ERASURE_COMPLETED' and entity_id = ?", personId);
-        assertThat(counts).containsEntry("deleted", "2").containsEntry("roles", "2").containsEntry("documents", "2");
+        assertThat(counts).containsEntry("deleted", "2").containsEntry("roles", "2").containsEntry("documents", "2")
+            .containsEntry("dashboard", "1");
+        assertThat(jdbc.queryForObject("select count(*) from dashboard_preferences where user_id = ?", Integer.class,
+            personId)).isZero();
         assertThat(runner.runDue(Instant.now())).isZero();
     }
 
@@ -294,6 +298,7 @@ class ErasureIT extends AbstractIntegrationTest {
         jdbc.update("insert into audit_logs (user_id, action_type, entity_type, entity_id, new_values, ip_address, "
             + "user_agent) values (?, 'LOGIN_SUCCESS', 'AUTHENTICATION', ?, ?::jsonb, ?::inet, ?)", personId,
             personId, "{\"email\": \"erik@chnu.edu.ua\", \"devices\": 1}", IP, AGENT);
+        jdbc.update("insert into dashboard_preferences (user_id, hidden_widgets) values (?, '{RANK}')", personId);
         jdbc.update("insert into erasure_requests (user_id, requested_at, scheduled_for) "
             + "values (?, now() - interval '31 days', now() - interval '1 hour')", personId);
     }

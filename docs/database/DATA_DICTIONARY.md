@@ -18,7 +18,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 | **Domain** | **Entities** | **Purpose** |
 |------------|--------------|-------------|
-| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations` | Identity, access control, approval authority lent to a colleague, organizational structure |
+| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations`, `dashboard_preferences` | Identity, access control, approval authority lent to a colleague, organizational structure, dashboard widget choice |
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
@@ -285,6 +285,28 @@ This Data Dictionary provides comprehensive documentation for all database entit
 **Relationships**:
 - BELONGS TO `users` (N:1) via `delegator_id`, `delegate_id` and `revoked_by`
 - BELONGS TO `organizations` (N:1) via `organization_id`
+
+---
+
+### 1.8 Entity: `dashboard_preferences`
+
+**Description**: The widgets a person hid on the personal dashboard (V046, 5.1.2). No row means every widget is shown.
+
+**Business Rules**:
+- At most one row per account; a save replaces the whole list (`insert ... on conflict (user_id) do update`), last write wins
+- `hidden_widgets` holds names of `DashboardWidget` only (`SUMMARY`, `TIMELINE`, `YEAR_TREND`, `BY_CATEGORY`, `BY_LEVEL`, `RANK`), without duplicates and in display order; the service rejects any other value with `invalid-parameter`
+- Not audited (no trigger, no audit row): it records a display choice, not a processing decision
+- Personal data: part of the export (`dashboard_preferences`, format 1.7 and later, with `updated_at`) and deleted by the erasure (`RoleErasure`, order 20, count `dashboardPreferencesDeleted`)
+
+| **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
+|------------|---------------|--------------|-------------|-----------------|-----------------|
+| `user_id` | `BIGINT` | NO | - | PK, FK→users (`ON DELETE CASCADE`) | The account the choice belongs to |
+| `hidden_widgets` | `TEXT[]` | NO | `'{}'` | - | Hidden widget names |
+| `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the choice was last saved |
+
+**Indexes**: `pk_dashboard_preferences`
+
+**Relationships**: BELONGS TO `users` (1:1) via `user_id`, deleted with the user
 
 ---
 
@@ -1093,6 +1115,7 @@ Legal basis is that of the change that caused the mail.
 | `award_requests` | → awards (1:1), → users (N:1, submitter), → users (N:1, reviewer), ← review_decisions (1:N), ← documents (1:N) |
 | `review_decisions` | → award_requests (N:1), → users (N:1), → users (N:1, delegator, optional) |
 | `role_delegations` | → users (N:1, delegator), → users (N:1, delegate), → organizations (N:1) |
+| `dashboard_preferences` | → users (1:1) |
 | `review_templates` | none (reference data) |
 | `audit_logs` | → users (N:1) |
 | `consent_records` | → users (N:1) |
