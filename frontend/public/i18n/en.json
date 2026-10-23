@@ -1493,6 +1493,87 @@
       "publicCheckFailed": "It could not be checked whether your awards are public. Reload the page to try again."
     }
   },
+  "unitAnalytics": {
+    "title": "Unit analytics",
+    "unit": "Faculty or department",
+    "failed": "The unit analytics could not be loaded.",
+    "unitsFailed": "The list of faculties and departments could not be loaded.",
+    "noUnits": "No faculty or department is open to you for analytics.",
+    "notFound": "This unit is not available.",
+    "back": "Back to unit analytics",
+    "comparedWith": "{{period}}, compared with {{previous}}.",
+    "partialYear": "{{year}} is not over yet, so its figures are still growing.",
+    "noAwards": "No approved awards in this period or the previous one.",
+    "other": "Other",
+    "delta": {
+      "new": "new",
+      "previous": "Previous period: {{count}}"
+    },
+    "tiles": {
+      "approved": "Approved awards",
+      "awardedPeople": "Awarded people",
+      "unitAwards": "Unit awards",
+      "verified": "Verified",
+      "perHundred": "Awards per 100 members",
+      "members": "Members: {{count}}"
+    },
+    "sections": {
+      "totals": "Summary",
+      "trend": "Awards by year",
+      "comparison": "Department comparison",
+      "byCategory": "By category",
+      "byLevel": "By level",
+      "bySource": "By awarding organisation",
+      "topPerformers": "Top performers",
+      "highlights": "Highlights"
+    },
+    "trend": {
+      "description": "Approved awards per year from {{from}} to {{to}}, {{total}} in all, personal and unit awards stacked.",
+      "facultyDescription": "Approved awards per year from {{from}} to {{to}}, one line for each of {{count}} rows, {{total}} in all.",
+      "personal": "Personal awards",
+      "unitAwards": "Unit awards"
+    },
+    "comparison": {
+      "unit": "Unit",
+      "members": "Members",
+      "approved": "Approved",
+      "change": "Change",
+      "awardedPeople": "Awarded people",
+      "perHundred": "Per 100 members",
+      "verified": "Verified",
+      "facultyLevel": "Faculty level",
+      "inactive": "inactive",
+      "chartTitle": "Approved awards per 100 members",
+      "chartDescription": "Approved awards per 100 members for {{count}} departments; the highest is {{top}} with {{value}}."
+    },
+    "bars": {
+      "current": "This period",
+      "previous": "Previous period",
+      "description": "{{caption}}: {{count}} rows, this period beside the previous one; the largest is «{{top}}» with {{current}} (previously {{previous}})."
+    },
+    "sources": {
+      "organisation": "Awarding organisation",
+      "others": "All other organisations",
+      "description": "Approved awards by awarding organisation: {{count}} shown, the most from «{{top}}» with {{topCount}}."
+    },
+    "top": {
+      "count": "Awards: {{count}}",
+      "highest": "highest level",
+      "note": "Only people who agreed to be named in analytics appear here.",
+      "empty": "Nobody in this unit has agreed to be named yet.",
+      "groupTooSmall": "The unit has fewer members than the minimum group for naming people, so nobody is listed."
+    },
+    "highlights": {
+      "strengths": "Strengths",
+      "gaps": "Gaps",
+      "none": "Nothing stands out in this period.",
+      "GROWTH": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
+      "DECLINE": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
+      "NO_AWARDS": "{{unit}}: no awards in this period, {{previous}} in the previous one",
+      "NO_AWARDS_EVER": "{{unit}}: no awards in this period or the previous one",
+      "BELOW_AVERAGE": "{{unit}}: {{current}} awards, under half of the faculty's average per member"
+    }
+  },
   "charts": {
     "showTable": "Show as table"
   }

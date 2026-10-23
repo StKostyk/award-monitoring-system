@@ -1,0 +1,37 @@
+<div class="period" role="group" [attr.aria-label]="'analytics.period.label' | transloco">
+  <mat-form-field subscriptSizing="dynamic">
+    <mat-label>{{ 'analytics.period.from' | transloco }}</mat-label>
+    <mat-select
+      [value]="period().from"
+      (selectionChange)="choose.emit({ from: $event.value })"
+      data-testid="period-from"
+    >
+      <mat-option [value]="null">{{ 'analytics.period.any' | transloco }}</mat-option>
+      @for (year of years; track year) {
+        @if (period().to === null || year <= period().to!) {
+          <mat-option [value]="year">{{ year }}</mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field subscriptSizing="dynamic">
+    <mat-label>{{ 'analytics.period.to' | transloco }}</mat-label>
+    <mat-select
+      [value]="period().to"
+      (selectionChange)="choose.emit({ to: $event.value })"
+      data-testid="period-to"
+    >
+      <mat-option [value]="null">{{ 'analytics.period.now' | transloco }}</mat-option>
+      @for (year of years; track year) {
+        @if (period().from === null || year >= period().from!) {
+          <mat-option [value]="year">{{ year }}</mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+  @if (chosen()) {
+    <button mat-button type="button" (click)="allYears.emit()" data-testid="period-all-years">
+      {{ 'analytics.period.allYears' | transloco }}
+    </button>
+  }
+</div>

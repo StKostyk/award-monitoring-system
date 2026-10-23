@@ -1,0 +1,59 @@
+.units__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.units__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+}
+
+.units__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+
+  app-unit-picker {
+    flex: 1 1 280px;
+    max-width: 420px;
+  }
+}
+
+.units__compared {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 16px;
+}
+
+.units__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+
+  @media (min-width: 960px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  h2 {
+    font: var(--mat-sys-title-medium);
+    margin: 0 0 8px;
+  }
+
+  mat-card {
+    min-width: 0;
+  }
+}
+
+.units__wide {
+  grid-column: 1 / -1;
+}
+
+.units__problem {
+  color: var(--mat-sys-error);
+}

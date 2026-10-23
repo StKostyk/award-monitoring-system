@@ -21,6 +21,7 @@ import {
   canReadDirectory,
   canReadOwnAnalytics,
   canReadOwnAwards,
+  canReadUnitAnalytics,
   canReview,
 } from '../auth/permissions';
 import { BrandService } from '../brand/brand.service';
@@ -84,6 +85,9 @@ export class ShellComponent {
   );
   protected readonly canOpenDashboard = computed(
     () => this.auth.isAuthenticated() && canReadOwnAnalytics(this.auth.permissions()),
+  );
+  protected readonly canOpenUnitAnalytics = computed(
+    () => this.auth.isAuthenticated() && canReadUnitAnalytics(this.auth.permissions()),
   );
   protected readonly canOpenUsers = computed(
     () => this.auth.isAuthenticated() && canReadDirectory(this.auth.permissions()),

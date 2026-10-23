@@ -7,6 +7,7 @@ import {
   canReadCompliance,
   canReadDirectory,
   canReadOwnAnalytics,
+  canReadUnitAnalytics,
   canReview,
 } from './permissions';
 
@@ -52,4 +53,11 @@ export const analyticsGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return canReadOwnAnalytics(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** Unit analytics need `analytics:read:department`; without it the route ends on the forbidden page. */
+export const unitAnalyticsGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return canReadUnitAnalytics(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };

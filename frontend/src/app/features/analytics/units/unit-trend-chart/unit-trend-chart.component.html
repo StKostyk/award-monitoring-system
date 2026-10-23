@@ -1,0 +1,55 @@
+<app-chart [option]="option()" [description]="description()">
+  @if (faculty()) {
+    <table class="analytics-table" data-testid="unit-trend-table">
+      <caption>
+        {{
+          'unitAnalytics.sections.trend' | transloco
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ 'unitAnalytics.comparison.unit' | transloco }}</th>
+          @for (year of years(); track year) {
+            <th scope="col">{{ year }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of lines(); track line.id) {
+          <tr>
+            <th scope="row">{{ line.label }}</th>
+            @for (count of line.counts; track $index) {
+              <td>{{ count }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  } @else {
+    <table class="analytics-table" data-testid="unit-trend-table">
+      <caption>
+        {{
+          'unitAnalytics.sections.trend' | transloco
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ 'analytics.table.year' | transloco }}</th>
+          <th scope="col">{{ 'unitAnalytics.trend.personal' | transloco }}</th>
+          <th scope="col">{{ 'unitAnalytics.trend.unitAwards' | transloco }}</th>
+          <th scope="col">{{ 'analytics.table.total' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of analytics().byYear; track entry.year) {
+          <tr>
+            <th scope="row">{{ entry.year }}</th>
+            <td>{{ entry.personal }}</td>
+            <td>{{ entry.unitAwards }}</td>
+            <td>{{ entry.total }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</app-chart>

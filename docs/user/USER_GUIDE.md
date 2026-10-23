@@ -17,9 +17,10 @@
 5. [Reviewing Awards](#reviewing-awards)
 6. [Achievements and Visibility](#achievements-and-visibility)
 7. [My dashboard](#my-dashboard)
-8. [Managing Your Profile](#managing-your-profile)
-9. [Notifications](#notifications)
-10. [FAQ](#faq)
+8. [Unit analytics](#unit-analytics)
+9. [Managing Your Profile](#managing-your-profile)
+10. [Notifications](#notifications)
+11. [FAQ](#faq)
 
 ---
 
@@ -324,6 +325,40 @@ rejected awards and unit awards are not counted.
 - **Copy link to my public achievements** («Копіювати посилання на мої публічні досягнення») on the summary copies
   the address of the public page with only your public awards (`/public/achievements?person=<id>`). The button
   appears once at least one of your approved awards is public; until then a hint explains why it is missing.
+
+---
+
+## Unit analytics
+
+**Аналітика підрозділів** in the navigation (`/analytics`) is open to faculty secretaries, deans and the
+rector's office. It opens the first faculty or department of your scope; the selector at the top
+lists the faculties with their departments indented, and the address keeps the unit and the period
+(`/analytics/units/9?from=2022&to=2026`).
+
+- **What counts**: approved awards submitted in the unit or one of its departments (the department of the
+  submission, not the owner's current one), by the year of the award date. Personal awards and unit awards both
+  count and are shown apart; drafts, pending and rejected awards never count.
+- **Period and previous period**: «З» and «По» as on «Мій дашборд»; without a start the period is the five years
+  ending at the last year. The figures are compared with the previous period of the same length, which ends the
+  year before the start; the line under the selectors names it. While the last year is the current one, the page
+  says the year is not over yet.
+- **Tiles**: approved awards and awarded people with their change (arrow, signed count and percent, «нове» when the
+  previous period had none), unit awards, verified awards and awards per 100 members.
+- **Per 100 members**: counted awards per 100 active accounts of the unit. Members are counted where they work now,
+  awards where they were submitted, so a person who moved still adds to the old department's awards.
+- **Department comparison** (faculties only): members, approved awards with their change, awarded people, per 100
+  members and verified for each department and for the faculty level itself; every column sorts, and a department
+  name opens its page for the same period. The table scrolls sideways on a narrow screen.
+- **Charts**: the trend by year (one line per department for a faculty, personal and unit awards for a
+  department), by category and by level (this period beside the previous one), and by awarding organisation. More
+  than 12 categories or organisations form an «Інші» bar; **Show as table** lists them all.
+- **Highlights**: a department with no award in the period; a decline (at least 4 awards before and at most half as
+  many now); growth (at least 4 before and at least one and a half times as many now); below average (at least
+  five members and fewer than half of the faculty's awards per member). Growth is listed under strengths, the
+  others under gaps.
+- **Top performers**: up to ten people with the most counted personal awards, without positions. Only people who
+  gave the consent «Рейтинги й порівняння» in the privacy centre are named; a withdrawal removes the name at the
+  next visit. A unit with fewer than five members names nobody.
 
 ---
 

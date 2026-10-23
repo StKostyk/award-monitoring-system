@@ -19,15 +19,8 @@
 }
 
 .dashboard__period {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
+  display: block;
   margin-bottom: 16px;
-
-  mat-form-field {
-    width: 150px;
-  }
 }
 
 .dashboard__grid {

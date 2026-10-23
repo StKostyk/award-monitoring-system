@@ -226,6 +226,27 @@ describe('ShellComponent', () => {
     ).toBe('/dashboard');
   });
 
+  it('ac2_1_shows_unit_analytics_to_a_holder_of_analytics_read_department', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['analytics:read:own'] })));
+    const without = TestBed.createComponent(ShellComponent);
+    without.detectChanges();
+
+    expect(without.nativeElement.querySelector('[data-testid="nav-unit-analytics"]')).toBeNull();
+
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['analytics:read:department'] })),
+    );
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="nav-unit-analytics"]')
+        .getAttribute('href'),
+    ).toBe('/analytics');
+  });
+
   it('ac3_6_shows_the_delegations_entry_only_to_a_holder_of_an_approval_role', () => {
     auth.isAuthenticated.set(true);
     auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));

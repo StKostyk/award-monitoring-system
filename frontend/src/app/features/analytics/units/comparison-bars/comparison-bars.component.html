@@ -1,0 +1,25 @@
+<app-chart [option]="option()" [description]="description()" [height]="height()">
+  <table class="analytics-table" [attr.data-testid]="tableId()">
+    <caption>
+      {{
+        caption()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{{ labelHeader() }}</th>
+        <th scope="col">{{ 'unitAnalytics.bars.current' | transloco }}</th>
+        <th scope="col">{{ 'unitAnalytics.bars.previous' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.key) {
+        <tr>
+          <th scope="row">{{ row.label }}</th>
+          <td>{{ row.current }}</td>
+          <td>{{ row.previous }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</app-chart>

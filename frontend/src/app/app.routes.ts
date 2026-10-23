@@ -6,6 +6,7 @@ import {
   authGuard,
   complianceGuard,
   delegationGuard,
+  unitAnalyticsGuard,
   userDirectoryGuard,
 } from './core/auth/auth.guard';
 import { CallbackComponent } from './core/auth/callback.component';
@@ -91,6 +92,14 @@ export const routes: Routes = [
         canActivate: [authGuard, analyticsGuard],
         loadChildren: () =>
           import('./features/analytics/analytics.routes').then((m) => m.ANALYTICS_ROUTES),
+      },
+      {
+        path: 'analytics',
+        canActivate: [authGuard, unitAnalyticsGuard],
+        loadChildren: () =>
+          import('./features/analytics/units/unit-analytics.routes').then(
+            (m) => m.UNIT_ANALYTICS_ROUTES,
+          ),
       },
       {
         path: 'achievements',

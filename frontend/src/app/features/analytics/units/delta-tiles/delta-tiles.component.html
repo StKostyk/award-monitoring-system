@@ -1,0 +1,33 @@
+<dl class="tiles">
+  <div class="tile" data-testid="tile-approved">
+    <dt>{{ 'unitAnalytics.tiles.approved' | transloco }}</dt>
+    <dd class="tile__value">{{ totals().approved.current }}</dd>
+    <dd><app-delta [figure]="totals().approved" /></dd>
+  </div>
+  <div class="tile" data-testid="tile-awarded-people">
+    <dt>{{ 'unitAnalytics.tiles.awardedPeople' | transloco }}</dt>
+    <dd class="tile__value">{{ totals().awardedPeople.current }}</dd>
+    <dd><app-delta [figure]="totals().awardedPeople" /></dd>
+  </div>
+  <div class="tile" data-testid="tile-unit-awards">
+    <dt>{{ 'unitAnalytics.tiles.unitAwards' | transloco }}</dt>
+    <dd class="tile__value">{{ totals().unitAwards }}</dd>
+  </div>
+  <div class="tile" data-testid="tile-verified">
+    <dt>{{ 'unitAnalytics.tiles.verified' | transloco }}</dt>
+    <dd class="tile__value">{{ totals().verified }}</dd>
+  </div>
+  <div class="tile" data-testid="tile-per-hundred">
+    <dt>{{ 'unitAnalytics.tiles.perHundred' | transloco }}</dt>
+    <dd class="tile__value">
+      @if (totals().perHundredMembers !== null) {
+        {{ totals().perHundredMembers | number: '1.0-1' }}
+      } @else {
+        —
+      }
+    </dd>
+    <dd class="tile__note">
+      {{ 'unitAnalytics.tiles.members' | transloco: { count: totals().members } }}
+    </dd>
+  </div>
+</dl>

@@ -1,0 +1,104 @@
+<div
+  class="comparison__scroll"
+  tabindex="0"
+  [attr.aria-label]="'unitAnalytics.sections.comparison' | transloco"
+>
+  <table
+    class="analytics-table comparison__table"
+    matSort
+    (matSortChange)="sort.set($event)"
+    data-testid="comparison-table"
+  >
+    <caption class="cdk-visually-hidden">
+      {{
+        'unitAnalytics.sections.comparison' | transloco
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col" mat-sort-header="name">
+          {{ 'unitAnalytics.comparison.unit' | transloco }}
+        </th>
+        <th scope="col" mat-sort-header="members">
+          {{ 'unitAnalytics.comparison.members' | transloco }}
+        </th>
+        <th scope="col" mat-sort-header="approved">
+          {{ 'unitAnalytics.comparison.approved' | transloco }}
+        </th>
+        <th scope="col" mat-sort-header="change">
+          {{ 'unitAnalytics.comparison.change' | transloco }}
+        </th>
+        <th scope="col" mat-sort-header="awardedPeople">
+          {{ 'unitAnalytics.comparison.awardedPeople' | transloco }}
+        </th>
+        <th scope="col" mat-sort-header="perHundred">
+          {{ 'unitAnalytics.comparison.perHundred' | transloco }}
+        </th>
+        <th scope="col" mat-sort-header="verified">
+          {{ 'unitAnalytics.comparison.verified' | transloco }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (entry of sorted(); track entry.row.unit.id + '-' + entry.row.facultyLevel) {
+        <tr [attr.data-testid]="'comparison-row-' + entry.row.unit.id">
+          <th scope="row">
+            @if (entry.row.facultyLevel) {
+              {{ entry.name }}
+            } @else {
+              <a
+                [routerLink]="['/analytics/units', entry.row.unit.id]"
+                [queryParams]="{ from: period().from, to: period().to }"
+                >{{ entry.name }}</a
+              >
+              @if (!entry.row.active) {
+                <span class="comparison__inactive">
+                  ({{ 'unitAnalytics.comparison.inactive' | transloco }})
+                </span>
+              }
+            }
+          </th>
+          <td>{{ entry.row.members }}</td>
+          <td>{{ entry.row.approved.current }}</td>
+          <td><app-delta [figure]="entry.row.approved" /></td>
+          <td>{{ entry.row.awardedPeople }}</td>
+          <td>
+            @if (entry.row.perHundredMembers !== null) {
+              {{ entry.row.perHundredMembers | number: '1.0-1' }}
+            } @else {
+              —
+            }
+          </td>
+          <td>{{ entry.row.verified }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (bars().length > 0) {
+  <h3 class="comparison__chart-title">{{ 'unitAnalytics.comparison.chartTitle' | transloco }}</h3>
+  <app-chart [option]="option()" [description]="description()" [height]="height()">
+    <table class="analytics-table" data-testid="per-hundred-table">
+      <caption>
+        {{
+          'unitAnalytics.comparison.chartTitle' | transloco
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ 'unitAnalytics.comparison.unit' | transloco }}</th>
+          <th scope="col">{{ 'unitAnalytics.comparison.perHundred' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (bar of bars(); track bar.label) {
+          <tr>
+            <th scope="row">{{ bar.label }}</th>
+            <td>{{ bar.value }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </app-chart>
+}

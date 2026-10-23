@@ -1,0 +1,29 @@
+<app-chart [option]="option()" [description]="description()" [height]="height()">
+  <table class="analytics-table" data-testid="source-table">
+    <caption>
+      {{
+        'unitAnalytics.sections.bySource' | transloco
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'unitAnalytics.sources.organisation' | transloco }}</th>
+        <th scope="col">{{ 'analytics.table.count' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (source of bySource().sources; track source.name) {
+        <tr>
+          <th scope="row">{{ source.name }}</th>
+          <td>{{ source.count }}</td>
+        </tr>
+      }
+      @if (bySource().otherCount > 0) {
+        <tr>
+          <th scope="row">{{ 'unitAnalytics.sources.others' | transloco }}</th>
+          <td>{{ bySource().otherCount }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</app-chart>
