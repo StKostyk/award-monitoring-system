@@ -59,12 +59,9 @@ class AwardDatabaseObjectsIT extends AbstractJpaSliceTest {
     }
 
     @Test
-    void statisticsCountAnAwardForTheOrganisationOfTheSubmission() {
-        long before = pendingIn(TestUsers.DAI_DEPARTMENT_ID);
-        award(jdbc, owner).title("Second").status("PENDING").insert();
-
-        assertThat(pendingIn(TestUsers.DAI_DEPARTMENT_ID)).isEqualTo(before + 1);
-        assertThat(pendingIn(DMUS_DEPARTMENT_ID)).isZero();
+    void ac1_11_theAwardStatisticsViewIsGone() {
+        assertThat(jdbc.queryForObject("select count(*) from pg_views where viewname = 'vw_award_statistics'",
+            Integer.class)).isZero();
     }
 
     @ParameterizedTest
@@ -157,11 +154,6 @@ class AwardDatabaseObjectsIT extends AbstractJpaSliceTest {
 
     private boolean canApprove(long userId) {
         return Boolean.TRUE.equals(jdbc.queryForObject(CAN_APPROVE, Boolean.class, userId, awardId));
-    }
-
-    private long pendingIn(long organizationId) {
-        return jdbc.queryForObject("select pending_awards from vw_award_statistics where org_id = ?", Long.class,
-            organizationId);
     }
 
     private String organisationName(long organizationId) {

@@ -17,7 +17,7 @@
 
 ## Current focus
 
-Feature 5.1 Done 2026-10-23: validated with notes, 5.1.4 (SCRUM-108) merged, manual run of §10 passed 37/37 ([feature-5.1-personal-achievement-dashboard.md](../features/epic-05/feature-5.1-personal-achievement-dashboard.md) §10, §13). Next: Feature 5.2.
+Feature 5.1 Done 2026-10-23: validated with notes, 5.1.4 (SCRUM-108) merged, manual run of §10 passed 37/37 ([feature-5.1-personal-achievement-dashboard.md](../features/epic-05/feature-5.1-personal-achievement-dashboard.md) §10, §13). Feature 5.2 PRD approved 2026-10-23 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md)). Next: 5.2.1 (SCRUM-101).
 
 ## Scope
 
@@ -43,7 +43,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 2 | 5.1.2 Personal dashboard with charts and widget choice | 5.1 | 8 | SCRUM-99 | #286 | yes | Done |
 | 3 | 5.1.3 Shareable achievement summary | 5.1 | 3 | SCRUM-100 | #287 | no | Done |
 | 3a | 5.1.4 Dashboard period and failure states | 5.1 | 5 | SCRUM-108 | #300 | no | Done |
-| 4 | 5.2.1 Unit analytics API for departments and faculties with period comparison | 5.2 | 5 | SCRUM-101 | #288 | no | Planned |
+| 4 | 5.2.1 Unit analytics API for departments and faculties with period comparison | 5.2 | 8 | SCRUM-101 | #288 | no | In review |
 | 5 | 5.2.2 Faculty analytics page with department comparison and top performers | 5.2 | 5 | SCRUM-102 | #289 | yes | Planned |
 | 6 | 5.2.3 Analytics report export to CSV, Excel and PDF | 5.2 | 5 | SCRUM-103 | #290 | no | Planned |
 | 7 | 5.3.1 University analytics API with trends and a compliance summary | 5.3 | 5 | SCRUM-104 | #291 | no | Planned |
@@ -51,7 +51,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Planned |
 | 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Planned |
 
-Total: 49 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
+Total: 52 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD, 5.2.1 from 5 to 8 in the 5.2 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
 
 ## Decisions
 
@@ -67,6 +67,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-19 | Charts with ngx-echarts 21 on ECharts 6 (SVG renderer, ARIA, table view per chart); personal analytics uncached; rank by count of approved awards under the person's own `ANALYTICS` consent, minimum group 5; widget choice stored per account (`dashboard_preferences`, V046) | Accessible and printable charts; fresh personal figures; no colleague named or derivable | PRD 5.1 §7 |
 | 2026-10-19 | Feature 5.1 validation: fix story 5.1.4 (SCRUM-108, 5 points) for the period the server refuses, the widget-choice save after a failed load, the public-awards check failure, Print while loading, the missing "Other" bar and a Kyiv New Year test | Scenario review and edge-case check found them; the validation docs ship in its PR | PRD 5.1 §13 |
 | 2026-10-23 | Feature 5.1 closed: manual run 37/37; the stale figures while the backend is down (step 22) and the rank counting members without the consent go to the Epic 5 review | No AC broken; both are product questions, not defects | PRD 5.1 §10, §13 |
+| 2026-10-23 | Unit analytics: `analytics:read:department` (approvers) and `analytics:read:faculty` (dean upward) on held scopes only, 404 outside them; awards count in the unit of submission; department figures at any size, top performers (consented, no positions, up to 10) need the minimum group of 5; four highlight rules; aggregates cached 5 minutes with names and consent applied per request; exports with openhtmltopdf, FastExcel and hand-written CSV, audited; `vw_award_statistics` and `/reports/awards/*` removed | Viewers already read these awards; naming stays under the consent; one export component reused by 5.3.3 | PRD 5.2 §7 |
 
 ## Documentation deviations found at kickoff
 

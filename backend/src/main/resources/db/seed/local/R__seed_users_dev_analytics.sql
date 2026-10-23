@@ -1,6 +1,7 @@
 -- R__seed_users_dev_analytics.sql
 -- Description: Analytics demo data for local and docker profiles only (password: Passw0rd-demo):
---              lecturer.fmi with approved awards 2019-2026, eleven colleagues in DAI and six in DMA.
+--              lecturer.fmi with approved awards 2019-2026, eleven colleagues in DAI and six in DMA,
+--              unit awards of DAI and of the faculty, and one awarding organisation in several spellings.
 --              Named to run after R__seed_users_dev.sql (repeatables run in description order).
 -- Author: Stefan Kostyk
 -- Date: 2026-10-19
@@ -108,6 +109,12 @@ JOIN (VALUES
 ) AS k(kind, title, title_uk, category_id, awarding_organization) ON k.kind = (p.seq * 3 + y.year) % 5
 WHERE p.seq > 0 AND (p.seq + y.year) % 3 <> 0;
 
+INSERT INTO seed_analytics_awards VALUES
+    ('dai.hnatiuk@chnu.edu.ua', 'Ministry diploma for the methodology handbook', 'Грамота міністерства за методичний посібник',
+     13, 'міністерство  освіти і науки УКРАЇНИ', DATE '2024-09-16', 'PRIVATE', FALSE),
+    ('dma.palamar@chnu.edu.ua', 'Ministry letter of thanks for the summer school', 'Подяка міністерства за літню школу', 13,
+     ' Міністерство освіти і науки  України', DATE '2025-08-29', 'PRIVATE', FALSE);
+
 INSERT INTO awards (user_id, organization_id, title, title_uk, status, category_id, awarding_organization,
                     award_date, verification_badge, visibility)
 SELECT u.user_id, u.organization_id, a.title, a.title_uk, 'APPROVED', a.category_id, a.awarding_organization,
@@ -124,4 +131,46 @@ SELECT aw.award_id, aw.user_id, 'APPROVED', 'FACULTY_SECRETARY', aw.award_date +
 FROM awards aw
 JOIN seed_analytics_awards a ON a.title_uk = aw.title_uk
 JOIN users u ON u.user_id = aw.user_id AND u.email_address = a.email_address
+WHERE NOT EXISTS (SELECT 1 FROM award_requests r WHERE r.award_id = aw.award_id);
+
+CREATE TEMPORARY TABLE seed_analytics_unit_awards (
+    email_address VARCHAR(255) NOT NULL,
+    recipient_org_id BIGINT NOT NULL,
+    title VARCHAR(500) NOT NULL,
+    title_uk VARCHAR(500) NOT NULL,
+    category_id BIGINT NOT NULL,
+    awarding_organization VARCHAR(255) NOT NULL,
+    award_date DATE NOT NULL,
+    verified BOOLEAN NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO seed_analytics_unit_awards VALUES
+    ('secretary.fmi@chnu.edu.ua', 64, 'Department of the year of the faculty', 'Кафедра року факультету', 31,
+     'Факультет математики та інформатики', DATE '2023-12-20', FALSE),
+    ('secretary.fmi@chnu.edu.ua', 64, 'Ministry diploma for the olympiad team',
+     'Грамота міністерства за підготовку олімпіадної команди', 13, 'МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ',
+     DATE '2025-04-11', TRUE),
+    ('secretary.fmi@chnu.edu.ua', 64, 'University award for the informatics curriculum',
+     'Нагорода університету за програму з інформатики', 21,
+     'Чернівецький національний університет імені Юрія Федьковича', DATE '2026-05-28', FALSE),
+    ('dean.fmi@chnu.edu.ua', 9, 'Regional recognition of the faculty', 'Обласне визнання факультету', 81,
+     'Чернівецька обласна державна адміністрація', DATE '2024-10-02', FALSE),
+    ('dean.fmi@chnu.edu.ua', 9, 'Ministry rating of the faculty', 'Рейтинг міністерства для факультету', 13,
+     'Міністерство освіти і науки України', DATE '2026-03-17', TRUE);
+
+INSERT INTO awards (user_id, organization_id, recipient_org_id, title, title_uk, status, category_id,
+                    awarding_organization, award_date, verification_badge, visibility)
+SELECT u.user_id, a.recipient_org_id, a.recipient_org_id, a.title, a.title_uk, 'APPROVED', a.category_id,
+       a.awarding_organization, a.award_date, a.verified, 'PRIVATE'
+FROM seed_analytics_unit_awards a
+JOIN users u ON u.email_address = a.email_address
+WHERE NOT EXISTS (
+    SELECT 1 FROM awards aw WHERE aw.recipient_org_id = a.recipient_org_id AND aw.title_uk = a.title_uk
+);
+
+INSERT INTO award_requests (award_id, submitter_id, status, current_level, submitted_at, completed_at)
+SELECT aw.award_id, aw.user_id, 'APPROVED', 'FACULTY_SECRETARY', aw.award_date + TIME '10:00',
+       aw.award_date + INTERVAL '3 days' + TIME '12:00'
+FROM awards aw
+JOIN seed_analytics_unit_awards a ON a.recipient_org_id = aw.recipient_org_id AND a.title_uk = aw.title_uk
 WHERE NOT EXISTS (SELECT 1 FROM award_requests r WHERE r.award_id = aw.award_id);

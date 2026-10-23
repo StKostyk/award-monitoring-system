@@ -2,9 +2,11 @@ package ua.edu.chnu.awards.gdpr.repository;
 
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -38,6 +40,15 @@ public class ConsentRecords {
          where user_id = :userId and consent_type = :type
          order by created_at desc, consent_id desc
          limit 1
+        """;
+
+    private static final String LATEST_AMONG = """
+        select user_id
+          from (select distinct on (user_id) user_id, is_granted
+                  from consent_records
+                 where user_id in (:userIds) and consent_type = :type
+                 order by user_id, created_at desc, consent_id desc) latest
+         where is_granted
         """;
 
     private static final String APPEND = """
@@ -80,6 +91,18 @@ public class ConsentRecords {
     public boolean granted(long userId, ConsentType type) {
         return jdbc.queryForList(LATEST, Map.of(USER_ID, userId, "type", type.name()), Boolean.class).stream()
             .findFirst().orElse(false);
+    }
+
+    /**
+     * The people among several whose newest record of one type is a grant.
+     *
+     * @param userIds the people, at least one
+     * @param type    the consent
+     * @return ids of those who granted it
+     */
+    public Set<Long> grantedAmong(Collection<Long> userIds, ConsentType type) {
+        return Set.copyOf(jdbc.queryForList(LATEST_AMONG, Map.of("userIds", userIds, "type", type.name()),
+            Long.class));
     }
 
     /**
