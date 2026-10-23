@@ -1,0 +1,297 @@
+# Feature 5.2: Faculty Performance Analytics
+
+> **Epic**: 5 — Analytics & Reporting Dashboard (SCRUM-97)
+> **Sprint**: 6–7 (2026-10-23 → 2026-11-01; 5.2.1 and 5.2.2 in sprint 6, 5.2.3 in sprint 7)
+> **Points**: 18 (three stories; 15 at kickoff, see deviation 12)
+> **Status**: Approved 2026-10-23
+> **Author**: Stefan Kostyk
+> **Governing docs**: EPIC-05 tracker (decisions of 2026-10-19, deviations 2, 3, 5 and 6, technical notes, risks 3 and 4), US-009, roadmap Feature 5.2, RBAC_matrix §4, AUTHENTICATION_AUTHORIZATION §3.3, PRIVACY_BY_DESIGN §4.2 (`ANALYTICS`), DATA_DICTIONARY §1.3, §2.1, §2.2, §4.1, Appendix C, ADR-005, ADR-014, ADR-015, ADR-022, PRD 5.1 (period, rank, chart wrapper, seed), `AccessScope`, `OrganizationTree`, `AwardStatistics`, `ConsentLookup`, `ActorDirectory`, `openapi.yml` (`/analytics/me`, `/reports/awards/*`)
+
+## 1. Problem and personas
+
+A dean reads every award of the faculty one by one in the review queue and the award list, but cannot see how the faculty's recognition develops: which departments grow, which fall behind, which kinds of award and which awarding bodies dominate, and who the most recognised people are. Reports for the rector's office are counted by hand. US-009 asks for trends across the departments, a comparison between them, patterns by category and source, top performers and potential support needs, a date filter with a comparison to the previous period, and exports for university presentations.
+
+| Persona | Need in this feature |
+|---------|----------------------|
+| Prof. Martynyuk, dean | Opens the faculty, compares its departments over a period and against the previous one, sees categories, levels and awarding bodies, the top performers who agreed to be named and the departments that need attention; exports the report as PDF, Excel or CSV |
+| Alina, faculty secretary | Opens each department of her scope with the same figures, to prepare reports for the dean |
+| Rector and rector's secretary | Open any faculty or department; the university view comes with Feature 5.3 |
+| Employees of the faculty | Are named in top-performer lists only with the `ANALYTICS` consent; otherwise counted in totals only |
+| GDPR officer, administrator | No unit analytics (tracker deviation 2) |
+
+## 2. Scope
+
+**In (this feature)**
+
+- `GET /analytics/units` (the units the caller may analyse) and `GET /analytics/units/{id}` (one faculty or department over a period of calendar years, compared with the previous period of the same length): totals, counts by year, a comparison of the child departments, counts by category, level and awarding organisation, top performers under the `ANALYTICS` consent, and rule-based highlights
+- Permissions `analytics:read:department` and `analytics:read:faculty`, evaluated on the caller's held role scopes
+- Redis cache of the unit aggregates (first use of Spring Cache), names and consent resolved per request
+- `vw_award_statistics` removed; `/reports/awards/*` drafts replaced in `openapi.yml` (tracker deviations 3 and 6)
+- Seed: unit awards and awarding-organisation spellings in ФМІ
+- Page `/analytics/units/{id}` with a unit and period choice, tiles with deltas, charts with table views, the department comparison table, top performers and highlights; navigation entry "Unit analytics"
+- Export of the same report as CSV, Excel and PDF (`GET /analytics/units/{id}/export`), audited
+- User guide "Unit analytics" with the interpretation of each figure (US-009 DoD "analytics guide, interpretation guide")
+
+**Out (where it goes)**
+
+- University level, comparison of faculties, trend projection, compliance summary: Feature 5.3 (5.3.1, 5.3.2)
+- Board report with charts: 5.3.3 reuses the PDF component of 5.2.3
+- Statistical significance tests: not planned (tracker deviation 5); deltas show the counts behind them
+- Date filters finer than a calendar year: not planned; the period stays in years as in 5.1 (deviation 6)
+- Workflow figures (approval rate, processing days, counts by status): stay with the review metrics of 4.2.2; the `/reports/awards/summary` draft is removed (tracker deviation 3)
+- Custom report builder, scheduled or e-mailed reports: not planned
+- Delegated analytics: delegations carry award reading and approval only (AUTHENTICATION_AUTHORIZATION, approval delegation)
+
+## 3. Stories
+
+| Key | Story | Points | Parallel | Depends on |
+|-----|-------|--------|----------|------------|
+| SCRUM-101 (#288) | 5.2.1 Unit analytics API for departments and faculties with period comparison | 8 | no | — |
+| SCRUM-102 (#289) | 5.2.2 Faculty analytics page with department comparison and top performers | 5 | yes | 5.2.1 (`/analytics/units/*`) |
+| SCRUM-103 (#290) | 5.2.3 Analytics report export to CSV, Excel and PDF | 5 | no | 5.2.1 (service); UI button after 5.2.2 |
+
+5.2.1 is backend only (with the seed). 5.2.2 is frontend only and can start from the stubs while 5.2.1 is built. 5.2.3 has a backend part (export component, endpoint, audit) and a small UI part (export menu); it splits at the green backend gate.
+
+## 4. Acceptance criteria
+
+Common definitions: an award **counts** for unit U when it is `APPROVED`, its `organization_id` lies in the subtree of U (the department of the submission, DATA_DICTIONARY Appendix C, not the owner's current department) and its `award_date` year lies in the period; personal awards (`recipient_org_id` NULL) and unit awards both count, reported apart. The **period** is `from`..`to` in calendar years (Europe/Kyiv); without `to` it ends at the current year, without `from` it is the five years ending at `to`. The **previous period** has the same length and ends the year before `from`. **Members** of a unit are the `ACTIVE` accounts whose `users.organization_id` lies in its subtree. An **analysable unit** is a `FACULTY` or a `DEPARTMENT` covered by a held role scope (`AccessScope.heldScopes`) of a role granting `analytics:read:faculty` (any analysable type) or `analytics:read:department` (departments only).
+
+### 5.2.1 Unit analytics API for departments and faculties with period comparison (SCRUM-101)
+
+- **AC-1.1** Given the permission matrix, when the roles are inspected, then `analytics:read:department` is held by `FACULTY_SECRETARY`, `DEAN`, `RECTOR_SECRETARY` and `RECTOR`, and `analytics:read:faculty` by `DEAN`, `RECTOR_SECRETARY` and `RECTOR`; neither is delegable; `RolePermissions`, AUTHENTICATION_AUTHORIZATION §3.3 and RBAC_matrix §4 (with a footnote correcting "View Faculty Analytics" for the faculty secretary) agree.
+- **AC-1.2** Given a signed-in account, when it calls `GET /analytics/units`, then it receives its analysable units (id, names, code, type, parent id), each faculty followed by its departments, alphabetically by Ukrainian name; `secretary.fmi` (scope ФМІ) gets the departments of ФМІ only, `dean.fmi` ФМІ and its departments, the rector every faculty and department; an account with neither permission receives 403, without a token 401.
+- **AC-1.3** Given an analysable unit, when the caller calls `GET /analytics/units/{id}`, then it receives 200 `UnitAnalytics` with the unit, the period, the previous period, `generatedAt` and `partialYear` (true when `to` is the current year); a unit that is unknown, of another type or not analysable for the caller (a borrowed scope included) answers 404 with the same body, so ids cannot be probed; invalid years answer 400 `invalid-parameter` as in AC-1.5 of 5.1.
+- **AC-1.4** Given approved, pending, rejected and draft awards inside and outside the unit, when the analytics are read, then `totals` holds `approved` and `awardedPeople` (distinct owners of counted personal awards) as `Figure` { `current`, `previous`, `delta`, `deltaPercent` (null when `previous` is 0) }, and `personal`, `unitAwards`, `verified`, `members` and `perHundredMembers` (counted awards per 100 members, one decimal, null without members) for the current period; only counted awards appear anywhere in the response.
+- **AC-1.5** Given a faculty, when its analytics are read, then `units` lists every active child department and, when it has members or counted awards, a row for the faculty level itself (`facultyLevel` true), each with `members`, `approved` (`Figure`), `awardedPeople`, `perHundredMembers`, `verified` and `byYear` (counts per year of the period, zeros included); the rows' approved counts sum to the faculty total; for a department `units` is empty.
+- **AC-1.6** Given counted awards, when the analytics are read, then `byYear` lists every year of the period with `total`, `personal` and `unitAwards`; `byCategory` and `byLevel` give `count` and `previous` per entry (levels in `RecognitionLevel` order, categories by count, then English name); `bySource` groups `awarding_organization` case- and space-insensitively under its most frequent spelling, the 15 largest by count with `otherCount` for the rest.
+- **AC-1.7** Given members with counted personal awards, when the analytics are read and the unit has at least `app.analytics.min-group-size` members, then `topPerformers.status` is `LISTED` and `people` lists up to `app.analytics.top-performers` (10) `ACTIVE` owners whose latest `ANALYTICS` row is a grant, by count, then by surname, each with name, department, count and highest level, without positions; owners without the consent, erased or inactive owners and unit awards are never listed; below the minimum the status is `GROUP_TOO_SMALL` with no people.
+- **AC-1.8** Given a faculty, when its analytics are read, then `highlights` lists, per department row with members: `NO_AWARDS` (no counted award), `DECLINE` (previous ≥ 4 and current ≤ half of it), `GROWTH` (previous ≥ 4 and current ≥ 1.5 times it) and, for rows with at least the minimum group of members, `BELOW_AVERAGE` (awards per member under half of the faculty's), each with the unit and the two counts; the rules and thresholds are documented in the user guide (5.2.2).
+- **AC-1.9** Given the same unit and period read twice within `app.analytics.unit-cache-ttl` (5 minutes), when the second request runs, then the aggregates come from the Redis cache `unit-analytics` (same `generatedAt`), while names, the `ACTIVE` filter and the consent filter are applied per request, so a withdrawn consent or an erased account disappears from `topPerformers` at the next request; with Redis stopped the analytics are computed and returned, with a warning in the log.
+- **AC-1.10** Given 30 000 approved awards over 10 departments and 600 members of one faculty, when its analytics are read without the cache, then the response arrives within 2 s in the IT (US-009 DoD: under 5 s), and the plan reads `awards` through `idx_awards_organization_status`, not a sequential scan.
+- **AC-1.11** Given the migrated schema, when it is inspected, then `vw_award_statistics` no longer exists (dropped by `R__create_views.sql`), DATA_DICTIONARY Appendix C says so, and `openapi.yml` has no `/reports/awards/*` paths nor the `AwardsSummary` schema.
+- **AC-1.12** Given the `local` or `docker` profile, when the database is migrated, then `R__seed_users_dev_analytics.sql` adds at least three approved unit awards of DAI and two of ФМІ itself, and awarding organisations written in two spellings (case and spacing) that group into one source; reruns add nothing; the e2e specs of 5.1 still pass.
+- **AC-1.13** Given the module rules, when `ModularityTest` runs, then it passes: `analytics` reads awards through `award`'s `UnitStatistics`, consent through `ConsentLookup.grantedAmong`, names through `ActorDirectory` and the tree through `OrganizationTree`; ADR-022 lists the new exposed types.
+
+### 5.2.2 Faculty analytics page with department comparison and top performers (SCRUM-102)
+
+- **AC-2.1** Given an account with `analytics:read:department`, when it opens the navigation, then "Unit analytics" leads to `/analytics`, which opens the first unit of `GET /analytics/units` at `/analytics/units/{id}`; an account without it sees no entry and gets `/forbidden` on the direct URL; a unit id the API answers 404 for shows "This unit is not available" with a link to `/analytics`.
+- **AC-2.2** Given the page, when it renders, then a unit selector (faculties and their departments, indented) and the period selector of 5.1 (a from–to pair of years, kept in the URL as `?from=&to=`) reload every widget, and a line states the previous period it is compared with and, when `partialYear`, that the current year is not over.
+- **AC-2.3** Given the analytics, when the page renders, then it shows in this order: tiles for approved awards and awarded people with their delta (arrow, signed count and percent, "new" when the previous count is 0), unit awards, verified and awards per 100 members; the trend by year (one line per department for a faculty, bars of personal and unit awards for a department); the department comparison (faculty only); by category and by level (current and previous side by side); by awarding organisation; top performers; highlights.
+- **AC-2.4** Given the department comparison, when it renders, then a table lists each row with members, approved with delta, awarded people, per 100 members and verified, sortable by every column, with "Faculty level" for the faculty row; a department name opens that department's page with the same period; a bar chart shows approved per 100 members per department.
+- **AC-2.5** Given the top performers, when `status` is `LISTED`, then the list shows name, department, count and highest level, with the note that only people who agreed to be named appear; when the list is empty, "Nobody in this unit has agreed to be named yet."; when `GROUP_TOO_SMALL`, an explanation of the minimum group without figures.
+- **AC-2.6** Given highlights, when they render, then each reads as a sentence naming the department and the counts (e.g. "Department of Mathematical Analysis: 3 awards, 8 in the previous period"), strengths and gaps in two groups; with none, "Nothing stands out in this period."
+- **AC-2.7** Given any chart of the page, when it renders, then it uses the chart wrapper of 5.1.2 (SVG, ARIA, theme tokens, reduced motion, "Show as table"); categories and sources beyond 12 bars form "Other" in the chart only; a failed load shows the error with Retry, an invalid period "The period is not valid" as in 5.1.4.
+- **AC-2.8** Given 360 px and 1280 px, uk and en, light and dark, when the page is screen-checked, then nothing scrolls horizontally except the comparison table inside its own container, texts are translated and axe reports no serious violation; the page is usable within 5 s with the seed (Playwright); the user guide has "Unit analytics" with the counting rule, the previous period, per 100 members, the highlight rules and the consent rule.
+
+### 5.2.3 Analytics report export to CSV, Excel and PDF (SCRUM-103)
+
+- **AC-3.1** Given an analysable unit, when the caller calls `GET /analytics/units/{id}/export?format=csv|xlsx|pdf&from=&to=&lang=uk|en`, then it receives the file with `Content-Disposition: attachment; filename="analytics-<code>-<from>-<to>.<ext>"`, the media type of the format and `Cache-Control: no-store`; access, 404 and 400 follow AC-1.3; an unknown `format` or `lang` answers 400 `invalid-parameter`.
+- **AC-3.2** Given the export, when it is opened, then every format carries the same figures as `GET /analytics/units/{id}` for that period: a header (unit, period, previous period, produced at, produced by) and the sections totals, by year, departments, by category, by level, by source, top performers and highlights, labelled in `lang` with category and unit names in that language; the file carries the note that named people agreed to be named and that a later withdrawal does not change files already produced.
+- **AC-3.3** Given CSV, when it is produced, then it is UTF-8 with a byte-order mark, RFC 4180 quoting, one long table (`section`, `key`, `label`, `year`, `current`, `previous`); given Excel, one sheet per section with a header row and number cells; in both a text cell starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with `'` (formula injection).
+- **AC-3.4** Given PDF, when it is produced, then it is A4 portrait from a Thymeleaf template with an embedded font that renders Ukrainian, tables that do not split rows across pages, page numbers, and opens in a standard viewer; the faculty report with the seed fits in at most 6 pages.
+- **AC-3.5** Given an export, when it completes, then one `ANALYTICS_EXPORTED` audit row is written (`entity_type` `ANALYTICS`, `entity_id` the unit, `new_values` with format, period, language and the number of people named); a refused request writes none.
+- **AC-3.6** Given the page of 5.2.2, when the figures are shown, then an "Export" menu offers PDF, Excel and CSV for the current unit, period and interface language and downloads the file; it is disabled while loading, after a failed load and for an invalid period; a failed download shows "The report could not be exported." without leaving the page.
+- **AC-3.7** Given the new libraries, when the gate runs, then the export component is one `analytics.export` package behind a `ReportWriter` interface (one implementation per format), the class fan-out stays ≤ 25, SpotBugs and PMD report nothing, and the libraries and the font licence are listed in the README third-party section.
+
+## 5. Edge cases
+
+- **Period**: `from` without `to` ends at the current year; `to` without `from` is five years; a single year compares with the year before. `from=1950` makes a previous period before 1950, which is allowed internally and simply empty. The current year is the Kyiv year.
+- **Award moved between units**: an award counts where it was submitted (`organization_id`); a later transfer of the owner does not move it. Members count where the account is now; per-member figures mix both, as stated in the user guide.
+- **Inactive departments**: an inactive child department with counted awards still gets a row (its awards are part of the faculty total), marked inactive; one without awards is left out.
+- **Faculty-level staff**: the dean's or secretary's personal awards submitted at faculty level land in the "Faculty level" row, not in a department.
+- **Consent changes and erasure**: names are resolved per request, so a withdrawal or an erasure removes the person at the next request even while the aggregates are cached; anonymised awards of erased accounts keep counting in totals. Exports already produced are outside the system's control (purpose text of the consent).
+- **Small groups**: top performers need the minimum group (5) in the requested unit; department figures are shown at every size, since every viewer already reads the same awards through `award:read:*` (deviation 4).
+- **Ties and positions**: no positions are shown, so a gap left by an unlisted colleague cannot be seen.
+- **Sources**: free text grouped by `lower(regexp_replace(btrim(x), '\s+', ' ', 'g'))`; different names of the same body (abbreviation vs full name) stay apart.
+- **Concurrency and cache**: an approval appears after at most the TTL; `generatedAt` tells the viewer how fresh the figures are. Two simultaneous misses compute twice (no lock), harmless.
+- **Authorization**: the scope check uses held scopes only, so a delegate never reads unit analytics; the 404 for out-of-scope units mirrors the review period endpoint; role revocation ends sessions (existing behaviour).
+- **Export**: large faculties stay small in the file (aggregates only, top 10 people); the export is synchronous; formula injection is neutralised; the file name uses the unit code, never a person's name.
+- **External**: Redis down: computed without cache (AC-1.9); the PDF font is bundled, no network access at render time.
+
+## 6. Dependencies
+
+### Tables
+
+| Table | Change |
+|-------|--------|
+| `awards`, `award_categories`, `users`, `organizations`, `consent_records` | Read only (5.2.1) |
+| `audit_logs` | New action `ANALYTICS_EXPORTED` (5.2.3); `action_type` has no check constraint, no migration |
+| `vw_award_statistics` | Removed from `R__create_views.sql` (its existing `DROP VIEW IF EXISTS` stays) (5.2.1) |
+| Seed `db/seed/local/R__seed_users_dev_analytics.sql` | Extended: unit awards, source spellings (5.2.1) |
+
+No versioned migration; `idx_awards_organization_status` covers the unit query.
+
+### Endpoints
+
+| Endpoint | State |
+|----------|-------|
+| `GET /analytics/units` | New (5.2.1) |
+| `GET /analytics/units/{id}` | New (5.2.1) |
+| `GET /analytics/units/{id}/export` | New (5.2.3) |
+| `GET /reports/awards/summary`, `GET /reports/awards/export` | Removed drafts (5.2.1) |
+
+### Services
+
+- `analytics`: `UnitAnalyticsService` (period, previous period, assembling, names and consent per request), `UnitScope` (analysable units from held scopes and the tree), `UnitAggregates` (cached, `@Cacheable("unit-analytics")`), `HighlightRules`, `AnalyticsCacheConfig` (Redis cache manager, TTL, error handler), `UnitAnalyticsController`; `analytics.export`: `ReportWriter`, `CsvReportWriter`, `XlsxReportWriter`, `PdfReportWriter`, `ReportLabels` (uk/en), `UnitReportExporter` (audit)
+- `award` `service`: `UnitStatistics` (native SQL over a set of organisation ids and two periods: counts by year and personal/unit, by organisation, by category, by level, by normalised source, per owner of personal awards, verified, members per organisation)
+- `gdpr`: `ConsentLookup.grantedAmong(Collection<Long>, ConsentType)` (batch form planned in 5.1)
+- `user`: `ActorDirectory.actorsOf` (names)
+- `organization`: `OrganizationTree.subtree`, `node`; names through the existing organisation reference lookup
+- `authz`: `RolePermissions` (two permissions, not delegable)
+
+### Frontend
+
+- `features/analytics/units` (lazy route `/analytics`): `unit-analytics` page, `unit-picker`, `delta-tile`, `unit-trend-chart`, `unit-comparison` (table and chart), `comparison-bars` (category and level, current vs previous), `source-chart`, `top-performers`, `highlights`, `export-menu` (5.2.3); NgRx feature `unitAnalytics` (units, selected unit, period, data, load state)
+- Reuse: `shared/charts` wrapper, `analytics-period` parser, horizontal-bar helper with "Other" (5.1.4)
+- `core/layout/shell`: "Unit analytics" entry; `core/auth`: `unitAnalyticsGuard`
+- i18n keys under `unitAnalytics.*`
+
+### External systems
+
+None. New backend libraries (5.2.3): `io.github.openhtmltopdf:openhtmltopdf-pdfbox` (HTML to PDF over PDFBox, LGPL-2.1), `org.dhatim:fastexcel` (XLSX writer, Apache-2.0); font Noto Sans (SIL OFL 1.1) under `resources/fonts`.
+
+## 7. Technical decisions
+
+Inherited: tracker decisions of 2026-10-19 (approved awards only, `ANALYTICS` for naming, SQL on demand with a short Redis TTL, one PDF library from 5.2.3), ADR-022 (modules), ADR-015 (NgRx per feature), ADR-014 with the 5.1.2 chart addendum (ngx-echarts), ADR-005 (Redis), PRD 5.1 deviations 5 (minimum group 5) and 13 (years), the award scope rule of AUTHENTICATION_AUTHORIZATION (an award belongs to the unit of its submission).
+
+**Proposed deviations and assumptions**
+
+1. **Two permissions, scope decides the unit** (tracker deviation 2): `analytics:read:department` for every approver role, `analytics:read:faculty` from the dean upward. A faculty secretary scoped to a whole faculty therefore opens each of its departments but not the faculty comparison; RBAC_matrix §4 gave the secretary "View Faculty Analytics" and is corrected with a footnote. Held scopes only: analytics are not part of a delegation.
+2. **404 for a unit outside the scope**, like `GET /organizations/{id}/review-period`, rather than 403: the unit list is the way to discover units.
+3. **Awards count where they were submitted** (`awards.organization_id`), members where they are now. This keeps the figures stable after transfers and matches the award reading rule and Appendix C; per-member figures are explained in the guide.
+4. **Unit figures at every group size; only people need the minimum group.** Everyone with unit analytics already reads each of these awards through `award:read:*`, so hiding a small department's count would protect nothing from the viewer; the `ANALYTICS` consent governs naming (PRIVACY_BY_DESIGN §4.2), and the minimum group of 5 applies to the top-performer list (tracker risk 3).
+5. **Top performers without positions**, consenting `ACTIVE` owners only, up to 10. A numbered list would reveal where an unlisted colleague sits.
+6. **Period in years, default five, previous period of the same length** (US-009 "compare current period to previous periods"). Deltas show counts and percent; no significance test (tracker deviation 5). The current year is flagged `partialYear` instead of being compared to date.
+7. **Highlights by four fixed rules** (`NO_AWARDS`, `DECLINE`, `GROWTH`, `BELOW_AVERAGE`) with the thresholds of AC-1.8 as constants, documented in the guide; "potential support needs" of US-009 read as departments, never as people.
+8. **Per 100 members** rather than per member: whole numbers read better in a comparison table and a presentation.
+9. **Cache the aggregates, not the response**: `UnitAggregates` holds counts and the per-owner counts keyed by unit and period, TTL 5 minutes; names, the `ACTIVE` filter and the consent are applied per request, so privacy changes are never delayed by the cache. Personal analytics stay uncached (PRD 5.1 deviation 2). A Redis failure falls back to computing (`CacheErrorHandler`), as the rate limit does.
+10. **Export libraries**: openhtmltopdf with Thymeleaf (already used for mail) so the PDF is an HTML template that 5.3.3 reuses; FastExcel for XLSX (streaming, no XMLBeans, a fraction of Apache POI's weight); CSV written by hand (one long table). One `ReportWriter` interface keeps the fan-out down (tracker risk 4). Exports are synchronous: aggregates only, a few hundred rows.
+11. **Exports are audited** (`ANALYTICS_EXPORTED`) because the file leaves the system with named people; viewing the page is not audited, like the other read screens.
+12. **Points**: 5.2.1 goes from 5 to 8 for the cache infrastructure, the highlights, the unit list and the seed next to the aggregation; the feature totals 18, the epic 52. Keeping 5 would mean moving the cache to 5.3.
+13. **`vw_award_statistics` dropped, not reused** (tracker deviation 6): it reports draft and pending counts and groups by one organisation; the service queries replace it.
+14. **`/reports/awards/*` drafts replaced by `/analytics/units/*`** (tracker deviation 3), tag `Analytics`.
+
+## 8. Contract
+
+### 8.1 OpenAPI stubs
+
+Written to `docs/api/openapi.yml` in this PRD's PR, each with `x-status: planned` and the story in `description`; tag `Analytics`. The `/reports/awards/*` drafts and `AwardsSummary` are removed in 5.2.1.
+
+| Operation | Request | Response | Problems |
+|-----------|---------|----------|----------|
+| `GET /analytics/units` (`listAnalysableUnits`, 5.2.1) | — | 200 `AnalysableUnit`[] | 401; 403 |
+| `GET /analytics/units/{id}` (`getUnitAnalytics`, 5.2.1) | path `id` (int64); query `from`, `to` (integer 1950..2100, optional) | 200 `UnitAnalytics` | 400 `invalid-parameter` (`from`, `to`); 401; 403; 404 |
+| `GET /analytics/units/{id}/export` (`exportUnitAnalytics`, 5.2.3) | as above + `format` (enum `csv`, `xlsx`, `pdf`, required), `lang` (enum `uk`, `en`, default `uk`) | 200 `text/csv`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `application/pdf` (binary) | 400 `invalid-parameter` (`format`, `lang`, `from`, `to`); 401; 403; 404 |
+
+Schemas:
+
+- `AnalysableUnit` { `id`, `name`, `nameUk`, `code`, `type` (`FACULTY`, `DEPARTMENT`), `parentId` (nullable) }
+- `UnitAnalytics` { `unit` (`AnalysableUnit`), `period` { `from`, `to` }, `previousPeriod` { `from`, `to` }, `partialYear`, `generatedAt` (date-time), `totals` (`UnitTotals`), `byYear`: [{ `year`, `total`, `personal`, `unitAwards` }], `units`: `UnitComparisonRow`[], `byCategory`: [{ `category` (`AwardCategoryRef`), `count`, `previous` }], `byLevel`: [{ `level`, `count`, `previous` }], `bySource` { `sources`: [{ `name`, `count` }], `otherCount` }, `topPerformers` (`TopPerformers`), `highlights`: `UnitHighlight`[] }
+- `Figure` { `current`, `previous`, `delta` (integer), `deltaPercent` (number, nullable) }
+- `UnitTotals` { `approved` (`Figure`), `awardedPeople` (`Figure`), `personal`, `unitAwards`, `verified`, `members`, `perHundredMembers` (number, nullable) }
+- `UnitComparisonRow` { `unit` (`OrganizationRef`), `facultyLevel`, `active`, `members`, `approved` (`Figure`), `awardedPeople`, `perHundredMembers` (nullable), `verified`, `byYear`: integer[] }
+- `TopPerformers` { `status`: enum `LISTED`, `GROUP_TOO_SMALL`; `people`: [{ `userId`, `firstName`, `lastName`, `department` (`OrganizationRef`, nullable), `count`, `highestLevel` (`RecognitionLevel`) }] }
+- `UnitHighlight` { `type`: enum `NO_AWARDS`, `DECLINE`, `GROWTH`, `BELOW_AVERAGE`; `unit` (`OrganizationRef`), `current`, `previous` }
+
+### 8.2 Migration outlines
+
+| File | Story | Content |
+|------|-------|---------|
+| `R__create_views.sql` (repeatable) | 5.2.1 | Remove the `vw_award_statistics` definition; the `DROP VIEW IF EXISTS vw_award_statistics CASCADE` line stays, so existing databases lose the view |
+| `db/seed/local/R__seed_users_dev_analytics.sql` | 5.2.1 | Unit awards (`recipient_org_id` = DAI and ФМІ) with `award_requests` `APPROVED`; awards of existing colleagues with an awarding organisation in two spellings; guarded by `WHERE NOT EXISTS` on (owner or unit, `title_uk`) |
+
+No versioned migration.
+
+### 8.3 Properties
+
+| Property | Default | Story |
+|----------|---------|-------|
+| `app.analytics.unit-cache-ttl` (`ANALYTICS_UNIT_CACHE_TTL`) | `PT5M` | 5.2.1 |
+| `app.analytics.top-performers` | 10 | 5.2.1 |
+| `app.analytics.min-group-size` | 5 (existing) | 5.1.1 |
+
+## 9. Test plan
+
+| AC | Unit | IT | FT | E2E / other |
+|----|------|----|----|-------------|
+| 1.1 | ✓ permission sets, not delegable | | ✓ 403 for employee, GDPR officer, administrator, delegate | doc review |
+| 1.2 | ✓ unit list from scopes and tree | | ✓ list per seed role | |
+| 1.3 | ✓ period and previous period | | ✓ 200, 404 unknown/other type/out of scope, 400 | |
+| 1.4–1.6 | ✓ figures, deltas, per 100, row sums | ✓ `UnitStatistics` on Testcontainers: status, subtree, submission unit vs current unit, unit awards, sources grouping, Kyiv year | ✓ response shape on the seed | |
+| 1.7 | ✓ consent, active, ordering, limit | ✓ group of 4 and 5 | ✓ consent toggle changes the list | |
+| 1.8 | ✓ each rule and threshold edge | | | |
+| 1.9 | ✓ error handler fallback | ✓ cache hit (`generatedAt`), withdrawal visible while cached, Redis stopped | | |
+| 1.10 | | ✓ 30 000 awards, time and `EXPLAIN` | | |
+| 1.11, 1.12 | | ✓ view absent; seed applied twice | | e2e 5.1 rerun |
+| 1.13 | | ✓ `ModularityTest` | | doc review |
+| 2.1–2.7 | ✓ components, store, guard, sorting, delta formatting, sentences | | | ✓ Playwright: dean faculty page, period, department drill-down, secretary list, forbidden for employee, invalid period |
+| 2.8 | | | | screen check 360/1280, uk/en, light/dark, axe; timing; doc review |
+| 3.1, 3.5 | ✓ file name, audit details | | ✓ three formats: headers, media types, 400/404, audit row | |
+| 3.2–3.4 | ✓ each writer: sections, labels, injection guard, BOM | ✓ PDF parsed back (PDFBox text extraction: Ukrainian text, page count); XLSX read back | | |
+| 3.6 | ✓ export menu states | | | ✓ Playwright: download of each format |
+| 3.7 | | | | gate static; doc review |
+
+Coverage 85 % lines; static clean. Security review for 5.2.1 (permissions, scope check, consent filter, cache contents) and 5.2.3 (export, injection, audit).
+
+## 10. Manual verification
+
+Expected texts are planned wording; they are replaced by the merged English i18n texts at the feature validation. Local e2e runs register accounts in the e2e unit, so figures of ФМІ grow over time; compare with psql rather than with fixed numbers.
+
+Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backend `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` (applies the seed); frontend `npm start` on `http://localhost:4200`. psql `docker compose exec postgres psql -U postgres award_monitoring`; Swagger `http://localhost:8080/swagger-ui.html`; Redis `docker compose exec redis redis-cli`. Seed accounts (password `Passw0rd-demo`, `@chnu.edu.ua`): `dean.fmi` (DEAN, ФМІ), `secretary.fmi` and `secretary2.fmi` (FACULTY_SECRETARY, ФМІ), `rector`, `employee.fmi`, `lecturer.fmi` (`ANALYTICS` granted), `admin`, `gdpr`.
+
+1. psql: counted awards of ФМІ per department for 2022–2026 and 2017–2021 (`status = 'APPROVED'`, `organization_id` in the ФМІ subtree), the unit awards of DAI and ФМІ, and the `ACTIVE` members per department. Expected: DAI and DMA with awards in both periods; at least three DAI and two ФМІ unit awards. (AC-1.12)
+2. Sign in as `dean.fmi`; Swagger `GET /analytics/units`. Expected: ФМІ followed by its departments. As `secretary.fmi`: the departments of ФМІ only; as `rector`: every faculty and department. (AC-1.1, 1.2)
+3. As `dean.fmi`, `GET /analytics/units/9`. Expected: 200; period 2022–2026, previous 2017–2021, `partialYear` true; `totals.approved.current` equals step 1; the `units` rows sum to the totals; a "Faculty level" row with the ФМІ unit awards. (AC-1.3–1.5)
+4. Same response: `byYear` five entries with personal and unit counts; `bySource` shows the two seeded spellings as one source with their sum. (AC-1.6)
+5. `topPerformers`: `LISTED`, `lecturer.fmi` among the people, nobody without an `ANALYTICS` grant (check with psql against `consent_records`), no positions. (AC-1.7)
+6. `highlights`: compare each with the rules of AC-1.8 using the counts of step 1. (AC-1.8)
+7. Call it again. Expected: same `generatedAt`; `redis-cli keys '*unit-analytics*'` shows the entry; it expires after 5 minutes. (AC-1.9)
+8. `GET /analytics/units/9?from=2027`, `?from=2026&to=2021`, `?from=abc`. Expected: 400 `invalid-parameter` naming the parameter. (AC-1.3)
+9. As `secretary.fmi`, `GET /analytics/units/9` and `GET /analytics/units/1`. Expected: 404 for both; a DAI id → 200. (AC-1.3, deviation 1)
+10. Open `http://localhost:4200` as `dean.fmi`, navigation "Unit analytics". Expected: `/analytics/units/9` with unit and period selectors, the comparison line "Compared with 2017–2021" and the note that the current year is not over; tiles with deltas, trend lines per department, the comparison table, category and level charts, sources, top performers, highlights. (AC-2.1–2.3)
+11. Sort the comparison table by "Per 100 members", then open DAI from the table. Expected: the order follows the column; `/analytics/units/<DAI>?from=2022&to=2026` with bars of personal and unit awards and no comparison section. (AC-2.4)
+12. Choose 2024–2026 on the faculty. Expected: URL `?from=2024&to=2026`, compared with 2021–2023, every widget reloaded. (AC-2.2)
+13. "Show as table" on the trend and the category chart. Expected: the same figures as the API; categories beyond 12 grouped as "Other" only in the chart. (AC-2.7)
+14. As `lecturer.fmi` on `/privacy` withdraw analytics; as `dean.fmi` reload the faculty within 5 minutes. Expected: `lecturer.fmi` is gone from top performers while `generatedAt` is unchanged; grant again. (AC-1.7, 1.9, 2.5)
+15. Export PDF, Excel and CSV from the "Export" menu in English and in Ukrainian. Expected: three downloads named `analytics-<code>-2022-2026.*`; the PDF in A4 with Ukrainian text, page numbers and the consent note; the Excel file with one sheet per section; the CSV opens in Excel with Cyrillic intact; the figures match the page. (AC-3.1–3.4, 3.6)
+16. psql `select action_type, entity_id, new_values from audit_logs where action_type = 'ANALYTICS_EXPORTED' order by log_id desc limit 3;`. Expected: one row per export with format, period, language and the number named. (AC-3.5)
+17. As `dean.fmi`, enter an award whose awarding organisation is `=HYPERLINK("http://example.org")` and have it approved through the usual workflow; export CSV and Excel. Expected: the cell shows the text with a leading `'`, no formula. (AC-3.3)
+18. Screen check of `/analytics/units/9` at 360 and 1280 px, uk/en, light/dark. Expected: no page-level horizontal scroll, the table scrolls in its container, no serious axe finding. (AC-2.8)
+19. Run the Playwright spec of 5.2.2 and note the time to a usable page. Expected: under 5 s. (AC-2.8)
+
+### Detours
+
+20. Direct URL `/analytics` as `employee.fmi`, `admin` and `gdpr`. Expected: no navigation entry, `/forbidden`; `GET /analytics/units` → 403. (AC-1.2, 2.1)
+21. Direct URL `/analytics/units/9` as `secretary.fmi` and `/analytics/units/999999` as `dean.fmi`. Expected: "This unit is not available" with a link to `/analytics`. (AC-2.1)
+22. Direct URLs `/analytics/units/9?from=2027` and `?from=2026&to=2021`. Expected: "The period is not valid" with a way back; the "Export" menu disabled. (AC-2.7, 3.6)
+23. Reload the page and use back/forward after changing the unit and period twice. Expected: each history entry restores its unit and period. (AC-2.2)
+24. Restart the backend while the page is open, then change the period. Expected: one error with Retry while it is down, the figures after it is up; "Export" disabled while the error shows. (AC-2.7, 3.6)
+25. Let the access token expire with the page open, then export. Expected: silent refresh, the file downloads. (AC-3.6)
+26. Stop Redis (`docker compose stop redis`) and reload the faculty. Expected: the page loads (a cache warning in the backend log); start Redis again. (AC-1.9)
+27. Hidden in state, export: during loading, after a failed load and for an invalid period the "Export" menu is disabled; `GET /analytics/units/9/export?format=docx` → 400; `?format=pdf` as `secretary.fmi` → 404. (AC-3.1, 3.6)
+28. Hidden in state, top performers: restart the backend with `ANALYTICS_MIN_GROUP_SIZE=50`. Expected: the faculty's top performers explain the minimum group without names; API `GROUP_TOO_SMALL`, no people; the department figures stay. Restore. (AC-1.7, 2.5)
+29. Hidden in state, faculty comparison: as `secretary.fmi` open a department: no comparison section, no faculty in the unit selector. (AC-1.2, 2.4)
+30. Revoked mid-flow, role: `admin` revokes the DEAN role of `dean.fmi` while the faculty page is open with the export menu open. Expected: the revocation ends the dean's sessions; the next request leads to the sign-in page; after signing in "Unit analytics" is gone (unless another role grants it) and an export URL answers 403. `secretary.fmi` keeps the department pages unchanged. Re-grant the role. (AC-1.1, 2.1, 3.1)
+31. Revoked mid-flow, delegation: `secretary.fmi` lends FACULTY_SECRETARY of ФМІ to `employee.fmi`. Expected: `employee.fmi` still gets 403 on `GET /analytics/units` and no navigation entry (analytics are not delegable); revoking the delegation changes nothing for analytics. (AC-1.1, deviation 1)
+32. Revoked mid-flow, consent: `lecturer.fmi` withdraws analytics while `dean.fmi` has the page open. Expected: the open page keeps the name until its next load; an export started after the withdrawal leaves the name out. (AC-1.7, 3.2)
+33. Erasure of a top performer (a fresh account with the consent and approved awards, `APP_ERASURE_GRACE_PERIOD=PT10M` as in Feature 6.1 §10): after completion the person is gone from top performers at the next request, the faculty totals keep the anonymised awards. (AC-1.7, §5)
+34. Transfer `lecturer.fmi` from DAI to DMA (`admin`). Expected: the DAI members drop by one and DMA's grow, the awards stay in DAI's count; the top-performer entry names DMA. (AC-1.5, deviation 3)
+35. Approve a new award in DAI and reload the faculty at once, then after 5 minutes. Expected: unchanged figures with the old `generatedAt`, then the new count. (AC-1.9)
+
+## 11. Risks
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| openhtmltopdf or FastExcel trip SpotBugs or the dependency check | Medium | Medium | One `analytics.export` package; exclusions only with a reason; Apache POI as fallback for XLSX |
+| Spring Cache with Redis serialisation of records fails at runtime only | Medium | Low | IT with a cache hit on Testcontainers Redis; JSON serializer with type information limited to the analytics package |
+| Department figures read as a ranking of people in small departments | Low | Medium | No names without the consent; minimum group for top performers; guide text explains the figures |
+| 5.2.1 at 8 points overruns sprint 7 | Medium | Medium | The cache (AC-1.9) can move to 5.3.1 without changing the API |
+| Calendar (deployment mid-November) | Medium | High | 5.2.3 can ship CSV and Excel before PDF; the board report (5.3.3) stays the cut line |
+
+## 12. Definition of Done
+
+- Every AC proven at the layers of §9; `.\tools\gate.ps1` green per story; Playwright for 5.2.2 and 5.2.3
+- Screen check of `/analytics/units/{id}` (faculty and department) and the export menu; the PDF opened and checked by eye
+- Security review for 5.2.1 and 5.2.3
+- `openapi.yml` without `x-status: planned` on the three operations and without `/reports/awards/*`; DATA_DICTIONARY Appendix C and `ANALYTICS_EXPORTED`; AUTHENTICATION_AUTHORIZATION §3.3; RBAC_matrix §4; ADR-022 module table; README third-party libraries and font licence; user guide "Unit analytics"; CHANGELOG `[Unreleased]`; tracker and BACKLOG
+- Manual verification (§10) run and recorded; feature validated

@@ -2943,6 +2943,135 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /analytics/units:
+    get:
+      tags: [Analytics]
+      summary: Units the caller may analyse (planned)
+      x-status: planned
+      description: >
+        Faculties and departments covered by a held role scope (never a borrowed one) of a role granting
+        `analytics:read:faculty` (faculties and departments) or `analytics:read:department` (departments only);
+        each faculty followed by its departments, alphabetically by Ukrainian name (5.2.1).
+      security:
+        - bearerAuth: []
+      operationId: listAnalysableUnits
+      responses:
+        '200':
+          description: The analysable units
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnalysableUnit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /analytics/units/{id}:
+    get:
+      tags: [Analytics]
+      summary: Analytics of a faculty or department (planned)
+      x-status: planned
+      description: >
+        Approved awards (personal and unit) submitted in the unit's subtree whose award year lies in `from`..`to`
+        (Kyiv calendar years; `to` defaults to the current year, `from` to four years before `to`), compared with
+        the previous period of the same length: totals, counts by year, the child departments, by category, by
+        level and by awarding organisation, top performers under the `ANALYTICS` consent and rule-based
+        highlights. Aggregates are cached for `app.analytics.unit-cache-ttl`; names and consent are applied per
+        request (5.2.1).
+      security:
+        - bearerAuth: []
+      operationId: getUnitAnalytics
+      parameters:
+        - $ref: '#/components/parameters/AnalysableUnitId'
+        - $ref: '#/components/parameters/AnalyticsFrom'
+        - $ref: '#/components/parameters/AnalyticsTo'
+      responses:
+        '200':
+          description: The analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitAnalytics'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `from` or `to`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Unknown, not a faculty or department, or outside the caller's analysable units
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /analytics/units/{id}/export:
+    get:
+      tags: [Analytics]
+      summary: Export the analytics of a faculty or department (planned)
+      x-status: planned
+      description: >
+        The figures of `GET /analytics/units/{id}` for the same period as a CSV, Excel or PDF file, labelled in
+        `lang`; writes an `ANALYTICS_EXPORTED` audit row (5.2.3).
+      security:
+        - bearerAuth: []
+      operationId: exportUnitAnalytics
+      parameters:
+        - $ref: '#/components/parameters/AnalysableUnitId'
+        - $ref: '#/components/parameters/AnalyticsFrom'
+        - $ref: '#/components/parameters/AnalyticsTo'
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [csv, xlsx, pdf]
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [uk, en]
+            default: uk
+      responses:
+        '200':
+          description: The report file, `Content-Disposition` attachment `analytics-<code>-<from>-<to>.<ext>`
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `format`, `lang`, `from` or `to`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Unknown, not a faculty or department, or outside the caller's analysable units
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
   # ============== Reports ==============
   /reports/awards/summary:
     get:
@@ -3147,6 +3276,33 @@ components:
         type: integer
         default: 0
         minimum: 0
+
+    AnalysableUnitId:
+      name: id
+      in: path
+      required: true
+      description: A faculty or department (5.2.1)
+      schema:
+        type: integer
+        format: int64
+
+    AnalyticsFrom:
+      name: from
+      in: query
+      description: First calendar year of the period
+      schema:
+        type: integer
+        minimum: 1950
+        maximum: 2100
+
+    AnalyticsTo:
+      name: to
+      in: query
+      description: Last calendar year of the period; not before `from`
+      schema:
+        type: integer
+        minimum: 1950
+        maximum: 2100
 
     UserIdParam:
       name: id
@@ -4566,6 +4722,226 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardWidget'
+
+    AnalysableUnit:
+      type: object
+      description: A faculty or department the caller may analyse (5.2.1, planned)
+      required: [id, name, type]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        nameUk:
+          type: [string, 'null']
+        code:
+          type: [string, 'null']
+        type:
+          type: string
+          enum: [FACULTY, DEPARTMENT]
+        parentId:
+          type: [integer, 'null']
+          format: int64
+
+    YearPeriod:
+      type: object
+      required: [from, to]
+      properties:
+        from:
+          type: integer
+        to:
+          type: integer
+
+    Figure:
+      type: object
+      description: A count in the period and in the previous period of the same length
+      required: [current, previous, delta]
+      properties:
+        current:
+          type: integer
+        previous:
+          type: integer
+        delta:
+          type: integer
+        deltaPercent:
+          type: [number, 'null']
+          description: Null when `previous` is 0
+
+    UnitTotals:
+      type: object
+      properties:
+        approved:
+          $ref: '#/components/schemas/Figure'
+        awardedPeople:
+          $ref: '#/components/schemas/Figure'
+        personal:
+          type: integer
+        unitAwards:
+          type: integer
+        verified:
+          type: integer
+        members:
+          type: integer
+          description: Active accounts of the unit's subtree
+        perHundredMembers:
+          type: [number, 'null']
+          description: Counted awards per 100 members, one decimal; null without members
+
+    UnitComparisonRow:
+      type: object
+      description: A child department, or the faculty level itself (`facultyLevel`)
+      properties:
+        unit:
+          $ref: '#/components/schemas/OrganizationRef'
+        facultyLevel:
+          type: boolean
+        active:
+          type: boolean
+        members:
+          type: integer
+        approved:
+          $ref: '#/components/schemas/Figure'
+        awardedPeople:
+          type: integer
+        perHundredMembers:
+          type: [number, 'null']
+        verified:
+          type: integer
+        byYear:
+          type: array
+          description: Counts per year of the period, zeros included
+          items:
+            type: integer
+
+    TopPerformers:
+      type: object
+      description: >
+        `LISTED`: up to `app.analytics.top-performers` active owners with an `ANALYTICS` grant, by count of counted
+        personal awards, then by surname, without positions. `GROUP_TOO_SMALL`: the unit has fewer members than
+        `app.analytics.min-group-size`; no people.
+      properties:
+        status:
+          type: string
+          enum: [LISTED, GROUP_TOO_SMALL]
+        people:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: integer
+                format: int64
+              firstName:
+                type: string
+              lastName:
+                type: string
+              department:
+                oneOf:
+                  - $ref: '#/components/schemas/OrganizationRef'
+                  - type: 'null'
+              count:
+                type: integer
+              highestLevel:
+                $ref: '#/components/schemas/RecognitionLevel'
+
+    UnitHighlight:
+      type: object
+      description: >
+        `NO_AWARDS`: no counted award; `DECLINE`: previous at least 4 and current at most half of it; `GROWTH`:
+        previous at least 4 and current at least 1.5 times it; `BELOW_AVERAGE`: awards per member under half of the
+        faculty's, for departments with at least the minimum group of members
+      properties:
+        type:
+          type: string
+          enum: [NO_AWARDS, DECLINE, GROWTH, BELOW_AVERAGE]
+        unit:
+          $ref: '#/components/schemas/OrganizationRef'
+        current:
+          type: integer
+        previous:
+          type: integer
+
+    UnitAnalytics:
+      type: object
+      description: Analytics of a faculty or department over a period (5.2.1, planned)
+      properties:
+        unit:
+          $ref: '#/components/schemas/AnalysableUnit'
+        period:
+          $ref: '#/components/schemas/YearPeriod'
+        previousPeriod:
+          $ref: '#/components/schemas/YearPeriod'
+        partialYear:
+          type: boolean
+          description: The period ends in the current year
+        generatedAt:
+          type: string
+          format: date-time
+          description: When the aggregates were computed (cached up to `app.analytics.unit-cache-ttl`)
+        totals:
+          $ref: '#/components/schemas/UnitTotals'
+        byYear:
+          type: array
+          items:
+            type: object
+            properties:
+              year:
+                type: integer
+              total:
+                type: integer
+              personal:
+                type: integer
+              unitAwards:
+                type: integer
+        units:
+          type: array
+          description: Empty for a department
+          items:
+            $ref: '#/components/schemas/UnitComparisonRow'
+        byCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                $ref: '#/components/schemas/AwardCategoryRef'
+              count:
+                type: integer
+              previous:
+                type: integer
+        byLevel:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                $ref: '#/components/schemas/RecognitionLevel'
+              count:
+                type: integer
+              previous:
+                type: integer
+        bySource:
+          type: object
+          description: Awarding organisations grouped case- and space-insensitively under the most frequent spelling
+          properties:
+            sources:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  count:
+                    type: integer
+            otherCount:
+              type: integer
+        topPerformers:
+          $ref: '#/components/schemas/TopPerformers'
+        highlights:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitHighlight'
 
     AwardPage:
       allOf:
