@@ -3,7 +3,7 @@
 > **Epic**: 5 — Analytics & Reporting Dashboard (SCRUM-97)
 > **Sprint**: 6 (2026-10-19 → 2026-10-25)
 > **Points**: 16 (three stories; 13 at kickoff, see deviation 9)
-> **Status**: Validated 2026-10-19, pending 5.1.4 (SCRUM-108) and the manual run of §10
+> **Status**: Done 2026-10-23 (validated 2026-10-19; 5.1.4 merged and the manual run of §10 passed 2026-10-23)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-05 tracker (decisions of 2026-10-19, deviations 2 and 8, technical notes, risks), US-008, roadmap Feature 5.1, RBAC_matrix §4, AUTHENTICATION_AUTHORIZATION §3.3, PRIVACY_BY_DESIGN §4.2 (`ANALYTICS`), DATA_DICTIONARY §1.1, §1.3, §2.1, §2.2, §4.2, ADR-005, ADR-013, ADR-014, ADR-015, ADR-022 (modules), `Achievements`, `ConsentService`, `PersonalDataAssembler` (format 1.6), `ErasureContributor`, `openapi.yml` (`/achievements`, `/public/achievements`, `/users/me/*`)
 
@@ -417,3 +417,7 @@ PRs #297, #298, #299 merged. Result: **passed with notes**, pending 5.1.4 (SCRUM
    - The period parsing is shared through `dashboard.component.ts`; it moves with AC-4.1.
    - The other notes are in the tracker's technical notes.
 3. The analytics FTs repeat the `like 'prefix%'` teardown seen in about ten FTs; this becomes a repo-wide chore, not part of this feature.
+
+### Close-out (2026-10-23)
+
+5.1.4 (SCRUM-108, PR #301) merged; the manual run of §10 passed all 37 steps by hand (step 19 through the timed `dashboard.spec` test), so no step rests on the ITs alone. All four stories Done in Jira and GitHub. Carried as notes, not blockers: step 22 (with the backend stopped the dashboard keeps the previous period's figures for about 60 s until the proxy answers 504) and the department rank counting members without the consent, both for the Epic 5 review.
