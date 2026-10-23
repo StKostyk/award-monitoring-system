@@ -55,8 +55,6 @@ tags:
     description: Temporary delegation of approval authority
   - name: Documents
     description: Document upload and management
-  - name: Reports
-    description: Analytics and reporting endpoints
   - name: Analytics
     description: Dashboards over approved awards (Epic 5)
   - name: Achievements
@@ -2946,8 +2944,7 @@ paths:
   /analytics/units:
     get:
       tags: [Analytics]
-      summary: Units the caller may analyse (planned)
-      x-status: planned
+      summary: Units the caller may analyse
       description: >
         Faculties and departments covered by a held role scope (never a borrowed one) of a role granting
         `analytics:read:faculty` (faculties and departments) or `analytics:read:department` (departments only);
@@ -2972,8 +2969,7 @@ paths:
   /analytics/units/{id}:
     get:
       tags: [Analytics]
-      summary: Analytics of a faculty or department (planned)
-      x-status: planned
+      summary: Analytics of a faculty or department
       description: >
         Approved awards (personal and unit) submitted in the unit's subtree whose award year lies in `from`..`to`
         (Kyiv calendar years; `to` defaults to the current year, `from` to four years before `to`), compared with
@@ -3071,64 +3067,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
-
-  # ============== Reports ==============
-  /reports/awards/summary:
-    get:
-      tags: [Reports]
-      summary: Awards summary statistics (planned, Epic 5)
-      x-status: planned
-      security:
-        - bearerAuth: []
-      operationId: getAwardsSummary
-      parameters:
-        - name: period
-          in: query
-          schema:
-            type: string
-            enum: [week, month, quarter, year]
-            default: month
-      responses:
-        '200':
-          description: Summary statistics
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AwardsSummary'
-
-  /reports/awards/export:
-    get:
-      tags: [Reports]
-      summary: Export awards data (planned, Epic 5)
-      x-status: planned
-      security:
-        - bearerAuth: []
-      operationId: exportAwards
-      parameters:
-        - name: format
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: [csv, xlsx, pdf]
-        - name: dateFrom
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: dateTo
-          in: query
-          schema:
-            type: string
-            format: date
-      responses:
-        '200':
-          description: Export file
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
 
   # ============== Compliance ==============
   /compliance/retention-policies:
@@ -4725,7 +4663,7 @@ components:
 
     AnalysableUnit:
       type: object
-      description: A faculty or department the caller may analyse (5.2.1, planned)
+      description: A faculty or department the caller may analyse (5.2.1)
       required: [id, name, type]
       properties:
         id:
@@ -4864,7 +4802,7 @@ components:
 
     UnitAnalytics:
       type: object
-      description: Analytics of a faculty or department over a period (5.2.1, planned)
+      description: Analytics of a faculty or department over a period (5.2.1)
       properties:
         unit:
           $ref: '#/components/schemas/AnalysableUnit'
@@ -5519,29 +5457,6 @@ components:
         - DIPLOMA
         - SUPPORTING_DOCUMENT
         - PHOTO
-
-    # Reports
-    AwardsSummary:
-      type: object
-      properties:
-        period:
-          type: string
-        totalAwards:
-          type: integer
-        byStatus:
-          type: object
-          additionalProperties:
-            type: integer
-        byCategory:
-          type: object
-          additionalProperties:
-            type: integer
-        approvalRate:
-          type: number
-          format: float
-        averageProcessingDays:
-          type: number
-          format: float
 
     # Common
     Page:

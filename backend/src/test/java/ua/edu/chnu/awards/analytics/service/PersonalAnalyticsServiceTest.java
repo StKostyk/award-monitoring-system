@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -55,6 +56,9 @@ class PersonalAnalyticsServiceTest {
     private static final long DEPARTMENT_ID = 64L;
     private static final int MIN_GROUP_SIZE = 5;
     private static final int TIMELINE_LIMIT = 3;
+    private static final int TOP_PERFORMERS = 10;
+    private static final AnalyticsProperties PROPERTIES = new AnalyticsProperties(MIN_GROUP_SIZE, TIMELINE_LIMIT,
+        TOP_PERFORMERS, Duration.ofMinutes(5));
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-19T10:00:00Z"), ZoneId.of("Europe/Kyiv"));
     private static final CategoryRef MINISTRY = new CategoryRef(13L, "Ministry Recognition", "Відзнака міністерства",
         RecognitionLevel.NATIONAL);
@@ -76,9 +80,8 @@ class PersonalAnalyticsServiceTest {
 
     @BeforeEach
     void setUp() {
-        AnalyticsProperties properties = new AnalyticsProperties(MIN_GROUP_SIZE, TIMELINE_LIMIT);
         service = new PersonalAnalyticsService(statistics,
-            new DepartmentRanking(statistics, consents, users, properties), properties, CLOCK);
+            new DepartmentRanking(statistics, consents, users, PROPERTIES), PROPERTIES, CLOCK);
     }
 
     @Test
@@ -128,9 +131,8 @@ class PersonalAnalyticsServiceTest {
         when(statistics.openAwards(USER_ID)).thenReturn(new OpenAwards(0, 0));
         withoutConsent();
         Clock newYearInKyiv = Clock.fixed(Instant.parse("2026-12-31T22:30:00Z"), ZoneId.of("Europe/Kyiv"));
-        AnalyticsProperties properties = new AnalyticsProperties(MIN_GROUP_SIZE, TIMELINE_LIMIT);
         PersonalAnalyticsService atNewYear = new PersonalAnalyticsService(statistics,
-            new DepartmentRanking(statistics, consents, users, properties), properties, newYearInKyiv);
+            new DepartmentRanking(statistics, consents, users, PROPERTIES), PROPERTIES, newYearInKyiv);
 
         PersonalAnalytics analytics = atNewYear.of(USER_ID, null, null);
 

@@ -54,6 +54,8 @@ class DevSeedIT {
     private static final int MIN_YEARS = 5;
     private static final int MIN_LEVELS = 4;
     private static final int MIN_DAI_MEMBERS = 12;
+    private static final int MIN_DAI_UNIT_AWARDS = 3;
+    private static final int MIN_FACULTY_UNIT_AWARDS = 2;
 
     @Autowired
     private UserRepository userRepository;
@@ -118,6 +120,29 @@ class DevSeedIT {
             .isEqualTo(8);
         assertThat(jdbc.queryForObject("select count(*) from awards a join users u on u.user_id = a.user_id "
             + "where u.email_address = 'employee.fmi@chnu.edu.ua'", Integer.class)).isZero();
+    }
+
+    @Test
+    void ac1_12_theSeedHoldsApprovedUnitAwardsAndOneSourceInSeveralSpellings() {
+        Map<String, Object> before = seedCounts();
+
+        jdbc.execute((ConnectionCallback<Void>) connection -> {
+            ScriptUtils.executeSqlScript(connection, new ClassPathResource(ANALYTICS_SEED));
+            return null;
+        });
+
+        assertThat(seedCounts()).isEqualTo(before);
+        Map<String, Object> units = jdbc.queryForMap("select count(*) filter (where o.code = 'DAI') as dai, "
+            + "count(*) filter (where o.org_type = 'FACULTY') as faculty, "
+            + "count(*) filter (where r.status is distinct from 'APPROVED') as undecided from awards a "
+            + "join organizations o on o.org_id = a.recipient_org_id "
+            + "left join award_requests r on r.award_id = a.award_id where a.status = 'APPROVED'");
+        assertThat(((Number) units.get("dai")).intValue()).isGreaterThanOrEqualTo(MIN_DAI_UNIT_AWARDS);
+        assertThat(((Number) units.get("faculty")).intValue()).isGreaterThanOrEqualTo(MIN_FACULTY_UNIT_AWARDS);
+        assertThat(((Number) units.get("undecided")).intValue()).isZero();
+        assertThat(jdbc.queryForObject("select count(distinct awarding_organization) from awards "
+            + "where status = 'APPROVED' and lower(regexp_replace(btrim(awarding_organization), '\\s+', ' ', 'g')) "
+            + "= 'міністерство освіти і науки україни'", Integer.class)).isGreaterThanOrEqualTo(2);
     }
 
     @Test

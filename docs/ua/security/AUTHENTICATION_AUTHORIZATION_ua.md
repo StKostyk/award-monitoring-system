@@ -507,6 +507,8 @@ public class TotpService {
 |------------|:------------:|:-----------:|:--------:|:------------:|:----------:|:---------:|:--------:|
 | `award:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `analytics:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `analytics:read:department` | - | ✅ | ✅ | ✅ | ✅ | - | - |
+| `analytics:read:faculty` | - | - | ✅ | ✅ | ✅ | - | - |
 | `award:read:department` | - | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `award:read:faculty` | - | - | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `award:read:all` | - | - | - | ✅ | ✅ | ✅ | ✅ |

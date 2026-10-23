@@ -70,7 +70,7 @@ Common definitions: an award **counts** for unit U when it is `APPROVED`, its `o
 - **AC-1.10** Given 30 000 approved awards over 10 departments and 600 members of one faculty, when its analytics are read without the cache, then the response arrives within 2 s in the IT (US-009 DoD: under 5 s), and the plan reads `awards` through `idx_awards_organization_status`, not a sequential scan.
 - **AC-1.11** Given the migrated schema, when it is inspected, then `vw_award_statistics` no longer exists (dropped by `R__create_views.sql`), DATA_DICTIONARY Appendix C says so, and `openapi.yml` has no `/reports/awards/*` paths nor the `AwardsSummary` schema.
 - **AC-1.12** Given the `local` or `docker` profile, when the database is migrated, then `R__seed_users_dev_analytics.sql` adds at least three approved unit awards of DAI and two of ФМІ itself, and awarding organisations written in two spellings (case and spacing) that group into one source; reruns add nothing; the e2e specs of 5.1 still pass.
-- **AC-1.13** Given the module rules, when `ModularityTest` runs, then it passes: `analytics` reads awards through `award`'s `UnitStatistics`, consent through `ConsentLookup.grantedAmong`, names through `ActorDirectory` and the tree through `OrganizationTree`; ADR-022 lists the new exposed types.
+- **AC-1.13** Given the module rules, when `ModularityTest` runs, then it passes: `analytics` reads awards through `award`'s `UnitStatistics`, consent through `ConsentLookup.grantedAmong`, names through `UserAccounts` (`ActorDirectory` carries neither the surname nor the department; ADR-022 addendum 2026-10-23), the analysable units through `authz` and the tree through `OrganizationTree`; ADR-022 lists the new exposed types.
 
 ### 5.2.2 Faculty analytics page with department comparison and top performers (SCRUM-102)
 
@@ -134,10 +134,10 @@ No versioned migration; `idx_awards_organization_status` covers the unit query.
 
 - `analytics`: `UnitAnalyticsService` (period, previous period, assembling, names and consent per request), `UnitScope` (analysable units from held scopes and the tree), `UnitAggregates` (cached, `@Cacheable("unit-analytics")`), `HighlightRules`, `AnalyticsCacheConfig` (Redis cache manager, TTL, error handler), `UnitAnalyticsController`; `analytics.export`: `ReportWriter`, `CsvReportWriter`, `XlsxReportWriter`, `PdfReportWriter`, `ReportLabels` (uk/en), `UnitReportExporter` (audit)
 - `award` `service`: `UnitStatistics` (native SQL over a set of organisation ids and two periods: counts by year and personal/unit, by organisation, by category, by level, by normalised source, per owner of personal awards, verified, members per organisation)
-- `gdpr`: `ConsentLookup.grantedAmong(Collection<Long>, ConsentType)` (batch form planned in 5.1)
-- `user`: `ActorDirectory.actorsOf` (names)
+- `gdpr`: `ConsentLookup.grantedAmong(Collection<Long>, ConsentType)` (batch form, added in 5.2.1)
+- `user`: `UserAccounts.findAllById` (names, status and department of the top performers)
 - `organization`: `OrganizationTree.subtree`, `node`; names through the existing organisation reference lookup
-- `authz`: `RolePermissions` (two permissions, not delegable)
+- `authz`: `RolePermissions` (two permissions, not delegable), `AccessScope.heldScopes`
 
 ### Frontend
 

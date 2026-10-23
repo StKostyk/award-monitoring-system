@@ -172,14 +172,16 @@ No level requires the rector. The review period of each level is counted in work
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|
 | **Reports & Analytics** |
 | View Personal Analytics¹⁸ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ |
-| View Department Analytics | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
-| View Faculty Analytics | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Department Analytics¹⁹ | ❌ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
+| View Faculty Analytics¹⁹ | ❌ | ❌ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | View University Analytics | ❌ | ❌ | ❌ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Export Reports (CSV/PDF) | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Create Custom Reports | ✓ | ✓ | ✓ | ✓ | ✓ | ❌ | ❌ | ❌ | ❌ |
 | Access Raw Data | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✓ |
 
 ¹⁸ Feature 5.1.1 (`PersonalAnalyticsService`, `GET /analytics/me`): every role holds `analytics:read:own`, since approvers, administrators and GDPR officers can own personal awards too (Epic 5 tracker, deviation 2); an account without a role (membership not confirmed) gets 403. Only the caller's own approved personal awards are read, with no parameter naming another person. The rank in the department carries figures only when the caller's latest `ANALYTICS` consent is a grant and the department has at least `app.analytics.min-group-size` (5) active accounts; every active account of the department counts in the group, with or without the consent.
+
+¹⁹ Feature 5.2.1 (`UnitAnalyticsService`, `GET /analytics/units`, `GET /analytics/units/{id}`): `analytics:read:department` belongs to every approver role and `analytics:read:faculty` to the dean, the rector's secretary and the rector; both are read through the role scopes a person holds, never through a delegation. A faculty secretary scoped to a faculty therefore opens each of its departments but not the faculty comparison, which corrects the earlier ✓ for "View Faculty Analytics". A unit outside the caller's scopes answers 404. Top performers name only active people whose latest `ANALYTICS` consent is a grant, in units with at least `app.analytics.min-group-size` (5) active accounts. "View University Analytics" comes with Feature 5.3.
 
 | Permission / Role | Employee | Faculty Secretary | Dean | Rector's Secretary | Rector | System Ops | GDPR Officer | InfoSec Team | Dev Team |
 |-------------------|:--------:|:----------------:|:----:|:-----------------:|:------:|:----------:|:------------:|:------------:|:--------:|

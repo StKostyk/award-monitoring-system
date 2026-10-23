@@ -126,10 +126,10 @@ when a module meets the extraction criteria below.**
 | `user` | common, audit, organization, authz | base (`AccountSessions`, `LentAuthority`), `entity`, `dto`, `event`, `service` (`UserAccounts`, `RoleHolders`) |
 | `delegation` | common, audit, organization, authz, user | `entity`, `dto`, `event`, `service` (`DelegationLookup`) |
 | `auth` | common, audit, organization, authz, user, delegation | `entity`, `dto`, `event`, `service` (`DeviceLookup`) |
-| `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`) |
+| `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
 | `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | base (`ConsentLookup`), `dto`, `event` |
-| `analytics` | common, organization, user, award, gdpr | — |
+| `analytics` | common, organization, authz, user, award, gdpr | — |
 | `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` for the data export) |
 | `metrics` | — | — |
 | `config` | common, audit | — (depended on by none) |
@@ -138,6 +138,11 @@ when a module meets the extraction criteria below.**
   `service` package is visible to the other modules. The "Exposed to others" column names the types they are meant to
   use; the rest of the package is reachable but not part of the contract. Narrowing it would mean moving the lookups
   into their own package, which no story needs yet.
+- Addendum 2026-10-23 (5.2.1): `analytics` reads the unit figures through `award`'s `UnitStatistics`, the consent
+  of several people at once through `ConsentLookup.grantedAmong`, the analysable units through `authz`'s
+  `AccessScope.heldScopes` and `RolePermissions`, and the names of top performers through `user`'s `UserAccounts`.
+  PRD 5.2 named `ActorDirectory` for the names; its `Actor` carries a full name and an e-mail address, but neither
+  the surname the list is ordered by nor the department it shows.
 - Cycles were broken by dependency inversion, with no behaviour change: `audit` names actors through
   `ActorDirectory` (implemented in `user`); `award` reads documents through `AwardDocuments` (implemented in
   `document`); `user` signs accounts out through `AccountSessions` (implemented in `auth`) and takes back lent

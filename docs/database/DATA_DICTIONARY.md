@@ -1188,14 +1188,15 @@ Legal basis is that of the change that caused the mail.
 
 ## Appendix C: Award Views and Functions
 
-Defined in the repeatable migrations `R__create_views.sql` and `R__create_functions.sql`; not called by the application yet (reporting in Epic 5, approval in Epic 4). They follow the same rules as the application:
+Defined in the repeatable migrations `R__create_views.sql` and `R__create_functions.sql`; not called by the application (the unit analytics of Epic 5 query `awards` directly through `UnitStatistics`). They follow the same rules as the application:
 
 | Object | Rule |
 |--------|------|
 | `vw_active_awards`, `vw_pending_requests` | Organisation columns come from `awards.organization_id`, the department of the submission, not the owner's current department |
-| `vw_award_statistics` | An award counts for `awards.organization_id`, whatever the owner's current department or account status |
 | `fn_calculate_impact_score(category_id)` | Base score of the category level, equal to `RecognitionLevel` (SPECIALITY 10, DEPARTMENT 20, COLLEGE 30, FACULTY 40, UNIVERSITY 50, LOCAL 60, REGIONAL 70, NATIONAL 80, INTERNATIONAL 100) |
 | `fn_can_user_approve_award(user_id, award_id)` | True when the request is `SUBMITTED`, `IN_REVIEW` or `ESCALATED` and the user holds the role of `current_level`, or a delegation of it in effect whose delegator still holds the role, in the award's organisation or one above it, can sign in (`ACTIVE`, `RETIRED`) and does not own the award; days are Kyiv calendar days |
+
+`vw_award_statistics` was dropped in Feature 5.2 (its `DROP VIEW IF EXISTS` stays in `R__create_views.sql`, so existing databases lose it): it counted drafts and pending awards per single organisation, while the unit analytics count approved awards over a subtree, by the same rule (an award counts for `awards.organization_id`, whatever the owner's current department or account status).
 
 ---
 

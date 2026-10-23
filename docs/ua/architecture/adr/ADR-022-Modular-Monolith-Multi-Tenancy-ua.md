@@ -141,15 +141,20 @@
 | `user` | common, audit, organization, authz | базовий пакет (`AccountSessions`, `LentAuthority`), `entity`, `dto`, `event`, `service` (`UserAccounts`, `RoleHolders`) |
 | `delegation` | common, audit, organization, authz, user | `entity`, `dto`, `event`, `service` (`DelegationLookup`) |
 | `auth` | common, audit, organization, authz, user, delegation | `entity`, `dto`, `event`, `service` (`DeviceLookup`) |
-| `award` | common, audit, organization, authz, user, delegation | базовий пакет (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`) |
+| `award` | common, audit, organization, authz, user, delegation | базовий пакет (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
 | `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | базовий пакет (`ConsentLookup`), `dto`, `event` |
-| `analytics` | common, organization, user, award, gdpr | — |
+| `analytics` | common, organization, authz, user, award, gdpr | — |
 | `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` для експорту даних) |
 | `metrics` | — | — |
 | `config` | common, audit | — (від нього не залежить жоден) |
 
 - Доповнення 2026-10-18: іменований інтерфейс Spring Modulith — це цілий пакет, тож кожен публічний тип пакета `service` модуля видимий іншим модулям. Стовпець «Відкрито іншим» називає типи, якими вони мають користуватися; решта пакета досяжна, але не входить у контракт. Звуження означало б винесення пошукових класів в окремий пакет, чого жодна історія поки не потребує.
+- Доповнення 2026-10-23 (5.2.1): `analytics` читає показники підрозділу через `UnitStatistics` модуля `award`,
+  згоду кількох осіб одразу через `ConsentLookup.grantedAmong`, доступні для аналізу підрозділи через
+  `AccessScope.heldScopes` і `RolePermissions` модуля `authz`, а імена найрезультативніших — через `UserAccounts`
+  модуля `user`. PRD 5.2 називав для імен `ActorDirectory`; його `Actor` містить повне ім'я та адресу електронної
+  пошти, але не прізвище, за яким упорядковано список, і не кафедру, яку він показує.
 - Цикли розірвано інверсією залежностей без зміни поведінки: `audit` називає виконавців через `ActorDirectory`
   (реалізація в `user`); `award` читає документи через `AwardDocuments` (реалізація в `document`); `user`
   завершує сеанси облікових записів через `AccountSessions` (реалізація в `auth`) і забирає делеговані

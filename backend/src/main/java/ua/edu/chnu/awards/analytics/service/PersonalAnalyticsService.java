@@ -3,9 +3,7 @@ package ua.edu.chnu.awards.analytics.service;
 import java.time.Clock;
 import java.time.Year;
 import java.util.List;
-import java.util.Map;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +28,6 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class PersonalAnalyticsService {
-
-    private static final int FIRST_YEAR = 1950;
-    private static final int LAST_YEAR = 2100;
-    private static final String FROM = "from";
-    private static final String TO = "to";
 
     private final AwardStatistics statistics;
     private final DepartmentRanking ranking;
@@ -71,24 +64,7 @@ public class PersonalAnalyticsService {
     }
 
     private YearRange period(long userId, Integer from, Integer to) {
-        requireYear(from, FROM);
-        requireYear(to, TO);
-        int last = to == null ? Year.now(clock).getValue() : to;
-        int first = from == null ? Math.min(statistics.firstYear(userId).orElse(last), last) : from;
-        if (first > last) {
-            throw invalid(FROM, "The first year must not lie after the last year " + last);
-        }
-        return new YearRange(first, last);
-    }
-
-    private static void requireYear(Integer year, String parameter) {
-        if (year != null && (year < FIRST_YEAR || year > LAST_YEAR)) {
-            throw invalid(parameter, "The year must lie between " + FIRST_YEAR + " and " + LAST_YEAR);
-        }
-    }
-
-    private static ApiProblemException invalid(String parameter, String detail) {
-        return new ApiProblemException(HttpStatus.BAD_REQUEST, "invalid-parameter", detail,
-            Map.of("parameter", parameter));
+        return PeriodHelper.resolve(from, to, Year.now(clock).getValue(),
+            last -> Math.min(statistics.firstYear(userId).orElse(last), last));
     }
 }
