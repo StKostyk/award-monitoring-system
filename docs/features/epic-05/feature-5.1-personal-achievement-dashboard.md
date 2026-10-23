@@ -276,8 +276,52 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 33. With DevTools blocking `GET /api/v1/users/me/dashboard-preferences`, open `/dashboard` and "Customise". Expected after 5.1.4: "The widget choice could not be loaded." with Retry, "Customise" disabled until the choice loads; psql `hidden_widgets` unchanged. (AC-2.2, 4.2)
 34. With DevTools blocking `GET /api/v1/public/achievements`, open `/dashboard/summary` as `lecturer.fmi`. Expected after 5.1.4: "It could not be checked whether your awards are public. Reload the page to try again.", not the hint that none of the awards is shared publicly, and no copy-link button. (AC-3.4, 4.3)
 35. With network throttling, change the summary period and press "Print" at once. Expected after 5.1.4: "Print" waits for the figures of the new period. (AC-3.2, 4.4)
-36. `admin` revokes the only role of E1 while E1 keeps `/dashboard` open, then E1 changes the period without reloading. Expected: the request answers 403; note whether the page shows the load error or `/forbidden` (accepted as the load error unless 5.1.4 changes it). (AC-1.1, 2.4)
+36. `admin` revokes the only role of E1 while E1 keeps `/dashboard` open, then E1 changes the period without reloading. Expected: the revocation ends E1's sessions (as in step 28), so the change ends in a refused token refresh and the sign-in page rather than a 403 with the old token; after signing in again `GET /analytics/me` answers 403 and `/dashboard` gives `/forbidden`. (AC-1.1, 2.4)
 37. Stop Redis (`docker compose stop redis`), call `GET /public/achievements?person=<lecturer.fmi id>` signed out, and open `/dashboard`. Expected: both answer (the rate limit fails open without Redis, personal analytics are uncached); start Redis again. (§5 External)
+
+### Run 2026-10-23
+
+container stack from 1a1da70 (develop after PR #301), defaults except step 26 ANALYTICS_MIN_GROUP_SIZE=5000 and step 31 APP_ERASURE_GRACE_PERIOD=PT10M, WARNING_BEFORE=PT5M, CRON every minute; restored afterwards. Result: 37 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | DAI 1121 ACTIVE (e2e pile-up); lecturer.fmi 9 approved over 8 years 2019–2026, 6 levels; after the backend restarts counts unchanged (9; same years) |
+| 2 | PASS | 200; byYear 2019-2026 zeros filled; rank RANKED position 2 of 1121 |
+| 3 | PASS | 3x 400 invalid-parameter; parameter field names from (1900, abc) |
+| 4 | PASS | psql: 9 APPROVED, 0 other; totals.approved 9, inProgress 0/0 |
+| 5 | PASS | /dashboard (uk UI): tiles 9/3, timeline, trend, category, level, rank card '2 з 1121 на кафедрі «Кафедра алгебри та інформатики»' |
+| 6 | PASS | period 2022-2024 -> ?from=2022&to=2024, approved 4, rank 1 of 1121; reload keeps period |
+| 7 | PASS | trend table 2022:1, 2023:2 (band + national), 2024:1 matches chart; timeline table via keyboard Space/Tab/Enter -> /awards/987; point click -> /awards/987 |
+| 8 | PASS | untick timeline+by level, save: gone, reload keeps, psql {TIMELINE,BY_LEVEL}, second browser same |
+| 9 | PASS | all unticked: hint 'Усі віджети приховано' + Налаштувати (period selects stay in toolbar); restore all ok |
+| 10 | PASS | export via GET /users/me/export: dashboard_preferences hidden_widgets [TIMELINE,BY_LEVEL] + updated_at |
+| 11 | PASS | E1=e1.dash51 (user 1314, DAI, EMPLOYEE granted by secretary.fmi API); E2 (e2.dash51) empty state with 'Внести нагороду'; E1 after submit 1333: 'Нагороди на розгляді: 1' link /awards |
+| 12 | PASS | after APPROVE (secretary.fmi, 1333): 1 award tile, rank card consent text + 'Відкрити центр конфіденційності' -> /privacy |
+| 13 | PASS | consent on in /privacy: rank 65 of 1123, 'Розділяєте місце…: 77'; psql 2026 period: 64 with more, 78 equal -> 65 / 77 ✓ |
+| 14 | PASS | E1 ?from=2019&to=2020: 'У цьому періоді немає затверджених нагород' + 'Усі роки' |
+| 15 | PASS | check.cjs /dashboard + /summary: 360/1280, uk/en, light/dark: no h-scroll, axe serious 0, console 0; reduced-motion: bars full at first paint, without: animate (0 -> 6 -> 206) |
+| 16 | PASS | lecturer.fmi /dashboard/summary?from=2019&to=2026: name, DAI, period 2019–2026, 9/3, six levels, award list, 'Сформовано: 23.10.2026'; print media hides sidenav/toolbar/buttons; @page A4 portrait |
+| 17 | PASS | copy button -> status 'Посилання на ваші публічні досягнення скопійовано.'; link /public/achievements?person=966 signed out: heading 'Досягнення: Оксана Викладач', 2 public awards |
+| 18 | PASS | person=8: 2 awards (76, 75, both PUBLIC of 47 approved, recipient Анастасія Працівник); person=999999: empty page 200 |
+| 19 | PASS | dashboard.spec 'opens from the navigation with every widget in order within 3 s' green (asserts < 3000 ms, 8.2 s whole test); first attempt had failed on my leftover hidden widgets, restored |
+| 20 | PASS | E1 before role: no nav entry, /dashboard -> /forbidden, GET /analytics/me 403 |
+| 21 | PASS | summary reload ?from=2019&to=2026 same summary; ?from=abc: 'Період некоректний.' + link 'До панелі' -> /dashboard |
+| 22 | PASS | app stopped, period -> 2021: progress bar over the previous figures until nginx 504 after 60 s, then one notice 'Не вдалося завантажити дашборд.' + Retry; app up: change -> 401, silent refresh 200, 2022: 6, 2022–2024: 4; no mixed periods after load (standalone Playwright script, MCP disconnected) |
+| 23 | PASS | lecturer tab idle > 15 min (TTL 15m): period 2020 -> analytics/me 200 (renewed by the token_expires timer, no 401), 6 awards; reload opens /dashboard?from=2020&to=2024 without sign-in |
+| 24 | PASS | E1 ANALYTICS withdrawn: rank status CONSENT_REQUIRED, position/groupSize/sharedWith null; card shows consent text, no figures |
+| 25 | PASS | E1 /dashboard/summary: no copy-link button, hint 'На публічній сторінці з’являються лише нагороди…'; GET /public/achievements?person=1314 empty page |
+| 26 | PASS | ANALYTICS_MIN_GROUP_SIZE=5000 (DAI has 1136 members locally, 50 would not trigger): API GROUP_TOO_SMALL, position/groupSize null; card 'На кафедрі «Кафедра алгебри та інформатики» замало працівників для рейтингу…'; restore at finish |
+| 27 | PASS | lecturer tab A '2 з 1136', withdrawal in browser B: A keeps '2 з 1136' until reload; period 2022 -> consent text, no figures; colleague e2.dash51 142 of 1136 (shared 994) before and after; consent re-granted |
+| 28 | PASS | admin revoked E1's only role (1186, 204) at 15:25: sessions ended (refresh 400, reload -> /login); after sign-in no nav entry, /dashboard -> /forbidden, API 403; E1 stays ACTIVE in DMA, DMA count 7 unchanged |
+| 29 | PASS | admin moves E1 to DMA (66) with fromOrganizationId 64: E1 rank 1 of 7 in Department of Mathematical Analysis, 1 award kept; lecturer group 1137 -> 1136 |
+| 30 | PASS | API: same choice twice 200; UI: tab A saves TIMELINE twice then BY_CATEGORY, browser B saves BY_LEVEL: no error; both reload without 'За рівнями', psql {BY_LEVEL}; restored {} |
+| 31 | PASS | E1 erasure (request 59, PT10M, minute cron) COMPLETED 12:39:58Z; dashboard_preferences rows for 1314: 1 -> 0; E1 had moved to DMA in step 29, so DMA ACTIVE 7 -> 6 (lecturer group not affected) |
+| 32 | PASS | /dashboard?from=2027 and ?from=2026&to=2021: 'Період некоректний.' + 'Усі роки' button, no Retry; /dashboard/summary?from=2027: message + 'До панелі' -> /dashboard |
+| 33 | PASS | prefs request aborted: 'Не вдалося завантажити вибір віджетів.' + 'Спробувати ще раз', Налаштувати disabled; psql hidden_widgets {} unchanged |
+| 34 | PASS | public/achievements aborted: 'Не вдалося перевірити, чи є ваші нагороди публічними. Оновіть сторінку…', no hint of 'none public', no copy-link button |
+| 35 | PASS | analytics/me delayed 3 s, SPA period change 2019–2026 -> 2022–2024 (summary has no period control; changed via URL): Друкувати disabled, no print call while loading; then period 2022–2024, 4 awards |
+| 36 | PASS | step text corrected: revocation ends the session, so the period change triggers a refused refresh (400) and sign-in instead of a 403 with the old token; after sign-in GET /analytics/me 403 and /forbidden |
+| 37 | PASS | redis stopped: GET /public/achievements?person=966 signed out 200; /dashboard as lecturer.fmi loads (9 approved, 2 of 1136), analytics/me 200; redis started |
 
 ## 11. Risks
 
