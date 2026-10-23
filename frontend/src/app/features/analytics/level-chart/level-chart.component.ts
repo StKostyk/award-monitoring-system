@@ -4,12 +4,9 @@ import type { EChartsCoreOption } from 'echarts/core';
 
 import { LanguageService } from '../../../core/i18n/language.service';
 import { ChartComponent } from '../../../shared/charts/chart.component';
-import { BAR_RADIUS, categoryAxis, tooltip, valueAxis } from '../../../shared/charts/chart-style';
+import { barChartHeight, horizontalBarOption } from '../../../shared/charts/chart-style';
 import { ChartThemeService } from '../../../shared/charts/chart-theme.service';
 import { RecognitionLevel } from '../../awards/awards.service';
-
-const ROW_HEIGHT = 32;
-const CHART_PADDING = 48;
 
 /** Approved awards per recognition level as horizontal bars, the highest level on top. */
 @Component({
@@ -25,7 +22,7 @@ export class LevelChartComponent {
 
   readonly byLevel = input.required<{ level: RecognitionLevel; count: number }[]>();
 
-  protected readonly height = computed(() => this.byLevel().length * ROW_HEIGHT + CHART_PADDING);
+  protected readonly height = computed(() => barChartHeight(this.byLevel().length));
   protected readonly description = computed(() => {
     this.language.current();
     return this.transloco.translate('analytics.levels.description', {
@@ -36,27 +33,11 @@ export class LevelChartComponent {
   });
   protected readonly option = computed<EChartsCoreOption>(() => {
     this.language.current();
-    const palette = this.theme.palette();
-    const rows = [...this.byLevel()].reverse();
-    return {
-      grid: { left: 8, right: 24, top: 8, bottom: 8, containLabel: true },
-      tooltip: tooltip(palette, 'item'),
-      xAxis: valueAxis(palette),
-      yAxis: categoryAxis(
-        palette,
-        rows.map((row) => this.levelName(row.level)),
-      ),
-      series: [
-        {
-          type: 'bar',
-          name: this.transloco.translate('analytics.table.count'),
-          barMaxWidth: 20,
-          itemStyle: { color: palette.bar, borderRadius: [0, BAR_RADIUS, BAR_RADIUS, 0] },
-          label: { show: true, position: 'right', color: palette.text },
-          data: rows.map((row) => row.count),
-        },
-      ],
-    };
+    return horizontalBarOption(
+      this.theme.palette(),
+      this.byLevel().map((entry) => ({ label: this.levelName(entry.level), value: entry.count })),
+      this.transloco.translate('analytics.table.count'),
+    );
   });
 
   private levelName(level: RecognitionLevel): string {

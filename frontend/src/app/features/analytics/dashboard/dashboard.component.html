@@ -13,6 +13,7 @@
     <button
       mat-stroked-button
       type="button"
+      [disabled]="preferences() !== 'loaded'"
       (click)="customise()"
       data-testid="dashboard-customise"
     >
@@ -22,151 +23,176 @@
   </div>
 </div>
 
-<div
-  class="dashboard__period"
-  role="group"
-  [attr.aria-label]="'analytics.period.label' | transloco"
->
-  <mat-form-field subscriptSizing="dynamic">
-    <mat-label>{{ 'analytics.period.from' | transloco }}</mat-label>
-    <mat-select
-      [value]="period().from"
-      (selectionChange)="choose({ from: $event.value })"
-      data-testid="period-from"
-    >
-      <mat-option [value]="null">{{ 'analytics.period.any' | transloco }}</mat-option>
-      @for (year of years; track year) {
-        @if (period().to === null || year <= period().to!) {
-          <mat-option [value]="year">{{ year }}</mat-option>
-        }
-      }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field subscriptSizing="dynamic">
-    <mat-label>{{ 'analytics.period.to' | transloco }}</mat-label>
-    <mat-select
-      [value]="period().to"
-      (selectionChange)="choose({ to: $event.value })"
-      data-testid="period-to"
-    >
-      <mat-option [value]="null">{{ 'analytics.period.now' | transloco }}</mat-option>
-      @for (year of years; track year) {
-        @if (period().from === null || year >= period().from!) {
-          <mat-option [value]="year">{{ year }}</mat-option>
-        }
-      }
-    </mat-select>
-  </mat-form-field>
-  @if (chosen()) {
-    <button mat-button type="button" (click)="allYears()" data-testid="period-all-years">
+@if (invalid()) {
+  <section class="dashboard__problem" role="alert" data-testid="dashboard-invalid">
+    <p>{{ 'analytics.report.invalidPeriod' | transloco }}</p>
+    <button mat-stroked-button type="button" (click)="allYears()">
       {{ 'analytics.period.allYears' | transloco }}
     </button>
-  }
-</div>
-
-@if (loading()) {
-  <mat-progress-bar
-    mode="indeterminate"
-    [attr.aria-label]="'app.loading' | transloco"
-    data-testid="dashboard-loading"
-  />
-}
-
-@if (saveProblem()) {
-  <p class="dashboard__problem" role="alert" data-testid="dashboard-save-error">
-    {{ 'analytics.customise.failed' | transloco }}
-  </p>
-}
-
-@if (problem()) {
-  <div class="dashboard__problem" role="alert" data-testid="dashboard-error">
-    <p>{{ 'analytics.failed' | transloco }}</p>
-    <button mat-stroked-button type="button" (click)="retry()">
-      {{ 'analytics.retry' | transloco }}
-    </button>
-  </div>
-} @else if (analytics(); as data) {
-  @if (empty()) {
-    <app-dashboard-empty
-      [periodOnly]="chosen()"
-      [canCreate]="canCreate"
-      [drafts]="data.inProgress.drafts"
-      [pending]="data.inProgress.pending"
-      (allYears)="allYears()"
-    />
-  } @else if (visible().size === 0) {
-    <section class="dashboard__all-hidden" data-testid="dashboard-all-hidden">
-      <p>{{ 'analytics.customise.allHidden' | transloco }}</p>
-      <button mat-flat-button type="button" (click)="customise()">
-        {{ 'analytics.customise.open' | transloco }}
+  </section>
+} @else {
+  <div
+    class="dashboard__period"
+    role="group"
+    [attr.aria-label]="'analytics.period.label' | transloco"
+  >
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>{{ 'analytics.period.from' | transloco }}</mat-label>
+      <mat-select
+        [value]="period().from"
+        (selectionChange)="choose({ from: $event.value })"
+        data-testid="period-from"
+      >
+        <mat-option [value]="null">{{ 'analytics.period.any' | transloco }}</mat-option>
+        @for (year of years; track year) {
+          @if (period().to === null || year <= period().to!) {
+            <mat-option [value]="year">{{ year }}</mat-option>
+          }
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>{{ 'analytics.period.to' | transloco }}</mat-label>
+      <mat-select
+        [value]="period().to"
+        (selectionChange)="choose({ to: $event.value })"
+        data-testid="period-to"
+      >
+        <mat-option [value]="null">{{ 'analytics.period.now' | transloco }}</mat-option>
+        @for (year of years; track year) {
+          @if (period().from === null || year >= period().from!) {
+            <mat-option [value]="year">{{ year }}</mat-option>
+          }
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (chosen()) {
+      <button mat-button type="button" (click)="allYears()" data-testid="period-all-years">
+        {{ 'analytics.period.allYears' | transloco }}
       </button>
-    </section>
-  } @else {
-    <div class="dashboard__grid">
-      @if (visible().has('SUMMARY')) {
-        <mat-card class="dashboard__wide" appearance="outlined" data-testid="widget-SUMMARY">
-          <mat-card-header>
-            <mat-card-title>
-              <h2>{{ 'analytics.widgets.SUMMARY' | transloco }}</h2>
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content><app-summary-tiles [totals]="data.totals" /></mat-card-content>
-        </mat-card>
-      }
-      @if (visible().has('TIMELINE')) {
-        <mat-card class="dashboard__wide" appearance="outlined" data-testid="widget-TIMELINE">
-          <mat-card-header>
-            <mat-card-title>
-              <h2>{{ 'analytics.widgets.TIMELINE' | transloco }}</h2>
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <app-timeline-chart [timeline]="data.timeline" [truncated]="data.timelineTruncated" />
-          </mat-card-content>
-        </mat-card>
-      }
-      @if (visible().has('YEAR_TREND')) {
-        <mat-card class="dashboard__wide" appearance="outlined" data-testid="widget-YEAR_TREND">
-          <mat-card-header>
-            <mat-card-title>
-              <h2>{{ 'analytics.widgets.YEAR_TREND' | transloco }}</h2>
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <app-year-trend-chart [byYear]="data.byYear" [fromChosen]="period().from !== null" />
-          </mat-card-content>
-        </mat-card>
-      }
-      @if (visible().has('BY_CATEGORY')) {
-        <mat-card appearance="outlined" data-testid="widget-BY_CATEGORY">
-          <mat-card-header>
-            <mat-card-title>
-              <h2>{{ 'analytics.widgets.BY_CATEGORY' | transloco }}</h2>
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content><app-category-chart [byCategory]="data.byCategory" /></mat-card-content>
-        </mat-card>
-      }
-      @if (visible().has('BY_LEVEL')) {
-        <mat-card appearance="outlined" data-testid="widget-BY_LEVEL">
-          <mat-card-header>
-            <mat-card-title>
-              <h2>{{ 'analytics.widgets.BY_LEVEL' | transloco }}</h2>
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content><app-level-chart [byLevel]="data.byLevel" /></mat-card-content>
-        </mat-card>
-      }
-      @if (visible().has('RANK')) {
-        <mat-card appearance="outlined" data-testid="widget-RANK">
-          <mat-card-header>
-            <mat-card-title>
-              <h2>{{ 'analytics.widgets.RANK' | transloco }}</h2>
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content><app-rank-card [rank]="data.rank" /></mat-card-content>
-        </mat-card>
-      }
+    }
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar
+      mode="indeterminate"
+      [attr.aria-label]="'app.loading' | transloco"
+      data-testid="dashboard-loading"
+    />
+  }
+
+  @if (preferences() === 'failed') {
+    <div class="dashboard__problem" role="alert" data-testid="dashboard-preferences-error">
+      <p>{{ 'analytics.customise.loadFailed' | transloco }}</p>
+      <button mat-stroked-button type="button" (click)="reloadPreferences()">
+        {{ 'analytics.retry' | transloco }}
+      </button>
     </div>
+  }
+
+  @if (saveProblem()) {
+    <p class="dashboard__problem" role="alert" data-testid="dashboard-save-error">
+      {{ 'analytics.customise.failed' | transloco }}
+    </p>
+  }
+
+  @if (problem()) {
+    <div class="dashboard__problem" role="alert" data-testid="dashboard-error">
+      <p>{{ 'analytics.failed' | transloco }}</p>
+      <button mat-stroked-button type="button" (click)="retry()">
+        {{ 'analytics.retry' | transloco }}
+      </button>
+    </div>
+  } @else if (analytics(); as data) {
+    @if (empty()) {
+      <app-dashboard-empty
+        [periodOnly]="chosen()"
+        [canCreate]="canCreate"
+        [drafts]="data.inProgress.drafts"
+        [pending]="data.inProgress.pending"
+        (allYears)="allYears()"
+      />
+    } @else if (visible().size === 0) {
+      <section class="dashboard__all-hidden" data-testid="dashboard-all-hidden">
+        <p>{{ 'analytics.customise.allHidden' | transloco }}</p>
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="preferences() !== 'loaded'"
+          (click)="customise()"
+        >
+          {{ 'analytics.customise.open' | transloco }}
+        </button>
+      </section>
+    } @else {
+      <div class="dashboard__grid">
+        @if (visible().has('SUMMARY')) {
+          <mat-card class="dashboard__wide" appearance="outlined" data-testid="widget-SUMMARY">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.SUMMARY' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content><app-summary-tiles [totals]="data.totals" /></mat-card-content>
+          </mat-card>
+        }
+        @if (visible().has('TIMELINE')) {
+          <mat-card class="dashboard__wide" appearance="outlined" data-testid="widget-TIMELINE">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.TIMELINE' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <app-timeline-chart [timeline]="data.timeline" [truncated]="data.timelineTruncated" />
+            </mat-card-content>
+          </mat-card>
+        }
+        @if (visible().has('YEAR_TREND')) {
+          <mat-card class="dashboard__wide" appearance="outlined" data-testid="widget-YEAR_TREND">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.YEAR_TREND' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <app-year-trend-chart [byYear]="data.byYear" [fromChosen]="period().from !== null" />
+            </mat-card-content>
+          </mat-card>
+        }
+        @if (visible().has('BY_CATEGORY')) {
+          <mat-card appearance="outlined" data-testid="widget-BY_CATEGORY">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.BY_CATEGORY' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content
+              ><app-category-chart [byCategory]="data.byCategory"
+            /></mat-card-content>
+          </mat-card>
+        }
+        @if (visible().has('BY_LEVEL')) {
+          <mat-card appearance="outlined" data-testid="widget-BY_LEVEL">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.BY_LEVEL' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content><app-level-chart [byLevel]="data.byLevel" /></mat-card-content>
+          </mat-card>
+        }
+        @if (visible().has('RANK')) {
+          <mat-card appearance="outlined" data-testid="widget-RANK">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.RANK' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content><app-rank-card [rank]="data.rank" /></mat-card-content>
+          </mat-card>
+        }
+      </div>
+    }
   }
 }

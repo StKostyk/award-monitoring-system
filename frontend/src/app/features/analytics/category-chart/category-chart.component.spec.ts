@@ -43,6 +43,37 @@ describe('CategoryChartComponent and LevelChartComponent', () => {
     ).toContain('Національний');
   });
 
+  it('ac4_5_draws_the_twelve_largest_categories_and_one_other_bar', async () => {
+    const stub = setUp('en');
+    const template = sampleAnalytics().byCategory[0];
+    const byCategory = Array.from({ length: 15 }, (_, index) => ({
+      category: { ...template.category, id: index + 1, name: `Category ${index + 1}` },
+      count: 20 - index,
+    }));
+    const fixture = TestBed.createComponent(CategoryChartComponent);
+    fixture.componentRef.setInput('byCategory', byCategory);
+    fixture.detectChanges();
+    await chartsDrawn();
+    const option = stub.options.at(-1) as {
+      yAxis: { data: string[] };
+      series: { data: number[] }[];
+      aria: { label: { description: string } };
+    };
+
+    expect(option.yAxis.data).toHaveLength(13);
+    expect(option.yAxis.data[0]).toBe('Other');
+    expect(option.yAxis.data.at(-1)).toBe('Category 1');
+    expect(option.series[0].data[0]).toBe(8 + 7 + 6);
+    expect(option.aria.label.description).toContain('15 categories');
+
+    fixture.nativeElement.querySelector('[data-testid="chart-table-switch"] button').click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid="category-table"] tbody tr'),
+    ).toHaveLength(15);
+  });
+
   it('ac2_5_draws_levels_from_the_highest_and_lists_them_in_the_description', async () => {
     const stub = setUp('en');
     const fixture = TestBed.createComponent(LevelChartComponent);

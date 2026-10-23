@@ -4,15 +4,14 @@ import type { EChartsCoreOption } from 'echarts/core';
 
 import { LanguageService } from '../../../core/i18n/language.service';
 import { ChartComponent } from '../../../shared/charts/chart.component';
-import { BAR_RADIUS, categoryAxis, tooltip, valueAxis } from '../../../shared/charts/chart-style';
+import { barChartHeight, horizontalBarOption } from '../../../shared/charts/chart-style';
 import { ChartThemeService } from '../../../shared/charts/chart-theme.service';
 import { CategoryRef, categoryName } from '../../awards/awards.service';
 
-const ROW_HEIGHT = 32;
-const CHART_PADDING = 48;
 const LABEL_WIDTH = 140;
+const MAX_BARS = 12;
 
-/** Approved awards per category as horizontal bars, the highest count on top. */
+/** Approved awards per category as horizontal bars, the highest count on top, the rest in one bar. */
 @Component({
   selector: 'app-category-chart',
   imports: [ChartComponent, TranslocoPipe],
@@ -35,7 +34,19 @@ export class CategoryChartComponent {
       count: entry.count,
     }));
   });
-  protected readonly height = computed(() => this.rows().length * ROW_HEIGHT + CHART_PADDING);
+  protected readonly bars = computed(() => {
+    this.language.current();
+    const rows = [...this.rows()].sort((a, b) => b.count - a.count);
+    const bars = rows.slice(0, MAX_BARS).map((row) => ({ label: row.name, value: row.count }));
+    if (rows.length > MAX_BARS) {
+      bars.push({
+        label: this.transloco.translate('analytics.categories.other'),
+        value: rows.slice(MAX_BARS).reduce((sum, row) => sum + row.count, 0),
+      });
+    }
+    return bars;
+  });
+  protected readonly height = computed(() => barChartHeight(this.bars().length));
   protected readonly description = computed(() => {
     this.language.current();
     const top = this.rows()[0];
@@ -45,28 +56,12 @@ export class CategoryChartComponent {
       topCount: top?.count ?? 0,
     });
   });
-  protected readonly option = computed<EChartsCoreOption>(() => {
-    const palette = this.theme.palette();
-    const rows = [...this.rows()].reverse();
-    return {
-      grid: { left: 8, right: 24, top: 8, bottom: 8, containLabel: true },
-      tooltip: tooltip(palette, 'item'),
-      xAxis: valueAxis(palette),
-      yAxis: categoryAxis(
-        palette,
-        rows.map((row) => row.name),
-        LABEL_WIDTH,
-      ),
-      series: [
-        {
-          type: 'bar',
-          name: this.transloco.translate('analytics.table.count'),
-          barMaxWidth: 20,
-          itemStyle: { color: palette.bar, borderRadius: [0, BAR_RADIUS, BAR_RADIUS, 0] },
-          label: { show: true, position: 'right', color: palette.text },
-          data: rows.map((row) => row.count),
-        },
-      ],
-    };
-  });
+  protected readonly option = computed<EChartsCoreOption>(() =>
+    horizontalBarOption(
+      this.theme.palette(),
+      this.bars(),
+      this.transloco.translate('analytics.table.count'),
+      LABEL_WIDTH,
+    ),
+  );
 }

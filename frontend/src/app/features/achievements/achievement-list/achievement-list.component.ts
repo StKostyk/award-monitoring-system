@@ -31,7 +31,7 @@ import {
 import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { kyivToday } from '../../../shared/date-format';
+import { currentKyivYear } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import { MAX_AGE_YEARS, Page } from '../../awards/awards.service';
@@ -234,6 +234,6 @@ export class AchievementListComponent implements OnInit {
 
 /** This year and the years an award may date from, newest first. */
 function recentYears(): number[] {
-  const year = Number(kyivToday().substring(0, 4));
+  const year = currentKyivYear();
   return Array.from({ length: MAX_AGE_YEARS + 1 }, (_, index) => year - index);
 }

@@ -34,6 +34,11 @@ export function kyivToday(now = new Date()): string {
   }).format(now);
 }
 
+/** The calendar year of a moment in Kyiv, by default the present. */
+export function currentKyivYear(now = new Date()): number {
+  return Number(kyivToday(now).slice(0, 4));
+}
+
 /** The same day the given number of years earlier; 29 February becomes 28 February in a common year. */
 export function yearsBefore(date: string, years: number): string {
   const [year, month, day] = date.split('-').map(Number);

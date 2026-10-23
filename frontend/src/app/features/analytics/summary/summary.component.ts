@@ -4,7 +4,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import { Observable, catchError, map, of } from 'rxjs';
@@ -19,10 +19,13 @@ import {
   NO_ACHIEVEMENT_FILTERS,
 } from '../../achievements/achievements.service';
 import { awardTitle } from '../../awards/awards.service';
-import { AnalyticsPeriod, TimelineEntry } from '../analytics.service';
-import { yearParameter } from '../dashboard/dashboard.component';
+import { readPeriod } from '../analytics-period';
+import { TimelineEntry } from '../analytics.service';
 import { AnalyticsActions } from '../store/analytics.actions';
 import { analyticsFeature } from '../store/analytics.feature';
+
+/** Whether the public achievements of the account list an award, while asking and after a failure. */
+type PublicCheck = 'checking' | 'shared' | 'none' | 'failed';
 
 /** The printable summary of the counted awards of a period, with the link to the public achievements. */
 @Component({
@@ -53,8 +56,7 @@ export class SummaryComponent {
   readonly analytics = this.store.selectSignal(analyticsFeature.selectAnalytics);
   readonly loading = this.store.selectSignal(analyticsFeature.selectLoading);
   readonly problem = this.store.selectSignal(analyticsFeature.selectProblem);
-  /** Whether the public achievements of the account list at least one award. */
-  readonly shared = toSignal(this.publicAwards(), { initialValue: false });
+  readonly shared = toSignal(this.publicAwards(), { initialValue: 'checking' as PublicCheck });
 
   constructor() {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
@@ -86,27 +88,16 @@ export class SummaryComponent {
     this.store.dispatch(AnalyticsActions.periodSelected({ period: this.period() }));
   }
 
-  private publicAwards(): Observable<boolean> {
+  private publicAwards(): Observable<PublicCheck> {
     const id = this.auth.profile()?.id;
     if (id === undefined) {
-      return of(false);
+      return of('none');
     }
     return this.achievements
       .list({ filters: { ...NO_ACHIEVEMENT_FILTERS, person: id }, page: 0, size: 1 }, 'public')
       .pipe(
-        map((page) => page.totalElements > 0),
-        catchError(() => of(false)),
+        map((page): PublicCheck => (page.totalElements > 0 ? 'shared' : 'none')),
+        catchError(() => of<PublicCheck>('failed')),
       );
   }
-}
-
-/** The period of the address bar, or null when a year is not valid or the years are reversed. */
-function readPeriod(params: ParamMap): AnalyticsPeriod | null {
-  const from = yearParameter(params, 'from');
-  const to = yearParameter(params, 'to');
-  const valid =
-    (from !== null || !params.has('from')) &&
-    (to !== null || !params.has('to')) &&
-    (from === null || to === null || from <= to);
-  return valid ? { from, to } : null;
 }

@@ -4,6 +4,9 @@ import { ChartPalette } from './chart-theme.service';
 export const BAR_RADIUS = 4;
 export const MARK_GAP = 2;
 
+const BAR_ROW_HEIGHT = 32;
+const BAR_CHART_PADDING = 48;
+
 /** A value axis: recessive grid lines, muted labels, whole numbers only. */
 export function valueAxis(palette: ChartPalette): Record<string, unknown> {
   return {
@@ -41,6 +44,41 @@ export function tooltip(palette: ChartPalette, trigger: 'item' | 'axis'): Record
     borderColor: palette.grid,
     textStyle: { color: palette.text },
     ...(trigger === 'axis' ? { axisPointer: { type: 'shadow' } } : {}),
+  };
+}
+
+/** The height in pixels of a horizontal bar chart with the given number of bars. */
+export function barChartHeight(bars: number): number {
+  return bars * BAR_ROW_HEIGHT + BAR_CHART_PADDING;
+}
+
+/** A horizontal bar chart of one series, the first bar on top, each bar labelled with its value. */
+export function horizontalBarOption(
+  palette: ChartPalette,
+  bars: { label: string; value: number }[],
+  seriesName: string,
+  labelWidth?: number,
+): Record<string, unknown> {
+  const bottomUp = [...bars].reverse();
+  return {
+    grid: { left: 8, right: 24, top: 8, bottom: 8, containLabel: true },
+    tooltip: tooltip(palette, 'item'),
+    xAxis: valueAxis(palette),
+    yAxis: categoryAxis(
+      palette,
+      bottomUp.map((bar) => bar.label),
+      labelWidth,
+    ),
+    series: [
+      {
+        type: 'bar',
+        name: seriesName,
+        barMaxWidth: 20,
+        itemStyle: { color: palette.bar, borderRadius: [0, BAR_RADIUS, BAR_RADIUS, 0] },
+        label: { show: true, position: 'right', color: palette.text },
+        data: bottomUp.map((bar) => bar.value),
+      },
+    ],
   };
 }
 
