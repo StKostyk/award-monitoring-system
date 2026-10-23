@@ -10,14 +10,14 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 5.1 Personal achievement dashboard (US-008) | Validated, pending 5.1.4 and the manual run | 2026-10-19 | - |
+| 5.1 Personal achievement dashboard (US-008) | Done | 2026-10-19 | 2026-10-23 |
 | 5.2 Faculty performance analytics (US-009) | Planned | - | - |
 | 5.3 Executive university dashboard (US-010) | Planned | - | - |
 | 5.4 Full-text award search (ADR-007 addendum) | Planned | - | - |
 
 ## Current focus
 
-Feature 5.1 validated 2026-10-19 with notes ([feature-5.1-personal-achievement-dashboard.md](../features/epic-05/feature-5.1-personal-achievement-dashboard.md) §13). Next: 5.1.4 (SCRUM-108, failure states of the dashboard and summary), then the manual run of §10, then Feature 5.2.
+Feature 5.1 Done 2026-10-23: validated with notes, 5.1.4 (SCRUM-108) merged, manual run of §10 passed 37/37 ([feature-5.1-personal-achievement-dashboard.md](../features/epic-05/feature-5.1-personal-achievement-dashboard.md) §10, §13). Next: Feature 5.2.
 
 ## Scope
 
@@ -42,7 +42,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 1 | 5.1.1 Personal analytics API with a consented department rank | 5.1 | 5 | SCRUM-98 | #285 | no | Done |
 | 2 | 5.1.2 Personal dashboard with charts and widget choice | 5.1 | 8 | SCRUM-99 | #286 | yes | Done |
 | 3 | 5.1.3 Shareable achievement summary | 5.1 | 3 | SCRUM-100 | #287 | no | Done |
-| 3a | 5.1.4 Dashboard period and failure states | 5.1 | 5 | SCRUM-108 | #300 | no | In review |
+| 3a | 5.1.4 Dashboard period and failure states | 5.1 | 5 | SCRUM-108 | #300 | no | Done |
 | 4 | 5.2.1 Unit analytics API for departments and faculties with period comparison | 5.2 | 5 | SCRUM-101 | #288 | no | Planned |
 | 5 | 5.2.2 Faculty analytics page with department comparison and top performers | 5.2 | 5 | SCRUM-102 | #289 | yes | Planned |
 | 6 | 5.2.3 Analytics report export to CSV, Excel and PDF | 5.2 | 5 | SCRUM-103 | #290 | no | Planned |
@@ -66,6 +66,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-19 | The shareable summary is a printable page (print CSS) with a link to the published achievements; server-side PDF starts at 5.2.3 | One PDF library, introduced once | US-008 |
 | 2026-10-19 | Charts with ngx-echarts 21 on ECharts 6 (SVG renderer, ARIA, table view per chart); personal analytics uncached; rank by count of approved awards under the person's own `ANALYTICS` consent, minimum group 5; widget choice stored per account (`dashboard_preferences`, V046) | Accessible and printable charts; fresh personal figures; no colleague named or derivable | PRD 5.1 §7 |
 | 2026-10-19 | Feature 5.1 validation: fix story 5.1.4 (SCRUM-108, 5 points) for the period the server refuses, the widget-choice save after a failed load, the public-awards check failure, Print while loading, the missing "Other" bar and a Kyiv New Year test | Scenario review and edge-case check found them; the validation docs ship in its PR | PRD 5.1 §13 |
+| 2026-10-23 | Feature 5.1 closed: manual run 37/37; the stale figures while the backend is down (step 22) and the rank counting members without the consent go to the Epic 5 review | No AC broken; both are product questions, not defects | PRD 5.1 §10, §13 |
 
 ## Documentation deviations found at kickoff
 
