@@ -1,0 +1,28 @@
+@if (sentences().length === 0) {
+  <p class="analytics-note" data-testid="highlights-none">
+    {{ 'unitAnalytics.highlights.none' | transloco }}
+  </p>
+} @else {
+  <div class="highlights">
+    @if (strengths().length > 0) {
+      <section data-testid="highlights-strengths">
+        <h3>{{ 'unitAnalytics.highlights.strengths' | transloco }}</h3>
+        <ul>
+          @for (entry of strengths(); track entry.key) {
+            <li>{{ entry.text }}</li>
+          }
+        </ul>
+      </section>
+    }
+    @if (gaps().length > 0) {
+      <section data-testid="highlights-gaps">
+        <h3>{{ 'unitAnalytics.highlights.gaps' | transloco }}</h3>
+        <ul>
+          @for (entry of gaps(); track entry.key) {
+            <li>{{ entry.text }}</li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+}

@@ -1,0 +1,22 @@
+.comparison__scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.comparison__table {
+  min-width: 640px;
+
+  th[scope='row'] {
+    white-space: normal;
+  }
+}
+
+.comparison__inactive {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.comparison__chart-title {
+  font: var(--mat-sys-title-small);
+  margin: 16px 0 8px;
+}

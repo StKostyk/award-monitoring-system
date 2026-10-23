@@ -1,0 +1,26 @@
+@if (topPerformers().status === 'GROUP_TOO_SMALL') {
+  <p class="analytics-note" data-testid="top-performers-too-small">
+    {{ 'unitAnalytics.top.groupTooSmall' | transloco }}
+  </p>
+} @else if (people().length === 0) {
+  <p class="analytics-note" data-testid="top-performers-empty">
+    {{ 'unitAnalytics.top.empty' | transloco }}
+  </p>
+} @else {
+  <ul class="people" data-testid="top-performers">
+    @for (person of people(); track person.userId) {
+      <li class="person">
+        <span class="person__name">{{ person.lastName }} {{ person.firstName }}</span>
+        @if (person.departmentName) {
+          <span class="person__detail">{{ person.departmentName }}</span>
+        }
+        <span class="person__detail">
+          {{ 'unitAnalytics.top.count' | transloco: { count: person.count } }} ·
+          {{ 'unitAnalytics.top.highest' | transloco }}:
+          {{ 'categories.levels.' + person.highestLevel | transloco }}
+        </span>
+      </li>
+    }
+  </ul>
+  <p class="analytics-note">{{ 'unitAnalytics.top.note' | transloco }}</p>
+}

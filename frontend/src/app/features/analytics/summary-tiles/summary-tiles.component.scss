@@ -28,3 +28,8 @@
 .tile__value--text {
   font: var(--mat-sys-title-medium);
 }
+
+.tile__note {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

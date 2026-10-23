@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unit analytics page (/analytics) for faculties and departments: change against the previous period, department comparison, charts, top performers and highlights
 - Unit analytics API for faculties and departments: totals and deltas against the previous period, department comparison, categories, levels, sources, consenting top performers and highlights (SCRUM-101)
 - Printable achievement summary of a period on the personal dashboard, with a link to a public page of the account's public awards (5.1.3)
 - Personal dashboard at /dashboard: summary, timeline, awards by year, category and level, place in the department, a table view of every chart and a widget choice kept per account (5.1.2)

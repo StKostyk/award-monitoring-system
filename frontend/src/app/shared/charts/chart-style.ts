@@ -4,6 +4,9 @@ import { ChartPalette } from './chart-theme.service';
 export const BAR_RADIUS = 4;
 export const MARK_GAP = 2;
 
+/** Bar charts draw at most this many bars of their own before the rest forms one "Other" bar. */
+export const MAX_BARS = 12;
+
 const BAR_ROW_HEIGHT = 32;
 const BAR_CHART_PADDING = 48;
 
@@ -80,6 +83,19 @@ export function horizontalBarOption(
       },
     ],
   };
+}
+
+/**
+ * The first `MAX_BARS` rows, followed by one row that combines the rest when there are more.
+ *
+ * @param rows the rows, largest first
+ * @param combine builds the "Other" row from the rows beyond the limit
+ * @returns the rows to draw
+ */
+export function withOther<T>(rows: T[], combine: (rest: T[]) => T): T[] {
+  return rows.length > MAX_BARS
+    ? [...rows.slice(0, MAX_BARS), combine(rows.slice(MAX_BARS))]
+    : rows;
 }
 
 /** Text of a tooltip line, escaped so that award titles cannot inject markup. */

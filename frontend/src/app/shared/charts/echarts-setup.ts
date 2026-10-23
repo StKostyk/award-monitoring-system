@@ -1,4 +1,4 @@
-import { BarChart, ScatterChart } from 'echarts/charts';
+import { BarChart, LineChart, ScatterChart } from 'echarts/charts';
 import {
   AriaComponent,
   GridComponent,
@@ -10,6 +10,7 @@ import { SVGRenderer } from 'echarts/renderers';
 
 echarts.use([
   BarChart,
+  LineChart,
   ScatterChart,
   AriaComponent,
   GridComponent,

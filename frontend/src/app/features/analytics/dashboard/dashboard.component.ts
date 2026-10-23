@@ -3,23 +3,21 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatOption, MatSelect } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
-import { currentKyivYear } from '../../../shared/date-format';
-import { FIRST_YEAR, readPeriod } from '../analytics-period';
+import { readPeriod } from '../analytics-period';
 import { AnalyticsPeriod, DASHBOARD_WIDGETS, DashboardWidget } from '../analytics.service';
 import { CategoryChartComponent } from '../category-chart/category-chart.component';
 import { CustomiseDialogComponent } from '../customise-dialog/customise-dialog.component';
 import { DashboardEmptyComponent } from '../dashboard-empty/dashboard-empty.component';
 import { LevelChartComponent } from '../level-chart/level-chart.component';
+import { PeriodSelectComponent } from '../period-select/period-select.component';
 import { RankCardComponent } from '../rank-card/rank-card.component';
 import { AnalyticsActions } from '../store/analytics.actions';
 import { analyticsFeature } from '../store/analytics.feature';
@@ -39,12 +37,9 @@ import { YearTrendChartComponent } from '../year-trend-chart/year-trend-chart.co
     MatCardContent,
     MatCardHeader,
     MatCardTitle,
-    MatFormField,
     MatIcon,
-    MatLabel,
-    MatOption,
     MatProgressBar,
-    MatSelect,
+    PeriodSelectComponent,
     RankCardComponent,
     RouterLink,
     SummaryTilesComponent,
@@ -63,7 +58,6 @@ export class DashboardComponent {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly canCreate = canCreateAwards(inject(AuthService).permissions());
-  protected readonly years = yearsDescending(currentKyivYear());
 
   readonly period = this.store.selectSignal(analyticsFeature.selectPeriod);
   readonly analytics = this.store.selectSignal(analyticsFeature.selectAnalytics);
@@ -127,8 +121,4 @@ export class DashboardComponent {
         }
       });
   }
-}
-
-function yearsDescending(last: number): number[] {
-  return Array.from({ length: last - FIRST_YEAR + 1 }, (_, index) => last - index);
 }

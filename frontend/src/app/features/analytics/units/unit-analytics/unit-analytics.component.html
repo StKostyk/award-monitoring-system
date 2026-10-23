@@ -1,0 +1,160 @@
+<div class="units__header">
+  <h1 class="units__title">{{ 'unitAnalytics.title' | transloco }}</h1>
+</div>
+
+@if (notFound()) {
+  <section class="units__problem" role="alert" data-testid="unit-not-found">
+    <p>{{ 'unitAnalytics.notFound' | transloco }}</p>
+    <a mat-stroked-button routerLink="/analytics">{{ 'unitAnalytics.back' | transloco }}</a>
+  </section>
+} @else {
+  <div class="units__controls">
+    @if (units().length > 0) {
+      <app-unit-picker [units]="units()" [selected]="unitId()" (choose)="chooseUnit($event)" />
+    }
+    @if (!invalid()) {
+      <app-period-select [period]="period()" (choose)="choose($event)" (allYears)="allYears()" />
+    }
+  </div>
+
+  @if (invalid()) {
+    <section class="units__problem" role="alert" data-testid="unit-analytics-invalid">
+      <p>{{ 'analytics.report.invalidPeriod' | transloco }}</p>
+      <button mat-stroked-button type="button" (click)="allYears()">
+        {{ 'analytics.period.allYears' | transloco }}
+      </button>
+    </section>
+  } @else {
+    @if (loading()) {
+      <mat-progress-bar
+        mode="indeterminate"
+        [attr.aria-label]="'app.loading' | transloco"
+        data-testid="unit-analytics-loading"
+      />
+    }
+
+    @if (problem()) {
+      <div class="units__problem" role="alert" data-testid="unit-analytics-error">
+        <p>{{ 'unitAnalytics.failed' | transloco }}</p>
+        <button mat-stroked-button type="button" (click)="retry()">
+          {{ 'analytics.retry' | transloco }}
+        </button>
+      </div>
+    } @else if (analytics(); as data) {
+      <p class="units__compared" data-testid="unit-analytics-compared">
+        {{ comparedWith() }}
+        @if (data.partialYear) {
+          {{ 'unitAnalytics.partialYear' | transloco: { year: data.period.to } }}
+        }
+      </p>
+
+      <div class="units__grid">
+        <mat-card class="units__wide" appearance="outlined" data-testid="section-totals">
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'unitAnalytics.sections.totals' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content><app-delta-tiles [totals]="data.totals" /></mat-card-content>
+        </mat-card>
+
+        <mat-card class="units__wide" appearance="outlined" data-testid="section-trend">
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'unitAnalytics.sections.trend' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content><app-unit-trend-chart [analytics]="data" /></mat-card-content>
+        </mat-card>
+
+        @if (data.unit.type === 'FACULTY') {
+          <mat-card class="units__wide" appearance="outlined" data-testid="section-comparison">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'unitAnalytics.sections.comparison' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <app-unit-comparison [rows]="data.units" [period]="period()" />
+            </mat-card-content>
+          </mat-card>
+        }
+
+        <mat-card appearance="outlined" data-testid="section-by-category">
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'unitAnalytics.sections.byCategory' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @if (byCategory().length > 0) {
+              <app-comparison-bars
+                [rows]="byCategory()"
+                [caption]="'unitAnalytics.sections.byCategory' | transloco"
+                [labelHeader]="'analytics.table.category' | transloco"
+                tableId="unit-category-table"
+              />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" data-testid="section-by-level">
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'unitAnalytics.sections.byLevel' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @if (byLevel().length > 0) {
+              <app-comparison-bars
+                [rows]="byLevel()"
+                [caption]="'unitAnalytics.sections.byLevel' | transloco"
+                [labelHeader]="'analytics.table.level' | transloco"
+                tableId="unit-level-table"
+              />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="units__wide" appearance="outlined" data-testid="section-by-source">
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'unitAnalytics.sections.bySource' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @if (data.bySource.sources.length > 0) {
+              <app-source-chart [bySource]="data.bySource" />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" data-testid="section-top-performers">
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'unitAnalytics.sections.topPerformers' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-top-performers [topPerformers]="data.topPerformers" />
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" data-testid="section-highlights">
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'unitAnalytics.sections.highlights' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content><app-highlights [highlights]="data.highlights" /></mat-card-content>
+        </mat-card>
+      </div>
+    }
+  }
+}
