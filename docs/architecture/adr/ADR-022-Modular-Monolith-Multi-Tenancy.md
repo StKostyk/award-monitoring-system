@@ -129,7 +129,7 @@ when a module meets the extraction criteria below.**
 | `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
 | `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | base (`ConsentLookup`), `dto`, `event` |
-| `analytics` | common, organization, authz, user, award, gdpr | — |
+| `analytics` | common, audit, organization, authz, user, award, gdpr | — |
 | `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` for the data export) |
 | `metrics` | — | — |
 | `config` | common, audit | — (depended on by none) |
@@ -143,6 +143,9 @@ when a module meets the extraction criteria below.**
   `AccessScope.heldScopes` and `RolePermissions`, and the names of top performers through `user`'s `UserAccounts`.
   PRD 5.2 named `ActorDirectory` for the names; its `Actor` carries a full name and an e-mail address, but neither
   the surname the list is ordered by nor the department it shows.
+- Addendum 2026-10-24 (5.2.3): `analytics` depends on `audit` to record `ANALYTICS_EXPORTED` through
+  `AuditService`, as `award` and `gdpr` do for their exports; `audit` depends only on `common`, so no cycle
+  arises. The report writers live in `analytics.export` behind one `ReportWriter` interface.
 - Cycles were broken by dependency inversion, with no behaviour change: `audit` names actors through
   `ActorDirectory` (implemented in `user`); `award` reads documents through `AwardDocuments` (implemented in
   `document`); `user` signs accounts out through `AccountSessions` (implemented in `auth`) and takes back lent

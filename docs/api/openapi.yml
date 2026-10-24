@@ -3011,11 +3011,14 @@ paths:
   /analytics/units/{id}/export:
     get:
       tags: [Analytics]
-      summary: Export the analytics of a faculty or department (planned)
-      x-status: planned
+      summary: Export the analytics of a faculty or department
       description: >
         The figures of `GET /analytics/units/{id}` for the same period as a CSV, Excel or PDF file, labelled in
-        `lang`; writes an `ANALYTICS_EXPORTED` audit row (5.2.3).
+        `lang`, sent with `Cache-Control: no-store`; writes an `ANALYTICS_EXPORTED` audit row once the file is
+        produced, none for a refused request (5.2.3). CSV is UTF-8 with a byte-order mark, one long table
+        (`section`, `key`, `label`, `year`, `current`, `previous`); Excel has one sheet per section; in both a text
+        cell starting with `=`, `+`, `-`, `@`, tab or carriage return is prefixed with `'`. PDF is A4 portrait
+        with an embedded font and page numbers.
       security:
         - bearerAuth: []
       operationId: exportUnitAnalytics

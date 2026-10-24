@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${report.language().code()}">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="${report.title()}">Unit analytics</title>
+  <style th:inline="css">
+    @page {
+      size: A4 portrait;
+      margin: 16mm 14mm 18mm 14mm;
+      @bottom-center {
+        content: "[(#{report.page})] " counter(page) " [(#{report.pageOf})] " counter(pages);
+        font-family: 'Noto Sans';
+        font-size: 8pt;
+        color: #555555;
+      }
+    }
+    body { font-family: 'Noto Sans'; font-size: 8.5pt; color: #111111; }
+    h1 { font-size: 14pt; margin: 0 0 6pt 0; }
+    h2 { font-size: 10.5pt; margin: 10pt 0 3pt 0; page-break-after: avoid; }
+    table { width: 100%; border-collapse: collapse; -fs-table-paginate: paginate; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    th { font-weight: bold; text-align: left; border-bottom: 0.8pt solid #444444; padding: 2pt 4pt; }
+    td { border-bottom: 0.4pt solid #cccccc; padding: 1.5pt 4pt; vertical-align: top; }
+    .number { text-align: right; white-space: nowrap; width: 16%; }
+    .year { text-align: right; white-space: nowrap; width: 8%; }
+    table.header td { border: none; padding: 0.5pt 6pt 0.5pt 0; }
+    table.header td.label { width: 28%; color: #444444; }
+    .note { font-size: 8pt; color: #444444; margin: 4pt 0 0 0; }
+    .empty { color: #444444; margin: 0; }
+  </style>
+</head>
+<body>
+  <h1 th:text="${report.title()}">Unit analytics</h1>
+  <table class="header">
+    <tr th:each="field : ${report.header()}">
+      <td class="label" th:text="${field.label()}">Label</td>
+      <td th:text="${field.value()}">Value</td>
+    </tr>
+  </table>
+  <p class="note" th:text="${report.note()}">Note</p>
+  <th:block th:each="section : ${report.sections()}">
+    <h2 th:text="${section.title()}">Section</h2>
+    <p class="empty" th:if="${section.rows().isEmpty()}" th:text="${report.empty()}">Empty</p>
+    <table th:unless="${section.rows().isEmpty()}">
+      <thead>
+        <tr>
+          <th th:text="${report.columns()[1]}">Item</th>
+          <th class="year" th:if="${section.hasYears()}" th:text="${report.columns()[2]}">Year</th>
+          <th class="number" th:text="${report.columns()[3]}">This period</th>
+          <th class="number" th:if="${section.hasPrevious()}" th:text="${report.columns()[4]}">Previous</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="row : ${section.rows()}">
+          <td th:text="${row.label()}">Label</td>
+          <td class="year" th:if="${section.hasYears()}" th:text="${row.year()}">2026</td>
+          <td class="number" th:text="${row.current()?.toPlainString()}">1</td>
+          <td class="number" th:if="${section.hasPrevious()}" th:text="${row.previous()?.toPlainString()}">1</td>
+        </tr>
+      </tbody>
+    </table>
+  </th:block>
+</body>
+</html>
