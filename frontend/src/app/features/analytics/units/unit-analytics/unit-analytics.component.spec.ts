@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import {
@@ -173,6 +173,43 @@ describe('UnitAnalyticsComponent', () => {
     );
   });
 
+  it('ac2_7_retry_also_reloads_a_unit_list_that_failed', async () => {
+    await setUp();
+    store.dispatch(UnitAnalyticsActions.unitsLoadFailed({ problem: 'network' }));
+    store.dispatch(UnitAnalyticsActions.analyticsLoadFailed({ problem: 'network' }));
+    fixture.detectChanges();
+    dispatch.mockClear();
+
+    element('unit-analytics-error')!.querySelector('button')!.click();
+
+    expect(dispatch).toHaveBeenCalledWith(UnitAnalyticsActions.unitsRequested());
+    expect(dispatch).toHaveBeenCalledWith(
+      UnitAnalyticsActions.unitSelected({ unitId: 9, period: { from: null, to: null } }),
+    );
+  });
+
+  it('ac2_7_retry_keeps_a_unit_list_that_loaded', async () => {
+    await setUp();
+    store.dispatch(UnitAnalyticsActions.unitsLoaded({ units: [FACULTY, ALGEBRA] }));
+    store.dispatch(UnitAnalyticsActions.analyticsLoadFailed({ problem: 'network' }));
+    fixture.detectChanges();
+    dispatch.mockClear();
+
+    element('unit-analytics-error')!.querySelector('button')!.click();
+
+    expect(dispatch).not.toHaveBeenCalledWith(UnitAnalyticsActions.unitsRequested());
+  });
+
+  it('ac2_7_reopening_the_page_requests_a_unit_list_that_failed', async () => {
+    await setUp();
+    store.dispatch(UnitAnalyticsActions.unitsLoadFailed({ problem: 'network' }));
+    dispatch.mockClear();
+
+    TestBed.createComponent(UnitAnalyticsComponent).detectChanges();
+
+    expect(dispatch).toHaveBeenCalledWith(UnitAnalyticsActions.unitsRequested());
+  });
+
   it('ac2_7_refuses_a_period_that_is_not_valid', async () => {
     await setUp('uk');
     dispatch.mockClear();
@@ -203,6 +240,30 @@ describe('UnitAnalyticsComponent', () => {
     queryParams.next(convertToParamMap({ from: '2026', to: '2021' }));
     fixture.detectChanges();
     expect(exportButton().disabled).toBe(true);
+  });
+
+  it('ac3_6_exports_the_years_of_the_shown_figures_on_the_default_period', async () => {
+    await setUp();
+    load();
+
+    (element('unit-export') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (document.querySelector('[data-testid="unit-export-csv"]') as HTMLButtonElement).click();
+
+    const request = TestBed.inject(HttpTestingController).expectOne((req) =>
+      req.url.endsWith('/9/export'),
+    ).request;
+    expect(request.params.get('from')).toBe('2024');
+    expect(request.params.get('to')).toBe('2026');
+  });
+
+  it('ac2_4_opens_a_department_with_the_years_of_the_shown_figures_on_the_default_period', async () => {
+    await setUp();
+    load();
+
+    const link = element('section-comparison')!.querySelector('a[href*="/analytics/units/64"]');
+
+    expect(link!.getAttribute('href')).toBe('/analytics/units/64?from=2024&to=2026');
   });
 
   it('ac3_6_leaves_out_the_export_for_an_unknown_unit', async () => {

@@ -1,7 +1,7 @@
 <div class="units__header">
   <h1 class="units__title">{{ 'unitAnalytics.title' | transloco }}</h1>
   @if (!notFound()) {
-    <app-export-menu [unitId]="unitId()" [period]="period()" [disabled]="exportDisabled()" />
+    <app-export-menu [unitId]="unitId()" [period]="shownPeriod()" [disabled]="exportDisabled()" />
   }
 </div>
 
@@ -78,7 +78,7 @@
               </mat-card-title>
             </mat-card-header>
             <mat-card-content>
-              <app-unit-comparison [rows]="data.units" [period]="period()" />
+              <app-unit-comparison [rows]="data.units" [period]="shownPeriod()" />
             </mat-card-content>
           </mat-card>
         }
