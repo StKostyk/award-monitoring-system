@@ -11,13 +11,13 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 5.1 Personal achievement dashboard (US-008) | Done | 2026-10-19 | 2026-10-23 |
-| 5.2 Faculty performance analytics (US-009) | Planned | - | - |
+| 5.2 Faculty performance analytics (US-009) | Done | 2026-10-23 | 2026-10-24 |
 | 5.3 Executive university dashboard (US-010) | Planned | - | - |
 | 5.4 Full-text award search (ADR-007 addendum) | Planned | - | - |
 
 ## Current focus
 
-Feature 5.1 Done 2026-10-23: validated with notes, 5.1.4 (SCRUM-108) merged, manual run of §10 passed 37/37 ([feature-5.1-personal-achievement-dashboard.md](../features/epic-05/feature-5.1-personal-achievement-dashboard.md) §10, §13). Feature 5.2 PRD approved 2026-10-23 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md)). Next: 5.2.1 (SCRUM-101).
+Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Next: Feature 5.3 PRD.
 
 ## Scope
 
@@ -45,7 +45,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 3a | 5.1.4 Dashboard period and failure states | 5.1 | 5 | SCRUM-108 | #300 | no | Done |
 | 4 | 5.2.1 Unit analytics API for departments and faculties with period comparison | 5.2 | 8 | SCRUM-101 | #288 | no | Done |
 | 5 | 5.2.2 Faculty analytics page with department comparison and top performers | 5.2 | 5 | SCRUM-102 | #289 | yes | Done |
-| 6 | 5.2.3 Analytics report export to CSV, Excel and PDF | 5.2 | 5 | SCRUM-103 | #290 | no | In review |
+| 6 | 5.2.3 Analytics report export to CSV, Excel and PDF | 5.2 | 5 | SCRUM-103 | #290 | no | Done |
 | 7 | 5.3.1 University analytics API with trends and a compliance summary | 5.3 | 5 | SCRUM-104 | #291 | no | Planned |
 | 8 | 5.3.2 Executive dashboard | 5.3 | 5 | SCRUM-105 | #292 | yes | Planned |
 | 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Planned |
@@ -68,6 +68,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-19 | Feature 5.1 validation: fix story 5.1.4 (SCRUM-108, 5 points) for the period the server refuses, the widget-choice save after a failed load, the public-awards check failure, Print while loading, the missing "Other" bar and a Kyiv New Year test | Scenario review and edge-case check found them; the validation docs ship in its PR | PRD 5.1 §13 |
 | 2026-10-23 | Feature 5.1 closed: manual run 37/37; the stale figures while the backend is down (step 22) and the rank counting members without the consent go to the Epic 5 review | No AC broken; both are product questions, not defects | PRD 5.1 §10, §13 |
 | 2026-10-23 | Unit analytics: `analytics:read:department` (approvers) and `analytics:read:faculty` (dean upward) on held scopes only, 404 outside them; awards count in the unit of submission; department figures at any size, top performers (consented, no positions, up to 10) need the minimum group of 5; four highlight rules; aggregates cached 5 minutes with names and consent applied per request; exports with openhtmltopdf, FastExcel and hand-written CSV, audited; `vw_award_statistics` and `/reports/awards/*` removed | Viewers already read these awards; naming stays under the consent; one export component reused by 5.3.3 | PRD 5.2 §7 |
+| 2026-10-24 | Feature 5.2 closed: validated with notes, manual run 35/35; the failed unit list without Retry, the export period of a page open over New Year and the "2026–2026" header go to fix story 5.2.4 | No AC broken; both paths are failure or boundary cases | PRD 5.2 §13 |
 
 ## Documentation deviations found at kickoff
 
@@ -96,6 +97,13 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   - `dashboard.spec` measures the 3 s with `Date.now()`.
   - The module-level helpers of `dashboard.component.ts` are ordered inconsistently.
   - The shared horizontal-bar helper for the category and level charts goes into 5.1.4, next to AC-4.5.
+- Feature 5.2 refactor sweep (2026-10-24), notes only:
+  - `OrganizationRef` is built by hand from an `Organization` in seven places; an `OrganizationRef.of` factory would serve them all.
+  - `UnitFiguresHelper.byCategory` and `byLevel` repeat the paired-count loop.
+  - `source-chart` cuts the bars by hand instead of the shared `withOther`.
+  - The faculty-level row name is built twice (comparison table, trend chart).
+  - The `ReportTextHelper.guard` assertions live in `CsvReportWriterTest`; a `ReportTextHelperTest` would cover all writers.
+  - `MARK_GAP` in `chart-style.ts` is unused.
 
 ## Risks
 

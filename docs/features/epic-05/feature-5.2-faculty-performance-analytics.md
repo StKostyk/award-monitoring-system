@@ -3,7 +3,7 @@
 > **Epic**: 5 — Analytics & Reporting Dashboard (SCRUM-97)
 > **Sprint**: 6–7 (2026-10-23 → 2026-11-01; 5.2.1 and 5.2.2 in sprint 6, 5.2.3 in sprint 7)
 > **Points**: 18 (three stories; 15 at kickoff, see deviation 12)
-> **Status**: Approved 2026-10-23
+> **Status**: Done 2026-10-24 (validated with notes, §13; manual run of §10 35/35)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-05 tracker (decisions of 2026-10-19, deviations 2, 3, 5 and 6, technical notes, risks 3 and 4), US-009, roadmap Feature 5.2, RBAC_matrix §4, AUTHENTICATION_AUTHORIZATION §3.3, PRIVACY_BY_DESIGN §4.2 (`ANALYTICS`), DATA_DICTIONARY §1.3, §2.1, §2.2, §4.1, Appendix C, ADR-005, ADR-014, ADR-015, ADR-022, PRD 5.1 (period, rank, chart wrapper, seed), `AccessScope`, `OrganizationTree`, `AwardStatistics`, `ConsentLookup`, `ActorDirectory`, `openapi.yml` (`/analytics/me`, `/reports/awards/*`)
 
@@ -310,6 +310,23 @@ container stack rebuilt from feature/SCRUM-103 (cf3e8c0, merged as PR #305); def
 | 33 | PASS | fresh e52.erasure (uid 1526, DAI, EMPLOYEE, ANALYTICS granted, 7 approved awards 1402–1408) listed top-1 with 7; erasure request 61 (PT10M, cron 1 min) COMPLETED 09:57; next load: not in topPerformers, faculty total 333 unchanged, 7 awards still APPROVED |
 | 34 | PASS | admin POST /users/966/roles EMPLOYEE 66 updateOrganization from 64: after cache TTL DAI members 1197→1196, DMA 6→7, approved unchanged 302/21, top performer department 66 |
 
+### Run 2026-10-24 (validation)
+
+Container stack from a tree equal to `develop` 68c26ee (`git diff cf3e8c0 68c26ee -- backend frontend docker-compose.yaml` empty), defaults; steps 1–9 and 35 through the API (`/api/v1`), psql and redis-cli. Result: 10 pass, so all 35 steps are run by hand.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | psql 2022–2026 / 2017–2021: DAI 309/25 (4 unit awards), DMA 21/12, ФМІ level 3/0 (2 unit awards); ACTIVE members DAI 1198, DDE 1, DMA 6, ФМІ 3 |
+| 2 | PASS | dean.fmi 6 units (FMI, DAI, DDE, DMA, DMM, DAMIT); secretary.fmi the 5 departments, no faculty; rector 85 units, 12 faculties; employee.fmi 403 |
+| 3 | PASS | /units/9: period 2022–2026, previous 2017–2021, partialYear true; approved 333/37 = psql (309+21+3); rows sum 333/37; faculty-level row 3 members, 3 awards; unitAwards 6 = psql |
+| 4 | PASS | byYear 2022–2026 (13, 14, 14, 16, 276) with personal/unit split; the four spellings of "Міністерство освіти і науки України" grouped as one source with 220 = psql over the normalised name |
+| 5 | PASS | LISTED, 7 people (966 lecturer.fmi top with 6); all 7 have a latest ANALYTICS grant and psql counts exactly 7 consenting ACTIVE owners; keys userId, firstName, lastName, department, count, highestLevel, no position |
+| 6 | PASS | NO_AWARDS DDE (1 member, 0/0); GROWTH DAI 309/25 and DMA 21/12; DMM and DAMIT (no members) left out; no BELOW_AVERAGE (DAI 0.26 per member vs faculty 0.28) |
+| 7 | PASS | second call same generatedAt 10:06:34.419Z; key `awardapp:unit-analytics::9:2022:2026`, TTL 291 s |
+| 8 | PASS | ?from=2027, ?from=2026&to=2021, ?from=abc: 400 invalid-parameter, `parameter: from` |
+| 9 | PASS | secretary.fmi /units/9 and /units/1: 404 with the same body; /units/64 (DAI): 200 |
+| 35 | PASS | award 1409 (lecturer.fmi, DAI) approved; at once 333 with generatedAt 10:06:34; after the key expired 334 with generatedAt 10:11:37 |
+
 ## 11. Risks
 
 | Risk | Likelihood | Impact | Mitigation |
@@ -327,3 +344,83 @@ container stack rebuilt from feature/SCRUM-103 (cf3e8c0, merged as PR #305); def
 - Security review for 5.2.1 and 5.2.3
 - `openapi.yml` without `x-status: planned` on the three operations and without `/reports/awards/*`; DATA_DICTIONARY Appendix C and `ANALYTICS_EXPORTED`; AUTHENTICATION_AUTHORIZATION §3.3; RBAC_matrix §4; ADR-022 module table; README third-party libraries and font licence; user guide "Unit analytics"; CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation (2026-10-24, `develop` at 68c26ee)
+
+PRs #303, #304, #305 merged, all three stories Done in Jira and GitHub. Result: **passed with notes**. Every AC has a test, every step of §10 passed by hand (25 in the first run, 10 in the validation run). The scenario review found two small defects in the failure paths of the page and no defect in the API; the refactor sweep found nothing worth a PR on its own (findings 2–4).
+
+| Layer | Result |
+|-------|--------|
+| Backend unit / IT + FT | 1237 / 486 on `develop`, all green (`gate.ps1 -Full`, 2026-10-24 13:22) |
+| Coverage, static | 98.7 % lines (5668/5745); Checkstyle, PMD, SpotBugs 0 |
+| Frontend | lint clean, 881 tests, initial bundle 958.33 kB |
+| Integration | Containers built from a tree equal to `develop`, healthy; migrations apply on empty Testcontainers databases in every IT; Flyway at V046; `/v3/api-docs` lists `/analytics/me`, `/analytics/units`, `/analytics/units/{id}`, `/analytics/units/{id}/export` as in `openapi.yml`, which has no `x-status: planned` operation and no `/reports/awards/*` left |
+| Playwright | Full run 2026-10-24: 114 of 118, `unit-analytics.spec` 8/8 and the 5.1 `dashboard.spec` green; the four failures are the known `auth.spec:85` (local seed), `reviews.spec:174/387` and `theme.spec:116` (axe mid-load), none in this feature |
+| Security | Checklist below; the PRs of #303 (permissions, scope check, consent filter, cache) and #305 (export, injection, audit) leave no finding open |
+
+### AC evidence
+
+| AC | Unit | IT / FT | E2E / manual |
+|----|------|---------|--------------|
+| 1.1 | `RolePermissionsTest.ac1_1_unitAnalyticsBelongToTheApproversAndAreNeverLent` | `UnitAnalyticsFT.ac1_1_rolesWithoutUnitAnalyticsAndDelegatesAreRefused` | §10 steps 20, 30, 31; doc review ✓ |
+| 1.2 | `UnitScopeTest.ac1_2_*` (4), `UnitAnalyticsServiceTest.ac1_2_unitsComeFromTheScope` | `UnitAnalyticsFT.ac1_2_eachRoleListsTheUnitsOfItsOwnScope` | step 2 |
+| 1.3 | `UnitAnalyticsServiceTest.ac1_3_*` (3), `UnitScopeTest.ac1_3_aUnitOutsideTheScopeOfAnotherTypeOrUnknownIsNotFound` | `UnitAnalyticsFT.ac1_3_unitsOutsideTheCallersAnalysableUnitsAnswerNotFoundAlike`, `ac1_3_invalidYearsNameTheParameter` | steps 3, 8, 9 |
+| 1.4 | `UnitFiguresHelperTest.ac1_4_*` (2) | `UnitAnalyticsIT.ac1_4_onlyApprovedAwardsSubmittedInTheSubtreeAndPeriodCountWhereverTheOwnerWorksNow`, `UnitStatisticsIT.ac1_4_anEmptySetOfOrganisationsCountsNothing`, `UnitAnalyticsFT.ac1_4_ac1_5_*` | step 3 |
+| 1.5 | `UnitAnalyticsServiceTest.ac1_5_*` (2) | `UnitAnalyticsIT.ac1_5_theDepartmentRowsAndTheFacultyLevelAddUpToTheFaculty`, `UnitAnalyticsFT.ac1_4_ac1_5_*` | steps 3, 34 |
+| 1.6 | `UnitFiguresHelperTest.ac1_6_*` (2) | `DevSeedIT.ac1_12_*` (spellings) | step 4 |
+| 1.7 | `TopPerformersRankingTest.ac1_7_*` (3), `UnitAnalyticsServiceTest.ac1_7_*` | `UnitAnalyticsIT.ac1_7_peopleAreListedFromTheMinimumGroupWithTheirConsentOnly`, `UnitAnalyticsFT.ac1_7_aWithdrawnConsentRemovesThePersonAtTheNextRequest` | steps 5, 14, 28, 32, 33 |
+| 1.8 | `HighlightRulesTest.ac1_8_*` (5), `UnitAnalyticsServiceTest.ac1_8_*` | | step 6 |
+| 1.9 | `CacheFailureLoggerTest.ac1_9_*` (2) | `UnitAnalyticsIT.ac1_9_cachedAggregatesKeepTheirTimeWhileConsentIsReadAtEveryRequest`, `DevSeedIT.ac1_9_*` | steps 7, 14, 26, 35 |
+| 1.10 | | `UnitStatisticsIT.ac1_10_thirtyThousandAwardsOfSixHundredMembersAnswerWithinTwoSecondsThroughTheIndex` (time and plan) | |
+| 1.11 | | `AwardDatabaseObjectsIT` (view absent) | `openapi.yml` and DATA_DICTIONARY Appendix C ✓ |
+| 1.12 | | `DevSeedIT.ac1_12_theSeedHoldsApprovedUnitAwardsAndOneSourceInSeveralSpellings` | step 1; e2e 5.1 specs in the full run |
+| 1.13 | | `ModularityTest` | ADR-022 ✓ |
+| 2.1 | `unit-analytics-entry.component.spec` (3), `unit-analytics.component.spec` ac2_1 (2) | | `unit-analytics.spec` ac2_1 (3 tests); steps 10, 20, 21 |
+| 2.2 | `unit-analytics.component.spec` ac2_2 (3), `unit-analytics.effects.spec` (5) | | `unit-analytics.spec` ac2_2 ac2_4, ac2_2 (secretary); steps 12, 23 |
+| 2.3 | `unit-analytics.component.spec` ac2_3 (2), `delta.spec` (2) | | `unit-analytics.spec` ac2_1 ac2_3 ac2_8; step 10 |
+| 2.4 | `unit-comparison.component.spec` (4) | | `unit-analytics.spec` ac2_2 ac2_4; step 11 |
+| 2.5 | `top-performers.component.spec` (3) | | steps 14, 28 |
+| 2.6 | `highlights.component.spec` (4) | | step 10 |
+| 2.7 | `unit-charts.spec` (5), `unit-analytics.component.spec` ac2_7 (2) | | `unit-analytics.spec` ac2_1 ac2_7; steps 13, 22, 24 |
+| 2.8 | | | `unit-analytics.spec` ac2_8 (360 px, dark, axe), ac2_1 ac2_3 ac2_8 (under 5 s); steps 18, 19; user guide "Unit analytics" ✓ |
+| 3.1 | `UnitReportExporterTest.ac3_1_*` (3) | `UnitAnalyticsExportFT.ac3_1_*` (3) | steps 15, 27 |
+| 3.2 | `UnitReportAssemblerTest.ac3_2_*` (7), writer tests ac3_2 (4) | `UnitAnalyticsExportFT.ac3_2_ac3_4_thePdfAndTheWorkbookCarryTheSectionsInUkrainian` | steps 15, 32 |
+| 3.3 | `CsvReportWriterTest.ac3_3_*` (3), `XlsxReportWriterTest.ac3_3_*` (3) | `UnitAnalyticsExportFT.ac3_3_ac3_5_theCsvDefusesFormulasAndTheExportIsAudited` | steps 15, 17 |
+| 3.4 | `PdfReportWriterTest.ac3_4_*` (3, incl. six pages for a large faculty) | `UnitAnalyticsExportFT.ac3_2_ac3_4_*` | step 15 (4 pages) |
+| 3.5 | `UnitReportExporterTest.ac3_5_*` (2, incl. no row when refused) | `UnitAnalyticsExportFT.ac3_3_ac3_5_*` | step 16 |
+| 3.6 | `export-menu.component.spec` (5), `unit-analytics.component.spec` ac3_6 (2) | | `unit-analytics.spec` ac3_6 (2); steps 15, 22, 24, 25, 27 |
+| 3.7 | `UnitReportExporterTest.ac3_7_aFormatWithoutAWriterIsRefused` | | gate static 0; README third-party (Noto Sans, OFL) ✓ |
+
+### Edge cases (§5)
+
+| Edge case | Covered by |
+|-----------|------------|
+| Period defaults, single year, Kyiv year | `UnitAnalyticsServiceTest.ac1_3_thePeriodDefaultsToFiveYearsEndingNowComparedWithTheFiveBefore`, `ac1_3_aSingleYearIsComparedWithTheYearBeforeAndAPastYearIsComplete`; `from=1950&to=2100` answers 200 (probe) |
+| Award moved between units | `UnitAnalyticsIT.ac1_4_*WhereverTheOwnerWorksNow`; step 34 |
+| Inactive departments | `UnitAnalyticsServiceTest.ac1_5_theFacultyRowsCoverEveryActiveDepartmentAndTheFacultyLevelAndAddUp` (`UnitTreeFixture` with an inactive department with and without awards) |
+| Faculty-level staff | `UnitAnalyticsIT.ac1_5_*`; step 3 |
+| Consent changes and erasure | `UnitAnalyticsFT.ac1_7_*`, `UnitAnalyticsIT.ac1_9_*`; steps 14, 32, 33 |
+| Small groups | `TopPerformersRankingTest.ac1_7_belowTheMinimumGroupNobodyIsListed`, `UnitAnalyticsIT.ac1_7_*` (groups of 4 and 5); step 28 |
+| Ties and positions | `TopPerformersRankingTest.ac1_7_onlyActiveConsentingOwnersAreListedByCountThenSurnameUpToTheLimit`; step 5 |
+| Sources | `UnitFiguresHelperTest.ac1_6_sourcesGroupTheirSpellingsUnderTheMostFrequentAndKeepTheFifteenLargest`; step 4 |
+| Concurrency and cache | `UnitAnalyticsIT.ac1_9_*`; steps 7, 35 |
+| Authorization | `UnitScopeTest.ac1_2_rolesWithoutUnitAnalyticsAndBorrowedScopesListNothing`, `UnitAnalyticsFT.ac1_1_*`, `ac1_3_*`; steps 30, 31 |
+| Export | writer tests ac3_3 (injection), `UnitReportExporterTest.ac3_1_*` (file name from the code or the id); widest period `from=1950&to=2100`: PDF 7.6 s, 206 kB, XLSX 0.9 s (probe) |
+| External | `CacheFailureLoggerTest.ac1_9_*`, step 26 (Redis down); `PdfReportWriterTest.ac3_4_theFontIsEmbedded` |
+
+### Security (OWASP)
+
+- **A01**: the three endpoints need `analytics:read:department` or `analytics:read:faculty` (`@access.require`). `UnitScope` checks the unit against the held role scopes only (`access.heldScopes()`), so delegations never apply. An unknown unit, a unit of another type and one out of scope all answer the same 404. The cache key (`unitId:from:to`) holds aggregates only; the scope check runs before the cache and names and consent are resolved per request.
+- **A02**: no new secrets or crypto. All three responses are `Cache-Control: no-store`. People are named only with the latest `ANALYTICS` grant, and only from the minimum group up.
+- **A03**: `UnitStatistics` uses `NamedParameterJdbcTemplate` with bound parameters. `ReportTextHelper.guard` prefixes text starting with `=`, `+`, `-`, `@`, tab or CR in CSV and XLSX (step 17). The Thymeleaf template has no `th:utext`. `format` and `lang` are enums, and unknown values answer 400.
+- **A07**: no change to authentication. Role revocation ends the sessions (step 30).
+
+### Findings
+
+1. Scenario review, two small defects in the failure paths of the page (no AC broken):
+   - When `GET /analytics/units` fails on `/analytics/units/{id}` (backend down at a reload), the unit selector stays empty: the component requests the units only while their status is `idle` (`unit-analytics.component.ts:119`), and Retry reloads only the analytics (`:153`).
+   - A page left open over New Year on the default period exports the new year's period: the store keeps no years for the default period, so the server resolves the period again at export time, and the file covers 2023–2027 while the page shows 2022–2026.
+   Proposed as one fix story 5.2.4 (about 2 points): Retry also reloads a failed unit list, and the export sends the period the page shows; a component spec for each, a clock test for New Year.
+2. Scenario review, accepted without a change: two tabs exporting write two audit rows (by design); the export has no rate limit beyond the 1950..2100 period bound (widest PDF 7.6 s); a cached entry of an older shape after a deploy is absorbed by `CacheFailureLogger` (covered at unit level only); an inactive unit opened by its id answers 200 but is missing from the selector.
+3. Refactor sweep, small items for the next story that touches the code: `OrganizationRef.of(Organization)` for the seven sites that build it by hand; one paired-count helper for `byCategory` and `byLevel` in `UnitFiguresHelper`; `source-chart` through the shared `withOther`; one helper for the faculty-level row name in the comparison table and the trend chart; a `ReportTextHelperTest` instead of the guard assertions in `CsvReportWriterTest`; the unused `MARK_GAP` in `chart-style.ts`.
+4. Refactor sweep, one behaviour difference: the export header writes a single-year period as "2026–2026", while the page shows "2026". It goes with the fix story of finding 1.
