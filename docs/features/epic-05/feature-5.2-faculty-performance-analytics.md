@@ -249,7 +249,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 8. `GET /analytics/units/9?from=2027`, `?from=2026&to=2021`, `?from=abc`. Expected: 400 `invalid-parameter` naming the parameter. (AC-1.3)
 9. As `secretary.fmi`, `GET /analytics/units/9` and `GET /analytics/units/1`. Expected: 404 for both; a DAI id → 200. (AC-1.3, deviation 1)
 10. Open `http://localhost:4200` as `dean.fmi`, navigation "Unit analytics". Expected: `/analytics/units/9` with unit and period selectors, the comparison line "Compared with 2017–2021" and the note that the current year is not over; tiles with deltas, trend lines per department, the comparison table, category and level charts, sources, top performers, highlights. (AC-2.1–2.3)
-11. Sort the comparison table by "Per 100 members", then open DAI from the table. Expected: the order follows the column; `/analytics/units/<DAI>?from=2022&to=2026` with bars of personal and unit awards and no comparison section. (AC-2.4)
+11. Sort the comparison table by "Per 100 members", then open DAI from the table. Expected: the order follows the column; `/analytics/units/<DAI>` (the default period stays implicit in the address; a chosen period is carried as `?from=&to=`) with bars of personal and unit awards and no comparison section. (AC-2.4)
 12. Choose 2024–2026 on the faculty. Expected: URL `?from=2024&to=2026`, compared with 2021–2023, every widget reloaded. (AC-2.2)
 13. "Show as table" on the trend and the category chart. Expected: the same figures as the API; categories beyond 12 grouped as "Other" only in the chart. (AC-2.7)
 14. As `lecturer.fmi` on `/privacy` withdraw analytics; as `dean.fmi` reload the faculty within 5 minutes. Expected: `lecturer.fmi` is gone from top performers while `generatedAt` is unchanged; grant again. (AC-1.7, 1.9, 2.5)
@@ -269,7 +269,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 25. Let the access token expire with the page open, then export. Expected: silent refresh, the file downloads. (AC-3.6)
 26. Stop Redis (`docker compose stop redis`) and reload the faculty. Expected: the page loads (a cache warning in the backend log); start Redis again. (AC-1.9)
 27. Hidden in state, export: during loading, after a failed load and for an invalid period the "Export" menu is disabled; `GET /analytics/units/9/export?format=docx` → 400; `?format=pdf` as `secretary.fmi` → 404. (AC-3.1, 3.6)
-28. Hidden in state, top performers: restart the backend with `ANALYTICS_MIN_GROUP_SIZE=50`. Expected: the faculty's top performers explain the minimum group without names; API `GROUP_TOO_SMALL`, no people; the department figures stay. Restore. (AC-1.7, 2.5)
+28. Hidden in state, top performers: restart the backend with `ANALYTICS_MIN_GROUP_SIZE=5000` (above the member count of the faculty, which local e2e accounts push past 1 200; 50 only hides the small departments). Expected: the faculty's top performers explain the minimum group without names; API `GROUP_TOO_SMALL`, no people; the department figures stay. Restore. (AC-1.7, 2.5)
 29. Hidden in state, faculty comparison: as `secretary.fmi` open a department: no comparison section, no faculty in the unit selector. (AC-1.2, 2.4)
 30. Revoked mid-flow, role: `admin` revokes the DEAN role of `dean.fmi` while the faculty page is open with the export menu open. Expected: the revocation ends the dean's sessions; the next request leads to the sign-in page; after signing in "Unit analytics" is gone (unless another role grants it) and an export URL answers 403. `secretary.fmi` keeps the department pages unchanged. Re-grant the role. (AC-1.1, 2.1, 3.1)
 31. Revoked mid-flow, delegation: `secretary.fmi` lends FACULTY_SECRETARY of ФМІ to `employee.fmi`. Expected: `employee.fmi` still gets 403 on `GET /analytics/units` and no navigation entry (analytics are not delegable); revoking the delegation changes nothing for analytics. (AC-1.1, deviation 1)
@@ -277,6 +277,38 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 33. Erasure of a top performer (a fresh account with the consent and approved awards, `APP_ERASURE_GRACE_PERIOD=PT10M` as in Feature 6.1 §10): after completion the person is gone from top performers at the next request, the faculty totals keep the anonymised awards. (AC-1.7, §5)
 34. Transfer `lecturer.fmi` from DAI to DMA (`admin`). Expected: the DAI members drop by one and DMA's grow, the awards stay in DAI's count; the top-performer entry names DMA. (AC-1.5, deviation 3)
 35. Approve a new award in DAI and reload the faculty at once, then after 5 minutes. Expected: unchanged figures with the old `generatedAt`, then the new count. (AC-1.9)
+
+### Run 2026-10-24
+
+container stack rebuilt from feature/SCRUM-103 (cf3e8c0, merged as PR #305); defaults except step 28 (ANALYTICS_MIN_GROUP_SIZE=5000) and 33 (APP_ERASURE_GRACE_PERIOD=PT10M, WARNING_BEFORE=PT5M, CRON every minute); steps 10-34, defaults restored. Result: 25 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 10 | PASS | dean.fmi: /analytics/units/9, line 2022–2026 vs 2017–2021 + partial-year note, tiles with deltas, trend, table, category/level/source charts, top performers, highlights; 3.2 s to usable |
+| 11 | PASS | step text corrected: default period is implicit in the URL (no ?from/to until chosen); sort by per-100 follows column both ways; DAI /units/64 same period, no comparison section |
+| 12 | PASS | ?from=2024&to=2026, line 2024–2026 vs 2021–2023, tiles reloaded (298 approved) |
+| 13 | PASS | 5 tables match API (12 categories 215/7, 46/8…, 6 levels); 'Other' grouping not exercised: exactly 12 categories |
+| 14 | PASS | lecturer.fmi (966) withdrawn: top performers 7→6 without 966, generatedAt 09:07:09 unchanged; granted again: 966 back |
+| 15 | PASS | uk+en: analytics-FMI-2022-2026.pdf/.xlsx/.csv; PDF 4 pages 'Сторінка n з 4'/'Page n of 4', Cyrillic + consent note, A4 per ui-check; xlsx 9 sheets; CSV BOM, 134 rows x 6 cols, approved 325/37 = page |
+| 16 | PASS | 6 new rows (ids 46983–46988) ANALYTICS_EXPORTED entity 9: format, from/to 2022–2026, language, peopleNamed 7 |
+| 17 | PASS | award 1401 (dean.fmi, approved by rector) with org =HYPERLINK(...): CSV bySource row and XLSX shared string start with ', no <f> formula element |
+| 18 | PASS | ui-check fallback 1280/360, light/dark uk + 1280 en: scrollWidth = viewport, axe serious+ 0, console errors 0; 360 en scrollWidth 360 |
+| 19 | PASS | e2e unit-analytics.spec 8/8 (assertion < 5 s inside test 1); manual open 3.2 s to usable |
+| 20 | PASS | employee.fmi/admin/gdpr: no Analytics nav link, /analytics → /forbidden; GET /analytics/units and /units/9 → 403 |
+| 21 | PASS | secretary.fmi /units/9 and dean.fmi /units/999999: 'This unit is not available' + link to /analytics; API 404 both |
+| 22 | PASS | ?from=2027 and ?from=2026&to=2021: 'The period is not valid', Export disabled, All years button; API 400 invalid-parameter (also for export) |
+| 23 | PASS | units 9→64, from 2023, to 2025: Back ×3 restore 64?from=2023, 9?from=2023, 9; forward and reload keep unit+period |
+| 24 | PASS | backend stopped, period change on DAI: figures stale ~2.5 s then one error 'Не вдалося завантажити…' + Retry at ~30 s, Export disabled; after start, Retry shows 2024–2026 vs 2021–2023 (283), Export enabled |
+| 25 | PASS | secretary.fmi page open since sign-in 09:19:40 (token 15 min TTL), export CSV at 09:36: 200, analytics-DAI-2022-2026.csv downloaded, no sign-in page |
+| 26 | PASS | Redis stopped: GET /analytics/units/9 → 200 (generatedAt 09:20:17); backend log lettuce 'Cannot reconnect to redis'; Redis started again |
+| 27 | PASS | Export disabled while loading, after the failed load (24) and for invalid periods (22); API format=docx → 400, secretary.fmi unit 9 pdf → 404 |
+| 28 | PASS | step text corrected: 50 is below the ~1200 members the e2e accounts piled into DAI/FMI; with ANALYTICS_MIN_GROUP_SIZE=5000 faculty topPerformers GROUP_TOO_SMALL, no people, UI text 'менше працівників, ніж мінімальна група…', totals/departments stay (302/21); at 50 DMA (6 members) GROUP_TOO_SMALL; restored |
+| 29 | PASS | secretary.fmi on DAI (64): no comparison section; unit selector lists only the 5 departments |
+| 30 | PASS | admin DELETE role 15: open export click → 401 → /login; re-sign-in lands on /forbidden, no nav entry, export URL 403; secretary.fmi dept 64 still 200; DEAN re-granted (role 1251), dean sees analytics again |
+| 31 | PASS | delegation 34 FACULTY_SECRETARY FMI → employee.fmi: GET /analytics/units and /units/9 → 403 while active and after DELETE (204); nav entry not checked in UI |
+| 32 | PASS | lecturer.fmi withdraws: open-page behaviour inherent; CSV export after withdrawal 6 topPerformers rows without the name (7 before and after re-grant) |
+| 33 | PASS | fresh e52.erasure (uid 1526, DAI, EMPLOYEE, ANALYTICS granted, 7 approved awards 1402–1408) listed top-1 with 7; erasure request 61 (PT10M, cron 1 min) COMPLETED 09:57; next load: not in topPerformers, faculty total 333 unchanged, 7 awards still APPROVED |
+| 34 | PASS | admin POST /users/966/roles EMPLOYEE 66 updateOrganization from 64: after cache TTL DAI members 1197→1196, DMA 6→7, approved unchanged 302/21, top performer department 66 |
 
 ## 11. Risks
 
