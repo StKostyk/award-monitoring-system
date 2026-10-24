@@ -114,9 +114,9 @@ Total: 46 points (roadmap estimate 26; 6.2.1 split into 6.2.1 and 6.2.3), planne
   `namesOf` in `ErasureRunner`, one row record in `DocumentErasure`.
 - Left open at the end of the epic (no story yet): the `status` query parameter of the erasure tab stays in the URL
   on the legal holds tab; no metric for retention runs skipped because the session lock was held; no FT for the
-  compliance endpoints after a role revocation; ended roles can get `valid_to` before `valid_from` on a same-day
-  erasure or revocation; revoking `GDPR_OFFICER` or `SYSTEM_ADMIN` has no last-holder guard and is not serialised
-  with erasures; the erasure card shows a date where the mail shows a time. Noted by the 6.2 sweep and left: a JDBC
+  compliance endpoints after a role revocation; ended roles get `valid_to` before `valid_from` on a same-day
+  erasure or revocation by design (V017, PRD 1.2 AC-4.2); the last-holder guard for `GDPR_OFFICER` and
+  `SYSTEM_ADMIN` revocations and their serialisation with erasures came with 1.2.6 (SCRUM-110); the erasure card shows a date where the mail shows a time. Noted by the 6.2 sweep and left: a JDBC
   page helper, `UserRef` in `shared/`, the policy-key list, the double `queryParamMap` read on the compliance page,
   the pass-through `ComplianceService`.
 - Epic sweep (2026-10-18), left after the `refactor(epic-06)` PR: raw SQL fixture inserts for `audit_logs`,

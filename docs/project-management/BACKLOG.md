@@ -46,6 +46,7 @@ Features 1.1–1.3 done (Sprints 2–3); this table holds the fixes found in the
 |----|-------|--------|--------|------|-------|
 | 1.1.7 | Forgot-password 429 shows a raw translation key | 1 | ✅ Done | SCRUM-80 | [#207](https://github.com/StKostyk/award-monitoring-system/issues/207) |
 | 1.2.5 | Repeated department move answers role-already-assigned | 1 | ✅ Done | SCRUM-81 | [#209](https://github.com/StKostyk/award-monitoring-system/issues/209) |
+| 1.2.6 | Role revocation: last-holder guard for GDPR_OFFICER and SYSTEM_ADMIN | 2 | 👀 In review | SCRUM-110 | [#310](https://github.com/StKostyk/award-monitoring-system/issues/310) |
 
 ### Epic 2 — done (Jira epic SCRUM-20)
 Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) were fixed in 2.1.5 (Sprint 3). Epic 2 done 2026-10-01.
@@ -141,7 +142,7 @@ Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPO
 | 5.2.1 | Unit analytics API for departments and faculties with period comparison | 8 | ✅ Done | SCRUM-101 | [#288](https://github.com/StKostyk/award-monitoring-system/issues/288) |
 | 5.2.2 | Faculty analytics page with department comparison and top performers | 5 | ✅ Done | SCRUM-102 | [#289](https://github.com/StKostyk/award-monitoring-system/issues/289) |
 | 5.2.3 | Analytics report export to CSV, Excel and PDF | 5 | ✅ Done | SCRUM-103 | [#290](https://github.com/StKostyk/award-monitoring-system/issues/290) |
-| 5.2.4 | Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 2 | 👀 In review | SCRUM-109 | [#308](https://github.com/StKostyk/award-monitoring-system/issues/308) |
+| 5.2.4 | Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 2 | ✅ Done | SCRUM-109 | [#308](https://github.com/StKostyk/award-monitoring-system/issues/308) |
 | 5.3.1 | University analytics API with trends and a compliance summary | 5 | 7 | SCRUM-104 | [#291](https://github.com/StKostyk/award-monitoring-system/issues/291) |
 | 5.3.2 | Executive dashboard | 5 | 7 | SCRUM-105 | [#292](https://github.com/StKostyk/award-monitoring-system/issues/292) |
 | 5.3.3 | Presentation-ready board report | 3 | 7 | SCRUM-106 | [#293](https://github.com/StKostyk/award-monitoring-system/issues/293) |

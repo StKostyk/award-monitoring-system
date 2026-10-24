@@ -98,11 +98,13 @@ public class RoleAssignmentService {
      * @param userId     who holds the role
      * @param assignment which assignment to end
      * @throws UserNotFoundException when the user or the assignment is unknown, or outside the caller's scope
-     * @throws ApiProblemException   when the caller may not take it back, it has already ended, or it is the
-     *                               caller's own last role above {@code EMPLOYEE}
+     * @throws ApiProblemException   when the caller may not take it back, it has already ended, it is the
+     *                               caller's own last role above {@code EMPLOYEE}, or the last current
+     *                               {@code SYSTEM_ADMIN} or {@code GDPR_OFFICER} on an active account
      */
     @Transactional
     public void revoke(long userId, long assignment) {
+        rules.serializeWithErasures(userId, assignment);
         User target = visible(userId);
         UserRole role = userRoleRepository.findByIdAndUserId(assignment, userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
@@ -111,6 +113,7 @@ public class RoleAssignmentService {
         rules.requireAuthority(role.getRoleType(), role.getOrganization().getId());
         User actor = caller();
         rules.requireNotOwnLastRole(actor, target, role, today);
+        rules.requireNotLastHolder(target, role, today);
 
         role.setValidTo(lastDayOf(role, today));
         recorder.revoked(actor, role);

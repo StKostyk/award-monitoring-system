@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ua.edu.chnu.awards.authz.RoleType;
+import ua.edu.chnu.awards.common.erasure.ErasureLockConstants;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.entity.UserRole;
@@ -81,6 +82,43 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
      */
     @Query("select r from UserRole r join fetch r.organization where r.id = :id and r.user.id = :userId")
     Optional<UserRole> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * The role of one assignment of a user, read without loading the assignment.
+     *
+     * @param id     the assignment
+     * @param userId the user it must belong to
+     * @return the role when the assignment belongs to that user
+     */
+    @Query("select r.roleType from UserRole r where r.id = :id and r.user.id = :userId")
+    Optional<RoleType> findRoleTypeByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * Whether an active account holds the role on the given day through an assignment other than the given one.
+     *
+     * @param role         the role
+     * @param assignmentId the assignment that does not count
+     * @param day          the day the assignment must be valid on
+     * @return true when another current holder exists
+     */
+    @Query("""
+        select count(r) > 0 from UserRole r
+        where r.roleType = :role
+          and r.id <> :assignmentId
+          and r.user.accountStatus = ua.edu.chnu.awards.user.entity.AccountStatus.ACTIVE
+          and r.validFrom <= :day
+          and (r.validTo is null or r.validTo >= :day)
+        """)
+    boolean existsOtherActiveHolder(@Param("role") RoleType role, @Param("assignmentId") long assignmentId,
+                                    @Param("day") LocalDate day);
+
+    /**
+     * Takes the erasure lock until the transaction ends.
+     *
+     * @return always 1
+     */
+    @Query(value = "select count(*) from (" + ErasureLockConstants.LOCK + ") l", nativeQuery = true)
+    long lockAgainstErasures();
 
     /**
      * Whether the user has ever been granted a role.

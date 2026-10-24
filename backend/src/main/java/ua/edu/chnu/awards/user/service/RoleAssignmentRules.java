@@ -1,6 +1,8 @@
 package ua.edu.chnu.awards.user.service;
 
 import java.time.LocalDate;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,7 @@ public class RoleAssignmentRules {
 
     static final String PERMISSION_MANAGE_ALL = "user:manage";
     private static final LocalDate OPEN_ENDED = LocalDate.of(9999, 12, 31);
+    private static final Set<RoleType> KEPT_HELD = EnumSet.of(RoleType.SYSTEM_ADMIN, RoleType.GDPR_OFFICER);
 
     private final UserRoleRepository userRoleRepository;
     private final OrganizationLookup organizations;
@@ -175,6 +178,38 @@ public class RoleAssignmentRules {
         if (!another) {
             throw new ApiProblemException(HttpStatus.FORBIDDEN, "role-last-own",
                 "You cannot take back your own last role above EMPLOYEE; ask somebody above you");
+        }
+    }
+
+    /**
+     * Makes the revocation of a role the university must keep a holder of wait for running erasures and other
+     * such revocations; called before the holder's account is locked, the order an erasure takes the same locks.
+     *
+     * @param userId     who holds the role
+     * @param assignment which assignment is being ended
+     */
+    public void serializeWithErasures(long userId, long assignment) {
+        userRoleRepository.findRoleTypeByIdAndUserId(assignment, userId)
+            .filter(KEPT_HELD::contains)
+            .ifPresent(role -> userRoleRepository.lockAgainstErasures());
+    }
+
+    /**
+     * Refuses to end the last current assignment of {@code SYSTEM_ADMIN} or {@code GDPR_OFFICER} held by an
+     * active account.
+     *
+     * @param target who holds the role
+     * @param role   the assignment
+     * @param today  the current day
+     */
+    public void requireNotLastHolder(User target, UserRole role, LocalDate today) {
+        if (!KEPT_HELD.contains(role.getRoleType()) || target.getAccountStatus() != AccountStatus.ACTIVE
+            || !role.isCurrentOn(today)) {
+            return;
+        }
+        if (!userRoleRepository.existsOtherActiveHolder(role.getRoleType(), role.getId(), today)) {
+            throw new ApiProblemException(HttpStatus.CONFLICT, "role-last-holder",
+                "Nobody else holds this role on an active account; grant it to somebody first");
         }
     }
 
