@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import {
@@ -36,6 +38,8 @@ describe('UnitAnalyticsComponent', () => {
       imports: [UnitAnalyticsComponent, NoopAnimationsModule, translations(language)],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideStore({}),
         provideState(unitAnalyticsFeature),
         stub.provider,
@@ -181,5 +185,31 @@ describe('UnitAnalyticsComponent', () => {
     element('unit-analytics-invalid')!.querySelector('button')!.click();
 
     expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: {} }));
+  });
+
+  it('ac3_6_offers_the_export_only_while_a_report_is_shown', async () => {
+    await setUp();
+    const exportButton = (): HTMLButtonElement => element('unit-export') as HTMLButtonElement;
+    expect(exportButton().disabled).toBe(true);
+
+    load();
+    expect(exportButton().disabled).toBe(false);
+
+    store.dispatch(UnitAnalyticsActions.analyticsLoadFailed({ problem: 'network' }));
+    fixture.detectChanges();
+    expect(exportButton().disabled).toBe(true);
+
+    load();
+    queryParams.next(convertToParamMap({ from: '2026', to: '2021' }));
+    fixture.detectChanges();
+    expect(exportButton().disabled).toBe(true);
+  });
+
+  it('ac3_6_leaves_out_the_export_for_an_unknown_unit', async () => {
+    await setUp();
+    store.dispatch(UnitAnalyticsActions.analyticsLoadFailed({ problem: UNIT_NOT_FOUND }));
+    fixture.detectChanges();
+
+    expect(element('unit-export')).toBeNull();
   });
 });
