@@ -88,6 +88,16 @@ before development started (stakeholder analysis, market research, risk assessme
 [docs](docs/) as they were approved; where the implementation differs, the later documents and the ADR addenda
 take precedence.
 
+## Third-party components
+
+Libraries bundled beyond the Spring Boot and Angular stacks listed above:
+
+| Component | Use | Licence |
+|-----------|-----|---------|
+| [openhtmltopdf](https://github.com/openhtmltopdf/openhtmltopdf) 1.1 with Apache PDFBox 3 | PDF analytics reports | LGPL 2.1 (openhtmltopdf), Apache 2.0 (PDFBox) |
+| [FastExcel](https://github.com/dhatim/fastexcel) 0.20 | Excel analytics reports | Apache 2.0 |
+| [Noto Sans](https://github.com/notofonts/latin-greek-cyrillic) (Regular, Bold) | Font embedded in PDF reports, Latin and Cyrillic | SIL Open Font License 1.1 (`backend/src/main/resources/fonts/OFL.txt`) |
+
 ## Author
 
 Stefan Kostyk, master's student at Yuriy Fedkovych Chernivtsi National University. The project is developed

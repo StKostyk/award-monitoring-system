@@ -1,15 +1,20 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { OrganizationRef } from '../../../core/auth/user-profile';
+import { AppLanguage } from '../../../core/i18n/language.service';
 import { CategoryRef, RecognitionLevel } from '../../awards/awards.service';
 import { AnalyticsPeriod } from '../analytics.service';
 
 export type UnitType = 'FACULTY' | 'DEPARTMENT';
 export type TopPerformersStatus = 'LISTED' | 'GROUP_TOO_SMALL';
 export type HighlightType = 'NO_AWARDS' | 'DECLINE' | 'GROWTH' | 'BELOW_AVERAGE';
+export type ReportFormat = 'pdf' | 'xlsx' | 'csv';
+
+/** The formats of the unit report in the order the export menu offers them. */
+export const REPORT_FORMATS: readonly ReportFormat[] = ['pdf', 'xlsx', 'csv'];
 
 /** A faculty or department the caller may analyse. */
 export interface AnalysableUnit {
@@ -94,13 +99,32 @@ export class UnitAnalyticsService {
   }
 
   read(unitId: number, period: AnalyticsPeriod): Observable<UnitAnalytics> {
-    let params = new HttpParams();
-    if (period.from !== null) {
-      params = params.set('from', period.from);
-    }
-    if (period.to !== null) {
-      params = params.set('to', period.to);
-    }
-    return this.http.get<UnitAnalytics>(`${this.url}/${unitId}`, { params });
+    return this.http.get<UnitAnalytics>(`${this.url}/${unitId}`, { params: periodParams(period) });
   }
+
+  /** The report of a unit for the period as a file in the given format and language. */
+  exportReport(
+    unitId: number,
+    period: AnalyticsPeriod,
+    format: ReportFormat,
+    lang: AppLanguage,
+  ): Observable<HttpResponse<Blob>> {
+    const params = periodParams(period).set('format', format).set('lang', lang);
+    return this.http.get(`${this.url}/${unitId}/export`, {
+      params,
+      observe: 'response',
+      responseType: 'blob',
+    });
+  }
+}
+
+function periodParams(period: AnalyticsPeriod): HttpParams {
+  let params = new HttpParams();
+  if (period.from !== null) {
+    params = params.set('from', period.from);
+  }
+  if (period.to !== null) {
+    params = params.set('to', period.to);
+  }
+  return params;
 }

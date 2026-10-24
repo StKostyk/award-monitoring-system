@@ -24,7 +24,8 @@
     <suppress files=".*Test\.java$" checks="MagicNumber"/>
     <suppress files=".*IT\.java$" checks="MagicNumber"/>
     <suppress files=".*FT\.java$" checks="MagicNumber"/>
-    
+    <suppress files="[\\/]src[\\/]test[\\/].*Fixture\.java$" checks="MagicNumber|ClassDataAbstractionCoupling"/>
+
     <!-- Allow longer methods in tests -->
     <suppress files=".*Test\.java$" checks="MethodLength"/>
     <suppress files=".*IT\.java$" checks="MethodLength"/>

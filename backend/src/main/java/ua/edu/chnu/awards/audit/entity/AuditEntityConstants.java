@@ -6,6 +6,8 @@ package ua.edu.chnu.awards.audit.entity;
 @SuppressWarnings("PMD.DataClass")
 public final class AuditEntityConstants {
 
+    /** Analytics reports of a faculty or department. */
+    public static final String ANALYTICS = "ANALYTICS";
     /** Sign-in, sign-out, lockout and one-time links. */
     public static final String AUTHENTICATION = "AUTHENTICATION";
     /** Roles, delegations and refused access. */

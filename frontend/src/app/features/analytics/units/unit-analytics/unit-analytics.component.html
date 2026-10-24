@@ -1,5 +1,8 @@
 <div class="units__header">
   <h1 class="units__title">{{ 'unitAnalytics.title' | transloco }}</h1>
+  @if (!notFound()) {
+    <app-export-menu [unitId]="unitId()" [period]="period()" [disabled]="exportDisabled()" />
+  }
 </div>
 
 @if (notFound()) {

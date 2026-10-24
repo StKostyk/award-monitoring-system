@@ -144,7 +144,7 @@
 | `award` | common, audit, organization, authz, user, delegation | базовий пакет (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
 | `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | базовий пакет (`ConsentLookup`), `dto`, `event` |
-| `analytics` | common, organization, authz, user, award, gdpr | — |
+| `analytics` | common, audit, organization, authz, user, award, gdpr | — |
 | `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` для експорту даних) |
 | `metrics` | — | — |
 | `config` | common, audit | — (від нього не залежить жоден) |
@@ -155,6 +155,9 @@
   `AccessScope.heldScopes` і `RolePermissions` модуля `authz`, а імена найрезультативніших — через `UserAccounts`
   модуля `user`. PRD 5.2 називав для імен `ActorDirectory`; його `Actor` містить повне ім'я та адресу електронної
   пошти, але не прізвище, за яким упорядковано список, і не кафедру, яку він показує.
+- Доповнення 2026-10-24 (5.2.3): `analytics` залежить від `audit`, щоб фіксувати `ANALYTICS_EXPORTED` через
+  `AuditService`, як це роблять `award` і `gdpr` для своїх експортів; `audit` залежить лише від `common`, тож
+  циклу не виникає. Засоби запису звітів містяться в `analytics.export` за одним інтерфейсом `ReportWriter`.
 - Цикли розірвано інверсією залежностей без зміни поведінки: `audit` називає виконавців через `ActorDirectory`
   (реалізація в `user`); `award` читає документи через `AwardDocuments` (реалізація в `document`); `user`
   завершує сеанси облікових записів через `AccountSessions` (реалізація в `auth`) і забирає делеговані

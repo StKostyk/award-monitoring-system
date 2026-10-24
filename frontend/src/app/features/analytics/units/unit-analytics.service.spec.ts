@@ -45,4 +45,34 @@ describe('UnitAnalyticsService', () => {
     expect(request.request.params.keys()).toEqual([]);
     request.flush(facultyAnalytics());
   });
+
+  it('ac3_6_exports_the_report_of_the_period_as_a_file', () => {
+    let name: string | null = null;
+    service
+      .exportReport(9, { from: 2021, to: 2025 }, 'xlsx', 'uk')
+      .subscribe((response) => (name = response.headers.get('Content-Disposition')));
+    const request = http.expectOne(
+      (req) => req.url === `${environment.apiUrl}/analytics/units/9/export`,
+    );
+
+    expect(request.request.responseType).toBe('blob');
+    expect(request.request.params.get('format')).toBe('xlsx');
+    expect(request.request.params.get('lang')).toBe('uk');
+    expect(request.request.params.get('from')).toBe('2021');
+    expect(request.request.params.get('to')).toBe('2025');
+    request.flush(new Blob(['x']), {
+      headers: { 'Content-Disposition': 'attachment; filename="analytics-FMI-2021-2025.xlsx"' },
+    });
+    expect(name).toContain('analytics-FMI-2021-2025.xlsx');
+  });
+
+  it('ac3_6_exports_without_years_for_the_server_default', () => {
+    service.exportReport(64, { from: null, to: null }, 'csv', 'en').subscribe();
+    const request = http.expectOne(
+      (req) => req.url === `${environment.apiUrl}/analytics/units/64/export`,
+    );
+
+    expect(request.request.params.keys()).toEqual(['format', 'lang']);
+    request.flush(new Blob());
+  });
 });

@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import { Page, expect, test } from '@playwright/test';
 
 import { SEED, seriousViolations, signedIn } from './helpers';
@@ -11,6 +13,9 @@ const DAI = 64;
 
 /** An empty chart draws only its category axis line. */
 const AXIS_ONLY_PATHS = 1;
+
+/** Long enough for the PDF, ZIP (XLSX) and UTF-8 byte order mark signatures. */
+const FILE_SIGNATURE_BYTES = 4;
 
 const FACULTY_SECTIONS = [
   'totals',
@@ -27,6 +32,15 @@ async function sections(page: Page): Promise<string[]> {
   return page
     .locator('[data-testid^="section-"]')
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-testid')!.slice(8)));
+}
+
+async function exported(page: Page, format: string): Promise<{ name: string; head: Buffer }> {
+  const download = page.waitForEvent('download');
+  await page.getByTestId('unit-export').click();
+  await page.getByTestId(`unit-export-${format}`).click();
+  const file = await download;
+  const head = Buffer.from(await readFile(await file.path())).subarray(0, FILE_SIGNATURE_BYTES);
+  return { name: file.suggestedFilename(), head };
 }
 
 async function noHorizontalScroll(page: Page): Promise<boolean> {
@@ -142,5 +156,45 @@ test.describe('unit analytics', () => {
     await page.getByTestId('language-toggle').click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Unit analytics');
     await expect(page.getByTestId('section-highlights')).toContainText('Highlights');
+  });
+
+  test('ac3_6 downloads the shown period as PDF, Excel and CSV', async ({ browser }) => {
+    const page = await signedIn(browser, SEED.dean);
+    await page.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
+    await expect(page.getByTestId('section-highlights')).toBeVisible();
+
+    const pdf = await exported(page, 'pdf');
+    expect(pdf.name).toMatch(/^analytics-[\w-]+-2021-2025\.pdf$/);
+    expect(pdf.head.toString('latin1')).toBe('%PDF');
+    const xlsx = await exported(page, 'xlsx');
+    expect(xlsx.name).toMatch(/^analytics-[\w-]+-2021-2025\.xlsx$/);
+    expect(xlsx.head.subarray(0, 2).toString('latin1')).toBe('PK');
+    const csv = await exported(page, 'csv');
+    expect(csv.name).toMatch(/^analytics-[\w-]+-2021-2025\.csv$/);
+    expect([...csv.head.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+
+    await page.goto(`/analytics/units/${DAI}`);
+    await expect(page.getByTestId('section-trend')).toBeVisible();
+    expect((await exported(page, 'csv')).name).toMatch(/^analytics-[\w-]+-\d{4}-\d{4}\.csv$/);
+  });
+
+  test('ac3_6 offers no export for an invalid period and reports a failed one', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.dean);
+    await page.goto(`/analytics/units/${FMI}?from=2026&to=2021`);
+    await expect(page.getByTestId('unit-analytics-invalid')).toBeVisible();
+    await expect(page.getByTestId('unit-export')).toBeDisabled();
+
+    await page.goto(`/analytics/units/${FMI}`);
+    await expect(page.getByTestId('section-highlights')).toBeVisible();
+    await page.route('**/analytics/units/*/export?**', (route) => route.abort());
+    await page.getByTestId('unit-export').click();
+    await page.getByTestId('unit-export-pdf').click();
+    await expect(page.getByTestId('unit-export-failed')).toHaveText(
+      'Не вдалося експортувати звіт.',
+    );
+    await expect(page.getByTestId('section-highlights')).toBeVisible();
+    await expect(page.getByTestId('unit-export')).toBeEnabled();
   });
 });

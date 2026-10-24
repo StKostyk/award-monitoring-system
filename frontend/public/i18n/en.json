@@ -1505,6 +1505,13 @@
     "partialYear": "{{year}} is not over yet, so its figures are still growing.",
     "noAwards": "No approved awards in this period or the previous one.",
     "other": "Other",
+    "export": {
+      "menu": "Export",
+      "pdf": "PDF report",
+      "xlsx": "Excel workbook",
+      "csv": "CSV file"
+    },
+    "exportFailed": "The report could not be exported.",
     "delta": {
       "new": "new",
       "previous": "Previous period: {{count}}"

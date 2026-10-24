@@ -1227,6 +1227,7 @@ public class SessionManagementService {
 | `PERMISSION_DENIED` | Warning | ID користувача, Ресурс, Дія | Так (при повторенні) |
 | `PRIVILEGE_ESCALATION` | Critical | ID користувача, З Ролі, До Ролі | Завжди |
 | Зміни рядків (`INSERT`/`UPDATE`/`DELETE`, тригери таблиць) | Info | Виконавець = суб'єкт токена доступу, прив'язаний до кожної транзакції запису (`app.current_user_id`), ідентифікатор кореляції, старі й нові значення; доступні для читання за нагородою з `audit:read` (`GET /awards/{id}/audit-trail`, експорт у CSV `…/audit-trail/export` фіксується як `AUDIT_EXPORT`, функція 2.2) | Ні |
+| `ANALYTICS_EXPORTED` | Info | ID користувача, підрозділ, формат, період, мова, кількість названих осіб (`GET /analytics/units/{id}/export`, 5.2.3) | Ні |
 
 ### 7.2 Впровадження Аудиту
 

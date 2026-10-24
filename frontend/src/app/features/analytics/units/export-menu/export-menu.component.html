@@ -1,0 +1,26 @@
+<button
+  mat-stroked-button
+  type="button"
+  [matMenuTriggerFor]="menu"
+  [disabled]="disabled() || busy() || unitId() === null"
+  data-testid="unit-export"
+>
+  {{ 'unitAnalytics.export.menu' | transloco }}
+</button>
+<mat-menu #menu="matMenu" xPosition="before">
+  @for (format of formats; track format) {
+    <button
+      mat-menu-item
+      type="button"
+      (click)="download(format)"
+      [attr.data-testid]="'unit-export-' + format"
+    >
+      {{ 'unitAnalytics.export.' + format | transloco }}
+    </button>
+  }
+</mat-menu>
+@if (failed()) {
+  <p class="export-menu__failed" role="alert" data-testid="unit-export-failed">
+    {{ 'unitAnalytics.exportFailed' | transloco }}
+  </p>
+}

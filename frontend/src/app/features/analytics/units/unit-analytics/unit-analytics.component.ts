@@ -18,6 +18,7 @@ import {
   ComparisonRow,
 } from '../comparison-bars/comparison-bars.component';
 import { DeltaTilesComponent } from '../delta-tiles/delta-tiles.component';
+import { ExportMenuComponent } from '../export-menu/export-menu.component';
 import { HighlightsComponent } from '../highlights/highlights.component';
 import { SourceChartComponent } from '../source-chart/source-chart.component';
 import { UnitAnalyticsActions } from '../store/unit-analytics.actions';
@@ -34,6 +35,7 @@ import { UnitTrendChartComponent } from '../unit-trend-chart/unit-trend-chart.co
   imports: [
     ComparisonBarsComponent,
     DeltaTilesComponent,
+    ExportMenuComponent,
     HighlightsComponent,
     MatButton,
     MatCard,
@@ -72,6 +74,9 @@ export class UnitAnalyticsComponent {
 
   protected readonly notFound = computed(
     () => this.unknownId() || this.problem() === UNIT_NOT_FOUND,
+  );
+  protected readonly exportDisabled = computed(
+    () => this.invalid() || this.loading() || this.problem() !== null || !this.analytics(),
   );
   protected readonly comparedWith = computed(() => {
     this.language.current();
