@@ -65,7 +65,7 @@ Spring Modulith and the event publication registry (Epic 7, ADR-022 step 2), She
 | 10f | 4.3.4 Review decisions in the personal data export | 4.3 | 3 | SCRUM-70 | #190 | no | Done |
 | 10g | 4.3.5 Wire the business metrics to the award workflow | 4.3 | 2 | SCRUM-71 | #191 | no | Done |
 | 10h | 4.3.8 Documents shown to colleagues on a shared award | 4.3 | 5 | SCRUM-74 | #194 | no | Done |
-| 10i | 4.2.7 Stabilise failing and flaky e2e specs | 4.2 | 3 | SCRUM-111 | #312 | no | In review |
+| 10i | 4.2.7 Stabilise failing and flaky e2e specs | 4.2 | 3 | SCRUM-111 | #312 | no | Done |
 
 Total: 64 points, all delivered in sprint 4 (2026-10-05 to 2026-10-11).
 

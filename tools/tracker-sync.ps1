@@ -8,7 +8,8 @@
       create-epic  create a Jira epic: -Summary
       create-story create a Jira story: -Summary, -Points, -Epic SCRUM-nn, optional -GitHub nn (link added to the description)
       rename       change the summary: -Summary, -Jira SCRUM-nn and/or -GitHub nn
-      points       set the Jira estimate: -Jira SCRUM-nn -Points n
+      points       set the Jira estimate and the points cells of the story's tracker and BACKLOG rows:
+                   -Jira SCRUM-nn -Points n
       set-epic     attach a story to an epic: -Jira SCRUM-nn -Epic SCRUM-nn
       describe     replace the description: -BodyFile file, -Jira SCRUM-nn and/or -GitHub nn; lines starting
                    with "- " become a bullet list in Jira, other non-empty lines paragraphs; GitHub gets the file as is;
@@ -136,6 +137,14 @@ switch ($Action) {
         if (-not $Jira -or -not $Points) { throw '-Jira and -Points are required' }
         Jira-Put "/issue/$Jira" @{ fields = @{ (Story-Points-Field) = $Points } } | Out-Null
         Write-Host "$Jira -> $Points points"
+        Push-Location (Split-Path $PSScriptRoot -Parent)
+        try {
+            . "$PSScriptRoot\story-common.ps1"
+            Set-StoryPoints $Jira $Points
+            Write-Host "$Jira rows in docs/epics and BACKLOG -> $Points points"
+        } finally {
+            Pop-Location
+        }
     }
     'set-epic' {
         if (-not $Jira -or -not $Epic) { throw '-Jira and -Epic are required' }

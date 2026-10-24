@@ -11,8 +11,11 @@
     Then Jira and GitHub of the story move to In Progress, its tracker row is marked and the PRD section of the
     story (the "### ... (<KEY>)" heading up to the next heading) is printed.
     For an unplanned story (-Summary, -Points, -Epic, -GitHub) the tracker and BACKLOG rows are added on the new
-    branch, numbered from the PRD heading of the story ("### 6.2.3 ...") or after the last started story of the
-    epic; the BACKLOG sprint cell comes from the neighbouring row or the PRD's **Sprint** line. A rerun on the story
+    branch, numbered from a leading number in -Summary ("4.2.7 Stabilise ..."), the PRD heading of the story
+    ("### 6.2.3 ...") or after the last started story of the epic. A number picks the tracker of its feature (also
+    when -Epic names the current epic), and the row follows the last started row there (Planned and To do rows do
+    not count). The BACKLOG sprint cell comes from -Sprint, the PRD's **Sprint** line or the neighbouring row; an
+    empty cell is reported. A rerun on the story
     branch skips the checkout. -Carry takes uncommitted changes along to the new branch; a base without an
     upstream is not pulled, and a failed pull or GitHub query is retried once.
 
@@ -21,6 +24,7 @@
     .\tools\story-start.ps1 SCRUM-49 -Base docs/epic-04-kickoff -Slug reviewer-queue
     .\tools\story-start.ps1 SCRUM-49 -DryRun    # prints branch, merged stories and PRD section only
     .\tools\story-start.ps1 SCRUM-61 -Summary "Refactor from the Feature 4.2 sweep" -Points 3 -Epic SCRUM-47 -GitHub 171
+    .\tools\story-start.ps1 SCRUM-111 -Summary "4.2.7 Stabilise failing and flaky e2e specs" -Epic SCRUM-47 -GitHub 312 -Sprint 6
 #>
 #Requires -Version 7
 
@@ -36,6 +40,7 @@ param(
     [ValidatePattern('^[A-Z]+-\d+$')]
     [string]$Epic,
     [int]$GitHub,
+    [string]$Sprint,
     [switch]$NoTracker,
     [switch]$NoClose,
     [switch]$Carry,
@@ -86,7 +91,8 @@ if ($DryRun) {
     }
     $closing | ForEach-Object { Close-Story $_ -NoTracker:$NoTracker }
     if (-not $row) {
-        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number $(if ($facts) { $facts.Sprint } else { '' })
+        $hint = if ($Sprint) { $Sprint } elseif ($facts) { $facts.Sprint } else { '' }
+        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number $hint
         Write-Host "Rows:    $id added to the epic tracker and BACKLOG"
         $row = Find-StoryRow $Key
     }

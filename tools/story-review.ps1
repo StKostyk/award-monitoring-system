@@ -8,7 +8,8 @@
     build/<key>-review.md (absolute diff path, the PRD section of the story, the checklist and the finding limit). Prints
     "security-reviewer" with the paths that trigger it (auth/, authz/, gdpr/, config/*Security*, config/*Authorization*,
     db/migration/, @PreAuthorize, document upload and storage code, access rules such as *Rule.java, *Guard(s).java
-    and the delegation, role-assignment, decision and correction rules) or "code-review" otherwise.
+    and the delegation, role-assignment, decision and correction rules, Public*Controller classes and route
+    strings containing /public) or "code-review" otherwise.
     Do not run it while gate.ps1 or e2e.ps1 is running: git leaves a stale index.lock.
 
 .EXAMPLE
@@ -49,6 +50,10 @@ $triggers += @($files | Where-Object {
 } | ForEach-Object { "$_ (access rule)" })
 $triggers += @(git diff --merge-base $Base -G '@PreAuthorize' --name-only -- '*.java' |
     ForEach-Object { "$_ (@PreAuthorize)" })
+$triggers += @($files | Where-Object { $_ -match '/Public[^/]*Controller\.java$' } |
+    ForEach-Object { "$_ (public controller)" })
+$triggers += @(git diff --merge-base $Base -G '"[^"]*/public[/"]' --name-only -- 'backend/src/main/*.java' |
+    Where-Object { $_ -notmatch '/Public[^/]*Controller\.java$' } | ForEach-Object { "$_ (public route)" })
 $reviewer = if ($triggers) { 'security-reviewer' } else { 'code-review' }
 
 $prd = Get-PrdSection $Key

@@ -5,8 +5,9 @@
 .DESCRIPTION
     The script runs in its own hidden pwsh process, outside the shell that started it, so it keeps running when
     that shell ends or is stopped (for example by a memory-pressure clean-up of background shells). Its output goes
-    to build/<Name>-run.log; when it finishes, build/<Name>.exit holds its exit code. A run of the same name that
-    is still going is refused. Wait for the exit file, then read the log or build/gate-summary.txt.
+    to build/<Name>-run.log; when it finishes, build/<Name>.exit holds its exit code. The log of the previous run is
+    kept as build/<Name>-run-<yyyyMMdd-HHmm>.log (the five newest stay). A run of the same name that is still
+    going is refused. Wait for the exit file, then read the log, build/gate-summary.txt or build/e2e-summary.txt.
 
 .PARAMETER Name
     Short name of the run (gate, e2e); names the log and the exit file.
@@ -15,11 +16,13 @@
     Path of the script to run, relative to the repository root.
 
 .PARAMETER Arguments
-    Arguments passed on to the script; parameter names (-Grep, -Full) stay names, values are quoted.
+    Arguments passed on to the script, each as its own argument after the script path (not one quoted string);
+    parameter names (-Grep, -Full) stay names, values are quoted.
 
 .EXAMPLE
     .\tools\detach.ps1 gate tools\gate.ps1
-    .\tools\detach.ps1 e2e tools\e2e.ps1 -Grep 'notifications'
+    .\tools\detach.ps1 gate tools\gate.ps1 -Sequential -Full
+    .\tools\detach.ps1 e2e tools\e2e.ps1 -Grep 'notifications' -Workers 1
 #>
 [CmdletBinding()]
 param(
@@ -42,7 +45,13 @@ if (Test-Path $pidFile) {
         exit 1
     }
 }
-Remove-Item $exitFile, $runLog -ErrorAction SilentlyContinue
+if (Test-Path $runLog) {
+    $stamp = (Get-Item $runLog).LastWriteTime.ToString('yyyyMMdd-HHmm')
+    Move-Item $runLog (Join-Path $build "$Name-run-$stamp.log") -Force
+    Get-ChildItem $build -Filter "$Name-run-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -Skip 5 |
+        Remove-Item
+}
+Remove-Item $exitFile -ErrorAction SilentlyContinue
 
 $target = Join-Path $root $Script
 $quoted = ($Arguments | ForEach-Object {
