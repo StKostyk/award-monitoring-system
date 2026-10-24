@@ -42,6 +42,7 @@ Feature 1.1 knows who the caller is; nothing yet decides what they may touch. Ev
 | SCRUM-13 (#32) | 1.2.2 Role assignment and membership confirmation | 8 | yes | SCRUM-12 |
 | SCRUM-14 (#37) | 1.2.3 Approval authority delegation | 5 | yes | SCRUM-12 |
 | SCRUM-19 (#73) | 1.2.4 Fixes from the Feature 1.2 validation (§12 F-1…F-10) | 5 | no | SCRUM-13, SCRUM-14 |
+| SCRUM-110 (#310) | 1.2.6 Role revocation: last-holder guard for `GDPR_OFFICER` and `SYSTEM_ADMIN` | 2 | no | SCRUM-19 |
 
 SCRUM-13 and SCRUM-14 fix their API contract in `openapi.yml` first; the Angular pages are then built against the contract while the backend is in progress.
 
@@ -93,6 +94,13 @@ SCRUM-13 and SCRUM-14 fix their API contract in `openapi.yml` first; the Angular
 - **AC-4.9** Given two simultaneous revocations of one delegation, then the row is locked, one answers 204 and the other 409, with one audit row and one email. (F-9)
 - **AC-4.10** §5 and AUTH §9 state the Redis-down window of role and delegation revocation (F-10).
 
+### 1.2.6 Last-holder guard on revocation (SCRUM-110)
+
+- **AC-6.1** Given the only current `SYSTEM_ADMIN` or `GDPR_OFFICER` assignment held by an `ACTIVE` account, when it is revoked, then 409 `role-last-holder`; the assignment, audit log, mail, delegations and sessions stay unchanged.
+- **AC-6.2** Given another current holder of the role on an `ACTIVE` account, the revocation succeeds as before; an assignment that has not started yet, or one held by an account that is not `ACTIVE`, is never refused.
+- **AC-6.3** Revoking either role takes the erasure advisory lock (`ErasureLockConstants`) before the holder's account row, the order an erasure run takes them, so concurrent revocations and erasures see each other's result.
+- A role revoked on the day it began still ends one day before it started (V017, AC-4.2); this is the designed way to stop it applying at once.
+
 ## 5. Edge cases
 
 - Role rows with `valid_from` in the future are not current: they neither appear in the token nor count for scope until that day; they are listed under "upcoming" in the user detail.
@@ -128,7 +136,7 @@ SCRUM-13 and SCRUM-14 fix their API contract in `openapi.yml` first; the Angular
 | `POST /api/v1/users/{id}/roles`, `DELETE /api/v1/users/{id}/roles/{roleId}` | new | SCRUM-13 |
 | `POST /api/v1/auth/register` | existing; role no longer created, pending replacement | SCRUM-13 |
 | `GET /api/v1/delegations`, `POST /api/v1/delegations`, `DELETE /api/v1/delegations/{id}` | new | SCRUM-14 |
-| Problem types | `access-denied`, `role-above-level`, `role-organization-mismatch`, `role-already-assigned`, `role-last-own`, `delegation-*` | all |
+| Problem types | `access-denied`, `role-above-level`, `role-organization-mismatch`, `role-already-assigned`, `role-last-own`, `role-last-holder`, `delegation-*` | all |
 
 ### Services and libraries
 
@@ -224,6 +232,7 @@ Preconditions: `.\tools\dev-up.ps1` (backend `local` profile on `http://localhos
 26. As the dean delegate `DEAN` to `employee.fmi` (only role `EMPLOYEE` in department 64), then as the administrator in Swagger move them to another faculty's department: `POST /api/v1/users/{employee id}/roles` with `{"role": "EMPLOYEE", "organizationId": 69, "updateOrganization": true, "fromOrganizationId": 64}` → 201; the old `EMPLOYEE` role ends yesterday, the next token carries no `delegations` claim and the delegation shows «Відкликано». The same body again → 409 `membership-already-confirmed` (the user is no longer in 64). (AC-3.2, §5, F-1, F-3, after 1.2.4)
 27. Open `http://localhost:4200/admin/users/abc` → «Не знайдено», and the browser's network tab shows no request for `abc`. The API limits only the authentication endpoints, so a 429 cannot be provoked from the admin dialogs by hand; the translated «Забагато запитів» text is covered by `assign-role-dialog.component.spec`. (AC-1.7, F-7, F-8, after 1.2.4)
 28. With the admin page open as the dean, restart the backend (`Ctrl+C`, then `./mvnw spring-boot:run -Dspring-boot.run.profiles=local`) and click a filter once it is healthy → the list reloads, no login page; the backend log names the kept key file instead of "generating a key that will not survive a restart". (AC-4.6, F-6, after 1.2.4)
+29. In psql list the current officers: `select r.user_role_id, u.email_address from user_roles r join users u using (user_id) where r.role_type = 'GDPR_OFFICER' and u.account_status = 'ACTIVE' and r.valid_from <= current_date and (r.valid_to is null or r.valid_to >= current_date);` — on the seed only `gdpr@chnu.edu.ua`. As `admin@chnu.edu.ua` in Swagger, `DELETE /api/v1/users/{gdpr id}/roles/{that assignment}` → 409 `role-last-holder`, no `ROLE_REVOKED` row, the officer stays signed in. Grant `GDPR_OFFICER` (organisation 1) to a fresh active account, revoke the first assignment again → 204. (AC-6.1, 6.2, after 1.2.6)
 
 ### Run 2026-10-11
 

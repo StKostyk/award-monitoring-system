@@ -2093,7 +2093,8 @@ paths:
         '409':
           description: |
             `urn:awards:problem:role-already-revoked` — the assignment has already ended, or was taken back
-            before it started
+            before it started; `role-last-holder` — it is the last current `SYSTEM_ADMIN` or `GDPR_OFFICER`
+            assignment on an active account
           content:
             application/problem+json:
               schema:

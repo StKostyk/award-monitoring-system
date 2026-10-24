@@ -429,6 +429,26 @@ class RoleAssignmentServiceTest {
             });
     }
 
+    @Test
+    void ac6_1_theLastSystemAdministratorCannotBeTakenBack() {
+        UserRole role = assignment(employee, RoleType.SYSTEM_ADMIN,
+            organization(1L, OrganizationType.UNIVERSITY, "ChNU"), TODAY.minusYears(1), null);
+        when(userRoleRepository.findRoleTypeByIdAndUserId(role.getId(), employee.getId()))
+            .thenReturn(Optional.of(RoleType.SYSTEM_ADMIN));
+        when(userRoleRepository.findByIdAndUserId(role.getId(), employee.getId())).thenReturn(Optional.of(role));
+
+        assertThatThrownBy(() -> service.revoke(employee.getId(), role.getId()))
+            .isInstanceOfSatisfying(ApiProblemException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                assertThat(e.getType()).isEqualTo("role-last-holder");
+            });
+        assertThat(role.getValidTo()).isNull();
+        verify(userRoleRepository).lockAgainstErasures();
+        verify(recorder, never()).revoked(any(), any());
+        verify(delegations, never()).revokeForRole(any(), any());
+        verify(revoker, never()).signOutEverywhere(any());
+    }
+
     private static UserRole assignment(User user, RoleType role, Organization organization, LocalDate from,
                                        LocalDate to) {
         UserRole assignment = UserRole.builder().user(user).roleType(role).organization(organization)

@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import ua.edu.chnu.awards.common.erasure.ErasureLockConstants;
 import ua.edu.chnu.awards.gdpr.dto.ErasureOrigin;
 import ua.edu.chnu.awards.gdpr.dto.ErasureRequest;
 
@@ -86,8 +87,6 @@ public class ErasureRequests {
          where request_id = :requestId and status = 'PENDING' and scheduled_for <= :now
            for update skip locked
         """;
-
-    private static final String SERIALIZE = "select pg_advisory_xact_lock(hashtext('erasure-run'))";
 
     private static final String MARK_POSTPONED =
         "update erasure_requests set postponed_at = :at where request_id = :requestId and postponed_at is null";
@@ -191,10 +190,10 @@ public class ErasureRequests {
 
     /**
      * Makes erasures wait for each other until the end of the transaction, across instances, so the check for the
-     * last system administrator sees the result of an erasure that ran just before.
+     * last system administrator sees the result of an erasure or a role revocation that ran just before.
      */
     public void serialize() {
-        jdbc.getJdbcTemplate().queryForList(SERIALIZE);
+        jdbc.getJdbcTemplate().queryForList(ErasureLockConstants.LOCK);
     }
 
     /**

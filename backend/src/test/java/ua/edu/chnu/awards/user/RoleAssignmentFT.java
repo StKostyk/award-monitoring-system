@@ -6,15 +6,24 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static ua.edu.chnu.awards.support.AwardApi.KYIV;
 
+import java.sql.Connection;
+import java.sql.Statement;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import io.restassured.http.ContentType;
@@ -48,8 +57,10 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     private static final String OFFICE = "ft.roles.office@chnu.edu.ua";
     private static final String JOINER = "ft.roles.joiner@chnu.edu.ua";
     private static final String MOVER = "ft.roles.mover@chnu.edu.ua";
+    private static final String OFFICER = "ft.roles.officer@chnu.edu.ua";
+    private static final String BACKUP = "ft.roles.backup@chnu.edu.ua";
     private static final List<String> ACCOUNTS = List.of(ADMIN, RECTOR, DEAN, SECRETARY, PROMOTED, SCHEDULED,
-        SENIOR, RULES, REVOKED, NEWCOMER, GONE, OFFICE, JOINER, MOVER);
+        SENIOR, RULES, REVOKED, NEWCOMER, GONE, OFFICE, JOINER, MOVER, OFFICER, BACKUP);
     private static final long OTHER_DEPARTMENT_ID = 65L;
 
     @Autowired
@@ -61,6 +72,9 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     @Autowired
     private JdbcTemplate jdbc;
 
+    @Autowired
+    private DataSource dataSource;
+
     private long adminId;
     private long deanId;
     private long promotedId;
@@ -71,6 +85,8 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
     private long newcomerId;
     private long joinerId;
     private long moverId;
+    private long officerId;
+    private long backupId;
 
     @BeforeAll
     void createUsers() {
@@ -90,6 +106,8 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
         newcomerId = userRepository.save(TestUsers.user(NEWCOMER, department)).getId();
         joinerId = userRepository.save(TestUsers.user(JOINER, department)).getId();
         withRole(OFFICE, university, RoleType.RECTOR_SECRETARY, university);
+        officerId = withRole(OFFICER, university, RoleType.GDPR_OFFICER, university);
+        backupId = withRole(BACKUP, university, RoleType.SYSTEM_ADMIN, university);
     }
 
     @AfterAll
@@ -302,5 +320,49 @@ class RoleAssignmentFT extends AbstractFunctionalTest {
             .body("type", equalTo("urn:awards:problem:membership-already-confirmed"));
         as(secretaryToken).get("/api/v1/users/" + moverId).then().statusCode(200)
             .body("organization.id", equalTo((int) OTHER_DEPARTMENT_ID));
+    }
+
+    @Test
+    void ac6_1_ac6_2_theLastActiveDataProtectionOfficerStaysUntilAnotherIsActive() {
+        long role = assignmentOf(officerId, "GDPR_OFFICER");
+        List<Long> others = jdbc.queryForList("select distinct r.user_id from user_roles r"
+            + " join users u on u.user_id = r.user_id where r.role_type = 'GDPR_OFFICER' and r.user_id <> ?"
+            + " and u.account_status = 'ACTIVE'", Long.class, officerId);
+        others.forEach(id -> jdbc.update("update users set account_status = 'SUSPENDED' where user_id = ?", id));
+        try {
+            as(tokenOf(ADMIN)).delete("/api/v1/users/" + officerId + "/roles/" + role).then().statusCode(409)
+                .body("type", equalTo("urn:awards:problem:role-last-holder"));
+            assertThat(jdbc.queryForObject("select valid_to from user_roles where user_role_id = ?",
+                LocalDate.class, role)).isNull();
+        } finally {
+            others.forEach(id -> jdbc.update("update users set account_status = 'ACTIVE' where user_id = ?", id));
+        }
+
+        as(tokenOf(ADMIN)).delete("/api/v1/users/" + officerId + "/roles/" + role).then().statusCode(204);
+    }
+
+    @Test
+    void ac6_3_aRevocationOfAGuardedRoleWaitsForARunningErasure() throws Exception {
+        long role = assignmentOf(backupId, "SYSTEM_ADMIN");
+        String token = tokenOf(ADMIN);
+        CompletableFuture<Integer> revocation;
+        try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("select pg_advisory_lock(hashtext('erasure-run'))");
+            try {
+                revocation = CompletableFuture.supplyAsync(() -> as(token)
+                    .delete("/api/v1/users/" + backupId + "/roles/" + role).then().extract().statusCode());
+                assertThat(revocation).failsWithin(Duration.ofSeconds(2))
+                    .withThrowableOfType(TimeoutException.class);
+            } finally {
+                statement.execute("select pg_advisory_unlock(hashtext('erasure-run'))");
+            }
+        }
+
+        assertThat(revocation.get(30, TimeUnit.SECONDS)).isEqualTo(HttpStatus.NO_CONTENT.value());
+    }
+
+    private long assignmentOf(long userId, String role) {
+        return jdbc.queryForObject("select user_role_id from user_roles where user_id = ? and role_type = ?",
+            Long.class, userId, role);
     }
 }
