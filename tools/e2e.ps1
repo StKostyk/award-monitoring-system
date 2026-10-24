@@ -27,7 +27,12 @@
 
 .PARAMETER RetryLimit
     When at most this many tests fail, they run once more with one worker (Playwright --last-failed) and the
-    result of that run counts. Default 3; 0 turns the retry off.
+    result of that run counts. More failures are retried too when one of them could not reach the dev server
+    (it stopped during the run; the retry starts a new one). Default 3; 0 turns the retry off.
+
+.OUTPUTS
+    build/e2e-summary.txt: result, counts and every failed test with its retry outcome; the JSON reports in
+    build/e2e-results.json and build/e2e-retry-results.json.
 
 .EXAMPLE
     .\tools\e2e.ps1
@@ -67,6 +72,46 @@ function Wait-PortClosed([int]$seconds) {
 function Save-State {
     $state = @{ BackendPid = if ($started) { $started.Id } else { 0 }; Container = $container }
     Set-Content -Path $stateFile -Value ($state | ConvertTo-Json -Compress)
+}
+
+function Get-E2eResults([string]$path) {
+    if (-not (Test-Path $path)) { return }
+    $pending = [System.Collections.Generic.Queue[object]]::new()
+    (Get-Content $path -Raw | ConvertFrom-Json).suites | ForEach-Object { $pending.Enqueue($_) }
+    while ($pending.Count) {
+        $suite = $pending.Dequeue()
+        foreach ($spec in @($suite.specs)) {
+            foreach ($test in @($spec.tests)) {
+                $last = @($test.results)[-1]
+                [pscustomobject]@{
+                    Name   = "$($spec.file):$($spec.line) $($spec.title)"
+                    Status = if ($test.status -eq 'skipped') { 'skipped' } elseif ($last) { $last.status } else { 'unknown' }
+                    Error  = (@($last.errors) | ForEach-Object { $_.message }) -join ' '
+                }
+            }
+        }
+        @($suite.suites) | Where-Object { $_ } | ForEach-Object { $pending.Enqueue($_) }
+    }
+}
+
+function Write-E2eSummary([object[]]$first, [object[]]$failed, [object[]]$retried, [datetime]$since) {
+    $span = (Get-Date) - $since
+    $passed = @($first | Where-Object Status -eq 'passed').Count
+    $skipped = @($first | Where-Object Status -eq 'skipped').Count
+    $stillFailing = if ($retried) { @($retried | Where-Object { $_.Status -notin 'passed', 'skipped' }) } else { $failed }
+    $lines = @(
+        "E2E run:  $(Get-Date -Format 'yyyy-MM-dd HH:mm') ($([int]$span.TotalMinutes) min)"
+        "Branch:   $(git -C $root rev-parse --abbrev-ref HEAD)"
+        "Result:   $(if ($first -and -not $stillFailing) { 'PASS' } else { 'FAIL' }) - $passed passed, " +
+            "$($failed.Count) failed, $skipped skipped$(if ($retried) { ", $($failed.Count - $stillFailing.Count) passed on retry" })"
+    )
+    if (-not $first) { $lines += 'No results: Playwright stopped before its report (see build/e2e-run.log).' }
+    $lines += $failed | ForEach-Object {
+        $again = $retried | Where-Object Name -eq $_.Name | Select-Object -First 1
+        "  $($_.Status.PadRight(9)) $($_.Name)$(if ($again) { " -> retry $($again.Status)" })"
+    }
+    Set-Content -Path (Join-Path $root 'build\e2e-summary.txt') -Value $lines -Encoding utf8
+    $lines | ForEach-Object { Write-Host $_ }
 }
 
 $inherited = $false
@@ -139,19 +184,32 @@ try {
 
     Push-Location (Join-Path $root 'frontend')
     try {
-        $arguments = @("--global-timeout=$($TimeoutMinutes * 60000)", "--workers=$Workers")
+        $runStart = Get-Date
+        $firstJson = Join-Path $root 'build\e2e-results.json'
+        $retryJson = Join-Path $root 'build\e2e-retry-results.json'
+        Remove-Item $firstJson, $retryJson -ErrorAction SilentlyContinue
+        $arguments = @("--global-timeout=$($TimeoutMinutes * 60000)", "--workers=$Workers", '--reporter=list,json')
         if ($Grep) { $arguments += @('--grep', $Grep) }
+        $env:PLAYWRIGHT_JSON_OUTPUT_NAME = $firstJson
         & npx playwright test @arguments
         $exit = $LASTEXITCODE
-        $lastRun = 'test-results\.last-run.json'
-        $failed = if ($exit -and (Test-Path $lastRun)) { @((Get-Content $lastRun -Raw | ConvertFrom-Json).failedTests).Count } else { 0 }
-        if ($failed -ge 1 -and $failed -le $RetryLimit) {
-            Write-Host "Retrying the $failed failed test(s) once with one worker."
-            & npx playwright test --last-failed --workers=1 "--global-timeout=$($TimeoutMinutes * 60000)"
+        $first = @(Get-E2eResults $firstJson)
+        $failed = @($first | Where-Object { $_.Status -notin 'passed', 'skipped' })
+        $serverDropped = [bool]($failed | Where-Object { $_.Error -match 'ERR_CONNECTION_REFUSED.*:4200' })
+        $retried = @()
+        if ($exit -and $failed.Count -ge 1 -and ($failed.Count -le $RetryLimit -or ($RetryLimit -and $serverDropped))) {
+            $reason = if ($failed.Count -gt $RetryLimit) { ' (the dev server stopped answering during the run)' } else { '' }
+            Write-Host "Retrying the $($failed.Count) failed test(s) once with one worker$reason."
+            $env:PLAYWRIGHT_JSON_OUTPUT_NAME = $retryJson
+            & npx playwright test --last-failed --workers=1 "--global-timeout=$($TimeoutMinutes * 60000)" `
+                '--reporter=list,json'
             $exit = $LASTEXITCODE
-            if (-not $exit) { Write-Host "Passed on retry: $failed test(s) are flaky." }
+            $retried = @(Get-E2eResults $retryJson)
+            if (-not $exit) { Write-Host "Passed on retry: $($failed.Count) test(s) are flaky." }
         }
+        Write-E2eSummary $first $failed $retried $runStart
     } finally {
+        Remove-Item Env:PLAYWRIGHT_JSON_OUTPUT_NAME -ErrorAction SilentlyContinue
         Pop-Location
     }
 } finally {

@@ -5,14 +5,17 @@
 .DESCRIPTION
     Static analysis first (about half a minute), then the full build with tests and coverage, so a style
     violation never costs a five-minute run. -StaticOnly stops after the static checks (backend, then the
-    frontend ESLint and Prettier check and nginx -t on the frontend nginx configuration); -SkipFrontend leaves the Angular checks, unit tests and the production
-    build (bundle budgets) out. The backend
+    frontend ESLint and Prettier check, the lint and type check of the Playwright specs and nginx -t on the frontend
+    nginx configuration); a compiler error is printed as such. -SkipFrontend leaves the Angular checks, unit
+    tests and the production build (bundle budgets) out. The backend
     verify runs only when the branch changes something under backend/ compared with develop (develop passed it
     when it was merged); -Full runs it regardless. The frontend checks run in a background job while the backend
     verify runs (-Sequential runs them afterwards); every phase prints its duration. When verify fails on one
     integration or functional test class only (no unit failure), that class runs once more and, if it passes, the
     coverage check follows; the summary names the class as flaky.
-    With less than -MinFreeGb of free memory the run switches to -Sequential by itself. A second gate, or a
+    With less than -MinFreeGb of free memory after the static checks the run switches to -Sequential by itself;
+    when verify fails because a Testcontainers container did not start while the frontend checks ran alongside,
+    verify runs once more after them. A second gate, or a
     running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
     For a full run started from an agent shell, use tools/detach.ps1 so the run survives the shell.
 
@@ -65,12 +68,6 @@ if (Test-Path $lock) {
 }
 Set-Content -Path $lock -Value $PID
 
-$freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
-if (-not ($StaticOnly -or $Sequential) -and $freeGb -lt $MinFreeGb) {
-    $Sequential = $true
-    Write-Host ('{0:N1} GB free (under {1} GB): the frontend checks run after the backend verify.' -f $freeGb,
-        $MinFreeGb)
-}
 $log = Join-Path $logDir 'gate.log'
 $mvnw = Join-Path $backend 'mvnw.cmd'
 
@@ -101,6 +98,19 @@ function Get-FailedClasses([string]$folder, [datetime]$since) {
 }
 
 if (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
+    $seen = @{}
+    $compileErrors = @(Select-String -Path $log -Pattern '^\[ERROR\] .*\.java:\[\d+,\d+\]|^\s+(symbol|location):' |
+        ForEach-Object { $_.Line -replace '^\[ERROR\] .*[\\/]', '' } |
+        ForEach-Object -Begin { $repeat = $false } -Process {
+            if ($_ -notmatch '^\s') { $repeat = $seen.ContainsKey($_); $seen[$_] = $true }
+            if (-not $repeat) { $_ }
+        } | Select-Object -First 20)
+    if ($compileErrors) {
+        Write-Host 'Compilation failed:'
+        $compileErrors | ForEach-Object { Write-Host $_ }
+        Write-Host 'Fix the compiler errors above, then run the gate again (build/gate-summary.txt is unchanged).'
+        Exit-Gate 1
+    }
     Select-String -Path $log -Pattern '^\[WARN\].*\.java|^\[ERROR\] (High|Medium|Low):|violation|BugInstance' | Select-Object -First 20 |
         ForEach-Object { $_.Line }
     $checkstyle = Join-Path $backend 'target\checkstyle-result.xml'
@@ -122,6 +132,8 @@ $frontendChecks = {
         & npm run lint *> $lintLog
         $result.LintOk = $LASTEXITCODE -eq 0
         & npm run format:check *>> $lintLog
+        $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
+        & npm run lint:e2e *>> $lintLog
         $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
         if (-not $result.LintOk) {
             $result.Lines += Select-String -Path $lintLog -Pattern 'error|\[warn\]' | Select-Object -First 20 |
@@ -191,6 +203,12 @@ if ($Full -or ($backendChanged | Where-Object { $_ })) {
         Exit-Gate 1
     }
 
+    $freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+    if (-not $Sequential -and $freeGb -lt $MinFreeGb) {
+        $Sequential = $true
+        Write-Host ('{0:N1} GB free (under {1} GB): the frontend checks run after the backend verify.' -f $freeGb,
+            $MinFreeGb)
+    }
     if (-not ($SkipFrontend -or $Sequential)) {
         $frontendStart = Get-Date
         $frontendJob = Start-ThreadJob -ScriptBlock $frontendChecks -ArgumentList $root, $logDir, $false
@@ -199,6 +217,16 @@ if ($Full -or ($backendChanged | Where-Object { $_ })) {
     $verifyStart = Get-Date
     $backendOk = Invoke-Maven @('verify') 'verify'
     $backendStatus = if ($backendOk) { 'PASS' } else { 'FAIL' }
+    $containerTimeout = 'ContainerLaunchException|Container startup failed|Timed out waiting for container'
+    if (-not $backendOk -and $frontendJob -and (Select-String -Path $log -Pattern $containerTimeout -Quiet)) {
+        Write-Host ("$(Get-Date -Format 'HH:mm:ss') a container did not start next to the frontend checks; " +
+            'verify runs again after them.')
+        $fe = Receive-Job -Job $frontendJob -Wait -AutoRemoveJob
+        $frontendJob = $null
+        $verifyStart = Get-Date
+        $backendOk = Invoke-Maven @('-o', 'verify') 'verify (sequential)'
+        $backendStatus = if ($backendOk) { 'PASS (verify rerun alone after a container start-up timeout)' } else { 'FAIL' }
+    }
     if (-not $backendOk) {
         Select-String -Path $log -Pattern '^\[ERROR\]\s{3}|Tests run:.*(Failures: [1-9]|Errors: [1-9])' |
             Select-Object -First 20 | ForEach-Object { $_.Line }
@@ -242,7 +270,9 @@ if ($Full -or ($backendChanged | Where-Object { $_ })) {
 $frontend = 'skipped'
 $frontendOk = $true
 if (-not $SkipFrontend) {
-    if ($frontendJob) {
+    if ($fe) {
+        Write-Host "$(Get-Date -Format 'HH:mm:ss') frontend checks (ran during the first verify)..." -NoNewline
+    } elseif ($frontendJob) {
         Write-Host "$(Get-Date -Format 'HH:mm:ss') waiting for the frontend checks..." -NoNewline
         $fe = Receive-Job -Job $frontendJob -Wait -AutoRemoveJob
     } else {

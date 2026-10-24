@@ -9,7 +9,8 @@
     passed while the branch changes nothing under backend/ or docs/api/openapi.yml compared with -Base. The tracker row of the story
     under docs/epics becomes "In review" and its BACKLOG row "👀 In review (<sprint>)"; -Changelog adds one
     bullet at the top of the -ChangelogSection (default Added) under CHANGELOG.md [Unreleased]. All of these are
-    part of the commit. The pull request targets -Base (default develop) with the title "<KEY>: <Title>" and the
+    part of the commit. On a branch that was never pushed, local commits since -Base (the backend commit of a
+    split story) are folded into this one commit. The pull request targets -Base (default develop) with the title "<KEY>: <Title>" and the
     body file; a leading "<KEY>:" in -Title is dropped. Without a key (a chore or docs branch) no tracker row,
     Jira or GitHub item is touched and the title stays as given. A rerun after a failed push or pull request
     continues: the commit is skipped when the tree is clean and HEAD already carries -Commit, the pull request
@@ -19,7 +20,7 @@
     .\tools\story-ship.ps1 SCRUM-49 -Title "Reviewer queue with claim and hand-over" `
         -Commit "feat(reviews): add the reviewer queue" -BodyFile build/pr-scrum-49.md `
         -Changelog "Reviewer queue «На розгляді» ..."
-    .	ools\story-ship.ps1 -Title "chore(tools): tooling fixes" -Commit "chore(tools): fix the story scripts" `
+    .\tools\story-ship.ps1 -Title "chore(tools): tooling fixes" -Commit "chore(tools): fix the story scripts" `
         -BodyFile build/pr-tools.md -SkipGate
 #>
 #Requires -Version 7
@@ -86,6 +87,15 @@ $resumed = -not (git status --porcelain) -and (git log -1 --format=%s) -eq $Comm
 if ($resumed) {
     Write-Host "Commit:  already made ($Commit); continuing with push and pull request"
 } else {
+    git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' *> $null
+    $pushed = -not $LASTEXITCODE
+    $mergeBase = git merge-base HEAD $Base
+    $local = @(git rev-list "$mergeBase..HEAD")
+    if (-not $pushed -and $local.Count) {
+        Write-Host "Squash:  $($local.Count) local commit(s) since $Base folded into the story commit"
+        git reset -q --soft $mergeBase
+        if ($LASTEXITCODE) { throw 'Squashing the local commits failed.' }
+    }
     git add -A
     if ($CommitBody) { git commit -q -m $Commit -m $CommitBody } else { git commit -q -m $Commit }
     if ($LASTEXITCODE) { throw 'Commit failed (hook or nothing to commit).' }

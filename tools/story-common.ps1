@@ -40,15 +40,22 @@ function Find-StoryRow([string]$key) {
 
 function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$epic, [int]$issue, [string]$id = '',
         [string]$sprintHint = '') {
-    $tracker = Get-ChildItem docs/epics -Filter 'EPIC-*.md' |
-        Where-Object { Select-String -Path $_.FullName -Pattern "Jira epic\*\*:\s*$epic\b" -Quiet } |
-        Select-Object -First 1
+    $trackers = Get-ChildItem docs/epics -Filter 'EPIC-*.md'
+    $tracker = if ($id) {
+        $idFeature = [regex]::Escape(($id -replace '\.\d+$', ''))
+        $trackers | Where-Object { Select-String -Path $_.FullName -Pattern "^\|[^|]+\|\s*$idFeature\.\d+\s" -Quiet } |
+            Select-Object -First 1
+    }
+    if (-not $tracker) {
+        $tracker = $trackers | Where-Object { Select-String -Path $_.FullName -Pattern "Jira epic\*\*:\s*$epic\b" -Quiet } |
+            Select-Object -First 1
+    }
     if (-not $tracker) { throw "No epic tracker for $epic in docs/epics" }
     $lines = [Collections.Generic.List[string]][IO.File]::ReadAllLines($tracker.FullName, $script:Utf8)
     $rowPattern = '^\|\s*(\d+[a-z]?)\s*\|\s*(\d+\.\d+)\.(\d+)\s.*\|\s*[A-Z]+-\d+\s*\|\s*#\d+\s*\|'
     $last = -1
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -match $rowPattern -and $lines[$i] -notmatch '\|\s*To do\s*\|\s*$') { $last = $i }
+        if ($lines[$i] -match $rowPattern -and $lines[$i] -notmatch '\|\s*(To do|Planned)\s*\|\s*$') { $last = $i }
     }
     if ($last -lt 0) { throw "No started story in $($tracker.Name)" }
     $null = $lines[$last] -match $rowPattern
@@ -80,9 +87,11 @@ function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$ep
         }
     }
     if ($after -lt 0) { throw "No BACKLOG row of feature $feature and no Epic table to add it to" }
-    $sprint = if ($backlog[$after] -match '\((Sprint \d+)\)\s*\|') { $Matches[1] }
-        elseif ($backlog[$after + 1] -match '\|\s*(Sprint \d+)\s*\|') { $Matches[1] }
-        else { $sprintHint }
+    $sprint = if ($sprintHint) { $sprintHint }
+        elseif ($backlog[$after] -match '\(((Sprint )?\d+)\)\s*\|') { $Matches[1] }
+        elseif ($backlog[$after] -match '^\|[^|]+\|[^|]+\|[^|]+\|\s*((Sprint )?\d+)\s*\|') { $Matches[1] }
+        elseif ($backlog[$after + 1] -match '^\|[^|]+\|[^|]+\|[^|]+\|\s*((Sprint )?\d+)\s*\|') { $Matches[1] }
+    if (-not $sprint) { Write-Warning "BACKLOG row $id has no sprint; pass -Sprint or fill the cell" }
     $repo = gh repo view --json url -q .url
     $backlog.Insert($after + 1, "| $id | $summary | $points | $sprint | $key | [#$issue]($repo/issues/$issue) |")
     Write-Lines $path $backlog.ToArray()
