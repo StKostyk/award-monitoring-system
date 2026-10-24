@@ -130,7 +130,7 @@
   }
 
   @if (loading() && !view()) {
-    <mat-progress-bar mode="indeterminate" />
+    <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
   }
   @if (problem(); as problem) {
     <div class="award-status__problem" role="alert" data-testid="award-status-error">

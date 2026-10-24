@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { Page, expect, test } from '@playwright/test';
+import { Page, expect, test } from './fixtures';
 
 import {
   FRESH_PASSWORD,

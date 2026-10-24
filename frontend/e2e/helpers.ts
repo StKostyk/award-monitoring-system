@@ -67,14 +67,25 @@ export async function countMessages(email: string, subject: string): Promise<num
 }
 
 /**
- * Registers and verifies a fresh account through the API and the verification page; a rate-limited registration
- * waits for `Retry-After` and is sent again.
+ * Registers a fresh account through {@link register} and verifies it through the verification page.
  */
 export async function registerAndVerify(
   page: Page,
   email: string,
   password: string,
 ): Promise<void> {
+  await register(email, password);
+  await page.goto(await linkFor(email, 'verify-email'));
+  await page.getByTestId('verify-password').fill(password);
+  await page.getByTestId('verify-submit').click();
+  await expect(page.getByTestId('verify-success')).toContainText(email);
+}
+
+/**
+ * Registers a fresh account through the API and leaves it unverified (`PENDING`); a rate-limited registration
+ * waits for `Retry-After` and is sent again.
+ */
+export async function register(email: string, password: string): Promise<void> {
   const request = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -96,10 +107,6 @@ export async function registerAndVerify(
   if (response.status !== 201) {
     throw new Error(`Registration of ${email} answered ${response.status}`);
   }
-  await page.goto(await linkFor(email, 'verify-email'));
-  await page.getByTestId('verify-password').fill(password);
-  await page.getByTestId('verify-submit').click();
-  await expect(page.getByTestId('verify-success')).toContainText(email);
 }
 
 /** Submits the award form and accepts the notice that the award has no documents. */
@@ -187,6 +194,18 @@ export async function seriousViolations(page: Page): Promise<string[]> {
     .map(
       (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(' | ')}`,
     );
+}
+
+/**
+ * Closes the open review requests of the awards matching the condition on `awards a` and `users u` (the owner),
+ * as `EXPIRED`, a status the application never sets, so that they leave the review queues.
+ */
+export function expireOpenRequests(condition: string): void {
+  sql(
+    `update award_requests r set status = 'EXPIRED', completed_at = now() from awards a join users u
+     on u.user_id = a.user_id where a.award_id = r.award_id
+     and r.status in ('SUBMITTED', 'IN_REVIEW', 'ESCALATED') and (${condition})`,
+  );
 }
 
 /**

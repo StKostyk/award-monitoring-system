@@ -4,7 +4,11 @@
 </a>
 
 @if (loading()) {
-  <mat-progress-bar mode="indeterminate" data-testid="detail-loading" />
+  <mat-progress-bar
+    [attr.aria-label]="'app.loading' | transloco"
+    mode="indeterminate"
+    data-testid="detail-loading"
+  />
 }
 
 @if (notFound()) {

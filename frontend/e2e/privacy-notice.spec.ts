@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 import { FRESH_PASSWORD, registerAndVerify, seriousViolations, sql, uniqueToken } from './helpers';
 

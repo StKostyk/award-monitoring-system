@@ -82,7 +82,7 @@
   }
 
   @if (loading()) {
-    <mat-progress-bar mode="indeterminate" />
+    <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
   }
   @if (notice(); as notice) {
     <p class="documents__problem" role="alert" data-testid="documents-notice">

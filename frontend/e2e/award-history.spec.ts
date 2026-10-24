@@ -1,4 +1,4 @@
-import { Page, expect, test } from '@playwright/test';
+import { Page, expect, test } from './fixtures';
 
 import { SEED, pastDay, signedIn, submitWithoutDocuments, uniqueToken } from './helpers';
 
@@ -71,12 +71,10 @@ test.describe('award history and audit log', () => {
 
     const auditor = await signedIn(browser, officer);
     await open(auditor, id);
-    const trail = auditor.waitForResponse((response) =>
-      response.url().includes(`/awards/${id}/audit-trail`),
-    );
-    await auditor.getByTestId('award-audit-tab').click();
-    await trail;
-    await expect(auditor.getByTestId('audit-action').first()).toBeVisible();
+    await expect(async () => {
+      await auditor.getByTestId('award-audit-tab').click();
+      await expect(auditor.getByTestId('audit-action').first()).toBeVisible({ timeout: 5_000 });
+    }).toPass();
     await expect(auditor.getByTestId('audit-action')).toContainText(['AWARD_SUBMITTED']);
     const submitted = auditor.getByTestId('audit-row').filter({ hasText: 'AWARD_SUBMITTED' });
     const header = submitted.locator('mat-expansion-panel-header');

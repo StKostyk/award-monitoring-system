@@ -238,7 +238,7 @@ Preconditions (all stories): run `.\tools\dev-up.ps1` from the repository root �
 8. In DevTools → Network, copy the access token from the `/oauth2/token` response; paste it at `https://jwt.io`: header `alg: RS256`, `kid` present; payload has `roles: ["EMPLOYEE"]`, `org_id`, `org_type: "DEPARTMENT"`. (AC-1.4)
 9. Swagger UI `http://localhost:8080/swagger-ui.html` → **Authorize** → tick `openid`/`profile` under *oauth2* → Authorize → sign in in the popup → the dialog shows *Logout* → Close → `GET /api/v1/users/me` → Try it out → Execute → 200 with the profile. Log out of Swagger (Authorize → Logout) → Execute again → 401. (AC-1.3, 1.9)
 10. Sign out; the app returns to the login page; the old refresh token fails at `/oauth2/token` (repeat the request from DevTools → `invalid_grant`). (AC-1.8, 1.5)
-11. Sign in as `pending@chnu.edu.ua`. Expected: login page says the address is not verified yet. (AC-1.6)
+11. Register a new address and do not open the verification link (on a fresh database `pending@chnu.edu.ua` works too; retention removes unverified registrations after 30 days), then sign in with it. Expected: login page says the address is not verified yet. (AC-1.6)
 
 ### After 1.1.2 (SCRUM-8)
 

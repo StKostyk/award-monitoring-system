@@ -8,7 +8,11 @@
 </div>
 
 @if (loading()) {
-  <mat-progress-bar mode="indeterminate" data-testid="delegations-loading" />
+  <mat-progress-bar
+    [attr.aria-label]="'app.loading' | transloco"
+    mode="indeterminate"
+    data-testid="delegations-loading"
+  />
 }
 
 @if (message(); as message) {

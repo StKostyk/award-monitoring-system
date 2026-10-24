@@ -37,7 +37,11 @@
 </mat-card>
 
 @if (loading()) {
-  <mat-progress-bar mode="indeterminate" data-testid="users-loading" />
+  <mat-progress-bar
+    [attr.aria-label]="'app.loading' | transloco"
+    mode="indeterminate"
+    data-testid="users-loading"
+  />
 }
 
 @if (problem(); as problem) {

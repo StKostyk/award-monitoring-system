@@ -16,7 +16,7 @@ import { Award, AwardsService, awardTitle, isOwnAward } from '../awards.service'
   imports: [RouterLink, MatButton, MatIcon, MatProgressBar, TranslocoPipe],
   template: `
     @if (loading()) {
-      <mat-progress-bar mode="indeterminate" />
+      <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
     }
     @if (notFound()) {
       <p class="award-submitted__problem" role="alert" data-testid="award-not-found">

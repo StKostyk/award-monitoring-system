@@ -89,7 +89,11 @@
 </div>
 
 @if (loading()) {
-  <mat-progress-bar mode="indeterminate" data-testid="achievements-loading" />
+  <mat-progress-bar
+    [attr.aria-label]="'app.loading' | transloco"
+    mode="indeterminate"
+    data-testid="achievements-loading"
+  />
 }
 
 @if (problem(); as problem) {

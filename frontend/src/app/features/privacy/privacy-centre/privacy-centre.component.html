@@ -116,7 +116,7 @@
           {{ 'privacy.centre.loadFailed' | transloco }}
         </p>
       } @else {
-        <mat-progress-bar mode="indeterminate" />
+        <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
       }
     </mat-card-content>
   </mat-card>
@@ -197,7 +197,7 @@
         </table>
       }
       @if (activityLoading()) {
-        <mat-progress-bar mode="indeterminate" />
+        <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
       }
       @if (activityProblem(); as problem) {
         <div class="centre__problem" role="alert" data-testid="privacy-activity-error">

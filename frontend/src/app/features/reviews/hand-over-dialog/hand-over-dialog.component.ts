@@ -39,7 +39,7 @@ export interface HandOverDialogData {
     <h2 mat-dialog-title id="hand-over-title">{{ 'reviews.handOver.title' | transloco }}</h2>
     <mat-dialog-content>
       @if (loading()) {
-        <mat-progress-bar mode="indeterminate" />
+        <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
       }
       @if (problem(); as problem) {
         <p class="hand-over__problem" role="alert" data-testid="hand-over-error">

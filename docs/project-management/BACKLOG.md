@@ -46,7 +46,7 @@ Features 1.1–1.3 done (Sprints 2–3); this table holds the fixes found in the
 |----|-------|--------|--------|------|-------|
 | 1.1.7 | Forgot-password 429 shows a raw translation key | 1 | ✅ Done | SCRUM-80 | [#207](https://github.com/StKostyk/award-monitoring-system/issues/207) |
 | 1.2.5 | Repeated department move answers role-already-assigned | 1 | ✅ Done | SCRUM-81 | [#209](https://github.com/StKostyk/award-monitoring-system/issues/209) |
-| 1.2.6 | Role revocation: last-holder guard for GDPR_OFFICER and SYSTEM_ADMIN | 2 | 👀 In review | SCRUM-110 | [#310](https://github.com/StKostyk/award-monitoring-system/issues/310) |
+| 1.2.6 | Role revocation: last-holder guard for GDPR_OFFICER and SYSTEM_ADMIN | 2 | ✅ Done | SCRUM-110 | [#310](https://github.com/StKostyk/award-monitoring-system/issues/310) |
 
 ### Epic 2 — done (Jira epic SCRUM-20)
 Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) were fixed in 2.1.5 (Sprint 3). Epic 2 done 2026-10-01.
@@ -86,6 +86,7 @@ Tracker: [EPIC-04-APPROVAL-WORKFLOW-STATUS.md](../epics/EPIC-04-APPROVAL-WORKFLO
 | 4.2.4 | Fixes from the Feature 4.2 walk | 2 | ✅ Done | SCRUM-60 | [#169](https://github.com/StKostyk/award-monitoring-system/issues/169) |
 | 4.2.5 | Refactor from the Feature 4.2 sweep | 3 | ✅ Done | SCRUM-61 | [#171](https://github.com/StKostyk/award-monitoring-system/issues/171) |
 | 4.2.6 | Review list: overdue notice chip clipped at 1280 px | 1 | ✅ Done | SCRUM-78 | [#202](https://github.com/StKostyk/award-monitoring-system/issues/202) |
+| 4.2.7 | Stabilise failing and flaky e2e specs | 3 | 👀 In review | SCRUM-111 | [#312](https://github.com/StKostyk/award-monitoring-system/issues/312) |
 | 4.3.1 | Colleague visibility and the achievements page | 5 | ✅ Done | SCRUM-56 | [#150](https://github.com/StKostyk/award-monitoring-system/issues/150) |
 | 4.3.2 | Unit achievement pages and public achievements | 5 | ✅ Done | SCRUM-57 | [#151](https://github.com/StKostyk/award-monitoring-system/issues/151) |
 | 4.3.3 | Fixes from the Feature 4.3 validation | 2 | ✅ Done | SCRUM-62 | [#176](https://github.com/StKostyk/award-monitoring-system/issues/176) |

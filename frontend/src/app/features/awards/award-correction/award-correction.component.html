@@ -1,7 +1,11 @@
 <h1 class="award-correction__title">{{ 'awards.correction.title' | transloco }}</h1>
 
 @if (loading() || saving()) {
-  <mat-progress-bar mode="indeterminate" data-testid="correction-busy" />
+  <mat-progress-bar
+    [attr.aria-label]="'app.loading' | transloco"
+    mode="indeterminate"
+    data-testid="correction-busy"
+  />
 }
 
 @if (unavailable()) {
