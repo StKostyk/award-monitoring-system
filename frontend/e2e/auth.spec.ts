@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, SEED, signIn } from './helpers';
+import { DEMO_PASSWORD, FRESH_PASSWORD, SEED, register, signIn, uniqueToken } from './helpers';
 
 const employee = {
   email: SEED.employee,
@@ -83,7 +83,9 @@ test.describe('authentication', () => {
   });
 
   test('ac16 a pending account is refused with an explanation', async ({ page }) => {
-    await signIn(page, 'pending@chnu.edu.ua', employee.password);
+    const email = `e2e.pending.${uniqueToken()}@chnu.edu.ua`;
+    await register(email, FRESH_PASSWORD);
+    await signIn(page, email, FRESH_PASSWORD);
 
     await expect(page).toHaveURL(/error=PENDING/);
     await expect(page.locator('.alert')).toContainText('не підтверджено');

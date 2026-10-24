@@ -162,9 +162,9 @@ class AwardHistoryFT extends AbstractFunctionalTest {
         assertThat(jdbc.queryForObject("select count(*) from award_versions where award_id = ?", Integer.class,
             draft)).isZero();
         as(admin).get(AWARDS + "/" + draft + "/audit-trail").then().statusCode(200)
-            .body("content[0].action", equalTo("DELETE"))
-            .body("content[0].entityId", equalTo((int) draft))
-            .body("content[0].actorId", equalTo((int) employeeId));
+            .body("content.action", hasItems("INSERT", "DELETE"))
+            .body("content.find { it.action == 'DELETE' }.entityId", equalTo((int) draft))
+            .body("content.find { it.action == 'DELETE' }.actorId", equalTo((int) employeeId));
         as(admin).get(AWARDS + "/999999999/audit-trail").then().statusCode(404);
     }
 

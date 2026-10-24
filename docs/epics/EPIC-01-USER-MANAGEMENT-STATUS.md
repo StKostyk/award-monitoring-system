@@ -40,7 +40,7 @@ Points follow the backlog where it had them; the rest are estimated here. `paral
 | 13 | 1.3.4 Fixes from the Feature 1.3 validation | 1.3 | 3 | SCRUM-29 | #92 | no | Done 2026-09-30 |
 | 13a | 1.1.7 Forgot-password 429 shows a raw translation key | 1.1 | 1 | SCRUM-80 | #207 | no | Done |
 | 13b | 1.2.5 Repeated department move answers role-already-assigned | 1.2 | 1 | SCRUM-81 | #209 | no | Done |
-| 13c | 1.2.6 Role revocation: last-holder guard for GDPR_OFFICER and SYSTEM_ADMIN | 1.2 | 2 | SCRUM-110 | #310 | no | In review |
+| 13c | 1.2.6 Role revocation: last-holder guard for GDPR_OFFICER and SYSTEM_ADMIN | 1.2 | 2 | SCRUM-110 | #310 | no | Done |
 
 Total: 62 points, planned across sprints 2–4.
 

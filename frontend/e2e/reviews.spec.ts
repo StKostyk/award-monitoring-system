@@ -1,7 +1,8 @@
-import { Browser, Page, expect, test } from '@playwright/test';
+import { Browser, Page, expect, test } from './fixtures';
 
 import {
   FRESH_PASSWORD,
+  expireOpenRequests,
   freshEmployee,
   pastDay,
   seriousViolations,
@@ -79,9 +80,7 @@ test.describe('reviewer queue', () => {
   });
 
   test.afterAll(() => {
-    sql(
-      `update award_requests set status = 'EXPIRED', completed_at = now() where award_id in (select award_id from awards where user_id = ${user(owner)})`,
-    );
+    expireOpenRequests(`u.email_address = '${owner}'`);
     sql(
       `delete from user_roles where organization_id = ${FACULTY} and user_id in (${user(first)}, ${user(second)}, ${user(dean)})`,
     );

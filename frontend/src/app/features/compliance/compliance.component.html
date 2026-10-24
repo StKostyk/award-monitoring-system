@@ -9,7 +9,11 @@
   <mat-tab [label]="'compliance.tabs.retention' | transloco">
     <div class="compliance__panel" data-testid="retention-tab">
       @if (policiesLoading() || runs().loading) {
-        <mat-progress-bar mode="indeterminate" data-testid="retention-loading" />
+        <mat-progress-bar
+          [attr.aria-label]="'app.loading' | transloco"
+          mode="indeterminate"
+          data-testid="retention-loading"
+        />
       }
       @if (policiesProblem() ?? runs().problem; as problem) {
         <ng-container
@@ -180,7 +184,11 @@
       </mat-button-toggle-group>
 
       @if (erasures().loading) {
-        <mat-progress-bar mode="indeterminate" data-testid="erasures-loading" />
+        <mat-progress-bar
+          [attr.aria-label]="'app.loading' | transloco"
+          mode="indeterminate"
+          data-testid="erasures-loading"
+        />
       }
       @if (erasures().problem; as problem) {
         <ng-container
@@ -303,7 +311,11 @@
       </mat-button-toggle-group>
 
       @if (holds().loading) {
-        <mat-progress-bar mode="indeterminate" data-testid="holds-loading" />
+        <mat-progress-bar
+          [attr.aria-label]="'app.loading' | transloco"
+          mode="indeterminate"
+          data-testid="holds-loading"
+        />
       }
       @if (holds().problem; as problem) {
         <ng-container

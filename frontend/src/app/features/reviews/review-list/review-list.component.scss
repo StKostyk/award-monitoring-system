@@ -24,6 +24,11 @@
 
 .reviews__table {
   width: 100%;
+
+  .mat-mdc-header-cell:not(.reviews__select),
+  .mat-mdc-cell:not(.reviews__select) {
+    padding-inline: 8px;
+  }
 }
 
 .reviews__row {

@@ -1,5 +1,5 @@
 @if (loading()) {
-  <mat-progress-bar mode="indeterminate" />
+  <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
 }
 @if (notFound()) {
   <p class="award-detail__problem" role="alert" data-testid="award-not-found">

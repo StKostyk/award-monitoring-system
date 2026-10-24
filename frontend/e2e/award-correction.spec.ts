@@ -1,4 +1,4 @@
-import { Browser, expect, test } from '@playwright/test';
+import { Browser, expect, test } from './fixtures';
 
 import {
   FRESH_PASSWORD,

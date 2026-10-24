@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { Page, expect, test } from '@playwright/test';
+import { Page, expect, test } from './fixtures';
 
 import { SEED, seriousViolations, signedIn } from './helpers';
 
@@ -52,7 +52,8 @@ test.describe('unit analytics', () => {
     browser,
   }) => {
     const warmUp = await signedIn(browser, SEED.dean);
-    await warmUp.goto('/analytics');
+    await warmUp.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
+    await expect(warmUp.getByTestId('section-totals')).toBeVisible();
     await expect(warmUp.getByTestId('section-highlights')).toBeVisible();
     await warmUp.context().close();
 

@@ -50,7 +50,7 @@
   }
 </mat-accordion>
 @if (loading()) {
-  <mat-progress-bar mode="indeterminate" />
+  <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
 }
 @if (problem(); as problem) {
   <div class="audit-trail__problem" role="alert" data-testid="audit-error">

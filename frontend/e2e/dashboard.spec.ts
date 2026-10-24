@@ -1,4 +1,4 @@
-import { Page, expect, test } from '@playwright/test';
+import { Page, expect, test } from './fixtures';
 
 import {
   FRESH_PASSWORD,
@@ -110,7 +110,14 @@ test.describe('personal dashboard', () => {
     await page.getByTestId('dashboard-customise').click();
     await page.getByTestId('customise-TIMELINE').locator('input').uncheck();
     await page.getByTestId('customise-RANK').locator('input').uncheck();
+    const saved = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/users/me/dashboard-preferences') &&
+        response.request().method() !== 'GET' &&
+        response.ok(),
+    );
     await page.getByTestId('customise-save').click();
+    await saved;
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
     const other = await signedInAs(browser, email, FRESH_PASSWORD);
