@@ -13,6 +13,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import ua.edu.chnu.awards.analytics.dto.UnitAnalytics;
+import ua.edu.chnu.awards.award.dto.YearRange;
+
 class UnitReportAssemblerTest {
 
     @Test
@@ -114,6 +117,20 @@ class UnitReportAssemblerTest {
         assertThat(rows(report, "topPerformers")).extracting(UnitReport.Row::key, UnitReport.Row::current)
             .containsExactly(tuple("groupTooSmall", null));
         assertThat(report.peopleNamed()).isZero();
+    }
+
+    @Test
+    void ac3_2_aSingleYearIsWrittenOnceAsOnThePage() {
+        UnitAnalytics shown = department();
+        UnitAnalytics singleYear = new UnitAnalytics(shown.unit(), new YearRange(2026, 2026),
+            new YearRange(2025, 2025), shown.partialYear(), shown.generatedAt(), shown.totals(), shown.byYear(),
+            shown.units(), shown.byCategory(), shown.byLevel(), shown.bySource(), shown.topPerformers(),
+            shown.highlights());
+
+        UnitReport report = report(singleYear, ReportLanguage.EN);
+
+        assertThat(report.header()).extracting(UnitReport.Field::key, UnitReport.Field::value)
+            .contains(tuple("period", "2026"), tuple("previousPeriod", "2025"));
     }
 
     private static List<UnitReport.Row> rows(UnitReport report, String key) {

@@ -69,6 +69,7 @@ export class UnitAnalyticsComponent {
   readonly analytics = this.store.selectSignal(unitAnalyticsFeature.selectAnalytics);
   readonly loading = this.store.selectSignal(unitAnalyticsFeature.selectLoading);
   readonly problem = this.store.selectSignal(unitAnalyticsFeature.selectProblem);
+  readonly unitsStatus = this.store.selectSignal(unitAnalyticsFeature.selectUnitsStatus);
   readonly invalid = signal(false);
   readonly unknownId = signal(false);
 
@@ -77,6 +78,9 @@ export class UnitAnalyticsComponent {
   );
   protected readonly exportDisabled = computed(
     () => this.invalid() || this.loading() || this.problem() !== null || !this.analytics(),
+  );
+  protected readonly shownPeriod = computed<AnalyticsPeriod>(
+    () => this.analytics()?.period ?? this.period(),
   );
   protected readonly comparedWith = computed(() => {
     this.language.current();
@@ -116,9 +120,7 @@ export class UnitAnalyticsComponent {
   });
 
   constructor() {
-    if (this.store.selectSignal(unitAnalyticsFeature.selectUnitsStatus)() === 'idle') {
-      this.store.dispatch(UnitAnalyticsActions.unitsRequested());
-    }
+    this.requestUnitsUnlessLoaded();
     combineLatest([this.route.paramMap, this.route.queryParamMap])
       .pipe(takeUntilDestroyed())
       .subscribe(([params, query]) => {
@@ -151,9 +153,17 @@ export class UnitAnalyticsComponent {
   }
 
   protected retry(): void {
+    this.requestUnitsUnlessLoaded();
     const unitId = this.unitId();
     if (unitId !== null) {
       this.store.dispatch(UnitAnalyticsActions.unitSelected({ unitId, period: this.period() }));
+    }
+  }
+
+  private requestUnitsUnlessLoaded(): void {
+    const status = this.unitsStatus();
+    if (status === 'idle' || status === 'failed') {
+      this.store.dispatch(UnitAnalyticsActions.unitsRequested());
     }
   }
 }

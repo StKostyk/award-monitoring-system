@@ -117,6 +117,6 @@ public class UnitReportAssembler {
     }
 
     private static String years(YearRange range) {
-        return range.from() + "–" + range.to();
+        return range.from() == range.to() ? String.valueOf(range.from()) : range.from() + "–" + range.to();
     }
 }
