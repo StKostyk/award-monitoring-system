@@ -509,6 +509,7 @@ public class TotpService {
 | `analytics:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `analytics:read:department` | - | ✅ | ✅ | ✅ | ✅ | - | - |
 | `analytics:read:faculty` | - | - | ✅ | ✅ | ✅ | - | - |
+| `analytics:read:university` | - | - | - | ✅ | ✅ | - | - |
 | `award:read:department` | - | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `award:read:faculty` | - | - | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `award:read:all` | - | - | - | ✅ | ✅ | ✅ | ✅ |

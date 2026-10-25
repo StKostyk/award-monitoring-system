@@ -58,7 +58,7 @@ class PersonalAnalyticsServiceTest {
     private static final int TIMELINE_LIMIT = 3;
     private static final int TOP_PERFORMERS = 10;
     private static final AnalyticsProperties PROPERTIES = new AnalyticsProperties(MIN_GROUP_SIZE, TIMELINE_LIMIT,
-        TOP_PERFORMERS, Duration.ofMinutes(5));
+        TOP_PERFORMERS, Duration.ofMinutes(5), Duration.ofDays(2));
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-19T10:00:00Z"), ZoneId.of("Europe/Kyiv"));
     private static final CategoryRef MINISTRY = new CategoryRef(13L, "Ministry Recognition", "Відзнака міністерства",
         RecognitionLevel.NATIONAL);

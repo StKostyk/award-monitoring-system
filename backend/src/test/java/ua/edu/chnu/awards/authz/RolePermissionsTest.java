@@ -70,6 +70,16 @@ class RolePermissionsTest {
     }
 
     @Test
+    void ac1_1_universityAnalyticsBelongToTheRectorAndTheSecretaryAndAreNeverLent() {
+        Set<RoleType> holders = EnumSet.of(RoleType.RECTOR_SECRETARY, RoleType.RECTOR);
+        for (RoleType role : RoleType.values()) {
+            assertThat(permissions.of(role).contains("analytics:read:university")).as(role.name())
+                .isEqualTo(holders.contains(role));
+            assertThat(permissions.delegableOf(role)).as(role.name()).doesNotContain("analytics:read:university");
+        }
+    }
+
+    @Test
     void ac2_1_onlyTheGdprOfficerReadsTheCompliancePage() {
         for (RoleType role : RoleType.values()) {
             assertThat(permissions.of(role).contains("compliance:read")).as(role.name())

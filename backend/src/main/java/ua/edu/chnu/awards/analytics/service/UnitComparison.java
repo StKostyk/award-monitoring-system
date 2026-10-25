@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.analytics.service;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -27,8 +28,8 @@ import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import lombok.RequiredArgsConstructor;
 
 /**
- * The rows comparing the child departments of a faculty, and the faculty level itself, which holds whatever was
- * submitted in the faculty outside its departments.
+ * The rows comparing the child units of a parent, the departments of a faculty or the faculties and colleges of the
+ * university, and the parent level itself, which holds whatever was submitted in the parent outside its children.
  */
 @Component
 @RequiredArgsConstructor
@@ -51,20 +52,37 @@ public class UnitComparison {
      */
     public List<UnitComparisonRow> rows(long facultyId, UnitFigures figures, YearRange period,
                                         YearRange previous) {
-        Set<Long> subtree = tree.subtree(facultyId);
+        return rows(facultyId, EnumSet.of(OrganizationType.DEPARTMENT), figures, period, previous);
+    }
+
+    /**
+     * The rows of a parent: every active direct child of the given types, an inactive one only with counted awards,
+     * and the parent level when it has members or counted awards; children by Ukrainian name, the parent level
+     * last.
+     *
+     * @param parentId   the parent
+     * @param childTypes the types of the children compared
+     * @param figures    the aggregates of the parent
+     * @param period     the calendar years
+     * @param previous   the previous period
+     * @return the rows, whose counts add up to the parent's
+     */
+    public List<UnitComparisonRow> rows(long parentId, Set<OrganizationType> childTypes, UnitFigures figures,
+                                        YearRange period, YearRange previous) {
+        Set<Long> subtree = tree.subtree(parentId);
         List<Long> children = subtree.stream()
-            .filter(id -> tree.node(id).filter(node -> node.type() == OrganizationType.DEPARTMENT
-                && node.parentId() != null && node.parentId() == facultyId).isPresent())
+            .filter(id -> tree.node(id).filter(node -> childTypes.contains(node.type())
+                && node.parentId() != null && node.parentId() == parentId).isPresent())
             .toList();
         List<Long> named = new ArrayList<>(children);
-        named.add(facultyId);
+        named.add(parentId);
         Map<Long, Organization> units = organizations.findAllById(named).stream()
             .collect(Collectors.toMap(Organization::getId, Function.identity()));
-        Set<Long> facultyLevel = new HashSet<>(subtree);
+        Set<Long> parentLevel = new HashSet<>(subtree);
         List<UnitComparisonRow> rows = new ArrayList<>();
         for (Long child : children) {
             Set<Long> part = tree.subtree(child);
-            facultyLevel.removeAll(part);
+            parentLevel.removeAll(part);
             UnitComparisonRow row = row(units.get(child), false, UnitFiguresHelper.in(part), figures, period,
                 previous);
             if (row.active() || row.approved().current() + row.approved().previous() > 0) {
@@ -72,7 +90,7 @@ public class UnitComparison {
             }
         }
         rows.sort(Comparator.comparing(row -> name(row.unit()), UKRAINIAN));
-        UnitComparisonRow own = row(units.get(facultyId), true, UnitFiguresHelper.in(facultyLevel), figures,
+        UnitComparisonRow own = row(units.get(parentId), true, UnitFiguresHelper.in(parentLevel), figures,
             period, previous);
         if (own.members() > 0 || own.approved().current() + own.approved().previous() > 0) {
             rows.add(own);

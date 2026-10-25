@@ -55,6 +55,7 @@ final class UnitTreeFixture {
         lenient().when(tree.node(anyLong()))
             .thenAnswer(call -> Optional.ofNullable(nodes.get(call.<Long>getArgument(0))));
         lenient().when(tree.subtree(anyLong())).thenAnswer(call -> subtree(call.getArgument(0)));
+        lenient().when(tree.university()).thenReturn(Optional.of(nodes.get(UNIVERSITY)));
         lenient().when(lookup.findById(any())).thenAnswer(call -> Optional.ofNullable(organizations.get(
             call.<Long>getArgument(0))));
         lenient().when(lookup.findAllById(any())).thenAnswer(call -> {

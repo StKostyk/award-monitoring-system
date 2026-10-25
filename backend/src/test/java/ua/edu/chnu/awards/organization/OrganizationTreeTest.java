@@ -68,6 +68,16 @@ class OrganizationTreeTest {
     }
 
     @Test
+    void ac1_2_theUniversityIsTheParentlessUniversityNode() {
+        assertThat(tree.university()).hasValueSatisfying(node -> assertThat(node.id()).isEqualTo(1L));
+
+        when(repository.findAll()).thenReturn(List.of(fmi));
+        tree.refresh();
+
+        assertThat(tree.university()).isEmpty();
+    }
+
+    @Test
     void ac12_refreshReplacesTheTreeAtomically() {
         Organization newFaculty = org(11L, OrganizationType.FACULTY, university, true);
         when(repository.findAll()).thenReturn(List.of(university, newFaculty));

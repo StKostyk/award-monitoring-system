@@ -3072,6 +3072,106 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
+  /analytics/university:
+    get:
+      tags: [Analytics]
+      summary: University-wide analytics
+      description: >
+        Approved awards (personal and unit) of the whole university whose award year lies in `from`..`to` (Kyiv
+        calendar years, defaults as for `/analytics/units/{id}`), compared with the previous period of the same
+        length: totals, counts by year, the faculties and colleges with a university-level row, by category, by
+        level and by awarding organisation, rising and falling categories and sources, a least-squares projection
+        over the complete years and rule-based highlights. Nobody is named. Aggregates share the `unit-analytics`
+        cache. Needs `analytics:read:university` (5.3.1).
+      security:
+        - bearerAuth: []
+      operationId: getUniversityAnalytics
+      parameters:
+        - $ref: '#/components/parameters/AnalyticsFrom'
+        - $ref: '#/components/parameters/AnalyticsTo'
+      responses:
+        '200':
+          description: The analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UniversityAnalytics'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `from` or `to`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /analytics/university/compliance:
+    get:
+      tags: [Analytics]
+      summary: Compliance summary for the executive dashboard
+      description: >
+        Counts only, computed at the request and never cached: privacy notice acknowledgements of the current
+        version, `ANALYTICS` consents, pending, postponed and overdue erasure requests, active legal holds, the last
+        retention run, open and overdue review requests per level, and an overall status with the reasons. No id,
+        name or e-mail. Needs `analytics:read:university` (5.3.1).
+      security:
+        - bearerAuth: []
+      operationId: getComplianceSummary
+      responses:
+        '200':
+          description: The summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /analytics/university/report:
+    get:
+      tags: [Analytics]
+      summary: Board report of the university
+      x-status: planned
+      description: >
+        The figures of `GET /analytics/university` and `/analytics/university/compliance` as a presentation-ready
+        PDF (A4 landscape, embedded font, page numbers, one topic per page, bars drawn in the template), labelled in
+        `lang`, sent with `Cache-Control: no-store`; writes an `ANALYTICS_EXPORTED` audit row with format
+        `board-pdf` once the file is produced (5.3.3).
+      security:
+        - bearerAuth: []
+      operationId: getBoardReport
+      parameters:
+        - $ref: '#/components/parameters/AnalyticsFrom'
+        - $ref: '#/components/parameters/AnalyticsTo'
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [uk, en]
+            default: uk
+      responses:
+        '200':
+          description: The report, `Content-Disposition` attachment `board-report-<code>-<from>-<to>.pdf`
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `lang`, `from` or `to`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   # ============== Compliance ==============
   /compliance/retention-policies:
     get:
@@ -4792,11 +4892,13 @@ components:
       description: >
         `NO_AWARDS`: no counted award; `DECLINE`: previous at least 4 and current at most half of it; `GROWTH`:
         previous at least 4 and current at least 1.5 times it; `BELOW_AVERAGE`: awards per member under half of the
-        faculty's, for departments with at least the minimum group of members
+        faculty's, for departments with at least the minimum group of members; `ABOVE_AVERAGE` (university only,
+        planned for 5.3.1): awards per member at least 1.5 times the university's, for faculties and colleges with at
+        least the minimum group of members
       properties:
         type:
           type: string
-          enum: [NO_AWARDS, DECLINE, GROWTH, BELOW_AVERAGE]
+          enum: [NO_AWARDS, DECLINE, GROWTH, BELOW_AVERAGE, ABOVE_AVERAGE]
         unit:
           $ref: '#/components/schemas/OrganizationRef'
         current:
@@ -4884,6 +4986,254 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UnitHighlight'
+
+    UniversityAnalytics:
+      type: object
+      description: >
+        Analytics of the whole university over a period (5.3.1). `units` holds the faculties and colleges by
+        Ukrainian name and the university-level row last (`facultyLevel` true); `byYear`, `byCategory`, `byLevel`
+        and `bySource` have the shapes of `UnitAnalytics`. `highlights` may include `ABOVE_AVERAGE`.
+      properties:
+        unit:
+          $ref: '#/components/schemas/OrganizationRef'
+        period:
+          $ref: '#/components/schemas/YearPeriod'
+        previousPeriod:
+          $ref: '#/components/schemas/YearPeriod'
+        partialYear:
+          type: boolean
+        generatedAt:
+          type: string
+          format: date-time
+        totals:
+          $ref: '#/components/schemas/UnitTotals'
+        byYear:
+          type: array
+          items:
+            type: object
+            properties:
+              year:
+                type: integer
+              total:
+                type: integer
+              personal:
+                type: integer
+              unitAwards:
+                type: integer
+        units:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitComparisonRow'
+        byCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                $ref: '#/components/schemas/AwardCategoryRef'
+              count:
+                type: integer
+              previous:
+                type: integer
+        byLevel:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                $ref: '#/components/schemas/RecognitionLevel'
+              count:
+                type: integer
+              previous:
+                type: integer
+        bySource:
+          type: object
+          properties:
+            sources:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  count:
+                    type: integer
+            otherCount:
+              type: integer
+        trends:
+          $ref: '#/components/schemas/AnalyticsTrends'
+        projection:
+          $ref: '#/components/schemas/TrendProjection'
+        highlights:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitHighlight'
+
+    AnalyticsTrends:
+      type: object
+      description: >
+        Up to 5 rising and 5 falling entries each, among those with at least 3 counted awards over both periods;
+        rising by largest positive delta, falling by largest negative delta, ties by name (5.3.1)
+      properties:
+        categories:
+          type: object
+          properties:
+            rising:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoryTrend'
+            falling:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoryTrend'
+        sources:
+          type: object
+          properties:
+            rising:
+              type: array
+              items:
+                $ref: '#/components/schemas/SourceTrend'
+            falling:
+              type: array
+              items:
+                $ref: '#/components/schemas/SourceTrend'
+
+    CategoryTrend:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/AwardCategoryRef'
+        current:
+          type: integer
+        previous:
+          type: integer
+        delta:
+          type: integer
+        deltaPercent:
+          type: [number, 'null']
+          description: Null when `previous` is 0
+
+    SourceTrend:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Most frequent spelling over both periods
+        current:
+          type: integer
+        previous:
+          type: integer
+        delta:
+          type: integer
+        deltaPercent:
+          type: [number, 'null']
+          description: Null when `previous` is 0
+
+    TrendProjection:
+      type: object
+      description: >
+        Least-squares line over the yearly totals of the complete years of the period (years before the current Kyiv
+        year), at least 3; otherwise `TOO_FEW_YEARS` with the other fields null (5.3.1)
+      properties:
+        status:
+          type: string
+          enum: [PROJECTED, TOO_FEW_YEARS]
+        basis:
+          oneOf:
+            - $ref: '#/components/schemas/YearPeriod'
+            - type: 'null'
+        slope:
+          type: [number, 'null']
+          description: Awards per year, one decimal
+        year:
+          type: [integer, 'null']
+          description: The year after `basis.to`
+        estimate:
+          type: [integer, 'null']
+          description: The line's value for `year`, rounded, never below 0
+
+    ComplianceSummary:
+      type: object
+      description: >
+        Counts only, read at the request (5.3.1). `ATTENTION` lists each reason: `RETENTION_NOT_RUN` (no run),
+        `RETENTION_FAILED` (last run `PARTIAL` or `INTERRUPTED`), `RETENTION_STALE` (last run started more than
+        `app.analytics.retention-stale-after` ago), `ERASURE_OVERDUE` (pending, not postponed, scheduled more than
+        one day ago), `REVIEWS_OVERDUE` (open requests past their deadline)
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [OK, ATTENTION]
+        attention:
+          type: array
+          items:
+            type: string
+            enum: [RETENTION_NOT_RUN, RETENTION_FAILED, RETENTION_STALE, ERASURE_OVERDUE, REVIEWS_OVERDUE]
+        privacyNotice:
+          type: object
+          properties:
+            version:
+              type: string
+            accounts:
+              type: integer
+              description: Active accounts
+            acknowledged:
+              type: integer
+              description: Active accounts whose latest `DATA_PROCESSING` row acknowledges `version`
+        analyticsConsent:
+          type: object
+          properties:
+            accounts:
+              type: integer
+            granted:
+              type: integer
+              description: Active accounts whose latest `ANALYTICS` row is a grant
+        erasure:
+          type: object
+          properties:
+            pending:
+              type: integer
+            postponed:
+              type: integer
+            overdue:
+              type: integer
+        legalHolds:
+          type: object
+          properties:
+            active:
+              type: integer
+        lastRetentionRun:
+          type: [object, 'null']
+          properties:
+            status:
+              type: string
+              enum: [RUNNING, COMPLETED, PARTIAL, INTERRUPTED]
+            startedAt:
+              type: string
+              format: date-time
+            finishedAt:
+              type: [string, 'null']
+              format: date-time
+        reviews:
+          type: object
+          properties:
+            open:
+              type: integer
+            overdue:
+              type: integer
+            byLevel:
+              type: array
+              items:
+                type: object
+                properties:
+                  level:
+                    $ref: '#/components/schemas/ApprovalLevel'
+                  open:
+                    type: integer
+                  overdue:
+                    type: integer
 
     AwardPage:
       allOf:

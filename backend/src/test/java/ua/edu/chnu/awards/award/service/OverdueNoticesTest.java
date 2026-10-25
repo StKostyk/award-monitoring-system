@@ -33,7 +33,7 @@ class OverdueNoticesTest {
     private final ReviewerAvailability availability = mock(ReviewerAvailability.class);
     private final OverdueNotices notices = new OverdueNotices(mock(JdbcTemplate.class),
         mock(AwardRequestRepository.class), availability, mock(AuditService.class), mock(ReviewMetrics.class),
-        mock(ApplicationEventPublisher.class));
+        mock(ApplicationEventPublisher.class), mock(ReviewBacklog.class));
 
     @Test
     void ac2_2_aVacantLevelIsSkippedForTheNextLevelWithAReviewer() {

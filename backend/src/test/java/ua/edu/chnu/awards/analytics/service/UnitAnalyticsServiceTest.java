@@ -76,7 +76,8 @@ class UnitAnalyticsServiceTest {
     @BeforeEach
     void setUp() {
         new UnitTreeFixture().stub(tree, lookup);
-        AnalyticsProperties properties = new AnalyticsProperties(MIN_GROUP_SIZE, 500, 10, Duration.ofMinutes(5));
+        AnalyticsProperties properties = new AnalyticsProperties(MIN_GROUP_SIZE, 500, 10, Duration.ofMinutes(5),
+            Duration.ofDays(2));
         service = new UnitAnalyticsService(scope, aggregates, new UnitComparison(tree, lookup),
             new HighlightRules(properties), ranking, CLOCK);
     }

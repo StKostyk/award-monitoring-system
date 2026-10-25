@@ -40,9 +40,6 @@ public class OverdueNotices {
         + " WHERE r.request_id IN (SELECT request_id FROM award_requests WHERE " + OPEN
         + " AND overdue_noticed_at IS NULL AND deadline < ? FOR UPDATE SKIP LOCKED)"
         + " RETURNING r.request_id";
-    private static final String COUNTS = "SELECT current_level, count(*) AS open,"
-        + " count(*) FILTER (WHERE deadline < ?) AS overdue FROM award_requests WHERE " + OPEN
-        + " GROUP BY current_level";
 
     private final JdbcTemplate jdbc;
     private final AwardRequestRepository requests;
@@ -50,6 +47,7 @@ public class OverdueNotices {
     private final AuditService audit;
     private final ReviewMetrics metrics;
     private final ApplicationEventPublisher events;
+    private final ReviewBacklog backlog;
 
     /**
      * One run: marks the overdue requests nobody noticed yet, writes an audit row per request, publishes one digest
@@ -75,7 +73,7 @@ public class OverdueNotices {
         digests.forEach((candidate, items) -> events.publishEvent(new OverdueNoticed(candidate.id(),
             candidate.email(), candidate.name(),
             items.stream().sorted(Comparator.comparing(OverdueNoticed.Item::deadline)).toList(), now)));
-        refreshGauges(at);
+        refreshGauges(now);
         return ids.size();
     }
 
@@ -115,17 +113,13 @@ public class OverdueNotices {
      */
     @Transactional(readOnly = true)
     public void refreshGauges(Instant now) {
-        refreshGauges(Timestamp.from(now));
-    }
-
-    private void refreshGauges(Timestamp at) {
+        Map<ApprovalLevel, ReviewBacklog.Queue> queues = backlog.at(now);
         Map<ApprovalLevel, Long> open = new EnumMap<>(ApprovalLevel.class);
         Map<ApprovalLevel, Long> overdue = new EnumMap<>(ApprovalLevel.class);
-        jdbc.query(COUNTS, row -> {
-            ApprovalLevel level = ApprovalLevel.valueOf(row.getString("current_level"));
-            open.put(level, row.getLong("open"));
-            overdue.put(level, row.getLong("overdue"));
-        }, at);
+        queues.forEach((level, queue) -> {
+            open.put(level, queue.open());
+            overdue.put(level, queue.overdue());
+        });
         metrics.refresh(open, overdue);
     }
 }

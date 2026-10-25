@@ -21,7 +21,7 @@ class HighlightRulesTest {
     private static final int MIN_GROUP_SIZE = 5;
 
     private final HighlightRules rules = new HighlightRules(new AnalyticsProperties(MIN_GROUP_SIZE, 500, 10,
-        Duration.ofMinutes(5)));
+        Duration.ofMinutes(5), Duration.ofDays(2)));
 
     @Test
     void ac1_8_aDepartmentWithoutAwardsIsNamedForThatAlone() {
@@ -66,6 +66,39 @@ class HighlightRulesTest {
                 UnitHighlight::current, UnitHighlight::previous)
             .containsExactly(tuple(UnitHighlight.Type.NO_AWARDS, 2L, 0L, 0L),
                 tuple(UnitHighlight.Type.GROWTH, 1L, 8L, 4L));
+    }
+
+    @Test
+    void ac1_7_aboveAverageNeedsTheMinimumGroupAndHalfAsManyAgainAsTheUniversityRate() {
+        UnitTotals university = totals(100, 50);
+
+        assertThat(universityTypes(row(1, 10, 30, 30), university)).containsExactly(UnitHighlight.Type.ABOVE_AVERAGE);
+        assertThat(universityTypes(row(1, 10, 29, 29), university)).isEmpty();
+        assertThat(universityTypes(row(1, MIN_GROUP_SIZE - 1, 30, 30), university)).isEmpty();
+        assertThat(universityTypes(row(1, 10, 2, 2), university)).containsExactly(UnitHighlight.Type.BELOW_AVERAGE);
+    }
+
+    @Test
+    void ac1_7_theFacultyPageNeverReceivesAboveAverage() {
+        assertThat(types(row(1, 10, 30, 30), totals(100, 50))).isEmpty();
+    }
+
+    @Test
+    void ac1_7_theUniversityLevelRowGetsNoHighlightAndStrengthsComeLast() {
+        UnitComparisonRow strong = row(1, 10, 60, 30);
+        UnitComparisonRow empty = row(2, 10, 0, 0);
+        UnitComparisonRow universityLevel = new UnitComparisonRow(unit(3), true, true, 10, Figure.of(0, 9), 0, null,
+            0, List.of());
+
+        List<UnitHighlight> highlights = rules.ofUniversity(List.of(strong, empty, universityLevel), totals(60, 30));
+
+        assertThat(highlights).extracting(UnitHighlight::type, highlight -> highlight.unit().id())
+            .containsExactly(tuple(UnitHighlight.Type.NO_AWARDS, 2L), tuple(UnitHighlight.Type.GROWTH, 1L),
+                tuple(UnitHighlight.Type.ABOVE_AVERAGE, 1L));
+    }
+
+    private List<UnitHighlight.Type> universityTypes(UnitComparisonRow row, UnitTotals totals) {
+        return rules.ofUniversity(List.of(row), totals).stream().map(UnitHighlight::type).toList();
     }
 
     private List<UnitHighlight.Type> types(UnitComparisonRow row, UnitTotals totals) {
