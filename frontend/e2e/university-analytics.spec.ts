@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import { Page, expect, test } from './fixtures';
 
 import { SEED, seriousViolations, signedIn } from './helpers';
@@ -8,6 +10,9 @@ const USABLE_WITHIN_MS = 10000;
 /** Faculty of Mathematics and Informatics and the university itself (seed). */
 const FMI = 9;
 const UNIVERSITY = 1;
+
+/** Length of the `%PDF` signature at the start of a PDF file. */
+const PDF_SIGNATURE_BYTES = 4;
 
 const UNIVERSITY_SECTIONS = [
   'compliance',
@@ -161,5 +166,38 @@ test.describe('university analytics', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('University analytics');
     await expect(page.getByTestId('section-trends')).toContainText('Rising');
     expect(await noHorizontalScroll(page)).toBe(true);
+  });
+
+  test('ac3_5 downloads the board report of the shown period', async ({ browser }) => {
+    const page = await signedIn(browser, SEED.rector);
+    await page.goto('/analytics/university?from=2021&to=2025');
+    await expect(page.getByTestId('section-highlights')).toBeVisible();
+
+    const download = page.waitForEvent('download');
+    await page.getByTestId('board-report').click();
+    const file = await download;
+    const head = Buffer.from(await readFile(await file.path())).subarray(0, PDF_SIGNATURE_BYTES);
+
+    expect(file.suggestedFilename()).toMatch(/^board-report-[\w-]+-2021-2025\.pdf$/);
+    expect(head.toString('latin1')).toBe('%PDF');
+  });
+
+  test('ac3_5 offers no board report for an invalid period and reports a failed one', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.rectorSecretary);
+    await page.goto('/analytics/university?from=2026&to=2021');
+    await expect(page.getByTestId('university-analytics-invalid')).toBeVisible();
+    await expect(page.getByTestId('board-report')).toBeDisabled();
+
+    await page.goto('/analytics/university');
+    await expect(page.getByTestId('section-highlights')).toBeVisible();
+    await page.route('**/analytics/university/report?**', (route) => route.abort());
+    await page.getByTestId('board-report').click();
+    await expect(page.getByTestId('board-report-failed')).toHaveText(
+      'Не вдалося експортувати звіт.',
+    );
+    await expect(page.getByTestId('section-highlights')).toBeVisible();
+    await expect(page.getByTestId('board-report')).toBeEnabled();
   });
 });

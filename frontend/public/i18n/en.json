@@ -1584,6 +1584,8 @@
   "universityAnalytics": {
     "title": "University analytics",
     "failed": "The university analytics could not be loaded.",
+    "boardReport": "Board report",
+    "boardReportFailed": "The report could not be exported.",
     "sections": {
       "compliance": "Compliance",
       "trend": "Awards by year and projection",

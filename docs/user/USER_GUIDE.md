@@ -392,6 +392,11 @@ secretary; both keep **Аналітика підрозділів** as well. The 
   below average (at least five members and under half of the university's awards per member); above average (at
   least five members and at least one and a half times the university's awards per member). Growth and above
   average are strengths, the others improvement opportunities.
+- **Board report**: **Звіт для ради** in the page header downloads the figures of the shown period as a PDF (A4
+  landscape, one topic per page) in the interface language: title page, key figures, trend and projection, faculty
+  comparison with bars per 100 members, categories and levels, trends, strengths and improvement opportunities, and
+  the compliance snapshot. It names nobody; each download is recorded in the audit trail. The button is disabled
+  while the page loads, after a failed load and for an invalid period.
 
 ---
 

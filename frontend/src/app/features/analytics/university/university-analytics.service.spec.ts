@@ -45,4 +45,16 @@ describe('UniversityAnalyticsService', () => {
 
     expect((await result).status).toBe('ATTENTION');
   });
+
+  it('ac3_5_downloads_the_board_report_for_the_period_and_language', async () => {
+    const body = new Blob(['%PDF']);
+    const result = firstValueFrom(service.exportReport({ from: 2022, to: 2026 }, 'uk'));
+    const request = http.expectOne(
+      `${environment.apiUrl}/analytics/university/report?from=2022&to=2026&lang=uk`,
+    );
+    request.flush(body);
+
+    expect(request.request.responseType).toBe('blob');
+    expect((await result).body).toEqual(body);
+  });
 });
