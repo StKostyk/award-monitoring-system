@@ -145,8 +145,8 @@ Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPO
 | 5.2.3 | Analytics report export to CSV, Excel and PDF | 5 | ✅ Done | SCRUM-103 | [#290](https://github.com/StKostyk/award-monitoring-system/issues/290) |
 | 5.2.4 | Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 2 | ✅ Done | SCRUM-109 | [#308](https://github.com/StKostyk/award-monitoring-system/issues/308) |
 | 5.3.1 | University analytics API with trends and a compliance summary | 8 | ✅ Done | SCRUM-104 | [#291](https://github.com/StKostyk/award-monitoring-system/issues/291) |
-| 5.3.2 | Executive dashboard | 5 | 👀 In review (7) | SCRUM-105 | [#292](https://github.com/StKostyk/award-monitoring-system/issues/292) |
-| 5.3.3 | Presentation-ready board report | 3 | 7 | SCRUM-106 | [#293](https://github.com/StKostyk/award-monitoring-system/issues/293) |
+| 5.3.2 | Executive dashboard | 5 | ✅ Done | SCRUM-105 | [#292](https://github.com/StKostyk/award-monitoring-system/issues/292) |
+| 5.3.3 | Presentation-ready board report | 3 | 👀 In review (7) | SCRUM-106 | [#293](https://github.com/StKostyk/award-monitoring-system/issues/293) |
 | 5.4.1 | Full-text award search on PostgreSQL | 5 | 7 | SCRUM-107 | [#294](https://github.com/StKostyk/award-monitoring-system/issues/294) |
 
 ### Later epics

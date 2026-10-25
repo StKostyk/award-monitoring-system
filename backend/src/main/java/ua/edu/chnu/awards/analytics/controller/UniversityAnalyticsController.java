@@ -1,8 +1,13 @@
 package ua.edu.chnu.awards.analytics.controller;
 
 import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,6 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ua.edu.chnu.awards.analytics.dto.ComplianceSummary;
 import ua.edu.chnu.awards.analytics.dto.UniversityAnalytics;
+import ua.edu.chnu.awards.analytics.export.BoardReportExporter;
+import ua.edu.chnu.awards.analytics.export.ReportFile;
+import ua.edu.chnu.awards.analytics.export.ReportLanguage;
 import ua.edu.chnu.awards.analytics.service.UniversityAnalyticsService;
 import ua.edu.chnu.awards.analytics.service.UniversityComplianceService;
 
@@ -27,6 +35,7 @@ public class UniversityAnalyticsController {
 
     private final UniversityAnalyticsService universityAnalytics;
     private final UniversityComplianceService compliance;
+    private final BoardReportExporter exporter;
 
     /**
      * The analytics of the whole university over a period, compared with the previous period of the same length.
@@ -51,5 +60,31 @@ public class UniversityAnalyticsController {
     @PreAuthorize(CAN_READ)
     public ResponseEntity<ComplianceSummary> compliance() {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(compliance.summary());
+    }
+
+    /**
+     * The board report of the university over a period as a PDF to download; the export is recorded in the audit
+     * trail.
+     *
+     * @param from first calendar year, by default four years before the last
+     * @param to   last calendar year, by default the current year
+     * @param lang the language of the labels, {@code uk} or {@code en}
+     * @param jwt  the caller's access token
+     * @return the PDF as an attachment
+     */
+    @GetMapping("/report")
+    @PreAuthorize(CAN_READ)
+    public ResponseEntity<byte[]> report(@RequestParam(required = false) Integer from,
+                                         @RequestParam(required = false) Integer to,
+                                         @RequestParam(defaultValue = "uk") String lang,
+                                         @AuthenticationPrincipal Jwt jwt) {
+        ReportLanguage language = ReportLanguage.of(lang);
+        ReportFile file = exporter.export(from, to, language, Long.parseLong(jwt.getSubject()));
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file.name()).build()
+                .toString())
+            .cacheControl(CacheControl.noStore())
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(file.content());
     }
 }

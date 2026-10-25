@@ -24,6 +24,7 @@ import {
   ComparisonLabels,
   UnitComparisonComponent,
 } from '../../units/unit-comparison/unit-comparison.component';
+import { BoardReportButtonComponent } from '../board-report-button/board-report-button.component';
 import { CompliancePanelComponent } from '../compliance-panel/compliance-panel.component';
 import { ProjectionTrendChartComponent } from '../projection-trend-chart/projection-trend-chart.component';
 import { UniversityAnalyticsActions } from '../store/university-analytics.actions';
@@ -40,6 +41,7 @@ const UNIVERSITY_LABELS: ComparisonLabels = {
 @Component({
   selector: 'app-university-analytics',
   imports: [
+    BoardReportButtonComponent,
     ComparisonBarsComponent,
     CompliancePanelComponent,
     DeltaTilesComponent,
@@ -83,6 +85,9 @@ export class UniversityAnalyticsComponent {
 
   protected readonly labels = UNIVERSITY_LABELS;
   protected readonly linkable = isFaculty;
+  protected readonly reportDisabled = computed(
+    () => this.invalid() || this.loading() || this.problem() !== null || !this.analytics(),
+  );
   protected readonly shownPeriod = computed<AnalyticsPeriod>(
     () => this.analytics()?.period ?? this.period(),
   );

@@ -3135,7 +3135,6 @@ paths:
     get:
       tags: [Analytics]
       summary: Board report of the university
-      x-status: planned
       description: >
         The figures of `GET /analytics/university` and `/analytics/university/compliance` as a presentation-ready
         PDF (A4 landscape, embedded font, page numbers, one topic per page, bars drawn in the template), labelled in

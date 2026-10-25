@@ -11,12 +11,17 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.oneOf;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,6 +34,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 
 import ua.edu.chnu.awards.analytics.service.UnitAggregates;
 import ua.edu.chnu.awards.authz.RoleType;
@@ -43,6 +49,10 @@ class UniversityAnalyticsFT extends AbstractFunctionalTest {
 
     private static final String UNIVERSITY = "/api/v1/analytics/university";
     private static final String COMPLIANCE = UNIVERSITY + "/compliance";
+    private static final String REPORT = UNIVERSITY + "/report";
+    private static final String COUNT_EXPORTS = "select count(*) from audit_logs where action_type = "
+        + "'ANALYTICS_EXPORTED' and user_id = ?";
+    private static final int MAX_REPORT_PAGES = 10;
     private static final String INVALID = "urn:awards:problem:invalid-parameter";
     private static final String PREFIX = "ft.university.";
     private static final String DOMAIN = "@chnu.edu.ua";
@@ -72,19 +82,23 @@ class UniversityAnalyticsFT extends AbstractFunctionalTest {
     private JdbcTemplate jdbc;
 
     private long delegateId;
+    private long rectorId;
+    private long secretaryId;
+    private String universityCode;
 
     @BeforeAll
     void createAccounts() {
         Organization university = organizationRepository.findById(UNIVERSITY_ID).orElseThrow();
         Organization faculty = organizationRepository.findById(FACULTY_ID).orElseThrow();
         Organization department = organizationRepository.findById(DEPARTMENT_ID).orElseThrow();
-        final long rectorId = withRole(RECTOR, university, RoleType.RECTOR, university);
-        withRole(RECTOR_SECRETARY, university, RoleType.RECTOR_SECRETARY, university);
+        rectorId = withRole(RECTOR, university, RoleType.RECTOR, university);
+        secretaryId = withRole(RECTOR_SECRETARY, university, RoleType.RECTOR_SECRETARY, university);
         withRole(DEAN, department, RoleType.DEAN, faculty);
         final long employeeId = withRole(EMPLOYEE, department, RoleType.EMPLOYEE, department);
         delegateId = withRole(DELEGATE, department, RoleType.EMPLOYEE, department);
         withRole(GDPR, university, RoleType.GDPR_OFFICER, university);
         withRole(ADMIN, university, RoleType.SYSTEM_ADMIN, university);
+        universityCode = university.getCode();
         String award = "insert into awards (user_id, organization_id, title, status, category_id, "
             + "awarding_organization, award_date) values (?, ?, 'Letter', 'APPROVED', 13, 'МОН', ?)";
         jdbc.update(award, employeeId, DEPARTMENT_ID, LocalDate.of(CURRENT_YEAR, 1, 10));
@@ -181,5 +195,75 @@ class UniversityAnalyticsFT extends AbstractFunctionalTest {
             .extract().asString();
 
         assertThat(body).doesNotContain("userId", "email", "\"id\"", "@");
+    }
+
+    @Test
+    void ac3_1_ac3_2_ac3_4_theRectorDownloadsTheBoardReportWithTheFiguresOfTheDashboard() throws IOException {
+        String rector = tokenOf(RECTOR);
+        int approved = as(rector).get(UNIVERSITY).then().statusCode(HttpStatus.OK.value())
+            .extract().path("totals.approved.current");
+        int before = exports(rectorId);
+
+        Response response = as(rector).queryParam("lang", "en").get(REPORT);
+
+        response.then().statusCode(HttpStatus.OK.value()).contentType("application/pdf")
+            .header(HttpHeaders.CACHE_CONTROL, "no-store")
+            .header(HttpHeaders.CONTENT_DISPOSITION, equalTo("attachment; filename=\"board-report-" + universityCode
+                + "-" + (CURRENT_YEAR - 4) + "-" + CURRENT_YEAR + ".pdf\""));
+        try (PDDocument pdf = Loader.loadPDF(response.asByteArray())) {
+            String text = new PDFTextStripper().getText(pdf).replaceAll("\\s+", " ");
+            PDRectangle page = pdf.getPage(0).getMediaBox();
+
+            assertThat(page.getWidth()).isGreaterThan(page.getHeight());
+            assertThat(pdf.getNumberOfPages()).isBetween(1, MAX_REPORT_PAGES);
+            assertThat(text).contains("Board report", "Key figures", "Approved awards " + approved + " ",
+                "Faculty and college comparison", "Compliance", "Page 1 of");
+            assertThat(text).doesNotContain(PREFIX);
+        }
+        assertThat(exports(rectorId)).isEqualTo(before + 1);
+        Map<String, Object> row = jdbc.queryForMap("select entity_type, entity_id, new_values::text as details "
+            + "from audit_logs where action_type = 'ANALYTICS_EXPORTED' and user_id = ? order by log_id desc limit 1",
+            rectorId);
+        assertThat(row).containsEntry("entity_type", "ANALYTICS").containsEntry("entity_id", UNIVERSITY_ID);
+        assertThat((String) row.get("details")).contains("\"format\": \"board-pdf\"", "\"language\": \"en\"",
+            "\"from\": " + (CURRENT_YEAR - 4), "\"to\": " + CURRENT_YEAR, "\"peopleNamed\": 0");
+    }
+
+    @Test
+    void ac3_3_theSecretaryGetsTheReportInUkrainianByDefault() throws IOException {
+        Response response = as(tokenOf(RECTOR_SECRETARY)).queryParam("from", CURRENT_YEAR - 1).get(REPORT);
+
+        response.then().statusCode(HttpStatus.OK.value());
+        try (PDDocument pdf = Loader.loadPDF(response.asByteArray())) {
+            assertThat(new PDFTextStripper().getText(pdf)).contains("Звіт для ради", "Ключові показники",
+                "Сторінка 1 з");
+        }
+    }
+
+    @Test
+    void ac3_1_ac3_4_refusedReportRequestsWriteNoAuditRow() {
+        final int rectorBefore = exports(rectorId);
+        final int secretaryBefore = exports(secretaryId);
+        for (String email : List.of(DEAN, EMPLOYEE, GDPR, ADMIN, DELEGATE)) {
+            as(tokenOf(email)).get(REPORT).then().statusCode(HttpStatus.FORBIDDEN.value());
+        }
+        RestAssured.given().get(REPORT).then().statusCode(HttpStatus.UNAUTHORIZED.value());
+        String rector = tokenOf(RECTOR);
+        as(rector).queryParam("lang", "de").get(REPORT).then().statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("type", equalTo(INVALID)).body("parameter", equalTo("lang"));
+        as(rector).queryParam("to", 2101).get(REPORT).then().statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("type", equalTo(INVALID)).body("parameter", equalTo("to"));
+        as(tokenOf(RECTOR_SECRETARY)).queryParam("from", CURRENT_YEAR + 1).get(REPORT).then()
+            .statusCode(HttpStatus.BAD_REQUEST.value()).body("parameter", equalTo("from"));
+
+        assertThat(exports(rectorId)).isEqualTo(rectorBefore);
+        assertThat(exports(secretaryId)).isEqualTo(secretaryBefore);
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where action_type = 'ANALYTICS_EXPORTED' "
+            + "and user_id in (select user_id from users where email_address in (?, ?, ?, ?, ?))", Integer.class,
+            DEAN, EMPLOYEE, GDPR, ADMIN, DELEGATE)).isZero();
+    }
+
+    private int exports(long userId) {
+        return Objects.requireNonNull(jdbc.queryForObject(COUNT_EXPORTS, Integer.class, userId));
     }
 }

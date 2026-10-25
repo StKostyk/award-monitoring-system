@@ -1,9 +1,10 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { OrganizationRef } from '../../../core/auth/user-profile';
+import { AppLanguage } from '../../../core/i18n/language.service';
 import { CategoryRef, RecognitionLevel } from '../../awards/awards.service';
 import { AnalyticsPeriod } from '../analytics.service';
 import {
@@ -104,5 +105,14 @@ export class UniversityAnalyticsService {
 
   compliance(): Observable<ComplianceSummary> {
     return this.http.get<ComplianceSummary>(`${this.url}/compliance`);
+  }
+
+  /** The board report of the university for the period as a PDF in the given language. */
+  exportReport(period: AnalyticsPeriod, lang: AppLanguage): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.url}/report`, {
+      params: periodParams(period).set('lang', lang),
+      observe: 'response',
+      responseType: 'blob',
+    });
   }
 }

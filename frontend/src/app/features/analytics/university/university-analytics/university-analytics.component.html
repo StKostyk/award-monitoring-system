@@ -1,5 +1,6 @@
 <div class="university__header">
   <h1 class="university__title">{{ 'universityAnalytics.title' | transloco }}</h1>
+  <app-board-report-button [period]="shownPeriod()" [disabled]="reportDisabled()" />
 </div>
 
 <mat-card class="university__compliance" appearance="outlined" data-testid="section-compliance">

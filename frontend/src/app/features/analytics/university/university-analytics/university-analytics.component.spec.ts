@@ -194,6 +194,30 @@ describe('UniversityAnalyticsComponent', () => {
     expect(dispatch).toHaveBeenCalledWith(UniversityAnalyticsActions.complianceRequested());
   });
 
+  it('ac3_5_offers_the_board_report_once_the_figures_are_shown', async () => {
+    await setUp('en', { from: '2023', to: '2025' });
+    const button = element('board-report') as HTMLButtonElement;
+    expect(button.textContent?.trim()).toBe('Board report');
+    expect(button.disabled).toBe(true);
+
+    load();
+
+    expect(button.disabled).toBe(false);
+  });
+
+  it('ac3_5_disables_the_board_report_after_a_failed_load_and_for_an_invalid_period', async () => {
+    await setUp('en', { from: '2023', to: '2025' });
+    store.dispatch(UniversityAnalyticsActions.analyticsLoadFailed({ problem: 'unknown' }));
+    fixture.detectChanges();
+    expect((element('board-report') as HTMLButtonElement).disabled).toBe(true);
+
+    load();
+    expect((element('board-report') as HTMLButtonElement).disabled).toBe(false);
+    queryParams.next(convertToParamMap({ from: '2026', to: '2021' }));
+    fixture.detectChanges();
+    expect((element('board-report') as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('ac2_9_reads_in_ukrainian', async () => {
     await setUp('uk');
     load();
