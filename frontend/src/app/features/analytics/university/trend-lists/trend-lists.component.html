@@ -1,0 +1,35 @@
+<div class="trends">
+  @for (group of groups(); track group.id) {
+    <section class="trends__group" [attr.data-testid]="'trends-' + group.id">
+      <h3>{{ group.title | transloco }}</h3>
+      @for (direction of ['rising', 'falling']; track direction) {
+        @let entries = direction === 'rising' ? group.rising : group.falling;
+        <h4>{{ 'universityAnalytics.trends.' + direction | transloco }}</h4>
+        @if (entries.length === 0) {
+          <p
+            class="analytics-note"
+            [attr.data-testid]="'trends-' + group.id + '-' + direction + '-empty'"
+          >
+            {{ group.empty | transloco }}
+          </p>
+        } @else {
+          <ul [attr.data-testid]="'trends-' + group.id + '-' + direction">
+            @for (entry of entries; track entry.key) {
+              <li>
+                <span class="trends__name">{{ entry.name }}</span>
+                <span class="trends__counts">
+                  {{
+                    'universityAnalytics.trends.counts'
+                      | transloco
+                        : { current: entry.figure.current, previous: entry.figure.previous }
+                  }}
+                </span>
+                <app-delta [figure]="entry.figure" />
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
+  }
+</div>

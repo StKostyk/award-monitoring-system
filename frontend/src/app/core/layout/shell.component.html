@@ -67,12 +67,29 @@
             routerLink="/analytics"
             routerLinkActive
             #unitAnalyticsLink="routerLinkActive"
-            [activated]="unitAnalyticsLink.isActive"
-            [attr.aria-current]="unitAnalyticsLink.isActive ? 'page' : null"
+            [activated]="unitAnalyticsLink.isActive && !onUniversityAnalytics()"
+            [attr.aria-current]="
+              unitAnalyticsLink.isActive && !onUniversityAnalytics() ? 'page' : null
+            "
             data-testid="nav-unit-analytics"
           >
             <mat-icon matListItemIcon>leaderboard</mat-icon>
             <span matListItemTitle>{{ 'unitAnalytics.title' | transloco }}</span>
+          </a>
+        }
+        @if (canOpenUniversityAnalytics()) {
+          <a
+            mat-list-item
+            (click)="closeDrawer()"
+            routerLink="/analytics/university"
+            routerLinkActive
+            #universityAnalyticsLink="routerLinkActive"
+            [activated]="universityAnalyticsLink.isActive"
+            [attr.aria-current]="universityAnalyticsLink.isActive ? 'page' : null"
+            data-testid="nav-university-analytics"
+          >
+            <mat-icon matListItemIcon>account_balance</mat-icon>
+            <span matListItemTitle>{{ 'universityAnalytics.title' | transloco }}</span>
           </a>
         }
         @if (auth.isAuthenticated()) {

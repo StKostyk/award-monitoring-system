@@ -7,9 +7,9 @@ import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@ang
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatToolbar } from '@angular/material/toolbar';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { map } from 'rxjs';
+import { filter, map } from 'rxjs';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
 import { PrivacyCentreService } from '../../features/privacy/privacy-centre.service';
@@ -22,6 +22,7 @@ import {
   canReadOwnAnalytics,
   canReadOwnAwards,
   canReadUnitAnalytics,
+  canReadUniversityAnalytics,
   canReview,
 } from '../auth/permissions';
 import { BrandService } from '../brand/brand.service';
@@ -30,6 +31,8 @@ import { LanguageService } from '../i18n/language.service';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
 
 export const WIDE_LAYOUT = '(min-width: 960px)';
+
+const UNIVERSITY_ANALYTICS = '/analytics/university';
 
 @Component({
   selector: 'app-shell',
@@ -88,6 +91,16 @@ export class ShellComponent {
   );
   protected readonly canOpenUnitAnalytics = computed(
     () => this.auth.isAuthenticated() && canReadUnitAnalytics(this.auth.permissions()),
+  );
+  protected readonly canOpenUniversityAnalytics = computed(
+    () => this.auth.isAuthenticated() && canReadUniversityAnalytics(this.auth.permissions()),
+  );
+  protected readonly onUniversityAnalytics = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects.startsWith(UNIVERSITY_ANALYTICS)),
+    ),
+    { initialValue: this.router.url.startsWith(UNIVERSITY_ANALYTICS) },
   );
   protected readonly canOpenUsers = computed(
     () => this.auth.isAuthenticated() && canReadDirectory(this.auth.permissions()),

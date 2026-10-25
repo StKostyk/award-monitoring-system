@@ -18,9 +18,10 @@
 6. [Achievements and Visibility](#achievements-and-visibility)
 7. [My dashboard](#my-dashboard)
 8. [Unit analytics](#unit-analytics)
-9. [Managing Your Profile](#managing-your-profile)
-10. [Notifications](#notifications)
-11. [FAQ](#faq)
+9. [University analytics](#university-analytics)
+10. [Managing Your Profile](#managing-your-profile)
+11. [Notifications](#notifications)
+12. [FAQ](#faq)
 
 ---
 
@@ -359,6 +360,38 @@ lists the faculties with their departments indented, and the address keeps the u
 - **Top performers**: up to ten people with the most counted personal awards, without positions. Only people who
   gave the consent «Рейтинги й порівняння» in the privacy centre are named; a withdrawal removes the name at the
   next visit. A unit with fewer than five members names nobody.
+
+---
+
+## University analytics
+
+**Аналітика університету** in the navigation (`/analytics/university`) is open to the rector and the rector's
+secretary; both keep **Аналітика підрозділів** as well. The address keeps the period
+(`/analytics/university?from=2022&to=2026`).
+
+- **Compliance**: the panel on top is read live, at each visit and with **Оновити**, and does not follow the
+  period. It says «Усе гаразд» or «Потребує уваги» with one sentence per reason: the retention job has never run;
+  its last run ended partly or was interrupted; its last run started more than two days ago (the job runs every
+  night, so one missed night is tolerated); erasure requests are overdue (not postponed and more than a day past
+  their date); reviews are overdue. The tiles show the accounts that acknowledged the current privacy notice and
+  those that gave the analytics consent (count and percent), pending, postponed and overdue erasure requests,
+  active legal holds, the last retention run and open and overdue reviews. Only counts appear, never names.
+- **What counts**: approved awards submitted anywhere in the university, by the year of the award date, as in unit
+  analytics. The period, the previous period, the tiles and the per-100-members figure work as there.
+- **Trend and projection**: approved awards per year, with a dashed segment to the next year. The projection is a
+  least-squares line through the complete years of the period (the current year is left out); with fewer than three
+  complete years the page says so instead. It extends the past and knows nothing of plans, rules or new
+  categories, so it is an indication only; **Show as table** marks the projected year.
+- **Faculty and college comparison**: every faculty and college with its figures and the university level (awards
+  submitted directly at the university); every column sorts, a faculty opens its unit analytics for the same
+  period, a college is not linked.
+- **Trends**: up to five categories and five awarding organisations that rose and fell the most against the
+  previous period, each with both counts and the change; an entry needs at least three awards over the two periods.
+- **Highlights**: for each faculty and college with members, no award in the period; a decline (at least 4 awards
+  before and at most half as many now); growth (at least 4 before and at least one and a half times as many now);
+  below average (at least five members and under half of the university's awards per member); above average (at
+  least five members and at least one and a half times the university's awards per member). Growth and above
+  average are strengths, the others improvement opportunities.
 
 ---
 

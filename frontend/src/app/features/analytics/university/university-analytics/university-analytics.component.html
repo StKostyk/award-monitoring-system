@@ -1,0 +1,172 @@
+<div class="university__header">
+  <h1 class="university__title">{{ 'universityAnalytics.title' | transloco }}</h1>
+</div>
+
+<mat-card class="university__compliance" appearance="outlined" data-testid="section-compliance">
+  <mat-card-header>
+    <mat-card-title>
+      <h2>{{ 'universityAnalytics.sections.compliance' | transloco }}</h2>
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <app-compliance-panel
+      [compliance]="compliance()"
+      [loading]="complianceLoading()"
+      [problem]="complianceProblem()"
+      (refresh)="refreshCompliance()"
+    />
+  </mat-card-content>
+</mat-card>
+
+<div class="university__controls">
+  @if (!invalid()) {
+    <app-period-select [period]="period()" (choose)="choose($event)" (allYears)="allYears()" />
+  }
+</div>
+
+@if (invalid()) {
+  <section class="university__problem" role="alert" data-testid="university-analytics-invalid">
+    <p>{{ 'analytics.report.invalidPeriod' | transloco }}</p>
+    <button mat-stroked-button type="button" (click)="allYears()">
+      {{ 'analytics.period.allYears' | transloco }}
+    </button>
+  </section>
+} @else {
+  @if (loading()) {
+    <mat-progress-bar
+      mode="indeterminate"
+      [attr.aria-label]="'app.loading' | transloco"
+      data-testid="university-analytics-loading"
+    />
+  }
+
+  @if (problem()) {
+    <div class="university__problem" role="alert" data-testid="university-analytics-error">
+      <p>{{ 'universityAnalytics.failed' | transloco }}</p>
+      <button mat-stroked-button type="button" (click)="retry()">
+        {{ 'analytics.retry' | transloco }}
+      </button>
+    </div>
+  } @else if (analytics(); as data) {
+    <p class="university__compared" data-testid="university-analytics-compared">
+      {{ comparedWith() }}
+      @if (data.partialYear) {
+        {{ 'unitAnalytics.partialYear' | transloco: { year: data.period.to } }}
+      }
+    </p>
+
+    <div class="university__grid">
+      <mat-card class="university__wide" appearance="outlined" data-testid="section-totals">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'unitAnalytics.sections.totals' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content><app-delta-tiles [totals]="data.totals" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="university__wide" appearance="outlined" data-testid="section-trend">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'universityAnalytics.sections.trend' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content><app-projection-trend-chart [analytics]="data" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="university__wide" appearance="outlined" data-testid="section-comparison">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'universityAnalytics.sections.comparison' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <app-unit-comparison
+            [rows]="data.units"
+            [period]="shownPeriod()"
+            [labels]="labels"
+            [linkable]="linkable"
+          />
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" data-testid="section-by-category">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'unitAnalytics.sections.byCategory' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (byCategory().length > 0) {
+            <app-comparison-bars
+              [rows]="byCategory()"
+              [caption]="'unitAnalytics.sections.byCategory' | transloco"
+              [labelHeader]="'analytics.table.category' | transloco"
+              tableId="university-category-table"
+            />
+          } @else {
+            <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" data-testid="section-by-level">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'unitAnalytics.sections.byLevel' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (byLevel().length > 0) {
+            <app-comparison-bars
+              [rows]="byLevel()"
+              [caption]="'unitAnalytics.sections.byLevel' | transloco"
+              [labelHeader]="'analytics.table.level' | transloco"
+              tableId="university-level-table"
+            />
+          } @else {
+            <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="university__wide" appearance="outlined" data-testid="section-by-source">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'unitAnalytics.sections.bySource' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (data.bySource.sources.length > 0) {
+            <app-source-chart [bySource]="data.bySource" />
+          } @else {
+            <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="university__wide" appearance="outlined" data-testid="section-trends">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'universityAnalytics.sections.trends' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content><app-trend-lists [trends]="data.trends" /></mat-card-content>
+      </mat-card>
+
+      <mat-card class="university__wide" appearance="outlined" data-testid="section-highlights">
+        <mat-card-header>
+          <mat-card-title>
+            <h2>{{ 'unitAnalytics.sections.highlights' | transloco }}</h2>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <app-highlights
+            [highlights]="data.highlights"
+            sentenceKeys="universityAnalytics.highlights"
+          />
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+}

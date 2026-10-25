@@ -20,11 +20,25 @@ export type ComparisonColumn =
 interface NamedRow {
   row: UnitComparisonRow;
   name: string;
+  link: boolean;
 }
+
+/** The translation keys the comparison uses for its caption, the summary row and the chart description. */
+export interface ComparisonLabels {
+  caption: string;
+  levelRow: string;
+  chartDescription: string;
+}
+
+const DEPARTMENT_LABELS: ComparisonLabels = {
+  caption: 'unitAnalytics.sections.comparison',
+  levelRow: 'unitAnalytics.comparison.facultyLevel',
+  chartDescription: 'unitAnalytics.comparison.chartDescription',
+};
 
 const LABEL_WIDTH = 160;
 
-/** The departments of a faculty side by side: a table sortable by every column and approved awards per 100 members as bars. */
+/** The child units of a faculty or the university side by side: a table sortable by every column and approved awards per 100 members as bars. */
 @Component({
   selector: 'app-unit-comparison',
   imports: [
@@ -47,15 +61,20 @@ export class UnitComparisonComponent {
 
   readonly rows = input.required<UnitComparisonRow[]>();
   readonly period = input.required<AnalyticsPeriod>();
+  readonly labels = input<ComparisonLabels>(DEPARTMENT_LABELS);
+  readonly linkable = input<(row: UnitComparisonRow) => boolean>(isChildUnit);
 
   protected readonly sort = signal<Sort>({ active: '', direction: '' });
   protected readonly named = computed<NamedRow[]>(() => {
     const language = this.language.current();
+    const levelRow = this.labels().levelRow;
+    const linkable = this.linkable();
     return this.rows().map((row) => ({
       row,
       name: row.facultyLevel
-        ? this.transloco.translate('unitAnalytics.comparison.facultyLevel')
+        ? this.transloco.translate(levelRow)
         : organizationName(row.unit, language),
+      link: linkable(row),
     }));
   });
   protected readonly sorted = computed(() => {
@@ -77,7 +96,7 @@ export class UnitComparisonComponent {
   protected readonly description = computed(() => {
     this.language.current();
     const top = this.bars()[0];
-    return this.transloco.translate('unitAnalytics.comparison.chartDescription', {
+    return this.transloco.translate(this.labels().chartDescription, {
       count: this.bars().length,
       top: top?.label ?? '',
       value: top?.value ?? 0,
@@ -91,6 +110,10 @@ export class UnitComparisonComponent {
       LABEL_WIDTH,
     ),
   );
+}
+
+function isChildUnit(row: UnitComparisonRow): boolean {
+  return !row.facultyLevel;
 }
 
 function compare(a: NamedRow, b: NamedRow, column: ComparisonColumn): number {

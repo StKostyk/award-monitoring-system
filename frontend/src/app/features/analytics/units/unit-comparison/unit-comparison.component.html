@@ -1,8 +1,4 @@
-<div
-  class="comparison__scroll"
-  tabindex="0"
-  [attr.aria-label]="'unitAnalytics.sections.comparison' | transloco"
->
+<div class="comparison__scroll" tabindex="0" [attr.aria-label]="labels().caption | transloco">
   <table
     class="analytics-table comparison__table"
     matSort
@@ -11,7 +7,7 @@
   >
     <caption class="cdk-visually-hidden">
       {{
-        'unitAnalytics.sections.comparison' | transloco
+        labels().caption | transloco
       }}
     </caption>
     <thead>
@@ -43,14 +39,16 @@
       @for (entry of sorted(); track entry.row.unit.id + '-' + entry.row.facultyLevel) {
         <tr [attr.data-testid]="'comparison-row-' + entry.row.unit.id">
           <th scope="row">
-            @if (entry.row.facultyLevel) {
-              {{ entry.name }}
-            } @else {
+            @if (entry.link) {
               <a
                 [routerLink]="['/analytics/units', entry.row.unit.id]"
                 [queryParams]="{ from: period().from, to: period().to }"
                 >{{ entry.name }}</a
               >
+            } @else {
+              {{ entry.name }}
+            }
+            @if (!entry.row.facultyLevel) {
               @if (!entry.row.active) {
                 <span class="comparison__inactive">
                   ({{ 'unitAnalytics.comparison.inactive' | transloco }})

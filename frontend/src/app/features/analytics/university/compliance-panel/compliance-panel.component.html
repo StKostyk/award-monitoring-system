@@ -1,0 +1,76 @@
+<div class="compliance__header">
+  @if (compliance(); as summary) {
+    <p
+      class="compliance__status"
+      [class.compliance__status--attention]="summary.status === 'ATTENTION'"
+      data-testid="compliance-status"
+    >
+      <mat-icon aria-hidden="true">{{
+        summary.status === 'OK' ? 'check_circle' : 'warning'
+      }}</mat-icon>
+      {{
+        (summary.status === 'OK'
+          ? 'universityAnalytics.compliance.ok'
+          : 'universityAnalytics.compliance.attention'
+        ) | transloco
+      }}
+    </p>
+  }
+  <div class="compliance__refresh">
+    @if (compliance()) {
+      <span class="compliance__as-of" data-testid="compliance-as-of">
+        {{ 'universityAnalytics.compliance.asOf' | transloco: { time: asOf() } }}
+      </span>
+    }
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="loading()"
+      (click)="refresh.emit()"
+      data-testid="compliance-refresh"
+    >
+      <mat-icon>refresh</mat-icon>
+      {{ 'universityAnalytics.compliance.refresh' | transloco }}
+    </button>
+  </div>
+</div>
+
+@if (loading()) {
+  <mat-progress-bar
+    mode="indeterminate"
+    [attr.aria-label]="'app.loading' | transloco"
+    data-testid="compliance-loading"
+  />
+}
+
+@if (problem()) {
+  <div class="compliance__problem" role="alert" data-testid="compliance-error">
+    <p>{{ 'universityAnalytics.compliance.failed' | transloco }}</p>
+    <button mat-stroked-button type="button" (click)="refresh.emit()">
+      {{ 'analytics.retry' | transloco }}
+    </button>
+  </div>
+} @else if (compliance()) {
+  @if (reasons().length > 0) {
+    <ul class="compliance__reasons" data-testid="compliance-reasons">
+      @for (reason of reasons(); track reason.key) {
+        <li [attr.data-testid]="'compliance-reason-' + reason.key">{{ reason.text }}</li>
+      }
+    </ul>
+  }
+  <dl class="compliance__tiles">
+    @for (tile of tiles(); track tile.id) {
+      <div
+        class="compliance__tile"
+        [class.compliance__tile--warn]="tile.warn"
+        [attr.data-testid]="'compliance-tile-' + tile.id"
+      >
+        <dt>{{ tile.label }}</dt>
+        <dd class="compliance__value">{{ tile.value }}</dd>
+        @if (tile.note) {
+          <dd class="compliance__note">{{ tile.note }}</dd>
+        }
+      </div>
+    }
+  </dl>
+}

@@ -97,6 +97,11 @@ export function canReadUnitAnalytics(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('analytics:read:department');
 }
 
+/** Whether the caller may open the analytics of the whole university and its compliance summary. */
+export function canReadUniversityAnalytics(permissions: TokenPermissions): boolean {
+  return permissions.hasPermission('analytics:read:university');
+}
+
 /** Whether the caller may open the compliance page: retention runs, erasure requests and legal holds. */
 export function canReadCompliance(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('compliance:read');
