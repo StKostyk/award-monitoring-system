@@ -12,12 +12,12 @@
 |---------|--------|---------|------|
 | 5.1 Personal achievement dashboard (US-008) | Done | 2026-10-19 | 2026-10-23 |
 | 5.2 Faculty performance analytics (US-009) | Done | 2026-10-23 | 2026-10-24 |
-| 5.3 Executive university dashboard (US-010) | Validated, pending the manual run of §10 | 2026-10-25 | - |
+| 5.3 Executive university dashboard (US-010) | Done | 2026-10-25 | 2026-10-25 |
 | 5.4 Full-text award search (ADR-007 addendum) | Planned | - | - |
 
 ## Current focus
 
-Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 validated 2026-10-25 with notes, pending the manual run of §10 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §13); next: that run.
+Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 Done 2026-10-25: validated with notes, manual run of §10 passed 39/39 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §10, §13); fix story SCRUM-112 (raw keys after a language switch without reload, board report busy guard) open. Next: SCRUM-112, then feature 5.4.
 
 ## Scope
 
@@ -71,6 +71,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-23 | Unit analytics: `analytics:read:department` (approvers) and `analytics:read:faculty` (dean upward) on held scopes only, 404 outside them; awards count in the unit of submission; department figures at any size, top performers (consented, no positions, up to 10) need the minimum group of 5; four highlight rules; aggregates cached 5 minutes with names and consent applied per request; exports with openhtmltopdf, FastExcel and hand-written CSV, audited; `vw_award_statistics` and `/reports/awards/*` removed | Viewers already read these awards; naming stays under the consent; one export component reused by 5.3.3 | PRD 5.2 §7 |
 | 2026-10-24 | Feature 5.2 closed: validated with notes, manual run 35/35; the failed unit list without Retry, the export period of a page open over New Year and the "2026–2026" header go to fix story 5.2.4 | No AC broken; both paths are failure or boundary cases | PRD 5.2 §13 |
 | 2026-10-25 | University analytics: `analytics:read:university` (rector, rector's secretary, not delegable) on its own endpoints; faculties and colleges compared with a university-level row, nobody named; trends as period deltas (at least 3 awards, 5 per direction); least-squares projection over at least 3 complete years; `ABOVE_AVERAGE` added to the highlights at university level; compliance summary of counts only, read live, with five attention reasons; board report as a landscape PDF on the 5.2.3 component, audited | The rector sees the state of the duties, not the records; no new library; the unit contract of 5.2 stays | PRD 5.3 §7 |
+| 2026-10-25 | Feature 5.3 closed: validated with notes, manual run 39/39; the analytics pages showing raw translation keys after a language switch without reload and the busy guard of the board report button go to fix story SCRUM-112 (#319) | No AC broken; both are cases outside the scripted path | PRD 5.3 §10, §13 |
 
 ## Documentation deviations found at kickoff
 
