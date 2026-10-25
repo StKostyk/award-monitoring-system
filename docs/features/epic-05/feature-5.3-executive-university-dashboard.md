@@ -3,7 +3,7 @@
 > **Epic**: 5 — Analytics & Reporting Dashboard (SCRUM-97)
 > **Sprint**: 7 (2026-10-26 → 2026-11-01)
 > **Points**: 16 (three stories; 13 at kickoff, see deviation 12)
-> **Status**: Approved 2026-10-25
+> **Status**: Validated 2026-10-25, pending the manual run of §10
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-05 tracker (decisions of 2026-10-19 and 2026-10-23, deviations 2, 4 and 5, risks 1 and 4), US-010, roadmap Feature 5.3, RBAC_matrix §4, AUTHENTICATION_AUTHORIZATION §3.3, PRIVACY_BY_DESIGN §4.2, DATA_DICTIONARY §2.2 (`award_requests` deadlines), §4.2–4.5, Appendix C, ADR-005, ADR-014, ADR-015, ADR-022, PRD 5.2 (unit analytics, cache, highlights, export component), `UnitAggregates`, `UnitComparison`, `HighlightRules`, `ComplianceQueries`, `OverdueNotices`, `PdfReportWriter`, `openapi.yml` (`/analytics/units/*`, `/compliance/*`)
 
@@ -220,7 +220,7 @@ Coverage 85 % lines; static clean. Security review for 5.3.1 (permission, compli
 
 ## 10. Manual verification
 
-Expected texts are planned wording; they are replaced by the merged English i18n texts at the feature validation. Local e2e runs register accounts in the e2e unit, so the figures grow over time; compare with psql rather than with fixed numbers.
+Expected texts are the merged English i18n texts (checked at the validation, 2026-10-25). Local e2e runs register accounts in the e2e unit, so the figures grow over time; compare with psql rather than with fixed numbers.
 
 Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backend `./mvnw spring-boot:run -Dspring-boot.run.profiles=local`; frontend `npm start` on `http://localhost:4200`. psql `docker compose exec postgres psql -U postgres award_monitoring`; Swagger `http://localhost:8080/swagger-ui.html`; Redis `docker compose exec redis redis-cli`. Seed accounts (password `Passw0rd-demo`, `@chnu.edu.ua`): `rector`, `rector.secretary`, `dean.fmi`, `secretary.fmi`, `employee.fmi`, `lecturer.fmi`, `admin`, `gdpr`.
 
@@ -234,7 +234,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 8. Make the summary change: as `employee.fmi` request erasure on `/privacy` (cancel it afterwards); as `gdpr` place a legal hold on `lecturer.fmi` (lift it afterwards). Call compliance after each. Expected: `erasure.pending` and `legalHolds.active` change at once, no cache. (AC-1.10)
 9. psql: `update erasure_requests set scheduled_for = now() - interval '2 days' where request_id = <the pending one>;` then compliance. Expected: `ATTENTION` with `ERASURE_OVERDUE`; cancel the request afterwards. Also `update retention_runs set started_at = now() - interval '3 days' where run_id = (select max(run_id) from retention_runs);` → `RETENTION_STALE` (restore the value). (AC-1.11)
 10. `GET /analytics/university?from=2027`, `?from=2026&to=2021`, `?from=abc`. Expected: 400 `invalid-parameter` naming the parameter. (AC-1.2)
-11. Open `http://localhost:4200` as `rector`, navigation "University analytics". Expected: `/analytics/university` with the compliance panel first, the comparison line "Compared with 2017–2021" and the partial-year note, tiles with deltas, the trend with a dashed projection and "Projected for 2026: about … awards, based on 2022–2025", the faculty comparison, categories and levels, sources, trends, highlights. "Unit analytics" is still in the navigation. (AC-2.1–2.3)
+11. Open `http://localhost:4200` as `rector`, navigation "University analytics". Expected: `/analytics/university` with the compliance panel first, the comparison line "2022–2026, compared with 2017–2021." and the partial-year note "2026 is not over yet, so its figures are still growing.", tiles with deltas, the trend with a dashed projection and "Projected for 2026: about … awards, based on 2022–2025.", the faculty comparison, categories and levels, sources, trends, highlights. "Unit analytics" is still in the navigation. (AC-2.1–2.3)
 12. Sort the comparison by "Per 100 members", open ФМІ from the table. Expected: the order follows the column; `/analytics/units/9` with the same period; a college row is plain text. (AC-2.4)
 13. Choose 2024–2026. Expected: `?from=2024&to=2026`, compared with 2021–2023, every widget reloaded, the compliance "As of" time unchanged. (AC-2.2)
 14. Trends and highlights: the lists match steps 3 and 5; an empty list shows its sentence (choose a single past year such as `?from=2019&to=2019`). (AC-2.5, 2.6)
@@ -248,7 +248,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 ### Detours
 
 21. Direct URL `/analytics/university` as `dean.fmi`, `secretary.fmi`, `employee.fmi`, `admin` and `gdpr`. Expected: no navigation entry, `/forbidden`; `GET /analytics/university`, `/compliance` and `/report` → 403. (AC-1.1, 1.2, 2.1)
-22. Direct URLs `/analytics/university?from=2027` and `?from=2026&to=2021`. Expected: "The period is not valid" with a way back; "Board report" disabled; the compliance panel still loads. (AC-2.8, 3.5)
+22. Direct URLs `/analytics/university?from=2027` and `?from=2026&to=2021`. Expected: "The period is not valid." with a way back; "Board report" disabled; the compliance panel still loads. (AC-2.8, 3.5)
 23. Reload and use back/forward after changing the period twice. Expected: each history entry restores its period. (AC-2.2)
 24. Stop the backend while the page is open, press "Refresh" on the panel, then change the period; start it again and press Retry. Expected: the panel's own error with Retry, then the page error with Retry; "Board report" disabled while the error shows; both fill after Retry. (AC-2.7, 2.8, 3.5)
 25. Let the access token expire with the page open, then press "Refresh" and "Board report". Expected: silent refresh, the panel reloads and the file downloads. (AC-2.7, 3.5)
@@ -256,12 +256,18 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 27. Stop Redis and reload. Expected: the page loads (cache warning in the backend log); start Redis again. (AC-1.8)
 28. Hidden in state, board report: during loading, after a failed load and for an invalid period the button is disabled; `GET /analytics/university/report?lang=de` → 400; as `dean.fmi` → 403. (AC-3.1, 3.5)
 29. Hidden in state, refresh: while the panel loads "Refresh" is disabled; a double click sends one request (network tab). (AC-2.7)
-30. Hidden in state, projection: `?from=2026&to=2026` shows "Too few complete years for a projection" and no dashed segment; the board report says the same. (AC-1.6, 2.3)
+30. Hidden in state, projection: `?from=2026&to=2026` shows "Too few complete years for a projection." and no dashed segment; the board report says the same. (AC-1.6, 2.3)
 31. Revoked mid-flow, role: `admin` revokes the RECTOR role of `rector` while the page is open and a board report is about to be requested. Expected: the revocation ends the rector's sessions; the next request leads to the sign-in page; after signing in "University analytics" is gone and the report URL answers 403; `rector.secretary` keeps the page unchanged. Re-grant the role. (AC-1.1, 2.1, 3.1)
 32. Revoked mid-flow, delegation: `rector` delegates approval to `dean.fmi`. Expected: `dean.fmi` still gets 403 on `/analytics/university` and no entry (not delegable); revoking the delegation changes nothing for analytics. (AC-1.1)
 33. Revoked mid-flow, consent: `lecturer.fmi` withdraws analytics while `rector` has the page open. Expected: no name on the page in either state; `analyticsConsent.granted` drops by one after "Refresh". (AC-1.7, 1.10)
 34. Approve a new award in a faculty and reload at once, then after 5 minutes. Expected: unchanged figures with the old `generatedAt`, then the new count; the compliance `reviews.open` drops at once. (AC-1.8, 1.10)
 35. Run the retention job off schedule (restart with `APP_RETENTION_CRON` one minute ahead), then press "Refresh". Expected: `lastRetentionRun` shows the new run; a stale reason clears. Restore. (AC-1.10, 1.11)
+36. Repeated one-time action: double-click "Board report", then press back and forward. Expected: one request in the network tab, one file, one new `ANALYTICS_EXPORTED` row; history does not download again. The same button in two tabs gives two files and two rows. (AC-3.4, 3.5)
+37. Redis down during the export: stop Redis, press "Board report". Expected: the PDF downloads, a cache warning in the backend log, one audit row; start Redis again. (AC-1.8, 3.4)
+38. Server restart mid-export: stop the backend right after pressing "Board report". Expected: "The report could not be exported.", no new audit row (the row is written after the file); after the restart the button works. (AC-3.4, 3.5)
+39. Session gone: sign out in another tab, then press "Refresh" and "Board report" in the open page. Expected: the sign-in page or the panel and report errors; no figures from before stay readable after sign-in as another account, and no empty file is saved. (AC-2.7, 3.5)
+
+Not turned into steps (findings of the scenario review): the report endpoint has no rate limit, like the 5.2 exports (each call renders a PDF and writes an audit row; the button allows one call at a time per page); the retention cron `0 0 4 * * *` in Europe/Kyiv lies outside the 03:00–04:00 DST window, and `RETENTION_STALE` uses a fixed 48 h, so neither DST change trips it; the default period is resolved on the server in Europe/Kyiv, and a tab left open over New Year shows the old year until it reloads.
 
 ## 11. Risks
 
@@ -281,3 +287,80 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 - Security review for 5.3.1 and 5.3.3
 - `openapi.yml` without `x-status: planned` on the three operations; AUTHENTICATION_AUTHORIZATION §3.3; RBAC_matrix §4; ADR-022 module table; DATA_DICTIONARY `ANALYTICS_EXPORTED` (`board-pdf`); user guide "University analytics"; CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation (2026-10-25, `develop` at 2921bc6)
+
+PRs #315, #316, #317 merged, all three stories Done in Jira and GitHub. Result: **passed with notes**, pending the manual run of §10. Every AC has a test; AC-1.9 holds its time bound but not the index clause (finding 1).
+
+| Layer | Result |
+|-------|--------|
+| Backend unit / IT + FT | 1291 / 503 on `develop`, all green (`gate.ps1 -Full`, 2026-10-25 16:47) |
+| Coverage, static | 98.7 % lines (6043/6120); Checkstyle, PMD, SpotBugs 0 |
+| Frontend | lint clean, 927 tests, initial bundle 959.71 kB |
+| Playwright | Full run 2026-10-25 (one worker): 126 of 126 passed in 15.7 min, `university-analytics.spec` 8/8 |
+| Security | Checklist below; the reviews of #315 (permission, counts-only summary) and #317 (export, audit) leave no finding open |
+| Docs | `openapi.yml` (no `x-status: planned` on the three operations), AUTHENTICATION_AUTHORIZATION §3.3, RBAC_matrix §4 footnote ²⁰, ADR-022 module table, DATA_DICTIONARY `ANALYTICS_EXPORTED` (`board-pdf`), user guide uk/en, CHANGELOG `[Unreleased]` |
+
+### AC evidence
+
+| AC | Unit | IT / FT | E2E / manual |
+|----|------|---------|--------------|
+| 1.1 | `RolePermissionsTest.ac1_1_universityAnalyticsBelongToTheRectorAndTheSecretaryAndAreNeverLent` | `UniversityAnalyticsFT.ac1_1_ac1_2_otherRolesAndDelegatesOfTheRectorAreRefused` | `university-analytics.spec` "ac2_1 refuses every account…"; steps 21, 31, 32; doc review ✓ |
+| 1.2 | `UniversityAnalyticsServiceTest.ac1_2_*` (3) | `UniversityAnalyticsFT.ac1_2_theRectorAndTheSecretaryReadTheUniversityAndTheCompliance`, `ac1_2_invalidYearsNameTheParameter` | steps 2, 10 |
+| 1.3 | `UniversityAnalyticsServiceTest.ac1_3_ac1_4_*` | `UniversityAnalyticsIT.ac1_3_ac1_4_countedAwardsOfTheWholeUniversityLandInTheirFacultyCollegeOrTheUniversityLevel` | steps 1, 2 |
+| 1.4 | same | same, `UniversityAnalyticsFT.ac1_4_to_ac1_7_*`, `UnitStatisticsIT.ac1_4_anEmptySetOfOrganisationsCountsNothing` | step 2 |
+| 1.5 | `TrendRulesTest.ac1_5_*` (4) | `UniversityAnalyticsFT.ac1_4_to_ac1_7_*` | step 3 |
+| 1.6 | `ProjectionHelperTest.ac1_6_*` (4) | same | steps 4, 30 |
+| 1.7 | `HighlightRulesTest.ac1_7_*` (3) | same (no person field) | steps 5, 33 |
+| 1.8 | `CacheFailureLoggerTest` (5.2, Redis errors) | `UniversityAnalyticsIT.ac1_8_theUniversitySharesTheUnitCacheWithThePreviousSourcesAndAnOldEntryIsAMiss` | steps 6, 27, 34, 37 |
+| 1.9 | | `UnitStatisticsIT.ac1_9_aHundredThousandAwardsOfThreeThousandMembersAnswerTheUniversityWithinThreeSeconds` (time only) | finding 1 |
+| 1.10 | `UniversityComplianceServiceTest.ac1_10_theSummaryCarriesTheCountsReadAtTheRequest` | `ComplianceCountsIT.ac1_10_*` (3), `UniversityAnalyticsFT.ac1_10_ac1_11_theComplianceSummaryIsCountsOnlyAndReadLive` | steps 7, 8, 35 |
+| 1.11 | `UniversityComplianceServiceTest.ac1_11_*` (4) | same FT | step 9 |
+| 1.12 | | `ModularityTest` (gate) | doc review ✓ (ADR-022) |
+| 2.1 | `auth.guard.spec`, `permissions.spec`, `shell.component.spec` `ac2_1_*university*` | | `university-analytics.spec` "ac2_1 ac2_3 ac2_9 opens the university…", "ac2_1 refuses every account…"; step 11, 21 |
+| 2.2 | `university-analytics.component.spec` `ac2_2_*` (2), `effects.spec`, `service.spec` `ac2_2_*` | | "ac2_2 ac2_4 keeps the period in the address…"; steps 13, 23 |
+| 2.3 | `projection-trend-chart.component.spec` `ac2_3_*` (3), `university-analytics.component.spec.ac2_3_*` | | "ac2_1 ac2_3 ac2_9 …"; step 11 |
+| 2.4 | `unit-comparison.component.spec` `ac2_4_*` (5) | | "ac2_2 ac2_4 …"; step 12 |
+| 2.5 | `trend-lists.component.spec` `ac2_5_*` (2) | | step 14 |
+| 2.6 | `highlights.component.spec` `ac2_6_*` (5) | | step 14 |
+| 2.7 | `compliance-panel.component.spec` `ac2_7_*` (4), `university-analytics.component.spec` `ac2_7_*` (2), `effects.spec` `ac2_7_*` (2) | | "ac2_7 refreshes only the compliance panel…"; steps 15, 29 |
+| 2.8 | `projection-trend-chart.component.spec.ac2_8_*`, `university-analytics.component.spec` `ac2_8_*` (2), `effects.spec.ac2_8_*` | | "ac2_8 refuses a period that is not valid…"; steps 16, 22, 24 |
+| 2.9 | `ac2_9_reads_in_ukrainian` (3 components) | | "ac2_9 fits a phone in dark mode…", timing in "ac2_1 ac2_3 ac2_9 …"; ui-check of #316; steps 19, 20; guide ✓ |
+| 3.1 | `BoardReportExporterTest.ac3_1_*` (2) | `UniversityAnalyticsFT.ac3_1_ac3_2_ac3_4_*`, `ac3_1_ac3_4_refusedReportRequestsWriteNoAuditRow` | steps 17, 28 |
+| 3.2 | `BoardReportAssemblerTest.ac3_2_*` (7), `BoardPdfWriterTest.ac3_2_*` (6), `BoardReportExporterTest.ac3_2_*` | `UniversityAnalyticsFT.ac3_1_ac3_2_ac3_4_theRectorDownloadsTheBoardReportWithTheFiguresOfTheDashboard` | step 17; PDFs uk/en checked by eye in #317 (8 pages) |
+| 3.3 | `BoardReportAssemblerTest.ac3_3_*` (2), `BoardPdfWriterTest.ac3_3_longFacultyNamesWrapInsideThePage` | `UniversityAnalyticsFT.ac3_3_theSecretaryGetsTheReportInUkrainianByDefault` | step 17 |
+| 3.4 | `BoardReportExporterTest.ac3_4_*` (2) | `UniversityAnalyticsFT.ac3_1_ac3_2_ac3_4_*`, `ac3_1_ac3_4_refused*` | steps 18, 26, 36, 38 |
+| 3.5 | `board-report-button.component.spec` `ac3_5_*` (5, double click added at the validation), `university-analytics.component.spec` `ac3_5_*` (2) | | "ac3_5 downloads the board report…", "ac3_5 offers no board report for an invalid period…"; steps 17, 22, 24, 25, 28, 36, 39 |
+
+### Edge cases (§5)
+
+| Edge case | Covered by |
+|-----------|-----------|
+| Period, `from` = `to` = current year | `UniversityAnalyticsServiceTest.ac1_2_*`, `ProjectionHelperTest.ac1_6_fewerThanThreeCompleteYearsGiveNoLine`; step 30 |
+| Projection on complete years, clamp at 0 | `ProjectionHelperTest.ac1_6_aLineThroughTheCompleteYearsLeavesThePartialYearOut`, `ac1_6_aFallingLineIsClampedAtZero` |
+| Trends noise, new category | `TrendRulesTest.ac1_5_entriesUnderThreeAwardsOverBothPeriodsAndUnchangedOnesAreLeftOut`, `ac1_5_categoriesRiseAndFallByDeltaWithPercentAndNullForNewOnes` |
+| Colleges not linked | `unit-comparison.component.spec.ac2_4_university_links_faculties_names_the_university_row_and_leaves_colleges_plain`; e2e "ac2_2 ac2_4 …" |
+| University level, no highlight | `HighlightRulesTest.ac1_7_theUniversityLevelRowGetsNoHighlightAndStrengthsComeLast` |
+| Inactive units | 5.2 `UnitComparison` tests, shared code; `UniversityAnalyticsIT.ac1_3_ac1_4_*` |
+| Cache shared, old entry a miss | `UniversityAnalyticsIT.ac1_8_*` |
+| Compliance live, `P2D`, running run | `UniversityComplianceServiceTest.ac1_11_aRunIsStaleOnlyAfterTheConfiguredLimitAndARunningOneIsJudgedByItsStart`; FT read live |
+| Compliance privacy (counts only) | `UniversityAnalyticsFT.ac1_10_ac1_11_*` (no ids in the body); security review #315 |
+| Authorization by role, delegations | `RolePermissionsTest.ac1_1_*`, FT delegate refused; step 32 |
+| Board report figures equal the page | `UniversityAnalyticsFT.ac3_1_ac3_2_ac3_4_*` |
+| Redis down | `CacheFailureLoggerTest`; steps 27, 37 |
+
+### Security (OWASP)
+
+| Item | Control |
+|------|---------|
+| A01 access control | `@PreAuthorize(CAN_READ)` on the three operations of `UniversityAnalyticsController` (`analytics:read:university`, not delegable in `RolePermissions`); guard and navigation on the client; FT 403 for five roles and a delegate |
+| A02 crypto / exposure | Counts only in the summary and the report, no ids, names or e-mails; `Cache-Control: no-store` on all three responses |
+| A03 injection | `ComplianceCounts` and `UnitStatistics` use bound parameters; years and `lang` parsed to types before use (400 otherwise); the Thymeleaf template escapes every value (no `th:utext`) |
+| A07 auth failures | Bearer JWT on the API chain (CSRF not used); role revocation ends sessions (Detour 31) |
+
+### Findings
+
+1. AC-1.9: the university read is a sequential scan by design; the IT proves only the 3 s bound. To decide: reword the AC to the time bound, or add a covering index.
+2. The report endpoint, like the 5.2 exports, has no rate limit; each call renders a PDF and writes an audit row. Belongs to the production hardening of Epic 9.
+3. Refactor sweep: eight notes in the epic tracker (technical notes), proposed as one refactor chore with the 5.2 notes.
+4. Integration check of the composed stack (`docker compose up --build`, `/v3/api-docs` against `openapi.yml`) and the walk of §10 move to the manual run; the migrations apply on the empty Testcontainers databases of every IT (no new migration in 5.3).
