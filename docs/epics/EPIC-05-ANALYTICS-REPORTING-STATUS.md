@@ -51,6 +51,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Done |
 | 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Planned |
 | 10a | 5.2.4 Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 5.2 | 2 | SCRUM-109 | #308 | no | Done |
+| 10b | 5.3.4 Analytics pages show translation keys after the language switch | 5.3 | 2 | SCRUM-112 | #319 | no | In review |
 
 Total: 55 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD, 5.2.1 from 5 to 8 in the 5.2 PRD, 5.3.1 from 5 to 8 in the 5.3 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
 

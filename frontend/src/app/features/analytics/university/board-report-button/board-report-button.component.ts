@@ -26,6 +26,9 @@ export class BoardReportButtonComponent {
   protected readonly failed = signal(false);
 
   protected download(): void {
+    if (this.busy()) {
+      return;
+    }
     this.busy.set(true);
     this.failed.set(false);
     this.service.exportReport(this.period(), this.language.current()).subscribe({
