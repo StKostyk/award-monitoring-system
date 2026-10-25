@@ -132,7 +132,7 @@ Tracker: [EPIC-06-COMPLIANCE-AUDIT-STATUS.md](../epics/EPIC-06-COMPLIANCE-AUDIT-
 | 6.2.4 | Nightly erasure run outside the clock-change hour | 1 | ✅ Done | SCRUM-96 | [#277](https://github.com/StKostyk/award-monitoring-system/issues/277) |
 
 ### Epic 5 — Analytics & Reporting Dashboard (Jira epic SCRUM-97)
-Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPORTING-STATUS.md). Kickoff 2026-10-19; personal, faculty and executive dashboards over approved awards, report exports, full-text award search on PostgreSQL (ADR-007). Feature 5.1 Done 2026-10-23 (manual run 37/37).
+Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPORTING-STATUS.md). Kickoff 2026-10-19; personal, faculty and executive dashboards over approved awards, report exports, full-text award search on PostgreSQL (ADR-007). Feature 5.1 Done 2026-10-23 (manual run 37/37). Feature 5.2 Done 2026-10-24 (manual run 35/35). Feature 5.3 Done 2026-10-25 (manual run 39/39).
 
 | ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|

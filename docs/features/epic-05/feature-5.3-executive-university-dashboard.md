@@ -3,7 +3,7 @@
 > **Epic**: 5 — Analytics & Reporting Dashboard (SCRUM-97)
 > **Sprint**: 7 (2026-10-26 → 2026-11-01)
 > **Points**: 16 (three stories; 13 at kickoff, see deviation 12)
-> **Status**: Validated 2026-10-25, pending the manual run of §10
+> **Status**: Done 2026-10-25 (validated with notes, manual run of §10 passed 39/39)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-05 tracker (decisions of 2026-10-19 and 2026-10-23, deviations 2, 4 and 5, risks 1 and 4), US-010, roadmap Feature 5.3, RBAC_matrix §4, AUTHENTICATION_AUTHORIZATION §3.3, PRIVACY_BY_DESIGN §4.2, DATA_DICTIONARY §2.2 (`award_requests` deadlines), §4.2–4.5, Appendix C, ADR-005, ADR-014, ADR-015, ADR-022, PRD 5.2 (unit analytics, cache, highlights, export component), `UnitAggregates`, `UnitComparison`, `HighlightRules`, `ComplianceQueries`, `OverdueNotices`, `PdfReportWriter`, `openapi.yml` (`/analytics/units/*`, `/compliance/*`)
 
@@ -336,7 +336,7 @@ compose stack rebuilt from develop 70236ab; defaults except APP_RETENTION_CRON f
 
 ## 13. Validation (2026-10-25, `develop` at 2921bc6)
 
-PRs #315, #316, #317 merged, all three stories Done in Jira and GitHub. Result: **passed with notes**, pending the manual run of §10. Every AC has a test; AC-1.9 holds its time bound but not the index clause (finding 1).
+PRs #315, #316, #317 merged, all three stories Done in Jira and GitHub. Result: **passed with notes**; manual run of §10 passed 39/39 on 2026-10-25. Every AC has a test; AC-1.9 holds its time bound but not the index clause (finding 1).
 
 | Layer | Result |
 |-------|--------|
