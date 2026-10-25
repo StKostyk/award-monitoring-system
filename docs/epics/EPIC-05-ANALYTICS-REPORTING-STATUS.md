@@ -12,12 +12,12 @@
 |---------|--------|---------|------|
 | 5.1 Personal achievement dashboard (US-008) | Done | 2026-10-19 | 2026-10-23 |
 | 5.2 Faculty performance analytics (US-009) | Done | 2026-10-23 | 2026-10-24 |
-| 5.3 Executive university dashboard (US-010) | Approved | - | - |
+| 5.3 Executive university dashboard (US-010) | Validated, pending the manual run of §10 | 2026-10-25 | - |
 | 5.4 Full-text award search (ADR-007 addendum) | Planned | - | - |
 
 ## Current focus
 
-Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 PRD approved 2026-10-25 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md)); next: 5.3.1 (SCRUM-104).
+Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 validated 2026-10-25 with notes, pending the manual run of §10 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §13); next: that run.
 
 ## Scope
 
@@ -48,7 +48,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 6 | 5.2.3 Analytics report export to CSV, Excel and PDF | 5.2 | 5 | SCRUM-103 | #290 | no | Done |
 | 7 | 5.3.1 University analytics API with trends and a compliance summary | 5.3 | 8 | SCRUM-104 | #291 | no | Done |
 | 8 | 5.3.2 Executive dashboard | 5.3 | 5 | SCRUM-105 | #292 | yes | Done |
-| 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | In review |
+| 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Done |
 | 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Planned |
 | 10a | 5.2.4 Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 5.2 | 2 | SCRUM-109 | #308 | no | Done |
 
@@ -106,6 +106,15 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   - The faculty-level row name is built twice (comparison table, trend chart).
   - The `ReportTextHelper.guard` assertions live in `CsvReportWriterTest`; a `ReportTextHelperTest` would cover all writers.
   - `MARK_GAP` in `chart-style.ts` is unused.
+- Feature 5.3 refactor sweep (2026-10-25), notes only; candidates for one refactor chore with the 5.2 notes:
+  - `UniversityAnalyticsService` and `UnitAnalyticsService` both resolve the default five years and the previous period inline; `PeriodHelper` could return the pair.
+  - `BoardFormatHelper.years` repeats `UnitReportAssembler.years`, and the `yyyy-MM-dd HH:mm` formatter is declared in both assemblers.
+  - The header fields of the board and unit reports (period, previous period, produced at and by, partial year) are built twice.
+  - `BoardReportExporter` and `UnitReportExporter` share the producer lookup and the `ANALYTICS_EXPORTED` row; a small export-audit helper would serve both.
+  - The localised category name is picked in three places; a `ReportLabels.categoryName` would do it once.
+  - `BoardFiguresHelper` also holds the trend and comparison pages; its name no longer fits.
+  - The university and unit analytics pages repeat about 60 lines (compared-with line, category and level rows, period navigation).
+  - `UniversityAnalyticsServiceTest` and `UnitAnalyticsServiceTest` repeat the fixed clock and `assertInvalid`.
 
 ## Risks
 

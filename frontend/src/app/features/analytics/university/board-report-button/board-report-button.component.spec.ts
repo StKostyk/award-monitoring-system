@@ -95,6 +95,16 @@ describe('BoardReportButtonComponent', () => {
     expect(button().disabled).toBe(false);
   });
 
+  it('ac3_5_sends_one_request_for_a_double_click', async () => {
+    await setUp();
+    exportReport.mockReturnValue(new Subject<HttpResponse<Blob>>());
+
+    click();
+    click();
+
+    expect(exportReport).toHaveBeenCalledTimes(1);
+  });
+
   it('ac3_5_is_disabled_when_the_page_has_no_report', async () => {
     await setUp();
     fixture.componentRef.setInput('disabled', true);
