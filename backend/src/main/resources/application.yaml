@@ -188,6 +188,7 @@ app:
     timeline-limit: ${ANALYTICS_TIMELINE_LIMIT:500}
     top-performers: ${ANALYTICS_TOP_PERFORMERS:10}
     unit-cache-ttl: ${ANALYTICS_UNIT_CACHE_TTL:PT5M}
+    retention-stale-after: ${ANALYTICS_RETENTION_STALE_AFTER:P2D}
   privacy:
     # texts: frontend/public/privacy/<version>/<lang>.html; a new version is added here and becomes current
     notice-version: ${APP_PRIVACY_NOTICE_VERSION:1.0}

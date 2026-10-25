@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- University analytics API for the rector and the rector's secretary: faculties and colleges compared, rising and falling categories and sources, a projection over the complete years, and a live counts-only compliance summary (5.3.1)
 - Unit analytics export as PDF, Excel and CSV for the shown unit, period and language, audited per file
 - Unit analytics page (/analytics) for faculties and departments: change against the previous period, department comparison, charts, top performers and highlights
 - Unit analytics API for faculties and departments: totals and deltas against the previous period, department comparison, categories, levels, sources, consenting top performers and highlights (SCRUM-101)

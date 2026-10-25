@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.organization;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -59,6 +60,17 @@ public class OrganizationTree {
      */
     public Optional<Node> node(long id) {
         return Optional.ofNullable(nodes.get().get(id));
+    }
+
+    /**
+     * The university: the root of the tree.
+     *
+     * @return the parentless node of type university with the lowest id, empty before the tree is loaded
+     */
+    public Optional<Node> university() {
+        return nodes.get().values().stream()
+            .filter(node -> node.parentId() == null && node.type() == OrganizationType.UNIVERSITY)
+            .min(Comparator.comparingLong(Node::id));
     }
 
     /**

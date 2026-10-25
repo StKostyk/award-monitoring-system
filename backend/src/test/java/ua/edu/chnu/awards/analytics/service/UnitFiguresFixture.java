@@ -30,7 +30,7 @@ final class UnitFiguresFixture {
 
     static UnitFigures figures(List<UnitAwardCount> counts, List<OwnerAwardCount> owners,
                                List<SourceSpelling> sources, List<MemberCount> members) {
-        return new UnitFigures(GENERATED, counts, owners, sources, members);
+        return new UnitFigures(GENERATED, counts, owners, sources, List.of(), members);
     }
 
     static UnitFigures empty() {

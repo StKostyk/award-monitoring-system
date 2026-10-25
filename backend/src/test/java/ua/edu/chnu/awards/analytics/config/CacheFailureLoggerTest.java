@@ -26,9 +26,9 @@ class CacheFailureLoggerTest {
 
     @Test
     void ac1_9_theAnalyticsLimitsRefuseNonPositiveValues() {
-        assertThatCode(() -> new AnalyticsProperties(5, 500, 10, Duration.ZERO))
+        assertThatCode(() -> new AnalyticsProperties(5, 500, 10, Duration.ZERO, Duration.ofDays(2)))
             .isInstanceOf(IllegalArgumentException.class);
-        assertThatCode(() -> new AnalyticsProperties(5, 500, 0, Duration.ofMinutes(5)))
+        assertThatCode(() -> new AnalyticsProperties(5, 500, 0, Duration.ofMinutes(5), Duration.ofDays(2)))
             .isInstanceOf(IllegalArgumentException.class);
     }
 }

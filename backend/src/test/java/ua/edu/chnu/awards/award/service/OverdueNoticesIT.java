@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
@@ -32,6 +34,9 @@ class OverdueNoticesIT extends AbstractIntegrationTest {
 
     @Autowired
     private OverdueNotices notices;
+
+    @Autowired
+    private ReviewBacklog backlog;
 
     @Autowired
     private UserRepository userRepository;
@@ -98,5 +103,26 @@ class OverdueNoticesIT extends AbstractIntegrationTest {
 
         assertThat(jdbc.queryForObject("select count(*) from award_requests where award_id in (?, ?)"
             + " and overdue_noticed_at is not null", Integer.class, future, returned)).isZero();
+    }
+
+    @Test
+    void ac1_10_theBacklogCountsOpenAndOverdueRequestsPerLevelWithZeros() {
+        Instant now = Instant.now();
+        Map<ApprovalLevel, ReviewBacklog.Queue> before = backlog.at(now);
+        long overdue = AwardRows.award(jdbc, owner.getId()).status("PENDING").insert();
+        RequestRows.request(jdbc, overdue, owner.getId()).status("ESCALATED").level("DEAN")
+            .submittedAt(now.minus(9, ChronoUnit.DAYS)).deadline(now.minus(1, ChronoUnit.DAYS)).insert();
+        long onTime = AwardRows.award(jdbc, owner.getId()).status("PENDING").insert();
+        RequestRows.request(jdbc, onTime, owner.getId()).status("SUBMITTED").level("DEAN")
+            .submittedAt(now.minus(1, ChronoUnit.DAYS)).deadline(now.plus(1, ChronoUnit.DAYS)).insert();
+        long returned = AwardRows.award(jdbc, owner.getId()).status("DRAFT").insert();
+        RequestRows.request(jdbc, returned, owner.getId()).status("RETURNED").level("DEAN")
+            .submittedAt(now.minus(9, ChronoUnit.DAYS)).deadline(now.minus(1, ChronoUnit.DAYS)).insert();
+
+        Map<ApprovalLevel, ReviewBacklog.Queue> after = backlog.at(now);
+
+        assertThat(after).containsOnlyKeys(ApprovalLevel.values());
+        assertThat(after.get(ApprovalLevel.DEAN).open() - before.get(ApprovalLevel.DEAN).open()).isEqualTo(2);
+        assertThat(after.get(ApprovalLevel.DEAN).overdue() - before.get(ApprovalLevel.DEAN).overdue()).isEqualTo(1);
     }
 }

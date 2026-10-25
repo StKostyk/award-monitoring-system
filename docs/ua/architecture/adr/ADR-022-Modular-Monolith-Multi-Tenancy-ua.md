@@ -141,9 +141,9 @@
 | `user` | common, audit, organization, authz | базовий пакет (`AccountSessions`, `LentAuthority`), `entity`, `dto`, `event`, `service` (`UserAccounts`, `RoleHolders`) |
 | `delegation` | common, audit, organization, authz, user | `entity`, `dto`, `event`, `service` (`DelegationLookup`) |
 | `auth` | common, audit, organization, authz, user, delegation | `entity`, `dto`, `event`, `service` (`DeviceLookup`) |
-| `award` | common, audit, organization, authz, user, delegation | базовий пакет (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`) |
+| `award` | common, audit, organization, authz, user, delegation | базовий пакет (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`, `ReviewBacklog`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
-| `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | базовий пакет (`ConsentLookup`), `dto`, `event` |
+| `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | базовий пакет (`ConsentLookup`, `ComplianceFigures`), `dto`, `event` |
 | `analytics` | common, audit, organization, authz, user, award, gdpr | — |
 | `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` для експорту даних) |
 | `metrics` | — | — |
@@ -158,6 +158,11 @@
 - Доповнення 2026-10-24 (5.2.3): `analytics` залежить від `audit`, щоб фіксувати `ANALYTICS_EXPORTED` через
   `AuditService`, як це роблять `award` і `gdpr` для своїх експортів; `audit` залежить лише від `common`, тож
   циклу не виникає. Засоби запису звітів містяться в `analytics.export` за одним інтерфейсом `ReportWriter`.
+- Доповнення 2026-10-25 (5.3.1): `analytics` читає кількості зведення відповідності через `ComplianceFigures`
+  модуля `gdpr` (реалізація `gdpr.repository.ComplianceCounts`), а відкриті та прострочені запити на розгляд —
+  через `ReviewBacklog` модуля `award`; цей самий запит підрахунку `OverdueNotices` тепер використовує для
+  показників черги, тож зведення і показники рахують однаково. Університет — корінь `OrganizationTree`
+  (`university()`). Нових залежностей між модулями немає.
 - Цикли розірвано інверсією залежностей без зміни поведінки: `audit` називає виконавців через `ActorDirectory`
   (реалізація в `user`); `award` читає документи через `AwardDocuments` (реалізація в `document`); `user`
   завершує сеанси облікових записів через `AccountSessions` (реалізація в `auth`) і забирає делеговані

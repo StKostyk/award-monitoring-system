@@ -51,7 +51,7 @@ class TopPerformersRankingTest {
     @BeforeEach
     void setUp() {
         ranking = new TopPerformersRanking(consents, users, new AnalyticsProperties(MIN_GROUP_SIZE, 500,
-            TOP_PERFORMERS, Duration.ofMinutes(5)));
+            TOP_PERFORMERS, Duration.ofMinutes(5), Duration.ofDays(2)));
     }
 
     @Test
@@ -127,6 +127,7 @@ class TopPerformersRankingTest {
     }
 
     private static UnitFigures figures(List<OwnerAwardCount> owners) {
-        return new UnitFigures(Instant.parse("2026-10-19T09:58:00Z"), List.of(), owners, List.of(), List.of());
+        return new UnitFigures(Instant.parse("2026-10-19T09:58:00Z"), List.of(), owners, List.of(), List.of(),
+            List.of());
     }
 }

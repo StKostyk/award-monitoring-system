@@ -12,12 +12,12 @@
 |---------|--------|---------|------|
 | 5.1 Personal achievement dashboard (US-008) | Done | 2026-10-19 | 2026-10-23 |
 | 5.2 Faculty performance analytics (US-009) | Done | 2026-10-23 | 2026-10-24 |
-| 5.3 Executive university dashboard (US-010) | Planned | - | - |
+| 5.3 Executive university dashboard (US-010) | Approved | - | - |
 | 5.4 Full-text award search (ADR-007 addendum) | Planned | - | - |
 
 ## Current focus
 
-Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Next: Feature 5.3 PRD.
+Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 PRD approved 2026-10-25 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md)); next: 5.3.1 (SCRUM-104).
 
 ## Scope
 
@@ -46,13 +46,13 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 4 | 5.2.1 Unit analytics API for departments and faculties with period comparison | 5.2 | 8 | SCRUM-101 | #288 | no | Done |
 | 5 | 5.2.2 Faculty analytics page with department comparison and top performers | 5.2 | 5 | SCRUM-102 | #289 | yes | Done |
 | 6 | 5.2.3 Analytics report export to CSV, Excel and PDF | 5.2 | 5 | SCRUM-103 | #290 | no | Done |
-| 7 | 5.3.1 University analytics API with trends and a compliance summary | 5.3 | 5 | SCRUM-104 | #291 | no | Planned |
+| 7 | 5.3.1 University analytics API with trends and a compliance summary | 5.3 | 8 | SCRUM-104 | #291 | no | In review |
 | 8 | 5.3.2 Executive dashboard | 5.3 | 5 | SCRUM-105 | #292 | yes | Planned |
 | 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Planned |
 | 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Planned |
 | 10a | 5.2.4 Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 5.2 | 2 | SCRUM-109 | #308 | no | Done |
 
-Total: 52 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD, 5.2.1 from 5 to 8 in the 5.2 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
+Total: 55 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD, 5.2.1 from 5 to 8 in the 5.2 PRD, 5.3.1 from 5 to 8 in the 5.3 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
 
 ## Decisions
 
@@ -70,6 +70,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-23 | Feature 5.1 closed: manual run 37/37; the stale figures while the backend is down (step 22) and the rank counting members without the consent go to the Epic 5 review | No AC broken; both are product questions, not defects | PRD 5.1 §10, §13 |
 | 2026-10-23 | Unit analytics: `analytics:read:department` (approvers) and `analytics:read:faculty` (dean upward) on held scopes only, 404 outside them; awards count in the unit of submission; department figures at any size, top performers (consented, no positions, up to 10) need the minimum group of 5; four highlight rules; aggregates cached 5 minutes with names and consent applied per request; exports with openhtmltopdf, FastExcel and hand-written CSV, audited; `vw_award_statistics` and `/reports/awards/*` removed | Viewers already read these awards; naming stays under the consent; one export component reused by 5.3.3 | PRD 5.2 §7 |
 | 2026-10-24 | Feature 5.2 closed: validated with notes, manual run 35/35; the failed unit list without Retry, the export period of a page open over New Year and the "2026–2026" header go to fix story 5.2.4 | No AC broken; both paths are failure or boundary cases | PRD 5.2 §13 |
+| 2026-10-25 | University analytics: `analytics:read:university` (rector, rector's secretary, not delegable) on its own endpoints; faculties and colleges compared with a university-level row, nobody named; trends as period deltas (at least 3 awards, 5 per direction); least-squares projection over at least 3 complete years; `ABOVE_AVERAGE` added to the highlights at university level; compliance summary of counts only, read live, with five attention reasons; board report as a landscape PDF on the 5.2.3 component, audited | The rector sees the state of the duties, not the records; no new library; the unit contract of 5.2 stays | PRD 5.3 §7 |
 
 ## Documentation deviations found at kickoff
 

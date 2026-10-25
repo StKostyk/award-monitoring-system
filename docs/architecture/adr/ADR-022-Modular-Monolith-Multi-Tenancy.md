@@ -126,9 +126,9 @@ when a module meets the extraction criteria below.**
 | `user` | common, audit, organization, authz | base (`AccountSessions`, `LentAuthority`), `entity`, `dto`, `event`, `service` (`UserAccounts`, `RoleHolders`) |
 | `delegation` | common, audit, organization, authz, user | `entity`, `dto`, `event`, `service` (`DelegationLookup`) |
 | `auth` | common, audit, organization, authz, user, delegation | `entity`, `dto`, `event`, `service` (`DeviceLookup`) |
-| `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`) |
+| `award` | common, audit, organization, authz, user, delegation | base (`AwardDocuments`), `entity`, `dto`, `event`, `service` (`AwardOwnership`, `AwardLookup`, `AwardVersionLookup`, `AwardStatistics`, `UnitStatistics`, `ReviewBacklog`) |
 | `document` | common, audit, authz, user, award | `dto`, `event` |
-| `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | base (`ConsentLookup`), `dto`, `event` |
+| `gdpr` | common, audit, organization, authz, user, delegation, auth, award, notification | base (`ConsentLookup`, `ComplianceFigures`), `dto`, `event` |
 | `analytics` | common, audit, organization, authz, user, award, gdpr | — |
 | `notification` | common, authz, user, delegation, award, audit | `service` (`NotificationLookup` for the data export) |
 | `metrics` | — | — |
@@ -146,6 +146,11 @@ when a module meets the extraction criteria below.**
 - Addendum 2026-10-24 (5.2.3): `analytics` depends on `audit` to record `ANALYTICS_EXPORTED` through
   `AuditService`, as `award` and `gdpr` do for their exports; `audit` depends only on `common`, so no cycle
   arises. The report writers live in `analytics.export` behind one `ReportWriter` interface.
+- Addendum 2026-10-25 (5.3.1): `analytics` reads the compliance counts of the executive summary through `gdpr`'s
+  `ComplianceFigures` (implemented by `gdpr.repository.ComplianceCounts`) and the open and overdue review
+  requests through `award`'s `ReviewBacklog`, the counting query `OverdueNotices` now also uses for the queue
+  gauges, so the summary and the gauges count alike. The university is the root of `OrganizationTree`
+  (`university()`). No new module dependency.
 - Cycles were broken by dependency inversion, with no behaviour change: `audit` names actors through
   `ActorDirectory` (implemented in `user`); `award` reads documents through `AwardDocuments` (implemented in
   `document`); `user` signs accounts out through `AccountSessions` (implemented in `auth`) and takes back lent
