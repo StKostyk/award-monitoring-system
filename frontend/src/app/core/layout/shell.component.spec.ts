@@ -247,6 +247,34 @@ describe('ShellComponent', () => {
     ).toBe('/analytics');
   });
 
+  it('ac2_1_shows_university_analytics_beside_unit_analytics_to_a_rector', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['analytics:read:department'] })),
+    );
+    const dean = TestBed.createComponent(ShellComponent);
+    dean.detectChanges();
+
+    expect(dean.nativeElement.querySelector('[data-testid="nav-university-analytics"]')).toBeNull();
+
+    auth.permissions.set(
+      readPermissions(
+        tokenWith({ permissions: ['analytics:read:department', 'analytics:read:university'] }),
+      ),
+    );
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="nav-university-analytics"]')
+        .getAttribute('href'),
+    ).toBe('/analytics/university');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="nav-unit-analytics"]'),
+    ).not.toBeNull();
+  });
+
   it('ac3_6_shows_the_delegations_entry_only_to_a_holder_of_an_approval_role', () => {
     auth.isAuthenticated.set(true);
     auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));

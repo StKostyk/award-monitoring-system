@@ -15,6 +15,7 @@ import {
   complianceGuard,
   delegationGuard,
   unitAnalyticsGuard,
+  universityAnalyticsGuard,
   userDirectoryGuard,
 } from './auth.guard';
 import { AuthService } from './auth.service';
@@ -182,6 +183,28 @@ describe('authGuard', () => {
 
     const refused = TestBed.runInInjectionContext(() =>
       unitAnalyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac2_1_opens_university_analytics_with_analytics_read_university_and_refuses_anybody_else', () => {
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['analytics:read:university'] })),
+    );
+
+    const allowed = TestBed.runInInjectionContext(() =>
+      universityAnalyticsGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(allowed).toBe(true);
+
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['analytics:read:department'] })),
+    );
+
+    const refused = TestBed.runInInjectionContext(() =>
+      universityAnalyticsGuard({} as ActivatedRouteSnapshot, state),
     );
 
     expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());

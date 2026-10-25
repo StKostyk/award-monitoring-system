@@ -1581,6 +1581,77 @@
       "BELOW_AVERAGE": "{{unit}}: {{current}} awards, under half of the faculty's average per member"
     }
   },
+  "universityAnalytics": {
+    "title": "University analytics",
+    "failed": "The university analytics could not be loaded.",
+    "sections": {
+      "compliance": "Compliance",
+      "trend": "Awards by year and projection",
+      "comparison": "Faculty and college comparison",
+      "trends": "Trends"
+    },
+    "comparison": {
+      "universityLevel": "University level",
+      "chartDescription": "Approved awards per 100 members for {{count}} faculties and colleges; the highest is {{top}} with {{value}}."
+    },
+    "projection": {
+      "approved": "Approved awards",
+      "projected": "Projected",
+      "projectedValue": "about {{count}} (projected)",
+      "sentence": "Projected for {{year}}: about {{estimate}} awards, based on {{from}}–{{to}}.",
+      "tooFewYears": "Too few complete years for a projection.",
+      "description": "Approved awards per year from {{from}} to {{to}}, {{total}} in all. {{projection}}"
+    },
+    "trends": {
+      "categories": "Categories",
+      "sources": "Awarding organisations",
+      "rising": "Rising",
+      "falling": "Falling",
+      "counts": "{{current}} (previously {{previous}})",
+      "noCategory": "No category changed noticeably.",
+      "noSource": "No awarding organisation changed noticeably."
+    },
+    "highlights": {
+      "GROWTH": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
+      "DECLINE": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
+      "NO_AWARDS": "{{unit}}: no awards in this period, {{previous}} in the previous one",
+      "NO_AWARDS_EVER": "{{unit}}: no awards in this period or the previous one",
+      "BELOW_AVERAGE": "{{unit}}: {{current}} awards, under half of the university's average per member",
+      "ABOVE_AVERAGE": "{{unit}}: {{current}} awards, at least one and a half times the university's average per member"
+    },
+    "compliance": {
+      "ok": "Everything is in order",
+      "attention": "Needs attention",
+      "asOf": "As of {{time}}",
+      "refresh": "Refresh",
+      "failed": "The compliance summary could not be loaded.",
+      "noRun": "No run yet",
+      "reasons": {
+        "RETENTION_NOT_RUN": "The retention job has never run.",
+        "RETENTION_FAILED": "The last retention run did not finish cleanly.",
+        "RETENTION_STALE": "The last retention run started more than two days ago.",
+        "ERASURE_OVERDUE": "Some erasure requests are past their due date.",
+        "REVIEWS_OVERDUE": "Some award reviews are overdue."
+      },
+      "runStatus": {
+        "RUNNING": "Running",
+        "COMPLETED": "Completed",
+        "PARTIAL": "Partly completed",
+        "INTERRUPTED": "Interrupted"
+      },
+      "tiles": {
+        "notice": "Privacy notice {{version}} acknowledged",
+        "consent": "Analytics consents",
+        "erasurePending": "Pending erasure requests",
+        "erasurePostponed": "Postponed erasure requests",
+        "erasureOverdue": "Overdue erasure requests",
+        "legalHolds": "Active legal holds",
+        "retention": "Last retention run",
+        "reviewsOpen": "Open reviews",
+        "reviewsOverdue": "Overdue reviews"
+      }
+    }
+  },
   "charts": {
     "showTable": "Show as table"
   }

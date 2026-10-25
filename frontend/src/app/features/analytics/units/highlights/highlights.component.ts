@@ -3,9 +3,11 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { organizationName } from '../../../../shared/organization-name';
-import { UnitHighlight } from '../unit-analytics.service';
+import { HighlightType, UnitHighlight } from '../unit-analytics.service';
 
-/** Departments that stand out, as sentences: growth among the strengths, the other kinds among the gaps. */
+const STRENGTHS: readonly HighlightType[] = ['GROWTH', 'ABOVE_AVERAGE'];
+
+/** Units that stand out, as sentences: growth and above average among the strengths, the other kinds among the gaps. */
 @Component({
   selector: 'app-highlights',
   imports: [TranslocoPipe],
@@ -18,13 +20,15 @@ export class HighlightsComponent {
   private readonly language = inject(LanguageService);
 
   readonly highlights = input.required<UnitHighlight[]>();
+  readonly sentenceKeys = input('unitAnalytics.highlights');
 
   protected readonly sentences = computed(() => {
     const language = this.language.current();
+    const prefix = this.sentenceKeys();
     return this.highlights().map((highlight) => ({
-      strength: highlight.type === 'GROWTH',
+      strength: STRENGTHS.includes(highlight.type),
       key: `${highlight.type}-${highlight.unit.id}`,
-      text: this.transloco.translate(`unitAnalytics.highlights.${sentenceKey(highlight)}`, {
+      text: this.transloco.translate(`${prefix}.${sentenceKey(highlight)}`, {
         unit: organizationName(highlight.unit, language),
         current: highlight.current,
         previous: highlight.previous,

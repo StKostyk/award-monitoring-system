@@ -10,7 +10,7 @@ import { AnalyticsPeriod } from '../analytics.service';
 
 export type UnitType = 'FACULTY' | 'DEPARTMENT';
 export type TopPerformersStatus = 'LISTED' | 'GROUP_TOO_SMALL';
-export type HighlightType = 'NO_AWARDS' | 'DECLINE' | 'GROWTH' | 'BELOW_AVERAGE';
+export type HighlightType = 'NO_AWARDS' | 'DECLINE' | 'GROWTH' | 'BELOW_AVERAGE' | 'ABOVE_AVERAGE';
 export type ReportFormat = 'pdf' | 'xlsx' | 'csv';
 
 /** The formats of the unit report in the order the export menu offers them. */
@@ -118,7 +118,8 @@ export class UnitAnalyticsService {
   }
 }
 
-function periodParams(period: AnalyticsPeriod): HttpParams {
+/** The query of a period: `from` and `to` when set. */
+export function periodParams(period: AnalyticsPeriod): HttpParams {
   let params = new HttpParams();
   if (period.from !== null) {
     params = params.set('from', period.from);

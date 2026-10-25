@@ -1,0 +1,35 @@
+<app-chart [option]="option()" [description]="description()">
+  <table class="analytics-table" data-testid="projection-table">
+    <caption>
+      {{
+        'universityAnalytics.sections.trend' | transloco
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'analytics.table.year' | transloco }}</th>
+        <th scope="col">{{ 'analytics.table.total' | transloco }}</th>
+        <th scope="col">{{ 'universityAnalytics.projection.projected' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.year) {
+        <tr [class.projection__row]="row.projected !== null">
+          <th scope="row">{{ row.year }}</th>
+          <td>{{ row.total ?? '—' }}</td>
+          <td [attr.data-testid]="row.projected !== null ? 'projection-row' : null">
+            @if (row.projected !== null) {
+              {{
+                'universityAnalytics.projection.projectedValue'
+                  | transloco: { count: row.projected }
+              }}
+            } @else {
+              —
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</app-chart>
+<p class="projection__sentence" data-testid="university-projection">{{ sentence() }}</p>

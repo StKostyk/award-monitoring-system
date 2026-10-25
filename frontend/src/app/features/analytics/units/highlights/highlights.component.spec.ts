@@ -60,4 +60,26 @@ describe('HighlightsComponent', () => {
       'Nothing stands out in this period.',
     );
   });
+
+  it('ac2_6_university_counts_above_average_among_the_strengths_with_its_own_sentences', () => {
+    TestBed.configureTestingModule({
+      imports: [translations('en')],
+      providers: [languageStub('en').provider],
+    });
+    const fixture = TestBed.createComponent(HighlightsComponent);
+    fixture.componentRef.setInput('highlights', [
+      { type: 'ABOVE_AVERAGE', unit: ref(ALGEBRA), current: 40, previous: 20 },
+      { type: 'BELOW_AVERAGE', unit: ref(ANALYSIS), current: 1, previous: 1 },
+    ]);
+    fixture.componentRef.setInput('sentenceKeys', 'universityAnalytics.highlights');
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('[data-testid="highlights-strengths"]')!.textContent).toContain(
+      "Department of Algebra and Informatics: 40 awards, at least one and a half times the university's average",
+    );
+    expect(element.querySelector('[data-testid="highlights-gaps"]')!.textContent).toContain(
+      "under half of the university's average per member",
+    );
+  });
 });

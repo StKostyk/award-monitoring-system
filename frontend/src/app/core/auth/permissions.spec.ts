@@ -6,6 +6,7 @@ import {
   canReadDirectory,
   canReadOwnAnalytics,
   canReadUnitAnalytics,
+  canReadUniversityAnalytics,
   canReadOwnAwards,
   canReview,
   delegatableOrganizations,
@@ -68,6 +69,19 @@ describe('permissions', () => {
     ).toBe(true);
     expect(
       canReadUnitAnalytics(readPermissions(token({ permissions: ['analytics:read:own'] }))),
+    ).toBe(false);
+  });
+
+  it('ac2_1_opens_university_analytics_only_with_analytics_read_university', () => {
+    expect(
+      canReadUniversityAnalytics(
+        readPermissions(token({ permissions: ['analytics:read:university'] })),
+      ),
+    ).toBe(true);
+    expect(
+      canReadUniversityAnalytics(
+        readPermissions(token({ permissions: ['analytics:read:department'] })),
+      ),
     ).toBe(false);
   });
 

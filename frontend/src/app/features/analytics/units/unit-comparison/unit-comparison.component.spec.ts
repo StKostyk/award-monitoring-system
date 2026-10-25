@@ -5,6 +5,8 @@ import { vi } from 'vitest';
 
 import { chartStub, chartsDrawn, ChartStub } from '../../../../shared/charts/chart.testing';
 import { languageStub, translations } from '../../analytics.testing';
+import { universityAnalytics } from '../../university/university-analytics.testing';
+import { UnitComparisonRow } from '../unit-analytics.service';
 import { facultyAnalytics } from '../unit-analytics.testing';
 import { UnitComparisonComponent } from './unit-comparison.component';
 
@@ -142,5 +144,31 @@ describe('UnitComparisonComponent', () => {
       'Department of Algebra and Informatics',
     ]);
     expect(option.series[0].data).toEqual([18.8, 55]);
+  });
+
+  it('ac2_4_university_links_faculties_names_the_university_row_and_leaves_colleges_plain', () => {
+    fixture.componentRef.setInput('rows', universityAnalytics().units);
+    fixture.componentRef.setInput('labels', {
+      caption: 'universityAnalytics.sections.comparison',
+      levelRow: 'universityAnalytics.comparison.universityLevel',
+      chartDescription: 'universityAnalytics.comparison.chartDescription',
+    });
+    fixture.componentRef.setInput(
+      'linkable',
+      (row: UnitComparisonRow) => !row.facultyLevel && row.unit.type === 'FACULTY',
+    );
+    fixture.detectChanges();
+    const row = (id: number) =>
+      fixture.nativeElement.querySelector(`[data-testid="comparison-row-${id}"]`) as HTMLElement;
+
+    expect(row(9).querySelector('a')!.getAttribute('href')).toBe(
+      '/analytics/units/9?from=2024&to=2026',
+    );
+    expect(row(30).querySelector('a')).toBeNull();
+    expect(row(30).textContent).toContain('Vyzhnytsia College of Applied Arts');
+    expect(row(1).textContent).toContain('University level');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="comparison-table"] caption').textContent,
+    ).toContain('Faculty and college comparison');
   });
 });
