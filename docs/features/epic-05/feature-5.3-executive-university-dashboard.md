@@ -236,7 +236,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 10. `GET /analytics/university?from=2027`, `?from=2026&to=2021`, `?from=abc`. Expected: 400 `invalid-parameter` naming the parameter. (AC-1.2)
 11. Open `http://localhost:4200` as `rector`, navigation "University analytics". Expected: `/analytics/university` with the compliance panel first, the comparison line "2022–2026, compared with 2017–2021." and the partial-year note "2026 is not over yet, so its figures are still growing.", tiles with deltas, the trend with a dashed projection and "Projected for 2026: about … awards, based on 2022–2025.", the faculty comparison, categories and levels, sources, trends, highlights. "Unit analytics" is still in the navigation. (AC-2.1–2.3)
 12. Sort the comparison by "Per 100 members", open ФМІ from the table. Expected: the order follows the column; `/analytics/units/9` with the same period; a college row is plain text. (AC-2.4)
-13. Choose 2024–2026. Expected: `?from=2024&to=2026`, compared with 2021–2023, every widget reloaded, the compliance "As of" time unchanged. (AC-2.2)
+13. Choose 2024–2026. Expected: `?from=2024` (`to` stays out of the URL while it is the default year), compared with 2021–2023, every widget reloaded, the compliance "As of" time unchanged. (AC-2.2)
 14. Trends and highlights: the lists match steps 3 and 5; an empty list shows its sentence (choose a single past year such as `?from=2019&to=2019`). (AC-2.5, 2.6)
 15. Compliance panel: compare with step 7; repeat the change of step 8 in another tab and press "Refresh". Expected: the panel changes, the "As of" time moves, the rest of the page does not reload. (AC-2.7)
 16. "Show as table" on the trend. Expected: the yearly totals and a projected row marked as such. (AC-2.8)
@@ -265,9 +265,55 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 36. Repeated one-time action: double-click "Board report", then press back and forward. Expected: one request in the network tab, one file, one new `ANALYTICS_EXPORTED` row; history does not download again. The same button in two tabs gives two files and two rows. (AC-3.4, 3.5)
 37. Redis down during the export: stop Redis, press "Board report". Expected: the PDF downloads, a cache warning in the backend log, one audit row; start Redis again. (AC-1.8, 3.4)
 38. Server restart mid-export: stop the backend right after pressing "Board report". Expected: "The report could not be exported.", no new audit row (the row is written after the file); after the restart the button works. (AC-3.4, 3.5)
-39. Session gone: sign out in another tab, then press "Refresh" and "Board report" in the open page. Expected: the sign-in page or the panel and report errors; no figures from before stay readable after sign-in as another account, and no empty file is saved. (AC-2.7, 3.5)
+39. Session gone: sign out in the open page (a sign-out in a second browser session ends only that session, so the first page keeps working), then press Back and sign in as `dean.fmi`. Expected: the sign-in page; Back shows no figures; `dean.fmi` reaches `/forbidden` without any figures, and no empty file is saved. (AC-2.7, 3.5)
 
 Not turned into steps (findings of the scenario review): the report endpoint has no rate limit, like the 5.2 exports (each call renders a PDF and writes an audit row; the button allows one call at a time per page); the retention cron `0 0 4 * * *` in Europe/Kyiv lies outside the 03:00–04:00 DST window, and `RETENTION_STALE` uses a fixed 48 h, so neither DST change trips it; the default period is resolved on the server in Europe/Kyiv, and a tab left open over New Year shows the old year until it reloads.
+
+### Run 2026-10-25
+
+compose stack rebuilt from develop 70236ab; defaults except APP_RETENTION_CRON for step 35 (restored); Playwright via walk.cjs and MCP. Result: 39 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | psql per child via organization_id subtree: current 470 / previous 57, FG 10/20, FMI 460/37, rest 0; ChNU direct 0; members 132+1955+3+4=2094 ACTIVE |
+| 2 | PASS | 200 rector; period 2022-2026, previous 2017-2021, partialYear true; totals 470/57 and unit rows equal step 1; ChNU row last; rector.secretary body byte-identical |
+| 3 | PASS | category rising 4 / falling 1 (University Excellence Award 21 vs 28) equal the rule recomputed from byCategory |
+| 4 | PASS | PROJECTED basis 2022-2025 slope 1.3 estimate 20 = psql regr 1.30 / 20.0; from=2025&to=2026 TOO_FEW_YEARS |
+| 5 | PASS | highlights NO_AWARDS FPPSW, DECLINE+BELOW_AVERAGE FG 10/20, GROWTH FMI 460/37 = rules over step 1 (avg 22.4/100); no userId/email/name keys in JSON |
+| 6 | PASS | second call same generatedAt 17:11:40.113Z; redis key awardapp:unit-analytics::1:2022:2026 |
+| 7 | PASS | privacyNotice 1.0 2094/2094, analytics 34/2094, erasure 1/0/0, holds 31, last run 99 COMPLETED, reviews 95/71 per level = psql and awards_review_* gauges; ATTENTION [RETENTION_STALE, REVIEWS_OVERDUE] (run 7 days old); generatedAt 17:13 = request time |
+| 8 | PASS | employee.fmi erasure request (API): pending 1->2 in the next call; hold on lecturer.fmi (966): active 31->32 at once; both undone (cancel 204, lift 200): 1 / 31 |
+| 9 | PASS | request 76 scheduled_for -2d: ERASURE_OVERDUE, overdue 1; retention run 99 started -1d clears RETENTION_STALE, -3d sets it; values restored, request cancelled |
+| 10 | PASS | 400 invalid-parameter for from=2027, from=2026&to=2021, from=abc; body field parameter=from |
+| 11 | PASS | rector: nav has University analytics + Unit analytics; /analytics/university sections in order Compliance, Summary, Awards by year, Faculty and college comparison, categories/levels/sources, Trends, Highlights; comparison line, partial-year note and 'Projected for 2026: about 20 awards, based on 2022–2025.' present in en (after reload, see defect on language switch) |
+| 12 | PASS | sort by Per 100 members asc/desc reorders rows (FMI 23.5 first desc); FMI link /analytics/units/9?from=2022&to=2026; Applied College and University level rows plain text |
+| 13 | PASS | step text corrected: choosing from=2024 gives ?from=2024 (to omitted while it is the default year); 'compared with 2021–2023', one request /analytics/university?from=2024 and none to compliance, As of 19:20 unchanged, approved 439 |
+| 14 | PASS | rising 4 / falling 1 categories and highlights (GROWTH FMI, NO_AWARDS FPPSW, DECLINE+BELOW FG) = steps 3 and 5; ?from=2019&to=2019 shows 'No category changed noticeably.' and 'No awarding organisation changed noticeably.' |
+| 15 | PASS | second change via API, Refresh: Pending erasure requests 1->2, As of 19:21->19:22, only GET /analytics/university/compliance sent; request cancelled after |
+| 16 | PASS | Show as table: yearly totals 2022-2026 (15,16,17,19,403) and row '2026 — about 20 (projected)' |
+| 17 | PASS | board-report-ChNU-2022-2026.pdf uk 8 pages 36 KB, en 8 pages 38 KB; MediaBox 841.9x595.3 (A4 landscape); 'Page n of 8'; Ukrainian unit names in both; totals 470/57/2094 and compliance 2094 of 2094, 34 of 2094, 95/71 equal the API |
+| 18 | PASS | two ANALYTICS_EXPORTED rows (entity 1): board-pdf 2022–2026 language uk and en, peopleNamed 0 |
+| 19 | PASS | check.cjs rector /analytics/university 1280+360, light+dark uk, 1280/360 light en: scrollWidth = viewport, axe serious+ 0, console errors 0; 360 en dark scrollWidth 360, table scrolls in .comparison__scroll; separate defect SCRUM-112 (#319): raw i18n keys after switching to English without reload |
+| 20 | PASS | e2e.ps1 -Grep 'university analytics' -Workers 1: 8 passed 0 failed in 1 min; the usable-page assertion (< 10 s) is in the spec |
+| 21 | PASS | dean.fmi, secretary.fmi, employee.fmi, admin, gdpr: no University analytics entry, /forbidden; all 3 endpoints 403 for each (15 calls); without token 401 |
+| 22 | PASS | ?from=2027 and ?from=2026&to=2021: 'The period is not valid.', 'All years' button, Board report disabled, compliance panel (As of) loaded |
+| 23 | PASS | from=2023 then to=2025: back -> ?from=2023, back -> default, forward -> ?from=2023, reload keeps ?from=2023 (2023–2026 vs 2019–2022) |
+| 24 | PASS | backend stopped: Refresh -> 'Не вдалося завантажити зведення відповідності.' + retry, period change -> 'Не вдалося завантажити аналітику університету.' + retry, Board report disabled; backend started, one Спробувати ще раз filled panel (As of 19:52) and page, Board report enabled |
+| 25 | PASS | page open since 17:34 (token expires 17:49:35): at 17:50:24 Refresh -> compliance 200, As of 19:50, Board report -> 200 and board-report-ChNU-2022-2026.pdf saved, no sign-in page; oauth2_authorization shows a token issued 17:45:38 (renewed silently) |
+| 26 | PASS | rector.secretary (user 7) and rector (user 2) each exported en PDF (38114 B / 38084 B): two files, two ANALYTICS_EXPORTED rows with their own user ids |
+| 27 | PASS | redis stopped, page reloaded: all sections and compliance load; backend log WARN CacheFailureLogger 'Cache unit-analytics could not be read/written for 1:2022:2026; computing without it'; redis started again |
+| 28 | PASS | Board report disabled while the page loads (delayed API), after an aborted load and for an invalid period; lang=de -> 400 parameter lang; dean.fmi -> 403 |
+| 29 | PASS | Refresh double-click: 1 request to /compliance |
+| 30 | PASS | ?from=2026&to=2026: 'Too few complete years for a projection.' and no dashed segment; the board report for 2026-2026 says the same, 200 application/pdf board-report-ChNU-2026-2026.pdf |
+| 31 | PASS | admin revoked RECTOR of rector (#2) with the page open: Refresh -> /login (401, token refresh refused); after sign-in nav shows only Home and Achievements, /analytics/university -> /forbidden, report 403; rector.secretary 200 unchanged; role granted again (new user_roles row 1917) |
+| 32 | PASS | delegation 49 rector->dean.fmi (RECTOR, org 1): dean.fmi still 403 on /analytics/university and /compliance, roles show only DEAN; after DELETE (204) unchanged; rector 200 |
+| 33 | PASS | lecturer.fmi withdraws analytics: compliance granted 34->33 at once; no lecturer/userId/e-mail text in the university body before or after; granted again -> 34 (page Refresh = same endpoint, step 15) |
+| 34 | PASS | award 2114 approved 17:36: reload at once gave 470 with generatedAt 17:32:13, at 17:39 471 with new generatedAt; compliance reviews.open 84->83 immediately |
+| 35 | PASS | APP_RETENTION_CRON '0 8 20 * * *': run 100 started 18:08:00Z COMPLETED 18:08:04Z; compliance lastRetentionRun shows it and RETENTION_STALE cleared (attention [REVIEWS_OVERDUE]); backend recreated without the variable (cron 0 0 4 * * *) |
+| 36 | PASS | Board report double click: Back/Forward no new download or row (audit count unchanged); two tabs -> two files, two rows (step 26); a scripted click pair in the same ms sends 2 requests (guard missing in download(), AC3 added to #319); clicks 30-150 ms apart send 1 |
+| 37 | PASS | redis stopped, Board report -> board-report-ChNU-2022-2026.pdf downloaded, cache warnings in the log, 1 new ANALYTICS_EXPORTED row; redis started |
+| 38 | PASS | report request held, backend stopped: 'Не вдалося експортувати звіт.', ANALYTICS_EXPORTED count 118 before and after; after restart the button downloads board-report-ChNU-2024-2026.pdf |
+| 39 | PASS | step text corrected: sign-out in a second session leaves the first page working (Refresh 200); own sign-out -> /login, Back -> /login with no figures, dean.fmi on /analytics/university -> /forbidden without figures |
 
 ## 11. Risks
 
