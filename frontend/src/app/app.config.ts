@@ -43,8 +43,11 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAppInitializer(() => {
       inject(ColorSchemeService).init();
-      inject(LanguageService).init();
-      return Promise.all([inject(BrandService).init(), inject(AuthService).init()]);
+      return Promise.all([
+        inject(LanguageService).init(),
+        inject(BrandService).init(),
+        inject(AuthService).init(),
+      ]);
     }),
     provideIsoDateAdapter(),
     provideStore(),

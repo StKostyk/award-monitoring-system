@@ -46,6 +46,16 @@ describe('BoardReportButtonComponent', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it('scrum112_ac3_sends_one_request_for_a_double_click_in_the_same_tick', async () => {
+    await setUp();
+    exportReport.mockReturnValue(new Subject<HttpResponse<Blob>>());
+
+    button().click();
+    button().click();
+
+    expect(exportReport).toHaveBeenCalledTimes(1);
+  });
+
   it('ac3_5_downloads_the_period_in_the_page_language_under_the_server_name', async () => {
     await setUp('uk');
     const body = new Blob(['%PDF']);

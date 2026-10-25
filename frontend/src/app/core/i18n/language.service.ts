@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DateAdapter } from '@angular/material/core';
 import { TranslocoService } from '@jsverse/transloco';
+import { take } from 'rxjs';
 
 import { DATE_LOCALES } from './iso-date-adapter';
 
@@ -14,8 +15,13 @@ export class LanguageService {
   private readonly dates = inject(DateAdapter, { optional: true });
   private readonly active = signal(this.transloco.getActiveLang() as AppLanguage);
 
-  init(): void {
-    this.activate(this.stored() ?? 'uk');
+  /**
+   * Activates the stored language, Ukrainian by default.
+   *
+   * @return resolves when the translation of that language has loaded or failed to load
+   */
+  init(): Promise<void> {
+    return this.activate(this.stored() ?? 'uk');
   }
 
   current(): AppLanguage {
@@ -23,11 +29,11 @@ export class LanguageService {
   }
 
   toggle(): void {
-    this.use(this.current() === 'uk' ? 'en' : 'uk');
+    this.use(this.transloco.getActiveLang() === 'uk' ? 'en' : 'uk');
   }
 
   use(lang: AppLanguage): void {
-    this.activate(lang);
+    void this.activate(lang);
     try {
       localStorage.setItem(STORAGE_KEY, lang);
     } catch {
@@ -35,10 +41,18 @@ export class LanguageService {
     }
   }
 
-  private activate(lang: AppLanguage): void {
+  private activate(lang: AppLanguage): Promise<void> {
     this.transloco.setActiveLang(lang);
-    this.active.set(lang);
-    this.dates?.setLocale(DATE_LOCALES[lang]);
+    return new Promise((resolve) => {
+      const settle = (): void => {
+        if (this.transloco.getActiveLang() === lang) {
+          this.active.set(lang);
+          this.dates?.setLocale(DATE_LOCALES[lang]);
+        }
+        resolve();
+      };
+      this.transloco.load(lang).pipe(take(1)).subscribe({ next: settle, error: settle });
+    });
   }
 
   private stored(): AppLanguage | null {

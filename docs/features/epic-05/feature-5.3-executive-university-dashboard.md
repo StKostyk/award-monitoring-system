@@ -242,7 +242,7 @@ Preconditions: `docker compose up -d postgres redis mailpit minio clamav`; backe
 16. "Show as table" on the trend. Expected: the yearly totals and a projected row marked as such. (AC-2.8)
 17. "Board report" in English and in Ukrainian. Expected: `board-report-<code>-2022-2026.pdf`; A4 landscape, page numbers, one topic per page, bars with counts, Ukrainian text in both (unit names), the figures equal the page and step 7, at most 10 pages. (AC-3.1–3.3, 3.5)
 18. psql `select action_type, entity_id, new_values from audit_logs where action_type = 'ANALYTICS_EXPORTED' order by log_id desc limit 2;`. Expected: one row per report, format `board-pdf`, the period, the language, 0 named. (AC-3.4)
-19. Screen check of `/analytics/university` at 360 and 1280 px, uk/en, light/dark. Expected: no page-level horizontal scroll, the table scrolls in its container, no serious axe finding. (AC-2.9)
+19. Screen check of `/analytics/university` at 360 and 1280 px, uk/en, light/dark. Expected: no page-level horizontal scroll, the table scrolls in its container, no serious axe finding; switching to English and back with the toolbar button (no reload) shows no translation key such as `universityAnalytics.comparison.universityLevel`, also on `/analytics/units/9` (SCRUM-112). (AC-2.9)
 20. Run the Playwright spec of 5.3.2 and note the time to a usable page. Expected: under 10 s. (AC-2.9)
 
 ### Detours

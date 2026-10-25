@@ -98,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- Analytics pages switch every label to English and back without a reload; a double click on «Звіт для ради» sends one export (5.3.4)
 - Flaky and failing end-to-end specs fixed at the cause; progress bars have an accessible name and the review queue fits at 1280 px.
 - Revoking the last active SYSTEM_ADMIN or GDPR_OFFICER is refused with 409 role-last-holder, and such revocations wait for running erasures.
 - Unit analytics: Retry also reloads a failed unit list, the export and department links keep the shown years over New Year, and a single-year report header reads 2026 instead of 2026–2026.
