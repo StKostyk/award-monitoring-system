@@ -16,7 +16,7 @@
     when -Epic names the current epic), and the row follows the last started row there (Planned and To do rows do
     not count). The BACKLOG sprint cell comes from -Sprint, the PRD's **Sprint** line or the neighbouring row; an
     empty cell is reported. A rerun on the story
-    branch skips the checkout. -Carry takes uncommitted changes along to the new branch; a base without an
+    branch skips the checkout. -Carry stashes uncommitted changes, checks out the base and pops them on the new branch; a base without an
     upstream is not pulled, and a failed pull or GitHub query is retried once.
 
 .EXAMPLE
@@ -78,6 +78,12 @@ if ($DryRun) {
         if ((git status --porcelain) -and -not $Carry) {
             throw 'The working tree is not clean; commit or stash first, or carry the changes with -Carry.'
         }
+        $stashed = $false
+        if ($Carry -and (git status --porcelain)) {
+            git stash push -q -u -m "story-start $Key"
+            if ($LASTEXITCODE) { throw 'Cannot stash the carried changes' }
+            $stashed = $true
+        }
         git checkout -q $Base
         if ($LASTEXITCODE) { throw "Cannot check out $Base" }
         git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' *> $null
@@ -88,6 +94,10 @@ if ($DryRun) {
         }
         git checkout -b $branch
         if ($LASTEXITCODE) { throw "Cannot create $branch" }
+        if ($stashed) {
+            git stash pop -q
+            if ($LASTEXITCODE) { throw "The carried changes conflict with $Base; resolve them, then git stash drop" }
+        }
     }
     $closing | ForEach-Object { Close-Story $_ -NoTracker:$NoTracker }
     if (-not $row) {

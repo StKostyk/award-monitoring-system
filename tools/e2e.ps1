@@ -19,7 +19,7 @@
 
 .PARAMETER Workers
     Number of Playwright workers. Default 2: four workers next to the backend, ClamAV and the containers
-    exhaust the memory of the development machine.
+    exhaust the memory of the development machine. Below 6 GB free the default drops to 1; an explicit value stays.
 
 .PARAMETER TimeoutMinutes
     Stops the Playwright run after this many minutes (Playwright --global-timeout), so a run interrupted
@@ -54,6 +54,11 @@ if (Test-Path $gateLock) {
         Write-Host "A gate is running (PID $($gate.Id)); run the end-to-end suite after it."
         exit 1
     }
+}
+$freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+if ($Workers -gt 1 -and -not $PSBoundParameters.ContainsKey('Workers') -and $freeGb -lt 6) {
+    Write-Host ('{0:N1} GB free (under 6 GB): one Playwright worker.' -f $freeGb)
+    $Workers = 1
 }
 $started = $null
 $nginx = 'award-e2e-nginx'
