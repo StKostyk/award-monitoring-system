@@ -13,11 +13,11 @@
 | 5.1 Personal achievement dashboard (US-008) | Done | 2026-10-19 | 2026-10-23 |
 | 5.2 Faculty performance analytics (US-009) | Done | 2026-10-23 | 2026-10-24 |
 | 5.3 Executive university dashboard (US-010) | Done | 2026-10-25 | 2026-10-25 |
-| 5.4 Full-text award search (ADR-007 addendum) | Planned | - | - |
+| 5.4 Full-text award search (ADR-007 addendum) | Approved | - | - |
 
 ## Current focus
 
-Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 Done 2026-10-25: validated with notes, manual run of §10 passed 39/39 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §10, §13); fix story SCRUM-112 (raw keys after a language switch without reload, board report busy guard) open. Next: SCRUM-112, then feature 5.4.
+Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 Done 2026-10-25: validated with notes, manual run of §10 passed 39/39 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §10, §13); fix story SCRUM-112 (raw keys after a language switch without reload, board report busy guard) open. Feature 5.4 PRD approved 2026-10-25 ([feature-5.4-full-text-award-search.md](../features/epic-05/feature-5.4-full-text-award-search.md)); next: 5.4.1 (SCRUM-107).
 
 ## Scope
 
@@ -49,9 +49,9 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 7 | 5.3.1 University analytics API with trends and a compliance summary | 5.3 | 8 | SCRUM-104 | #291 | no | Done |
 | 8 | 5.3.2 Executive dashboard | 5.3 | 5 | SCRUM-105 | #292 | yes | Done |
 | 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Done |
-| 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Planned |
+| 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | In review |
 | 10a | 5.2.4 Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 5.2 | 2 | SCRUM-109 | #308 | no | Done |
-| 10b | 5.3.4 Analytics pages show translation keys after the language switch | 5.3 | 2 | SCRUM-112 | #319 | no | In review |
+| 10b | 5.3.4 Analytics pages show translation keys after the language switch | 5.3 | 2 | SCRUM-112 | #319 | no | Done |
 
 Total: 55 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD, 5.2.1 from 5 to 8 in the 5.2 PRD, 5.3.1 from 5 to 8 in the 5.3 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
 
@@ -73,6 +73,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-24 | Feature 5.2 closed: validated with notes, manual run 35/35; the failed unit list without Retry, the export period of a page open over New Year and the "2026–2026" header go to fix story 5.2.4 | No AC broken; both paths are failure or boundary cases | PRD 5.2 §13 |
 | 2026-10-25 | University analytics: `analytics:read:university` (rector, rector's secretary, not delegable) on its own endpoints; faculties and colleges compared with a university-level row, nobody named; trends as period deltas (at least 3 awards, 5 per direction); least-squares projection over at least 3 complete years; `ABOVE_AVERAGE` added to the highlights at university level; compliance summary of counts only, read live, with five attention reasons; board report as a landscape PDF on the 5.2.3 component, audited | The rector sees the state of the duties, not the records; no new library; the unit contract of 5.2 stays | PRD 5.3 §7 |
 | 2026-10-25 | Feature 5.3 closed: validated with notes, manual run 39/39; the analytics pages showing raw translation keys after a language switch without reload and the busy guard of the board report button go to fix story SCRUM-112 (#319) | No AC broken; both are cases outside the scripted path | PRD 5.3 §10, §13 |
+| 2026-10-25 | Award search: `q` on own awards and both achievements lists; generated `tsvector` and trigram columns with GIN indexes (V047), `simple` configuration for both languages with a query-side stem and prefix matching, trigram fallback for typos, owner's name on the achievements lists, relevance order while searching; proven at 100 000 awards under 1 s; reviewer queue and document contents not searched | PostgreSQL 17 has no Ukrainian stemmer; generated columns follow the row and leave with it on erasure; ADR-007 addendum in 5.4.1 | PRD 5.4 §7 |
 
 ## Documentation deviations found at kickoff
 

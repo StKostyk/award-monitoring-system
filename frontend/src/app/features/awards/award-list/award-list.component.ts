@@ -23,6 +23,7 @@ import { canCreateAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
+import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
 import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import {
@@ -47,6 +48,7 @@ const PAGE_SIZES = [20, 50, 100];
   selector: 'app-award-list',
   imports: [
     RequestTimingComponent,
+    SearchFieldComponent,
     FormsModule,
     RouterLink,
     MatButton,

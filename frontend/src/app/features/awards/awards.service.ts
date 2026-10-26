@@ -220,6 +220,8 @@ export interface AwardFilters {
   category: number | null;
   dateFrom: string | null;
   dateTo: string | null;
+  /** Search text of 2 to 200 characters; null lists without a search. */
+  q: string | null;
 }
 
 export type AwardPage = Page<Award>;
@@ -229,6 +231,7 @@ export const NO_FILTERS: AwardFilters = {
   category: null,
   dateFrom: null,
   dateTo: null,
+  q: null,
 };
 
 export type { Page };

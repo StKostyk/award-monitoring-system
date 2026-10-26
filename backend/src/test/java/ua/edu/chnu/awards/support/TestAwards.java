@@ -16,8 +16,10 @@ import ua.edu.chnu.awards.award.entity.ReviewDecision;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
+import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
+import ua.edu.chnu.awards.award.service.AwardSearch;
 import ua.edu.chnu.awards.award.service.RequestLookup;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
@@ -77,6 +79,17 @@ public final class TestAwards {
                                           Instant decidedAt) {
         return ReviewDecision.builder().id(id).requestId(REQUEST_ID).decision(type).level(level).reviewer(reviewer)
             .comments("comment " + id).decidedAt(decidedAt).build();
+    }
+
+    /**
+     * Award list pages over a repository.
+     *
+     * @param awards         the award repository
+     * @param specifications the list rules
+     * @return the list pages
+     */
+    public static AwardSearch search(AwardRepository awards, AwardSpecifications specifications) {
+        return new AwardSearch(awards, specifications);
     }
 
     /**

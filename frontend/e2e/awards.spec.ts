@@ -2,10 +2,14 @@ import { expect, test } from './fixtures';
 
 import {
   DEMO_PASSWORD,
+  FRESH_PASSWORD,
   SEED,
+  freshEmployee,
   kyivDay,
   pastDay,
+  seriousViolations,
   signIn,
+  signedInAs,
   submitWithoutDocuments,
   uniqueToken,
 } from './helpers';
@@ -315,5 +319,56 @@ test.describe('award drafts and submission on a phone', () => {
     await openAwards(page);
     await expect(page.getByRole('heading', { name: 'My awards' })).toBeVisible();
     await expect(page.getByTestId('award-add')).toContainText('Add award');
+  });
+});
+
+test.describe('searching my awards', () => {
+  test('ac1_10 ac1_12 the search narrows my awards and the clear button lists them again', async ({
+    browser,
+  }) => {
+    const owner = await freshEmployee(browser, 'search');
+    const found = uniqueToken();
+    const other = uniqueToken();
+    const page = await signedInAs(browser, owner, FRESH_PASSWORD);
+    await page.setViewportSize({ width: 360, height: 780 });
+    for (const word of [found, other]) {
+      await openAwards(page);
+      await page.getByTestId('award-add').click();
+      await page.getByTestId('award-title-uk').fill(`Грамота ${word}`);
+      await page.getByTestId('award-save').click();
+      await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
+    }
+    await openAwards(page);
+    await expect(page.getByTestId('award-item')).toHaveCount(2);
+    const searches: string[] = [];
+    page.on('request', (request) => {
+      const q = new URL(request.url()).searchParams.get('q');
+      if (request.url().includes('/api/v1/awards?') && q !== null) {
+        searches.push(q);
+      }
+    });
+
+    await page.getByTestId('filter-q').fill(found.slice(0, 1));
+    await page.waitForTimeout(500);
+    await expect(page.getByTestId('award-item')).toHaveCount(2);
+    await page.getByTestId('filter-q').fill(found);
+    await expect(page.getByTestId('award-item')).toHaveCount(1);
+    await expect(page.getByTestId('award-title')).toHaveText(`Грамота ${found}`);
+    await expect(page.getByTestId('award-status')).toContainText('Чернетка');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360,
+    );
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.getByTestId('filter-q').fill(uniqueToken());
+    await expect(page.getByTestId('awards-empty')).toHaveText(
+      'Немає нагород, що відповідають пошуку.',
+    );
+
+    await page.getByRole('button', { name: 'Очистити пошук' }).click();
+    await expect(page.getByTestId('filter-q')).toHaveValue('');
+    await expect(page.getByTestId('award-item')).toHaveCount(2);
+    expect(searches.every((q) => q.length >= 2)).toBe(true);
+    await page.context().close();
   });
 });

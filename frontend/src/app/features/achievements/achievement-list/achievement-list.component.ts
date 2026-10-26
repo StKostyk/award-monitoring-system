@@ -33,6 +33,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { currentKyivYear } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
+import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import { MAX_AGE_YEARS, Page } from '../../awards/awards.service';
 import { AchievementCardComponent } from '../achievement-card/achievement-card.component';
@@ -74,6 +75,7 @@ const UNIT_ID = /^\d{1,9}$/;
     MatProgressBar,
     MatPaginator,
     RouterLink,
+    SearchFieldComponent,
     TranslocoPipe,
     UnitHeaderComponent,
   ],

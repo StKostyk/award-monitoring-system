@@ -22,6 +22,12 @@
 }
 
 <div class="achievements__filters">
+  <app-search-field
+    class="achievements__filter achievements__filter--search"
+    label="achievements.filters.search"
+    [value]="filters.q"
+    (search)="filter({ q: $event })"
+  />
   @if (fixedUnit() === null) {
     <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
       <mat-label>{{ 'achievements.filters.unit' | transloco }}</mat-label>

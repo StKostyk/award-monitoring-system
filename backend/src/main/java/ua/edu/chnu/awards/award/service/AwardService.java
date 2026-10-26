@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +21,6 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
-import ua.edu.chnu.awards.common.web.PageResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +42,7 @@ public class AwardService {
     private final AccessScope access;
     private final AwardHistory history;
     private final AwardDocuments documents;
+    private final AwardSearch search;
 
     /**
      * Creates a draft owned by the caller in the caller's department, or in the unit that received it.
@@ -112,7 +111,7 @@ public class AwardService {
     }
 
     /**
-     * A page of the caller's own awards, newest first.
+     * A page of the caller's own awards, newest first, or in relevance order while searching.
      *
      * @param query filters
      * @param page  0-based page
@@ -121,9 +120,8 @@ public class AwardService {
      */
     @Transactional(readOnly = true)
     public Page<AwardResponse> listOwn(AwardQuery query, int page, int size) {
-        PageRequest pageable = PageResponse.request(page, size,
-            Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
-        Page<Award> found = awards.findAll(specifications.ownedBy(access.callerId(), query), pageable);
+        Page<Award> found = search.page(specifications.ownedBy(access.callerId(), query), query.q(),
+            Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")), false, page, size);
         Map<Long, AwardRequest> byAward = requests.byAward(found.map(Award::getId).getContent());
         Map<Long, List<AwardWarning>> hints = warnings.forDrafts(found.getContent());
         return found.map(award -> mapper.toResponse(award, byAward.get(award.getId()),

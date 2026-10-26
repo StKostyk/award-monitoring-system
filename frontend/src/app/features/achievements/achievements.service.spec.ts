@@ -133,7 +133,7 @@ describe('AchievementsService', () => {
     );
 
     expect(query).toEqual({
-      filters: { unit: 9, year: 2025, level: 'NATIONAL', recipient: 'PERSON', person: 12 },
+      filters: { unit: 9, year: 2025, level: 'NATIONAL', recipient: 'PERSON', person: 12, q: null },
       page: 2,
       size: 50,
     });
@@ -152,6 +152,32 @@ describe('AchievementsService', () => {
     );
 
     expect(query).toEqual({ filters: NO_ACHIEVEMENT_FILTERS, page: 0, size: 20 });
+  });
+
+  it('ac1_11_reads_the_search_trimmed_and_leaves_out_one_the_api_would_refuse', () => {
+    expect(readQuery(convertToParamMap({ q: ' премія ' })).filters.q).toBe('премія');
+    expect(readQuery(convertToParamMap({ q: 'п' })).filters.q).toBeNull();
+    expect(readQuery(convertToParamMap({ q: 'x'.repeat(201) })).filters.q).toBeNull();
+  });
+
+  it('ac1_11_writes_the_search_with_the_other_filters', () => {
+    expect(
+      writeQuery({
+        filters: { ...NO_ACHIEVEMENT_FILTERS, year: 2025, q: 'horizon' },
+        page: 0,
+        size: 20,
+      }),
+    ).toEqual({ year: 2025, q: 'horizon' });
+  });
+
+  it('ac1_11_sends_the_search_to_the_api', () => {
+    service
+      .list({ filters: { ...NO_ACHIEVEMENT_FILTERS, q: 'шевченко' }, page: 0, size: 20 }, 'public')
+      .subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/public/achievements'));
+    expect(request.request.params.get('q')).toBe('шевченко');
+    request.flush({ content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 });
   });
 
   it('ac1_8_writes_only_the_filters_that_are_set_and_a_later_page', () => {

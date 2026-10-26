@@ -1,0 +1,12 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.search-field {
+  width: 100%;
+}
+
+input[type='search']::-webkit-search-cancel-button {
+  display: none;
+}

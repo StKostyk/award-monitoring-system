@@ -1,6 +1,6 @@
 # ADR-007: Search Engine Selection
 
-**Status**: Accepted (deferred to Epic 5; PostgreSQL full-text search evaluated first, see Addendum 2026-10-05)  
+**Status**: Accepted (superseded in practice by PostgreSQL full-text search, see Addendum 2026-10-26)  
 **Date**: 2025-02-20  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Development Team
@@ -142,6 +142,22 @@ searches in milliseconds, and the data stays in one store with the same access r
 is chosen only if the evaluation shows a need PostgreSQL cannot meet (relevance tuning across languages, facets
 over large volumes, cross-university search).
 
+## Addendum 2026-10-26: PostgreSQL full-text search is the search engine
+
+Feature 5.4 ships the search on PostgreSQL (migration V047). Two generated stored columns on `awards` hold the
+searched texts: `search_vector` (`simple` configuration; titles weight A, awarding organisation B, descriptions C;
+apostrophes removed) and `search_text` (lower-cased titles and awarding organisation), each with a GIN index
+(`idx_awards_search`, `trgm_awards_search`). PostgreSQL 17 has no Ukrainian stemmer, so the query side cuts up to
+two final vowels of each word and matches every stem as a prefix (`прем:* & шевченк:*`). On the achievements
+lists the owner's name is matched as well. A trigram word similarity of at least 0.5 on the titles and awarding
+organisation is the typo fallback, run only when no award matches the words.
+
+Measured on 100 000 approved awards (story 5.4.1 scale test, PostgreSQL 17): a ranked two-word search with
+1 666 matches takes about 200 ms in the database and answers under 1 s through the API on both lists; a typo
+search through the trigram index takes 16 ms. The trigram match OR'd with the full-text match took 1.7 s for
+common words (10 000 candidate rows rechecked), hence the fallback. Elasticsearch stays out unless one of the
+triggers of the 2026-10-05 addendum arises.
+
 ---
 
 ## Revision History
@@ -151,6 +167,7 @@ over large volumes, cross-university search).
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: implementation deferred | Documentation sync after Epic 2 |
 | 2026-10-05 | Stefan Kostyk | Addendum: PostgreSQL full-text search evaluated first | Design review of 2026-10-04 |
+| 2026-10-26 | Stefan Kostyk | Addendum: PostgreSQL full-text search is the search engine | Feature 5.4 |
 
 ---
 

@@ -64,7 +64,7 @@ class AwardServiceTest {
     private final AwardDocuments documents = mock(AwardDocuments.class);
     private final AwardService service = new AwardService(awards, TestAwards.requestLookup(requests),
         specifications, rules, ownership, warnings, new AwardMapper(TestWorkflow.estimator()), access,
-        mock(AwardHistory.class), documents);
+        mock(AwardHistory.class), documents, TestAwards.search(awards, specifications));
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 

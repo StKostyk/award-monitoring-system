@@ -11,7 +11,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { Award, AwardsService } from '../awards.service';
+import { Award, AwardsService, NO_FILTERS } from '../awards.service';
 import { AwardsActions } from '../store/awards.actions';
 import { awardsFeature } from '../store/awards.feature';
 import { AwardListComponent } from './award-list.component';
@@ -65,6 +65,8 @@ const translations = {
       statusPanel: { returned: 'Очікує ваших виправлень' },
       add: 'Додати нагороду',
       empty: 'Нагород ще немає.',
+      noMatch: 'Немає нагород, що відповідають пошуку.',
+      filters: { search: 'Пошук у моїх нагородах' },
       messages: { removed: 'Чернетку видалено.' },
       status: { DRAFT: 'Чернетка', PENDING: 'На розгляді', APPROVED: 'Затверджено' },
       visibility: { chips: { UNIVERSITY: 'Колегам', PUBLIC: 'Публічно' } },
@@ -331,9 +333,47 @@ describe('AwardListComponent', () => {
 
     expect(store.dispatch).toHaveBeenCalledWith(
       AwardsActions.filtersChanged({
-        filters: { status: 'PENDING', category: null, dateFrom: null, dateTo: null },
+        filters: { status: 'PENDING', category: null, dateFrom: null, dateTo: null, q: null },
       }),
     );
+  });
+
+  it('ac1_10_a_search_reloads_the_list_with_the_other_filters', async () => {
+    await create();
+    store.dispatch(AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, status: 'DRAFT' } }));
+
+    fixture.componentInstance.filter({ q: 'horizon' });
+
+    expect(store.dispatch).toHaveBeenLastCalledWith(
+      AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, status: 'DRAFT', q: 'horizon' } }),
+    );
+  });
+
+  it('ac1_10_shows_the_search_field_with_the_search_of_the_list', async () => {
+    await create();
+    store.dispatch(AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, q: 'horizon' } }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const input = fixture.nativeElement.querySelector(
+      '[data-testid="filter-q"]',
+    ) as HTMLInputElement;
+    expect(input.value).toBe('horizon');
+  });
+
+  it('ac1_10_a_search_without_matches_says_so', async () => {
+    await create();
+    store.dispatch(AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, q: 'horizon' } }));
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: { content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 },
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="awards-empty"]')?.textContent,
+    ).toContain('Немає нагород, що відповідають пошуку.');
   });
 
   it('ac1_2_hides_the_add_button_without_award_create', async () => {

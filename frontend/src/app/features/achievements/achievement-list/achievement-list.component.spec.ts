@@ -45,6 +45,7 @@ const translations = {
   uk: {
     achievements: {
       empty: 'Поки що немає досягнень за цими умовами.',
+      filters: { search: 'Пошук досягнень' },
       problems: { failed: 'Не вдалося завантажити досягнення.', gone: 'Такого підрозділу немає.' },
       title: 'Досягнення',
       publicTitle: 'Досягнення університету',
@@ -164,6 +165,51 @@ describe('AchievementListComponent', () => {
 
     expect(element(fixture, 'achievements-empty')?.textContent).toContain(
       'Поки що немає досягнень за цими умовами.',
+    );
+  });
+
+  it('ac1_11_the_search_comes_from_the_address_bar', async () => {
+    params.next(convertToParamMap({ q: 'шевченко', year: '2025' }));
+    const fixture = await open();
+    await fixture.whenStable();
+
+    expect(service.list).toHaveBeenLastCalledWith(
+      { filters: { ...NO_ACHIEVEMENT_FILTERS, year: 2025, q: 'шевченко' }, page: 0, size: 20 },
+      'signed-in',
+    );
+    expect((element(fixture, 'filter-q') as HTMLInputElement).value).toBe('шевченко');
+  });
+
+  it('ac1_11_a_search_goes_into_the_address_bar_on_the_first_page', async () => {
+    params.next(convertToParamMap({ year: '2025', page: '3' }));
+    const fixture = await open();
+
+    fixture.componentInstance.filter({ q: 'horizon' });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { year: 2025, q: 'horizon' } }),
+    );
+  });
+
+  it('ac1_11_a_search_on_a_unit_page_keeps_the_unit_out_of_the_address_bar', async () => {
+    unitId.next(convertToParamMap({ id: '64' }));
+    const fixture = await open();
+
+    fixture.componentInstance.filter({ q: 'horizon' });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { q: 'horizon' } }),
+    );
+  });
+
+  it('ac1_11_the_public_page_link_keeps_the_search', async () => {
+    params.next(convertToParamMap({ q: 'horizon' }));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-counterpart')?.getAttribute('href')).toBe(
+      '/public/achievements?q=horizon',
     );
   });
 

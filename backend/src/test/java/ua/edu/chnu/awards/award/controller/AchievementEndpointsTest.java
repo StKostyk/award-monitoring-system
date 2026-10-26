@@ -58,6 +58,17 @@ class AchievementEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.content[0].impactScore").doesNotExist());
     }
 
+    @Test
+    void ac1_2_theSearchTextIsPassedWithTheFilters() throws Exception {
+        when(achievements.shared(new AchievementQuery(null, 2025, null, null, null, "horizon"), 0, 20))
+            .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get(ACHIEVEMENTS).with(secretary()).param("q", "horizon").param("year", "2025"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+            .andExpect(jsonPath("$.content").isEmpty());
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"year=abc", "level=GALACTIC", "recipient=TEAM", "unit=x"})
     void ac1_6_aMalformedFilterIsAnInvalidParameter(String filter) throws Exception {
