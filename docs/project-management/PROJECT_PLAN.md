@@ -327,6 +327,21 @@ Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](.
   stays outside the software.
 - **Next**: Epic 5 (analytics and reporting).
 
+## Addendum 2026-10-26: After Epic 5
+
+- **Velocity**: Epic 5 delivered 67 points between 2026-10-19 and 2026-10-26 (sprints 6 and 7): 55 estimated on the
+  roadmap, 67 after raising three analytics stories from 5 to 8 and adding three fix stories from the validations and
+  manual runs. About 379 points are delivered.
+- **Delivered scope**: feature 5.1 added the personal dashboard with a consented department rank and a shareable
+  summary; 5.2 the faculty and department analytics with CSV, Excel and PDF export; 5.3 the executive university
+  dashboard with a compliance summary, trends with a projection and a presentation-ready board report; 5.4 the
+  full-text award search on PostgreSQL (ADR-007 addendum), which settles the search engine decision. All four
+  features were walked through their manual scenarios.
+- **Not built**: a custom report builder, a recommendations engine and statistical significance tests (a rule-based
+  list of strengths and gaps and period-over-period deltas instead), raw data access, cross-university analytics, and
+  a separate search engine (Elasticsearch stays out unless a trigger of ADR-007 arises).
+- **Next**: Epic 8, then Epic 9 (production hardening and the demo deployment).
+
 ---
 
 ## Summary
