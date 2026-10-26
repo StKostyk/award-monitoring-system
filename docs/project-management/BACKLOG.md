@@ -151,6 +151,18 @@ Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPO
 | 5.4.1 | Full-text award search on PostgreSQL | 5 | ✅ Done | SCRUM-107 | [#294](https://github.com/StKostyk/award-monitoring-system/issues/294) |
 | 5.4.2 | Search words and names in every typed form | 3 | ✅ Done | SCRUM-113 | [#325](https://github.com/StKostyk/award-monitoring-system/issues/325) |
 
+### Epic 8 — Mobile Optimization & Accessibility (Jira epic SCRUM-114)
+Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md). Kickoff 2026-10-26; installable PWA with an application-shell cache only (no personal data cached), offline award draft saved on reconnect, touch layouts at 360 px, WCAG 2.1 AA with an audit and a public accessibility statement. Browser push notifications in the icebox.
+
+| ID | Story | Points | Status | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 8.1.1 | Installable app with an offline application shell | 5 | 7 | SCRUM-115 | [#331](https://github.com/StKostyk/award-monitoring-system/issues/331) |
+| 8.1.2 | Award draft kept offline and saved on reconnect | 5 | 7 | SCRUM-116 | [#332](https://github.com/StKostyk/award-monitoring-system/issues/332) |
+| 8.1.3 | Touch-ready layouts at 360 px and camera capture | 5 | 7 | SCRUM-117 | [#333](https://github.com/StKostyk/award-monitoring-system/issues/333) |
+| 8.2.1 | Page language, titles, skip link and focus management | 5 | 7 | SCRUM-118 | [#334](https://github.com/StKostyk/award-monitoring-system/issues/334) |
+| 8.2.2 | Described forms, tables and announced changes | 5 | 7 | SCRUM-119 | [#335](https://github.com/StKostyk/award-monitoring-system/issues/335) |
+| 8.2.3 | WCAG 2.1 AA audit and accessibility statement | 3 | 7 | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
+
 ### Later epics
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
@@ -178,3 +190,4 @@ From Sprint 4 on, completed stories are not summed here: the epic trackers and t
 |----|-------|--------|-------|
 | 1.3.5 | MFA (TOTP, SMS, WebAuthn) | Not needed for the demo; design kept in the auth document | [#41](https://github.com/StKostyk/award-monitoring-system/issues/41) |
 | — | HR validation endpoint | No HR system available; replaced by domain check and department selection at registration | [#47](https://github.com/StKostyk/award-monitoring-system/issues/47) |
+| — | Browser push notifications (Epic 8 PWA) | Needs VAPID keys, a subscription table, a preference channel and export/erasure; e-mail and in-app channels cover the events | — |
