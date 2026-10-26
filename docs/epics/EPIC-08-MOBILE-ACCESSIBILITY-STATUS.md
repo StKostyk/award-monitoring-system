@@ -10,12 +10,12 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Not started | - | - |
+| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Planned ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) approved 2026-10-26) | - | - |
 | 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | Not started | - | - |
 
 ## Current focus
 
-Kickoff 2026-10-26. Next: the Feature 8.1 PRD.
+Feature 8.1 PRD approved 2026-10-26. Next: story 8.1.1 (SCRUM-115).
 
 ## Scope
 
@@ -63,6 +63,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-26 | Browser push notifications stay out of Epic 8 (icebox) | Backend work (VAPID keys, subscription table, preference channel, export and erasure) for a feature iOS offers only to installed apps; e-mail and in-app channels cover the events | Epic 7 scope note |
 | 2026-10-26 | Accessibility in a slim form: page language, titles, skip link and focus (8.2.1) plus an automated axe sweep (WCAG 2.1 AA tags) of every route in the gate (8.2.3); 8.2.2 and the accessibility statement go to the icebox; no manual conformance audit | NFR-010 and US-014 are met by automated checks at a third of the cost; Angular Material forms and dialogs already pass the axe checks of 19 specs; the thesis claims automated checking, not certification | QUALITY_GATES §8, 8.2 PRD |
 | 2026-10-26 | Lighthouse (mobile profile) above 90 for performance, accessibility and best practices on the sign-in page, the award form and the award list, measured against the production build in Compose | US-013 DoD, NFR-009, ADR-013 | 8.1.3 |
+| 2026-10-26 | Feature 8.1 PRD approved: one service worker data group for the brand files (freshness), refining decision 1; Ukrainian-only manifest; Lighthouse measured by hand and the service worker spec run against the Compose build, both outside the gate; installability checked in the Chrome Application panel; server drafts written on "Save draft" and on reconnect only; navigation of every signed-in user after an offline start | Brand files change per deployment without a rebuild and hold no personal data; a manifest has no language switch; the worker exists only in the production build; Lighthouse 12 has no PWA category | 8.1 PRD §7 D-1 to D-8 |
 
 ## Documentation deviations found at kickoff
 
@@ -77,7 +78,8 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 5. US-014 DoD and QUALITY_GATES §8.2 require testing with a screen reader (NVDA/JAWS/VoiceOver) "with actual screen
    reader users". The manual scenario uses the browser accessibility tree and a keyboard-only walk instead; testing
    with a screen reader and with screen reader users is a thesis limitation (decided 2026-10-26).
-6. US-013 DoD "mobile user guide": one user-facing page in `docs/guides/`, written with 8.1.3. The US-014 DoD
+6. US-013 DoD "mobile user guide": a section "Using the app on a phone" in `docs/user/USER_GUIDE.md`, written
+   with 8.1.3 (8.1 PRD D-3). The US-014 DoD
    "accessibility guide", "WCAG AA compliance verified through audit" and "keyboard navigation throughout" are met
    only as far as the automated sweep and 8.2.1 reach; the remainder is a thesis limitation.
 

@@ -152,7 +152,7 @@ Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPO
 | 5.4.2 | Search words and names in every typed form | 3 | ✅ Done | SCRUM-113 | [#325](https://github.com/StKostyk/award-monitoring-system/issues/325) |
 
 ### Epic 8 — Mobile Optimization & Accessibility (Jira epic SCRUM-114)
-Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md). Kickoff 2026-10-26; installable PWA with an application-shell cache only (no personal data cached), offline award draft saved on reconnect, touch layouts at 360 px, page language, titles, skip link and focus plus an automated WCAG 2.1 AA sweep of every route. Browser push notifications, 8.2.2 and an accessibility statement in the icebox.
+Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md). Kickoff 2026-10-26; installable PWA with an application-shell cache only (no personal data cached), offline award draft saved on reconnect, touch layouts at 360 px, page language, titles, skip link and focus plus an automated WCAG 2.1 AA sweep of every route. Browser push notifications, 8.2.2 and an accessibility statement in the icebox. Feature 8.1 PRD approved 2026-10-26: [feature-8.1-mobile-pwa.md](../features/epic-08/feature-8.1-mobile-pwa.md).
 
 | ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
