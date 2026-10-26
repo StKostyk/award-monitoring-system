@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.dto;
 
+import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -15,7 +16,7 @@ import ua.edu.chnu.awards.common.web.ApiProblemException;
  * The search text of an award list, split into the words the full-text and trigram matches use.
  *
  * @param words the lower-cased words, apostrophes removed, at most ten
- * @param text  the trimmed search text, matched as a fragment of a name
+ * @param text  the trimmed search text in composed (NFC) form, matched as a fragment of a name
  */
 public record SearchTerms(List<String> words, String text) {
 
@@ -32,6 +33,7 @@ public record SearchTerms(List<String> words, String text) {
     public static final double MIN_SIMILARITY = 0.5;
 
     private static final Pattern APOSTROPHES = Pattern.compile("['’ʼ`]");
+    private static final Pattern SPACES = Pattern.compile("\\s+");
     private static final Pattern SEPARATORS = Pattern.compile("[^\\p{L}\\p{M}\\p{N}]+");
     private static final String ENDINGS = "аеєиіїоуюяйь";
     private static final int MIN_STEMMED_LENGTH = 5;
@@ -42,7 +44,7 @@ public record SearchTerms(List<String> words, String text) {
      * Copies the words.
      *
      * @param words the lower-cased words, apostrophes removed, at most ten
-     * @param text  the trimmed search text, matched as a fragment of a name
+     * @param text  the trimmed search text in composed (NFC) form, matched as a fragment of a name
      */
     public SearchTerms {
         words = List.copyOf(words);
@@ -56,7 +58,7 @@ public record SearchTerms(List<String> words, String text) {
      * @throws ApiProblemException when the text is longer than 200 characters
      */
     public static SearchTerms of(String query) {
-        String text = query == null ? "" : query.strip();
+        String text = query == null ? "" : Normalizer.normalize(query, Normalizer.Form.NFC).strip();
         if (text.length() > MAX_LENGTH) {
             throw new ApiProblemException(HttpStatus.BAD_REQUEST, "invalid-parameter",
                 "The search text must not be longer than " + MAX_LENGTH + " characters", Map.of("parameter", "q"));
@@ -98,12 +100,14 @@ public record SearchTerms(List<String> words, String text) {
     }
 
     /**
-     * The search text as a case-insensitive {@code LIKE} fragment, wildcards escaped.
+     * The search text as a case-insensitive {@code LIKE} fragment: wildcards escaped, any apostrophe matching any
+     * one character and every run of white space read as one space.
      *
      * @return the pattern
      */
     public String namePattern() {
-        return "%" + text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        String escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        return "%" + SPACES.matcher(APOSTROPHES.matcher(escaped).replaceAll("_")).replaceAll(" ") + "%";
     }
 
     /**

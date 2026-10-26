@@ -17,7 +17,7 @@
 
 ## Current focus
 
-Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 Done 2026-10-25: validated with notes, manual run of §10 passed 39/39 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §10, §13); fix story SCRUM-112 (raw keys after a language switch without reload, board report busy guard) open. Feature 5.4 PRD approved 2026-10-25 ([feature-5.4-full-text-award-search.md](../features/epic-05/feature-5.4-full-text-award-search.md)); next: 5.4.1 (SCRUM-107).
+Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 Done 2026-10-25: validated with notes, manual run of §10 passed 39/39 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §10, §13); fix story SCRUM-112 (raw keys after a language switch without reload, board report busy guard) open. Feature 5.4: 5.4.1 (SCRUM-107) Done 2026-10-26, validated with notes ([feature-5.4-full-text-award-search.md](../features/epic-05/feature-5.4-full-text-award-search.md) §13); fix story 5.4.2 (SCRUM-113: joined tokens, decomposed letters, name spelling) in progress; next: the manual run of §10 and the feature close.
 
 ## Scope
 
@@ -49,9 +49,10 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 7 | 5.3.1 University analytics API with trends and a compliance summary | 5.3 | 8 | SCRUM-104 | #291 | no | Done |
 | 8 | 5.3.2 Executive dashboard | 5.3 | 5 | SCRUM-105 | #292 | yes | Done |
 | 9 | 5.3.3 Presentation-ready board report | 5.3 | 3 | SCRUM-106 | #293 | no | Done |
-| 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | In review |
+| 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Done |
 | 10a | 5.2.4 Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 5.2 | 2 | SCRUM-109 | #308 | no | Done |
 | 10b | 5.3.4 Analytics pages show translation keys after the language switch | 5.3 | 2 | SCRUM-112 | #319 | no | Done |
+| 10c | 5.4.2 Search words and names in every typed form | 5.4 | 3 | SCRUM-113 | #325 | no | In review |
 
 Total: 55 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD, 5.2.1 from 5 to 8 in the 5.2 PRD, 5.3.1 from 5 to 8 in the 5.3 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
 
@@ -118,6 +119,9 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   - `BoardFiguresHelper` also holds the trend and comparison pages; its name no longer fits.
   - The university and unit analytics pages repeat about 60 lines (compared-with line, category and level rows, period navigation).
   - `UniversityAnalyticsServiceTest` and `UnitAnalyticsServiceTest` repeat the fixed clock and `assertInvalid`.
+- Feature 5.4 refactor sweep (2026-10-26), notes only (the cheap items went into 5.4.2):
+  - `AchievementQuery` and `AwardQuery` gained overload constructors for the search text; one change for both belongs in the refactor chore.
+  - The `searchTerm` helper of the two list components moves to `shared/search-field/search-term.ts` once a third list adopts the search.
 
 ## Risks
 

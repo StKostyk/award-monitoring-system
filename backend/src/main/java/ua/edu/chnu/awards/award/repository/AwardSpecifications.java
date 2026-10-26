@@ -7,6 +7,7 @@ import java.util.List;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
@@ -112,26 +113,23 @@ public class AwardSpecifications {
      * Awards whose texts hold every search word as a prefix, or, when asked, whose owner's name holds the search
      * text, by full-text rank and then in the given order. The count query of a page carries no order.
      *
-     * @param search the search terms
+     * @param search the search terms, at least one word
      * @param ties   the list order of equally relevant awards
      * @param byName whether the owner's name of a personal award is searched as well
      * @return specification
      */
     public Specification<Award> matching(SearchTerms search, Sort ties, boolean byName) {
         return (root, criteria, builder) -> {
-            if (search.isEmpty()) {
-                return builder.disjunction();
-            }
-            ordered(criteria, builder.desc(builder.function(AwardSearchFunctions.RANK, Double.class,
-                root.get(SEARCH_VECTOR), builder.literal(search.tsquery()))), root, builder, ties);
-            Predicate fullText = builder.isTrue(builder.function(AwardSearchFunctions.FULL_TEXT, Boolean.class,
-                root.get(SEARCH_VECTOR), builder.literal(search.tsquery())));
+            Expression<Object> vector = root.get(SEARCH_VECTOR);
+            Expression<String> tsquery = builder.literal(search.tsquery());
+            ordered(criteria, builder.function(AwardSearchFunctions.RANK, Double.class, vector, tsquery), root,
+                builder, ties);
+            Predicate fullText = holds(builder, AwardSearchFunctions.FULL_TEXT, vector, tsquery);
             if (!byName) {
                 return fullText;
             }
-            return builder.or(fullText, builder.and(builder.isNull(root.get(RECIPIENT_UNIT)), builder.isTrue(
-                builder.function(AwardSearchFunctions.OWNER_NAMED, Boolean.class, root.get(OWNER).get("id"),
-                    builder.literal(search.namePattern())))));
+            return builder.or(fullText, builder.and(builder.isNull(root.get(RECIPIENT_UNIT)), holds(builder,
+                AwardSearchFunctions.OWNER_NAMED, root.get(OWNER).get("id"), builder.literal(search.namePattern()))));
         };
     }
 
@@ -139,29 +137,31 @@ public class AwardSpecifications {
      * Awards whose titles and awarding organisation are similar to the search words, most similar first and then
      * in the given order; the typo fallback when no award matches the words.
      *
-     * @param search the search terms
+     * @param search the search terms, at least one word
      * @param ties   the list order of equally similar awards
      * @return specification
      */
     public Specification<Award> similar(SearchTerms search, Sort ties) {
         return (root, criteria, builder) -> {
-            if (search.isEmpty()) {
-                return builder.disjunction();
-            }
-            ordered(criteria, builder.desc(builder.function(AwardSearchFunctions.SIMILARITY, Double.class,
-                root.get(SEARCH_TEXT), builder.literal(search.trigram()))), root, builder, ties);
-            return builder.isTrue(builder.function(AwardSearchFunctions.TYPO, Boolean.class, root.get(SEARCH_TEXT),
-                builder.literal(search.trigram())));
+            Expression<String> text = root.get(SEARCH_TEXT);
+            Expression<String> words = builder.literal(search.trigram());
+            ordered(criteria, builder.function(AwardSearchFunctions.SIMILARITY, Double.class, text, words), root,
+                builder, ties);
+            return holds(builder, AwardSearchFunctions.TYPO, text, words);
         };
     }
 
-    private static void ordered(CriteriaQuery<?> criteria, Order relevance, Root<Award> root,
+    private static Predicate holds(CriteriaBuilder builder, String function, Expression<?>... arguments) {
+        return builder.isTrue(builder.function(function, Boolean.class, arguments));
+    }
+
+    private static void ordered(CriteriaQuery<?> criteria, Expression<Double> relevance, Root<Award> root,
                                 CriteriaBuilder builder, Sort ties) {
         if (criteria.getResultType() == Long.class || criteria.getResultType() == long.class) {
             return;
         }
         List<Order> orders = new ArrayList<>();
-        orders.add(relevance);
+        orders.add(builder.desc(relevance));
         ties.forEach(tie -> orders.add(tie.isAscending() ? builder.asc(root.get(tie.getProperty()))
             : builder.desc(root.get(tie.getProperty()))));
         criteria.orderBy(orders);

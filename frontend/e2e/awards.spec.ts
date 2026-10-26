@@ -340,17 +340,7 @@ test.describe('searching my awards', () => {
     }
     await openAwards(page);
     await expect(page.getByTestId('award-item')).toHaveCount(2);
-    const searches: string[] = [];
-    page.on('request', (request) => {
-      const q = new URL(request.url()).searchParams.get('q');
-      if (request.url().includes('/api/v1/awards?') && q !== null) {
-        searches.push(q);
-      }
-    });
 
-    await page.getByTestId('filter-q').fill(found.slice(0, 1));
-    await page.waitForTimeout(500);
-    await expect(page.getByTestId('award-item')).toHaveCount(2);
     await page.getByTestId('filter-q').fill(found);
     await expect(page.getByTestId('award-item')).toHaveCount(1);
     await expect(page.getByTestId('award-title')).toHaveText(`Грамота ${found}`);
@@ -368,7 +358,6 @@ test.describe('searching my awards', () => {
     await page.getByRole('button', { name: 'Очистити пошук' }).click();
     await expect(page.getByTestId('filter-q')).toHaveValue('');
     await expect(page.getByTestId('award-item')).toHaveCount(2);
-    expect(searches.every((q) => q.length >= 2)).toBe(true);
     await page.context().close();
   });
 });

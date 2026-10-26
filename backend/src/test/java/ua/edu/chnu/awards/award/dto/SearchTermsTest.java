@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.award.dto;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.text.Normalizer;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,25 @@ class SearchTermsTest {
         assertThat(SearchTerms.of("пʼять").words()).containsExactly("пять");
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+        "2024-2025|2024 2025",
+        "v3.5|v3 5",
+        "chnu.edu.ua|chnu edu ua",
+        "a@b_c/d|a b c d"
+    })
+    void ac1_3_joinedTokensSplitIntoTheirWords(String text, String words) {
+        assertThat(SearchTerms.of(text).trigram()).isEqualTo(words);
+    }
+
+    @Test
+    void ac1_3_aDecomposedLetterIsReadComposed() {
+        SearchTerms terms = SearchTerms.of(Normalizer.normalize("Прийом Київ", Normalizer.Form.NFD));
+
+        assertThat(terms.words()).containsExactly("прийом", "київ");
+        assertThat(terms.text()).isEqualTo("Прийом Київ");
+    }
+
     @Test
     void ac1_3_everyWordIsRequiredAsAPrefix() {
         SearchTerms terms = SearchTerms.of("  Best   pap ");
@@ -85,5 +105,11 @@ class SearchTermsTest {
     @Test
     void ac1_6_theNamePatternEscapesWildcards() {
         assertThat(SearchTerms.of("50%_a\\b").namePattern()).isEqualTo("%50\\%\\_a\\\\b%");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Мар'яна  Шукайленко", "Мар’яна Шукайленко", "Марʼяна\tШукайленко", "Мар`яна Шукайленко"})
+    void ac1_6_theNamePatternReadsAnyApostropheAndOneSpace(String text) {
+        assertThat(SearchTerms.of(text).namePattern()).isEqualTo("%Мар_яна Шукайленко%");
     }
 }

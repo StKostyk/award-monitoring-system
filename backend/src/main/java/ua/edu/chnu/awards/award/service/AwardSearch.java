@@ -45,8 +45,11 @@ public class AwardSearch {
             return awards.findAll(list, PageResponse.request(page, size, order));
         }
         PageRequest unordered = PageResponse.request(page, size, Sort.unsorted());
+        if (search.isEmpty()) {
+            return Page.empty(unordered);
+        }
         Page<Award> found = awards.findAll(list.and(specifications.matching(search, order, byName)), unordered);
-        if (found.getTotalElements() > 0 || search.isEmpty()) {
+        if (found.getTotalElements() > 0) {
             return found;
         }
         awards.useWordSimilarity(String.valueOf(SearchTerms.MIN_SIMILARITY));
