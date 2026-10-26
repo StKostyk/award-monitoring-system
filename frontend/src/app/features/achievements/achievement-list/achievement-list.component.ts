@@ -35,7 +35,7 @@ import { currentKyivYear } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
-import { MAX_AGE_YEARS, Page } from '../../awards/awards.service';
+import { MAX_AGE_YEARS, Page, RECOGNITION_LEVELS } from '../../awards/awards.service';
 import { AchievementCardComponent } from '../achievement-card/achievement-card.component';
 import {
   Achievement,
@@ -46,7 +46,6 @@ import {
   NO_ACHIEVEMENT_FILTERS,
   PAGE_SIZES,
   RECIPIENT_TYPES,
-  RECOGNITION_LEVELS,
   UnitOption,
   readQuery,
   writeQuery,
@@ -93,7 +92,7 @@ export class AchievementListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly retries = new Subject<void>();
 
-  protected readonly levels = RECOGNITION_LEVELS;
+  protected readonly levels = [...RECOGNITION_LEVELS].reverse();
   protected readonly recipients = RECIPIENT_TYPES;
   protected readonly pageSizes = PAGE_SIZES;
   protected readonly years = recentYears();

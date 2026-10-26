@@ -11,7 +11,13 @@ import {
 import { organizationName } from '../../shared/organization-name';
 import { searchTerm } from '../../shared/search-field/search-field.component';
 import { DocumentType } from '../awards/award-documents/documents.service';
-import { CategoryRef, Page, RecognitionLevel, UnitRef } from '../awards/awards.service';
+import {
+  CategoryRef,
+  Page,
+  RECOGNITION_LEVELS,
+  RecognitionLevel,
+  UnitRef,
+} from '../awards/awards.service';
 
 /** Which set a page lists: awards shared with colleagues, or the public ones without sign-in. */
 export type AchievementScope = 'signed-in' | 'public';
@@ -90,19 +96,6 @@ export const NO_ACHIEVEMENT_FILTERS: AchievementFilters = {
   person: null,
   q: null,
 };
-
-/** Recognition levels, broadest first. */
-export const RECOGNITION_LEVELS: RecognitionLevel[] = [
-  'INTERNATIONAL',
-  'NATIONAL',
-  'REGIONAL',
-  'UNIVERSITY',
-  'LOCAL',
-  'FACULTY',
-  'COLLEGE',
-  'DEPARTMENT',
-  'SPECIALITY',
-];
 
 export const RECIPIENT_TYPES: RecipientType[] = ['PERSON', 'UNIT'];
 export const PAGE_SIZES = [20, 50, 100];

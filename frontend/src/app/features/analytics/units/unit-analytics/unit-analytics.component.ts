@@ -9,9 +9,9 @@ import { Store } from '@ngrx/store';
 import { combineLatest } from 'rxjs';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
-import { categoryName } from '../../../awards/awards.service';
+import { RECOGNITION_LEVELS, categoryName } from '../../../awards/awards.service';
 import { readPeriod } from '../../analytics-period';
-import { AnalyticsPeriod, RECOGNITION_LEVELS } from '../../analytics.service';
+import { AnalyticsPeriod } from '../../analytics.service';
 import { PeriodSelectComponent } from '../../period-select/period-select.component';
 import {
   ComparisonBarsComponent,

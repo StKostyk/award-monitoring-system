@@ -26,8 +26,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UnitAnalyticsService {
 
-    private static final int DEFAULT_YEARS = 5;
-
     private final UnitScope scope;
     private final UnitAggregates aggregates;
     private final UnitComparison comparison;
@@ -59,8 +57,8 @@ public class UnitAnalyticsService {
     public UnitAnalytics of(long unitId, Integer from, Integer to) {
         AnalysableUnit unit = scope.require(unitId);
         int currentYear = Year.now(clock).getValue();
-        YearRange period = PeriodHelper.resolve(from, to, currentYear, last -> last - DEFAULT_YEARS + 1);
-        YearRange previous = new YearRange(2 * period.from() - period.to() - 1, period.from() - 1);
+        YearRange period = PeriodHelper.resolve(from, to, currentYear);
+        YearRange previous = period.previous();
         UnitFigures figures = aggregates.of(unitId, previous, period);
         UnitTotals totals = UnitFiguresHelper.totals(figures, period, previous);
         boolean faculty = unit.type() == OrganizationType.FACULTY;

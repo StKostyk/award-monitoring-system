@@ -6,13 +6,8 @@ import { environment } from '../../../../environments/environment';
 import { OrganizationRef } from '../../../core/auth/user-profile';
 import { AppLanguage } from '../../../core/i18n/language.service';
 import { CategoryRef, RecognitionLevel } from '../../awards/awards.service';
-import { AnalyticsPeriod } from '../analytics.service';
-import {
-  UnitComparisonRow,
-  UnitHighlight,
-  UnitTotals,
-  periodParams,
-} from '../units/unit-analytics.service';
+import { AnalyticsPeriod, periodParams } from '../analytics.service';
+import { UnitComparisonRow, UnitHighlight, UnitTotals } from '../units/unit-analytics.service';
 
 export type ProjectionStatus = 'PROJECTED' | 'TOO_FEW_YEARS';
 export type ComplianceStatus = 'OK' | 'ATTENTION';
