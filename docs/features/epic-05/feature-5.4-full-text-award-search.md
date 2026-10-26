@@ -232,11 +232,11 @@ where u.user_id = 966;
 ### Detours
 
 14. Direct URL `http://localhost:4200/units/9/achievements?q=премії` as `dean.fmi`. Expected: the unit page with the field filled and the prize listed only if the lecturer's department is under unit 9. (AC-1.11)
-15. Backend restart mid-search: with step 10's result on screen, stop the backend, type another word. Expected: the existing list failure state with Retry; after the restart, Retry runs the search with the current text. (AC-1.11)
+15. Backend restart mid-search: with step 10's result on screen, stop the backend, type another word. Expected: the existing list failure state with «Try again» (it appears after the request has been retried, a few seconds); after the restart, «Try again» runs the search with the current text. (AC-1.11)
 16. Token expiry on reload: on `/achievements?q=horizon`, expire the session (wait past the access-token lifetime, or delete the token in DevTools) and reload. Expected: sign-in, then back on `/achievements?q=horizon` with the result. (AC-1.11)
 17. Second browser as `lecturer.fmi`: rename the draft to «MV54 Чернетка гранту» and save; in the first browser search `гранту` on `/awards`. Expected: the renamed draft found at once, `премії` no longer finds it. (AC-1.9)
 18. Revoked mid-flow (visibility): `employee.fmi` has `?q=MV54` open on `/achievements` with the teaching grant listed; `lecturer.fmi` sets it to private on its detail page. Expected: the employee's next page change or search drops it; opening the stale card answers the existing not-found state. (AC-1.2)
-19. Revoked mid-flow (account): `admin` suspends `lecturer.fmi` while `employee.fmi` has `?q=виклад` open. Expected: the next search returns none of her awards; after reactivation they return. (AC-1.2)
+19. Revoked mid-flow (account): psql `update users set account_status = 'SUSPENDED' where user_id = 966` (no API changes the status) while `employee.fmi` has `?q=виклад` open, then `'DELETED'`, finally `'ACTIVE'`. Expected: with `SUSPENDED` her shared awards stay listed (a suspension is not a publication matter); with `DELETED` the next search returns none of them; after `ACTIVE` they return. (AC-1.2)
 20. Back after a search: on `/achievements`, search `horizon`, open the prize, press Back. Expected: the list with `?q=horizon` and the same result, not the unfiltered list. (AC-1.11)
 21. A text under 2 characters on `/awards` (`п`). Expected: no request carries `q`; the list as without a search. (AC-1.10)
 ### Typed forms (5.4.2)
@@ -248,6 +248,39 @@ where u.user_id = 966;
 26. Clean-up: `delete from awards where title_uk like 'MV54%';`, then `GET /achievements?q=MV54`. Expected: an empty page (the search columns went with the rows). (AC-1.9)
 
 No action buttons are added and no role is checked beyond the existing list rules, so the "hidden in state" detours do not apply; the revoked-mid-flow detours cover the two rules the lists depend on (visibility, account status).
+
+### Run 2026-10-26
+
+container stack rebuilt from develop d0e25bb (app + frontend images), default settings; step 13 via AwardSearchScaleFT; steps 15 and 19 corrected. Result: 26 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | 4 rows; vector has премія, шевченка, horizon, пять (apostrophe gone), weights A/B/C; idx_awards_search + trgm_awards_search, no ftidx_awards_title* |
+| 2 | PASS | employee.fmi q=премії: 200, award 202277 only; medal and draft absent |
+| 3 | PASS | Шевченко, best pap, horizon, пʼять, п'ять each find 202277 only (horizon excludes private medal) |
+| 4 | PASS | Horizn, Horrizon, Шевченкo(Latin o), MV54 horizon find 202277 only; word_similarity=0.714 |
+| 5 | PASS | employee q=виклад: prize+teaching grant, no medal; public: prize only |
+| 6 | PASS | q=MV54&year=2025&recipient=PERSON: 2 shared awards; year=2024: empty (totalElements 0) |
+| 7 | PASS | lecturer /awards?q=премії: prize+draft (+1 non-MV54 seed award), medal absent; status=DRAFT: draft only; employee /awards?q=виклад: empty |
+| 8 | PASS | 201×a: 400 invalid-parameter, parameter q; 200×a, SQL text, tsquery text: 200; ??: empty page; q=a: same 12570B body as no q; awards table intact (2103) |
+| 9 | PASS | lecturer.fmi /awards (en): q=премії → prize+draft, medal absent; Draft filter → draft only; cleared → draft only (filter kept); zzzz → «No awards match your search.» |
+| 10 | PASS | employee.fmi (en): q=horizon → /achievements?q=horizon, prize only (medal/grant absent); reload keeps field+result; Back from the list returns to /achievements with empty field |
+| 11 | PASS | anonymous /public/achievements?q=виклад: field=виклад, prize only (no teaching grant); qqqq → «No achievements match these filters yet.» |
+| 12 | PASS | achievements?q=horizon and awards at 1280/360, uk light+dark, en light: scroll width equals viewport, axe serious+ 0, console errors 0; field labelled, clear button named (Очистити пошук / Clear search); uk to en toggle without reload: no raw keys, q kept in URL |
+| 13 | PASS | AwardSearchScaleFT 2/2 green (152 s): 100 000 awards, /achievements and /awards each asserted < 1 s, plan contains idx_awards_search; exact timings not logged by the test |
+| 14 | PASS | dean.fmi /units/9/achievements?q=премії (dept 64 under unit 9): field filled, prize listed, grant not |
+| 15 | PASS | backend stopped, typed grant: failure state with «Try again» (appears after the request retries, ~5 s; step text said Retry → corrected); after restart Try again reruns q=grant, list shown, button gone |
+| 16 | PASS | session cleared (cookies+storage) on /achievements?q=horizon, reload → /login; after sign-in back on /achievements?q=horizon, field horizon, prize listed |
+| 17 | PASS | lecturer renamed draft 202280 to «MV54 Чернетка гранту» (PUT v1): /awards?q=гранту finds it, q=премії no longer |
+| 18 | PASS | lecturer set grant 202278 PRIVATE: employee /achievements?q=MV54 drops it (202281, 202277 remain); GET /achievements/202278 → 404 «Award 202278 not found» |
+| 19 | PASS | step text corrected: suspended owner 966 keeps 202277/202281 listed (PRD §4: suspension is not a publication matter; only DELETED excluded); with DELETED the search returns none; ACTIVE restores them |
+| 20 | PASS | search horizon → open /achievements/202277 → Back: /achievements?q=horizon, field horizon, prize listed, grant not |
+| 21 | PASS | single char п: 0 requests carry q (3 q-requests earlier in the run, none after typing п); list unchanged |
+| 22 | PASS | search_text = 'mv54 grant 2024 2025 version 3 5 mv54 київський прийом chnu edu ua', NFC-normalised (true) |
+| 23 | PASS | 2024-2025, en dash 2024–2025, 3.5, chnu.edu.ua, edu.ua each find the grant |
+| 24 | PASS | Київський and NFD прийом (и+U+0306) both find the grant |
+| 25 | PASS | first_name Мар’яна: 'Мар'яна  Викладач' and 'марʼяна викладач' on /public/achievements find the prize; name restored to Оксана |
+| 26 | PASS | 5 MV54 rows deleted; /achievements?q=MV54 empty page (totalElements 0), no MV54 left |
 
 ## 11. Risks
 
