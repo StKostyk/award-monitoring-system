@@ -73,7 +73,7 @@ class AwardSearchSchemaIT extends AbstractJpaSliceTest {
         assertThat(jdbc.queryForObject(MATCHES, Long.class, prize.getId(), "horizon:*")).isZero();
         assertThat(jdbc.queryForObject(MATCHES, Long.class, prize.getId(), "пять:*")).isZero();
         assertThat(jdbc.queryForObject("select search_text from awards where award_id = ?", String.class,
-            prize.getId())).isEqualTo(" [erased] ");
+            prize.getId())).isEqualToIgnoringWhitespace("erased");
     }
 
     @Test

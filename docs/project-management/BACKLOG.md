@@ -148,7 +148,8 @@ Tracker: [EPIC-05-ANALYTICS-REPORTING-STATUS.md](../epics/EPIC-05-ANALYTICS-REPO
 | 5.3.2 | Executive dashboard | 5 | ✅ Done | SCRUM-105 | [#292](https://github.com/StKostyk/award-monitoring-system/issues/292) |
 | 5.3.3 | Presentation-ready board report | 3 | ✅ Done | SCRUM-106 | [#293](https://github.com/StKostyk/award-monitoring-system/issues/293) |
 | 5.3.4 | Analytics pages show translation keys after the language switch | 2 | ✅ Done | SCRUM-112 | [#319](https://github.com/StKostyk/award-monitoring-system/issues/319) |
-| 5.4.1 | Full-text award search on PostgreSQL | 5 | 👀 In review (7) | SCRUM-107 | [#294](https://github.com/StKostyk/award-monitoring-system/issues/294) |
+| 5.4.1 | Full-text award search on PostgreSQL | 5 | ✅ Done | SCRUM-107 | [#294](https://github.com/StKostyk/award-monitoring-system/issues/294) |
+| 5.4.2 | Search words and names in every typed form | 3 | 👀 In review (7) | SCRUM-113 | [#325](https://github.com/StKostyk/award-monitoring-system/issues/325) |
 
 ### Later epics
 | ID | Story | Points | Epic |

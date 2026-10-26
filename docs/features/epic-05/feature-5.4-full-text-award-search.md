@@ -239,7 +239,13 @@ where u.user_id = 966;
 19. Revoked mid-flow (account): `admin` suspends `lecturer.fmi` while `employee.fmi` has `?q=виклад` open. Expected: the next search returns none of her awards; after reactivation they return. (AC-1.2)
 20. Back after a search: on `/achievements`, search `horizon`, open the prize, press Back. Expected: the list with `?q=horizon` and the same result, not the unfiltered list. (AC-1.11)
 21. A text under 2 characters on `/awards` (`п`). Expected: no request carries `q`; the list as without a search. (AC-1.10)
-22. Clean-up: `delete from awards where title_uk like 'MV54%';`, then `GET /achievements?q=MV54`. Expected: an empty page (the search columns went with the rows). (AC-1.9)
+### Typed forms (5.4.2)
+
+22. psql: `insert into awards (user_id, organization_id, category_id, title, title_uk, awarding_organization, award_date, status, visibility) select 966, organization_id, (select min(category_id) from award_categories), 'MV54 Grant 2024-2025, version 3.5', normalize('MV54 Київський прийом', NFD), 'chnu.edu.ua', date '2025-05-20', 'APPROVED', 'UNIVERSITY' from users where user_id = 966;`, then `select search_text from awards where title like 'MV54 Grant%';`. Expected: `mv54 grant 2024 2025 version 3 5 mv54 київський прийом chnu edu ua` with composed `ї` and `й` (V048). (AC-1.3, 1.9)
+23. As `employee.fmi`, `GET /achievements?q=2024-2025`, then `q=2024–2025` (en dash), `q=3.5`, `q=chnu.edu.ua`, `q=edu.ua`. Expected: the grant found each time. (AC-1.3)
+24. `GET /achievements?q=Київський`, then `GET /achievements?q=%D0%BF%D1%80%D0%B8%D0%B8%CC%86%D0%BE%D0%BC` (`прийом` typed as `и` + combining breve). Expected: the grant both times. (AC-1.3)
+25. psql `update users set first_name = 'Мар’яна' where user_id = 966;`, then `GET /public/achievements?q=Мар'яна%20%20Викладач` (ASCII apostrophe, two spaces) and `q=марʼяна викладач`. Expected: the prize both times. Restore with `update users set first_name = 'Оксана' where user_id = 966;`. (AC-1.6)
+26. Clean-up: `delete from awards where title_uk like 'MV54%';`, then `GET /achievements?q=MV54`. Expected: an empty page (the search columns went with the rows). (AC-1.9)
 
 No action buttons are added and no role is checked beyond the existing list rules, so the "hidden in state" detours do not apply; the revoked-mid-flow detours cover the two rules the lists depend on (visibility, account status).
 
@@ -260,3 +266,63 @@ No action buttons are added and no role is checked beyond the existing list rule
 - Security review (query built from user input, public endpoint)
 - `openapi.yml` without `x-status: planned` on `SearchQueryParam`; DATA_DICTIONARY §2.1 (columns, indexes, dropped indexes); ADR-007 addendum; user guide (search on "My awards" and achievements); CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation (2026-10-26, `develop` at 1b7c8aa)
+
+PR #324 merged, SCRUM-107 Done in Jira and GitHub. Result: **passed with notes**; the scenario review found three typed forms the search missed (findings 1–3), fixed in 5.4.2 (SCRUM-113) with steps 22–25 added to §10. The manual run of §10 follows 5.4.2.
+
+| Layer | Result |
+|-------|--------|
+| Backend unit / IT + FT | 1318 / 537 on `develop`, all green (`gate.ps1`, 2026-10-26 14:32) |
+| Coverage, static | 98.7 % lines; Checkstyle, PMD, SpotBugs 0 |
+| Frontend | lint clean, 952 tests, production build |
+| Playwright | Full run 2026-10-26 15:15: 130 of 130 passed |
+| Security | Checklist below; no finding open |
+| Docs | `openapi.yml` `SearchQueryParam` on `/awards`, `/achievements`, `/public/achievements`; DATA_DICTIONARY §2.1 (columns, indexes, dropped V005 indexes); ADR-007 addendum; CHANGELOG `[Unreleased]` |
+
+### AC evidence
+
+| AC | Unit | IT / FT | E2E / manual |
+|----|------|---------|--------------|
+| 1.1 | `SearchTermsTest.ac1_1_aMissingOrShortTextIsNotSearched` | `AwardSearchFT.ac1_1_theOwnListFindsOwnAwardsInEveryStatusAndKeepsItsFilters`, `ac1_1_aShortOrMissingTextLeavesTheListAndItsOrderUnchanged` | step 7 |
+| 1.2 | | `AwardSearchFT.ac1_2_theAchievementListsKeepTheirRuleWhileSearching` | steps 2, 5, 6, 18, 19 |
+| 1.3 | `SearchTermsTest.ac1_3_*` (2; 5.4.2: 3 more) | `AwardSearchFT.ac1_3_ukrainianAndEnglishWordsOfEverySearchedTextFindTheAward` (10 values), `AwardSearchSchemaIT.ac1_3_theColumnsHoldTheWeightedWordsWithoutApostrophes`; 5.4.2: `ac1_3_joinedAndDecomposedFormsFindTheAward`, `ac1_3_aDecomposedSearchTextFindsAComposedTitle` | steps 1, 3, 22–24 |
+| 1.4 | | `AwardSearchFT.ac1_4_typosInTheTitlesAndOrganisationFindTheAward`, `ac1_4_similarTitlesAreSearchedOnlyWhenNoAwardMatchesTheWords` | step 4 |
+| 1.5 | | `AwardSearchFT.ac1_5_aTitleMatchRanksAboveADescriptionMatch`, `ac1_5_pagesCountEveryMatchWithoutRepeatingOrSkipping` | |
+| 1.6 | `SearchTermsTest.ac1_6_theNamePatternEscapesWildcards` (5.4.2: `ac1_6_theNamePatternReadsAnyApostropheAndOneSpace`) | `AwardSearchFT.ac1_6_ownerNamesAreSearchedOnTheAchievementListsOnly` (5.4.2: `ac1_6_anyApostropheAndSpacingOfANameFindTheOwner`) | steps 5, 7, 25 |
+| 1.7 | `SearchTermsTest.ac1_7_*` (4) | `AwardSearchFT.ac1_7_aTextOver200CharactersIsRefusedOnEveryList`, `ac1_7_querySyntaxIsReadAsSeparators`, `ac1_7_aTextWithoutLettersOrDigitsFindsNothing` | step 8 |
+| 1.8 | | `AwardSearchScaleFT.ac1_8_aTwoWordSearchOverAHundredThousandAwardsAnswersWithinOneSecond`, `ac1_8_theSearchUsesTheGinIndexes` | step 13 |
+| 1.9 | | `AwardSearchSchemaIT.ac1_9_*` (3), `AwardSearchFT.ac1_9_anEditedTitleIsFoundByTheNextSearch` | steps 1, 17, 26 |
+| 1.10 | `search-field.component.spec` `ac1_10_*` (5), `award-list.component.spec` `ac1_10_*` (3) | | `awards.spec` "ac1_10 ac1_12 the search narrows my awards…"; steps 9, 21 |
+| 1.11 | `achievement-list.component.spec` `ac1_11_*` (4), `search-field.component.spec.ac1_11_shows_a_search_set_from_outside` | | `achievements.spec` search test; steps 10, 11, 14–16, 20 |
+| 1.12 | `search-field.component.spec` `ac1_12_*` | | axe in both e2e specs; ui-check of #324; step 12 |
+
+### Edge cases (§5)
+
+| Edge case | Covered by |
+|-----------|-----------|
+| Spaces only, one character | `SearchTermsTest.ac1_1_*`, `AwardSearchFT.ac1_1_aShortOrMissingText…`; step 21 |
+| 201 characters | `AwardSearchFT.ac1_7_aTextOver200Characters…`, `SearchTermsTest.ac1_7_aTextOver200CharactersIsRefused` |
+| Query syntax, `??` | `AwardSearchFT.ac1_7_querySyntaxIsReadAsSeparators`, `ac1_7_aTextWithoutLettersOrDigitsFindsNothing` |
+| 11 words | `SearchTermsTest.ac1_7_atMostTenWordsAreUsed` |
+| Draft renamed a second ago | `AwardSearchFT.ac1_9_anEditedTitleIsFoundByTheNextSearch`; step 17 |
+| Made private, owner suspended or erased | `AwardSearchFT.ac1_2_*` (private, deleted owner), `AwardSearchSchemaIT.ac1_9_*` (erasure); steps 18, 19 |
+| Name also in a title | `AwardSearchFT.ac1_6_ownerNamesAreSearchedOnTheAchievementListsOnly` |
+| Public rate limit | existing `RateLimitFilterTest` (shared filter) |
+| Mixed Latin and Cyrillic | `AwardSearchFT.ac1_4_typos…` (`Шевченкo`) |
+| `q` with `person` | `AwardSearchFT.ac1_2_*` (`person`) |
+
+### Security
+
+- A03: the tsquery is built only from validated words (`SearchTerms` splits on `[^\p{L}\p{M}\p{N}]+`), passed as bind parameters `?1`/`?2` of `AwardSearchFunctions`; `LIKE` wildcards escaped in `namePattern`.
+- A01: the search is a predicate added to the existing list rules (`AwardSpecifications.shared`, the own list); no list shows more with `q` than without.
+- A04 / DoS: `q` ≤ 200 characters and ≤ 10 words, `size` ≤ 100, public rate limit 120 per minute.
+- A02, A07: not applicable (no new authentication or cryptography).
+
+### Findings
+
+1. Joined tokens: the default parser kept `2024-2025`, `3.5` and `chnu.edu.ua` as single tokens while the query split them, so they were never found. Fixed in 5.4.2 (V048 `search_words()`).
+2. A decomposed search text (`и` + U+0306) did not match a composed `й`. Fixed in 5.4.2 (NFC on both sides).
+3. The name match took the raw text: another apostrophe form or a double space missed the owner. Fixed in 5.4.2 (any apostrophe matches one character, white space collapsed).
+4. Not fixed, PRD wording: the typo fallback also switches on when filters leave no word or name match (`q=horizon&year=2024` lists typo matches); a typo of a name alone falls back to title similarity.
+5. Not fixed, low: a `q` over 200 characters in a hand-typed URL is dropped silently by the page; `#` in a hand-typed URL cuts `q`; `/awards` answers without `Cache-Control: no-store` (§7 decision 8 says all lists); detours 15 and 16 are manual only.

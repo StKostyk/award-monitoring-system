@@ -346,8 +346,8 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `impact_score` | `INTEGER` | YES | - | CK: 0-100 | Calculated significance score |
 | `external_url` | `VARCHAR(2048)` | YES | - | - | Link to external verification |
 | `visibility` | `VARCHAR(20)` | NO | `'PRIVATE'` | CK: `PRIVATE`, `UNIVERSITY`, `PUBLIC` | Owner's choice for an approved personal award: `PRIVATE` (owner and scoped reviewers), `UNIVERSITY` (also signed-in colleagues on the achievements page), `PUBLIC` (also the public page, 4.3.2); written only by `PUT /awards/{id}/visibility`, without a new `version` or award version (V035) |
-| `search_vector` | `TSVECTOR` | NO | generated | `GENERATED ALWAYS AS … STORED` | Words of `title` and `title_uk` (weight A), `awarding_organization` (B), `description` and `description_uk` (C), `simple` configuration, apostrophes (`'`, `’`, `ʼ` and the backtick) removed; never written by the application (V047, 5.4.1) |
-| `search_text` | `TEXT` | NO | generated | `GENERATED ALWAYS AS … STORED` | Lower-cased `title`, `title_uk` and `awarding_organization`, apostrophes removed, for the trigram typo fallback (V047) |
+| `search_vector` | `TSVECTOR` | NO | generated | `GENERATED ALWAYS AS … STORED` | Words of `title` and `title_uk` (weight A), `awarding_organization` (B), `description` and `description_uk` (C), `simple` configuration, each text through `search_words()` (NFC, apostrophes `'`, `’`, `ʼ` and the backtick removed, every run of characters other than letters and digits read as a space, so `2024-2025` gives `2024` and `2025`); never written by the application (V047, 5.4.1; V048, 5.4.2) |
+| `search_text` | `TEXT` | NO | generated | `GENERATED ALWAYS AS … STORED` | Lower-cased `search_words()` of `title`, `title_uk` and `awarding_organization`, for the trigram typo fallback (V047, V048) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 | `version` | `BIGINT` | NO | `1` | - | Optimistic locking version; a new draft starts at 1 and every save that changes a field adds 1 (`award_versions.version_number`) |
@@ -1196,6 +1196,7 @@ Defined in the repeatable migrations `R__create_views.sql` and `R__create_functi
 | Object | Rule |
 |--------|------|
 | `vw_active_awards`, `vw_pending_requests` | Organisation columns come from `awards.organization_id`, the department of the submission, not the owner's current department |
+| `search_words(value)` | Search form of a text for the generated `awards.search_vector` and `search_text`: NFC, apostrophes removed, every run of characters other than letters and digits replaced by one space; `IMMUTABLE`, defined in V048 rather than the repeatable migration because the generated columns depend on it, and used by the application only through those columns |
 | `fn_calculate_impact_score(category_id)` | Base score of the category level, equal to `RecognitionLevel` (SPECIALITY 10, DEPARTMENT 20, COLLEGE 30, FACULTY 40, UNIVERSITY 50, LOCAL 60, REGIONAL 70, NATIONAL 80, INTERNATIONAL 100) |
 | `fn_can_user_approve_award(user_id, award_id)` | True when the request is `SUBMITTED`, `IN_REVIEW` or `ESCALATED` and the user holds the role of `current_level`, or a delegation of it in effect whose delegator still holds the role, in the award's organisation or one above it, can sign in (`ACTIVE`, `RETIRED`) and does not own the award; days are Kyiv calendar days |
 

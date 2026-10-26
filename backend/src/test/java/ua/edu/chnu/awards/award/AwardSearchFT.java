@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.award;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,6 +69,7 @@ class AwardSearchFT extends AbstractFunctionalTest {
     private long draftId;
     private long unitAwardId;
     private long deletedOwnersId;
+    private long joinedId;
     private final List<Long> pagedIds = new ArrayList<>();
 
     @BeforeAll
@@ -75,7 +77,7 @@ class AwardSearchFT extends AbstractFunctionalTest {
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         Organization other = organizationRepository.findById(OTHER_FACULTY_ID).orElseThrow();
         ownerId = withRole(OWNER, department, RoleType.EMPLOYEE, department);
-        jdbc.update("update users set first_name = 'Оксана', last_name = 'Шукайленко' where user_id = ?", ownerId);
+        jdbc.update("update users set first_name = 'Мар’яна', last_name = 'Шукайленко' where user_id = ?", ownerId);
         withRole(COLLEAGUE, other, RoleType.EMPLOYEE, other);
         LocalDate date = LocalDate.of(YEAR, 5, 20);
         prizeId = shared(AwardRows.award(jdbc, ownerId).title("Best Paper Award")
@@ -96,6 +98,10 @@ class AwardSearchFT extends AbstractFunctionalTest {
         draftId = AwardRows.award(jdbc, ownerId).title(null).titleUk("Чернетка премії").awardDate(date).insert();
         unitAwardId = AwardRows.award(jdbc, ownerId).title("Horizon unit cup").unit(TestUsers.DAI_DEPARTMENT_ID)
             .awardDate(date).status("APPROVED").insert();
+        joinedId = shared(AwardRows.award(jdbc, ownerId).title("Grant 2024-2025, прийом")
+            .titleUk(Normalizer.normalize("Київський грант", Normalizer.Form.NFD))
+            .awardingOrganization("chnu.edu.ua").awardDate(date).status("APPROVED").insert(), "UNIVERSITY");
+        jdbc.update("update awards set description = 'Version 3.5' where award_id = ?", joinedId);
         for (int i = 0; i < PAGED_AWARDS; i++) {
             pagedIds.add(AwardRows.award(jdbc, ownerId).title("Пульсар " + i).awardDate(date).insert());
         }
@@ -161,6 +167,20 @@ class AwardSearchFT extends AbstractFunctionalTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"2024-2025", "2024–2025", "3.5", "v 3.5", "chnu.edu.ua", "edu.ua", "Київський",
+        "Прийом"})
+    void ac1_3_joinedAndDecomposedFormsFindTheAward(String text) {
+        assertThat(achievements(tokenOf(COLLEAGUE), Map.of("q", text))).contains(joinedId);
+    }
+
+    @Test
+    void ac1_3_aDecomposedSearchTextFindsAComposedTitle() {
+        String decomposed = Normalizer.normalize("прийом", Normalizer.Form.NFD);
+
+        assertThat(achievements(tokenOf(COLLEAGUE), Map.of("q", decomposed))).contains(joinedId);
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"Horizn", "Horrizon", "Шевченкo"})
     void ac1_4_typosInTheTitlesAndOrganisationFindTheAward(String text) {
         assertThat(achievements(tokenOf(COLLEAGUE), Map.of("q", text))).contains(prizeId);
@@ -203,9 +223,15 @@ class AwardSearchFT extends AbstractFunctionalTest {
 
         assertThat(named).contains(prizeId, typoTitleId, titleMatchId, descriptionMatchId)
             .doesNotContain(privateId, pendingId, unitAwardId);
-        assertThat(publicIds(Map.of("q", "Оксана Шукайленко"))).containsExactly(prizeId);
+        assertThat(publicIds(Map.of("q", "Мар’яна Шукайленко"))).containsExactly(prizeId);
         assertThat(ids(as(tokenOf(COLLEAGUE)), AwardApi.AWARDS, Map.of("q", "шукайлен"))).isEmpty();
         assertThat(ids(as(tokenOf(OWNER)), AwardApi.AWARDS, Map.of("q", "шукайлен"))).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Мар'яна  Шукайленко", "марʼяна шукайлен", "Мар`яна\tШукайленко"})
+    void ac1_6_anyApostropheAndSpacingOfANameFindTheOwner(String text) {
+        assertThat(publicIds(Map.of("q", text))).containsExactly(prizeId);
     }
 
     @Test

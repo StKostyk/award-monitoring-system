@@ -99,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- Award search finds joined tokens (2024-2025, 3.5, chnu.edu.ua), letters typed in decomposed form and owner names with any apostrophe or spacing
 - Analytics pages switch every label to English and back without a reload; a double click on «Звіт для ради» sends one export (5.3.4)
 - Flaky and failing end-to-end specs fixed at the cause; progress bars have an accessible name and the review queue fits at 1280 px.
 - Revoking the last active SYSTEM_ADMIN or GDPR_OFFICER is refused with 409 role-last-holder, and such revocations wait for running erasures.
