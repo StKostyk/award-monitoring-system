@@ -3,7 +3,7 @@
 > **Epic**: 5 — Analytics & Reporting Dashboard (SCRUM-97)
 > **Sprint**: 7 (2026-10-26 → 2026-11-01)
 > **Points**: 5 (one story)
-> **Status**: Approved 2026-10-25
+> **Status**: Done 2026-10-26 (validated with notes, §13; manual run of §10 passed 26/26)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-05 tracker (decision of 2026-10-19 on search, deviation 1, risk 1), ADR-007 and its addenda of 2026-10 and 2026-10-05, ADR-004, ADR-022, BRD §5.1 (search under 1 s) and §5.2, DATA_DICTIONARY §2.1 (`awards`, indexes, visibility rules), PRIVACY_BY_DESIGN §4, `openapi.yml` (`/awards`, `/achievements`, `/public/achievements`), `AwardSpecifications`, `Achievements`, `DuplicateFinder`, `UserSpecifications` (`q`), `user-list.component.ts` (debounced search field), `achievement-list.component.ts` (filters in the address bar)
 
