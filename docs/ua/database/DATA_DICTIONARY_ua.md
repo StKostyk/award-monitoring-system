@@ -342,6 +342,8 @@
 | `impact_score` | `INTEGER` | ТАК | - | CK: 0-100 | Розрахований бал значущості |
 | `external_url` | `VARCHAR(2048)` | ТАК | - | - | Посилання на зовнішню верифікацію |
 | `visibility` | `VARCHAR(20)` | НІ | `'PRIVATE'` | CK: `PRIVATE`, `UNIVERSITY`, `PUBLIC` | Вибір власника для схваленої особистої нагороди: `PRIVATE` (власник і рецензенти в області), `UNIVERSITY` (також колеги, що увійшли, на сторінці досягнень), `PUBLIC` (також публічна сторінка, 4.3.2); записується лише `PUT /awards/{id}/visibility`, без нової `version` чи версії нагороди (V035) |
+| `search_vector` | `TSVECTOR` | НІ | згенероване | `GENERATED ALWAYS AS … STORED` | Слова `title` і `title_uk` (вага A), `awarding_organization` (B), `description` і `description_uk` (C), конфігурація `simple`, кожен текст через `search_words()` (NFC, апострофи `'`, `’`, `ʼ` та зворотний апостроф вилучено, кожна послідовність символів, що не є літерами чи цифрами, читається як пробіл, тому `2024-2025` дає `2024` і `2025`); застосунок ніколи його не записує (V047, 5.4.1; V048, 5.4.2) |
+| `search_text` | `TEXT` | НІ | згенероване | `GENERATED ALWAYS AS … STORED` | `search_words()` від `title`, `title_uk` і `awarding_organization` малими літерами, для триграмного запасного пошуку при помилках (V047, V048) |
 | `created_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу створення запису |
 | `updated_at` | `TIMESTAMPTZ` | НІ | `CURRENT_TIMESTAMP` | - | Мітка часу останньої модифікації |
 | `version` | `BIGINT` | НІ | `1` | - | Версія оптимістичного блокування; нова чернетка починає з 1, а кожне збереження, що змінює поле, додає 1 (`award_versions.version_number`) |
@@ -384,8 +386,8 @@
 - `idx_awards_category_status` - B-tree на `(category_id, status)` (V012)
 - `idx_awards_pending` - Частковий B-tree на `(user_id, created_at DESC)` де `status = 'PENDING'`
 - `idx_awards_approved` - Частковий B-tree на `award_date DESC` де `status = 'APPROVED'`
-- `ftidx_awards_title` - Повнотекстовий GIN на `to_tsvector('english', title)`
-- `ftidx_awards_title_uk` - Повнотекстовий GIN на `to_tsvector('simple', title_uk)`
+- `idx_awards_search` - Повнотекстовий GIN на `search_vector` (V047; замінює `ftidx_awards_title` і `ftidx_awards_title_uk` з V005, які вилучено)
+- `trgm_awards_search` - Триграмний GIN на `search_text` (V047)
 - `trgm_awards_title` - Триграмний GIN на `title` (V012)
 
 **Зв'язки**:
@@ -1183,6 +1185,7 @@
 
 | Об'єкт | Правило |
 |--------|---------|
+| `search_words(value)` | Пошукова форма тексту для згенерованих `awards.search_vector` і `search_text`: NFC, апострофи вилучено, кожна послідовність символів, що не є літерами чи цифрами, замінена одним пробілом; `IMMUTABLE`, визначена у V048, а не в повторюваній міграції, бо від неї залежать згенеровані колонки; застосунок використовує її лише через ці колонки |
 | `vw_active_awards`, `vw_pending_requests` | Колонки підрозділу беруться з `awards.organization_id`, кафедри на момент подання, а не з поточної кафедри власника |
 | `fn_calculate_impact_score(category_id)` | Базовий бал рівня категорії, що дорівнює `RecognitionLevel` (SPECIALITY 10, DEPARTMENT 20, COLLEGE 30, FACULTY 40, UNIVERSITY 50, LOCAL 60, REGIONAL 70, NATIONAL 80, INTERNATIONAL 100) |
 | `fn_can_user_approve_award(user_id, award_id)` | Істина, коли запит у стані `SUBMITTED`, `IN_REVIEW` або `ESCALATED`, а користувач має роль `current_level` або чинне делегування цієї ролі, делегант якого досі має роль, у підрозділі нагороди чи вище за нього, може входити (`ACTIVE`, `RETIRED`) і не є власником нагороди; дні — календарні дні за київським часом |

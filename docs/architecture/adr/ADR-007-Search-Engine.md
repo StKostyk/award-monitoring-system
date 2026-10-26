@@ -158,6 +158,13 @@ search through the trigram index takes 16 ms. The trigram match OR'd with the fu
 common words (10 000 candidate rows rechecked), hence the fallback. Elasticsearch stays out unless one of the
 triggers of the 2026-10-05 addendum arises.
 
+Story 5.4.2 (migration V048) moved the word rules into one IMMUTABLE function, `search_words()`, that both generated
+columns call: NFC normalisation, apostrophes removed, every run of other characters read as a space. A joined token
+such as `2024-2025`, `3.5` or `chnu.edu.ua` therefore becomes separate words in the stored text and in the query,
+letters typed in decomposed form match, and an owner name matches with any apostrophe or spacing. The function lives
+in V048, not in a repeatable migration, because the generated columns depend on it; the deployment database must keep
+the `en_US.utf8` character classification the function relies on.
+
 ---
 
 ## Revision History

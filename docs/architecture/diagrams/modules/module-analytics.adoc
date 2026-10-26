@@ -1,0 +1,25 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`ua.edu.chnu.awards.analytics`
+|Spring components
+|_Controllers_
+
+* `u.e.c.a.a.controller.AnalyticsController`
+* `u.e.c.a.a.controller.UnitAnalyticsController`
+* `u.e.c.a.a.controller.UniversityAnalyticsController`
+
+_Services_
+
+* `u.e.c.a.a.service.PersonalAnalyticsService`
+* `u.e.c.a.a.service.UnitAnalyticsService`
+* `u.e.c.a.a.service.UniversityAnalyticsService`
+* `u.e.c.a.a.service.UniversityComplianceService`
+
+_Others_
+
+* `u.e.c.a.a.export.BoardReportExporter`
+* `u.e.c.a.a.export.UnitReportExporter`
+* `u.e.c.a.a.config.AnalyticsCacheConfig`
+* `u.e.c.a.a.config.AnalyticsConfig`
+|===
