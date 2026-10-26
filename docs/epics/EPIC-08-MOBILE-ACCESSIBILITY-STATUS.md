@@ -11,7 +11,7 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Not started | - | - |
-| 8.2 WCAG 2.1 AA accessibility (page structure, described forms and tables, audit and statement) | Not started | - | - |
+| 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | Not started | - | - |
 
 ## Current focus
 
@@ -26,14 +26,14 @@ lost connection on the device and is saved as a server draft when the connection
 another device (server drafts exist since 2.1.1, local form copies since Epic 2). Every page works by touch at 360 px
 in both orientations; certificates can be photographed (the upload already offers `capture="environment"`).
 
-On the accessibility side the pages get their language and title, a skip link, focus management after navigation,
-fields tied to their errors, described tables, dialogs that return focus and announcements for changing content.
-The epic ends with an axe sweep of every route, a keyboard-only walk, a screen reader pass and a public
-accessibility statement.
+On the accessibility side the pages get their language and title, a skip link and focus management after
+navigation. The epic ends with an axe sweep of every route in both languages and themes, enforced by the gate. The
+claim is "WCAG 2.1 AA checked automatically on every page", not a conformance audit.
 
 Out of scope here: browser push notifications (deferred from Epic 7; needs VAPID keys, a subscription table and a
 consent entry, see Decisions), native apps, background sync of uploads (documents need a connection), offline reading
-of awards (personal data stays out of the service worker cache), OCR (Epic 3 continuation after this epic).
+of awards (personal data stays out of the service worker cache), OCR (Epic 3 continuation after this epic), the
+form, table and announcement work of 8.2.2 and a public accessibility statement (icebox, see Decisions).
 
 ## Stories
 
@@ -46,10 +46,10 @@ All six stories are frontend work; none has a backend lane.
 | 2 | 8.1.2 Award draft kept offline and saved on reconnect | 8.1 | 5 | SCRUM-116 | #332 | no | Planned |
 | 3 | 8.1.3 Touch-ready layouts at 360 px and camera capture | 8.1 | 5 | SCRUM-117 | #333 | no | Planned |
 | 4 | 8.2.1 Page language, titles, skip link and focus management | 8.2 | 5 | SCRUM-118 | #334 | no | Planned |
-| 5 | 8.2.2 Described forms, tables and announced changes | 8.2 | 5 | SCRUM-119 | #335 | no | Planned |
-| 6 | 8.2.3 WCAG 2.1 AA audit and accessibility statement | 8.2 | 3 | SCRUM-120 | #336 | no | Planned |
+| 5 | 8.2.3 Automated WCAG 2.1 AA sweep of every route | 8.2 | 3 | SCRUM-120 | #336 | no | Planned |
+| - | 8.2.2 Described forms, tables and announced changes | 8.2 | 5 | SCRUM-119 | #335 | no | Icebox |
 
-Total: 28 points (roadmap estimate 21: US-013 13, US-014 8; the roadmap's single story per feature is split by
+Total: 23 points (roadmap estimate 21: US-013 13, US-014 8; the roadmap's single story per feature is split by
 concern), planned for sprints 7 and 8 (2026-10-26 to 2026-11-08), before the deployment in mid-November.
 
 ## Decisions
@@ -61,7 +61,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-26 | Offline means a fallback for the award form, not an offline-first client: the service worker caches the application shell, icons and translations only; no API answer, document or personal data is cached | BRD §3.2 excludes offline-only clients; personal data in a shared cache outlives sign-out and escapes the erasure of Epic 6 | ADR-013 addendum in the 8.1 PRD |
 | 2026-10-26 | Cross-device continuation rides on the server draft (`DRAFT` status, 2.1.1): an offline form is kept in the existing local form copy and saved as a draft on reconnect; no separate sync store | One source of truth for drafts; the local copy is already per user and cleared on sign-out | ADR-005 not involved |
 | 2026-10-26 | Browser push notifications stay out of Epic 8 (icebox) | Backend work (VAPID keys, subscription table, preference channel, export and erasure) for a feature iOS offers only to installed apps; e-mail and in-app channels cover the events | Epic 7 scope note |
-| 2026-10-26 | Target WCAG 2.1 AA (the tags the axe helper already checks); accessibility statement modelled on the EU web accessibility directive template | QUALITY_GATES §8, NFR-010; Ukraine aligns public-sector sites with EN 301 549 | 8.2 PRD |
+| 2026-10-26 | Accessibility in a slim form: page language, titles, skip link and focus (8.2.1) plus an automated axe sweep (WCAG 2.1 AA tags) of every route in the gate (8.2.3); 8.2.2 and the accessibility statement go to the icebox; no manual conformance audit | NFR-010 and US-014 are met by automated checks at a third of the cost; Angular Material forms and dialogs already pass the axe checks of 19 specs; the thesis claims automated checking, not certification | QUALITY_GATES §8, 8.2 PRD |
 | 2026-10-26 | Lighthouse (mobile profile) above 90 for performance, accessibility and best practices on the sign-in page, the award form and the award list, measured against the production build in Compose | US-013 DoD, NFR-009, ADR-013 | 8.1.3 |
 
 ## Documentation deviations found at kickoff
@@ -77,8 +77,9 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 5. US-014 DoD and QUALITY_GATES §8.2 require testing with a screen reader (NVDA/JAWS/VoiceOver) "with actual screen
    reader users". The manual scenario uses the browser accessibility tree and a keyboard-only walk instead; testing
    with a screen reader and with screen reader users is a thesis limitation (decided 2026-10-26).
-6. US-013 DoD "mobile user guide" and US-014 DoD "accessibility guide": one user-facing page each in `docs/guides/`,
-   written with 8.1.3 and 8.2.3.
+6. US-013 DoD "mobile user guide": one user-facing page in `docs/guides/`, written with 8.1.3. The US-014 DoD
+   "accessibility guide", "WCAG AA compliance verified through audit" and "keyboard navigation throughout" are met
+   only as far as the automated sweep and 8.2.1 reach; the remainder is a thesis limitation.
 
 ## Technical notes
 
