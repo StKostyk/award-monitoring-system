@@ -13,11 +13,11 @@
 | 5.1 Personal achievement dashboard (US-008) | Done | 2026-10-19 | 2026-10-23 |
 | 5.2 Faculty performance analytics (US-009) | Done | 2026-10-23 | 2026-10-24 |
 | 5.3 Executive university dashboard (US-010) | Done | 2026-10-25 | 2026-10-25 |
-| 5.4 Full-text award search (ADR-007 addendum) | Approved | - | - |
+| 5.4 Full-text award search (ADR-007 addendum) | Done | 2026-10-26 | 2026-10-26 |
 
 ## Current focus
 
-Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 Done 2026-10-25: validated with notes, manual run of §10 passed 39/39 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §10, §13); fix story SCRUM-112 (raw keys after a language switch without reload, board report busy guard) open. Feature 5.4: 5.4.1 (SCRUM-107) Done 2026-10-26, validated with notes ([feature-5.4-full-text-award-search.md](../features/epic-05/feature-5.4-full-text-award-search.md) §13); fix story 5.4.2 (SCRUM-113: joined tokens, decomposed letters, name spelling) in progress; next: the manual run of §10 and the feature close.
+Feature 5.2 Done 2026-10-24: validated with notes, manual run of §10 passed 35/35 ([feature-5.2-faculty-performance-analytics.md](../features/epic-05/feature-5.2-faculty-performance-analytics.md) §10, §13); fix story 5.2.4 (unit list retry, export period over New Year, single-year header) proposed. Feature 5.1 Done 2026-10-23. Feature 5.3 Done 2026-10-25: validated with notes, manual run of §10 passed 39/39 ([feature-5.3-executive-university-dashboard.md](../features/epic-05/feature-5.3-executive-university-dashboard.md) §10, §13); fix story SCRUM-112 (raw keys after a language switch without reload, board report busy guard) open. Feature 5.4 Done 2026-10-26: validated with notes, manual run of §10 passed 26/26 ([feature-5.4-full-text-award-search.md](../features/epic-05/feature-5.4-full-text-award-search.md) §10, §13); fix story 5.4.2 (SCRUM-113) Done. All Epic 5 features are Done; next: the documentation reconciliation of Epic 5.
 
 ## Scope
 
@@ -52,7 +52,7 @@ addendum: chosen only if PostgreSQL falls short), cross-university analytics (AD
 | 10 | 5.4.1 Full-text award search on PostgreSQL | 5.4 | 5 | SCRUM-107 | #294 | no | Done |
 | 10a | 5.2.4 Unit analytics: retry after a failed unit-list load, export the displayed period, single-year export header | 5.2 | 2 | SCRUM-109 | #308 | no | Done |
 | 10b | 5.3.4 Analytics pages show translation keys after the language switch | 5.3 | 2 | SCRUM-112 | #319 | no | Done |
-| 10c | 5.4.2 Search words and names in every typed form | 5.4 | 3 | SCRUM-113 | #325 | no | In review |
+| 10c | 5.4.2 Search words and names in every typed form | 5.4 | 3 | SCRUM-113 | #325 | no | Done |
 
 Total: 55 points (roadmap estimate 55; 5.1.2 raised from 5 to 8 in the 5.1 PRD, 5.2.1 from 5 to 8 in the 5.2 PRD, 5.3.1 from 5 to 8 in the 5.3 PRD), planned for sprints 6 and 7 (2026-10-19 to 2026-11-01).
 
@@ -75,6 +75,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-25 | University analytics: `analytics:read:university` (rector, rector's secretary, not delegable) on its own endpoints; faculties and colleges compared with a university-level row, nobody named; trends as period deltas (at least 3 awards, 5 per direction); least-squares projection over at least 3 complete years; `ABOVE_AVERAGE` added to the highlights at university level; compliance summary of counts only, read live, with five attention reasons; board report as a landscape PDF on the 5.2.3 component, audited | The rector sees the state of the duties, not the records; no new library; the unit contract of 5.2 stays | PRD 5.3 §7 |
 | 2026-10-25 | Feature 5.3 closed: validated with notes, manual run 39/39; the analytics pages showing raw translation keys after a language switch without reload and the busy guard of the board report button go to fix story SCRUM-112 (#319) | No AC broken; both are cases outside the scripted path | PRD 5.3 §10, §13 |
 | 2026-10-25 | Award search: `q` on own awards and both achievements lists; generated `tsvector` and trigram columns with GIN indexes (V047), `simple` configuration for both languages with a query-side stem and prefix matching, trigram fallback for typos, owner's name on the achievements lists, relevance order while searching; proven at 100 000 awards under 1 s; reviewer queue and document contents not searched | PostgreSQL 17 has no Ukrainian stemmer; generated columns follow the row and leave with it on erasure; ADR-007 addendum in 5.4.1 | PRD 5.4 §7 |
+| 2026-10-26 | Feature 5.4 closed: validated with notes, manual run 26/26; joined tokens, decomposed letters and name spellings fixed in 5.4.2 (V048 `search_words()`) | Scenario corrected: a suspended owner's shared awards stay listed, only `DELETED` hides them | PRD 5.4 §10, §13 |
 
 ## Documentation deviations found at kickoff
 
