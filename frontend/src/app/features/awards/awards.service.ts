@@ -40,6 +40,19 @@ export type RecognitionLevel =
   | 'NATIONAL'
   | 'INTERNATIONAL';
 
+/** Recognition levels from the lowest to the highest. */
+export const RECOGNITION_LEVELS: RecognitionLevel[] = [
+  'SPECIALITY',
+  'DEPARTMENT',
+  'COLLEGE',
+  'FACULTY',
+  'LOCAL',
+  'UNIVERSITY',
+  'REGIONAL',
+  'NATIONAL',
+  'INTERNATIONAL',
+];
+
 export const AWARD_STATUSES: AwardStatus[] = [
   'DRAFT',
   'PENDING',

@@ -32,7 +32,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UniversityAnalyticsService {
 
-    private static final int DEFAULT_YEARS = 5;
     private static final Set<OrganizationType> COMPARED = EnumSet.of(OrganizationType.FACULTY,
         OrganizationType.COLLEGE);
 
@@ -55,8 +54,8 @@ public class UniversityAnalyticsService {
     @Transactional(readOnly = true)
     public UniversityAnalytics of(Integer from, Integer to) {
         int currentYear = Year.now(clock).getValue();
-        YearRange period = PeriodHelper.resolve(from, to, currentYear, last -> last - DEFAULT_YEARS + 1);
-        YearRange previous = new YearRange(2 * period.from() - period.to() - 1, period.from() - 1);
+        YearRange period = PeriodHelper.resolve(from, to, currentYear);
+        YearRange previous = period.previous();
         Organization university = university();
         UnitFigures figures = aggregates.of(university.getId(), previous, period);
         UnitTotals totals = UnitFiguresHelper.totals(figures, period, previous);

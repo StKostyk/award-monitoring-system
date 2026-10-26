@@ -21,19 +21,6 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   'RANK',
 ];
 
-/** Recognition levels from the lowest to the highest. */
-export const RECOGNITION_LEVELS: RecognitionLevel[] = [
-  'SPECIALITY',
-  'DEPARTMENT',
-  'COLLEGE',
-  'FACULTY',
-  'LOCAL',
-  'UNIVERSITY',
-  'REGIONAL',
-  'NATIONAL',
-  'INTERNATIONAL',
-];
-
 export type LevelBand = 'UNIT' | 'UNIVERSITY' | 'REGIONAL' | 'NATIONAL' | 'INTERNATIONAL';
 
 /** The five bands the year trend stacks by: the unit levels below the university share one band. */
@@ -106,14 +93,7 @@ export class AnalyticsService {
   private readonly preferencesUrl = `${environment.apiUrl}/users/me/dashboard-preferences`;
 
   read(period: AnalyticsPeriod): Observable<PersonalAnalytics> {
-    let params = new HttpParams();
-    if (period.from !== null) {
-      params = params.set('from', period.from);
-    }
-    if (period.to !== null) {
-      params = params.set('to', period.to);
-    }
-    return this.http.get<PersonalAnalytics>(this.analyticsUrl, { params });
+    return this.http.get<PersonalAnalytics>(this.analyticsUrl, { params: periodParams(period) });
   }
 
   hiddenWidgets(): Observable<DashboardWidget[]> {
@@ -127,4 +107,16 @@ export class AnalyticsService {
       .put<{ hiddenWidgets: DashboardWidget[] }>(this.preferencesUrl, { hiddenWidgets })
       .pipe(map((body) => body.hiddenWidgets));
   }
+}
+
+/** The query of a period: `from` and `to` when set. */
+export function periodParams(period: AnalyticsPeriod): HttpParams {
+  let params = new HttpParams();
+  if (period.from !== null) {
+    params = params.set('from', period.from);
+  }
+  if (period.to !== null) {
+    params = params.set('to', period.to);
+  }
+  return params;
 }

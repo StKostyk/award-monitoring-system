@@ -123,6 +123,11 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 - Feature 5.4 refactor sweep (2026-10-26), notes only (the cheap items went into 5.4.2):
   - `AchievementQuery` and `AwardQuery` gained overload constructors for the search text; one change for both belongs in the refactor chore.
   - The `searchTerm` helper of the two list components moves to `shared/search-field/search-term.ts` once a third list adopts the search.
+- Epic 5 refactor sweep (2026-10-26). Applied in the epic refactor PR: one year check (`YearRange.requireYear`) for achievements and analytics, `YearRange.previous()` and the five-year default in `PeriodHelper`, `periodParams` beside `AnalyticsPeriod`, one `RECOGNITION_LEVELS` (lowest first) in the awards service. Left for the analytics refactor chore:
+  - `UnitReportExporter` and `BoardReportExporter` repeat the producer lookup, the `ANALYTICS_EXPORTED` audit payload, the file-name code fallback and a private `fullName` (`User#getFullName`); the two controllers repeat the attachment response. An export-audit component and one response helper would serve both.
+  - `UnitAnalyticsIT`, `UniversityAnalyticsIT`, `UnitAnalyticsFT`, `AwardStatisticsIT` and `UnitStatisticsIT` insert users and awards by hand next to `support/AwardRows`; `withoutTriggers` exists twice. Shared test rows and one class of unit ids would remove the copies.
+  - The category, level and source bar charts repeat the theme, language and option pipeline; the source chart builds its own "other" bar instead of `withOther`.
+  - Search parameters are validated in two layers (`SearchTerms` for `q`, `Achievements` for `year` and `unit`), so the problem reported for two invalid parameters depends on the order; parsing the terms once with the other parameters is a behaviour change and needs its own story.
 
 ## Risks
 

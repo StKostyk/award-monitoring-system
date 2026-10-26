@@ -10,8 +10,8 @@ import { categoryAxis, escapeHtml, tooltip } from '../../../shared/charts/chart-
 import { ChartThemeService } from '../../../shared/charts/chart-theme.service';
 import { kyivDate } from '../../../shared/date-format';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
-import { awardTitle, categoryName } from '../../awards/awards.service';
-import { RECOGNITION_LEVELS, TimelineEntry } from '../analytics.service';
+import { RECOGNITION_LEVELS, awardTitle, categoryName } from '../../awards/awards.service';
+import { TimelineEntry } from '../analytics.service';
 
 const MARKER_SIZE = 12;
 const AXIS_PADDING_MS = 60 * 24 * 60 * 60 * 1000;

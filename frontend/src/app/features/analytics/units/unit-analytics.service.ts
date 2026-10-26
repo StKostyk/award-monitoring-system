@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { OrganizationRef } from '../../../core/auth/user-profile';
 import { AppLanguage } from '../../../core/i18n/language.service';
 import { CategoryRef, RecognitionLevel } from '../../awards/awards.service';
-import { AnalyticsPeriod } from '../analytics.service';
+import { AnalyticsPeriod, periodParams } from '../analytics.service';
 
 export type UnitType = 'FACULTY' | 'DEPARTMENT';
 export type TopPerformersStatus = 'LISTED' | 'GROUP_TOO_SMALL';
@@ -116,16 +116,4 @@ export class UnitAnalyticsService {
       responseType: 'blob',
     });
   }
-}
-
-/** The query of a period: `from` and `to` when set. */
-export function periodParams(period: AnalyticsPeriod): HttpParams {
-  let params = new HttpParams();
-  if (period.from !== null) {
-    params = params.set('from', period.from);
-  }
-  if (period.to !== null) {
-    params = params.set('to', period.to);
-  }
-  return params;
 }

@@ -2,12 +2,10 @@ package ua.edu.chnu.awards.award.service;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +17,7 @@ import ua.edu.chnu.awards.award.dto.AchievementRecipient;
 import ua.edu.chnu.awards.award.dto.RecipientType;
 import ua.edu.chnu.awards.award.dto.SharedDocument;
 import ua.edu.chnu.awards.award.dto.UnitRef;
+import ua.edu.chnu.awards.award.dto.YearRange;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
@@ -40,8 +39,6 @@ public class Achievements {
     private static final Set<AwardVisibility> COLLEAGUES = EnumSet.of(AwardVisibility.UNIVERSITY,
         AwardVisibility.PUBLIC);
     private static final Set<AwardVisibility> EVERYONE = EnumSet.of(AwardVisibility.PUBLIC);
-    private static final int FIRST_YEAR = 1950;
-    private static final int LAST_YEAR = 2100;
 
     private final AwardRepository awards;
     private final OrganizationLookup organizations;
@@ -104,10 +101,7 @@ public class Achievements {
     }
 
     private void requireValid(AchievementQuery query) {
-        if (query.year() != null && (query.year() < FIRST_YEAR || query.year() > LAST_YEAR)) {
-            throw new ApiProblemException(HttpStatus.BAD_REQUEST, "invalid-parameter",
-                "The year must lie between " + FIRST_YEAR + " and " + LAST_YEAR, Map.of("parameter", "year"));
-        }
+        YearRange.requireYear(query.year(), "year");
         if (query.unit() != null) {
             organizations.findById(query.unit())
                 .filter(unit -> RecipientUnits.TYPES.contains(unit.getOrgType()))
