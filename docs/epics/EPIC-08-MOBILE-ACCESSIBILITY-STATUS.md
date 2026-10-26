@@ -75,9 +75,8 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 4. The roadmap task "offline-first with service workers" conflicts with BRD §3.2 ("no offline-first applications").
    Resolved by the first decision above.
 5. US-014 DoD and QUALITY_GATES §8.2 require testing with a screen reader (NVDA/JAWS/VoiceOver) "with actual screen
-   reader users". The manual scenario uses the browser accessibility tree and a keyboard-only walk; one NVDA pass on
-   Windows (about 30 minutes, script in the 8.2 PRD) is recorded separately. User testing with screen reader users is
-   a thesis limitation.
+   reader users". The manual scenario uses the browser accessibility tree and a keyboard-only walk instead; testing
+   with a screen reader and with screen reader users is a thesis limitation (decided 2026-10-26).
 6. US-013 DoD "mobile user guide" and US-014 DoD "accessibility guide": one user-facing page each in `docs/guides/`,
    written with 8.1.3 and 8.2.3.
 
@@ -108,7 +107,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | A stale service worker serves an old shell after a deployment | Version prompt from `SwUpdate`; nginx serves `ngsw.json` uncached; tested by a rebuild in the manual run |
 | Service worker interferes with Playwright e2e and the dev server | Registered only in the production build; e2e runs against the dev build, one spec against the Compose build |
 | No physical iOS device for Safari testing | Playwright WebKit with the iPhone profile plus an Android phone through Chrome remote debugging; real iOS check named as a limitation |
-| Screen reader testing cannot be automated | Accessibility tree snapshots in the scenario; one recorded NVDA pass (deviation 5) |
+| Screen reader testing cannot be automated | Accessibility tree snapshots and a keyboard-only walk in the scenario; no screen reader session (deviation 5) |
 | Layout pass touches many templates late in the project | Narrow-screen rules in shared styles first (tables, filter bars), per-page fixes after; screenshots before and after |
 
 ## Quick links
