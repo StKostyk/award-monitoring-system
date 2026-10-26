@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,6 @@ import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
-import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 
 import lombok.RequiredArgsConstructor;
@@ -49,6 +47,7 @@ public class Achievements {
     private final OrganizationLookup organizations;
     private final AwardSpecifications specifications;
     private final AwardDocuments documents;
+    private final AwardSearch search;
 
     /**
      * A page of the achievements colleagues may see, newest award date first.
@@ -100,9 +99,8 @@ public class Achievements {
 
     private Page<Achievement> page(Set<AwardVisibility> visibilities, AchievementQuery query, int page, int size) {
         requireValid(query);
-        PageRequest pageable = PageResponse.request(page, size,
-            Sort.by(Sort.Order.desc("awardDate"), Sort.Order.desc("id")));
-        return awards.findAll(specifications.shared(visibilities, query), pageable).map(Achievements::of);
+        return search.page(specifications.shared(visibilities, query), query.q(),
+            Sort.by(Sort.Order.desc("awardDate"), Sort.Order.desc("id")), true, page, size).map(Achievements::of);
     }
 
     private void requireValid(AchievementQuery query) {

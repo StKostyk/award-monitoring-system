@@ -30,7 +30,10 @@
     <suppress files=".*Test\.java$" checks="MethodLength"/>
     <suppress files=".*IT\.java$" checks="MethodLength"/>
     <suppress files=".*FT\.java$" checks="MethodLength"/>
-    
+
+    <!-- The public achievements list takes its filters, search text and page as separate query parameters -->
+    <suppress files="[\\/]PublicAchievementController\.java$" checks="ParameterNumber"/>
+
     <!-- Allow more complex tests -->
     <suppress files=".*Test\.java$" checks="CyclomaticComplexity"/>
     

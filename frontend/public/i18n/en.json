@@ -12,6 +12,7 @@
       "dark": "Dark"
     },
     "logout": "Sign out",
+    "clearSearch": "Clear search",
     "login": "Sign in",
     "loading": "Loading…",
     "datePlaceholder": "dd/mm/yyyy",
@@ -70,6 +71,7 @@
     "title": "My awards",
     "add": "Add award",
     "empty": "No awards yet. Add your first one — you can save it as a draft and finish it later.",
+    "noMatch": "No awards match your search.",
     "notFound": "Not found",
     "back": "Back to my awards",
     "edit": "Edit",
@@ -78,6 +80,7 @@
       "category": "Category",
       "dateFrom": "Date from",
       "dateTo": "Date to",
+      "search": "Search my awards",
       "all": "All"
     },
     "status": {
@@ -441,6 +444,7 @@
       "year": "Year",
       "level": "Level",
       "recipient": "Recipient",
+      "search": "Search achievements",
       "all": "All"
     },
     "recipients": {

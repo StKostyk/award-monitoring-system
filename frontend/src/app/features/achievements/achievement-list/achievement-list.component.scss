@@ -25,6 +25,10 @@
   min-width: 0;
 }
 
+.achievements__filter--search {
+  flex-basis: 100%;
+}
+
 ::ng-deep .achievements__child {
   padding-left: 32px;
 }

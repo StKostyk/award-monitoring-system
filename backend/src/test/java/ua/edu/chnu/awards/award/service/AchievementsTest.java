@@ -54,8 +54,7 @@ class AchievementsTest {
     private final OrganizationRepository organizations = mock(OrganizationRepository.class);
     private final AwardDocuments documents = mock(AwardDocuments.class);
     private final Achievements achievements = new Achievements(awards, new OrganizationLookup(organizations),
-        new AwardSpecifications(),
-        documents);
+        new AwardSpecifications(), documents, new AwardSearch(awards, new AwardSpecifications()));
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
 

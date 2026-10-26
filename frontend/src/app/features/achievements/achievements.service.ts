@@ -9,6 +9,7 @@ import {
   OrganizationSummary,
 } from '../../core/organizations/organizations.service';
 import { organizationName } from '../../shared/organization-name';
+import { searchTerm } from '../../shared/search-field/search-field.component';
 import { DocumentType } from '../awards/award-documents/documents.service';
 import { CategoryRef, Page, RecognitionLevel, UnitRef } from '../awards/awards.service';
 
@@ -64,6 +65,8 @@ export interface AchievementFilters {
   recipient: RecipientType | null;
   /** The account whose public awards to list; the public set only. */
   person: number | null;
+  /** Search text of 2 to 200 characters; null lists without a search. */
+  q: string | null;
 }
 
 /** The filters with their page, as kept in the address bar. */
@@ -85,6 +88,7 @@ export const NO_ACHIEVEMENT_FILTERS: AchievementFilters = {
   level: null,
   recipient: null,
   person: null,
+  q: null,
 };
 
 /** Recognition levels, broadest first. */
@@ -188,6 +192,7 @@ export function readQuery(params: ParamMap): AchievementQuery {
       level: level && RECOGNITION_LEVELS.includes(level) ? level : null,
       recipient: recipient && RECIPIENT_TYPES.includes(recipient) ? recipient : null,
       person: number('person'),
+      q: searchTerm(params.get('q')),
     },
     page: number('page') ?? 0,
     size: size !== null && PAGE_SIZES.includes(size) ? size : PAGE_SIZES[0],

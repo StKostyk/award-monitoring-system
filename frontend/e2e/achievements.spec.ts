@@ -272,6 +272,50 @@ test.describe('unit achievement pages and public achievements', () => {
     await expect(card(page, shared)).toBeVisible();
   });
 
+  test('ac1_11 ac1_12 the search goes into the address bar and survives reload, back and the public page', async ({
+    browser,
+  }) => {
+    const { published, shared, unit } = await publicAndShared(browser, 'search');
+    const sharedWord = shared.split(' ').at(-1) ?? '';
+    const publishedWord = published.split(' ').at(-1) ?? '';
+    const page = await signedIn(browser, SEED.employee);
+
+    await page.goto('/achievements');
+    await page.getByTestId('filter-q').fill(sharedWord);
+    await expect(page).toHaveURL(new RegExp(`/achievements\\?q=${sharedWord}$`));
+    await expect(page.getByTestId('achievement-card')).toHaveCount(1);
+    await expect(card(page, shared)).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.reload();
+    await expect(page.getByTestId('filter-q')).toHaveValue(sharedWord);
+    await expect(page.getByTestId('achievement-card')).toHaveCount(1);
+
+    await page.getByTestId('filter-q').fill(uniqueToken());
+    await expect(page.getByTestId('achievements-empty')).toHaveText(
+      'Поки що немає досягнень за цими умовами.',
+    );
+    await page.goBack();
+    await expect(page.getByTestId('filter-q')).toHaveValue(sharedWord);
+    await expect(card(page, shared)).toBeVisible();
+
+    await page.getByTestId('filter-q').fill(publishedWord);
+    await expect(card(page, published)).toBeVisible();
+    await page.getByTestId('achievements-counterpart').click();
+    await expect(page).toHaveURL(new RegExp(`/public/achievements\\?q=${publishedWord}$`));
+    await expect(page.getByTestId('filter-q')).toHaveValue(publishedWord);
+    await expect(page.getByTestId('achievement-card')).toHaveCount(1);
+
+    await page.goto(`/public/units/${unit}/achievements?q=${sharedWord}`);
+    await expect(page.getByTestId('achievement-card')).toHaveCount(0);
+    await page.getByTestId('filter-q').fill(publishedWord);
+    await expect(page).toHaveURL(
+      new RegExp(`/public/units/${unit}/achievements\\?q=${publishedWord}$`),
+    );
+    await expect(card(page, published)).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
   test('ac2_8 a public unit page works in English at 360 px', async ({ browser }) => {
     const { published } = await publicAndShared(browser, 'public-en');
     const { page, errors } = await anonymous(browser);

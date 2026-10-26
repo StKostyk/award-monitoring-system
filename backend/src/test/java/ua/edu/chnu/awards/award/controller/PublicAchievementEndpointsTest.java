@@ -100,6 +100,16 @@ class PublicAchievementEndpointsTest extends AbstractAwardEndpointsTest {
     }
 
     @Test
+    void ac1_2_theSearchTextIsPassedWithThePerson() throws Exception {
+        when(achievements.published(new AchievementQuery(null, null, null, null, 7L, "виклад"), 0, 20))
+            .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get(PUBLIC_ACHIEVEMENTS).param("person", "7").param("q", "виклад"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isEmpty());
+    }
+
+    @Test
     void ac2_1_anUnknownUnitAnswers404() throws Exception {
         when(achievements.published(new AchievementQuery(99L, null, null, null), 0, 20))
             .thenThrow(new UnitNotFoundException(99L));

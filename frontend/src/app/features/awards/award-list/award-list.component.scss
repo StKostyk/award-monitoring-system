@@ -25,6 +25,10 @@
   width: 100%;
 }
 
+.awards__filter--search {
+  grid-column: 1 / -1;
+}
+
 .awards__list {
   list-style: none;
   margin: 0;

@@ -346,6 +346,8 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `impact_score` | `INTEGER` | YES | - | CK: 0-100 | Calculated significance score |
 | `external_url` | `VARCHAR(2048)` | YES | - | - | Link to external verification |
 | `visibility` | `VARCHAR(20)` | NO | `'PRIVATE'` | CK: `PRIVATE`, `UNIVERSITY`, `PUBLIC` | Owner's choice for an approved personal award: `PRIVATE` (owner and scoped reviewers), `UNIVERSITY` (also signed-in colleagues on the achievements page), `PUBLIC` (also the public page, 4.3.2); written only by `PUT /awards/{id}/visibility`, without a new `version` or award version (V035) |
+| `search_vector` | `TSVECTOR` | NO | generated | `GENERATED ALWAYS AS … STORED` | Words of `title` and `title_uk` (weight A), `awarding_organization` (B), `description` and `description_uk` (C), `simple` configuration, apostrophes (`'`, `’`, `ʼ` and the backtick) removed; never written by the application (V047, 5.4.1) |
+| `search_text` | `TEXT` | NO | generated | `GENERATED ALWAYS AS … STORED` | Lower-cased `title`, `title_uk` and `awarding_organization`, apostrophes removed, for the trigram typo fallback (V047) |
 | `created_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Record creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 | `version` | `BIGINT` | NO | `1` | - | Optimistic locking version; a new draft starts at 1 and every save that changes a field adds 1 (`award_versions.version_number`) |
@@ -388,8 +390,8 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `idx_awards_category_status` - B-tree on `(category_id, status)` (V012)
 - `idx_awards_pending` - Partial B-tree on `(user_id, created_at DESC)` where `status = 'PENDING'`
 - `idx_awards_approved` - Partial B-tree on `award_date DESC` where `status = 'APPROVED'`
-- `ftidx_awards_title` - Full-text GIN on `to_tsvector('english', title)`
-- `ftidx_awards_title_uk` - Full-text GIN on `to_tsvector('simple', title_uk)`
+- `idx_awards_search` - Full-text GIN on `search_vector` (V047; replaces V005's `ftidx_awards_title` and `ftidx_awards_title_uk`, dropped)
+- `trgm_awards_search` - Trigram GIN on `search_text` (V047)
 - `trgm_awards_title` - Trigram GIN on `title` (V012)
 
 **Relationships**:

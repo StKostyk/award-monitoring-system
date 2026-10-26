@@ -47,6 +47,15 @@ describe('AwardsService', () => {
     request.flush({ content: [], totalElements: 0, totalPages: 0, size: 100, number: 0 });
   });
 
+  it('ac1_10_sends_the_search_with_the_other_filters', () => {
+    service.list({ ...NO_FILTERS, status: 'DRAFT', q: 'horizon' }, 0, 20).subscribe();
+
+    const request = http.expectOne((r) => r.url.endsWith('/awards'));
+    expect(request.request.params.get('q')).toBe('horizon');
+    expect(request.request.params.get('status')).toBe('DRAFT');
+    request.flush({ content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 });
+  });
+
   it('ac1_2_puts_the_chosen_visibility', () => {
     service.updateVisibility(5, 'UNIVERSITY').subscribe();
 

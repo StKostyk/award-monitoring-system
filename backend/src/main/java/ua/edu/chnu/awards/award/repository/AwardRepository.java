@@ -54,6 +54,15 @@ public interface AwardRepository extends JpaRepository<Award, Long>, JpaSpecific
     void updateVisibility(@Param("id") long id, @Param("visibility") String visibility);
 
     /**
+     * Sets the word similarity the trigram index uses for the rest of the transaction.
+     *
+     * @param threshold the lowest similarity, as text
+     * @return the threshold set
+     */
+    @Query(value = "select set_config('pg_trgm.word_similarity_threshold', :threshold, true)", nativeQuery = true)
+    String useWordSimilarity(@Param("threshold") String threshold);
+
+    /**
      * A page of awards with what their responses show.
      *
      * @param specification the filter

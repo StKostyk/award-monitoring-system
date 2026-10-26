@@ -199,6 +199,16 @@ class AwardEndpointsTest extends AbstractAwardEndpointsTest {
     }
 
     @Test
+    void ac1_1_theSearchTextIsPassedWithTheFilters() throws Exception {
+        when(awardService.listOwn(new AwardQuery(AwardStatus.DRAFT, null, null, null, "премії"), 0, 20))
+            .thenReturn(new PageImpl<>(List.of(award(AwardStatus.DRAFT))));
+
+        mockMvc.perform(get(AWARDS).param("q", "премії").param("status", "DRAFT").with(employee()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
     void ac1_8_anUnknownOrHiddenAwardAnswers404() throws Exception {
         when(awardService.get(5L)).thenThrow(new AwardNotFoundException(5L));
 

@@ -562,6 +562,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SearchQueryParam'
         - name: status
           in: query
           schema:
@@ -588,6 +589,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AwardPage'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter`: `q` over 200 characters"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2306,6 +2313,7 @@ paths:
         - $ref: '#/components/parameters/AchievementYearParam'
         - $ref: '#/components/parameters/AchievementLevelParam'
         - $ref: '#/components/parameters/AchievementRecipientParam'
+        - $ref: '#/components/parameters/SearchQueryParam'
       responses:
         '200':
           description: A page of achievements
@@ -2314,7 +2322,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AchievementPage'
         '400':
-          description: "`urn:awards:problem:invalid-parameter`: a malformed filter"
+          description: "`urn:awards:problem:invalid-parameter`: a malformed filter, or `q` over 200 characters"
           content:
             application/problem+json:
               schema:
@@ -2380,6 +2388,7 @@ paths:
         - $ref: '#/components/parameters/AchievementLevelParam'
         - $ref: '#/components/parameters/AchievementRecipientParam'
         - $ref: '#/components/parameters/AchievementPersonParam'
+        - $ref: '#/components/parameters/SearchQueryParam'
       responses:
         '200':
           description: A page of public achievements
@@ -2388,7 +2397,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AchievementPage'
         '400':
-          description: "`urn:awards:problem:invalid-parameter`: a malformed filter"
+          description: "`urn:awards:problem:invalid-parameter`: a malformed filter, or `q` over 200 characters"
           content:
             application/problem+json:
               schema:
@@ -3405,6 +3414,19 @@ components:
       schema:
         type: integer
         format: int64
+
+    SearchQueryParam:
+      name: q
+      in: query
+      description: >
+        Full-text search: words of the English and Ukrainian titles, the awarding organisation and the
+        descriptions, each matched as a prefix after a light stem; on the achievements lists also a fragment of
+        the owner's name. When nothing matches, titles and awarding organisations similar to the words (typos)
+        are listed. Ignored under 2 characters; while searching, results come in relevance order. Over 200 characters:
+        `urn:awards:problem:invalid-parameter` naming `q`.
+      schema:
+        type: string
+        maxLength: 200
 
     SortParam:
       name: sort

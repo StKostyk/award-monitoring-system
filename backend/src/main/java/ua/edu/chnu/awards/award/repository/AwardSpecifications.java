@@ -5,16 +5,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.award.dto.AchievementQuery;
 import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.RecipientType;
+import ua.edu.chnu.awards.award.dto.SearchTerms;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
@@ -30,6 +36,8 @@ public class AwardSpecifications {
     private static final String AWARD_DATE = "awardDate";
     private static final String OWNER = "owner";
     private static final String RECIPIENT_UNIT = "recipientOrganizationId";
+    private static final String SEARCH_VECTOR = "searchVector";
+    private static final String SEARCH_TEXT = "searchText";
 
     /**
      * Awards of one owner matching the filters.
@@ -98,5 +106,64 @@ public class AwardSpecifications {
             }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    /**
+     * Awards whose texts hold every search word as a prefix, or, when asked, whose owner's name holds the search
+     * text, by full-text rank and then in the given order. The count query of a page carries no order.
+     *
+     * @param search the search terms
+     * @param ties   the list order of equally relevant awards
+     * @param byName whether the owner's name of a personal award is searched as well
+     * @return specification
+     */
+    public Specification<Award> matching(SearchTerms search, Sort ties, boolean byName) {
+        return (root, criteria, builder) -> {
+            if (search.isEmpty()) {
+                return builder.disjunction();
+            }
+            ordered(criteria, builder.desc(builder.function(AwardSearchFunctions.RANK, Double.class,
+                root.get(SEARCH_VECTOR), builder.literal(search.tsquery()))), root, builder, ties);
+            Predicate fullText = builder.isTrue(builder.function(AwardSearchFunctions.FULL_TEXT, Boolean.class,
+                root.get(SEARCH_VECTOR), builder.literal(search.tsquery())));
+            if (!byName) {
+                return fullText;
+            }
+            return builder.or(fullText, builder.and(builder.isNull(root.get(RECIPIENT_UNIT)), builder.isTrue(
+                builder.function(AwardSearchFunctions.OWNER_NAMED, Boolean.class, root.get(OWNER).get("id"),
+                    builder.literal(search.namePattern())))));
+        };
+    }
+
+    /**
+     * Awards whose titles and awarding organisation are similar to the search words, most similar first and then
+     * in the given order; the typo fallback when no award matches the words.
+     *
+     * @param search the search terms
+     * @param ties   the list order of equally similar awards
+     * @return specification
+     */
+    public Specification<Award> similar(SearchTerms search, Sort ties) {
+        return (root, criteria, builder) -> {
+            if (search.isEmpty()) {
+                return builder.disjunction();
+            }
+            ordered(criteria, builder.desc(builder.function(AwardSearchFunctions.SIMILARITY, Double.class,
+                root.get(SEARCH_TEXT), builder.literal(search.trigram()))), root, builder, ties);
+            return builder.isTrue(builder.function(AwardSearchFunctions.TYPO, Boolean.class, root.get(SEARCH_TEXT),
+                builder.literal(search.trigram())));
+        };
+    }
+
+    private static void ordered(CriteriaQuery<?> criteria, Order relevance, Root<Award> root,
+                                CriteriaBuilder builder, Sort ties) {
+        if (criteria.getResultType() == Long.class || criteria.getResultType() == long.class) {
+            return;
+        }
+        List<Order> orders = new ArrayList<>();
+        orders.add(relevance);
+        ties.forEach(tie -> orders.add(tie.isAscending() ? builder.asc(root.get(tie.getProperty()))
+            : builder.desc(root.get(tie.getProperty()))));
+        criteria.orderBy(orders);
     }
 }

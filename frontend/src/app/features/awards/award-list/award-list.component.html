@@ -8,6 +8,12 @@
 </div>
 
 <div class="awards__filters">
+  <app-search-field
+    class="awards__filter awards__filter--search"
+    label="awards.filters.search"
+    [value]="filters().q"
+    (search)="filter({ q: $event })"
+  />
   <mat-form-field class="awards__filter" subscriptSizing="dynamic">
     <mat-label>{{ 'awards.filters.status' | transloco }}</mat-label>
     <mat-select
@@ -122,7 +128,9 @@
     </li>
   } @empty {
     @if (!loading() && !problem()) {
-      <li class="awards__empty" data-testid="awards-empty">{{ 'awards.empty' | transloco }}</li>
+      <li class="awards__empty" data-testid="awards-empty">
+        {{ (filters().q ? 'awards.noMatch' : 'awards.empty') | transloco }}
+      </li>
     }
   }
 </ul>

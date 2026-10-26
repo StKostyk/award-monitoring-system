@@ -103,6 +103,12 @@ public class Award {
     @Column(name = "visibility", nullable = false, updatable = false, length = 20)
     private AwardVisibility visibility = AwardVisibility.PRIVATE;
 
+    @Column(name = "search_vector", insertable = false, updatable = false, columnDefinition = "tsvector")
+    private String searchVector;
+
+    @Column(name = "search_text", insertable = false, updatable = false)
+    private String searchText;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

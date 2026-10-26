@@ -51,6 +51,7 @@ public class AwardController {
      * @param category limit to a category
      * @param dateFrom earliest award date
      * @param dateTo   latest award date
+     * @param q        search text; while searching the page is in relevance order
      * @param page     0-based page
      * @param size     page size, capped at 100
      * @return the page
@@ -63,9 +64,10 @@ public class AwardController {
                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
                                             @RequestParam(required = false)
                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+                                            @RequestParam(required = false) String q,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "20") int size) {
-        return PageResponse.of(awardService.listOwn(new AwardQuery(status, category, dateFrom, dateTo), page,
+        return PageResponse.of(awardService.listOwn(new AwardQuery(status, category, dateFrom, dateTo, q), page,
             size));
     }
 

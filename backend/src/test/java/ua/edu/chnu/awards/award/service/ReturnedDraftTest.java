@@ -45,7 +45,8 @@ class ReturnedDraftTest {
     private final AwardService service = new AwardService(awards, new RequestLookup(requests, decisions),
         mock(AwardSpecifications.class), mock(AwardInputRules.class),
         TestAwards.ownership(awards, mock(UserRepository.class), access), mock(AwardWarnings.class),
-        new AwardMapper(TestWorkflow.estimator()), access, mock(AwardHistory.class), documents);
+        new AwardMapper(TestWorkflow.estimator()), access, mock(AwardHistory.class), documents,
+        mock(AwardSearch.class));
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private Award draft;
 
