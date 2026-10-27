@@ -222,7 +222,7 @@
         data-testid="award-date"
       />
       <mat-datepicker-toggle matIconSuffix [for]="awardDatePicker" />
-      <mat-datepicker #awardDatePicker />
+      <mat-datepicker #awardDatePicker [touchUi]="touch" />
       @if (recentDate()) {
         <mat-hint data-testid="award-recent-date">{{
           'awards.warnings.RECENT_DATE' | transloco
@@ -266,6 +266,8 @@
       <input
         matInput
         type="url"
+        inputmode="url"
+        autocomplete="url"
         formControlName="externalUrl"
         [maxlength]="limits.url"
         data-testid="award-url"
@@ -275,15 +277,19 @@
       }
     </mat-form-field>
 
-    <app-award-documents
-      [awardId]="current()?.id ?? null"
-      [uploads]="true"
-      [removable]="true"
-      [prepare]="prepareUpload"
-      [paused]="offline()"
-      (countChange)="documentCount.set($event)"
-      (lost)="documentsLost($event)"
-    />
+    @defer (on idle) {
+      <app-award-documents
+        [awardId]="current()?.id ?? null"
+        [uploads]="true"
+        [removable]="true"
+        [prepare]="prepareUpload"
+        [paused]="offline()"
+        (countChange)="documentCount.set($event)"
+        (lost)="documentsLost($event)"
+      />
+    } @placeholder {
+      <div class="award-form__documents-placeholder"></div>
+    }
 
     <div class="award-form__offline" role="status" data-testid="award-offline">
       @if (offlineNotice(); as notice) {

@@ -114,6 +114,17 @@ describe('AwardDocumentsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('awards.documents.hint');
   });
 
+  it('ac3_5_the_camera_button_opens_the_rear_camera_input_on_every_device', async () => {
+    await render({ awardId: 5, uploads: true });
+    const camera = byTestId('documents-camera-input') as HTMLInputElement;
+    const click = vi.spyOn(camera, 'click');
+
+    byTestId('documents-camera')?.click();
+
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(camera.getAttribute('accept')).toBe('image/*');
+  });
+
   it('ac2_4_offline_the_section_takes_no_files_and_says_why', async () => {
     await render({ awardId: 5, uploads: true, paused: true });
     const picker = byTestId('documents-input') as HTMLInputElement;

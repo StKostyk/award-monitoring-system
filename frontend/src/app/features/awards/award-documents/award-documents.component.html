@@ -57,17 +57,15 @@
           }
         </mat-select>
       </mat-form-field>
-      @if (touch) {
-        <button
-          mat-stroked-button
-          type="button"
-          [disabled]="paused()"
-          (click)="camera.click()"
-          data-testid="documents-camera"
-        >
-          {{ 'awards.documents.camera' | transloco }}
-        </button>
-      }
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="paused()"
+        (click)="camera.click()"
+        data-testid="documents-camera"
+      >
+        {{ 'awards.documents.camera' | transloco }}
+      </button>
     </div>
     <p id="documents-hint" class="documents__hint" data-testid="documents-hint">
       {{ (paused() ? 'awards.documents.offline' : 'awards.documents.hint') | transloco }}

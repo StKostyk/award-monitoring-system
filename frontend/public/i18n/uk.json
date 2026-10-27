@@ -261,7 +261,7 @@
       "problems": {
         "empty-file": "Файл порожній",
         "file-too-large": "Файл більший за 10 МБ",
-        "unsupported-type": "Непідтримуваний формат файлу",
+        "unsupported-type": "Непідтримуваний формат файлу. Підходять PDF, JPG, PNG і WEBP.",
         "content-mismatch": "Вміст файлу не відповідає його розширенню",
         "duplicate-document": "Цей файл уже додано",
         "document-limit": "Досягнуто ліміту в 10 файлів",
