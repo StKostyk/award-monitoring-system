@@ -182,11 +182,11 @@ jobs:
           tail -n 100 ../build/e2e-backend.log
           exit 1
 
-      - name: Install dependencies and the Playwright browser
+      - name: Install dependencies and the Playwright browsers
         working-directory: frontend
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
 
       - name: Run Playwright
         working-directory: frontend
