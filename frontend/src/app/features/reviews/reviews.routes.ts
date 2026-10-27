@@ -10,6 +10,6 @@ export const REVIEW_ROUTES: Routes = [
   {
     path: '',
     providers: [provideState(reviewsFeature), provideEffects(ReviewsEffects)],
-    children: [{ path: '', component: ReviewListComponent }],
+    children: [{ path: '', title: 'titles.reviews', component: ReviewListComponent }],
   },
 ];

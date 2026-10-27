@@ -17,27 +17,30 @@ export const AWARD_ROUTES: Routes = [
     path: '',
     providers: [provideState(awardsFeature), provideEffects(AwardsEffects)],
     children: [
-      { path: '', component: AwardListComponent },
+      { path: '', title: 'titles.awards', component: AwardListComponent },
       {
         path: 'new',
+        title: 'titles.awardNew',
         component: AwardFormComponent,
         canActivate: [awardEntryGuard],
         canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ':id/edit',
+        title: 'titles.awardEdit',
         component: AwardFormComponent,
         canActivate: [awardEditGuard],
         canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ':id/correct',
+        title: 'titles.awardCorrect',
         component: AwardCorrectionComponent,
         canActivate: [approverGuard],
         canDeactivate: [unsavedChangesGuard],
       },
-      { path: ':id/submitted', component: AwardSubmittedComponent },
-      { path: ':id', component: AwardDetailComponent },
+      { path: ':id/submitted', title: 'titles.awardSubmitted', component: AwardSubmittedComponent },
+      { path: ':id', title: 'titles.award', component: AwardDetailComponent },
     ],
   },
 ];

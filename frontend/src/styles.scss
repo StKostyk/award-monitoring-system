@@ -3,6 +3,7 @@
 @use './styles/charts';
 @use './styles/status';
 @use './styles/touch';
+@use './styles/a11y';
 
 html {
   height: 100%;
@@ -34,6 +35,7 @@ body {
 
 @include charts.tables();
 @include touch.rules();
+@include a11y.rules();
 
 app-root {
   display: block;

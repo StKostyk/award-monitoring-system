@@ -23,9 +23,15 @@ export const UNIT_ANALYTICS_ROUTES: Routes = [
       }),
     ],
     children: [
-      { path: '', pathMatch: 'full', component: UnitAnalyticsEntryComponent },
+      {
+        path: '',
+        pathMatch: 'full',
+        title: 'titles.analytics',
+        component: UnitAnalyticsEntryComponent,
+      },
       {
         path: 'university',
+        title: 'titles.university',
         canActivate: [universityAnalyticsGuard],
         providers: [
           provideState(universityAnalyticsFeature),
@@ -33,7 +39,7 @@ export const UNIT_ANALYTICS_ROUTES: Routes = [
         ],
         component: UniversityAnalyticsComponent,
       },
-      { path: 'units/:id', component: UnitAnalyticsComponent },
+      { path: 'units/:id', title: 'titles.unitAnalytics', component: UnitAnalyticsComponent },
     ],
   },
 ];

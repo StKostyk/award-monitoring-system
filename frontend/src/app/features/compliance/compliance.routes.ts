@@ -10,6 +10,6 @@ export const COMPLIANCE_ROUTES: Routes = [
   {
     path: '',
     providers: [provideState(complianceFeature), provideEffects(ComplianceEffects)],
-    children: [{ path: '', component: ComplianceComponent }],
+    children: [{ path: '', title: 'titles.compliance', component: ComplianceComponent }],
   },
 ];

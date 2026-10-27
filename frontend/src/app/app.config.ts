@@ -6,7 +6,8 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { AnimationsConfig, MATERIAL_ANIMATIONS } from '@angular/material/core';
+import { TitleStrategy, provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { provideTransloco } from '@jsverse/transloco';
 import { provideEffects } from '@ngrx/effects';
@@ -23,13 +24,20 @@ import { ColorSchemeService } from './core/brand/color-scheme.service';
 import { connectivityInterceptor } from './core/connectivity/connectivity.interceptor';
 import { provideIsoDateAdapter } from './core/i18n/iso-date-adapter';
 import { LanguageService } from './core/i18n/language.service';
+import { PageTitleStrategy } from './core/i18n/page-title.strategy';
 import { UpdatePromptService } from './core/pwa/update-prompt.service';
 import { TranslocoHttpLoader } from './core/i18n/transloco.loader';
+import { reducedMotion } from './shared/touch';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
+    { provide: TitleStrategy, useExisting: PageTitleStrategy },
+    {
+      provide: MATERIAL_ANIMATIONS,
+      useFactory: (): AnimationsConfig => ({ animationsDisabled: reducedMotion() }),
+    },
     provideHttpClient(
       withInterceptorsFromDi(),
       withInterceptors([connectivityInterceptor, unauthorizedInterceptor]),

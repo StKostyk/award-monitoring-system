@@ -12,8 +12,8 @@ export const ADMIN_ROUTES: Routes = [
     path: '',
     providers: [provideState(adminUsersFeature), provideEffects(AdminUsersEffects)],
     children: [
-      { path: 'users', component: UserListComponent },
-      { path: 'users/:id', component: UserDetailComponent },
+      { path: 'users', title: 'titles.users', component: UserListComponent },
+      { path: 'users/:id', title: 'titles.user', component: UserDetailComponent },
       { path: '', redirectTo: 'users', pathMatch: 'full' },
     ],
   },

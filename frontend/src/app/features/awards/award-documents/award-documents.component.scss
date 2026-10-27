@@ -25,7 +25,11 @@
 .documents__drop--active {
   border-color: var(--mat-sys-primary);
   background: var(--mat-sys-secondary-container);
-  outline: none;
+}
+
+.documents__drop:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 2px;
 }
 
 .documents__controls {

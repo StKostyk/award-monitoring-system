@@ -12,6 +12,7 @@ describe('LanguageService', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    document.documentElement.lang = 'uk';
     TestBed.configureTestingModule({
       imports: [
         TranslocoTestingModule.forRoot({
@@ -45,6 +46,26 @@ describe('LanguageService', () => {
     expect(label()).toBe('uk');
     file.next({});
     expect(label()).toBe('en');
+  });
+
+  it('ac1_1_the_page_language_changes_with_the_translation', () => {
+    service.init();
+    const file = new Subject<Translation>();
+    vi.spyOn(transloco, 'load').mockReturnValue(file);
+
+    service.use('en');
+
+    expect(document.documentElement.lang).toBe('uk');
+    file.next({});
+    expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('ac1_1_a_stored_language_sets_the_page_language_at_start', () => {
+    localStorage.setItem('lang', 'en');
+
+    service.init();
+
+    expect(document.documentElement.lang).toBe('en');
   });
 
   it('scrum112 ignores a translation that arrives after a newer switch', () => {

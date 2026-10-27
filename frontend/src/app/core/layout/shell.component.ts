@@ -1,5 +1,14 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -30,6 +39,7 @@ import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-s
 import { OfflineNoticeComponent } from '../connectivity/offline-notice.component';
 import { LanguageService } from '../i18n/language.service';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
+import { NavigationFocusService } from './navigation-focus.service';
 
 export const WIDE_LAYOUT = '(min-width: 960px)';
 
@@ -67,6 +77,7 @@ export class ShellComponent {
   private readonly privacy = inject(PrivacyCentreService);
   private readonly router = inject(Router);
   private readonly drawer = viewChild<MatSidenav>('drawer');
+  private readonly main = viewChild<ElementRef<HTMLElement>>('main');
 
   protected readonly auth = inject(AuthService);
   protected readonly language = inject(LanguageService);
@@ -127,6 +138,13 @@ export class ShellComponent {
   constructor() {
     effect(() => this.readActingFor());
     effect(() => this.readErasure());
+    inject(NavigationFocusService).follow(() => this.main()?.nativeElement, inject(DestroyRef));
+  }
+
+  /** Moves the focus to the page content, past the navigation. */
+  protected skipToContent(event: Event): void {
+    event.preventDefault();
+    this.main()?.nativeElement.focus();
   }
 
   logout(): void {

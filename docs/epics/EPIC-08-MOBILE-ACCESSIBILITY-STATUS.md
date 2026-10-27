@@ -10,12 +10,12 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Planned ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) approved 2026-10-26) | - | - |
-| 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | Not started | - | - |
+| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Stories merged; validation pending ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) approved 2026-10-26) | 2026-10-26 | - |
+| 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | In progress ([PRD](../features/epic-08/feature-8.2-accessibility.md) approved 2026-10-27) | 2026-10-27 | - |
 
 ## Current focus
 
-Feature 8.1 PRD approved 2026-10-26. Next: story 8.1.1 (SCRUM-115).
+Feature 8.1 stories merged (validation pending; AC-3.7 Lighthouse open for `/awards/new` and `/awards`). Feature 8.2 PRD approved 2026-10-27; story 8.2.1 (SCRUM-118) in progress, then 8.2.3 (SCRUM-120).
 
 ## Scope
 
@@ -45,7 +45,7 @@ All six stories are frontend work; none has a backend lane.
 | 1 | 8.1.1 Installable app with an offline application shell | 8.1 | 5 | SCRUM-115 | #331 | no | Done |
 | 2 | 8.1.2 Award draft kept offline and saved on reconnect | 8.1 | 5 | SCRUM-116 | #332 | no | In review |
 | 3 | 8.1.3 Touch-ready layouts at 360 px and camera capture | 8.1 | 5 | SCRUM-117 | #333 | no | In review |
-| 4 | 8.2.1 Page language, titles, skip link and focus management | 8.2 | 5 | SCRUM-118 | #334 | no | Planned |
+| 4 | 8.2.1 Page language, titles, skip link and focus management | 8.2 | 5 | SCRUM-118 | #334 | no | In review |
 | 5 | 8.2.3 Automated WCAG 2.1 AA sweep of every route | 8.2 | 3 | SCRUM-120 | #336 | no | Planned |
 | - | 8.2.2 Described forms, tables and announced changes | 8.2 | 5 | SCRUM-119 | #335 | no | Icebox |
 
