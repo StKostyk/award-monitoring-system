@@ -85,6 +85,8 @@ import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
 import { DuplicateDialogComponent } from '../duplicate-dialog/duplicate-dialog.component';
 
 const COPY_DEBOUNCE = 400;
+/** Stored key of a new award saved without a connection, shared by every tab of the user. */
+const NEW_KEY = 'award-new-key';
 const SUGGEST_DEBOUNCE = 400;
 /** Characters of each text sent for suggestions; enough for the rules and short enough for a request line. */
 const SUGGEST_TEXT_LIMIT = 300;
@@ -146,6 +148,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   private id: number | null = null;
   private owner: string | null = null;
+  private creationKey: string | null = null;
   private version = 0;
   private leaving = false;
   private running: Observable<Award> | null = null;
@@ -328,6 +331,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   restore(): void {
     const copy = this.restoreOffer();
+    const userId = this.copyOwner();
+    if (this.id === null && userId) {
+      this.creationKey ??= this.copies.load<string>(userId, NEW_KEY);
+    }
     if (copy) {
       this.form.patchValue({
         ...copy,
@@ -612,19 +619,24 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   private store(): Observable<Award> {
     const value = this.value();
-    const request =
-      this.id === null
-        ? this.service.create(value)
-        : this.service.update(this.id, value, this.version);
-    return request.pipe(
-      tap((award) => {
-        if (this.id === null) {
-          this.dropCopy();
-          this.id = award.id;
-          this.location.replaceState(`/awards/${award.id}/edit`);
-        }
+    if (this.id !== null) {
+      return this.service
+        .update(this.id, value, this.version)
+        .pipe(tap((award) => this.show(award)));
+    }
+    this.creationKey ??= crypto.randomUUID();
+    return this.service.create(value, this.creationKey).pipe(
+      tap(({ award, repeated }) => {
+        this.dropCopy();
+        this.id = award.id;
+        this.creationKey = null;
+        this.location.replaceState(`/awards/${award.id}/edit`);
         this.show(award);
+        if (repeated && JSON.stringify(this.value()) !== JSON.stringify(value)) {
+          this.restoreOffer.set(value);
+        }
       }),
+      map(({ award }) => award),
     );
   }
 
@@ -670,7 +682,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       this.keepCopy(true);
       return;
     }
-    if (this.id !== null && problemStatus(error) === HttpStatusCode.NotFound) {
+    const known = this.id !== null || this.creationKey !== null;
+    if (known && problemStatus(error) === HttpStatusCode.NotFound) {
       this.deletedElsewhere();
       return;
     }
@@ -697,6 +710,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private deletedElsewhere(): void {
     this.dropCopy();
     this.id = null;
+    this.creationKey = null;
     this.version = 0;
     this.current.set(null);
     this.stale.set(false);
@@ -747,13 +761,23 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     const userId = this.copyOwner();
     if (userId && (this.form.dirty || evenIfPristine) && !this.leaving) {
       this.notStored.set(!this.copies.save(userId, this.copyName(), this.value()));
+      if (this.id === null && this.offline()) {
+        this.creationKey ??= this.copies.load<string>(userId, NEW_KEY) ?? crypto.randomUUID();
+        this.copies.save(userId, NEW_KEY, this.creationKey);
+      }
     }
   }
 
   private dropCopy(): void {
     const userId = this.copyOwner();
-    if (userId) {
-      this.copies.remove(userId, this.copyName());
+    if (!userId) {
+      return;
+    }
+    this.copies.remove(userId, this.copyName());
+    if (this.id === null && this.creationKey !== null) {
+      if (this.copies.load<string>(userId, NEW_KEY) === this.creationKey) {
+        this.copies.remove(userId, NEW_KEY);
+      }
     }
   }
 

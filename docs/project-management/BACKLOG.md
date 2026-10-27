@@ -159,14 +159,16 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.1.1 | Installable app with an offline application shell | 5 | ✅ Done | SCRUM-115 | [#331](https://github.com/StKostyk/award-monitoring-system/issues/331) |
 | 8.1.2 | Award draft kept offline and saved on reconnect | 5 | ✅ Done | SCRUM-116 | [#332](https://github.com/StKostyk/award-monitoring-system/issues/332) |
 | 8.1.3 | Touch-ready layouts at 360 px and camera capture | 5 | ✅ Done | SCRUM-117 | [#333](https://github.com/StKostyk/award-monitoring-system/issues/333) |
+| 8.1.4 | New award created once when the save answer is lost | 3 | 👀 In review (7) | SCRUM-121 | [#346](https://github.com/StKostyk/award-monitoring-system/issues/346) |
 | 8.2.1 | Page language, titles, skip link and focus management | 5 | ✅ Done | SCRUM-118 | [#334](https://github.com/StKostyk/award-monitoring-system/issues/334) |
-| 8.2.3 | Automated WCAG 2.1 AA sweep of every route | 3 | 👀 In review (7) | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
+| 8.2.3 | Automated WCAG 2.1 AA sweep of every route | 3 | ✅ Done | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
 
 ### Later epics
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
 | US-006 | AI-Powered Document Parsing (deferred) | 21 | Documents |
 | US-007 | Confidence Score Display (deferred) | 8 | Documents |
+| — | Signed-in pages reach Lighthouse mobile performance 90 (`/awards/new`, `/awards`: total blocking time at start-up and first render; AC-3.7 of Feature 8.1, NFR-009) | - | Epic 9 |
 | — | Production hardening: backend-for-frontend with an HttpOnly cookie, refresh tokens hashed at rest, rate limits for a campus NAT, Spring Session on Redis (design review 2026-10-04) | - | Epic 9 |
 
 ---

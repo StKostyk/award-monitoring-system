@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,21 +36,26 @@ import ua.edu.chnu.awards.award.dto.AwardQuery;
 import ua.edu.chnu.awards.award.dto.DuplicateMatch;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.service.AwardCreation;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardStatusService;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
 
-@WebMvcTest(AwardController.class)
+@WebMvcTest({AwardController.class, AwardCreationController.class})
 @MockitoBean(types = AwardStatusService.class)
 class AwardEndpointsTest extends AbstractAwardEndpointsTest {
 
     private static final String AWARDS = "/api/v1/awards";
     private static final String AWARD = "/api/v1/awards/5";
+    private static final String IDEMPOTENCY_KEY = "Idempotency-Key";
+
+    @MockitoBean
+    private AwardCreation creation;
 
     @Test
     void ac1_1_creatingADraftAnswers201WithItsLocation() throws Exception {
-        when(awardService.create(any())).thenReturn(award(AwardStatus.DRAFT));
+        when(creation.create(any(), any())).thenReturn(new AwardCreation.Created(award(AwardStatus.DRAFT), false));
 
         mockMvc.perform(post(AWARDS).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"titleUk\":\"Грамота МОН\",\"awardDate\":\"2025-05-01\"}")
@@ -61,13 +67,36 @@ class AwardEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.request").doesNotExist())
             .andExpect(jsonPath("$.recipient.type").value("PERSON"))
             .andExpect(jsonPath("$.version").value(3));
-        verify(awardService).create(new AwardForm(null, "Грамота МОН", null, null, null, null,
-            LocalDate.of(2025, 5, 1), null, null, null));
+        verify(creation).create(new AwardForm(null, "Грамота МОН", null, null, null, null,
+            LocalDate.of(2025, 5, 1), null, null, null), null);
+    }
+
+    @Test
+    void ac4_1_aRepeatedCreationAnswers200WithTheEarlierDraft() throws Exception {
+        UUID key = UUID.fromString("0b9c7c52-6f1e-4a8e-9d55-3f2f8b7a1c01");
+        when(creation.create(any(), eq(key))).thenReturn(new AwardCreation.Created(award(AwardStatus.DRAFT), true));
+
+        mockMvc.perform(post(AWARDS).contentType(MediaType.APPLICATION_JSON).header(IDEMPOTENCY_KEY, key)
+                .content("{\"titleUk\":\"Грамота МОН\"}").with(employee()))
+            .andExpect(status().isOk())
+            .andExpect(header().doesNotExist("Location"))
+            .andExpect(jsonPath("$.id").value(5))
+            .andExpect(jsonPath("$.version").value(3));
+    }
+
+    @Test
+    void ac4_3_aKeyThatIsNotAUuidAnswers400NamingTheHeader() throws Exception {
+        mockMvc.perform(post(AWARDS).contentType(MediaType.APPLICATION_JSON).header(IDEMPOTENCY_KEY, "tab-1")
+                .content("{\"titleUk\":\"Грамота МОН\"}").with(employee()))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.type").value("urn:awards:problem:invalid-parameter"))
+            .andExpect(jsonPath("$.parameter").value(IDEMPOTENCY_KEY));
+        verify(creation, never()).create(any(), any());
     }
 
     @Test
     void ac1_1_invalidFieldsAnswer422WithOneEntryPerField() throws Exception {
-        when(awardService.create(any())).thenThrow(new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY,
+        when(creation.create(any(), any())).thenThrow(new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY,
             "validation-failed", "The award form has invalid fields", Map.of("errors", List.of(
                 new FieldViolation("title", "required", "A title is required"),
                 new FieldViolation("externalUrl", "invalid", "http or https")))));

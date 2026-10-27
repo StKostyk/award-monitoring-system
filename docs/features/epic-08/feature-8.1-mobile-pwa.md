@@ -3,7 +3,7 @@
 > **Epic**: 8 — Mobile Optimization & Accessibility (SCRUM-114)
 > **Sprint**: 7 (2026-10-26 → 2026-11-01), spilling into sprint 8
 > **Points**: 15 (three stories)
-> **Status**: Approved 2026-10-26 (deviations D-1 to D-8 accepted)
+> **Status**: Validated 2026-10-27 with notes (§13), pending fix story 8.1.4 (AC-2.9) and the manual run of §10; approved 2026-10-26 (deviations D-1 to D-8 accepted)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-08 tracker (decisions of 2026-10-26, deviations 3–6, technical notes, risks), US-013, TRACEABILITY FR-012 NFR-009, BRD §3.1 and §3.2, QUALITY_GATES §6.1, ADR-013 (service workers, rendering addendum), ADR-014, ADR-016 (brands addendum), ADR-022 (brand per deployment), Feature 2.1 (server drafts, local form copies), `FormCopiesService`, `AuthService`, `BrandService`, `award-form.component.ts`, `award-documents.component.html`, `frontend/nginx.conf`, `security-headers.conf`
 
@@ -52,6 +52,7 @@ The application works in a desktop browser on a steady connection. On a phone it
 | SCRUM-115 (#331) | 8.1.1 Installable app with an offline application shell | 5 | no | — |
 | SCRUM-116 (#332) | 8.1.2 Award draft kept offline and saved on reconnect | 5 | no | 8.1.1 (`ConnectivityService`, service worker) |
 | SCRUM-117 (#333) | 8.1.3 Touch-ready layouts at 360 px and camera capture | 5 | no | 8.1.1 (manifest, offline notice in the shell) |
+| SCRUM-121 (#346) | 8.1.4 New award created once when the save answer is lost (validation finding F-1) | 3 | no | 8.1.2 |
 
 All three stories are frontend only (plus nginx in 8.1.1); none needs a backend change or a split.
 
@@ -96,6 +97,14 @@ All three stories are frontend only (plus nginx in 8.1.1); none needs a backend 
 - **AC-3.6** (WebKit) Given the Playwright projects `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 13, WebKit), when the award form spec runs (create, save draft, attach an image, submit), then it passes in both; they run in `e2e.ps1` and the gate's e2e step.
 - **AC-3.7** (Lighthouse) Given the Compose build, Chrome Lighthouse in the mobile profile (simulated throttling), then performance, accessibility and best practices are each 90 or above on `/login`, `/awards/new` and `/awards`; the scores and the Lighthouse version are recorded in the §10 run notes; the initial bundle stays within the `angular.json` budget.
 - **AC-3.8** (User guide) Given `docs/user/USER_GUIDE.md`, then a section "Using the app on a phone" covers installing on Android and iOS, what works without a connection (AC-2.x), photographing a certificate and the 10 MB limit, and continuing on a desktop.
+
+### 8.1.4 New award created once when the save answer is lost (SCRUM-121)
+
+Validation finding F-1 (§13): AC-2.9 promises that a save which reached the server is never stored twice, but a new award has no id for the version check.
+
+- **AC-4.1** (Lost answer) Given a new award whose save reached the server and whose answer was lost (status 0), when the connection returns and the save runs again, then exactly one award exists and the form continues on `/awards/{id}/edit`.
+- **AC-4.2** (Two tabs) Given two tabs on `/awards/new` with values typed offline, when the connection returns, then one draft is created; the other tab meets an existing outcome (stale or restore) instead of creating a second draft.
+- **AC-4.3** (Contract) The way a repeated creation is recognised is documented in `openapi.yml` and the data dictionary.
 
 ## 5. Edge cases
 
@@ -232,7 +241,7 @@ Preconditions: `docker compose up -d --build` (production build with the service
 15. Go offline, change the description, close the tab. Open `http://localhost/awards/<id>/edit` online. Expected: the draft loads with "Відновити незбережені зміни?"; "Відновити" brings the change back; "Зберегти чернетку" saves it (PUT 200). (AC-2.6)
 16. On the phone (or a Playwright context at 360×740) save a draft with a photo; sign in as `employee.fmi` on the desktop. Expected: `/awards` lists it as a draft; the form shows the values and the photo; submission succeeds. (AC-2.7)
 17. Run `npx playwright test mobile-layout` and look at `/awards`, `/reviews`, `/dashboard/summary`, `/admin/users` and `/profile` at 360×740 and 740×360 in Ukrainian. Expected: green; no sideways page scroll; tables scroll inside their card. (AC-3.1, 3.2)
-18. Award form at 360 px on the phone: fill every field, turn the phone. Expected: one column, no zoom on focus, the device date picker, the URL keyboard for the link; values and focus kept after turning. (AC-3.3, 3.4)
+18. Award form at 360 px on the phone: fill every field, turn the phone. Expected: one column, no zoom on focus, the full-screen calendar dialog (Material `touchUi`), the URL keyboard for the link; values and focus kept after turning. (AC-3.3, 3.4)
 19. On the phone press "Сфотографувати" and photograph a certificate. Expected: the rear camera, the upload with a preview. On the desktop the same button opens the file picker. Upload a photo over 10 MB. Expected: "The file is larger than 10 MB". (AC-3.5)
 20. Lighthouse (mobile, Navigation, Performance + Accessibility + Best practices) on `/login`, `/awards/new` and `/awards` signed in as `employee.fmi`. Expected: each score ≥ 90; record the three rows and the Lighthouse version. (AC-3.7)
 21. Read the user guide section "Using the app on a phone" against steps 3, 11–14 and 19. Expected: the text matches the screens. (AC-3.8)
@@ -251,6 +260,10 @@ Preconditions: `docker compose up -d --build` (production build with the service
 31. Two tabs on the same draft offline, both edited; go online. Expected: one tab saves, the other shows the stale message; one row in psql. (§5)
 32. Block site storage (Chrome Settings → Site data) and type in the form offline. Expected: the notice "Пристрій не зберігає введене — не закривайте сторінку."; a private window offline without an earlier visit shows Chrome's own offline page. (§5)
 33. Rename `ngsw.json` in the container (`docker compose exec frontend mv /usr/share/nginx/html/ngsw.json /tmp/`), reload twice. Expected: Application shows the worker redundant or gone; the app works online; restore the file. (AC-1.11)
+34. Answer lost, new award: on `/awards/new` type a title, block the response of `POST /awards` after it reached the server (Playwright `route.fetch()` then `route.abort('failed')`, test `ac2_9 a new award whose save answer was lost is created once`), press "Зберегти чернетку", then reconnect. Expected: both `POST /awards` requests carry the same `Idempotency-Key` header, the first answers 201 and the repeat 200; one draft in `/awards` and in psql (`select id, creation_key from awards where user_id = …`: one row with the key). (AC-2.9, AC-4.1, AC-4.3)
+35. Two tabs on `/awards/new` offline, a different title in each, "Зберегти чернетку" in both; go online. Expected: both tabs on the same `/awards/{id}/edit`, exactly one of them shows the restore offer with its own title; one draft in `/awards`. Two tabs typed online instead stay two drafts. (AC-2.9, AC-4.2)
+36. Backend stopped, browser online: `docker compose stop app`, press "Зберегти чернетку". Expected: the server error text (502 is not offline), the values and the copy kept, no pending state; `docker compose start app`, save once. Expected: one draft. (AC-2.9)
+37. Update in one tab, old version in another: two tabs, press "Оновити" in the first, open a lazy route (`/analytics`) in the second. Expected: the page reloads with the update notice; a dirty form keeps its copy. (AC-1.10)
 
 ### Run notes
 
@@ -283,3 +296,56 @@ Changes made in 8.1.3: initial bundle 986 → 841 kB (home and profile routes la
 - ADR-013 addendum (service worker and offline policy); deployment guide (brand files, worker files, kill switch); user guide section; CHANGELOG `[Unreleased]`; tracker and BACKLOG
 - Lighthouse scores recorded (AC-3.7)
 - Manual verification (§10) run and recorded; feature validated
+
+## 13. Validation (2026-10-27, `develop` at 7a6df4e)
+
+Result: **PASSED WITH NOTES**, pending the manual run of §10 and the fix of AC-2.9 (finding F-1). SCRUM-115 (#340), SCRUM-116 (#341) and SCRUM-117 (#342) merged.
+
+Gate (`gate.ps1 -Full`, 17:08, sequential under 8 GB free): 1 327 unit, 549 IT/FT, coverage 98.7 % lines (6081/6158), Checkstyle/PMD/SpotBugs 0; frontend lint, 1 020 tests, prod build 844.87 kB initial (budget 850 warning). E2E (`e2e.ps1`, 2 workers): 153 passed, 0 failed, including the WebKit and Pixel projects. `pwa.spec.ts` against the Compose build (`PLAYWRIGHT_BASE_URL=http://localhost`): 3 of 3. The planned texts of §4 and §10 match `uk.json` and `en.json`. No migration and no endpoint in this feature; `openapi.yml` unchanged.
+
+### AC evidence
+
+| AC | Tests | Result |
+|----|-------|--------|
+| 1.1 | e2e `pwa.spec.ts` "ac1_1 ac1_11 …", `offline.spec.ts` "ac1_1 ac1_2 serves the manifests and icons of both brands"; manual 1 | pass |
+| 1.2 | `offline.spec.ts` "ac1_1 ac1_2 …", `brand.service.spec.ts`; deployment guide; manual 2 | pass |
+| 1.3 | `pwa.spec.ts` "ac1_3 ac1_5 ac1_6 …" (worker active); manual 3 (install prompt) | pass (install: manual) |
+| 1.4 | `offline.spec.ts` "ac1_4 registers no service worker in the development build" | pass |
+| 1.5 | `ngsw-config.spec.ts` (3 × ac1_5), `pwa.spec.ts` cache contents; manual 4 | pass |
+| 1.6 | `pwa.spec.ts` "ac1_3 ac1_5 ac1_6 …" (`/login` navigation); manual 5 | pass |
+| 1.7 | `auth.service.spec.ts` (2 × ac1_7), `offline.spec.ts` "ac1_7 ac1_9 …", `pwa.spec.ts` "ac1_7 ac1_8 ac1_12 …" (3 s); manual 6 | pass |
+| 1.8 | `auth.service.spec.ts` ac1_8, `auth.guard.spec.ts` ac1_8, `offline.component.spec.ts` (ac1_8, foreign `next` targets), `offline.spec.ts` "ac1_8 …"; manual 7 | pass |
+| 1.9 | `auth.service.spec.ts` (2 × ac1_9), `offline.spec.ts` "ac1_7 ac1_9 …"; manual 8 | pass |
+| 1.10 | `update-prompt.service.spec.ts` (5 × ac1_10); manual 9, 29, 37 | pass |
+| 1.11 | `pwa.spec.ts` "ac1_1 ac1_11 …" (worker headers); ADR-013 addendum; manual 10, 33 | pass |
+| 1.12 | `auth.service.spec.ts` ac1_12, `offline.spec.ts` "ac1_12 …", `pwa.spec.ts` "ac1_7 ac1_8 ac1_12 …"; manual 22 | pass |
+| 2.1 | `award-form.component.spec.ts` (2 × ac2_1), e2e `award-offline.spec.ts` "ac2_1 ac2_2 ac2_3 ac2_4 ac2_7 …"; manual 11, 32 | pass |
+| 2.2 | `award-form…` ac2_2, e2e as 2.1; manual 12 | pass |
+| 2.3 | `award-form…` (3 × ac2_3), e2e as 2.1; manual 14 | pass |
+| 2.4 | `award-documents.component.spec.ts` ac2_4, e2e as 2.1; manual 13, 28 | pass |
+| 2.5 | `award-form…` (3 × ac2_5), e2e `award-offline.spec.ts` "ac2_5 …"; manual 23, 24 | pass |
+| 2.6 | `award-form…` ac2_6 and the restore tests of Feature 2.1; manual 15 | pass |
+| 2.7 | e2e as 2.1 (phone context saves, desktop context submits); manual 16 | pass |
+| 2.8 | `award-form…` ac2_8, `auth.service.spec.ts` ac1_9 renewal; manual 25 | pass |
+| 2.9 | `award-form…` (2 × ac2_9), `connectivity.interceptor.spec.ts` (2 × ac2_9), `connectivity.service.spec.ts` ac2_9; manual 26 | **fail** (F-1) |
+| 3.1 | e2e `mobile-layout.spec.ts` (3 × "ac3_1 ac3_2 …"); manual 17 | pass |
+| 3.2 | as 3.1 (axe `target-size`, 44 px) | pass |
+| 3.3 | `award-form…` ac3_3 (URL keyboard); `touchUi` in the template; manual 18 | pass (calendar, font size: manual) |
+| 3.4 | e2e `mobile-layout.spec.ts` "ac3_4 …"; manifest without `orientation` (AC-1.1) | pass |
+| 3.5 | `award-documents…` ac3_5, e2e `award-mobile.spec.ts` "ac3_5 ac3_6 …"; manual 19 | pass |
+| 3.6 | e2e `award-mobile.spec.ts` in `mobile-chrome` and `mobile-safari` | pass |
+| 3.7 | §10 run notes: `/login` 100/100/100; `/awards/new` 74, `/awards` 77 performance | **partly met**: performance of the signed-in pages moves to an Epic 9 story; NFR-009 target kept |
+| 3.8 | `USER_GUIDE.md` "Using the app on a phone" (+ `docs/ua` copy); manual 21 | pass |
+
+Edge cases of §5: weak connection (`connectivity.service.spec.ts` ac2_9, `award-form…` ac2_9), storage refused (`award-form…` ac2_1_storage…), sign-out offline (ac1_12), offline start with a stored session and discovery unreachable (`auth.service.spec.ts` ac1_7); the others are manual steps 27–33.
+
+### Security
+
+Frontend only. A01: the service worker caches no backend path (`ngsw-config.spec.ts` ac1_5_caches_no_backend_path, `pwa.spec.ts` cache contents) and backend pages always come from the network (AC-1.6); no API answer, document or personal data is kept by the worker (decision of 2026-10-26). A02: tokens stay in `sessionStorage`; sign-out without a connection removes tokens and form copies (ac1_12). A03: the offline page accepts only a local `next` path (`offline.component.spec.ts`, foreign targets). A07: an expired token is renewed on reconnect; a session ended elsewhere opens the sign-in page (ac2_8). Content security policy unchanged (AC-1.11).
+
+### Findings
+
+- **F-1** (AC-2.9, high) A new award whose `POST /awards` reached the server but whose answer was lost is created a second time on reconnect: no id exists for the version check, and the duplicate check compares only awards with the same date. Two tabs on `/awards/new` offline give the same result. Proven by e2e `award-offline.spec.ts` "ac2_9 a new award whose save answer was lost is created once" (red on `develop`). Fix story 8.1.4.
+- **F-2** (AC-3.7, medium) Performance under 90 on `/awards/new` and `/awards` (total blocking time at 4× CPU). Follow-up story in Epic 9; NFR-009 target kept.
+- **F-3** (low) A save sent on reconnect while the access token expired on the same tick may refresh twice in sequence (`AuthService.reconnect` and the 401 path); harmless with token rotation, recorded in the tracker notes.
+- **F-4** (low) Values typed while a save is in flight are marked pristine when it finishes (existing since Feature 2.1, more likely with slow connections); recorded in the tracker notes.

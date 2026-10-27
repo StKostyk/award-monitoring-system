@@ -1,11 +1,9 @@
 package ua.edu.chnu.awards.award.controller;
 
-import java.net.URI;
 import java.time.LocalDate;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -69,19 +67,6 @@ public class AwardController {
                                             @RequestParam(defaultValue = "20") int size) {
         return PageResponse.of(awardService.listOwn(new AwardQuery(status, category, dateFrom, dateTo, q), page,
             size));
-    }
-
-    /**
-     * Creates a draft owned by the caller.
-     *
-     * @param form the form; a title in one language is enough
-     * @return 201 with the draft and its location
-     */
-    @PostMapping
-    @PreAuthorize(AwardPermissionConstants.CAN_CREATE)
-    public ResponseEntity<AwardResponse> create(@RequestBody AwardForm form) {
-        AwardResponse created = awardService.create(form);
-        return ResponseEntity.created(URI.create("/api/v1/awards/" + created.id())).body(created);
     }
 
     /**

@@ -10,12 +10,12 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Stories merged; validation pending ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) approved 2026-10-26) | 2026-10-26 | - |
+| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Validated 2026-10-27 with notes ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) §13): fix 8.1.4 (SCRUM-121, AC-2.9) in progress; AC-3.7 partly met, performance of the signed-in pages moves to Epic 9; manual run of §10 pending | 2026-10-26 | - |
 | 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | In progress ([PRD](../features/epic-08/feature-8.2-accessibility.md) approved 2026-10-27) | 2026-10-27 | - |
 
 ## Current focus
 
-Feature 8.1 stories merged (validation pending; AC-3.7 Lighthouse open for `/awards/new` and `/awards`). Feature 8.2 PRD approved 2026-10-27; story 8.2.1 (SCRUM-118) in progress, then 8.2.3 (SCRUM-120).
+Feature 8.1 validated 2026-10-27 with notes: fix story 8.1.4 (SCRUM-121) for a new award created twice when the save answer is lost (AC-2.9); AC-3.7 performance of `/awards/new` and `/awards` moves to an Epic 9 story. Feature 8.2 stories merged; validation next.
 
 ## Scope
 
@@ -46,7 +46,8 @@ All six stories are frontend work; none has a backend lane.
 | 2 | 8.1.2 Award draft kept offline and saved on reconnect | 8.1 | 5 | SCRUM-116 | #332 | no | Done |
 | 3 | 8.1.3 Touch-ready layouts at 360 px and camera capture | 8.1 | 5 | SCRUM-117 | #333 | no | Done |
 | 4 | 8.2.1 Page language, titles, skip link and focus management | 8.2 | 5 | SCRUM-118 | #334 | no | Done |
-| 5 | 8.2.3 Automated WCAG 2.1 AA sweep of every route | 8.2 | 3 | SCRUM-120 | #336 | no | In review |
+| 5 | 8.2.3 Automated WCAG 2.1 AA sweep of every route | 8.2 | 3 | SCRUM-120 | #336 | no | Done |
+| 5a | 8.1.4 New award created once when the save answer is lost | 8.1 | 3 | SCRUM-121 | #346 | no | In review |
 | - | 8.2.2 Described forms, tables and announced changes | 8.2 | 5 | SCRUM-119 | #335 | no | Icebox |
 
 Total: 23 points (roadmap estimate 21: US-013 13, US-014 8; the roadmap's single story per feature is split by
@@ -102,6 +103,12 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   (2.4.2), no skip link (2.4.1), no `prefers-reduced-motion` styles, no `LiveAnnouncer` use.
 - The screenshot check of each UI story covers 360/1280 px, both themes and both languages; 8.2.3 turns its route
   list into a Playwright sweep so the audit runs in the gate.
+- Validation of 8.1 (PRD §13), left open: a save sent on reconnect while the access token expired on the same tick
+  may refresh twice in sequence (F-3); values typed while a save is in flight are marked pristine when it finishes
+  (F-4, since Feature 2.1). Refactor sweep: duplicated "go pending" sequence in `award-form.component.ts`
+  (`failed()` and the offline save), a second `prefers-reduced-motion` check in `shared/touch.ts` next to
+  `ChartThemeService`, offline texts and `RECONNECT_MS` repeated across the offline e2e specs, a wall-clock 3 s
+  check in `pwa.spec.ts`; the offline flags of the form could become one state value.
 
 ## Risks
 

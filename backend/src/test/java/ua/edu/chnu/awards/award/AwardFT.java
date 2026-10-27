@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,6 +55,7 @@ class AwardFT extends AbstractFunctionalTest {
     private static final String SUGGESTIONS = "/api/v1/award-categories/suggestions";
     private static final String TYPE = "type";
     private static final String VERSION = "version";
+    private static final String IDEMPOTENCY_KEY = "Idempotency-Key";
     private static final long OTHER_FACULTY_ID = 10L;
     private static final long MINISTRY_CATEGORY = 13L;
     private static final long COMMUNITY_CATEGORY = 72L;
@@ -353,6 +355,32 @@ class AwardFT extends AbstractFunctionalTest {
         assertThat(statuses).containsExactlyInAnyOrder(200, 409);
         assertThat(jdbc.queryForObject("select count(*) from award_requests where award_id = ?", Integer.class,
             id)).isEqualTo(1);
+    }
+
+    @Test
+    void ac4_1_ac4_2_repeatsOfOneCreationStoreOneDraft() throws Exception {
+        String key = UUID.randomUUID().toString();
+        String title = "Повторене створення " + key;
+        ExecutorService pool = Executors.newFixedThreadPool(3);
+        List<Callable<Response>> calls = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            calls.add(() -> as(employee).contentType(ContentType.JSON).header(IDEMPOTENCY_KEY, key)
+                .body(Map.of("titleUk", title)).post(AWARDS));
+        }
+        List<Response> answers = new ArrayList<>();
+        for (Future<Response> result : pool.invokeAll(calls)) {
+            answers.add(result.get());
+        }
+        pool.shutdown();
+        Response late = as(employee).contentType(ContentType.JSON).header(IDEMPOTENCY_KEY, key)
+            .body(Map.of("titleUk", title)).post(AWARDS);
+
+        assertThat(answers).extracting(Response::statusCode).containsOnlyOnce(201).containsOnly(201, 200);
+        late.then().statusCode(200).body("titleUk", equalTo(title));
+        assertThat(answers).extracting(answer -> answer.jsonPath().getLong("id"))
+            .containsOnly(late.jsonPath().getLong("id"));
+        assertThat(jdbc.queryForObject("select count(*) from awards where user_id = ? and title_uk = ?",
+            Integer.class, employeeId, title)).isEqualTo(1);
     }
 
     private long draft(String token, String title) {
