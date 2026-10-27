@@ -50,6 +50,19 @@ describe('BrandService', () => {
     expect(TestBed.inject(Title).getTitle()).toBe('Облік нагород ЧНУ');
   });
 
+  it('ac1_1_sets_the_browser_bar_colour_of_the_brand', async () => {
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.appendChild(meta);
+    try {
+      await load((request) => request.flush({ ...chnu, id: 'neutral' }));
+
+      expect(meta.content).toBe('#2D6A4F');
+    } finally {
+      meta.remove();
+    }
+  });
+
   it('ac3_follows_the_language_in_the_tab_title_and_texts', async () => {
     await load((request) => request.flush(chnu));
     TestBed.inject(TranslocoService).setActiveLang('en');

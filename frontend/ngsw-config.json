@@ -1,0 +1,54 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "shell",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/favicon.ico", "/index.html", "/*.css", "/*.js", "/i18n/*.json"]
+      }
+    },
+    {
+      "name": "fonts",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/media/*.(woff|woff2)"]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "brand",
+      "urls": ["/brand/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "timeout": "3s",
+        "maxAge": "7d",
+        "maxSize": 20
+      }
+    }
+  ],
+  "navigationUrls": [
+    "/**",
+    "!/**/*.*",
+    "!/**/*__*",
+    "!/**/*__*/**",
+    "!/api/**",
+    "!/oauth2/**",
+    "!/connect/**",
+    "!/.well-known/**",
+    "!/login",
+    "!/login/**",
+    "!/logout",
+    "!/error",
+    "!/login-assets/**",
+    "!/swagger-ui/**",
+    "!/v3/api-docs",
+    "!/v3/api-docs/**",
+    "!/privacy/*/**",
+    "!/health"
+  ]
+}

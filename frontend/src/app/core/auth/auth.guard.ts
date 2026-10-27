@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
+import { ConnectivityService } from '../connectivity/connectivity.service';
 import { AuthService } from './auth.service';
 import {
   canDelegate,
@@ -16,6 +17,9 @@ export const authGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
   if (auth.isAuthenticated()) {
     return true;
+  }
+  if (!inject(ConnectivityService).online()) {
+    return auth.offlinePage(state.url);
   }
   auth.login(state.url);
   return false;

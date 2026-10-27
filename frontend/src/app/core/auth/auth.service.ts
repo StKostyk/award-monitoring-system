@@ -1,10 +1,12 @@
 import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
 import { debounceTime, filter, firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { problemType } from '../api/problem';
+import { ConnectivityService } from '../connectivity/connectivity.service';
 import { FormCopiesService } from '../storage/form-copies.service';
 import { authConfig } from './auth.config';
 import { readPermissions, readSubject } from './permissions';
@@ -23,6 +25,7 @@ const PUBLIC_ROUTES = [
   '/public/',
   '/not-found',
   '/privacy-notice',
+  '/offline',
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -31,7 +34,10 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly formCopies = inject(FormCopiesService);
+  private readonly connectivity = inject(ConnectivityService);
   private loginStarted = false;
+  private discovered = false;
+  private renewalFailed = false;
   private refreshing: Promise<string | null> | null = null;
 
   readonly isAuthenticated = signal(false);
@@ -65,37 +71,84 @@ export class AuthService {
         this.loginStarted = false;
       }
     });
-    await this.oauth.loadDiscoveryDocumentAndTryLogin();
+    try {
+      await this.oauth.loadDiscoveryDocumentAndTryLogin();
+      this.discovered = true;
+    } catch (err) {
+      unlessUnreachable(err);
+    }
     this.oauth.events
       .pipe(
         filter((event) => event.type === 'token_expires'),
         debounceTime(1000),
       )
       .subscribe(() => {
-        this.refreshOnce().catch(() => undefined);
+        this.refreshOnce().catch(() => {
+          this.renewalFailed = true;
+        });
       });
+    this.connectivity.reconnected$.subscribe(() => {
+      this.reconnect().catch(() => undefined);
+    });
     if (this.oauth.hasValidAccessToken()) {
-      try {
-        await this.loadProfile();
-        this.remember();
-      } catch (err) {
-        if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
-          this.oauth.logOut(true);
-          this.forget();
-        } else {
-          throw err;
-        }
-      }
+      await this.loadProfileAtStart();
+    } else if (!this.discovered && this.oauth.getRefreshToken()) {
+      this.resumeOffline();
     }
   }
 
-  /** Starts the code flow once per page; the guard and a failed refresh may both ask for it. */
+  /**
+   * Starts the code flow once per page; the guard and a failed refresh may both ask for it. Without a connection
+   * the offline page opens instead and starts the flow once the connection returns.
+   */
   login(targetUrl = '/'): void {
+    if (!this.connectivity.online()) {
+      void this.router.navigateByUrl(this.offlinePage(targetUrl));
+      return;
+    }
     if (this.loginStarted) {
       return;
     }
     this.loginStarted = true;
-    this.oauth.initCodeFlow(targetUrl);
+    if (this.discovered) {
+      this.oauth.initCodeFlow(targetUrl);
+      return;
+    }
+    this.discover()
+      .then(() => this.oauth.initCodeFlow(targetUrl))
+      .catch(() => {
+        this.loginStarted = false;
+        void this.router.navigateByUrl(this.offlinePage(targetUrl));
+      });
+  }
+
+  /**
+   * The offline page, which signs in to the target once the connection returns.
+   *
+   * @param targetUrl where the sign-in should land
+   * @return the page as a router target
+   */
+  offlinePage(targetUrl: string): UrlTree {
+    return this.router.createUrlTree(['/offline'], { queryParams: { next: targetUrl } });
+  }
+
+  /**
+   * After a start or a token renewal without a connection: loads what is missing once the server answers again,
+   * the discovery document first, then the renewed token, then the profile.
+   *
+   * @return resolves once every missing part is loaded
+   */
+  async reconnect(): Promise<void> {
+    if (!this.discovered) {
+      await this.discover();
+    }
+    if (this.renewalFailed) {
+      this.renewalFailed = false;
+      await this.refreshOnce().catch(() => undefined);
+    }
+    if (this.isAuthenticated() && !this.profile()) {
+      await this.loadProfileAtStart();
+    }
   }
 
   /** Where the code flow should land after the callback; set by {@link login}. */
@@ -104,10 +157,21 @@ export class AuthService {
     return state ? decodeURIComponent(state) : '/';
   }
 
+  /** Signs out; without a connection the tokens are dropped on this device only and the offline page opens. */
   async logout(): Promise<void> {
     this.formCopies.clearAll();
-    await this.oauth.revokeTokenAndLogout();
+    if (this.connectivity.online()) {
+      try {
+        await this.oauth.revokeTokenAndLogout();
+        this.forget();
+        return;
+      } catch (err) {
+        unlessUnreachable(err);
+      }
+    }
+    this.oauth.logOut(true);
     this.forget();
+    await this.router.navigateByUrl(this.offlinePage('/'));
   }
 
   async loadProfile(): Promise<UserProfile> {
@@ -163,6 +227,34 @@ export class AuthService {
     }
   }
 
+  /** A refused profile ends the session; an unreachable server keeps it until the profile can be loaded. */
+  private async loadProfileAtStart(): Promise<void> {
+    try {
+      await this.loadProfile();
+      this.remember();
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
+        this.oauth.logOut(true);
+        this.forget();
+        return;
+      }
+      unlessUnreachable(err);
+      this.remember();
+    }
+  }
+
+  /** Started without a connection on an expired access token: the stored session holds until it is renewed. */
+  private resumeOffline(): void {
+    this.isAuthenticated.set(true);
+    this.accessToken.set(this.oauth.getAccessToken() || null);
+    this.renewalFailed = true;
+  }
+
+  private async discover(): Promise<void> {
+    await this.oauth.loadDiscoveryDocument();
+    this.discovered = true;
+  }
+
   private remember(): void {
     this.isAuthenticated.set(this.oauth.hasValidAccessToken());
     this.accessToken.set(this.oauth.getAccessToken() ?? null);
@@ -176,6 +268,13 @@ export class AuthService {
     this.isAuthenticated.set(false);
     this.accessToken.set(null);
     this.profile.set(null);
+  }
+}
+
+/** Rethrows anything but an unreachable server, which start-up and sign-out outlast. */
+function unlessUnreachable(err: unknown): void {
+  if (problemType(err) !== 'network') {
+    throw err;
   }
 }
 

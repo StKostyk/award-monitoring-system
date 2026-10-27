@@ -18,6 +18,7 @@ import {
   universityAnalyticsGuard,
   userDirectoryGuard,
 } from './auth.guard';
+import { ConnectivityService } from '../connectivity/connectivity.service';
 import { AuthService } from './auth.service';
 import { NO_PERMISSIONS, readPermissions } from './permissions';
 
@@ -30,6 +31,7 @@ describe('authGuard', () => {
     isAuthenticated: signal(false),
     permissions: signal(NO_PERMISSIONS),
     login: vi.fn(),
+    offlinePage: vi.fn(),
   };
   const state = { url: '/awards' } as RouterStateSnapshot;
 
@@ -50,6 +52,23 @@ describe('authGuard', () => {
 
     expect(result).toBe(false);
     expect(auth.login).toHaveBeenCalledWith('/awards');
+  });
+
+  it('ac1_8_sends_an_anonymous_user_without_a_connection_to_the_offline_page', () => {
+    auth.isAuthenticated.set(false);
+    TestBed.inject(ConnectivityService).unreachable();
+    const offline = TestBed.inject(Router).createUrlTree(['/offline'], {
+      queryParams: { next: '/awards' },
+    });
+    auth.offlinePage.mockReturnValue(offline);
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, state),
+    );
+
+    expect(result).toBe(offline);
+    expect(auth.offlinePage).toHaveBeenCalledWith('/awards');
+    expect(auth.login).not.toHaveBeenCalled();
   });
 
   it('lets an authenticated user through', () => {

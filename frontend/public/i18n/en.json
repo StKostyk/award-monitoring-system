@@ -4,6 +4,11 @@
     "languageLabel": "Перейти на українську",
     "menu": "Menu",
     "navigation": "Main navigation",
+    "offlineNotice": "No connection to the server. Pages that need data will open once the connection returns.",
+    "update": {
+      "available": "A new version of the app is available.",
+      "action": "Update"
+    },
     "home": "Home",
     "scheme": {
       "title": "Theme",
@@ -474,6 +479,11 @@
     "title": "Page not found",
     "text": "There is no such page, or the address is mistyped.",
     "publicAchievements": "University achievements"
+  },
+  "offline": {
+    "title": "No connection",
+    "text": "You can sign in as soon as the connection returns.",
+    "retry": "Try again"
   },
   "categories": {
     "suggestions": "Suggested categories",

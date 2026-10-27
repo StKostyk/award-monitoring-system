@@ -79,7 +79,19 @@ the `frontend` service:
     volumes:
       - ./brand/brand.json:/usr/share/nginx/html/brand/brand.json:ro
       - ./brand/logo.svg:/usr/share/nginx/html/brand/<id>/logo.svg:ro
+      - ./brand/manifest.webmanifest:/usr/share/nginx/html/brand/manifest.webmanifest:ro
+      - ./brand/icons:/usr/share/nginx/html/brand/icons:ro
 ```
+
+The manifest and the icons (`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`)
+give the installed app its name and icon; the neutral set is in the image under `brand/neutral/`
+(`frontend/public/brand/neutral/`) and is copied with the brand file. No rebuild is needed: the service worker
+fetches `/brand/**` from the network first.
+
+**Service worker.** nginx serves `ngsw-worker.js`, `ngsw.json` and `safety-worker.js` with `Cache-Control:
+no-cache`, so a new image reaches installed apps on their next check. If a release leaves clients stuck on a broken
+worker, the kill switch is to serve `safety-worker.js` as `ngsw-worker.js` (or remove `ngsw.json`) in the running
+container: the worker unregisters itself and the app works without it (ADR-013, addendum 2026-10).
 
 The `id` must name a theme compiled into the image (`chnu`, `neutral`); anything else falls back to the neutral
 theme. The sign-in and error pages come from the backend and take their brand from `APP_BRAND` (same ids, logo

@@ -42,7 +42,7 @@ All six stories are frontend work; none has a backend lane.
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 8.1.1 Installable app with an offline application shell | 8.1 | 5 | SCRUM-115 | #331 | no | Planned |
+| 1 | 8.1.1 Installable app with an offline application shell | 8.1 | 5 | SCRUM-115 | #331 | no | In review |
 | 2 | 8.1.2 Award draft kept offline and saved on reconnect | 8.1 | 5 | SCRUM-116 | #332 | no | Planned |
 | 3 | 8.1.3 Touch-ready layouts at 360 px and camera capture | 8.1 | 5 | SCRUM-117 | #333 | no | Planned |
 | 4 | 8.2.1 Page language, titles, skip link and focus management | 8.2 | 5 | SCRUM-118 | #334 | no | Planned |

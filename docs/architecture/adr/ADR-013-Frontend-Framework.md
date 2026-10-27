@@ -168,6 +168,20 @@ Authentication in the browser uses `angular-oauth2-oidc` as a public OpenID Conn
 
 ---
 
+## Addendum 2026-10: Service worker and offline policy
+
+The production build is an installable web app (Feature 8.1, US-013). Offline support is a fallback for the award form, not an offline-first client:
+
+- **`@angular/service-worker` over Workbox.** It ships with Angular, writes a hashed manifest (`ngsw.json`) per build and offers the `SwUpdate` API; no extra build step. It is registered in the production build only (`registerWhenStable:30000`); `npm start` and the e2e dev build run without it.
+- **Cache policy** (`frontend/ngsw-config.json`). Asset groups hold the shell only: `index.html`, the bundles, `favicon.ico`, the translations and the fonts. The single data group `brand` (`/brand/**`, freshness, 3 s timeout, 7 days) keeps the brand file, manifest and icons, which a deployment replaces without a rebuild and which hold no personal data. No API response is cached.
+- **Backend navigations bypass the worker.** `navigationUrls` exclude `/api/`, `/oauth2/`, `/connect/`, `/.well-known/`, `/login`, `/logout`, `/error`, `/login-assets/`, `/swagger-ui/`, `/v3/api-docs`, `/privacy/<version>/` and `/health`, so the sign-in page and the authorization flow never receive the cached shell. A unit spec reads the configuration and fails on a cached backend path or a missing exclusion.
+- **Connectivity.** `ConnectivityService` combines the browser's `online`/`offline` events with the outcome of backend requests (status 0 marks the server unreachable, a successful answer reachable again); components read its `online` signal. Without a connection, start-up keeps the stored session (discovery document and profile are loaded once the server answers, a failed token renewal is retried once), a visitor without a session gets the offline page instead of the sign-in redirect, and sign-out drops the tokens on the device only.
+- **Updates.** `UpdatePromptService` checks for a new version at start, when the tab becomes visible and every 6 hours, and offers it in a snackbar; the user decides when to reload. An unrecoverable worker state reloads the page.
+- **Worker files** (`ngsw-worker.js`, `ngsw.json`, `safety-worker.js`) are served with `Cache-Control: no-cache`, the manifest as `application/manifest+json`; the content security policy is unchanged (`script-src 'self'` covers the same-origin worker).
+- **Kill switch.** Serving `safety-worker.js` as `ngsw-worker.js`, or removing `ngsw.json`, makes the worker unregister itself on its next check; the application keeps working without it.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
@@ -175,6 +189,7 @@ Authentication in the browser uses `angular-oauth2-oidc` as a public OpenID Conn
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-09-19 | Stefan Kostyk | Addendum: client-side rendering only, i18n locales | Scaffold cleanup before Sprint 2 |
 | 2026-09-21 | Stefan Kostyk | Runtime localisation with Transloco; OpenID Connect client library | Feature 1.1, story 1.1.1 |
+| 2026-10-26 | Stefan Kostyk | Addendum: service worker and offline policy | Feature 8.1, story 8.1.1 |
 
 ---
 

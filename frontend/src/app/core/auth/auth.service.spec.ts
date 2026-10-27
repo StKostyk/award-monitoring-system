@@ -8,6 +8,7 @@ import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { environment } from '../../../environments/environment';
+import { ConnectivityService } from '../connectivity/connectivity.service';
 import { FormCopiesService } from '../storage/form-copies.service';
 import { AuthService } from './auth.service';
 import { UserProfile } from './user-profile';
@@ -39,6 +40,7 @@ describe('AuthService', () => {
   let oauth: {
     configure: ReturnType<typeof vi.fn>;
     loadDiscoveryDocumentAndTryLogin: ReturnType<typeof vi.fn>;
+    loadDiscoveryDocument: ReturnType<typeof vi.fn>;
     setupAutomaticSilentRefresh: ReturnType<typeof vi.fn>;
     hasValidAccessToken: ReturnType<typeof vi.fn>;
     getAccessToken: ReturnType<typeof vi.fn>;
@@ -58,6 +60,7 @@ describe('AuthService', () => {
     oauth = {
       configure: vi.fn(),
       loadDiscoveryDocumentAndTryLogin: vi.fn().mockResolvedValue(true),
+      loadDiscoveryDocument: vi.fn().mockResolvedValue({}),
       setupAutomaticSilentRefresh: vi.fn(),
       hasValidAccessToken: vi.fn().mockReturnValue(false),
       getAccessToken: vi.fn().mockReturnValue(null),
@@ -136,7 +139,8 @@ describe('AuthService', () => {
     }
   });
 
-  it('ac11 starts the code flow with the target url when login is requested, once per page', () => {
+  it('ac11 starts the code flow with the target url when login is requested, once per page', async () => {
+    await service.init();
     service.login('/awards/3');
     service.login('/');
 
@@ -296,5 +300,140 @@ describe('AuthService', () => {
     expect(service.targetUrl()).toBe('/');
     oauth.state = encodeURIComponent('/awards/3');
     expect(service.targetUrl()).toBe('/awards/3');
+  });
+
+  describe('without a connection', () => {
+    const unreachable = new HttpErrorResponse({ status: 0 });
+    let connectivity: ConnectivityService;
+
+    beforeEach(() => {
+      connectivity = TestBed.inject(ConnectivityService);
+      oauth.loadDiscoveryDocumentAndTryLogin.mockRejectedValue(unreachable);
+    });
+
+    async function startOffline(): Promise<void> {
+      connectivity.unreachable();
+      const init = service.init();
+      await new Promise((resolve) => setTimeout(resolve));
+      for (const request of http.match(`${environment.apiUrl}/users/me`)) {
+        request.error(new ProgressEvent('error'), { status: 0 });
+      }
+      await init;
+    }
+
+    it('ac1_7_starts_with_the_stored_session_when_discovery_and_profile_are_unreachable', async () => {
+      oauth.hasValidAccessToken.mockReturnValue(true);
+      oauth.getAccessToken.mockReturnValue(tokenWith({ sub: '5' }));
+
+      await startOffline();
+
+      expect(service.isAuthenticated()).toBe(true);
+      expect(service.profile()).toBeNull();
+      expect(oauth.initCodeFlow).not.toHaveBeenCalled();
+    });
+
+    it('ac1_7_keeps_a_session_whose_access_token_expired_while_a_refresh_token_is_stored', async () => {
+      oauth.getRefreshToken.mockReturnValue('refresh');
+
+      await startOffline();
+
+      expect(service.isAuthenticated()).toBe(true);
+    });
+
+    it('ac1_7_still_fails_at_start_up_when_discovery_is_refused', async () => {
+      oauth.loadDiscoveryDocumentAndTryLogin.mockRejectedValue(
+        new HttpErrorResponse({ status: 500 }),
+      );
+
+      await expect(service.init()).rejects.toBeTruthy();
+    });
+
+    it('ac1_9_loads_discovery_renews_the_token_once_and_loads_the_profile_when_back_online', async () => {
+      oauth.getRefreshToken.mockReturnValue('refresh');
+      oauth.refreshToken.mockImplementation(() => {
+        oauth.hasValidAccessToken.mockReturnValue(true);
+        oauth.getAccessToken.mockReturnValue(tokenWith({ sub: '5' }));
+        events.next({ type: 'token_refreshed' } as OAuthEvent);
+        return Promise.resolve({});
+      });
+      await startOffline();
+
+      const reconnect = service.reconnect();
+      await new Promise((resolve) => setTimeout(resolve));
+      http.expectOne(`${environment.apiUrl}/users/me`).flush(profile);
+      await reconnect;
+
+      expect(oauth.loadDiscoveryDocument).toHaveBeenCalledTimes(1);
+      expect(oauth.refreshToken).toHaveBeenCalledTimes(1);
+      expect(service.profile()).toEqual(profile);
+      await service.reconnect();
+      expect(oauth.refreshToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('ac1_9_retries_a_token_renewal_that_failed_offline_when_the_connection_returns', async () => {
+      oauth.loadDiscoveryDocumentAndTryLogin.mockResolvedValue(true);
+      oauth.getRefreshToken.mockReturnValue('refresh');
+      oauth.refreshToken.mockRejectedValueOnce(unreachable).mockResolvedValue({});
+      vi.useFakeTimers();
+      try {
+        await service.init();
+        events.next({ type: 'token_expires' } as OAuthEvent);
+        await vi.advanceTimersByTimeAsync(1000);
+      } finally {
+        vi.useRealTimers();
+      }
+      connectivity.unreachable();
+
+      connectivity.reachable();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(oauth.refreshToken).toHaveBeenCalledTimes(2);
+    });
+
+    it('ac1_8_opens_the_offline_page_instead_of_the_sign_in', async () => {
+      await startOffline();
+
+      service.login('/awards');
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(oauth.initCodeFlow).not.toHaveBeenCalled();
+      expect(TestBed.inject(Router).url).toBe('/offline?next=%2Fawards');
+    });
+
+    it('ac1_8_loads_the_discovery_document_before_the_sign_in_once_online', async () => {
+      await startOffline();
+      connectivity.reachable();
+
+      service.login('/awards');
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(oauth.loadDiscoveryDocument).toHaveBeenCalled();
+      expect(oauth.initCodeFlow).toHaveBeenCalledWith('/awards');
+    });
+
+    it('ac1_12_signs_out_on_the_device_only_and_opens_the_offline_page', async () => {
+      oauth.hasValidAccessToken.mockReturnValue(true);
+      await startOffline();
+      const clearAll = vi.spyOn(TestBed.inject(FormCopiesService), 'clearAll');
+
+      await service.logout();
+
+      expect(clearAll).toHaveBeenCalled();
+      expect(oauth.revokeTokenAndLogout).not.toHaveBeenCalled();
+      expect(oauth.logOut).toHaveBeenCalledWith(true);
+      expect(service.isAuthenticated()).toBe(false);
+      expect(TestBed.inject(Router).url).toBe('/offline?next=%2F');
+    });
+
+    it('ac1_12_falls_back_to_the_device_sign_out_when_the_revocation_gets_no_answer', async () => {
+      oauth.loadDiscoveryDocumentAndTryLogin.mockResolvedValue(true);
+      oauth.revokeTokenAndLogout.mockRejectedValue(unreachable);
+      await service.init();
+
+      await service.logout();
+
+      expect(oauth.logOut).toHaveBeenCalledWith(true);
+      expect(TestBed.inject(Router).url).toBe('/offline?next=%2F');
+    });
   });
 });

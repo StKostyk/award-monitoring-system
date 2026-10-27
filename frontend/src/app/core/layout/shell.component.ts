@@ -27,6 +27,7 @@ import {
 } from '../auth/permissions';
 import { BrandService } from '../brand/brand.service';
 import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-scheme.service';
+import { OfflineNoticeComponent } from '../connectivity/offline-notice.component';
 import { LanguageService } from '../i18n/language.service';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
 
@@ -49,6 +50,7 @@ const UNIVERSITY_ANALYTICS = '/analytics/university';
     MatMenuTrigger,
     MatNavList,
     NotificationBellComponent,
+    OfflineNoticeComponent,
     MatSidenav,
     MatSidenavContainer,
     MatSidenavContent,

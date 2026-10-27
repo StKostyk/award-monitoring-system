@@ -29,7 +29,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       locale: 'uk-UA',
     });
     await page.goto('/');
-    await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: WARM_UP_TIMEOUT });
+    await expect(page).toHaveURL(/\/login$/, { timeout: WARM_UP_TIMEOUT });
     await page.fill('#username', SEED.employee);
     await page.fill('#password', DEMO_PASSWORD);
     await page.click('button[type="submit"]');
