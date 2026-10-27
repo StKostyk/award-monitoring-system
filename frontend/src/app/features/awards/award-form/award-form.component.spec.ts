@@ -10,6 +10,7 @@ import { Observable, Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ConnectivityService } from '../../../core/connectivity/connectivity.service';
 import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
@@ -557,7 +558,8 @@ describe('AwardFormComponent', () => {
 
     component.save();
 
-    expect(component.problem()).toBe('awards.problems.network');
+    expect(component.problem()).toBeNull();
+    expect(component.pending()).toBe(true);
     expect(component.form.controls.titleUk.value).toBe('Грамота');
     expect(component.saving()).toBe(false);
   });
@@ -1073,6 +1075,259 @@ describe('AwardFormComponent', () => {
 
       expect(dialog.open).not.toHaveBeenCalled();
       expect(service.submit).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('offline draft', () => {
+    let connectivity: ConnectivityService;
+
+    function goOffline(): void {
+      connectivity = TestBed.inject(ConnectivityService);
+      vi.spyOn(connectivity, 'linked').mockReturnValue(false);
+      connectivity.unreachable();
+      fixture.detectChanges();
+    }
+
+    function goOnline(): void {
+      vi.mocked(connectivity.linked).mockReturnValue(true);
+      connectivity.reachable();
+      fixture.detectChanges();
+    }
+
+    function text(testId: string): string | null {
+      const element = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+      return element ? element.textContent.trim() : null;
+    }
+
+    it('ac2_1_the_form_shows_the_offline_notice_and_stays_editable', async () => {
+      await open(null);
+
+      goOffline();
+
+      expect(text('award-offline-notice')).toBe('awards.offline.notice');
+      expect(component.form.enabled).toBe(true);
+    });
+
+    it('ac2_2_saving_offline_sends_nothing_and_keeps_the_save_pending', async () => {
+      await open(null);
+      goOffline();
+      type('titleUk', 'Грамота');
+
+      component.save();
+      fixture.detectChanges();
+
+      expect(service.create).not.toHaveBeenCalled();
+      expect(text('award-offline-notice')).toBe('awards.offline.pending');
+      expect(copies.load('21', 'award-new')).toEqual(
+        expect.objectContaining({ titleUk: 'Грамота' }),
+      );
+    });
+
+    it('ac2_2_a_form_without_a_title_is_marked_and_not_kept_pending', async () => {
+      await open(null);
+      goOffline();
+      type('awardingOrganization', 'МОН України');
+
+      component.save();
+
+      expect(component.pending()).toBe(false);
+      expect(component.form.controls.title.touched).toBe(true);
+    });
+
+    it('ac2_3_a_new_award_saved_offline_is_created_once_on_reconnect', async () => {
+      await open(null);
+      goOffline();
+      type('titleUk', 'Грамота');
+      component.save();
+      service.create.mockReturnValue(of(award({ id: 7 })));
+
+      goOnline();
+
+      expect(service.create).toHaveBeenCalledTimes(1);
+      expect(location.replaceState).toHaveBeenCalledWith('/awards/7/edit');
+      expect(component.message()).toBe('awards.messages.reconnected');
+      expect(copies.load('21', 'award-new')).toBeNull();
+      expect(text('award-offline-notice')).toBeNull();
+    });
+
+    it('ac2_3_changes_to_a_draft_made_offline_are_saved_with_its_version', async () => {
+      service.get.mockReturnValue(of(award({ version: 4 })));
+      await open('5');
+      goOffline();
+      type('titleUk', 'Зміна без мережі');
+      service.update.mockReturnValue(of(award({ titleUk: 'Зміна без мережі', version: 5 })));
+
+      goOnline();
+
+      expect(service.update).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({ titleUk: 'Зміна без мережі' }),
+        4,
+      );
+      expect(component.message()).toBe('awards.messages.reconnected');
+      expect(copies.load('21', 'award-5')).toBeNull();
+    });
+
+    it('ac2_3_changes_made_before_the_connection_dropped_wait_for_a_save', async () => {
+      service.get.mockReturnValue(of(award()));
+      await open('5');
+      type('titleUk', 'Зміна з мережею');
+      goOffline();
+
+      goOnline();
+
+      expect(service.update).not.toHaveBeenCalled();
+    });
+
+    it('ac2_3_a_form_that_lost_its_title_asks_for_one_and_sends_nothing', async () => {
+      await open(null);
+      goOffline();
+      type('titleUk', 'Грамота');
+      component.save();
+      type('titleUk', '');
+
+      goOnline();
+
+      expect(service.create).not.toHaveBeenCalled();
+      expect(text('award-offline-notice')).toBe('awards.offline.titleNeeded');
+    });
+
+    it('ac2_4_submit_and_documents_wait_for_the_connection', async () => {
+      await open(null);
+      goOffline();
+      fillComplete();
+
+      component.submit();
+      fixture.detectChanges();
+
+      expect(service.create).not.toHaveBeenCalled();
+      expect(dialog.open).not.toHaveBeenCalled();
+      expect(text('award-offline-submit')).toBe('awards.offline.submit');
+      expect(text('documents-hint')).toBe('awards.documents.offline');
+
+      service.create.mockReturnValue(of(award()));
+      goOnline();
+
+      expect(text('award-offline-submit')).toBeNull();
+      expect(text('documents-hint')).toBe('awards.documents.hint');
+    });
+
+    it('ac2_5_a_draft_changed_elsewhere_meets_the_stale_outcome_on_reconnect', async () => {
+      service.get.mockReturnValue(of(award()));
+      await open('5');
+      goOffline();
+      type('titleUk', 'Моя версія');
+      service.update.mockReturnValue(throwError(() => problem('award-stale', 409)));
+
+      goOnline();
+
+      expect(component.stale()).toBe(true);
+      expect(component.problem()).toBe('awards.problems.award-stale');
+      expect(copies.load('21', 'award-5')).toEqual(
+        expect.objectContaining({ titleUk: 'Моя версія' }),
+      );
+    });
+
+    it('ac2_5_a_draft_deleted_elsewhere_becomes_a_new_unsaved_draft_on_reconnect', async () => {
+      service.get.mockReturnValue(of(award()));
+      await open('5');
+      goOffline();
+      type('titleUk', 'Моя версія');
+      service.update.mockReturnValue(throwError(() => problem('not-found', 404)));
+
+      goOnline();
+
+      expect(component.problem()).toBe('awards.problems.award-deleted');
+      expect(location.replaceState).toHaveBeenCalledWith('/awards/new');
+    });
+
+    it('ac2_5_a_draft_submitted_elsewhere_opens_the_award_page_on_reconnect', async () => {
+      service.get.mockReturnValue(of(award()));
+      await open('5');
+      goOffline();
+      type('titleUk', 'Моя версія');
+      service.update.mockReturnValue(throwError(() => problem('award-not-editable', 409)));
+
+      goOnline();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/awards', 5], {
+        state: { problem: 'award-not-editable' },
+      });
+    });
+
+    it('ac2_6_a_copy_restored_offline_is_saved_on_reconnect', async () => {
+      copies.save('21', 'award-new', { ...emptyForm(), titleUk: 'Незбережена' });
+      await open(null);
+      goOffline();
+      component.restore();
+      service.create.mockReturnValue(of(award({ id: 8 })));
+
+      goOnline();
+
+      expect(service.create).toHaveBeenCalledWith(
+        expect.objectContaining({ titleUk: 'Незбережена' }),
+      );
+    });
+
+    it('ac2_8_a_session_ended_elsewhere_keeps_the_copy', async () => {
+      await open(null);
+      goOffline();
+      type('titleUk', 'Грамота');
+      component.save();
+      service.create.mockReturnValue(throwError(() => problem('unauthorized', 401)));
+
+      goOnline();
+
+      expect(copies.load('21', 'award-new')).toEqual(
+        expect.objectContaining({ titleUk: 'Грамота' }),
+      );
+    });
+
+    it('ac2_9_a_save_without_an_answer_turns_pending_and_runs_once_when_a_request_succeeds', async () => {
+      await open(null);
+      connectivity = TestBed.inject(ConnectivityService);
+      service.create.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
+      type('titleUk', 'Грамота');
+
+      component.save();
+      fixture.detectChanges();
+
+      expect(component.problem()).toBeNull();
+      expect(connectivity.online()).toBe(false);
+      expect(text('award-offline-notice')).toBe('awards.offline.pending');
+
+      service.create.mockReturnValue(of(award({ id: 9 })));
+      connectivity.reachable();
+      connectivity.reachable();
+
+      expect(service.create).toHaveBeenCalledTimes(2);
+      expect(component.message()).toBe('awards.messages.reconnected');
+    });
+
+    it('ac2_9_saving_again_while_the_browser_is_linked_sends_the_request', async () => {
+      await open(null);
+      connectivity = TestBed.inject(ConnectivityService);
+      service.create.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
+      type('titleUk', 'Грамота');
+      component.save();
+      service.create.mockReturnValue(of(award({ id: 9 })));
+
+      component.save();
+
+      expect(service.create).toHaveBeenCalledTimes(2);
+      expect(component.pending()).toBe(false);
+    });
+
+    it('ac2_1_storage_that_refuses_the_copy_is_named_in_the_notice', async () => {
+      await open(null);
+      vi.spyOn(copies, 'save').mockReturnValue(false);
+      goOffline();
+      type('titleUk', 'Грамота');
+
+      component.save();
+      fixture.detectChanges();
+
+      expect(text('award-offline-notice')).toBe('awards.offline.notStored');
     });
   });
 });

@@ -11,14 +11,23 @@ const PREFIX = 'awards.form-copy.';
 export class FormCopiesService {
   private signingOut = false;
 
-  save(userId: string, form: string, value: unknown): void {
+  /**
+   * Keeps the values of a form.
+   *
+   * @param userId the user the form belongs to
+   * @param form the name of the form
+   * @param value the values to keep
+   * @returns false when the browser refused to store them (storage full or disabled)
+   */
+  save(userId: string, form: string, value: unknown): boolean {
     if (this.signingOut) {
-      return;
+      return true;
     }
     try {
       localStorage.setItem(key(userId, form), JSON.stringify(value));
+      return true;
     } catch {
-      // storage unavailable: the form simply cannot be restored
+      return false;
     }
   }
 

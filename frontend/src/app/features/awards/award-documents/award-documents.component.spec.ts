@@ -114,6 +114,28 @@ describe('AwardDocumentsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('awards.documents.hint');
   });
 
+  it('ac2_4_offline_the_section_takes_no_files_and_says_why', async () => {
+    await render({ awardId: 5, uploads: true, paused: true });
+    const picker = byTestId('documents-input') as HTMLInputElement;
+    const click = vi.spyOn(picker, 'click');
+
+    byTestId('documents-drop')?.click();
+    component.add([file('a.pdf')]);
+
+    expect(click).not.toHaveBeenCalled();
+    expect(service.upload).not.toHaveBeenCalled();
+    expect(component.queue()).toEqual([]);
+    expect(byTestId('documents-drop')?.getAttribute('aria-disabled')).toBe('true');
+    expect(byTestId('documents-hint')?.textContent?.trim()).toBe('awards.documents.offline');
+
+    fixture.componentRef.setInput('paused', false);
+    fixture.detectChanges();
+    byTestId('documents-drop')?.click();
+
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(byTestId('documents-hint')?.textContent?.trim()).toBe('awards.documents.hint');
+  });
+
   it('ac1_type_defaults_to_supporting_document_once_a_file_exists', async () => {
     service.list.mockReturnValue(of([document()]));
     await render({ awardId: 5, uploads: true });

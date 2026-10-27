@@ -21,6 +21,11 @@ export class ConnectivityService {
     this.window?.addEventListener('offline', () => this.unreachable());
   }
 
+  /** Whether the browser itself has a connection; a server that does not answer is not considered. */
+  linked(): boolean {
+    return this.window?.navigator.onLine ?? true;
+  }
+
   /** A backend request was answered: the server is reachable. */
   reachable(): void {
     if (!this.online()) {

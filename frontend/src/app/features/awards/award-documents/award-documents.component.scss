@@ -16,6 +16,11 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+.documents__drop--paused {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .documents__drop:focus-visible,
 .documents__drop--active {
   border-color: var(--mat-sys-primary);

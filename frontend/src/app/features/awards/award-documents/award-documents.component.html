@@ -5,10 +5,12 @@
     <div
       class="documents__drop"
       [class.documents__drop--active]="dragging()"
+      [class.documents__drop--paused]="paused()"
       role="button"
       tabindex="0"
+      [attr.aria-disabled]="paused()"
       [attr.aria-describedby]="'documents-hint'"
-      (click)="picker.click()"
+      (click)="pick(picker, $event)"
       (keydown.enter)="pick(picker, $event)"
       (keydown.space)="pick(picker, $event)"
       (dragover)="dragOver($event)"
@@ -41,6 +43,7 @@
         <mat-label>{{ 'awards.documents.type' | transloco }}</mat-label>
         <mat-select
           [value]="nextType()"
+          [disabled]="paused()"
           (selectionChange)="chooseType($event.value)"
           data-testid="documents-type"
         >
@@ -58,6 +61,7 @@
         <button
           mat-stroked-button
           type="button"
+          [disabled]="paused()"
           (click)="camera.click()"
           data-testid="documents-camera"
         >
@@ -65,7 +69,9 @@
         </button>
       }
     </div>
-    <p id="documents-hint" class="documents__hint">{{ 'awards.documents.hint' | transloco }}</p>
+    <p id="documents-hint" class="documents__hint" data-testid="documents-hint">
+      {{ (paused() ? 'awards.documents.offline' : 'awards.documents.hint') | transloco }}
+    </p>
   }
 
   <p class="documents__live" aria-live="polite" data-testid="documents-announcement">

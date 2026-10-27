@@ -69,7 +69,8 @@ describe('FormCopiesService', () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('full');
     });
-    expect(() => copies.save('21', 'award-5', {})).not.toThrow();
+    expect(copies.save('21', 'award-5', {})).toBe(false);
     setItem.mockRestore();
+    expect(copies.save('21', 'award-5', {})).toBe(true);
   });
 });

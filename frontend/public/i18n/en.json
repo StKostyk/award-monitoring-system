@@ -230,6 +230,7 @@
       "camera": "Take a photo",
       "type": "Document type",
       "hint": "PDF, JPG, PNG or WEBP, up to 10 MB, at most 10 files",
+      "offline": "Documents can be added once the connection returns.",
       "types": {
         "CERTIFICATE": "Certificate",
         "DIPLOMA": "Diploma",
@@ -295,6 +296,13 @@
       "accept": "Restore",
       "discard": "Discard"
     },
+    "offline": {
+      "notice": "No connection. What you enter is kept on this device and saved as a draft once the connection returns.",
+      "pending": "The draft will be saved once the connection returns.",
+      "titleNeeded": "To save the draft, enter a title in at least one language.",
+      "notStored": "This device does not keep what you enter. Do not close the page.",
+      "submit": "An award can only be submitted with a connection to the server. Save the draft and it will be saved automatically."
+    },
     "leave": {
       "title": "You have unsaved changes",
       "text": "If you leave now, the values you entered will be lost.",
@@ -303,6 +311,7 @@
     },
     "messages": {
       "saved": "Draft saved.",
+      "reconnected": "The connection is back and the draft is saved.",
       "removed": "Draft deleted."
     },
     "remove": {

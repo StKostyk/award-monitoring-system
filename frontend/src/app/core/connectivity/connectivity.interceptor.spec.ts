@@ -65,4 +65,32 @@ describe('connectivityInterceptor', () => {
 
     expect(connectivity.online()).toBe(false);
   });
+
+  it('ac2_9_backend_requests_bypass_a_controlling_service_worker', () => {
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { controller: {} },
+    });
+    try {
+      http.get(`${environment.apiUrl}/awards`).subscribe();
+      http.get('brand/brand.json').subscribe();
+
+      const api = backend.expectOne(`${environment.apiUrl}/awards`);
+      const shell = backend.expectOne('brand/brand.json');
+      expect(api.request.headers.get('ngsw-bypass')).toBe('true');
+      expect(shell.request.headers.has('ngsw-bypass')).toBe(false);
+      api.flush({});
+      shell.flush({});
+    } finally {
+      Reflect.deleteProperty(navigator, 'serviceWorker');
+    }
+  });
+
+  it('ac2_9_without_a_service_worker_requests_go_out_unchanged', () => {
+    http.get(`${environment.apiUrl}/awards`).subscribe();
+
+    const api = backend.expectOne(`${environment.apiUrl}/awards`);
+    expect(api.request.headers.has('ngsw-bypass')).toBe(false);
+    api.flush({});
+  });
 });

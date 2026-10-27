@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { HttpStatusCode } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -44,6 +44,7 @@ import {
 
 import { fieldProblems, knownProblem, problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ConnectivityService } from '../../../core/connectivity/connectivity.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { kyivToday, yearsBefore } from '../../../shared/date-format';
@@ -140,12 +141,14 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private readonly auth = inject(AuthService);
   private readonly copies = inject(FormCopiesService);
   private readonly language = inject(LanguageService);
+  private readonly connectivity = inject(ConnectivityService);
 
   private id: number | null = null;
   private owner: string | null = null;
   private version = 0;
   private leaving = false;
   private running: Observable<Award> | null = null;
+  private changedOffline = false;
 
   readonly recentDate = signal(false);
   readonly limits = {
@@ -170,6 +173,24 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly documentCount = signal(0);
   readonly units = signal<UnitRef[]>([]);
   readonly unitChosen = signal(false);
+  readonly offline = computed(() => !this.connectivity.online());
+  /** A save was asked for, or failed for want of a connection, and runs once the connection returns. */
+  readonly pending = signal(false);
+  readonly titleNeeded = signal(false);
+  readonly notStored = signal(false);
+  readonly submitRefused = signal(false);
+  readonly offlineNotice = computed(() => {
+    if (this.titleNeeded()) {
+      return 'awards.offline.titleNeeded';
+    }
+    if (!this.offline()) {
+      return null;
+    }
+    if (this.notStored()) {
+      return 'awards.offline.notStored';
+    }
+    return this.pending() ? 'awards.offline.pending' : 'awards.offline.notice';
+  });
   /** The recipient choice is offered to faculty secretaries and deans, and kept on a unit draft of anyone. */
   readonly unitOptions = computed(() => {
     const current = this.current()?.recipient.organization;
@@ -226,8 +247,13 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   constructor() {
     this.form.valueChanges
-      .pipe(debounceTime(COPY_DEBOUNCE), takeUntilDestroyed())
+      .pipe(
+        tap(() => (this.changedOffline ||= this.offline())),
+        debounceTime(COPY_DEBOUNCE),
+        takeUntilDestroyed(),
+      )
       .subscribe(() => this.keepCopy());
+    this.connectivity.reconnected$.pipe(takeUntilDestroyed()).subscribe(() => this.reconnected());
     this.form.controls.awardDate.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((date) => this.recentDate.set(isRecent(date, this.today)));
@@ -327,20 +353,18 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       return;
     }
     this.clearMarkedErrors();
+    this.titleNeeded.set(false);
     if (this.form.invalid || this.unitMissing()) {
       this.form.markAllAsTouched();
       return;
     }
-    this.start();
-    const request = this.store().pipe(
-      finalize(() => (this.running = null)),
-      share(),
-    );
-    this.running = request;
-    request.subscribe({
-      next: (award) => this.finish(award, 'awards.messages.saved'),
-      error: (error: unknown) => this.failed(error),
-    });
+    if (!this.connectivity.linked()) {
+      this.message.set(null);
+      this.pending.set(true);
+      this.keepCopy();
+      return;
+    }
+    this.persist('awards.messages.saved');
   }
 
   /** Saves a new award before its first file is uploaded, exactly as «Зберегти чернетку» does. */
@@ -365,6 +389,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   submit(): void {
     if (this.saving()) {
+      return;
+    }
+    if (!this.connectivity.linked()) {
+      this.submitRefused.set(true);
       return;
     }
     this.clearMarkedErrors();
@@ -394,6 +422,39 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     if (!this.saving()) {
       this.failed(error);
     }
+  }
+
+  private persist(message: string): void {
+    this.start();
+    const request = this.store().pipe(
+      finalize(() => (this.running = null)),
+      share(),
+    );
+    this.running = request;
+    request.subscribe({
+      next: (award) => this.finish(award, message),
+      error: (error: unknown) => this.failed(error),
+    });
+  }
+
+  /** Saves what was entered or asked for while offline, once, when the connection returns. */
+  private reconnected(): void {
+    this.submitRefused.set(false);
+    if (this.saving() || this.leaving) {
+      return;
+    }
+    const due = this.pending() || (this.changedOffline && this.form.dirty);
+    this.changedOffline = false;
+    if (!due) {
+      return;
+    }
+    if (this.form.invalid || this.unitMissing()) {
+      this.pending.set(false);
+      this.titleNeeded.set(this.form.hasError('titleRequired'));
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.persist('awards.messages.reconnected');
   }
 
   private send(): void {
@@ -583,6 +644,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   private start(): void {
     this.saving.set(true);
+    this.pending.set(false);
+    this.titleNeeded.set(false);
+    this.submitRefused.set(false);
     this.message.set(null);
     this.problem.set(null);
   }
@@ -597,6 +661,12 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
 
   private failed(error: unknown): void {
     this.saving.set(false);
+    if (error instanceof HttpErrorResponse && error.status === 0) {
+      this.connectivity.unreachable();
+      this.pending.set(true);
+      this.keepCopy(true);
+      return;
+    }
     if (this.id !== null && problemStatus(error) === HttpStatusCode.NotFound) {
       this.deletedElsewhere();
       return;
@@ -673,7 +743,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private keepCopy(evenIfPristine = false): void {
     const userId = this.copyOwner();
     if (userId && (this.form.dirty || evenIfPristine) && !this.leaving) {
-      this.copies.save(userId, this.copyName(), this.value());
+      this.notStored.set(!this.copies.save(userId, this.copyName(), this.value()));
     }
   }
 
