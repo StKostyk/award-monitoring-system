@@ -3,7 +3,7 @@
 > **Epic**: 8 — Mobile Optimization & Accessibility (SCRUM-114)
 > **Sprint**: 8 (2026-11-02 → 2026-11-08)
 > **Points**: 8 (two stories; 8.2.2 in the icebox)
-> **Status**: Planned
+> **Status**: Approved 2026-10-27 (deviations D-1 to D-5 accepted)
 > **Author**: Stefan Kostyk
 > **Governing docs**: EPIC-08 tracker (decision 2026-10-26 "accessibility in a slim form", deviations 5 and 6, technical notes), US-014, TRACEABILITY NFR-010 / TC-031, QUALITY_GATES §8, BRD §3.1, ADR-013, Feature 8.1 PRD (route list, `mobile-layout.spec.ts`), `LanguageService`, `BrandService`, `ShellComponent`, `e2e/helpers.ts` (`seriousViolations`)
 
@@ -50,7 +50,7 @@ Both stories are frontend only; no backend change, migration or endpoint.
 
 ## 4. Acceptance criteria
 
-**Definitions.** *Route*: every path of the route files that renders a page, as listed in the 8.1 PRD §6 "Frontend routes" plus `/login` (backend). *Navigation*: a router navigation that changes the path; a change of query parameters only (filters, paging) is not a navigation. *Page heading*: the first `h1` inside `<main>`.
+**Definitions.** *Route*: every path of the route files that renders a page, as listed in the 8.1 PRD §6 "Frontend routes" plus `/login` (backend). *Navigation*: a router navigation that changes the path; a change of query parameters only (filters, paging) is not a navigation. *Page heading*: the first `h1`, `h2` or card title (`mat-card-title`) inside `<main>`.
 
 ### 8.2.1 Page language, titles, skip link and focus management (SCRUM-118)
 
@@ -58,7 +58,7 @@ Both stories are frontend only; no backend change, migration or endpoint.
 - **AC-1.2** (Page titles) Given any route, when it has loaded, then the document title is "‹page title› — ‹brand name›" in the interface language (e.g. "Мої нагороди — Облік нагород ЧНУ", "My awards — ChNU Awards"); switching the language updates it; a route showing one record uses the page kind ("Нагорода", "Редагування чернетки"), never the award title or a person's name; unknown paths use the not-found title.
 - **AC-1.3** (Skip link) Given any signed-in page, when Tab is pressed once after the page has loaded, then a link "Перейти до основного вмісту" ("Skip to main content") appears at the top; Enter moves the focus to `<main>`, and the next Tab reaches the first control of the page, not the navigation drawer. Pages without the shell (offline page, public pages without a session) have the same link when they have navigation before the content.
 - **AC-1.4** (Focus after navigation) Given a page, when a navigation happens (link, button, browser back or forward), then once the new page has rendered the focus is on its page heading (or on `<main>` when the page has none) and the heading is not a Tab stop of its own (`tabindex="-1"`); on the first load of the app the focus is left to the browser; a change of query parameters only keeps the focus where it is; an open dialog keeps its focus.
-- **AC-1.5** (Focus visible) Given a keyboard-only walk through the shell, the award form and the award list in light and dark, then every element that receives focus shows an indicator (outline or ring) with a contrast of at least 3:1 against its background; no style removes the outline without a replacement.
+- **AC-1.5** (Focus visible) Given a keyboard-only walk through the shell, the award form and the award list in light and dark, then every element that receives focus shows an indicator (outline or ring) drawn in a theme colour with a contrast of at least 3:1 against the surface (primary on surface, both themes); no style removes the outline without a replacement.
 - **AC-1.6** (Reduced motion) Given `prefers-reduced-motion: reduce`, when dialogs, menus, the navigation drawer, snackbars and expansion panels open and close, then they change without animation (Material animations off, CSS transitions and animations at most 0.01 ms); charts already follow the setting (`ChartThemeService`).
 - **AC-1.7** (Keyboard-only award flow) Given an employee using only the keyboard, when they open "Мої нагороди", add an award, fill the title, choose a category, type a date, attach a file through the picker, save the draft and submit it, then every step is reachable with Tab, Shift+Tab, Enter, Space, the arrow keys and Escape, and the focus never lands on an invisible element.
 - **AC-1.8** (User guide) Given `docs/user/USER_GUIDE.md` and its Ukrainian copy, then a section "Accessibility" lists the skip link, the focus behaviour, the keyboard keys of menus, dialogs and the date picker, the language switch and reduced motion, and states that the pages are checked automatically against WCAG 2.1 AA.
@@ -111,7 +111,7 @@ Inherited: ADR-013 (Angular, client rendering only, Material), tracker decision 
 - **D-1** Titles name the page kind, never the record (award title, person): the tab title is kept in the browser history and shown in tab lists of a shared device; a screen reader still reads the record from the page heading.
 - **D-2** After navigation the focus moves to the page heading instead of a live-region announcement of the title: one mechanism, works with every screen reader, and the heading text is what the user needs next.
 - **D-3** The sweep fails on serious and critical findings only (as all 19 existing specs do); moderate and minor ones are reported (AC-3.4). Enabling `wcag22aa` stays limited to `target-size` in the layout sweep of 8.1.3.
-- **D-4** Contrast of focus indicators (AC-1.5) is checked by a computed-style assertion in the keyboard spec, since axe has no rule for it.
+- **D-4** Focus indicators (AC-1.5) are checked by a computed-style assertion per Tab stop in the keyboard spec, since axe has no rule for it; their 3:1 contrast follows from the theme tokens they use (primary on surface), not from a pixel measurement.
 - **D-5** The sweep reuses the role and route table of 8.1.3 and signs in once per role; the full matrix (two languages × two themes × two widths) runs on every route, so the spec is split into one test per role for parallel workers.
 
 ## 8. Contract

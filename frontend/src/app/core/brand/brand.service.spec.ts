@@ -1,7 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Title } from '@angular/platform-browser';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 
 import { BRAND_URL, BrandService, NEUTRAL_BRAND } from './brand.service';
@@ -47,7 +46,6 @@ describe('BrandService', () => {
     expect(root.classList).toContain('brand-chnu');
     expect(root.classList).not.toContain('brand-neutral');
     expect(service.brand()).toEqual(chnu);
-    expect(TestBed.inject(Title).getTitle()).toBe('Облік нагород ЧНУ');
   });
 
   it('ac1_1_sets_the_browser_bar_colour_of_the_brand', async () => {
@@ -63,12 +61,12 @@ describe('BrandService', () => {
     }
   });
 
-  it('ac3_follows_the_language_in_the_tab_title_and_texts', async () => {
+  it('ac3_follows_the_language_in_its_texts', async () => {
     await load((request) => request.flush(chnu));
     TestBed.inject(TranslocoService).setActiveLang('en');
 
-    expect(TestBed.inject(Title).getTitle()).toBe('ChNU Awards');
     expect(service.text(chnu.organization)).toBe('Chernivtsi University');
+    expect(service.text(chnu.name)).toBe('ChNU Awards');
   });
 
   it('ac2_falls_back_to_the_neutral_brand_when_the_file_is_missing', async () => {

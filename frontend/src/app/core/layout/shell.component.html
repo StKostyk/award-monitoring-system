@@ -1,3 +1,6 @@
+<a class="shell__skip" href="#main" (click)="skipToContent($event)" data-testid="skip-link">
+  {{ 'app.skipLink' | transloco }}
+</a>
 <mat-sidenav-container class="shell" [class.shell--anonymous]="!auth.isAuthenticated()">
   <mat-sidenav
     #drawer
@@ -278,7 +281,7 @@
         </button>
       }
     </mat-toolbar>
-    <main class="shell__content">
+    <main id="main" class="shell__content" tabindex="-1" #main>
       <app-offline-notice />
       @if (erasureDate(); as date) {
         <div class="shell__erasure" role="status" data-testid="erasure-banner">

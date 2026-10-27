@@ -19,8 +19,8 @@ export const ANALYTICS_ROUTES: Routes = [
       }),
     ],
     children: [
-      { path: '', component: DashboardComponent },
-      { path: 'summary', component: SummaryComponent },
+      { path: '', title: 'titles.dashboard', component: DashboardComponent },
+      { path: 'summary', title: 'titles.summary', component: SummaryComponent },
     ],
   },
 ];

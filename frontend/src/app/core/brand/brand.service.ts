@@ -1,8 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Title } from '@angular/platform-browser';
+import { Injectable, inject, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { firstValueFrom } from 'rxjs';
 
@@ -41,9 +39,7 @@ export const NEUTRAL_BRAND: Brand = {
 export class BrandService {
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
-  private readonly title = inject(Title);
   private readonly transloco = inject(TranslocoService);
-  private readonly destroyRef = inject(DestroyRef);
 
   readonly brand = signal<Brand>(NEUTRAL_BRAND);
 
@@ -60,9 +56,6 @@ export class BrandService {
       brand = NEUTRAL_BRAND;
     }
     this.apply(brand);
-    this.transloco.langChanges$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((lang) => this.title.setTitle(this.text(brand.name, lang)));
   }
 
   /**
@@ -81,7 +74,6 @@ export class BrandService {
     BRAND_IDS.forEach((id) => root.classList.remove(`brand-${id}`));
     root.classList.add(`brand-${brand.id}`);
     this.brand.set(brand);
-    this.title.setTitle(this.text(brand.name));
     this.document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute('content', THEME_COLORS[brand.id]);

@@ -23,7 +23,7 @@ const achievementList = () =>
   );
 
 export const routes: Routes = [
-  { path: 'callback', component: CallbackComponent },
+  { path: 'callback', title: 'titles.signingIn', component: CallbackComponent },
   {
     path: '',
     component: ShellComponent,
@@ -31,11 +31,13 @@ export const routes: Routes = [
     children: [
       {
         path: 'register',
+        title: 'titles.register',
         loadComponent: () =>
           import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
       },
       {
         path: 'registration-pending',
+        title: 'titles.registrationPending',
         loadComponent: () =>
           import('./features/auth/registration-pending/registration-pending.component').then(
             (m) => m.RegistrationPendingComponent,
@@ -43,6 +45,7 @@ export const routes: Routes = [
       },
       {
         path: 'verify-email',
+        title: 'titles.verifyEmail',
         loadComponent: () =>
           import('./features/auth/verify-email/verify-email.component').then(
             (m) => m.VerifyEmailComponent,
@@ -50,6 +53,7 @@ export const routes: Routes = [
       },
       {
         path: 'forgot-password',
+        title: 'titles.forgotPassword',
         loadComponent: () =>
           import('./features/auth/forgot-password/forgot-password.component').then(
             (m) => m.ForgotPasswordComponent,
@@ -57,6 +61,7 @@ export const routes: Routes = [
       },
       {
         path: 'reset-password',
+        title: 'titles.resetPassword',
         loadComponent: () =>
           import('./features/auth/reset-password/reset-password.component').then(
             (m) => m.ResetPasswordComponent,
@@ -64,11 +69,13 @@ export const routes: Routes = [
       },
       {
         path: 'security/not-me',
+        title: 'titles.notMe',
         loadComponent: () =>
           import('./features/auth/security/not-me/not-me.component').then((m) => m.NotMeComponent),
       },
       {
         path: 'confirm-email-change',
+        title: 'titles.confirmEmailChange',
         loadComponent: () =>
           import('./features/profile/confirm-email-change/confirm-email-change.component').then(
             (m) => m.ConfirmEmailChangeComponent,
@@ -76,11 +83,17 @@ export const routes: Routes = [
       },
       {
         path: 'profile',
+        title: 'titles.profile',
         loadComponent: () =>
           import('./features/profile/profile/profile.component').then((m) => m.ProfileComponent),
         canActivate: [authGuard],
       },
-      { path: 'forbidden', component: ForbiddenComponent, canActivate: [authGuard] },
+      {
+        path: 'forbidden',
+        title: 'titles.forbidden',
+        component: ForbiddenComponent,
+        canActivate: [authGuard],
+      },
       {
         path: 'admin',
         canActivate: [authGuard, userDirectoryGuard],
@@ -113,19 +126,27 @@ export const routes: Routes = [
       },
       {
         path: 'units/:id/achievements',
+        title: 'titles.unitAchievements',
         canActivate: [authGuard],
         loadComponent: achievementList,
       },
-      { path: 'public/achievements', loadComponent: achievementList, data: { scope: 'public' } },
       {
-        path: 'public/units/:id/achievements',
+        path: 'public/achievements',
+        title: 'titles.achievements',
         loadComponent: achievementList,
         data: { scope: 'public' },
       },
-      { path: 'not-found', component: NotFoundComponent },
-      { path: 'offline', component: OfflineComponent },
+      {
+        path: 'public/units/:id/achievements',
+        title: 'titles.unitAchievements',
+        loadComponent: achievementList,
+        data: { scope: 'public' },
+      },
+      { path: 'not-found', title: 'titles.notFound', component: NotFoundComponent },
+      { path: 'offline', title: 'titles.offline', component: OfflineComponent },
       {
         path: 'privacy-notice',
+        title: 'titles.privacyNotice',
         loadComponent: () =>
           import('./features/privacy/privacy-notice/privacy-notice.component').then(
             (m) => m.PrivacyNoticeComponent,
@@ -133,6 +154,7 @@ export const routes: Routes = [
       },
       {
         path: 'privacy',
+        title: 'titles.privacy',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./features/privacy/privacy-centre/privacy-centre.component').then(
@@ -141,6 +163,7 @@ export const routes: Routes = [
       },
       {
         path: 'notifications',
+        title: 'titles.notifications',
         canActivate: [authGuard],
         loadComponent: () =>
           import('./features/notifications/notification-list/notification-list.component').then(
@@ -167,6 +190,7 @@ export const routes: Routes = [
       },
       {
         path: '',
+        title: 'titles.home',
         loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
         pathMatch: 'full',
         canActivate: [authGuard],

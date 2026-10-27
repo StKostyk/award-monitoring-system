@@ -4,6 +4,6 @@ import { AchievementDetailComponent } from './achievement-detail/achievement-det
 import { AchievementListComponent } from './achievement-list/achievement-list.component';
 
 export const ACHIEVEMENT_ROUTES: Routes = [
-  { path: '', component: AchievementListComponent },
-  { path: ':id', component: AchievementDetailComponent },
+  { path: '', title: 'titles.achievements', component: AchievementListComponent },
+  { path: ':id', title: 'titles.achievement', component: AchievementDetailComponent },
 ];

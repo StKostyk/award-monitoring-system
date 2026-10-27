@@ -22,7 +22,8 @@
 10. [Managing Your Profile](#managing-your-profile)
 11. [Notifications](#notifications)
 12. [Using the app on a phone](#using-the-app-on-a-phone)
-13. [FAQ](#faq)
+13. [Accessibility](#accessibility)
+14. [FAQ](#faq)
 
 ---
 
@@ -501,6 +502,20 @@ Decisions, corrections, overdue notices, take-overs, roles and delegations reach
 ### Continuing on a computer
 
 A draft saved on the phone is an ordinary draft: sign in on a computer, open **My awards**, and the draft is there with its values, documents and photos. Complete it and submit it there. If you edit the same draft on both devices, the one saved second shows the "changed in another window" message instead of overwriting.
+
+---
+
+## Accessibility
+
+Every page is checked automatically against WCAG 2.1 level AA in both languages, both colour schemes and at phone and desktop width.
+
+- **Skip link:** press Tab once on any page; **Skip to main content** appears at the top. Enter moves you past the menu to the page itself.
+- **Focus after navigation:** when a new page opens, the focus is on its heading, so a screen reader reads where you are and the next Tab reaches the first control of the page.
+- **Page titles and language:** the browser tab names the page ("My awards — …"), and the page language follows the language switch, so screen readers pronounce the text correctly.
+- **Keys:** Tab and Shift+Tab move between controls; Enter or Space activates buttons and links; in lists, menus and the category list the arrow keys move and Enter chooses; Escape closes menus and dialogs; in the date field type the date (day.month.year) or open the calendar with its button and move with the arrow keys.
+- **Focus indicator:** the control with the focus always has a visible ring, in light and dark mode.
+- **Reduced motion:** when your system asks for reduced motion (Windows: Settings → Accessibility → Visual effects → Animation effects off; macOS and iOS: Reduce motion), menus, dialogs and the side menu open without animation.
+- **Charts:** every chart has a text description and a **Show as table** switch.
 
 ---
 

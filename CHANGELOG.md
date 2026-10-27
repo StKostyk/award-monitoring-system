@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Accessibility: page language follows the interface, a title per page, a skip link, focus on the page heading after navigation, visible focus rings and reduced motion; user guide section on accessibility
 - Phone-ready screens: 44 px touch targets, no sideways scrolling at 360 px in both orientations, photographing a certificate from the award form, and a user guide section on using the app on a phone
 - Award form without a connection: entries are kept on the device and saved as a draft once the connection returns; submitting and uploads wait for it
 - Installable app: the production build installs from the browser, starts its shell without a connection, shows an offline notice and page, and offers new versions in a snackbar (8.1.1)

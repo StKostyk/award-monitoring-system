@@ -10,6 +10,6 @@ export const DELEGATION_ROUTES: Routes = [
   {
     path: '',
     providers: [provideState(delegationsFeature), provideEffects(DelegationsEffects)],
-    children: [{ path: '', component: DelegationListComponent }],
+    children: [{ path: '', title: 'titles.delegations', component: DelegationListComponent }],
   },
 ];
