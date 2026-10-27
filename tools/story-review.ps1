@@ -10,6 +10,8 @@
     db/migration/, @PreAuthorize, document upload and storage code, access rules such as *Rule.java, *Guard(s).java
     and the delegation, role-assignment, decision and correction rules, Public*Controller classes and route
     strings containing /public) or "code-review" otherwise.
+    The local base branch is first fast-forwarded to origin (when it is not checked out and has no local commits of
+    its own), so merged stories do not reappear in the diff.
     Do not run it while gate.ps1 or e2e.ps1 is running: git leaves a stale index.lock.
 
 .EXAMPLE
@@ -36,6 +38,13 @@ $diffPath = "build/$name.diff"
 $briefPath = "build/$name-review.md"
 $exclude = @(':!frontend/package-lock.json', ':!*.png', ':!*.jpg')
 
+git fetch --quiet origin $Base 2>$null
+if (-not $LASTEXITCODE -and (git rev-parse --abbrev-ref HEAD) -ne $Base) {
+    git merge-base --is-ancestor $Base "origin/$Base" 2>$null
+    if (-not $LASTEXITCODE) {
+        git update-ref "refs/heads/$Base" "origin/$Base"
+    }
+}
 git add -N -- .
 $diff = git diff --merge-base $Base -- . @exclude
 if ($LASTEXITCODE) { throw "Cannot diff against $Base" }

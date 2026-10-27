@@ -1,0 +1,16 @@
+{
+  "name": "award-lighthouse",
+  "version": "1.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Lighthouse mobile scores of the sign-in page, the award form and the award list (PRD 8.1 AC-3.7)",
+  "type": "module",
+  "scripts": {
+    "flow": "node run.mjs",
+    "profile": "node profile.mjs"
+  },
+  "dependencies": {
+    "lighthouse": "^12.8.2",
+    "puppeteer-core": "^24.10.0"
+  }
+}
