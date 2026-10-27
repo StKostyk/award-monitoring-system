@@ -161,6 +161,10 @@ No OpenAPI or migration change. i18n blocks added: `titles.*` (one key per route
 20. Hidden in state: the feature adds no action on an object; the skip link is absent on pages without the shell navigation (`/offline` has none before the content). Expected: the first Tab reaches the page's own control. (AC-1.3)
 21. Revoked mid-flow: the feature checks no role; when `admin` revokes the dean role while `dean.fmi` is on `/reviews`, the next navigation shows the forbidden page with its title "Немає доступу — …" and focus on its heading. (AC-1.2, 1.4)
 
+### Run notes
+
+Sweep of 2026-10-27 (8.2.3), axe-core 4.13, dev build: 35 routes over five roles (11 public, 15 employee, 7 dean, rector, GDPR officer), each in uk/en × light/dark × 1280/360, plus 8 open states. First run: one serious finding, `color-contrast` on ended roles of `/admin/users/:id` (dimmed with opacity), fixed in 8.2.3. Final run: no serious or critical findings, no moderate or minor findings (`build/accessibility-report.json`), exception list empty.
+
 ## 11. Risks
 
 | Risk | Likelihood | Impact | Mitigation |
