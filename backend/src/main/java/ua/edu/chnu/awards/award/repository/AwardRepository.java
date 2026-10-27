@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.award.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import jakarta.persistence.LockModeType;
 
@@ -31,6 +32,28 @@ public interface AwardRepository extends JpaRepository<Award, Long>, JpaSpecific
      */
     @EntityGraph(attributePaths = {"owner", "organization", "category"})
     Optional<Award> findWithDetailsById(Long id);
+
+    /**
+     * The award an owner created with a creation key.
+     *
+     * @param ownerId     the owner
+     * @param creationKey the key sent with the creation
+     * @return the award id, empty when no award was created with that key
+     */
+    @Query(value = "select award_id from awards where user_id = :ownerId and creation_key = :creationKey",
+        nativeQuery = true)
+    Optional<Long> findIdByCreationKey(@Param("ownerId") Long ownerId, @Param("creationKey") UUID creationKey);
+
+    /**
+     * Stores the key a draft was created with; a second draft of the same owner with the key is refused by the
+     * unique index.
+     *
+     * @param id          the new draft
+     * @param creationKey the key sent with the creation
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "update awards set creation_key = :creationKey where award_id = :id", nativeQuery = true)
+    void keepCreationKey(@Param("id") Long id, @Param("creationKey") UUID creationKey);
 
     /**
      * An award locked for the rest of the transaction, so two submissions of it run one after the other.

@@ -1,8 +1,9 @@
-import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import {
+  AwardCreation,
   AwardsService,
   CategoryNode,
   NO_FILTERS,
@@ -23,6 +24,8 @@ const form = {
   externalUrl: null,
   recipientOrganizationId: null,
 };
+
+const CREATION_KEY = '0b9c7f3e-5d1a-4c2b-9e8f-1a2b3c4d5e6f';
 
 describe('AwardsService', () => {
   let service: AwardsService;
@@ -114,15 +117,30 @@ describe('AwardsService', () => {
   });
 
   it('ac1_1_creates_gets_and_deletes', () => {
-    service.create(form).subscribe();
+    service.create(form, CREATION_KEY).subscribe();
     service.get(5).subscribe();
     service.remove(5).subscribe();
 
-    expect(
-      http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/awards')).request.body,
-    ).toEqual(form);
+    const creation = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/awards'));
+    expect(creation.request.body).toEqual(form);
+    expect(creation.request.headers.get('Idempotency-Key')).toBe(CREATION_KEY);
     http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/awards/5'));
     http.expectOne((r) => r.method === 'DELETE' && r.url.endsWith('/awards/5'));
+  });
+
+  it('ac4_1_tells_a_new_award_from_one_an_earlier_request_created', () => {
+    const answers: AwardCreation[] = [];
+    service.create(form, CREATION_KEY).subscribe((creation) => answers.push(creation));
+    service.create(form, CREATION_KEY).subscribe((creation) => answers.push(creation));
+
+    const [first, repeat] = http.match((r) => r.method === 'POST' && r.url.endsWith('/awards'));
+    first.flush({ id: 5 }, { status: HttpStatusCode.Created, statusText: 'Created' });
+    repeat.flush({ id: 5 }, { status: HttpStatusCode.Ok, statusText: 'OK' });
+
+    expect(answers.map(({ award, repeated }) => [award.id, repeated])).toEqual([
+      [5, false],
+      [5, true],
+    ]);
   });
 
   it('ac3_1_asks_for_suggestions_with_the_title_and_the_organisation', () => {

@@ -20,7 +20,14 @@ import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { DocumentsService } from '../award-documents/documents.service';
-import { Award, AwardsService, CategoryNode, CategorySuggestion, UnitRef } from '../awards.service';
+import {
+  Award,
+  AwardCreation,
+  AwardsService,
+  CategoryNode,
+  CategorySuggestion,
+  UnitRef,
+} from '../awards.service';
 import { AwardFormComponent } from './award-form.component';
 
 const tree: CategoryNode[] = [
@@ -80,8 +87,15 @@ function award(overrides: Partial<Award> = {}): Award {
   };
 }
 
+const NEW_KEY = 'award-new-key';
+const STORED_KEY = '6f1d2c3b-4a5e-4f60-8172-93a4b5c6d7e8';
+
 function problem(type: string, status: number, errors: unknown[] = []): HttpErrorResponse {
   return new HttpErrorResponse({ status, error: { type: `urn:awards:problem:${type}`, errors } });
+}
+
+function created(saved: Award, repeated = false): Observable<AwardCreation> {
+  return of({ award: saved, repeated });
 }
 
 describe('AwardFormComponent', () => {
@@ -222,7 +236,7 @@ describe('AwardFormComponent', () => {
   it('ac0_8_a_secretary_enters_a_department_award', async () => {
     service.recipientUnits.mockReturnValue(of(units));
     await open(null);
-    service.create.mockReturnValue(of(award()));
+    service.create.mockReturnValue(created(award()));
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-testid="award-recipient"]')).not.toBeNull();
     type('titleUk', 'Грамота кафедрі');
@@ -233,13 +247,14 @@ describe('AwardFormComponent', () => {
 
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({ titleUk: 'Грамота кафедрі', recipientOrganizationId: 64 }),
+      expect.any(String),
     );
   });
 
   it('ac0_8_switching_back_to_me_clears_the_unit', async () => {
     service.recipientUnits.mockReturnValue(of(units));
     await open(null);
-    service.create.mockReturnValue(of(award()));
+    service.create.mockReturnValue(created(award()));
     type('titleUk', 'Грамота');
     type('recipient', 'UNIT');
     type('recipientOrganizationId', 64);
@@ -250,6 +265,7 @@ describe('AwardFormComponent', () => {
     expect(component.form.controls.recipientOrganizationId.value).toBeNull();
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({ recipientOrganizationId: null }),
+      expect.any(String),
     );
   });
 
@@ -301,13 +317,14 @@ describe('AwardFormComponent', () => {
 
   it('ac1_1_saves_a_draft_with_only_a_title_and_moves_to_its_address', async () => {
     await open(null);
-    service.create.mockReturnValue(of(award()));
+    service.create.mockReturnValue(created(award()));
     type('titleUk', '  Грамота  ');
 
     component.save();
 
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({ titleUk: 'Грамота', title: null }),
+      expect.any(String),
     );
     expect(location.replaceState).toHaveBeenCalledWith('/awards/5/edit');
     expect(component.message()).toBe('awards.messages.saved');
@@ -338,7 +355,7 @@ describe('AwardFormComponent', () => {
 
   it('m1_a_draft_is_saved_after_a_submission_that_lacked_fields', async () => {
     await open(null);
-    service.create.mockReturnValue(of(award()));
+    service.create.mockReturnValue(created(award()));
     type('titleUk', 'Грамота');
     component.submit();
 
@@ -351,7 +368,7 @@ describe('AwardFormComponent', () => {
 
   it('m1_a_file_is_uploaded_after_a_submission_that_lacked_fields', async () => {
     await open(null);
-    service.create.mockReturnValue(of(award()));
+    service.create.mockReturnValue(created(award()));
     type('titleUk', 'Грамота');
     component.submit();
     let id: number | undefined;
@@ -396,7 +413,7 @@ describe('AwardFormComponent', () => {
 
   it('ac1_5_ac1_9_saves_then_submits_and_shows_the_confirmation', async () => {
     await open(null);
-    service.create.mockReturnValue(of(award({ version: 2 })));
+    service.create.mockReturnValue(created(award({ version: 2 })));
     service.submit.mockReturnValue(of(award({ status: 'PENDING', version: 3 })));
     type('titleUk', 'Грамота');
     type('categoryId', 13);
@@ -470,7 +487,7 @@ describe('AwardFormComponent', () => {
       status: 'PENDING',
     };
     await open(null);
-    service.create.mockReturnValue(of(award({ version: 2 })));
+    service.create.mockReturnValue(created(award({ version: 2 })));
     service.submit
       .mockReturnValueOnce(throwError(() => duplicateOf([match])))
       .mockReturnValueOnce(of(award({ status: 'PENDING', version: 3 })));
@@ -489,7 +506,7 @@ describe('AwardFormComponent', () => {
 
   it('ac2_5_cancelling_the_duplicate_dialog_leaves_a_saved_draft', async () => {
     await open(null);
-    service.create.mockReturnValue(of(award({ version: 2 })));
+    service.create.mockReturnValue(created(award({ version: 2 })));
     service.submit.mockReturnValue(throwError(() => duplicateOf([{ id: 9 }])));
     dialog.open.mockReturnValue({ afterClosed: () => of(false) });
     fillComplete();
@@ -664,11 +681,12 @@ describe('AwardFormComponent', () => {
       expect.objectContaining({ titleUk: 'Змінена грамота' }),
     );
 
-    service.create.mockReturnValue(of(award({ id: 6, titleUk: 'Змінена грамота' })));
+    service.create.mockReturnValue(created(award({ id: 6, titleUk: 'Змінена грамота' })));
     component.save();
 
     expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({ titleUk: 'Змінена грамота' }),
+      expect.any(String),
     );
     expect(location.replaceState).toHaveBeenCalledWith('/awards/6/edit');
   });
@@ -933,7 +951,7 @@ describe('AwardFormComponent', () => {
 
     it('ac2_2_first_file_of_a_new_award_saves_the_draft_first', async () => {
       await open(null);
-      service.create.mockReturnValue(of(award({ id: 42, version: 1 })));
+      service.create.mockReturnValue(created(award({ id: 42, version: 1 })));
       type('titleUk', 'Грамота');
 
       let saved: number | undefined;
@@ -972,7 +990,7 @@ describe('AwardFormComponent', () => {
 
     it('finding3_a_file_added_while_the_draft_is_saving_waits_for_that_save', async () => {
       await open(null);
-      const response = new Subject<Award>();
+      const response = new Subject<AwardCreation>();
       service.create.mockReturnValue(response);
       type('titleUk', 'Грамота');
 
@@ -983,7 +1001,7 @@ describe('AwardFormComponent', () => {
         next: (id) => (saved = id),
         error: () => (failed = true),
       });
-      response.next(award({ id: 42, version: 1 }));
+      response.next({ award: award({ id: 42, version: 1 }), repeated: false });
       response.complete();
 
       expect(service.create).toHaveBeenCalledTimes(1);
@@ -994,7 +1012,7 @@ describe('AwardFormComponent', () => {
 
     it('finding3_a_failed_running_save_fails_the_waiting_file_too', async () => {
       await open(null);
-      const response = new Subject<Award>();
+      const response = new Subject<AwardCreation>();
       service.create.mockReturnValue(response);
       type('titleUk', 'Грамота');
 
@@ -1049,7 +1067,7 @@ describe('AwardFormComponent', () => {
     it('ac2_8_submitting_without_documents_asks_with_the_notice', async () => {
       await open(null);
       component.documentCount.set(0);
-      service.create.mockReturnValue(of(award({ version: 2 })));
+      service.create.mockReturnValue(created(award({ version: 2 })));
       service.submit.mockReturnValue(of(award({ status: 'PENDING', version: 3 })));
       dialog.open.mockReturnValue({ afterClosed: () => of(true) });
       fillComplete();
@@ -1076,7 +1094,7 @@ describe('AwardFormComponent', () => {
 
     it('ac2_8_submitting_with_documents_asks_nothing', async () => {
       await open(null);
-      service.create.mockReturnValue(of(award({ version: 2 })));
+      service.create.mockReturnValue(created(award({ version: 2 })));
       service.submit.mockReturnValue(of(award({ status: 'PENDING', version: 3 })));
       fillComplete();
 
@@ -1157,7 +1175,7 @@ describe('AwardFormComponent', () => {
       goOffline();
       type('titleUk', 'Грамота');
       component.save();
-      service.create.mockReturnValue(of(award({ id: 7 })));
+      service.create.mockReturnValue(created(award({ id: 7 })));
 
       goOnline();
 
@@ -1223,7 +1241,7 @@ describe('AwardFormComponent', () => {
       expect(text('award-offline-submit')).toBe('awards.offline.submit');
       expect(text('documents-hint')).toBe('awards.documents.offline');
 
-      service.create.mockReturnValue(of(award()));
+      service.create.mockReturnValue(created(award()));
       goOnline();
 
       expect(text('award-offline-submit')).toBeNull();
@@ -1278,12 +1296,13 @@ describe('AwardFormComponent', () => {
       await open(null);
       goOffline();
       component.restore();
-      service.create.mockReturnValue(of(award({ id: 8 })));
+      service.create.mockReturnValue(created(award({ id: 8 })));
 
       goOnline();
 
       expect(service.create).toHaveBeenCalledWith(
         expect.objectContaining({ titleUk: 'Незбережена' }),
+        expect.any(String),
       );
     });
 
@@ -1314,7 +1333,7 @@ describe('AwardFormComponent', () => {
       expect(connectivity.online()).toBe(false);
       expect(text('award-offline-notice')).toBe('awards.offline.pending');
 
-      service.create.mockReturnValue(of(award({ id: 9 })));
+      service.create.mockReturnValue(created(award({ id: 9 })));
       connectivity.reachable();
       connectivity.reachable();
 
@@ -1328,12 +1347,113 @@ describe('AwardFormComponent', () => {
       service.create.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
       type('titleUk', 'Грамота');
       component.save();
-      service.create.mockReturnValue(of(award({ id: 9 })));
+      service.create.mockReturnValue(created(award({ id: 9 })));
 
       component.save();
 
       expect(service.create).toHaveBeenCalledTimes(2);
       expect(component.pending()).toBe(false);
+    });
+
+    it('ac4_1_a_save_whose_answer_was_lost_is_repeated_with_the_same_key', async () => {
+      await open(null);
+      connectivity = TestBed.inject(ConnectivityService);
+      service.create.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
+      type('titleUk', 'Грамота');
+      component.save();
+      const key = service.create.mock.calls[0][1];
+      expect(copies.load('21', NEW_KEY)).toBe(key);
+      service.create.mockReturnValue(created(award({ id: 9 })));
+
+      connectivity.reachable();
+
+      expect(service.create).toHaveBeenLastCalledWith(expect.anything(), key);
+      expect(copies.load('21', NEW_KEY)).toBeNull();
+    });
+
+    it('ac4_1_a_repeat_of_a_draft_deleted_meanwhile_becomes_a_new_draft_with_a_new_key', async () => {
+      copies.save('21', 'award-new', { ...emptyForm(), titleUk: 'Незбережена' });
+      copies.save('21', NEW_KEY, STORED_KEY);
+      await open(null);
+      component.restore();
+      service.create.mockReturnValueOnce(throwError(() => problem('award-not-found', 404)));
+
+      component.save();
+
+      expect(component.problem()).toBe('awards.problems.award-deleted');
+      expect(copies.load('21', NEW_KEY)).toBeNull();
+      service.create.mockReturnValue(created(award({ id: 11 })));
+      component.save();
+      expect(service.create).toHaveBeenLastCalledWith(expect.anything(), expect.any(String));
+      expect(service.create.mock.calls[1][1]).not.toBe(STORED_KEY);
+    });
+
+    it('ac4_1_a_restored_copy_repeats_the_key_stored_with_it', async () => {
+      copies.save('21', 'award-new', { ...emptyForm(), titleUk: 'Незбережена' });
+      copies.save('21', NEW_KEY, STORED_KEY);
+      await open(null);
+      component.restore();
+      service.create.mockReturnValue(created(award({ id: 8, titleUk: 'Незбережена' }), true));
+
+      component.save();
+
+      expect(service.create).toHaveBeenCalledWith(expect.anything(), STORED_KEY);
+      expect(location.replaceState).toHaveBeenCalledWith('/awards/8/edit');
+      expect(component.restoreOffer()).toBeNull();
+    });
+
+    it('ac4_2_a_form_typed_offline_takes_the_key_another_tab_stored', async () => {
+      copies.save('21', NEW_KEY, STORED_KEY);
+      await open(null);
+      goOffline();
+      type('titleUk', 'Друга вкладка');
+      component.save();
+      service.create.mockReturnValue(created(award({ id: 7 }), true));
+
+      goOnline();
+
+      expect(service.create).toHaveBeenCalledWith(expect.anything(), STORED_KEY);
+    });
+
+    it('ac4_2_a_repeated_creation_shows_the_award_and_offers_the_values_typed_here', async () => {
+      await open(null);
+      goOffline();
+      type('titleUk', 'Друга вкладка');
+      component.save();
+      service.create.mockReturnValue(created(award({ id: 7, titleUk: 'Перша вкладка' }), true));
+
+      goOnline();
+
+      expect(location.replaceState).toHaveBeenCalledWith('/awards/7/edit');
+      expect(component.form.controls.titleUk.value).toBe('Перша вкладка');
+      expect(component.restoreOffer()).toEqual(
+        expect.objectContaining({ titleUk: 'Друга вкладка' }),
+      );
+      expect(text('restore-offer')).not.toBeNull();
+    });
+
+    it('ac4_2_a_repeated_creation_with_the_same_values_offers_nothing', async () => {
+      await open(null);
+      goOffline();
+      type('titleUk', 'Грамота');
+      component.save();
+      service.create.mockReturnValue(created(award({ id: 7 }), true));
+
+      goOnline();
+
+      expect(component.restoreOffer()).toBeNull();
+    });
+
+    it('ac4_2_a_form_saved_online_does_not_take_a_stored_key', async () => {
+      copies.save('21', NEW_KEY, STORED_KEY);
+      await open(null);
+      type('titleUk', 'Інша грамота');
+      service.create.mockReturnValue(created(award({ id: 10 })));
+
+      component.save();
+
+      expect(service.create).not.toHaveBeenCalledWith(expect.anything(), STORED_KEY);
+      expect(copies.load('21', NEW_KEY)).toBe(STORED_KEY);
     });
 
     it('ac2_1_storage_that_refuses_the_copy_is_named_in_the_notice', async () => {

@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, forkJoin, map, shareReplay, throwError } from 'rxjs';
 
@@ -214,6 +214,12 @@ export interface Award {
   version: number;
 }
 
+/** A created award, and whether an earlier request with the same key had already created it. */
+export interface AwardCreation {
+  award: Award;
+  repeated: boolean;
+}
+
 /** The form fields of an award; every field may be empty in a draft except a title in one language. */
 export interface AwardForm {
   title: string | null;
@@ -361,8 +367,16 @@ export class AwardsService {
     return this.http.get<Award>(`${this.base}/${id}`);
   }
 
-  create(form: AwardForm): Observable<Award> {
-    return this.http.post<Award>(this.base, form);
+  /** Creates a new award once per key; a repeat of the key answers the award the first request created. */
+  create(form: AwardForm, key: string): Observable<AwardCreation> {
+    return this.http
+      .post<Award>(this.base, form, { headers: { 'Idempotency-Key': key }, observe: 'response' })
+      .pipe(
+        map((response) => ({
+          award: response.body as Award,
+          repeated: response.status === HttpStatusCode.Ok,
+        })),
+      );
   }
 
   update(id: number, form: AwardForm, version: number): Observable<Award> {

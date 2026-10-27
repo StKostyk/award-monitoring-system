@@ -46,6 +46,77 @@ async function saveOnline(page: Page, title: string): Promise<string> {
 }
 
 test.describe('award draft kept offline', () => {
+  test('ac2_9 a new award whose save answer was lost is created once', async ({ browser }) => {
+    const email = await freshEmployee(browser, 'lost-answer');
+    const title = `Грамота з утраченою відповіддю ${uniqueToken()}`;
+    const phone = await signedInAs(browser, email, FRESH_PASSWORD);
+    let stored = 0;
+    let lose = true;
+    await phone.route(/\/api\/v1\/awards$/, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      const response = await route.fetch();
+      if (response.status() === 201) {
+        stored++;
+      }
+      if (lose) {
+        lose = false;
+        await route.abort('failed');
+        return;
+      }
+      await route.fulfill({ response });
+    });
+    await openNewForm(phone);
+
+    await phone.getByTestId('award-title-uk').fill(title);
+    await phone.getByTestId('award-save').click();
+    await expect(phone.getByTestId('award-offline-notice')).toHaveText(PENDING);
+    await phone.context().setOffline(true);
+    await phone.context().setOffline(false);
+    await expect(phone.getByTestId('award-form-message')).toHaveText(RECONNECTED, {
+      timeout: RECONNECT_MS,
+    });
+    await phone.goto('/awards');
+    await expect(phone.getByText(title)).toHaveCount(1);
+    expect(stored).toBe(1);
+  });
+
+  test('ac4_2 two tabs on a new award typed offline create one draft', async ({ browser }) => {
+    const email = await freshEmployee(browser, 'two-tabs');
+    const token = uniqueToken();
+    const first = await signedInAs(browser, email, FRESH_PASSWORD);
+    const second = await first.context().newPage();
+    await openNewForm(first);
+    await openNewForm(second);
+
+    await first.context().setOffline(true);
+    for (const [tab, title] of [
+      [first, `Перша вкладка ${token}`],
+      [second, `Друга вкладка ${token}`],
+    ] as const) {
+      await tab.getByTestId('award-title-uk').fill(title);
+      await tab.getByTestId('award-save').click();
+      await expect(tab.getByTestId('award-offline-notice')).toHaveText(PENDING);
+    }
+    await first.context().setOffline(false);
+
+    for (const tab of [first, second]) {
+      await expect(tab.getByTestId('award-form-message')).toHaveText(RECONNECTED, {
+        timeout: RECONNECT_MS,
+      });
+    }
+    await expect(first).toHaveURL(/\/awards\/\d+\/edit$/);
+    expect(new URL(second.url()).pathname).toBe(new URL(first.url()).pathname);
+    const offers = await Promise.all(
+      [first, second].map((tab) => tab.getByTestId('restore-offer').count()),
+    );
+    expect(offers.sort()).toEqual([0, 1]);
+    await first.goto('/awards');
+    await expect(first.getByTestId('award-item')).toHaveCount(1);
+  });
+
   test('ac2_1 ac2_2 ac2_3 ac2_4 ac2_7 a draft entered offline is saved on reconnect and submitted elsewhere', async ({
     browser,
   }) => {

@@ -608,9 +608,23 @@ paths:
         `recipientOrganizationId`, an award of that faculty or department owned by the caller and belonging to
         the unit. A title in one language is enough; fields that are present are checked (lengths, active category, `http`/`https` link,
         award date not after today in Europe/Kyiv). Surrounding spaces are removed and blank texts count as empty.
+        A request repeated with the same `Idempotency-Key` (a lost answer, or a second tab with the same form copy)
+        creates nothing and answers 200 with the award that key created, as it is now; the key is stored in
+        `awards.creation_key`, unique per owner, so concurrent repeats also store one draft (8.1.4). The form of
+        the repeat is not read: a client whose values differ offers them on the returned award.
       security:
         - bearerAuth: []
       operationId: createAward
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: >
+            UUID the client generates once per new award and sends with every attempt to create it. Keys of other
+            owners are never matched. Without the header every request creates a draft.
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -618,6 +632,12 @@ paths:
             schema:
               $ref: '#/components/schemas/AwardCreateRequest'
       responses:
+        '200':
+          description: The `Idempotency-Key` created this award before; nothing new was stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Award'
         '201':
           description: Draft created
           content:
@@ -629,6 +649,12 @@ paths:
               schema:
                 type: string
               description: URL of created resource
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` with `parameter: Idempotency-Key`: not a UUID"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
