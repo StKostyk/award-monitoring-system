@@ -12,6 +12,8 @@
     or is interrupted (a finally block). A killed PowerShell process skips it; build\e2e.state then lets the next
     run stop the backend left behind and restart the container. Mailpit is emptied at the start, and the backend
     port must be free before the container starts again.
+    A dev server already listening on port 4200 that started before the last change of frontend/package.json or
+    package-lock.json is refused (Playwright would reuse it with outdated dependencies).
     Browsers come from PLAYWRIGHT_BROWSERS_PATH, D:\Tools\ms-playwright when it is not set.
 
 .PARAMETER Grep
@@ -59,6 +61,18 @@ $freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
 if ($Workers -gt 1 -and -not $PSBoundParameters.ContainsKey('Workers') -and $freeGb -lt 6) {
     Write-Host ('{0:N1} GB free (under 6 GB): one Playwright worker.' -f $freeGb)
     $Workers = 1
+}
+$devServer = Get-NetTCPConnection -LocalPort 4200 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($devServer) {
+    $serverStart = (Get-Process -Id $devServer.OwningProcess -ErrorAction SilentlyContinue).StartTime
+    $changed = @('package.json', 'package-lock.json') |
+        ForEach-Object { (Get-Item (Join-Path $root "frontend\$_")).LastWriteTime } |
+        Sort-Object -Descending | Select-Object -First 1
+    if ($serverStart -and $serverStart -lt $changed) {
+        Write-Host ("The dev server on port 4200 (PID {0}) started {1:HH:mm} before the last package change ({2:yyyy-MM-dd HH:mm});" -f $devServer.OwningProcess, $serverStart, $changed)
+        Write-Host 'stop it (Ctrl+C in its terminal) and run again; Playwright then starts a current one.'
+        exit 1
+    }
 }
 $started = $null
 $nginx = 'award-e2e-nginx'

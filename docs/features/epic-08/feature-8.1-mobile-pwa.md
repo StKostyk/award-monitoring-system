@@ -243,7 +243,7 @@ Preconditions: `docker compose up -d --build` (production build with the service
 17. Run `npx playwright test mobile-layout` and look at `/awards`, `/reviews`, `/dashboard/summary`, `/admin/users` and `/profile` at 360×740 and 740×360 in Ukrainian. Expected: green; no sideways page scroll; tables scroll inside their card. (AC-3.1, 3.2)
 18. Award form at 360 px on the phone: fill every field, turn the phone. Expected: one column, no zoom on focus, the full-screen calendar dialog (Material `touchUi`), the URL keyboard for the link; values and focus kept after turning. (AC-3.3, 3.4)
 19. On the phone press "Сфотографувати" and photograph a certificate. Expected: the rear camera, the upload with a preview. On the desktop the same button opens the file picker. Upload a photo over 10 MB. Expected: "The file is larger than 10 MB". (AC-3.5)
-20. Lighthouse (mobile, Navigation, Performance + Accessibility + Best practices) on `/login`, `/awards/new` and `/awards` signed in as `employee.fmi`. Expected: each score ≥ 90; record the three rows and the Lighthouse version. (AC-3.7)
+20. Lighthouse (mobile, Navigation, Performance + Accessibility + Best practices) on `/login`, `/awards/new` and `/awards` signed in as `employee.fmi`, by hand in Chrome DevTools or with `tools/lighthouse` (`npm ci`, then `npm run flow` on the Compose stack; the report lands in `build/lighthouse/report.html`). Expected: each score ≥ 90; record the three rows and the Lighthouse version. (AC-3.7)
 21. Read the user guide section "Using the app on a phone" against steps 3, 11–14 and 19. Expected: the text matches the screens. (AC-3.8)
 
 ### Detours
