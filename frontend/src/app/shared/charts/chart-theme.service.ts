@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 
 import { ColorSchemeService } from '../../core/brand/color-scheme.service';
+import { REDUCED_MOTION } from '../touch';
 
 /** Chart colours resolved from the theme tokens of the active colour scheme. */
 export interface ChartPalette {
@@ -31,7 +32,7 @@ export class ChartThemeService {
   private readonly scheme = inject(ColorSchemeService).scheme;
   private readonly systemDark = signal(this.matches('(prefers-color-scheme: dark)'));
 
-  readonly reducedMotion = signal(this.matches('(prefers-reduced-motion: reduce)'));
+  readonly reducedMotion = signal(this.matches(REDUCED_MOTION));
 
   readonly palette = computed<ChartPalette>(() => {
     this.scheme();
@@ -50,7 +51,7 @@ export class ChartThemeService {
   constructor() {
     const destroyRef = inject(DestroyRef);
     this.watch('(prefers-color-scheme: dark)', this.systemDark, destroyRef);
-    this.watch('(prefers-reduced-motion: reduce)', this.reducedMotion, destroyRef);
+    this.watch(REDUCED_MOTION, this.reducedMotion, destroyRef);
   }
 
   private resolve(token: string): string {

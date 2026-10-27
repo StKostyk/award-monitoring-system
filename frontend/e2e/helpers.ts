@@ -26,6 +26,13 @@ export const FRESH_PASSWORD = 'correct-horse-battery';
 /** The privacy notice version the backend serves as current (`app.privacy.notice-version`). */
 export const NOTICE_VERSION = '1.0';
 
+/** The app-wide notice shown while the server cannot be reached. */
+export const OFFLINE_NOTICE =
+  "Немає з'єднання з сервером. Сторінки, яким потрібні дані, відкриються, щойно з'єднання відновиться.";
+
+/** How long the app may take to notice a restored connection and finish what waited for it. */
+export const RECONNECT_MS = 5000;
+
 interface MessageSummary {
   ID: string;
   Subject: string;

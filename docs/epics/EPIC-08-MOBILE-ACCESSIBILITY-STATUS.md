@@ -105,10 +105,10 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   list into a Playwright sweep so the audit runs in the gate.
 - Validation of 8.1 (PRD §13), left open: a save sent on reconnect while the access token expired on the same tick
   may refresh twice in sequence (F-3); values typed while a save is in flight are marked pristine when it finishes
-  (F-4, since Feature 2.1). Refactor sweep: duplicated "go pending" sequence in `award-form.component.ts`
-  (`failed()` and the offline save), a second `prefers-reduced-motion` check in `shared/touch.ts` next to
-  `ChartThemeService`, offline texts and `RECONNECT_MS` repeated across the offline e2e specs, a wall-clock 3 s
-  check in `pwa.spec.ts`; the offline flags of the form could become one state value.
+  (F-4, since Feature 2.1). Refactor sweep applied after the validation: one "go pending" step in
+  `award-form.component.ts`, one `REDUCED_MOTION` query in `shared/touch.ts`, the offline notice and
+  `RECONNECT_MS` shared in the e2e helpers, the 3 s start check in `pwa.spec.ts` as an assertion timeout. Left
+  open: the offline flags of the form could become one state value.
 
 ## Risks
 

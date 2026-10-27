@@ -4,6 +4,7 @@ import {
   FRESH_PASSWORD,
   freshEmployee,
   pastDay,
+  RECONNECT_MS,
   seriousViolations,
   signedInAs,
   submitWithoutDocuments,
@@ -19,7 +20,6 @@ const SUBMIT_REFUSED = "Подати нагороду можна лише з'є�
 const DOCUMENTS_PAUSED = "Документи можна додати, щойно з'єднання відновиться.";
 const RECONNECTED = "З'єднання відновлено, чернетку збережено.";
 const STALE = 'Нагороду змінено в іншому вікні';
-const RECONNECT_MS = 5000;
 
 function countCreations(page: Page): () => number {
   let created = 0;
