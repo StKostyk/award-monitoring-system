@@ -1,11 +1,8 @@
 import { expect, test } from './fixtures';
 
-import { SEED, seriousViolations, signInAsSeed } from './helpers';
+import { OFFLINE_NOTICE, RECONNECT_MS, SEED, seriousViolations, signInAsSeed } from './helpers';
 
 const { employee } = SEED;
-const NOTICE =
-  "Немає з'єднання з сервером. Сторінки, яким потрібні дані, відкриються, щойно з'єднання відновиться.";
-const RECONNECT_MS = 2000;
 
 test.describe('connection loss', () => {
   test('ac1_4 registers no service worker in the development build', async ({ page }) => {
@@ -26,7 +23,7 @@ test.describe('connection loss', () => {
     await expect(page.getByTestId('offline-notice')).toHaveCount(0);
 
     await context.setOffline(true);
-    await expect(page.getByTestId('offline-notice')).toContainText(NOTICE);
+    await expect(page.getByTestId('offline-notice')).toContainText(OFFLINE_NOTICE);
     await expect(page.getByTestId('nav-awards')).toBeVisible();
     expect(await seriousViolations(page)).toEqual([]);
 

@@ -369,9 +369,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       return;
     }
     if (!this.connectivity.linked()) {
-      this.message.set(null);
-      this.pending.set(true);
-      this.keepCopy();
+      this.goPending(false);
       return;
     }
     this.persist('awards.messages.saved');
@@ -678,8 +676,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.saving.set(false);
     if (error instanceof HttpErrorResponse && error.status === 0) {
       this.connectivity.unreachable();
-      this.pending.set(true);
-      this.keepCopy(true);
+      this.goPending(true);
       return;
     }
     const known = this.id !== null || this.creationKey !== null;
@@ -704,6 +701,12 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       control?.markAsTouched();
     }
     this.problem.set(this.problemKey(error));
+  }
+
+  private goPending(evenIfPristine: boolean): void {
+    this.message.set(null);
+    this.pending.set(true);
+    this.keepCopy(evenIfPristine);
   }
 
   /** The draft was deleted in another window: the typed values become a new draft that is not saved yet. */

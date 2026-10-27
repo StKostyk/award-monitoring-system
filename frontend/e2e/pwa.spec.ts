@@ -2,7 +2,7 @@ import { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, SEED } from './helpers';
+import { DEMO_PASSWORD, OFFLINE_NOTICE, SEED } from './helpers';
 
 /**
  * The service worker exists only in the production build: this spec runs against the Compose stack on demand,
@@ -11,6 +11,7 @@ import { DEMO_PASSWORD, SEED } from './helpers';
 const BASE_URL = process.env['PLAYWRIGHT_BASE_URL'];
 const BACKEND_PATH =
   /^\/(api|oauth2|connect|\.well-known|login|logout|error|login-assets|swagger-ui|v3\/api-docs|privacy\/|health)/;
+const STARTS_WITHIN_MS = 3000;
 
 test.skip(!BASE_URL, 'needs the production build: set PLAYWRIGHT_BASE_URL');
 
@@ -78,10 +79,10 @@ test.describe('installable app', () => {
     await page.goto('/awards');
 
     await context.setOffline(true);
-    const started = Date.now();
     await page.reload();
-    await expect(page.getByTestId('offline-notice')).toBeVisible();
-    expect(Date.now() - started).toBeLessThan(3000);
+    await expect(page.getByTestId('offline-notice')).toContainText(OFFLINE_NOTICE, {
+      timeout: STARTS_WITHIN_MS,
+    });
     await expect(page.getByTestId('nav-awards')).toBeVisible();
     await expect(page).toHaveURL(/\/awards$/);
 
