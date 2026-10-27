@@ -28,4 +28,11 @@ describe('ConnectivityService', () => {
 
     expect(returns).toBe(1);
   });
+
+  it('ac2_9_a_server_without_answer_leaves_the_browser_link_up', () => {
+    service.unreachable();
+
+    expect(service.online()).toBe(false);
+    expect(service.linked()).toBe(navigator.onLine);
+  });
 });

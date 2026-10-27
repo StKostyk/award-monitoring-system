@@ -127,6 +127,8 @@ export class AwardDocumentsComponent {
   readonly sharing = input<DocumentSharing>('none');
   /** Saves the new award and answers its id; called before the first upload when `awardId` is null. */
   readonly prepare = input<(() => Observable<number>) | null>(null);
+  /** Whether adding files waits for the connection to return. */
+  readonly paused = input(false);
   /** The number of stored documents, after every load and change. */
   readonly countChange = output<number>();
   /** The refusal of an upload because the award was deleted or submitted elsewhere. */
@@ -183,7 +185,7 @@ export class AwardDocumentsComponent {
    */
   add(files: FileList | File[] | null): void {
     const chosen = Array.from(files ?? []);
-    if (!chosen.length) {
+    if (!chosen.length || this.paused()) {
       return;
     }
     this.notice.set(null);
@@ -229,7 +231,9 @@ export class AwardDocumentsComponent {
   /** Opens the file picker from the keyboard. */
   pick(input: HTMLInputElement, event: Event): void {
     event.preventDefault();
-    input.click();
+    if (!this.paused()) {
+      input.click();
+    }
   }
 
   /** Takes the files of a picker and clears it, so that the same file can be chosen again. */

@@ -11,14 +11,18 @@ const AUTH_PATHS = /^\/(oauth2|connect|\.well-known)\//;
 /**
  * Reports the outcome of every backend request: a successful answer marks the server reachable, a request without
  * any answer (status 0) marks it unreachable. Files of the application shell are left out, since the service worker
- * may answer them from its cache.
+ * may answer them from its cache. Backend requests bypass the service worker, which caches none of them and would
+ * turn a missing answer into a 504 of its own.
  */
 export const connectivityInterceptor: HttpInterceptorFn = (request, next) => {
   if (!isBackend(request.url)) {
     return next(request);
   }
   const connectivity = inject(ConnectivityService);
-  return next(request).pipe(
+  const sent = workerControlled()
+    ? request.clone({ setHeaders: { 'ngsw-bypass': 'true' } })
+    : request;
+  return next(sent).pipe(
     tap({
       next: (event) => {
         if (event instanceof HttpResponse) {
@@ -33,6 +37,10 @@ export const connectivityInterceptor: HttpInterceptorFn = (request, next) => {
     }),
   );
 };
+
+function workerControlled(): boolean {
+  return typeof navigator !== 'undefined' && !!navigator.serviceWorker?.controller;
+}
 
 function isBackend(url: string): boolean {
   if (url.startsWith(environment.apiUrl)) {

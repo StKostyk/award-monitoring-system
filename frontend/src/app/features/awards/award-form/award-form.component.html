@@ -280,9 +280,19 @@
       [uploads]="true"
       [removable]="true"
       [prepare]="prepareUpload"
+      [paused]="offline()"
       (countChange)="documentCount.set($event)"
       (lost)="documentsLost($event)"
     />
+
+    <div class="award-form__offline" role="status" data-testid="award-offline">
+      @if (offlineNotice(); as notice) {
+        <p data-testid="award-offline-notice">{{ notice | transloco }}</p>
+      }
+      @if (submitRefused()) {
+        <p data-testid="award-offline-submit">{{ 'awards.offline.submit' | transloco }}</p>
+      }
+    </div>
 
     <div class="award-form__actions">
       @if (removable()) {
