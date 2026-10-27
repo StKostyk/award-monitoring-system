@@ -16,6 +16,7 @@
 
 - A brand is a folder `frontend/src/styles/brands/<id>/` with `_theme-colors.scss` (tonal palettes from the brand colours, Angular Material `theme-color` schematic) and `_brand.scss` (`theme()` mixin), included in `styles.scss` under `html.brand-<id>`, and the id in `BRAND_IDS` (`core/brand/brand.service.ts`).
 - The deployment chooses the brand with `brand/brand.json`: `id`, `name` and `organization` (each `{ "uk", "en" }`) and `logo` (a path inside the app, `.svg` or `.png`). The image ships the ChNU file; another deployment mounts its own file and logo over `/usr/share/nginx/html/brand/`.
+- The installed app takes its name and icon from `brand/manifest.webmanifest` and `brand/icons/` (192 and 512 px, a 512 px maskable icon with the logo inside the central 72 %, and a 180 px `apple-touch-icon` on the logo colour); the neutral set lives in `brand/neutral/` and a deployment copies it together with `brand.json`. The manifest is in Ukrainian only and its `theme_color` is the brand primary, which `BrandService` also sets on `<meta name="theme-color">`.
 - The neutral theme applies when the file is missing, unreadable, names an unknown id, lacks a language or points the logo outside the app.
 
 ## 2. Tokens

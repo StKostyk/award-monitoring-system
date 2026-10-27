@@ -156,7 +156,7 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 
 | ID | Story | Points | Status | Jira | Issue |
 |----|-------|--------|--------|------|-------|
-| 8.1.1 | Installable app with an offline application shell | 5 | 7 | SCRUM-115 | [#331](https://github.com/StKostyk/award-monitoring-system/issues/331) |
+| 8.1.1 | Installable app with an offline application shell | 5 | 👀 In review (7) | SCRUM-115 | [#331](https://github.com/StKostyk/award-monitoring-system/issues/331) |
 | 8.1.2 | Award draft kept offline and saved on reconnect | 5 | 7 | SCRUM-116 | [#332](https://github.com/StKostyk/award-monitoring-system/issues/332) |
 | 8.1.3 | Touch-ready layouts at 360 px and camera capture | 5 | 7 | SCRUM-117 | [#333](https://github.com/StKostyk/award-monitoring-system/issues/333) |
 | 8.2.1 | Page language, titles, skip link and focus management | 5 | 7 | SCRUM-118 | [#334](https://github.com/StKostyk/award-monitoring-system/issues/334) |

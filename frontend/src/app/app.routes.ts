@@ -15,6 +15,7 @@ import { ownAwardsGuard } from './features/awards/awards.guards';
 import { ForbiddenComponent } from './features/forbidden/forbidden.component';
 import { HomeComponent } from './features/home/home.component';
 import { NotFoundComponent } from './features/not-found/not-found.component';
+import { OfflineComponent } from './features/offline/offline.component';
 import { noticeAcknowledgementGuard } from './features/privacy/notice-acknowledgement.guard';
 import { ProfileComponent } from './features/profile/profile/profile.component';
 
@@ -119,6 +120,7 @@ export const routes: Routes = [
         data: { scope: 'public' },
       },
       { path: 'not-found', component: NotFoundComponent },
+      { path: 'offline', component: OfflineComponent },
       {
         path: 'privacy-notice',
         loadComponent: () =>

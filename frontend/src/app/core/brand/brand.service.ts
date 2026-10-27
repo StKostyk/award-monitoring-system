@@ -26,6 +26,9 @@ const BRAND_IDS: readonly BrandId[] = ['chnu', 'neutral'];
 
 export const BRAND_URL = 'brand/brand.json';
 
+/** The browser bar colour of each brand, the `theme_color` of its manifest. */
+const THEME_COLORS: Record<BrandId, string> = { chnu: '#0047AB', neutral: '#2D6A4F' };
+
 export const NEUTRAL_BRAND: Brand = {
   id: 'neutral',
   name: { uk: 'Облік нагород', en: 'Award Registry' },
@@ -79,6 +82,9 @@ export class BrandService {
     root.classList.add(`brand-${brand.id}`);
     this.brand.set(brand);
     this.title.setTitle(this.text(brand.name));
+    this.document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', THEME_COLORS[brand.id]);
   }
 }
 

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Installable app: the production build installs from the browser, starts its shell without a connection, shows an offline notice and page, and offers new versions in a snackbar (8.1.1)
 - Full-text search on My awards and the achievements pages: Ukrainian and English words, prefixes, owner names on achievements and typo tolerance (5.4.1).
 - Board report: a presentation-ready PDF of the university analytics for the chosen period (A4 landscape, one topic per page, uk/en), downloadable from the university analytics page and recorded in the audit trail
 - University analytics page for the rector and the rector's secretary: compliance summary with refresh, yearly trend with projection, faculty and college comparison, rising and falling trends and highlights

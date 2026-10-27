@@ -1,0 +1,13 @@
+<mat-card class="offline__card" data-testid="offline-card">
+  <mat-card-header>
+    <mat-card-title>
+      <h1 class="offline__title">{{ 'offline.title' | transloco }}</h1>
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <p>{{ 'offline.text' | transloco }}</p>
+    <button mat-flat-button type="button" (click)="retry()" data-testid="offline-retry">
+      {{ 'offline.retry' | transloco }}
+    </button>
+  </mat-card-content>
+</mat-card>
