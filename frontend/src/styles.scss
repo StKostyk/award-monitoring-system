@@ -2,6 +2,7 @@
 @use './styles/brands/neutral/brand' as neutral;
 @use './styles/charts';
 @use './styles/status';
+@use './styles/touch';
 
 html {
   height: 100%;
@@ -32,6 +33,7 @@ body {
 }
 
 @include charts.tables();
+@include touch.rules();
 
 app-root {
   display: block;

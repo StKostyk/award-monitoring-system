@@ -90,7 +90,7 @@ All three stories are frontend only (plus nginx in 8.1.1); none needs a backend 
 
 - **AC-3.1** (No sideways scroll) Given every route of §6 Frontend, signed in with the role that sees it, in Ukrainian and English, at 360×740 and at 740×360, when the page has loaded, then the page does not scroll sideways (`scrollWidth` ≤ `innerWidth`); tables wider than the screen scroll inside their card; dialogs fit the screen. A Playwright sweep (`mobile-layout.spec.ts`, Chromium) proves it in the gate.
 - **AC-3.2** (Touch targets) Given the same sweep, then the axe rule `target-size` (WCAG 2.5.8) reports nothing, and the form actions, toolbar buttons and paginators are at least 44 px high at 360 px.
-- **AC-3.3** (Award form on a phone) Given the award form at 360 px, then fields fill the width in one column, the actions are reachable without zooming, the date opens the device picker, the web link uses `inputmode="url"`, and no input text is under 16 px (no zoom on focus in Safari).
+- **AC-3.3** (Award form on a phone) Given the award form at 360 px, then fields fill the width in one column, the actions are reachable without zooming, the date calendar opens as a full-screen dialog on touch screens (Material `touchUi`), the web link uses `inputmode="url"`, and no input text is under 16 px (no zoom on focus in Safari).
 - **AC-3.4** (Orientation) Given the award form with values, when the device turns between portrait and landscape, then the values, the focused field and the open notice stay; the manifest locks no orientation (WCAG 1.3.4).
 - **AC-3.5** (Camera) Given a phone, when "Сфотографувати" is chosen, then the rear camera opens (`capture="environment"`) and the photo uploads as a JPEG document with its preview; where the browser offers no camera (desktop), the button opens the file picker for images; a photo over 10 MB shows "The file is larger than 10 MB" and an unsupported format (e.g. HEIC on Android) shows the unsupported-type message naming the accepted formats.
 - **AC-3.6** (WebKit) Given the Playwright projects `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 13, WebKit), when the award form spec runs (create, save draft, attach an image, submit), then it passes in both; they run in `e2e.ps1` and the gate's e2e step.
@@ -139,7 +139,7 @@ None new or changed. Used: `POST /awards`, `PUT /awards/{id}`, `POST /awards/{id
 
 ### Frontend routes (sweep of AC-3.1)
 
-Public: `/login` (backend), `/register`, `/registration-pending`, `/verify-email`, `/forgot-password`, `/reset-password`, `/public/achievements`, `/public/units/:id/achievements`, `/privacy-notice`, `/not-found`, `/forbidden`. Signed in: `/dashboard`, `/awards`, `/awards/new`, `/awards/:id`, `/awards/:id/edit`, `/awards/:id/correct`, `/awards/:id/submitted`, `/achievements`, `/units/:id/achievements`, `/analytics/summary`, `/analytics/university`, `/analytics/units/:id`, `/reviews`, `/reviews/:id`, `/delegations`, `/notifications`, `/profile`, `/privacy`, `/compliance`, `/admin/users`, `/admin/users/:id`. The final list is taken from the route files when 8.1.3 starts.
+Public: `/login` (backend), `/register`, `/registration-pending`, `/verify-email`, `/forgot-password`, `/reset-password`, `/security/not-me`, `/public/achievements`, `/public/units/:id/achievements`, `/privacy-notice`, `/not-found`, `/offline`. Signed in: `/`, `/dashboard`, `/dashboard/summary`, `/awards`, `/awards/new`, `/awards/:id`, `/awards/:id/edit`, `/awards/:id/correct`, `/awards/:id/submitted`, `/achievements`, `/achievements/:id`, `/units/:id/achievements`, `/analytics`, `/analytics/university`, `/analytics/units/:id`, `/reviews`, `/delegations`, `/notifications`, `/profile`, `/privacy`, `/forbidden`, `/compliance`, `/admin/users`, `/admin/users/:id`. Taken from the route files at the start of 8.1.3 (`e2e/mobile-layout.spec.ts`); a route whose record does not exist on the database is left out of that run.
 
 ### External systems
 
@@ -218,7 +218,7 @@ Preconditions: `docker compose up -d --build` (production build with the service
 1. `curl -sI http://localhost/brand/manifest.webmanifest`. Expected: 200, `application/manifest+json`, `Cache-Control: no-cache`; the body has the fields of AC-1.1 and the three icons load. (AC-1.1)
 2. Copy `public/brand/neutral/manifest.webmanifest` and `icons/` over the served brand files in the container together with the neutral `brand.json`; reload. Expected: Application → Manifest shows "Облік нагород" and the neutral icon; restore the ChNU files. (AC-1.2)
 3. Open `http://localhost`, sign in as `employee.fmi`. Expected: Application shows the manifest without errors, the worker "activated and running" for `/`, the install icon in the address bar; install and open the app: a standalone window on the start page. (AC-1.3)
-4. Open `/awards`, an award with a document, `/analytics/summary` and `/profile`; Application → Cache storage. Expected: only `ngsw:` caches with shell files, `i18n/*.json` and `brand/*`; no `/api/`, document or `/privacy/` entry. (AC-1.5)
+4. Open `/awards`, an award with a document, `/dashboard/summary` and `/profile`; Application → Cache storage. Expected: only `ngsw:` caches with shell files, `i18n/*.json` and `brand/*`; no `/api/`, document or `/privacy/` entry. (AC-1.5)
 5. Sign out; with the worker active, open `http://localhost/login`, `http://localhost/swagger-ui/index.html` (if enabled) and `/privacy/<version>/uk.html`. Expected: the Spring sign-in page, Swagger (or its 404) or the notice text, never the application shell (no `<app-root>` in the response); the Network panel may still show "(ServiceWorker)", because the worker passes requests it does not cache to the network. (AC-1.6)
 6. Sign in as `employee.fmi`, open `/awards`; set Network to Offline; reload. Expected: the shell within 3 s, the offline notice of AC-1.7, still signed in, the list area shows the network message; no request to `/oauth2/authorize`. (AC-1.7)
 7. Still offline, open a new tab on `http://localhost`. Expected: the shell; with no session in that tab, the offline page "Немає з'єднання" and "Спробувати ще раз", no redirect. Go online, press the button (or wait for the `online` event). Expected: the sign-in flow starts; since the sign-in of step 6 still holds a server session, it ends on the start page without the form. (AC-1.8)
@@ -231,7 +231,7 @@ Preconditions: `docker compose up -d --build` (production build with the service
 14. Go online. Expected: one `POST /awards` 201, the address `/awards/{id}/edit`, "З'єднання відновлено, чернетку збережено."; psql `select status, title_uk, title from awards where id = <id>;` → `DRAFT` with the typed values; Application → Local storage has no `awards.form-copy.<user>.award-new`. (AC-2.3)
 15. Go offline, change the description, close the tab. Open `http://localhost/awards/<id>/edit` online. Expected: the draft loads with "Відновити незбережені зміни?"; "Відновити" brings the change back; "Зберегти чернетку" saves it (PUT 200). (AC-2.6)
 16. On the phone (or a Playwright context at 360×740) save a draft with a photo; sign in as `employee.fmi` on the desktop. Expected: `/awards` lists it as a draft; the form shows the values and the photo; submission succeeds. (AC-2.7)
-17. Run `npx playwright test mobile-layout` and look at `/awards`, `/reviews`, `/analytics/summary`, `/admin/users` and `/profile` at 360×740 and 740×360 in Ukrainian. Expected: green; no sideways page scroll; tables scroll inside their card. (AC-3.1, 3.2)
+17. Run `npx playwright test mobile-layout` and look at `/awards`, `/reviews`, `/dashboard/summary`, `/admin/users` and `/profile` at 360×740 and 740×360 in Ukrainian. Expected: green; no sideways page scroll; tables scroll inside their card. (AC-3.1, 3.2)
 18. Award form at 360 px on the phone: fill every field, turn the phone. Expected: one column, no zoom on focus, the device date picker, the URL keyboard for the link; values and focus kept after turning. (AC-3.3, 3.4)
 19. On the phone press "Сфотографувати" and photograph a certificate. Expected: the rear camera, the upload with a preview. On the desktop the same button opens the file picker. Upload a photo over 10 MB. Expected: "The file is larger than 10 MB". (AC-3.5)
 20. Lighthouse (mobile, Navigation, Performance + Accessibility + Best practices) on `/login`, `/awards/new` and `/awards` signed in as `employee.fmi`. Expected: each score ≥ 90; record the three rows and the Lighthouse version. (AC-3.7)
@@ -251,6 +251,18 @@ Preconditions: `docker compose up -d --build` (production build with the service
 31. Two tabs on the same draft offline, both edited; go online. Expected: one tab saves, the other shows the stale message; one row in psql. (§5)
 32. Block site storage (Chrome Settings → Site data) and type in the form offline. Expected: the notice "Пристрій не зберігає введене — не закривайте сторінку."; a private window offline without an earlier visit shows Chrome's own offline page. (§5)
 33. Rename `ngsw.json` in the container (`docker compose exec frontend mv /usr/share/nginx/html/ngsw.json /tmp/`), reload twice. Expected: Application shows the worker redundant or gone; the app works online; restore the file. (AC-1.11)
+
+### Run notes
+
+Lighthouse 12.8.2, mobile profile, simulated throttling (4× CPU, benchmark index 1800–2100), Compose build of 2026-10-27, storage kept between steps so `/awards/new` and `/awards` run signed in as `employee.fmi`; median of three runs:
+
+| Page | Performance | Accessibility | Best practices |
+|------|-------------|---------------|----------------|
+| `/login` | 100 | 100 | 100 |
+| `/awards/new` | 74 | 100 | 100 |
+| `/awards` | 77 | 100 | 96 |
+
+Changes made in 8.1.3: initial bundle 986 → 841 kB (home and profile routes lazy), date formatters cached (the award list went from 85 to 99 in single runs before the median), documents section of the form deferred. The signed-in pages stay under 90 on total blocking time (start-up and the first render, 0.9–1.1 s at 4× CPU); AC-3.7 is open for these two pages.
 
 ## 11. Risks
 

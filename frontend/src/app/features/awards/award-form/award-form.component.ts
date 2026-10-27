@@ -49,6 +49,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
 import { kyivToday, yearsBefore } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
+import { coarsePointer } from '../../../shared/touch';
 import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import {
@@ -150,6 +151,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private running: Observable<Award> | null = null;
   private changedOffline = false;
 
+  /** The date picker opens as a full-screen dialog on touch screens. */
+  readonly touch = coarsePointer();
   readonly recentDate = signal(false);
   readonly limits = {
     title: TITLE_LIMIT,

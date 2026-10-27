@@ -206,7 +206,7 @@ test.describe('award documents', () => {
       buffer: Buffer.from('heic'),
     });
     await expect(page.getByTestId('documents-queued-problem')).toHaveText(
-      'Unsupported file format',
+      'Unsupported file format. Use PDF, JPG, PNG or WEBP.',
     );
     await expect(page.getByTestId('documents-dismiss')).toHaveText('Dismiss');
 

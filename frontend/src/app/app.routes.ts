@@ -13,11 +13,9 @@ import { CallbackComponent } from './core/auth/callback.component';
 import { ShellComponent } from './core/layout/shell.component';
 import { ownAwardsGuard } from './features/awards/awards.guards';
 import { ForbiddenComponent } from './features/forbidden/forbidden.component';
-import { HomeComponent } from './features/home/home.component';
 import { NotFoundComponent } from './features/not-found/not-found.component';
 import { OfflineComponent } from './features/offline/offline.component';
 import { noticeAcknowledgementGuard } from './features/privacy/notice-acknowledgement.guard';
-import { ProfileComponent } from './features/profile/profile/profile.component';
 
 const achievementList = () =>
   import('./features/achievements/achievement-list/achievement-list.component').then(
@@ -76,7 +74,12 @@ export const routes: Routes = [
             (m) => m.ConfirmEmailChangeComponent,
           ),
       },
-      { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile/profile.component').then((m) => m.ProfileComponent),
+        canActivate: [authGuard],
+      },
       { path: 'forbidden', component: ForbiddenComponent, canActivate: [authGuard] },
       {
         path: 'admin',
@@ -162,7 +165,12 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/compliance/compliance.routes').then((m) => m.COMPLIANCE_ROUTES),
       },
-      { path: '', component: HomeComponent, pathMatch: 'full', canActivate: [authGuard] },
+      {
+        path: '',
+        loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
+        pathMatch: 'full',
+        canActivate: [authGuard],
+      },
     ],
   },
   { path: '**', redirectTo: '' },

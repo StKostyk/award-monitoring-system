@@ -1,7 +1,12 @@
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  DeferBlockBehavior,
+  DeferBlockState,
+  TestBed,
+} from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
@@ -106,6 +111,7 @@ describe('AwardFormComponent', () => {
 
   async function open(id: string | null): Promise<void> {
     await TestBed.configureTestingModule({
+      deferBlockBehavior: DeferBlockBehavior.Manual,
       imports: [
         AwardFormComponent,
         NoopAnimationsModule,
@@ -136,6 +142,9 @@ describe('AwardFormComponent', () => {
     fixture = TestBed.createComponent(AwardFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    for (const block of await fixture.getDeferBlocks()) {
+      await block.render(DeferBlockState.Complete);
+    }
     component.documentCount.set(1);
   }
 
@@ -1076,6 +1085,15 @@ describe('AwardFormComponent', () => {
       expect(dialog.open).not.toHaveBeenCalled();
       expect(service.submit).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('ac3_3_the_web_link_opens_the_url_keyboard', async () => {
+    await open(null);
+
+    const link = fixture.nativeElement.querySelector('[data-testid="award-url"]') as HTMLElement;
+
+    expect(link.getAttribute('inputmode')).toBe('url');
+    expect(link.getAttribute('type')).toBe('url');
   });
 
   describe('offline draft', () => {

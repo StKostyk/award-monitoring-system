@@ -21,7 +21,8 @@
 9. [University analytics](#university-analytics)
 10. [Managing Your Profile](#managing-your-profile)
 11. [Notifications](#notifications)
-12. [FAQ](#faq)
+12. [Using the app on a phone](#using-the-app-on-a-phone)
+13. [FAQ](#faq)
 
 ---
 
@@ -75,7 +76,7 @@ After login, the navigation leads to your awards (**Мої нагороди**), 
 - Additional supporting materials
 
 **File Requirements:**
-- Formats: PDF, JPEG, PNG
+- Formats: PDF, JPEG, PNG, WEBP
 - Maximum size: 10MB per file
 - Recommended: PDF at 300 DPI
 
@@ -474,6 +475,35 @@ Decisions, corrections, overdue notices, take-overs, roles and delegations reach
 
 ---
 
+## Using the app on a phone
+
+### Installing the app
+
+- **Android (Chrome):** open the site, then the menu ⋮ → **Install app** (on some phones **Add to Home screen**). The icon opens the app in its own window, without the browser bar.
+- **iPhone and iPad (Safari):** open the site, then **Share** → **Add to Home Screen**.
+- **Updates:** when a new version is deployed, the app shows "A new version of the app is available." with **Update**; the page reloads only when you choose it.
+
+### Without a connection
+
+- The installed app opens without a connection. Pages that need data show "No connection to the server. Pages that need data will open once the connection returns." and load once you are back online.
+- The award form keeps working offline: what you enter is kept on this device. **Save draft** sends nothing until the connection returns; the draft is then saved automatically and the form says "The connection is back and the draft is saved."
+- **Submit** and adding documents need a connection; the form says so and both return when you are online.
+- If you close the tab before the connection returns, open **Add award** again and choose **Restore** in "Restore unsaved changes?".
+- If the draft was changed on another device meanwhile, the form says "The award was changed in another window. Your changes are kept in this browser." and keeps your values.
+- In a private window, or with site data blocked, the device cannot keep what you enter; the form warns "This device does not keep what you enter. Do not close the page."
+
+### Photographing a certificate
+
+- In **Documents**, **Take a photo** opens the rear camera; on a computer it opens the file picker for images.
+- Accepted are PDF, JPG, PNG and WEBP up to 10 MB. A larger photo shows "The file is larger than 10 MB". HEIC photos (the default format of some phones) are refused; switch the camera to JPEG ("Most compatible" on an iPhone) or pick a JPEG copy.
+- For a readable photo, lay the certificate flat in good light and let it fill the frame.
+
+### Continuing on a computer
+
+A draft saved on the phone is an ordinary draft: sign in on a computer, open **My awards**, and the draft is there with its values, documents and photos. Complete it and submit it there. If you edit the same draft on both devices, the one saved second shows the "changed in another window" message instead of overwriting.
+
+---
+
 ## FAQ
 
 ### General
@@ -496,7 +526,7 @@ arrives twice. Emails with a confirmation or reset link are not resent; if one d
 
 **Q: My file won't upload. What should I do?**  
 A: Check that:
-1. File is PDF, JPEG, or PNG
+1. File is PDF, JPEG, PNG or WEBP
 2. File size is under 10MB
 3. Filename doesn't contain special characters
 4. Browser is up to date

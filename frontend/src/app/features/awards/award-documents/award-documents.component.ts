@@ -138,7 +138,6 @@ export class AwardDocumentsComponent {
   readonly accept = Object.entries(ACCEPTED_FORMATS)
     .flatMap(([mime, extensions]) => [mime, ...extensions.map((extension) => `.${extension}`)])
     .join(',');
-  readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   readonly documents = signal<AwardDocument[]>([]);
   readonly queue = signal<QueuedFile[]>([]);
   readonly loading = signal(false);

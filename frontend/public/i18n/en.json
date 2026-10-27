@@ -261,7 +261,7 @@
       "problems": {
         "empty-file": "The file is empty",
         "file-too-large": "The file is larger than 10 MB",
-        "unsupported-type": "Unsupported file format",
+        "unsupported-type": "Unsupported file format. Use PDF, JPG, PNG or WEBP.",
         "content-mismatch": "The file content does not match its extension",
         "duplicate-document": "This file has already been added",
         "document-limit": "The limit of 10 files has been reached",

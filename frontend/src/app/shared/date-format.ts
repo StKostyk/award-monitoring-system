@@ -1,13 +1,16 @@
+const KYIV = 'Europe/Kyiv';
+const DAY: Intl.DateTimeFormatOptions = {
+  timeZone: KYIV,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+};
+const DAY_TIME: Intl.DateTimeFormatOptions = { ...DAY, hour: '2-digit', minute: '2-digit' };
+const formats = new Map<string, Intl.DateTimeFormat>();
+
 /** Date and time in Kyiv, day first, in the interface language. */
 export function kyivDateTime(iso: string, language: string): string {
-  return new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'uk-UA', {
-    timeZone: 'Europe/Kyiv',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(iso));
+  return format(localeOf(language), DAY_TIME).format(new Date(iso));
 }
 
 /**
@@ -16,22 +19,12 @@ export function kyivDateTime(iso: string, language: string): string {
  */
 export function kyivDate(value: string, language: string): string {
   const instant = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00Z` : value;
-  return new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'uk-UA', {
-    timeZone: 'Europe/Kyiv',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(instant));
+  return format(localeOf(language), DAY).format(new Date(instant));
 }
 
 /** Today in Kyiv as `YYYY-MM-DD`, the day the server compares award dates with. */
 export function kyivToday(now = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Kyiv',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
+  return format('en-CA', DAY).format(now);
 }
 
 /** The calendar year of a moment in Kyiv, by default the present. */
@@ -54,4 +47,19 @@ export function daysBefore(date: string, days: number): string {
 
 function isoDate(time: number): string {
   return new Date(time).toISOString().substring(0, 10);
+}
+
+function localeOf(language: string): string {
+  return language === 'en' ? 'en-GB' : 'uk-UA';
+}
+
+/** Formatters are costly to create and are reused per locale and pattern. */
+function format(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${locale}|${options === DAY ? 'day' : 'time'}`;
+  let formatter = formats.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, options);
+    formats.set(key, formatter);
+  }
+  return formatter;
 }
