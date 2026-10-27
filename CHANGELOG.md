@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automated WCAG 2.1 AA check of every page in both languages, both themes and at phone and desktop width, run with the end-to-end tests
 - Accessibility: page language follows the interface, a title per page, a skip link, focus on the page heading after navigation, visible focus rings and reduced motion; user guide section on accessibility
 - Phone-ready screens: 44 px touch targets, no sideways scrolling at 360 px in both orientations, photographing a certificate from the award form, and a user guide section on using the app on a phone
 - Award form without a connection: entries are kept on the device and saved as a draft once the connection returns; submitting and uploads wait for it

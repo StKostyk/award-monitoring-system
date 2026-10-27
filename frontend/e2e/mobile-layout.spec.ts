@@ -2,7 +2,17 @@ import AxeBuilder from '@axe-core/playwright';
 
 import { expect, test } from './fixtures';
 
-import { SEED, settled, signInAsSeed, sql } from './helpers';
+import { SEED, settled, signInAsSeed } from './helpers';
+import {
+  GDPR_ROUTES,
+  PUBLIC_ROUTES,
+  RECTOR_ROUTES,
+  RoleRoutes,
+  deanRoutes,
+  employeeRoutes,
+  openRoute,
+  signOutQuietly,
+} from './routes';
 
 type Page = import('@playwright/test').Page;
 
@@ -17,25 +27,6 @@ const TARGETS = [
   'mat-paginator .mat-mdc-button-base',
 ];
 
-function awardOf(email: string, status: string): string {
-  return sql(
-    `select a.award_id from awards a join users u on u.user_id = a.user_id
-     where u.email_address = '${email}' and a.status = '${status}' order by a.award_id desc limit 1`,
-  );
-}
-
-function shownAchievement(): string {
-  return sql(
-    `select award_id from awards where status = 'APPROVED' and visibility <> 'PRIVATE'
-     order by award_id desc limit 1`,
-  );
-}
-
-/** Leaves out the routes whose record does not exist on this database. */
-function withIds(routes: string[]): string[] {
-  return routes.filter((route) => route === '/' || !(route.includes('//') || route.endsWith('/')));
-}
-
 /**
  * Opens every route at both orientations in both languages and answers what does not fit a phone: sideways
  * scrolling, targets the axe rule `target-size` reports, and form, toolbar and paginator buttons under 44 px.
@@ -48,18 +39,14 @@ async function sweep(
   let measured = 0;
   for (const language of LANGUAGES) {
     await page.evaluate((lang) => localStorage.setItem('lang', lang), language);
-    for (const route of withIds(routes)) {
+    for (const route of routes) {
       for (const size of [PORTRAIT, LANDSCAPE]) {
         await page.setViewportSize(size);
-        await page.goto(route);
-        await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
+        const elsewhere = await openRoute(page, route);
         await settled(page);
         const where = `${route} ${size.width}x${size.height} ${language}`;
-        if (
-          page.url().includes('/login') ||
-          (route !== '/forbidden' && page.url().endsWith('/forbidden'))
-        ) {
-          problems.push(`${where}: opened ${page.url()} instead`);
+        if (elsewhere) {
+          problems.push(`${where}: ${elsewhere}`);
         }
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - window.innerWidth,
@@ -100,10 +87,11 @@ async function sweep(
 }
 
 /** Sweeps the routes signed in; a sweep that met no toolbar or form button did not see the signed-in pages. */
-async function signedInSweep(page: Page, email: string, routes: string[]): Promise<string[]> {
+async function signedInSweep(page: Page, role: RoleRoutes): Promise<string[]> {
+  const email = role.account ?? '';
   await page.setViewportSize({ width: 1280, height: 800 });
   await signInAsSeed(page, email);
-  const { problems, measured } = await sweep(page, routes);
+  const { problems, measured } = await sweep(page, role.routes);
   return measured > 0 ? problems : [...problems, `${email}: no touch target measured`];
 }
 
@@ -112,66 +100,20 @@ test.describe('phone layouts', () => {
 
   test('ac3_1 ac3_2 pages without a session fit a phone', async ({ page }) => {
     await page.goto('/public/achievements');
-    const { problems } = await sweep(page, [
-      '/public/achievements',
-      '/public/units/9/achievements',
-      '/privacy-notice',
-      '/register',
-      '/registration-pending',
-      '/forgot-password',
-      '/reset-password',
-      '/verify-email',
-      '/security/not-me',
-      '/not-found',
-      '/offline',
-    ]);
+    const { problems } = await sweep(page, PUBLIC_ROUTES.routes);
     expect(problems).toEqual([]);
   });
 
   test('ac3_1 ac3_2 the pages of an employee fit a phone', async ({ page }) => {
-    const draft = awardOf(SEED.employee, 'DRAFT');
-    const approved = awardOf(SEED.employee, 'APPROVED');
-    const pending = awardOf(SEED.employee, 'PENDING');
-    const problems = await signedInSweep(page, SEED.employee, [
-      '/',
-      '/awards',
-      '/awards/new',
-      `/awards/${draft}/edit`,
-      `/awards/${approved}`,
-      `/awards/${pending}/submitted`,
-      '/dashboard',
-      '/dashboard/summary',
-      '/achievements',
-      `/achievements/${shownAchievement()}`,
-      '/units/64/achievements',
-      '/profile',
-      '/privacy',
-      '/notifications',
-      '/forbidden',
-    ]);
-    expect(problems).toEqual([]);
+    expect(await signedInSweep(page, employeeRoutes())).toEqual([]);
   });
 
   test('ac3_1 ac3_2 the pages of reviewers and officers fit a phone', async ({ page }) => {
-    const pending = awardOf(SEED.employee, 'PENDING');
-    const employee = sql(`select user_id from users where email_address = '${SEED.employee}'`);
-    const problems = [
-      ...(await signedInSweep(page, SEED.dean, [
-        '/reviews',
-        `/awards/${pending}/correct`,
-        '/delegations',
-        '/analytics',
-        '/analytics/units/9',
-        '/admin/users',
-        `/admin/users/${employee}`,
-      ])),
-    ];
-    await page.context().clearCookies();
-    await page.evaluate(() => sessionStorage.clear());
-    problems.push(...(await signedInSweep(page, SEED.rector, ['/analytics/university'])));
-    await page.context().clearCookies();
-    await page.evaluate(() => sessionStorage.clear());
-    problems.push(...(await signedInSweep(page, SEED.gdpr, ['/compliance'])));
+    const problems = await signedInSweep(page, deanRoutes());
+    await signOutQuietly(page);
+    problems.push(...(await signedInSweep(page, RECTOR_ROUTES)));
+    await signOutQuietly(page);
+    problems.push(...(await signedInSweep(page, GDPR_ROUTES)));
     expect(problems).toEqual([]);
   });
 
