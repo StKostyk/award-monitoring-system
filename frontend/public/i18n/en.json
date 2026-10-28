@@ -260,6 +260,12 @@
       "saveDraft": "Save draft",
       "submit": "Submit",
       "reload": "Load the current version",
+      "retry": "Try again",
+      "loadProblems": {
+        "network": "The server cannot be reached, so the draft could not be loaded.",
+        "failed": "The draft could not be loaded.",
+        "denied": "You have no access to this draft."
+      },
       "cancel": "Cancel"
     },
     "documents": {
