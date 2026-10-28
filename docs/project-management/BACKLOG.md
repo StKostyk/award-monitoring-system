@@ -165,6 +165,7 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.1.7 | Restored unit-recipient copy cannot be saved after the role is revoked | 2 | ✅ Done | SCRUM-124 | [#354](https://github.com/StKostyk/award-monitoring-system/issues/354) |
 | 8.2.1 | Page language, titles, skip link and focus management | 5 | ✅ Done | SCRUM-118 | [#334](https://github.com/StKostyk/award-monitoring-system/issues/334) |
 | 8.2.3 | Automated WCAG 2.1 AA sweep of every route | 3 | ✅ Done | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
+| 8.2.4 | Show a not-found page for unknown paths | 1 | 👀 In review | SCRUM-125 | [#361](https://github.com/StKostyk/award-monitoring-system/issues/361) |
 
 ### Later epics
 | ID | Story | Points | Epic |
