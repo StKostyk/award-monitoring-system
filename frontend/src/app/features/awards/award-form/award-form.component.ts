@@ -324,6 +324,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       tap((confirmed) => {
         if (confirmed) {
           this.dropCopy();
+          this.leaving = true;
         }
       }),
     );

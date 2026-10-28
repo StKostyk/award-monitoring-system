@@ -10,6 +10,7 @@ import {
   seriousViolations,
   signIn,
   signedInAs,
+  storedCopies,
   submitWithoutDocuments,
   uniqueToken,
 } from './helpers';
@@ -45,12 +46,6 @@ async function clickMyAwards(page: Page): Promise<void> {
     await page.getByTestId('nav-toggle').click();
   }
   await link.click();
-}
-
-function storedCopies(page: Page): Promise<number> {
-  return page.evaluate(
-    () => Object.keys(localStorage).filter((key) => key.startsWith('awards.form-copy.')).length,
-  );
 }
 
 async function chooseCategory(page: Page, id: number): Promise<void> {
@@ -139,6 +134,7 @@ test.describe('award drafts and submission on a phone', () => {
     await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
 
     await page.getByTestId('logout').click();
+    await page.getByTestId('confirm-accept').click();
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
     await signIn(page, employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();

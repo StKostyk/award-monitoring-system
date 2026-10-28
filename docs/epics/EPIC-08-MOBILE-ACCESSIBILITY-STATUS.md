@@ -49,6 +49,7 @@ All six stories are frontend work; none has a backend lane.
 | 4 | 8.2.1 Page language, titles, skip link and focus management | 8.2 | 5 | SCRUM-118 | #334 | no | Done |
 | 5 | 8.2.3 Automated WCAG 2.1 AA sweep of every route | 8.2 | 3 | SCRUM-120 | #336 | no | Done |
 | 5a | 8.1.4 New award created once when the save answer is lost | 8.1 | 3 | SCRUM-121 | #346 | no | Done |
+| 5b | 8.1.5 Offline sign-out drops the form copy before the leave question | 8.1 | 2 | SCRUM-122 | #352 | no | In review |
 | - | 8.2.2 Described forms, tables and announced changes | 8.2 | 5 | SCRUM-119 | #335 | no | Icebox |
 
 Total: 23 points (roadmap estimate 21: US-013 13, US-014 8; the roadmap's single story per feature is split by

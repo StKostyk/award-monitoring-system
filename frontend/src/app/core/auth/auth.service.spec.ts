@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -26,6 +27,9 @@ const profile: UserProfile = {
   lastLoginAt: null,
   membershipConfirmed: false,
 };
+
+@Component({ template: '' })
+class FormStubComponent {}
 
 function refreshError(status: number): OAuthEvent {
   return new OAuthErrorEvent('token_refresh_error', new HttpErrorResponse({ status }));
@@ -294,6 +298,105 @@ describe('AuthService', () => {
     expect(oauth.revokeTokenAndLogout).toHaveBeenCalled();
     expect(service.isAuthenticated()).toBe(false);
     expect(service.profile()).toBeNull();
+  });
+
+  describe('from a form with unsaved values', () => {
+    let leave: ReturnType<typeof vi.fn>;
+    let clearAll: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(async () => {
+      leave = vi.fn().mockReturnValue(false);
+      const router = TestBed.inject(Router);
+      router.resetConfig([
+        { path: 'awards/new', component: FormStubComponent, canDeactivate: [leave] },
+        { path: '**', children: [] },
+      ]);
+      oauth.hasValidAccessToken.mockReturnValue(true);
+      const init = service.init();
+      await Promise.resolve();
+      http.expectOne(`${environment.apiUrl}/users/me`).flush(profile);
+      await init;
+      await router.navigateByUrl('/awards/new');
+      clearAll = vi.spyOn(TestBed.inject(FormCopiesService), 'clearAll');
+    });
+
+    it('ac1_staying_on_the_form_keeps_the_session_and_the_copies', async () => {
+      await service.logout();
+
+      expect(leave).toHaveBeenCalled();
+      expect(clearAll).not.toHaveBeenCalled();
+      expect(oauth.revokeTokenAndLogout).not.toHaveBeenCalled();
+      expect(service.isAuthenticated()).toBe(true);
+      expect(TestBed.inject(Router).url).toBe('/awards/new');
+    });
+
+    it('ac1_staying_on_the_form_offline_keeps_the_session_and_the_copies', async () => {
+      TestBed.inject(ConnectivityService).unreachable();
+
+      await service.logout();
+
+      expect(clearAll).not.toHaveBeenCalled();
+      expect(oauth.logOut).not.toHaveBeenCalled();
+      expect(service.isAuthenticated()).toBe(true);
+      expect(TestBed.inject(Router).url).toBe('/awards/new');
+    });
+
+    it('ac1_signs_out_when_the_form_is_left_after_staying_once', async () => {
+      TestBed.inject(ConnectivityService).unreachable();
+      await service.logout();
+      leave.mockReturnValue(true);
+
+      await service.logout();
+
+      expect(clearAll).toHaveBeenCalled();
+      expect(service.isAuthenticated()).toBe(false);
+      expect(TestBed.inject(Router).url).toBe('/offline?next=%2F');
+    });
+
+    it('ac1_signs_out_from_the_page_it_would_open', async () => {
+      leave.mockReturnValue(true);
+      await TestBed.inject(Router).navigateByUrl('/');
+      expect(TestBed.inject(Router).url).toBe('/');
+
+      await service.logout();
+
+      expect(oauth.revokeTokenAndLogout).toHaveBeenCalled();
+      expect(service.isAuthenticated()).toBe(false);
+    });
+
+    it('ac1_signs_out_when_the_landing_page_fails_to_open', async () => {
+      leave.mockReturnValue(true);
+      oauth.revokeTokenAndLogout.mockRejectedValue(new HttpErrorResponse({ status: 0 }));
+      TestBed.inject(Router).resetConfig([
+        { path: 'awards/new', component: FormStubComponent, canDeactivate: [leave] },
+        {
+          path: '',
+          pathMatch: 'full',
+          loadComponent: () => Promise.reject(new Error('chunk unavailable')),
+        },
+        { path: '**', children: [] },
+      ]);
+
+      await service.logout();
+
+      expect(clearAll).toHaveBeenCalled();
+      expect(oauth.revokeTokenAndLogout).toHaveBeenCalled();
+      expect(oauth.logOut).toHaveBeenCalledWith(true);
+      expect(service.isAuthenticated()).toBe(false);
+      expect(TestBed.inject(Router).url).toBe('/offline?next=%2F');
+    });
+
+    it('ac1_asks_the_form_before_anything_is_removed', async () => {
+      leave.mockImplementation(() => clearAll.mock.calls.length === 0 && service.isAuthenticated());
+      TestBed.inject(ConnectivityService).unreachable();
+
+      await service.logout();
+
+      expect(clearAll).toHaveBeenCalled();
+      expect(oauth.logOut).toHaveBeenCalledWith(true);
+      expect(service.isAuthenticated()).toBe(false);
+      expect(TestBed.inject(Router).url).toBe('/offline?next=%2F');
+    });
   });
 
   it('returns the stored target url or the root', () => {

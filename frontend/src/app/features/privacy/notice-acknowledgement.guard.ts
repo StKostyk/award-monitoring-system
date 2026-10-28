@@ -5,7 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ConsentsService } from './consents.service';
 
 /** Pages that stay open without an acknowledgement of the current notice. */
-const EXEMPT = ['/privacy-notice', '/privacy', '/forbidden', '/not-found'];
+const EXEMPT = ['/privacy-notice', '/privacy', '/forbidden', '/not-found', '/offline'];
 
 /**
  * Sends a signed-in person who has not acknowledged the current privacy notice to the acknowledgement page.
