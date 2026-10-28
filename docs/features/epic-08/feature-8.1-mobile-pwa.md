@@ -248,7 +248,7 @@ Preconditions: `docker compose up -d --build` (production build with the service
 
 ### Detours
 
-22. Sign out while offline (profile menu → sign out). Expected: the offline page; Local storage has no `awards.form-copy.*`; after going online the sign-in page. Then, signed in again, open `/awards/new`, type a title, go offline and sign out: "Є незбережені зміни" opens while the copy and the tokens are still stored; "Залишитися" keeps the form, its copy and the session; signing out again and leaving opens the offline page with no copy. (AC-1.12, 8.1.5)
+22. Sign out while offline (profile menu → sign out). Expected: the offline page; Local storage has no `awards.form-copy.*`; after going online the app signs in again through the server session, which ends only at the refresh token's expiry (AC-1.12), without the form. Then, signed in again, open `/awards/new`, type a title, go offline and sign out: "Є незбережені зміни" opens while the copy and the tokens are still stored; "Залишитися" keeps the form, its copy and the session; signing out again and leaving opens the offline page with no copy. (AC-1.12, 8.1.5)
 23. Open the draft of step 14 on the phone and go offline; on the desktop change its title and save; change the description on the phone and go online. Expected: "The award was changed in another window. Your changes are kept in this browser."; no second draft in psql. (AC-2.5)
 24. Repeat with the desktop deleting the draft. Expected: the `award-deleted` text, the address `/awards/new`, and one save creates a new draft. Repeat with the desktop submitting it. Expected: the award page with the `award-not-editable` text. (AC-2.5)
 25. Go offline with the form dirty and wait 16 minutes (access token expired); go online. Expected: the token is renewed and the save goes through. Repeat, but reset the password of `employee.fmi` from another browser while offline. Expected: the sign-in page; after signing in, the restore offer at `/awards/new`. (AC-2.8)
@@ -320,6 +320,16 @@ Compose stack rebuilt from 2fbf38f (develop after #350), default settings; Playw
 | 35 | PASS | two tabs offline 'вкладка А'/'вкладка Б': online POST 201 + POST 200 (same key), both on /awards/202829/edit, only tab A shows the restore offer and Відновити gives 'MR81 вкладка А'; psql one draft 202829. Typed online in two tabs: POST 201 twice, two drafts |
 | 36 | PASS | app stopped, browser online: Зберегти чернетку -> POST /awards 502, 'Сервер недоступний. Введені дані збережено, спробуйте ще раз.', no offline notice or pending state, values and copy kept; app started: one save -> 401 (new signing key) renewed, POST 201 (202833); psql one draft |
 | 37 | PASS | two tabs on build v2, revert deployed: Оновити in tab A reloaded the page (it ended on the sign-in page because that long-lived test context had lost its server session; a clean context reloads signed in); tab C (dirty form, old build) opened the lazy /dashboard route without a reload or failed chunk and showed the update snackbar; the leave dialog guards the dirty form. Step text corrected: no unrecoverable reload with prefetched versions (covered by update-prompt.service.spec) |
+
+### Run 2026-10-28
+
+docker compose stack, frontend rebuilt from develop b20ce3d (SCRUM-124 merged), backend unchanged; reruns of steps 22, 27, 30. Result: 3 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 22 | PASS | clean page /: offline sign-out -> /offline?next=%2F 'Немає з'єднання', no form copy, no tokens; online: signed in again through the server session (AC-1.12; step text corrected). Dirty /awards/new offline: 'Є незбережені зміни' with copy + tokens stored; Залишитися keeps form, copy, session; Вийти без збереження -> /offline, storage empty |
+| 27 | PASS | offline save then online: POST 201 /awards/203072/edit; Back -> /awards, no restore offer, 1 draft (psql count 1). Offline reload: 'Чернетка нагороди', 'Сервер недоступний, тому чернетку не завантажено.', Спробувати ще раз, 0 fields; online loads the draft (9 fields), Try again loads it too (request aborted on reconnect); save PUT 200 |
+| 30 | PASS | fresh mr81c.sec (EMPLOYEE 64 + FACULTY_SECRETARY 9, role #2703): faculty draft offline, role revoked, online save -> POST 401, token 400, /login, copy kept; after sign-in restore offer; save -> 422 validation-failed recipientOrganizationId out-of-scope, recipient message 'Ви більше не можете подавати нагороди цього підрозділу…', unit picker invalid, Підрозділ stays chosen (picker shows no unit name); Я -> POST 201 draft 203073 (org 64). secretary.fmi faculty draft 203074 DRAFT org 9 |
 
 ## 11. Risks
 
