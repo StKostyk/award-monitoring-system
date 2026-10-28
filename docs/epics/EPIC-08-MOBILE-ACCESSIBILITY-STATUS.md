@@ -11,11 +11,12 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Validated 2026-10-27 with notes ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) §13): fix 8.1.4 (SCRUM-121, AC-2.9) in progress; AC-3.7 partly met, performance of the signed-in pages moves to Epic 9; manual run of §10 pending | 2026-10-26 | - |
-| 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | In progress ([PRD](../features/epic-08/feature-8.2-accessibility.md) approved 2026-10-27) | 2026-10-27 | - |
+| 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | Validated 2026-10-28 with notes ([PRD](../features/epic-08/feature-8.2-accessibility.md) §13): finding F-1 (failed translation load) checked in the manual run; manual run of §10 pending | 2026-10-27 | - |
 
 ## Current focus
 
-Feature 8.1 validated 2026-10-27 with notes: fix story 8.1.4 (SCRUM-121) for a new award created twice when the save answer is lost (AC-2.9); AC-3.7 performance of `/awards/new` and `/awards` moves to an Epic 9 story. Feature 8.2 stories merged; validation next.
+Feature 8.1 validated 2026-10-27 with notes: fix story 8.1.4 (SCRUM-121) for a new award created twice when the save answer is lost (AC-2.9); AC-3.7 performance of `/awards/new` and `/awards` moves to an Epic 9 story. Feature 8.2 validated 2026-10-28 with notes (PRD §13); the manual runs of 8.1 §10 and 8.2 §10 are next, then the
+documentation reconciliation of the epic.
 
 ## Scope
 
@@ -47,7 +48,7 @@ All six stories are frontend work; none has a backend lane.
 | 3 | 8.1.3 Touch-ready layouts at 360 px and camera capture | 8.1 | 5 | SCRUM-117 | #333 | no | Done |
 | 4 | 8.2.1 Page language, titles, skip link and focus management | 8.2 | 5 | SCRUM-118 | #334 | no | Done |
 | 5 | 8.2.3 Automated WCAG 2.1 AA sweep of every route | 8.2 | 3 | SCRUM-120 | #336 | no | Done |
-| 5a | 8.1.4 New award created once when the save answer is lost | 8.1 | 3 | SCRUM-121 | #346 | no | In review |
+| 5a | 8.1.4 New award created once when the save answer is lost | 8.1 | 3 | SCRUM-121 | #346 | no | Done |
 | - | 8.2.2 Described forms, tables and announced changes | 8.2 | 5 | SCRUM-119 | #335 | no | Icebox |
 
 Total: 23 points (roadmap estimate 21: US-013 13, US-014 8; the roadmap's single story per feature is split by
@@ -65,6 +66,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-26 | Accessibility in a slim form: page language, titles, skip link and focus (8.2.1) plus an automated axe sweep (WCAG 2.1 AA tags) of every route in the gate (8.2.3); 8.2.2 and the accessibility statement go to the icebox; no manual conformance audit | NFR-010 and US-014 are met by automated checks at a third of the cost; Angular Material forms and dialogs already pass the axe checks of 19 specs; the thesis claims automated checking, not certification | QUALITY_GATES §8, 8.2 PRD |
 | 2026-10-26 | Lighthouse (mobile profile) above 90 for performance, accessibility and best practices on the sign-in page, the award form and the award list, measured against the production build in Compose | US-013 DoD, NFR-009, ADR-013 | 8.1.3 |
 | 2026-10-26 | Feature 8.1 PRD approved: one service worker data group for the brand files (freshness), refining decision 1; Ukrainian-only manifest; Lighthouse measured by hand and the service worker spec run against the Compose build, both outside the gate; installability checked in the Chrome Application panel; server drafts written on "Save draft" and on reconnect only; navigation of every signed-in user after an offline start | Brand files change per deployment without a rebuild and hold no personal data; a manifest has no language switch; the worker exists only in the production build; Lighthouse 12 has no PWA category | 8.1 PRD §7 D-1 to D-8 |
+| 2026-10-28 | Feature 8.2 validated with notes; NFR-010 counts as met by the automated sweep, every axe scan of the e2e suite uses the same WCAG 2.1 A and AA tags | The tracker decision of 2026-10-26 replaces the manual audit by automated checks; one tag list keeps the 19 older specs and the sweep from drifting apart | 8.2 PRD §13, TRACEABILITY NFR-010 |
 
 ## Documentation deviations found at kickoff
 
@@ -109,6 +111,13 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   `award-form.component.ts`, one `REDUCED_MOTION` query in `shared/touch.ts`, the offline notice and
   `RECONNECT_MS` shared in the e2e helpers, the 3 s start check in `pwa.spec.ts` as an assertion timeout. Left
   open: the offline flags of the form could become one state value.
+- Validation of 8.2 (PRD §13), refactor sweep: applied in the validation PR (one `AXE_TAGS` list and `isSerious`
+  in the e2e helpers, so the 19 specs scanning with `seriousViolations` now include `wcag21a`; keyboard spec
+  contexts closed in `finally`, the category choice asserted, the focus walk names its screen). Left open: the
+  open-states test of `accessibility.spec.ts` (~90 lines, hand-built dean context) into small helpers; one shared
+  route loop and viewport constants for `accessibility.spec.ts` and `mobile-layout.spec.ts`; `openRoute` waits for
+  `networkidle` with a swallowed 5 s timeout instead of a page signal; `theme.spec.ts` constant names and its
+  400 px phone; `NavigationFocusService.focusPage` (~30 lines of closures) as a small state object.
 
 ## Risks
 
