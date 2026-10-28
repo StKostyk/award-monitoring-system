@@ -137,13 +137,13 @@ No OpenAPI or migration change. i18n blocks added: `titles.*` (one key per route
 **Preconditions**: Compose stack up (`docker compose up -d --build`), app at `http://localhost`; seed accounts `employee.fmi`, `dean.fmi`, `gdpr`, `rector` with `Passw0rd-demo`; Chrome with DevTools (Elements, Accessibility tree), keyboard only from step 3.
 
 1. Sign in as `employee.fmi`; in Elements read `<html lang>`; switch to English with the language button; read it again; reload. Expected: `uk`, then `en`, still `en` after the reload. (AC-1.1)
-2. Open `/awards`, an award page, `/awards/new`, `/profile`, `/not-a-page`; read the tab title each time; switch language on `/awards`. Expected: "Мої нагороди — Облік нагород ЧНУ", "Нагорода — …", "Нова нагорода — …", "Профіль — …", the not-found title; English titles after the switch; no award title in any tab title. (AC-1.2)
+2. Open `/awards`, an award page, `/awards/new`, `/profile`, `/not-found`, `/not-a-page`; read the tab title each time; switch language on `/awards`. Expected: "Мої нагороди — Облік нагород ЧНУ", "Нагорода — …", "Нова нагорода — …", "Профіль — …", "Сторінку не знайдено — …", "Головна — …" (an unknown path redirects to the home page); English titles after the switch; no award title in any tab title. (AC-1.2)
 3. Reload `/awards`, press Tab once. Expected: "Перейти до основного вмісту" visible at the top; Enter, then Tab. Expected: the focus is on the first control of the award list (search or "Додати нагороду"), not in the menu. (AC-1.3)
 4. From `/awards` open an award with Enter, then Alt+Left (back). Expected: the Accessibility pane shows focus on the heading "‹award›" then on "Мої нагороди"; no visible focus ring on the heading itself, a ring on the next Tab stop. (AC-1.4)
-5. On `/awards` change the status filter or the page. Expected: the focus stays on the filter or paginator. Open `/admin` as `dean.fmi`. Expected: focus on the heading of `/admin/users`. (AC-1.4)
+5. On `/awards` change the status filter or the page. Expected: the focus stays on the filter or paginator. As `dean.fmi` open "Користувачі" from the menu (a typed `/admin` is a first load and leaves the focus to the browser). Expected: focus on the heading of `/admin/users`. (AC-1.4)
 6. Tab through the shell, `/awards/new` and `/awards` in light and in dark theme. Expected: every focused element shows a ring or outline clearly visible against its background. (AC-1.5)
 7. Turn on reduced motion (Windows: Settings → Accessibility → Visual effects → Animation effects off; or DevTools Rendering → Emulate `prefers-reduced-motion: reduce`), open the menu, a dialog ("Видалити чернетку") and the drawer at 360 px. Expected: they appear and disappear without sliding or fading. (AC-1.6)
-8. Keyboard only: open "Мої нагороди", "Додати нагороду", fill the title, open the category list with Alt+Down and choose with the arrows and Enter, type a date, attach a PDF with the picker (Enter on the drop zone), "Зберегти чернетку", "Подати", confirm. Expected: every step done without the mouse; the submitted page opens. (AC-1.7)
+8. Keyboard only: open "Мої нагороди", "Додати нагороду", fill the title, open the category list with Alt+Down and choose with the arrows and Enter, type "Хто нагородив" and a date, "Зберегти чернетку", attach a PDF with the picker (Enter on the drop zone), "Подати" (no confirmation dialog). Expected: every step done without the mouse; the submitted page opens. (AC-1.7)
 9. Read the user guide section "Accessibility" against steps 3–8. Expected: the text matches the behaviour. (AC-1.8)
 10. Run `npx playwright test accessibility` (or `.\tools\e2e.ps1 -Grep accessibility`). Expected: green; `build/accessibility-report.json` lists the moderate and minor findings per rule. (AC-3.1, 3.4)
 11. Break the contrast on purpose (DevTools: set `--mat-sys-on-surface-variant` to `#bbb` on `/awards`) and run axe from the DevTools extension or the spec locally against that change. Expected: `color-contrast` serious; restore. (AC-3.1)
@@ -158,8 +158,8 @@ No OpenAPI or migration change. i18n blocks added: `titles.*` (one key per route
 17. Access token expired in an open tab (wait 16 minutes), then navigate. Expected: silent renewal, title and focus as usual; after a session ended elsewhere the sign-in page opens with its own `lang` and title. (AC-1.1, 1.2)
 18. Second browser in English, first in Ukrainian, same account. Expected: each tab keeps its own `lang` and titles (language is per browser). Two tabs of one browser: switch in the first. Expected: the second keeps its language until it is reloaded (no live sync). (AC-1.1)
 19. Back after submitting an award (the submitted page). Expected: the award page or list with its own title and focus on its heading; no second submission. (AC-1.4)
-20. Hidden in state: the feature adds no action on an object; the skip link is absent on pages without the shell navigation (`/offline` has none before the content). Expected: the first Tab reaches the page's own control. (AC-1.3)
-21. Revoked mid-flow: the feature checks no role; when `admin` revokes the dean role while `dean.fmi` is on `/reviews`, the next navigation shows the forbidden page with its title "Немає доступу — …" and focus on its heading. (AC-1.2, 1.4)
+20. Hidden in state: the feature adds no action on an object; the shell renders the skip link on every page, `/offline` included, signed in or not. Expected: the first Tab reaches the skip link, the next one the page's own control. (AC-1.3)
+21. Revoked mid-flow: the feature checks no role; when `admin` revokes the dean role of a fresh dean on `/reviews`, the revocation ends the session and the next navigation shows the sign-in page with its own title; an employee who reaches `/reviews` in the app sees the forbidden page with its title "Немає доступу — …" and focus on its heading. (AC-1.2, 1.4)
 22. Sign in from `/login`. Expected: the page after the sign-in counts as a first load, so the focus is left to the browser and the first Tab reaches the skip link. (AC-1.3, 1.4)
 23. DevTools Network throttling "Slow 3G", from `/awards` open an award. Expected: the focus lands on the heading once it renders; when the page takes longer than 3 s the focus is on `<main>`, and a heading that appears afterwards does not take the focus back. (§5, AC-1.4)
 24. Block `/i18n/en.json` in DevTools (Network request blocking) and switch to English. Expected: `<html lang>` names the language of the text shown, and the title is never a raw key such as `titles.awards` (finding F-1 of §13). (§5, AC-1.1, 1.2)
@@ -169,6 +169,37 @@ No OpenAPI or migration change. i18n blocks added: `titles.*` (one key per route
 Sweep of 2026-10-27 (8.2.3), axe-core 4.13, dev build: 35 routes over five roles (11 public, 15 employee, 7 dean, rector, GDPR officer), each in uk/en × light/dark × 1280/360, plus 8 open states. First run: one serious finding, `color-contrast` on ended roles of `/admin/users/:id` (dimmed with opacity), fixed in 8.2.3. Final run: no serious or critical findings, no moderate or minor findings (`build/accessibility-report.json`), exception list empty.
 
 Validation run of 2026-10-28 (axe tags shared with the 19 older specs, `wcag21a` added to them): no serious or critical findings, `build/accessibility-report.json` empty for all five sweep tests, exception list empty.
+
+### Run 2026-10-28
+
+Compose stack (app from develop 2026-10-28, frontend b20ce3d), default settings; UI steps through walk.cjs (Chromium 1280 px, 360 px for step 7); fresh mr82a (EMPLOYEE), mr82b (DEAN, revoked); awards 203075-203077. Result: 23 pass, 1 blocked.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | html lang uk -> en after toggle -> en after reload |
+| 2 | PASS | titles uk/en as expected, award 203075 'Нагорода — …', no award title; step text corrected: /not-a-page redirects home by design (title 'Головна'), not-found title is on /not-found and in-record 404s |
+| 3 | PASS | first Tab = skip link (top 8px, 232x44); Enter+Tab -> award-add in main |
+| 4 | PASS | award page focus on H1 'Прогін 8.2'; Back -> H1 'Мої нагороди', no outline; next Tab -> award-add with strong ring |
+| 5 | PASS | status filter keeps focus (MAT-SELECT filter-status); dean.fmi menu 'Користувачі' -> /admin/users focus on H1; step text corrected: via menu, a direct /admin load is a first load (focus stays on body) |
+| 6 | PASS | Tab through shell, /awards, /awards/new light+dark: 3px outline rings seen in screenshots (nav item, user menu); skip link outline |
+| 7 | PASS | reduced motion emulated at 360px: drawer, dialog container/pane animation+transition 1e-05s, no running animations |
+| 8 | PASS | keyboard only: nav-awards, add, title, category via Alt+Down/arrows/Enter, date typed, PDF through drop zone Enter (filechooser), save (draft 203076), submit -> /awards/203076/submitted; step text corrected: needs 'Хто нагородив' filled and no confirm dialog appears |
+| 9 | PASS | USER_GUIDE.md §Accessibility (skip link, focus after navigation, titles/language, keys, focus ring, reduced motion) matches steps 3-8 |
+| 10 | BLOCKED | e2e -Grep accessibility: 8 passed, 'pages of an employee' renderer crashed twice ('Target crashed' in axe analyze, 3.3 GB free, one worker); report has no moderate/minor findings for the other scans; rerun when memory allows |
+| 11 | PASS | axe on /awards: clean; --mat-sys-on-surface-variant #bbb -> color-contrast serious (18 nodes); after reload clean |
+| 12 | PASS | toggle fired with delete dialog open: lang uk->en, title 'Editing a draft — ChNU Awards', focus stays on confirm-cancel inside the dialog (toggle fired by script: the dialog traps real focus) |
+| 13 | PASS | Enter on active nav-awards: focus stays on nav-awards |
+| 14 | PASS | dirty /awards/new + menu link: dialog; Залишитися -> focus on nav-awards, title 'Нова нагорода — …', /awards/new; again + Вийти -> H1 'Мої нагороди' |
+| 15 | PASS | direct URL /awards/203075: focus BODY, title 'Нагорода — Облік нагород ЧНУ' |
+| 16 | PASS | backend restarted while on /awards (title unchanged 'Мої нагороди — …'), then menu Профіль: /profile 'Профіль — …', focus on heading 'Мій профіль', no error title |
+| 17 | PASS | mr82a idle 16.5 min on /awards (19:28Z), then menu: /dashboard 'Мій дашборд — …' focus H1, /awards focus H1, no sign-in; session ended elsewhere -> sign-in page 'Вхід до системи обліку нагород' (step 21 run) |
+| 18 | PASS | browser B toggled to en: 'No connection — ChNU Awards', browser A stays uk; two tabs of one browser: tab 2 stays uk after tab 1 switched to en, en after its reload |
+| 19 | PASS | award 203077 submitted via UI (1 award_request, status PENDING v3); Back -> /awards 'Мої нагороди — …', focus H1; no second submission |
+| 20 | PASS | /offline (signed in and anonymous): skip link present, first Tab = skip link, then page controls; step text corrected: the shell renders the skip link on every page incl. /offline (title 'Немає з'єднання — …'), it is not absent there |
+| 21 | PASS | mr82b (fresh DEAN) on /reviews, role revoked: revoke ends sessions, next navigation shows sign-in page with own title 'Вхід до системи обліку нагород'; employee.fmi pushed to /reviews: /forbidden, title 'Немає доступу — …', focus on its heading (mat-card-title 'Доступ заборонено'); step text corrected: a revoked role ends the session, forbidden is reached without it |
+| 22 | PASS | sign-in from /login -> /: focus BODY (browser's), first Tab = skip-link |
+| 23 | PASS | award request delayed 4.5 s: at 3.6 s focus on MAIN, no h1; at 7 s h1 'Прогін 8.2' rendered, focus still MAIN |
+| 24 | PASS | service workers blocked + /i18n/en.json aborted: switch to en keeps lang=uk with Ukrainian text and titles ('Мої нагороди — …', 'Мій дашборд — …'), no raw key, also after navigation and reload; (with the worker active the cached en.json still loads) |
 
 ## 11. Risks
 
