@@ -11,7 +11,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { Observable, Subject, of, throwError } from 'rxjs';
+import { Observable, Subject, of, tap, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -1482,6 +1482,106 @@ describe('AwardFormComponent', () => {
       fixture.detectChanges();
 
       expect(text('award-offline-notice')).toBe('awards.offline.notStored');
+    });
+
+    it('ac1_a_draft_that_cannot_be_loaded_shows_try_again_instead_of_the_form', async () => {
+      service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+
+      await open('5');
+
+      expect(fixture.nativeElement.querySelector('form')).toBeNull();
+      expect(text('award-load-error')).toContain('awards.form.loadProblems.network');
+      expect(text('award-load-retry')).toBe('awards.form.retry');
+      expect(text('award-form-error')).toBeNull();
+    });
+
+    it('ac1_a_proxy_answer_while_loading_counts_as_unreachable', async () => {
+      service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+
+      await open('5');
+
+      expect(text('award-load-error')).toContain('awards.form.loadProblems.network');
+    });
+
+    it('ac1_a_refused_draft_offers_no_try_again', async () => {
+      service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+
+      await open('5');
+
+      expect(fixture.nativeElement.querySelector('form')).toBeNull();
+      expect(text('award-load-error')).toContain('awards.form.loadProblems.denied');
+      expect(text('award-load-retry')).toBeNull();
+    });
+
+    it('ac1_try_again_that_brings_the_connection_back_loads_the_draft_once', async () => {
+      service.get.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
+      await open('5');
+      goOffline();
+      service.get.mockReturnValue(
+        of(award({ titleUk: 'Чернетка' })).pipe(tap(() => connectivity.reachable())),
+      );
+
+      component.retry();
+
+      expect(service.get).toHaveBeenCalledTimes(2);
+      expect(component.form.controls.titleUk.value).toBe('Чернетка');
+    });
+
+    it('ac1_try_again_loads_the_draft_into_the_form', async () => {
+      service.get.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
+      await open('5');
+      service.get.mockReturnValue(of(award({ titleUk: 'Чернетка', version: 4 })));
+
+      fixture.nativeElement.querySelector('[data-testid="award-load-retry"]').click();
+      fixture.detectChanges();
+
+      expect(text('award-load-error')).toBeNull();
+      expect(fixture.nativeElement.querySelector('form')).not.toBeNull();
+      expect(component.form.controls.titleUk.value).toBe('Чернетка');
+      service.update.mockReturnValue(of(award({ version: 5 })));
+      component.save();
+      expect(service.update).toHaveBeenCalledWith(5, expect.anything(), 4);
+    });
+
+    it('ac1_a_draft_that_failed_to_load_is_loaded_when_the_connection_returns', async () => {
+      service.get.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
+      await open('5');
+      goOffline();
+      service.get.mockReturnValue(of(award({ titleUk: 'Чернетка' })));
+
+      goOnline();
+
+      expect(service.get).toHaveBeenCalledTimes(2);
+      expect(component.form.controls.titleUk.value).toBe('Чернетка');
+      expect(text('award-load-error')).toBeNull();
+    });
+
+    it('ac1_a_server_failure_while_loading_also_offers_try_again', async () => {
+      service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+      await open('5');
+
+      expect(fixture.nativeElement.querySelector('form')).toBeNull();
+      expect(text('award-load-error')).toContain('awards.form.loadProblems.failed');
+      expect(text('award-load-retry')).toBe('awards.form.retry');
+    });
+
+    it('ac2_the_form_copy_is_offered_once_the_draft_has_loaded', async () => {
+      copies.save('21', 'award-5', {
+        ...emptyForm(),
+        titleUk: 'Копія',
+        recipientOrganizationId: null,
+      });
+      service.get.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 })));
+      await open('5');
+      expect(text('restore-offer')).toBeNull();
+      service.get.mockReturnValue(of(award()));
+
+      component.retry();
+      fixture.detectChanges();
+
+      expect(text('restore-offer')).not.toBeNull();
+      expect(copies.load('21', 'award-5')).toEqual(expect.objectContaining({ titleUk: 'Копія' }));
     });
   });
 });

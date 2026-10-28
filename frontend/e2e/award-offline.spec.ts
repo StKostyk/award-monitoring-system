@@ -187,4 +187,29 @@ test.describe('award draft kept offline', () => {
     });
     await expect(phone.getByTestId('award-title-uk')).toHaveValue('Версія телефона');
   });
+
+  test('8_1_6 a draft opened without a connection offers Try again instead of an empty form', async ({
+    browser,
+  }) => {
+    const email = await freshEmployee(browser, 'offline-reload');
+    const title = `Грамота ${uniqueToken()}`;
+    const phone = await signedInAs(browser, email, FRESH_PASSWORD);
+    const path = await saveOnline(phone, title);
+    const draft = new RegExp(`/api/v1${path.replace(/\/edit$/, '')}$`);
+    await phone.route(draft, (route) => route.abort('internetdisconnected'));
+
+    await phone.goto(path);
+
+    await expect(phone.getByTestId('award-load-error')).toContainText(
+      'Сервер недоступний, тому чернетку не завантажено.',
+    );
+    await expect(phone.getByTestId('award-title-uk')).toHaveCount(0);
+    await expect(phone.getByRole('heading', { level: 1 })).toHaveText('Чернетка нагороди');
+    expect(await seriousViolations(phone)).toEqual([]);
+
+    await phone.unroute(draft);
+    await phone.getByTestId('award-load-retry').click();
+    await expect(phone.getByTestId('award-title-uk')).toHaveValue(title);
+    await expect(phone.getByTestId('award-load-error')).toHaveCount(0);
+  });
 });

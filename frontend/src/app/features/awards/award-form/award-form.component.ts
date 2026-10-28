@@ -42,7 +42,14 @@ import {
   throwError,
 } from 'rxjs';
 
-import { fieldProblems, knownProblem, problemStatus, problemType } from '../../../core/api/problem';
+import {
+  ReadProblem,
+  fieldProblems,
+  knownProblem,
+  problemStatus,
+  problemType,
+  readProblem,
+} from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ConnectivityService } from '../../../core/connectivity/connectivity.service';
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -170,6 +177,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly notFound = signal(false);
+  /** Why the draft of this address could not be loaded; the form stays hidden until it is. */
+  readonly loadFailed = signal<ReadProblem | 'network' | null>(null);
   readonly message = signal<string | null>(null);
   readonly problem = signal<string | null>(null);
   readonly stale = signal(false);
@@ -352,6 +361,13 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.restoreOffer.set(null);
   }
 
+  /** Loads the draft of this address again after its load failed. */
+  retry(): void {
+    if (this.id !== null && !this.loading()) {
+      this.load(this.id);
+    }
+  }
+
   reload(): void {
     if (this.id !== null) {
       this.keepCopy();
@@ -450,6 +466,13 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private reconnected(): void {
     this.submitRefused.set(false);
     if (this.saving() || this.leaving) {
+      return;
+    }
+    if (this.loading()) {
+      return;
+    }
+    if (this.loadFailed() !== null) {
+      this.retry();
       return;
     }
     const due = this.pending() || (this.changedOffline && this.form.dirty);
@@ -595,6 +618,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
           void this.router.navigate(['/awards', award.id], { replaceUrl: true });
           return;
         }
+        this.loadFailed.set(null);
         this.show(award);
         this.returned.set(
           award.request?.status === 'RETURNED'
@@ -609,8 +633,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
         this.loading.set(false);
         if (problemStatus(error) === HttpStatusCode.NotFound) {
           this.notFound.set(true);
-        } else {
+        } else if (this.current() !== null) {
           this.problem.set(this.problemKey(error));
+        } else {
+          this.loadFailed.set(problemType(error) === 'network' ? 'network' : readProblem(error));
         }
       },
     });
@@ -728,7 +754,6 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private problemKey(error: unknown): string {
     return `awards.problems.${knownProblem(problemType(error), KNOWN_PROBLEMS)}`;
   }
-
   private clearMarkedErrors(): void {
     this.problem.set(null);
     for (const control of Object.values(this.form.controls)) {

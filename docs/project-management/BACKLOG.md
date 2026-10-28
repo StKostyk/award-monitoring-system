@@ -160,7 +160,8 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.1.2 | Award draft kept offline and saved on reconnect | 5 | ✅ Done | SCRUM-116 | [#332](https://github.com/StKostyk/award-monitoring-system/issues/332) |
 | 8.1.3 | Touch-ready layouts at 360 px and camera capture | 5 | ✅ Done | SCRUM-117 | [#333](https://github.com/StKostyk/award-monitoring-system/issues/333) |
 | 8.1.4 | New award created once when the save answer is lost | 3 | ✅ Done | SCRUM-121 | [#346](https://github.com/StKostyk/award-monitoring-system/issues/346) |
-| 8.1.5 | Offline sign-out drops the form copy before the leave question | 2 | 👀 In review (7) | SCRUM-122 | [#352](https://github.com/StKostyk/award-monitoring-system/issues/352) |
+| 8.1.5 | Offline sign-out drops the form copy before the leave question | 2 | ✅ Done | SCRUM-122 | [#352](https://github.com/StKostyk/award-monitoring-system/issues/352) |
+| 8.1.6 | Offline reload of a draft opens an empty form without Try again | 2 | 👀 In review (7) | SCRUM-123 | [#353](https://github.com/StKostyk/award-monitoring-system/issues/353) |
 | 8.2.1 | Page language, titles, skip link and focus management | 5 | ✅ Done | SCRUM-118 | [#334](https://github.com/StKostyk/award-monitoring-system/issues/334) |
 | 8.2.3 | Automated WCAG 2.1 AA sweep of every route | 3 | ✅ Done | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
 

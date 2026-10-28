@@ -4,7 +4,7 @@
   </p>
 } @else {
   <h1 class="award-form__title">
-    {{ (editing() ? 'awards.form.editTitle' : 'awards.form.newTitle') | transloco }}
+    {{ (editing() || loadFailed() ? 'awards.form.editTitle' : 'awards.form.newTitle') | transloco }}
   </h1>
 
   @if (loading() || saving()) {
@@ -55,284 +55,301 @@
     </p>
   }
 
-  <form class="award-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-    @if (unitOptions().length) {
-      <div class="award-form__recipient" data-testid="award-recipient">
-        <span class="award-form__recipient-label" id="award-recipient-label">{{
-          'awards.recipient.label' | transloco
-        }}</span>
-        <mat-radio-group formControlName="recipient" aria-labelledby="award-recipient-label">
-          <mat-radio-button value="PERSON" data-testid="award-recipient-person">{{
-            'awards.recipient.person' | transloco
-          }}</mat-radio-button>
-          <mat-radio-button value="UNIT" data-testid="award-recipient-unit">{{
-            'awards.recipient.unit' | transloco
-          }}</mat-radio-button>
-        </mat-radio-group>
-      </div>
-      @if (unitChosen()) {
-        <mat-form-field class="award-form__field">
-          <mat-label>{{ 'awards.recipient.unitPicker' | transloco }}</mat-label>
-          <mat-select
-            formControlName="recipientOrganizationId"
-            data-testid="award-recipient-picker"
-          >
-            @for (unit of unitOptions(); track unit.id) {
-              <mat-option
-                [value]="unit.id"
-                [class.award-form__child]="unit.type === 'DEPARTMENT'"
-                [attr.data-testid]="'recipient-option-' + unit.id"
-              >
-                {{ unitName(unit) }}
-              </mat-option>
-            }
-          </mat-select>
-          @if (errorKey('recipientOrganizationId'); as key) {
-            <mat-error>{{ key | transloco }}</mat-error>
-          }
-        </mat-form-field>
-      }
-    }
-
-    <mat-form-field class="award-form__field">
-      <mat-label>{{ 'awards.fields.titleUk' | transloco }}</mat-label>
-      <input
-        matInput
-        formControlName="titleUk"
-        [maxlength]="limits.title"
-        data-testid="award-title-uk"
-      />
-      @if (errorKey('titleUk'); as key) {
-        <mat-error>{{ key | transloco: { max: limits.title } }}</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="award-form__field">
-      <mat-label>{{ 'awards.fields.title' | transloco }}</mat-label>
-      <input
-        matInput
-        formControlName="title"
-        [maxlength]="limits.title"
-        data-testid="award-title"
-      />
-      <mat-hint>{{ 'awards.hints.title' | transloco }}</mat-hint>
-      @if (errorKey('title'); as key) {
-        <mat-error>{{ key | transloco: { max: limits.title } }}</mat-error>
-      }
-    </mat-form-field>
-    @if (form.hasError('titleRequired') && form.controls.title.touched) {
-      <p
-        class="award-form__problem award-form__inline"
-        role="alert"
-        data-testid="award-title-required"
-      >
-        {{ 'awards.errors.titleRequired' | transloco }}
-      </p>
-    }
-    @if (duplicates().length && form.pristine) {
-      <div
-        class="award-form__warning award-form__inline"
-        role="status"
-        data-testid="award-duplicate-warning"
-      >
-        <span>{{ 'awards.warnings.POSSIBLE_DUPLICATE' | transloco }}</span>
-        @for (match of duplicates(); track match.id) {
-          <a
-            [routerLink]="['/awards', match.id]"
-            [attr.data-testid]="'award-duplicate-' + match.id"
-          >
-            {{ matchTitle(match) }}
-          </a>
-        }
-      </div>
-    }
-
-    <mat-form-field class="award-form__field">
-      <mat-label>{{ 'awards.fields.category' | transloco }}</mat-label>
-      <mat-select formControlName="categoryId" data-testid="award-category">
-        <mat-option [value]="null" data-testid="category-option-none">{{
-          'awards.form.noCategory' | transloco
-        }}</mat-option>
-        @if (retiredCategory(); as retired) {
-          <mat-option [value]="retired.id">{{ optionName(retired) }}</mat-option>
-        }
-        @for (item of categories(); track item.category.id) {
-          <mat-option
-            [value]="item.category.id"
-            [class.award-form__child]="item.depth > 0"
-            [attr.data-testid]="'category-option-' + item.category.id"
-          >
-            {{ optionName(item.category) }}
-          </mat-option>
-        }
-      </mat-select>
-      @if (errorKey('categoryId'); as key) {
-        <mat-error>{{ key | transloco }}</mat-error>
-      }
-    </mat-form-field>
-    @if (suggestions().length && !categoryChosen()) {
-      <div class="award-form__suggestions award-form__inline" data-testid="category-suggestions">
-        <span class="award-form__suggestions-label">{{
-          'categories.suggestions' | transloco
-        }}</span>
-        @for (suggestion of suggestions(); track suggestion.id) {
-          <button
-            mat-stroked-button
-            type="button"
-            class="award-form__suggestion"
-            (click)="choose(suggestion)"
-            [attr.data-testid]="'category-suggestion-' + suggestion.id"
-          >
-            <span class="award-form__suggestion-name">
-              {{ 'categories.levels.' + suggestion.level | transloco }} ·
-              {{ optionName(suggestion) }}
-            </span>
-            <span class="award-form__suggestion-reasons">
-              @for (reason of suggestion.reasons; track reason; let last = $last) {
-                {{ 'categories.reasons.' + reason | transloco }}{{ last ? '' : ', ' }}
-              }
-            </span>
-          </button>
-        }
-      </div>
-    }
-
-    <mat-form-field class="award-form__field">
-      <mat-label>{{ 'awards.fields.awardingOrganization' | transloco }}</mat-label>
-      <input
-        matInput
-        formControlName="awardingOrganization"
-        [maxlength]="limits.organization"
-        data-testid="award-organization"
-      />
-      @if (errorKey('awardingOrganization'); as key) {
-        <mat-error>{{ key | transloco: { max: limits.organization } }}</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="award-form__field" subscriptSizing="dynamic">
-      <mat-label>{{ 'awards.fields.awardDate' | transloco }}</mat-label>
-      <input
-        matInput
-        [matDatepicker]="awardDatePicker"
-        formControlName="awardDate"
-        [min]="oldest"
-        [max]="today"
-        [placeholder]="'app.datePlaceholder' | transloco"
-        data-testid="award-date"
-      />
-      <mat-datepicker-toggle matIconSuffix [for]="awardDatePicker" />
-      <mat-datepicker #awardDatePicker [touchUi]="touch" />
-      @if (recentDate()) {
-        <mat-hint data-testid="award-recent-date">{{
-          'awards.warnings.RECENT_DATE' | transloco
-        }}</mat-hint>
-      }
-      @if (errorKey('awardDate'); as key) {
-        <mat-error>{{ key | transloco }}</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="award-form__field">
-      <mat-label>{{ 'awards.fields.descriptionUk' | transloco }}</mat-label>
-      <textarea
-        matInput
-        rows="3"
-        formControlName="descriptionUk"
-        [maxlength]="limits.description"
-        data-testid="award-description-uk"
-      ></textarea>
-      @if (errorKey('descriptionUk'); as key) {
-        <mat-error>{{ key | transloco: { max: limits.description } }}</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="award-form__field">
-      <mat-label>{{ 'awards.fields.description' | transloco }}</mat-label>
-      <textarea
-        matInput
-        rows="3"
-        formControlName="description"
-        [maxlength]="limits.description"
-        data-testid="award-description"
-      ></textarea>
-      @if (errorKey('description'); as key) {
-        <mat-error>{{ key | transloco: { max: limits.description } }}</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="award-form__field">
-      <mat-label>{{ 'awards.fields.externalUrl' | transloco }}</mat-label>
-      <input
-        matInput
-        type="url"
-        inputmode="url"
-        autocomplete="url"
-        formControlName="externalUrl"
-        [maxlength]="limits.url"
-        data-testid="award-url"
-      />
-      @if (errorKey('externalUrl'); as key) {
-        <mat-error>{{ key | transloco: { max: limits.url } }}</mat-error>
-      }
-    </mat-form-field>
-
-    @defer (on idle) {
-      <app-award-documents
-        [awardId]="current()?.id ?? null"
-        [uploads]="true"
-        [removable]="true"
-        [prepare]="prepareUpload"
-        [paused]="offline()"
-        (countChange)="documentCount.set($event)"
-        (lost)="documentsLost($event)"
-      />
-    } @placeholder {
-      <div class="award-form__documents-placeholder"></div>
-    }
-
-    <div class="award-form__offline" role="status" data-testid="award-offline">
-      @if (offlineNotice(); as notice) {
-        <p data-testid="award-offline-notice">{{ notice | transloco }}</p>
-      }
-      @if (submitRefused()) {
-        <p data-testid="award-offline-submit">{{ 'awards.offline.submit' | transloco }}</p>
-      }
-    </div>
-
-    <div class="award-form__actions">
-      @if (removable()) {
+  @if (loadFailed(); as loadProblem) {
+    <p class="award-form__problem" role="alert" data-testid="award-load-error">
+      {{ 'awards.form.loadProblems.' + loadProblem | transloco }}
+      @if (loadProblem !== 'denied') {
         <button
           mat-button
           type="button"
-          class="award-form__remove"
-          [disabled]="saving() || loading()"
-          (click)="remove()"
-          data-testid="award-remove"
+          [disabled]="loading()"
+          (click)="retry()"
+          data-testid="award-load-retry"
         >
-          {{ 'awards.remove.action' | transloco }}
+          {{ 'awards.form.retry' | transloco }}
         </button>
       }
-      <a mat-button [routerLink]="cancelLink()" data-testid="award-cancel">
-        {{ 'awards.form.cancel' | transloco }}
-      </a>
-      <button
-        mat-stroked-button
-        type="submit"
-        [disabled]="saving() || loading()"
-        data-testid="award-save"
-      >
-        {{ 'awards.form.saveDraft' | transloco }}
-      </button>
-      <button
-        mat-flat-button
-        type="button"
-        [disabled]="saving() || loading()"
-        (click)="submit()"
-        data-testid="award-submit"
-      >
-        {{ 'awards.form.submit' | transloco }}
-      </button>
-    </div>
-  </form>
+    </p>
+  } @else {
+    <form class="award-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      @if (unitOptions().length) {
+        <div class="award-form__recipient" data-testid="award-recipient">
+          <span class="award-form__recipient-label" id="award-recipient-label">{{
+            'awards.recipient.label' | transloco
+          }}</span>
+          <mat-radio-group formControlName="recipient" aria-labelledby="award-recipient-label">
+            <mat-radio-button value="PERSON" data-testid="award-recipient-person">{{
+              'awards.recipient.person' | transloco
+            }}</mat-radio-button>
+            <mat-radio-button value="UNIT" data-testid="award-recipient-unit">{{
+              'awards.recipient.unit' | transloco
+            }}</mat-radio-button>
+          </mat-radio-group>
+        </div>
+        @if (unitChosen()) {
+          <mat-form-field class="award-form__field">
+            <mat-label>{{ 'awards.recipient.unitPicker' | transloco }}</mat-label>
+            <mat-select
+              formControlName="recipientOrganizationId"
+              data-testid="award-recipient-picker"
+            >
+              @for (unit of unitOptions(); track unit.id) {
+                <mat-option
+                  [value]="unit.id"
+                  [class.award-form__child]="unit.type === 'DEPARTMENT'"
+                  [attr.data-testid]="'recipient-option-' + unit.id"
+                >
+                  {{ unitName(unit) }}
+                </mat-option>
+              }
+            </mat-select>
+            @if (errorKey('recipientOrganizationId'); as key) {
+              <mat-error>{{ key | transloco }}</mat-error>
+            }
+          </mat-form-field>
+        }
+      }
+
+      <mat-form-field class="award-form__field">
+        <mat-label>{{ 'awards.fields.titleUk' | transloco }}</mat-label>
+        <input
+          matInput
+          formControlName="titleUk"
+          [maxlength]="limits.title"
+          data-testid="award-title-uk"
+        />
+        @if (errorKey('titleUk'); as key) {
+          <mat-error>{{ key | transloco: { max: limits.title } }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field class="award-form__field">
+        <mat-label>{{ 'awards.fields.title' | transloco }}</mat-label>
+        <input
+          matInput
+          formControlName="title"
+          [maxlength]="limits.title"
+          data-testid="award-title"
+        />
+        <mat-hint>{{ 'awards.hints.title' | transloco }}</mat-hint>
+        @if (errorKey('title'); as key) {
+          <mat-error>{{ key | transloco: { max: limits.title } }}</mat-error>
+        }
+      </mat-form-field>
+      @if (form.hasError('titleRequired') && form.controls.title.touched) {
+        <p
+          class="award-form__problem award-form__inline"
+          role="alert"
+          data-testid="award-title-required"
+        >
+          {{ 'awards.errors.titleRequired' | transloco }}
+        </p>
+      }
+      @if (duplicates().length && form.pristine) {
+        <div
+          class="award-form__warning award-form__inline"
+          role="status"
+          data-testid="award-duplicate-warning"
+        >
+          <span>{{ 'awards.warnings.POSSIBLE_DUPLICATE' | transloco }}</span>
+          @for (match of duplicates(); track match.id) {
+            <a
+              [routerLink]="['/awards', match.id]"
+              [attr.data-testid]="'award-duplicate-' + match.id"
+            >
+              {{ matchTitle(match) }}
+            </a>
+          }
+        </div>
+      }
+
+      <mat-form-field class="award-form__field">
+        <mat-label>{{ 'awards.fields.category' | transloco }}</mat-label>
+        <mat-select formControlName="categoryId" data-testid="award-category">
+          <mat-option [value]="null" data-testid="category-option-none">{{
+            'awards.form.noCategory' | transloco
+          }}</mat-option>
+          @if (retiredCategory(); as retired) {
+            <mat-option [value]="retired.id">{{ optionName(retired) }}</mat-option>
+          }
+          @for (item of categories(); track item.category.id) {
+            <mat-option
+              [value]="item.category.id"
+              [class.award-form__child]="item.depth > 0"
+              [attr.data-testid]="'category-option-' + item.category.id"
+            >
+              {{ optionName(item.category) }}
+            </mat-option>
+          }
+        </mat-select>
+        @if (errorKey('categoryId'); as key) {
+          <mat-error>{{ key | transloco }}</mat-error>
+        }
+      </mat-form-field>
+      @if (suggestions().length && !categoryChosen()) {
+        <div class="award-form__suggestions award-form__inline" data-testid="category-suggestions">
+          <span class="award-form__suggestions-label">{{
+            'categories.suggestions' | transloco
+          }}</span>
+          @for (suggestion of suggestions(); track suggestion.id) {
+            <button
+              mat-stroked-button
+              type="button"
+              class="award-form__suggestion"
+              (click)="choose(suggestion)"
+              [attr.data-testid]="'category-suggestion-' + suggestion.id"
+            >
+              <span class="award-form__suggestion-name">
+                {{ 'categories.levels.' + suggestion.level | transloco }} ·
+                {{ optionName(suggestion) }}
+              </span>
+              <span class="award-form__suggestion-reasons">
+                @for (reason of suggestion.reasons; track reason; let last = $last) {
+                  {{ 'categories.reasons.' + reason | transloco }}{{ last ? '' : ', ' }}
+                }
+              </span>
+            </button>
+          }
+        </div>
+      }
+
+      <mat-form-field class="award-form__field">
+        <mat-label>{{ 'awards.fields.awardingOrganization' | transloco }}</mat-label>
+        <input
+          matInput
+          formControlName="awardingOrganization"
+          [maxlength]="limits.organization"
+          data-testid="award-organization"
+        />
+        @if (errorKey('awardingOrganization'); as key) {
+          <mat-error>{{ key | transloco: { max: limits.organization } }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field class="award-form__field" subscriptSizing="dynamic">
+        <mat-label>{{ 'awards.fields.awardDate' | transloco }}</mat-label>
+        <input
+          matInput
+          [matDatepicker]="awardDatePicker"
+          formControlName="awardDate"
+          [min]="oldest"
+          [max]="today"
+          [placeholder]="'app.datePlaceholder' | transloco"
+          data-testid="award-date"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="awardDatePicker" />
+        <mat-datepicker #awardDatePicker [touchUi]="touch" />
+        @if (recentDate()) {
+          <mat-hint data-testid="award-recent-date">{{
+            'awards.warnings.RECENT_DATE' | transloco
+          }}</mat-hint>
+        }
+        @if (errorKey('awardDate'); as key) {
+          <mat-error>{{ key | transloco }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field class="award-form__field">
+        <mat-label>{{ 'awards.fields.descriptionUk' | transloco }}</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="descriptionUk"
+          [maxlength]="limits.description"
+          data-testid="award-description-uk"
+        ></textarea>
+        @if (errorKey('descriptionUk'); as key) {
+          <mat-error>{{ key | transloco: { max: limits.description } }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field class="award-form__field">
+        <mat-label>{{ 'awards.fields.description' | transloco }}</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="description"
+          [maxlength]="limits.description"
+          data-testid="award-description"
+        ></textarea>
+        @if (errorKey('description'); as key) {
+          <mat-error>{{ key | transloco: { max: limits.description } }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field class="award-form__field">
+        <mat-label>{{ 'awards.fields.externalUrl' | transloco }}</mat-label>
+        <input
+          matInput
+          type="url"
+          inputmode="url"
+          autocomplete="url"
+          formControlName="externalUrl"
+          [maxlength]="limits.url"
+          data-testid="award-url"
+        />
+        @if (errorKey('externalUrl'); as key) {
+          <mat-error>{{ key | transloco: { max: limits.url } }}</mat-error>
+        }
+      </mat-form-field>
+
+      @defer (on idle) {
+        <app-award-documents
+          [awardId]="current()?.id ?? null"
+          [uploads]="true"
+          [removable]="true"
+          [prepare]="prepareUpload"
+          [paused]="offline()"
+          (countChange)="documentCount.set($event)"
+          (lost)="documentsLost($event)"
+        />
+      } @placeholder {
+        <div class="award-form__documents-placeholder"></div>
+      }
+
+      <div class="award-form__offline" role="status" data-testid="award-offline">
+        @if (offlineNotice(); as notice) {
+          <p data-testid="award-offline-notice">{{ notice | transloco }}</p>
+        }
+        @if (submitRefused()) {
+          <p data-testid="award-offline-submit">{{ 'awards.offline.submit' | transloco }}</p>
+        }
+      </div>
+
+      <div class="award-form__actions">
+        @if (removable()) {
+          <button
+            mat-button
+            type="button"
+            class="award-form__remove"
+            [disabled]="saving() || loading()"
+            (click)="remove()"
+            data-testid="award-remove"
+          >
+            {{ 'awards.remove.action' | transloco }}
+          </button>
+        }
+        <a mat-button [routerLink]="cancelLink()" data-testid="award-cancel">
+          {{ 'awards.form.cancel' | transloco }}
+        </a>
+        <button
+          mat-stroked-button
+          type="submit"
+          [disabled]="saving() || loading()"
+          data-testid="award-save"
+        >
+          {{ 'awards.form.saveDraft' | transloco }}
+        </button>
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="saving() || loading()"
+          (click)="submit()"
+          data-testid="award-submit"
+        >
+          {{ 'awards.form.submit' | transloco }}
+        </button>
+      </div>
+    </form>
+  }
 }
