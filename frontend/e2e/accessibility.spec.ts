@@ -5,9 +5,11 @@ import { dirname, join } from 'node:path';
 import { expect, test } from './fixtures';
 
 import {
+  AXE_TAGS,
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
+  isSerious,
   settled,
   signIn,
   signInAsSeed,
@@ -26,7 +28,6 @@ import {
 type Page = import('@playwright/test').Page;
 type AxeResults = Awaited<ReturnType<AxeBuilder['analyze']>>;
 
-const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const LANGUAGES = ['uk', 'en'] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const DESKTOP = { width: 1280, height: 800 };
@@ -54,7 +55,7 @@ interface Scan {
 
 async function violations(page: Page): Promise<AxeResults['violations']> {
   const excepted = [...new Set(EXCEPTIONS.map((exception) => exception.rule))];
-  const found = (await new AxeBuilder({ page }).withTags(TAGS).disableRules(excepted).analyze())
+  const found = (await new AxeBuilder({ page }).withTags(AXE_TAGS).disableRules(excepted).analyze())
     .violations;
   for (const rule of excepted) {
     let builder = new AxeBuilder({ page }).withRules([rule]);
@@ -72,7 +73,7 @@ async function scan({ page, label, where, language, signedIn }: Scan): Promise<s
   const report = (minor[test.info().title] ??= {});
   const problems: string[] = [];
   for (const violation of await violations(page)) {
-    if (violation.impact === 'serious' || violation.impact === 'critical') {
+    if (isSerious(violation)) {
       problems.push(
         `${where}: ${violation.id} ${violation.nodes.map((node) => node.target).join(' | ')}`,
       );

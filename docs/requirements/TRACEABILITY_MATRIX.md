@@ -45,7 +45,7 @@ This Requirements Traceability Matrix (RTM) provides complete traceability from 
 | **NFR-007** | Security | High | Security Standards, InfoSec Requirements | Authentication and authorization security | OAuth2/JWT + RBAC | TC-027, TC-028 | ⏳ Pending |
 | **NFR-008** | Security | High | GDPR Requirements, Data Protection | Data encryption and protection | AES-256 + TLS 1.3 | TC-029 | ⏳ Pending |
 | **NFR-009** | Usability | High | User Research, Persona Requirements | Mobile responsiveness and PWA | Lighthouse score >90 | TC-030 | ⏳ Pending |
-| **NFR-010** | Compliance | High | WCAG Requirements, Accessibility | Accessibility compliance | WCAG AA audit pass | TC-031 | ⏳ Pending |
+| **NFR-010** | Compliance | High | WCAG Requirements, Accessibility | Accessibility compliance | WCAG AA audit pass | TC-031 | ✅ Automated axe sweep of every route (Feature 8.2); no manual audit |
 | **NFR-011** | Compliance | High | GDPR Officer, Legal Requirements | GDPR compliance validation | Zero audit findings | TC-032 | ⏳ Pending |
 
 ---

@@ -15,6 +15,9 @@ type Page = import('@playwright/test').Page;
 /** Tab stops tried before a control counts as unreachable by keyboard. */
 const MAX_TABS = 80;
 
+/** Tab stops checked for a focus indicator on each screen: the shell and the first controls of the page. */
+const INDICATOR_STOPS = 40;
+
 /** Presses Tab until the element with the test id has the focus; fails when it is never reached. */
 async function tabTo(page: Page, testId: string): Promise<void> {
   for (let presses = 0; presses < MAX_TABS; presses++) {
@@ -77,12 +80,18 @@ test.describe('keyboard and page structure', () => {
 
   test('ac1_5 every focused control shows an indicator', async ({ page }) => {
     await signInAsSeed(page, SEED.employee);
-    for (const scheme of ['light', 'dark'] as const) {
+    const screens = [
+      { path: '/awards/new', ready: 'award-title-uk' },
+      { path: '/awards', ready: 'award-add' },
+    ];
+    for (const [scheme, screen] of (['light', 'dark'] as const).flatMap((each) =>
+      screens.map((item) => [each, item] as const),
+    )) {
       await page.emulateMedia({ colorScheme: scheme });
-      await page.goto('/awards/new');
-      await expect(page.getByTestId('award-title-uk')).toBeVisible();
+      await page.goto(screen.path);
+      await expect(page.getByTestId(screen.ready)).toBeVisible();
       const missing: string[] = [];
-      for (let stop = 0; stop < 40; stop++) {
+      for (let stop = 0; stop < INDICATOR_STOPS; stop++) {
         await page.keyboard.press('Tab');
         const result = await page.evaluate(() => {
           const element = document.activeElement as HTMLElement | null;
@@ -107,10 +116,10 @@ test.describe('keyboard and page structure', () => {
             : `${element.tagName}.${element.className}`.slice(0, 80);
         });
         if (result) {
-          missing.push(`${scheme}: ${result}`);
+          missing.push(result);
         }
       }
-      expect(missing).toEqual([]);
+      expect(missing, `${screen.path}, ${scheme}`).toEqual([]);
     }
   });
 
@@ -136,51 +145,84 @@ test.describe('keyboard and page structure', () => {
 
   test('ac1_7 an award is entered and submitted with the keyboard only', async ({ browser }) => {
     const email = await freshEmployee(browser, 'keyboard');
-    const page = await (await browser.newContext()).newPage();
-    await signIn(page, email, FRESH_PASSWORD);
-    await expect(page.getByTestId('nav-awards')).toBeVisible();
-
-    await tabTo(page, 'nav-awards');
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/awards$/);
-    await tabTo(page, 'award-add');
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/awards\/new$/);
-
-    await tabTo(page, 'award-title-uk');
-    await page.keyboard.type(`Грамота з клавіатури ${uniqueToken()}`);
-    await tabTo(page, 'award-category');
-    await page.keyboard.press('Enter');
-    for (let step = 0; step < 30; step++) {
-      const active = await page.evaluate(() =>
-        document.querySelector('mat-option.mat-mdc-option-active')?.getAttribute('data-testid'),
-      );
-      if (active === 'category-option-13') {
-        break;
-      }
-      await page.keyboard.press('ArrowDown');
+    const context = await browser.newContext();
+    try {
+      await enterAndSubmit(await context.newPage(), email);
+    } finally {
+      await context.close();
     }
-    await page.keyboard.press('Enter');
-    await tabTo(page, 'award-organization');
-    await page.keyboard.type('Міністерство освіти і науки України');
-    await tabTo(page, 'award-date');
-    await page.keyboard.type(pastDay());
+  });
 
-    await tabTo(page, 'documents-drop');
-    const chooser = page.waitForEvent('filechooser');
-    await page.keyboard.press('Enter');
-    await (
-      await chooser
-    ).setFiles({
-      name: 'грамота.pdf',
-      mimeType: 'application/pdf',
-      buffer: Buffer.from(`%PDF-1.4\n% ${uniqueToken()}\n${' '.repeat(2048)}`),
-    });
-    await expect(page.getByTestId('documents-list').locator('li')).toHaveCount(1);
+  test('ac1_4 a confirmed leave focuses the next page and a cancelled one stays', async ({
+    page,
+  }) => {
+    await signInAsSeed(page, SEED.employee);
+    await page.goto('/awards/new');
+    await page.getByTestId('award-title-uk').fill('Грамота');
 
-    await tabTo(page, 'award-submit');
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/awards\/\d+\/submitted$/);
-    await page.context().close();
+    await page.getByTestId('nav-awards').click();
+    await page.getByTestId('confirm-cancel').click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/awards\/new$/);
+    await expect(page).toHaveTitle(/^Нова нагорода — /);
+
+    await page.getByTestId('nav-awards').click();
+    await page.getByTestId('confirm-accept').click();
+    await expect(page).toHaveURL(/\/awards$/);
+    await expect(page.locator('main h1')).toBeFocused();
+    await expect(page).toHaveTitle(/^Мої нагороди — /);
   });
 });
+
+async function enterAndSubmit(page: Page, email: string): Promise<void> {
+  await signIn(page, email, FRESH_PASSWORD);
+  await expect(page.getByTestId('nav-awards')).toBeVisible();
+
+  await tabTo(page, 'nav-awards');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/awards$/);
+  await tabTo(page, 'award-add');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/awards\/new$/);
+
+  await tabTo(page, 'award-title-uk');
+  await page.keyboard.type(`Грамота з клавіатури ${uniqueToken()}`);
+  await tabTo(page, 'award-category');
+  await page.keyboard.press('Enter');
+  for (let step = 0; step < 30; step++) {
+    const active = await page.evaluate(() =>
+      document.querySelector('mat-option.mat-mdc-option-active')?.getAttribute('data-testid'),
+    );
+    if (active === 'category-option-13') {
+      break;
+    }
+    await page.keyboard.press('ArrowDown');
+  }
+  await expect(page.getByTestId('category-option-13')).toHaveClass(/mat-mdc-option-active/);
+  await page.keyboard.press('Enter');
+  await tabTo(page, 'award-organization');
+  await page.keyboard.type('Міністерство освіти і науки України');
+  await tabTo(page, 'award-date');
+  await page.keyboard.type(pastDay());
+
+  await tabTo(page, 'documents-drop');
+  const chooser = page.waitForEvent('filechooser');
+  await page.keyboard.press('Enter');
+  await (
+    await chooser
+  ).setFiles({
+    name: 'грамота.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from(`%PDF-1.4\n% ${uniqueToken()}\n${' '.repeat(2048)}`),
+  });
+  await expect(page.getByTestId('documents-list').locator('li')).toHaveCount(1);
+
+  await tabTo(page, 'award-submit');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/awards\/\d+\/submitted$/);
+
+  await page.goBack();
+  await expect(page).not.toHaveURL(/\/submitted$/);
+  await expect(page.locator('main').locator('h1, h2, mat-card-title').first()).toBeFocused();
+  await expect(page).toHaveTitle(/^.+ — .+$/);
+}

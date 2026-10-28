@@ -189,17 +189,23 @@ export async function settled(page: Page): Promise<void> {
   );
 }
 
+/** The axe rule tags of WCAG 2.1 levels A and AA. */
+export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+/** Whether an axe finding fails a spec: serious and critical do, moderate and minor are reported only. */
+export function isSerious(violation: { impact?: string | null }): boolean {
+  return violation.impact === 'serious' || violation.impact === 'critical';
+}
+
 /**
  * The serious and critical WCAG 2.1 AA violations of the page, with the elements they concern; runs once the page
  * has settled, so that half-faded text is not reported as low contrast.
  */
 export async function seriousViolations(page: Page): Promise<string[]> {
   await settled(page);
-  const result = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-    .analyze();
+  const result = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   return result.violations
-    .filter((violation) => violation.impact === 'serious' || violation.impact === 'critical')
+    .filter(isSerious)
     .map(
       (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(' | ')}`,
     );
