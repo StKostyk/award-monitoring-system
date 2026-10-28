@@ -72,7 +72,7 @@
     </p>
   } @else {
     <form class="award-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-      @if (unitOptions().length) {
+      @if (recipientShown()) {
         <div class="award-form__recipient" data-testid="award-recipient">
           <span class="award-form__recipient-label" id="award-recipient-label">{{
             'awards.recipient.label' | transloco

@@ -213,6 +213,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       ? [current, ...this.units()]
       : this.units();
   });
+  /** A unit no longer offered was restored or refused; the choice stays so that the award can go to «Я». */
+  readonly recipientKept = signal(false);
+  readonly recipientShown = computed(() => this.unitOptions().length > 0 || this.recipientKept());
   readonly editing = computed(() => this.current() !== null);
   readonly removable = computed(() => {
     const award = this.current();
@@ -346,6 +349,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       this.creationKey ??= this.copies.load<string>(userId, NEW_KEY);
     }
     if (copy) {
+      this.recipientKept.update((kept) => kept || copy.recipientOrganizationId !== null);
       this.form.patchValue({
         ...copy,
         recipient: copy.recipientOrganizationId ? 'UNIT' : 'PERSON',
@@ -726,6 +730,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       const control = this.form.get(problem.field);
       control?.setErrors({ server: problem.code });
       control?.markAsTouched();
+      if (problem.field === 'recipientOrganizationId') {
+        this.recipientKept.set(true);
+      }
     }
     this.problem.set(this.problemKey(error));
   }
@@ -752,8 +759,15 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   }
 
   private problemKey(error: unknown): string {
-    return `awards.problems.${knownProblem(problemType(error), KNOWN_PROBLEMS)}`;
+    const fields = fieldProblems(error);
+    const onlyRecipient =
+      fields.length === 1 &&
+      fields[0].field === 'recipientOrganizationId' &&
+      fields[0].code === 'out-of-scope';
+    const type = onlyRecipient ? 'recipient-out-of-scope' : problemType(error);
+    return `awards.problems.${knownProblem(type, KNOWN_PROBLEMS)}`;
   }
+
   private clearMarkedErrors(): void {
     this.problem.set(null);
     for (const control of Object.values(this.form.controls)) {

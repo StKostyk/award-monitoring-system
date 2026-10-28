@@ -315,6 +315,74 @@ describe('AwardFormComponent', () => {
     expect(component.unitOptions()).toEqual([unit]);
   });
 
+  it('ac1_restored_unit_copy_out_of_scope_shows_the_recipient_message_and_saves_for_me', async () => {
+    copies.save('21', 'award-new', {
+      ...emptyForm(),
+      titleUk: 'Грамота факультету',
+      recipientOrganizationId: 9,
+    });
+    await open(null);
+    component.restore();
+    fixture.detectChanges();
+    service.create.mockReturnValue(created(award({ id: 8 })));
+    service.create.mockReturnValueOnce(
+      throwError(() =>
+        problem('validation-failed', 422, [
+          { field: 'recipientOrganizationId', code: 'out-of-scope', message: 'x' },
+        ]),
+      ),
+    );
+
+    component.save();
+    fixture.detectChanges();
+
+    expect(component.problem()).toBe('awards.problems.recipient-out-of-scope');
+    expect(component.errorKey('recipientOrganizationId')).toBe('awards.errors.out-of-scope');
+    const person = fixture.nativeElement.querySelector('[data-testid="award-recipient-person"]');
+    expect(person).not.toBeNull();
+
+    type('recipient', 'PERSON');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="award-recipient"]')).not.toBeNull();
+    component.save();
+
+    expect(service.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ titleUk: 'Грамота факультету', recipientOrganizationId: null }),
+      expect.any(String),
+    );
+    expect(component.current()?.id).toBe(8);
+    expect(component.problem()).toBeNull();
+  });
+
+  it('ac2_a_refused_recipient_beside_other_fields_stays_marked_on_a_shown_picker', async () => {
+    copies.save('21', 'award-new', {
+      ...emptyForm(),
+      titleUk: 'Грамота',
+      recipientOrganizationId: 9,
+    });
+    await open(null);
+    component.restore();
+    fixture.detectChanges();
+    service.create.mockReturnValue(
+      throwError(() =>
+        problem('validation-failed', 422, [
+          { field: 'titleUk', code: 'too-long', message: 'x' },
+          { field: 'recipientOrganizationId', code: 'out-of-scope', message: 'x' },
+        ]),
+      ),
+    );
+
+    component.save();
+    fixture.detectChanges();
+
+    expect(component.problem()).toBe('awards.problems.validation-failed');
+    expect(component.errorKey('recipientOrganizationId')).toBe('awards.errors.out-of-scope');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="award-recipient-picker"]'),
+    ).not.toBeNull();
+  });
+
   it('ac1_1_saves_a_draft_with_only_a_title_and_moves_to_its_address', async () => {
     await open(null);
     service.create.mockReturnValue(created(award()));
