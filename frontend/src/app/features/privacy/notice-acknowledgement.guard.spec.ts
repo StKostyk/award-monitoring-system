@@ -74,6 +74,7 @@ describe('noticeAcknowledgementGuard', () => {
     '/privacy/export',
     '/forbidden',
     '/not-found',
+    '/offline?next=%2F',
   ])('ac1_8 keeps %s open without an acknowledgement', async (url) => {
     consents.overview.mockResolvedValue(overview(true));
 

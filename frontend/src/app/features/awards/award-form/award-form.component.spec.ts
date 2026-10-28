@@ -794,6 +794,22 @@ describe('AwardFormComponent', () => {
     expect(copies.load('21', 'award-new')).toBeNull();
   });
 
+  it('ac1_a_confirmed_leave_neither_asks_again_nor_keeps_a_copy_on_unload', async () => {
+    await open(null);
+    type('titleUk', 'Половина');
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    (component.confirmLeave() as Observable<boolean>).subscribe();
+    dialog.open.mockClear();
+    const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
+
+    expect(component.confirmLeave()).toBe(true);
+    component.keepOnUnload(event);
+
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(copies.load('21', 'award-new')).toBeNull();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it('ac1_9_a_submitted_award_opens_read_only', async () => {
     service.get.mockReturnValue(of(award({ status: 'PENDING' })));
     await open('5');

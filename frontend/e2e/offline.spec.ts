@@ -1,6 +1,14 @@
 import { expect, test } from './fixtures';
 
-import { OFFLINE_NOTICE, RECONNECT_MS, SEED, seriousViolations, signInAsSeed } from './helpers';
+import {
+  OFFLINE_NOTICE,
+  RECONNECT_MS,
+  SEED,
+  seriousViolations,
+  signInAsSeed,
+  storedCopies,
+  uniqueToken,
+} from './helpers';
 
 const { employee } = SEED;
 
@@ -61,6 +69,43 @@ test.describe('connection loss', () => {
         Object.keys(sessionStorage).filter((key) => /access_token|refresh_token/.test(key)),
       ),
     ).toEqual([]);
+    await context.setOffline(false);
+  });
+
+  test('ac1 asks about unsaved values before signing out without a connection', async ({
+    page,
+    context,
+  }) => {
+    const tokens = (): Promise<string[]> =>
+      page.evaluate(() =>
+        Object.keys(sessionStorage).filter((key) => /access_token|refresh_token/.test(key)),
+      );
+    await signInAsSeed(page, employee);
+    await page.goto('/awards/new');
+    const suggested = page.waitForResponse((response) =>
+      response.url().includes('/award-categories/suggestions'),
+    );
+    await page.getByTestId('award-title-uk').fill(`Грамота перед виходом ${uniqueToken()}`);
+    await suggested;
+    await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
+
+    await context.setOffline(true);
+    await expect(page.getByTestId('offline-notice')).toContainText(OFFLINE_NOTICE);
+    await page.getByTestId('logout').click();
+    await page.getByTestId('confirm-cancel').click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    await expect(page).toHaveURL(/\/awards\/new$/);
+    expect(await storedCopies(page)).toBeGreaterThan(0);
+    expect(await tokens()).not.toEqual([]);
+    await expect(page.getByTestId('logout')).toBeVisible();
+
+    await page.getByTestId('logout').click();
+    await page.getByTestId('confirm-accept').click();
+
+    await expect(page).toHaveURL(/\/offline\?next=%2F/);
+    expect(await storedCopies(page)).toBe(0);
+    expect(await tokens()).toEqual([]);
     await context.setOffline(false);
   });
 

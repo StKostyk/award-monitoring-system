@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Router, UrlTree } from '@angular/router';
+import { NavigationCancel, NavigationCancellationCode, Router, UrlTree } from '@angular/router';
 import { OAuthErrorEvent, OAuthService } from 'angular-oauth2-oidc';
 import { debounceTime, filter, firstValueFrom } from 'rxjs';
 
@@ -157,10 +157,18 @@ export class AuthService {
     return state ? decodeURIComponent(state) : '/';
   }
 
-  /** Signs out; without a connection the tokens are dropped on this device only and the offline page opens. */
+  /**
+   * Signs out unless the current page refuses to be left, so a form with unsaved values asks before its copy and
+   * the tokens are removed; a landing page that fails to open does not stop the sign-out. Without a connection the
+   * tokens are dropped on this device only and the offline page opens.
+   */
   async logout(): Promise<void> {
+    const online = this.connectivity.online();
+    if (!(await this.leaveFor(online ? '/' : this.offlinePage('/')))) {
+      return;
+    }
     this.formCopies.clearAll();
-    if (this.connectivity.online()) {
+    if (online) {
       try {
         await this.oauth.revokeTokenAndLogout();
         this.forget();
@@ -262,6 +270,18 @@ export class AuthService {
     if (userId) {
       this.formCopies.clearOthers(userId);
     }
+  }
+
+  private async leaveFor(target: string | UrlTree): Promise<boolean> {
+    let refused = false;
+    const cancels = this.router.events
+      .pipe(filter((event) => event instanceof NavigationCancel))
+      .subscribe((event) => {
+        refused = event.code === NavigationCancellationCode.GuardRejected;
+      });
+    await this.router.navigateByUrl(target).catch(() => false);
+    cancels.unsubscribe();
+    return !refused;
   }
 
   private forget(): void {

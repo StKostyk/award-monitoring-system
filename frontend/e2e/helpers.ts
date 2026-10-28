@@ -246,6 +246,13 @@ export function sql(statement: string): string {
   ).trim();
 }
 
+/** How many award form copies this browser keeps. */
+export function storedCopies(page: Page): Promise<number> {
+  return page.evaluate(
+    () => Object.keys(localStorage).filter((key) => key.startsWith('awards.form-copy.')).length,
+  );
+}
+
 /** Twelve random lower-case letters, to tell the records of one test run apart. */
 export function uniqueToken(): string {
   return Array.from(
