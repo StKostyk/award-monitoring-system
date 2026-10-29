@@ -10,6 +10,8 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
+import ua.edu.chnu.awards.auth.security.HashingAuthorizationService;
+
 /**
  * Registered clients, authorizations and consents of the authorization server, kept in the database.
  */
@@ -24,7 +26,8 @@ public class AuthorizationStoreConfig {
     @Bean
     OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
                                                     RegisteredClientRepository registeredClientRepository) {
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        return new HashingAuthorizationService(
+            new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository));
     }
 
     @Bean
