@@ -27,6 +27,7 @@ import { LanguageService } from './core/i18n/language.service';
 import { PageTitleStrategy } from './core/i18n/page-title.strategy';
 import { UpdatePromptService } from './core/pwa/update-prompt.service';
 import { TranslocoHttpLoader } from './core/i18n/transloco.loader';
+import { prepareDateFormats } from './shared/date-format';
 import { reducedMotion } from './shared/touch';
 
 export const appConfig: ApplicationConfig = {
@@ -58,11 +59,13 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       inject(ColorSchemeService).init();
       inject(UpdatePromptService).init();
-      return Promise.all([
+      const ready = Promise.all([
         inject(LanguageService).init(),
         inject(BrandService).init(),
         inject(AuthService).init(),
       ]);
+      prepareDateFormats();
+      return ready;
     }),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

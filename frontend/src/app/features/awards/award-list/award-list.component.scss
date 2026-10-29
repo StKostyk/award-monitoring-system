@@ -29,6 +29,11 @@
   grid-column: 1 / -1;
 }
 
+.awards__filters-toggle {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
 .awards__list {
   list-style: none;
   margin: 0;
@@ -66,45 +71,21 @@
   font: var(--mat-sys-body-medium);
 }
 
-.awards__unit {
-  max-width: 100%;
-  height: auto;
-  min-height: 32px;
-  --mat-chip-outline-color: var(--mat-sys-outline-variant);
-  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
-
-  ::ng-deep .mdc-evolution-chip__cell,
-  ::ng-deep .mdc-evolution-chip__action,
-  ::ng-deep .mdc-evolution-chip__text-label {
-    white-space: normal;
-    overflow: visible;
-  }
-}
-
 .awards__chip {
   flex-shrink: 0;
-  --mat-chip-outline-width: 0;
-  --mat-chip-label-text-weight: 700;
 }
 
 @each $status in (DRAFT, PENDING, APPROVED, REJECTED, ARCHIVED) {
   $name: string.to-lower-case($status);
 
   .awards__chip--#{$status} {
-    --mat-chip-elevated-container-color: var(--app-status-#{$name});
-    --mat-chip-label-text-color: var(--app-on-status-#{$name});
+    background: var(--app-status-#{$name});
+    color: var(--app-on-status-#{$name});
   }
 }
 
 .awards__chip--ARCHIVED {
-  --mat-chip-outline-width: 1px;
-  --mat-chip-outline-color: var(--mat-sys-outline);
-}
-
-.awards__shared {
-  flex-shrink: 0;
-  --mat-chip-outline-color: var(--mat-sys-outline-variant);
-  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+  border-color: var(--mat-sys-outline);
 }
 
 .awards__state {

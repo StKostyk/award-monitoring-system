@@ -14,60 +14,79 @@
     [value]="filters().q"
     (search)="filter({ q: $event })"
   />
-  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'awards.filters.status' | transloco }}</mat-label>
-    <mat-select
-      [ngModel]="filters().status"
-      (ngModelChange)="filter({ status: $event })"
-      data-testid="filter-status"
+  @if (narrow()) {
+    <button
+      mat-stroked-button
+      type="button"
+      class="awards__filters-toggle"
+      [attr.aria-expanded]="filtersOpen()"
+      (click)="filtersOpen.set(!filtersOpen())"
+      data-testid="filters-toggle"
     >
-      <mat-option [value]="null">{{ 'awards.filters.all' | transloco }}</mat-option>
-      @for (status of statuses; track status) {
-        <mat-option [value]="status">{{ 'awards.status.' + status | transloco }}</mat-option>
+      <mat-icon>filter_list</mat-icon>
+      @if (activeFilters() > 0) {
+        {{ 'awards.filters.toggleActive' | transloco: { count: activeFilters() } }}
+      } @else {
+        {{ 'awards.filters.toggle' | transloco }}
       }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'awards.filters.category' | transloco }}</mat-label>
-    <mat-select
-      [ngModel]="filters().category"
-      (ngModelChange)="filter({ category: $event })"
-      data-testid="filter-category"
-    >
-      <mat-option [value]="null">{{ 'awards.filters.all' | transloco }}</mat-option>
-      @for (item of categories(); track item.category.id) {
-        <mat-option [value]="item.category.id" [class.awards__child]="item.depth > 0">
-          {{ optionName(item.category) }}
-        </mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'awards.filters.dateFrom' | transloco }}</mat-label>
-    <input
-      matInput
-      [matDatepicker]="dateFromPicker"
-      [ngModel]="filters().dateFrom"
-      (dateChange)="filter({ dateFrom: validDate($event.value) })"
-      [placeholder]="'app.datePlaceholder' | transloco"
-      data-testid="filter-date-from"
-    />
-    <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker" />
-    <mat-datepicker #dateFromPicker />
-  </mat-form-field>
-  <mat-form-field class="awards__filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'awards.filters.dateTo' | transloco }}</mat-label>
-    <input
-      matInput
-      [matDatepicker]="dateToPicker"
-      [ngModel]="filters().dateTo"
-      (dateChange)="filter({ dateTo: validDate($event.value) })"
-      [placeholder]="'app.datePlaceholder' | transloco"
-      data-testid="filter-date-to"
-    />
-    <mat-datepicker-toggle matIconSuffix [for]="dateToPicker" />
-    <mat-datepicker #dateToPicker />
-  </mat-form-field>
+    </button>
+  }
+  @if (!narrow() || filtersOpen()) {
+    <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'awards.filters.status' | transloco }}</mat-label>
+      <mat-select
+        [ngModel]="filters().status"
+        (ngModelChange)="filter({ status: $event })"
+        data-testid="filter-status"
+      >
+        <mat-option [value]="null">{{ 'awards.filters.all' | transloco }}</mat-option>
+        @for (status of statuses; track status) {
+          <mat-option [value]="status">{{ 'awards.status.' + status | transloco }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'awards.filters.category' | transloco }}</mat-label>
+      <mat-select
+        [ngModel]="filters().category"
+        (ngModelChange)="filter({ category: $event })"
+        data-testid="filter-category"
+      >
+        <mat-option [value]="null">{{ 'awards.filters.all' | transloco }}</mat-option>
+        @for (item of categories(); track item.category.id) {
+          <mat-option [value]="item.category.id" [class.awards__child]="item.depth > 0">
+            {{ optionName(item.category) }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'awards.filters.dateFrom' | transloco }}</mat-label>
+      <input
+        matInput
+        [matDatepicker]="dateFromPicker"
+        [ngModel]="filters().dateFrom"
+        (dateChange)="filter({ dateFrom: validDate($event.value) })"
+        [placeholder]="'app.datePlaceholder' | transloco"
+        data-testid="filter-date-from"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="dateFromPicker" />
+      <mat-datepicker #dateFromPicker />
+    </mat-form-field>
+    <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'awards.filters.dateTo' | transloco }}</mat-label>
+      <input
+        matInput
+        [matDatepicker]="dateToPicker"
+        [ngModel]="filters().dateTo"
+        (dateChange)="filter({ dateTo: validDate($event.value) })"
+        [placeholder]="'app.datePlaceholder' | transloco"
+        data-testid="filter-date-to"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="dateToPicker" />
+      <mat-datepicker #dateToPicker />
+    </mat-form-field>
+  }
 </div>
 
 @if (loading()) {
@@ -95,10 +114,10 @@
         <span class="awards__name" data-testid="award-title">{{ title(award) }}</span>
         <span class="awards__meta">
           @if (award.recipient.organization; as unit) {
-            <mat-chip class="awards__unit" data-testid="award-unit">
+            <span class="app-chip" data-testid="award-unit">
               <span class="cdk-visually-hidden">{{ 'awards.fields.recipient' | transloco }}: </span
               >{{ unitName(unit) }}
-            </mat-chip>
+            </span>
           }
           @if (award.category) {
             <span>{{ category(award) }}</span>
@@ -109,17 +128,17 @@
         </span>
       </a>
       <span class="awards__state">
-        <mat-chip
-          class="awards__chip"
+        <span
+          class="app-chip app-chip--filled awards__chip"
           [class]="'awards__chip--' + award.status"
           data-testid="award-status"
         >
           {{ 'awards.status.' + award.status | transloco }}
-        </mat-chip>
+        </span>
         @if (sharedWith(award); as visibility) {
-          <mat-chip class="awards__shared" data-testid="award-visibility">
+          <span class="app-chip awards__chip" data-testid="award-visibility">
             {{ 'awards.visibility.chips.' + visibility | transloco }}
-          </mat-chip>
+          </span>
         }
         @if (award.request; as request) {
           <app-request-timing [request]="request" />

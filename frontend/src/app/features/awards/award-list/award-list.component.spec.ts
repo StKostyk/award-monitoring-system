@@ -1,3 +1,4 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -66,7 +67,12 @@ const translations = {
       add: 'Додати нагороду',
       empty: 'Нагород ще немає.',
       noMatch: 'Немає нагород, що відповідають пошуку.',
-      filters: { search: 'Пошук у моїх нагородах' },
+      filters: {
+        search: 'Пошук у моїх нагородах',
+        status: 'Статус',
+        toggle: 'Фільтри',
+        toggleActive: 'Фільтри: {{count}}',
+      },
       messages: { removed: 'Чернетку видалено.' },
       status: { DRAFT: 'Чернетка', PENDING: 'На розгляді', APPROVED: 'Затверджено' },
       visibility: { chips: { UNIVERSITY: 'Колегам', PUBLIC: 'Публічно' } },
@@ -81,7 +87,7 @@ describe('AwardListComponent', () => {
     readPermissions(token({ permissions: ['award:read:own', 'award:create'] })),
   );
 
-  async function create(): Promise<void> {
+  async function create(narrow = false): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         AwardListComponent,
@@ -99,6 +105,10 @@ describe('AwardListComponent', () => {
         { provide: AwardsService, useValue: { categories: () => of([]) } },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { permissions } },
+        {
+          provide: BreakpointObserver,
+          useValue: { observe: () => of({ matches: narrow, breakpoints: {} }) },
+        },
       ],
     }).compileComponents();
     store = TestBed.inject(Store);
@@ -381,5 +391,44 @@ describe('AwardListComponent', () => {
     await create();
 
     expect(fixture.nativeElement.querySelector('[data-testid="award-add"]')).toBeNull();
+  });
+
+  it('ac1_2_a_phone_shows_the_search_and_opens_the_other_filters_on_request', async () => {
+    await create(true);
+    const element: HTMLElement = fixture.nativeElement;
+    const toggle = element.querySelector<HTMLButtonElement>('[data-testid="filters-toggle"]');
+
+    expect(element.querySelector('app-search-field')).not.toBeNull();
+    expect(element.querySelector('[data-testid="filter-status"]')).toBeNull();
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle?.textContent).toContain('Фільтри');
+
+    toggle?.click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('[data-testid="filter-status"]')).not.toBeNull();
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('ac1_2_the_filter_button_counts_the_filters_in_use', async () => {
+    await create(true);
+    store.dispatch(
+      AwardsActions.filtersChanged({
+        filters: { ...NO_FILTERS, status: 'PENDING', dateFrom: '2026-01-01', q: 'грамота' },
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="filters-toggle"]').textContent,
+    ).toContain('Фільтри: 2');
+  });
+
+  it('ac1_2_a_wide_screen_shows_every_filter_without_the_button', async () => {
+    await create();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="filters-toggle"]')).toBeNull();
+    expect(element.querySelector('[data-testid="filter-status"]')).not.toBeNull();
   });
 });

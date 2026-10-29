@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { MatChip } from '@angular/material/chips';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -12,7 +11,7 @@ import { AwardRequestSummary } from '../awards.service';
  */
 @Component({
   selector: 'app-request-timing',
-  imports: [MatChip, TranslocoPipe],
+  imports: [TranslocoPipe],
   templateUrl: './request-timing.component.html',
   styleUrl: './request-timing.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

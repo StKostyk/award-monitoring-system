@@ -1,10 +1,24 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 
+import { narrowScreen } from '../../../shared/touch';
 import { Award, AwardFilters, NO_FILTERS } from '../awards.service';
 import { AwardsActions } from './awards.actions';
 
 /** Awards per page when the list opens. */
 export const DEFAULT_PAGE_SIZE = 20;
+
+/** Awards per page when the list opens on a phone: half a page renders in half the time. */
+export const NARROW_PAGE_SIZE = 10;
+
+/**
+ * Awards per page when the list opens.
+ *
+ * @param narrow whether the screen is phone-sized
+ * @return the page size
+ */
+export function openingPageSize(narrow = narrowScreen()): number {
+  return narrow ? NARROW_PAGE_SIZE : DEFAULT_PAGE_SIZE;
+}
 
 export interface AwardsState {
   awards: Award[];
@@ -21,7 +35,7 @@ export const initialState: AwardsState = {
   total: 0,
   filters: NO_FILTERS,
   pageIndex: 0,
-  pageSize: DEFAULT_PAGE_SIZE,
+  pageSize: openingPageSize(),
   loading: false,
   problem: null,
 };
