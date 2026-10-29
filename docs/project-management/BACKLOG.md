@@ -169,13 +169,24 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.2.3 | Automated WCAG 2.1 AA sweep of every route | 3 | ✅ Done | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
 | 8.2.4 | Show a not-found page for unknown paths | 1 | ✅ Done | SCRUM-125 | [#361](https://github.com/StKostyk/award-monitoring-system/issues/361) |
 
+### Epic 9 — Production Hardening (Jira epic SCRUM-128)
+Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance).
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 9.1.1 | Refresh tokens and authorization codes hashed at rest | 5 | 8 | SCRUM-129 | [#370](https://github.com/StKostyk/award-monitoring-system/issues/370) |
+| 9.1.2 | Rate limits keyed by account and address | 5 | 8 | SCRUM-130 | [#371](https://github.com/StKostyk/award-monitoring-system/issues/371) |
+| 9.1.3 | Backend-for-frontend with an HttpOnly session cookie (stretch) | 8 | 9 | SCRUM-135 | [#376](https://github.com/StKostyk/award-monitoring-system/issues/376) |
+| 9.2.1 | Signed-in pages reach Lighthouse mobile performance 90 | 3 | 8 | SCRUM-131 | [#372](https://github.com/StKostyk/award-monitoring-system/issues/372) |
+| 9.2.2 | Nightly backups with a restore drill | 5 | 8 | SCRUM-132 | [#373](https://github.com/StKostyk/award-monitoring-system/issues/373) |
+| 9.2.3 | Deploy job and production server settings | 3 | 9 | SCRUM-133 | [#374](https://github.com/StKostyk/award-monitoring-system/issues/374) |
+| 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | 9 | SCRUM-134 | [#375](https://github.com/StKostyk/award-monitoring-system/issues/375) |
+
 ### Later epics
 | ID | Story | Points | Epic |
 |----|-------|--------|------|
 | US-006 | AI-Powered Document Parsing (deferred) | 21 | Documents |
 | US-007 | Confidence Score Display (deferred) | 8 | Documents |
-| — | Signed-in pages reach Lighthouse mobile performance 90 (`/awards/new`, `/awards`: total blocking time at start-up and first render; AC-3.7 of Feature 8.1, NFR-009) | - | Epic 9 |
-| — | Production hardening: backend-for-frontend with an HttpOnly cookie, refresh tokens hashed at rest, rate limits for a campus NAT, Spring Session on Redis (design review 2026-10-04) | - | Epic 9 |
 
 ---
 
