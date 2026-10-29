@@ -106,6 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - A backend answer that arrives after the browser lost its connection no longer ends the offline state (8.1.8).
+- Unknown paths show the not-found page with its own title instead of redirecting to the home page (8.2.4).
 - A restored award copy for a unit the person can no longer choose shows the recipient message and can be saved for the person (8.1.7).
 - Opening a saved draft without a connection shows the network message with Try again instead of an empty form; the draft loads when the connection returns (8.1.6).
 - Signing out from an award form with unsaved values asks first; staying keeps the session and the local copy, online and offline (8.1.5).

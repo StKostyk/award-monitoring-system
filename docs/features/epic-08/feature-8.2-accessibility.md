@@ -137,7 +137,7 @@ No OpenAPI or migration change. i18n blocks added: `titles.*` (one key per route
 **Preconditions**: Compose stack up (`docker compose up -d --build`), app at `http://localhost`; seed accounts `employee.fmi`, `dean.fmi`, `gdpr`, `rector` with `Passw0rd-demo`; Chrome with DevTools (Elements, Accessibility tree), keyboard only from step 3.
 
 1. Sign in as `employee.fmi`; in Elements read `<html lang>`; switch to English with the language button; read it again; reload. Expected: `uk`, then `en`, still `en` after the reload. (AC-1.1)
-2. Open `/awards`, an award page, `/awards/new`, `/profile`, `/not-found`, `/not-a-page`; read the tab title each time; switch language on `/awards`. Expected: "Мої нагороди — Облік нагород ЧНУ", "Нагорода — …", "Нова нагорода — …", "Профіль — …", "Сторінку не знайдено — …", "Головна — …" (an unknown path redirects to the home page); English titles after the switch; no award title in any tab title. (AC-1.2)
+2. Open `/awards`, an award page, `/awards/new`, `/profile`, `/not-found`, `/not-a-page`; read the tab title each time; switch language on `/awards`. Expected: "Мої нагороди — Облік нагород ЧНУ", "Нагорода — …", "Нова нагорода — …", "Профіль — …", "Сторінку не знайдено — …" twice (an unknown path shows the not-found page and keeps its address); English titles after the switch; no award title in any tab title. (AC-1.2)
 3. Reload `/awards`, press Tab once. Expected: "Перейти до основного вмісту" visible at the top; Enter, then Tab. Expected: the focus is on the first control of the award list (search or "Додати нагороду"), not in the menu. (AC-1.3)
 4. From `/awards` open an award with Enter, then Alt+Left (back). Expected: the Accessibility pane shows focus on the heading "‹award›" then on "Мої нагороди"; no visible focus ring on the heading itself, a ring on the next Tab stop. (AC-1.4)
 5. On `/awards` change the status filter or the page. Expected: the focus stays on the filter or paginator. As `dean.fmi` open "Користувачі" from the menu (a typed `/admin` is a first load and leaves the focus to the browser). Expected: focus on the heading of `/admin/users`. (AC-1.4)
@@ -172,7 +172,7 @@ Validation run of 2026-10-28 (axe tags shared with the 19 older specs, `wcag21a`
 
 ### Run 2026-10-28
 
-Compose stack (app from develop 2026-10-28, frontend b20ce3d), default settings; UI steps through walk.cjs (Chromium 1280 px, 360 px for step 7); fresh mr82a (EMPLOYEE), mr82b (DEAN, revoked); awards 203075-203077. Result: 23 pass, 1 blocked.
+Compose stack (app from develop 2026-10-28, frontend b20ce3d), default settings; UI steps through walk.cjs (Chromium 1280 px, 360 px for step 7); fresh mr82a (EMPLOYEE), mr82b (DEAN, revoked); awards 203075-203077. Result: 24 pass (step 10 after a rerun); step 2's unknown path shows the not-found page since 8.2.4.
 
 | Step | Result | Evidence |
 |---|---|---|
@@ -185,7 +185,7 @@ Compose stack (app from develop 2026-10-28, frontend b20ce3d), default settings;
 | 7 | PASS | reduced motion emulated at 360px: drawer, dialog container/pane animation+transition 1e-05s, no running animations |
 | 8 | PASS | keyboard only: nav-awards, add, title, category via Alt+Down/arrows/Enter, date typed, PDF through drop zone Enter (filechooser), save (draft 203076), submit -> /awards/203076/submitted; step text corrected: needs 'Хто нагородив' filled and no confirm dialog appears |
 | 9 | PASS | USER_GUIDE.md §Accessibility (skip link, focus after navigation, titles/language, keys, focus ring, reduced motion) matches steps 3-8 |
-| 10 | BLOCKED | e2e -Grep accessibility: 8 passed, 'pages of an employee' renderer crashed twice ('Target crashed' in axe analyze, 3.3 GB free, one worker); report has no moderate/minor findings for the other scans; rerun when memory allows |
+| 10 | PASS | first try: 'pages of an employee' renderer crashed twice ('Target crashed' in axe analyze, 3.3 GB free); rerun in the full e2e of 8.2.4 (one worker, 3.6 GB free): all five sweep tests and the open states green (employee pages 3.0 min), `build/accessibility-report.json` empty for each |
 | 11 | PASS | axe on /awards: clean; --mat-sys-on-surface-variant #bbb -> color-contrast serious (18 nodes); after reload clean |
 | 12 | PASS | toggle fired with delete dialog open: lang uk->en, title 'Editing a draft — ChNU Awards', focus stays on confirm-cancel inside the dialog (toggle fired by script: the dialog traps real focus) |
 | 13 | PASS | Enter on active nav-awards: focus stays on nav-awards |

@@ -172,6 +172,21 @@ test.describe('keyboard and page structure', () => {
     await expect(page.locator('main h1')).toBeFocused();
     await expect(page).toHaveTitle(/^Мої нагороди — /);
   });
+
+  test('ac1_2 an unknown path shows the not-found page under its own address', async ({ page }) => {
+    await page.goto('/not-a-page');
+    await expect(page.getByTestId('not-found-card')).toBeVisible();
+    await expect(page).toHaveURL(/\/not-a-page$/);
+    await expect(page).toHaveTitle(/^Сторінку не знайдено — /);
+
+    await signInAsSeed(page, SEED.employee);
+    await page.goto('/awards/1/unknown');
+    await expect(page.getByTestId('not-found-card')).toBeVisible();
+    await expect(page).toHaveTitle(/^Сторінку не знайдено — /);
+    await page.getByTestId('language-toggle').click();
+    await expect(page).toHaveTitle(/^Page not found — /);
+    await page.getByTestId('language-toggle').click();
+  });
 });
 
 async function enterAndSubmit(page: Page, email: string): Promise<void> {
