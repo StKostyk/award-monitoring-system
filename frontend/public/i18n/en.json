@@ -171,7 +171,8 @@
       "label": "Recipient",
       "person": "Me",
       "unit": "Faculty or department",
-      "unitPicker": "Faculty or department"
+      "unitPicker": "Faculty or department",
+      "unavailable": "A unit no longer available to you"
     },
     "correction": {
       "title": "Correct the award",
