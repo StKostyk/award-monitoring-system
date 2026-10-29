@@ -195,7 +195,7 @@ export const routes: Routes = [
         pathMatch: 'full',
         canActivate: [authGuard],
       },
+      { path: '**', title: 'titles.notFound', component: NotFoundComponent },
     ],
   },
-  { path: '**', redirectTo: '' },
 ];

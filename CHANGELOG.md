@@ -105,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- Unknown paths show the not-found page with its own title instead of redirecting to the home page (8.2.4).
 - A restored award copy for a unit the person can no longer choose shows the recipient message and can be saved for the person (8.1.7).
 - Opening a saved draft without a connection shows the network message with Try again instead of an empty form; the draft loads when the connection returns (8.1.6).
 - Signing out from an award form with unsaved values asks first; staying keeps the session and the local copy, online and offline (8.1.5).
