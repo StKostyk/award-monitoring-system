@@ -43,6 +43,9 @@ class LoginProtectionFT extends AbstractIntegrationTest {
     private static final String PASSWORD = "Passw0rd-demo";
     private static final String TARGET = "ft.locked@chnu.edu.ua";
     private static final String ADMIN = "ft.admin@chnu.edu.ua";
+    private static final String BUDGET = "ft.budget@chnu.edu.ua";
+    private static final String NEIGHBOUR = "ft.neighbour@chnu.edu.ua";
+    private static final String NAT_IP = "10.98.1.1";
     private static final String BURST_IP = "10.99.0.1";
     private static final int MAX_FAILURES = 5;
     private static final int MINUTE = 60;
@@ -72,14 +75,20 @@ class LoginProtectionFT extends AbstractIntegrationTest {
     @Value("${app.auth.protection.requests-per-minute}")
     private int requestsPerMinute;
 
+    @Value("${app.auth.protection.account-requests-per-minute}")
+    private int accountRequestsPerMinute;
+
     private Mailpit mailpit;
     private Long targetId;
+    private Long budgetId;
 
     @BeforeAll
     void createUsers() {
-        Organization university = organizationRepository.findById(TestUsers.UNIVERSITY_ID).orElseThrow();
+        final Organization university = organizationRepository.findById(TestUsers.UNIVERSITY_ID).orElseThrow();
         Organization department = organizationRepository.findById(TestUsers.DAI_DEPARTMENT_ID).orElseThrow();
         targetId = userRepository.save(TestUsers.user(TARGET, department)).getId();
+        budgetId = userRepository.save(TestUsers.user(BUDGET, department)).getId();
+        userRepository.save(TestUsers.user(NEIGHBOUR, department));
         User admin = userRepository.save(TestUsers.user(ADMIN, university));
         userRoleRepository.save(TestUsers.role(admin, RoleType.SYSTEM_ADMIN, university,
             LocalDate.now().minusDays(1), null));
@@ -88,8 +97,9 @@ class LoginProtectionFT extends AbstractIntegrationTest {
     @AfterAll
     void deleteUsers() {
         redis.delete(List.of(LoginAttemptService.LOCK_KEY_PREFIX + TARGET,
-            LoginAttemptService.FAILURE_KEY_PREFIX + TARGET));
-        List.of(TARGET, ADMIN).forEach(email ->
+            LoginAttemptService.FAILURE_KEY_PREFIX + TARGET, LoginAttemptService.LOCK_KEY_PREFIX + BUDGET,
+            LoginAttemptService.FAILURE_KEY_PREFIX + BUDGET));
+        List.of(TARGET, ADMIN, BUDGET, NEIGHBOUR).forEach(email ->
             userRepository.findByEmailAddressIgnoreCase(email).ifPresent(userRepository::delete));
     }
 
@@ -166,6 +176,23 @@ class LoginProtectionFT extends AbstractIntegrationTest {
     }
 
     @Test
+    void ac2_2_ac2_3_postsOverTheAccountBudgetAreRefusedBeforeThePasswordAndDoNotCountAsFailures()
+            throws InterruptedException {
+        waitForAFreshWindow();
+
+        for (int i = 1; i <= accountRequestsPerMinute; i++) {
+            assertThat(signIn(BUDGET, "wrong-" + i, "10.98.0." + i).statusCode()).isEqualTo(302);
+        }
+        Integer audited = authenticationAudits(budgetId);
+        Response refused = signIn("  FT.Budget@CHNU.edu.ua ", PASSWORD, NAT_IP);
+
+        refused.then().statusCode(429).header("Retry-After", notNullValue());
+        assertThat(refused.asString()).contains("Забагато запитів");
+        assertThat(authenticationAudits(budgetId)).isEqualTo(audited);
+        assertThat(signIn(NEIGHBOUR, PASSWORD, NAT_IP).getHeader("Location")).doesNotContain("/login");
+    }
+
+    @Test
     void ac43_everyResponseCarriesACorrelationId() {
         RestAssured.given().accept("text/html").get("/login")
             .then().statusCode(200).header("X-Correlation-Id", notNullValue());
@@ -175,6 +202,18 @@ class LoginProtectionFT extends AbstractIntegrationTest {
         AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
         flow.authorize();
         return flow.submitLogin(email, password).getHeader("Location");
+    }
+
+    private static Response signIn(String email, String password, String address) {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow().header("X-Forwarded-For", address)
+            .header("Accept", "text/html");
+        flow.authorize();
+        return flow.submitLogin(email, password);
+    }
+
+    private Integer authenticationAudits(Long userId) {
+        return jdbc.queryForObject("select count(*) from audit_logs where user_id = ? and entity_type = ?",
+            Integer.class, userId, "AUTHENTICATION");
     }
 
     private static Response resetRequest() {

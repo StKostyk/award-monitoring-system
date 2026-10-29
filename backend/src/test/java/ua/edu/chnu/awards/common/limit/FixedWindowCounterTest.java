@@ -15,10 +15,14 @@ import java.time.ZoneOffset;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
+@ExtendWith(OutputCaptureExtension.class)
 class FixedWindowCounterTest {
 
     private static final String PREFIX = "test:rate:";
@@ -60,5 +64,19 @@ class FixedWindowCounterTest {
         when(values.increment(anyString())).thenThrow(new QueryTimeoutException("down"));
 
         assertThat(counter.secondsToWait(PREFIX, 21L, 0)).isZero();
+    }
+
+    @Test
+    void ac27_withoutRedisTheFailureIsLoggedOncePerMinute(CapturedOutput output) {
+        Clock clock = mock(Clock.class);
+        when(clock.instant()).thenReturn(LAST_SECOND, LAST_SECOND, LAST_SECOND, LAST_SECOND.plusSeconds(1));
+        when(values.increment(anyString())).thenThrow(new QueryTimeoutException("down"));
+        FixedWindowCounter failing = new FixedWindowCounter(redis, clock);
+
+        for (int i = 0; i < 4; i++) {
+            assertThat(failing.secondsToWait(PREFIX, 21L, 0)).isZero();
+        }
+
+        assertThat(output.getOut().split("Redis unavailable", -1)).hasSize(3);
     }
 }

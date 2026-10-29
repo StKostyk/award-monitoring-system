@@ -174,8 +174,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
-| 9.1.1 | Refresh tokens and authorization codes hashed at rest | 5 | 👀 In review (8) | SCRUM-129 | [#370](https://github.com/StKostyk/award-monitoring-system/issues/370) |
-| 9.1.2 | Rate limits keyed by account and address | 5 | 8 | SCRUM-130 | [#371](https://github.com/StKostyk/award-monitoring-system/issues/371) |
+| 9.1.1 | Refresh tokens and authorization codes hashed at rest | 5 | ✅ Done | SCRUM-129 | [#370](https://github.com/StKostyk/award-monitoring-system/issues/370) |
+| 9.1.2 | Rate limits keyed by account and address | 5 | 👀 In review (8) | SCRUM-130 | [#371](https://github.com/StKostyk/award-monitoring-system/issues/371) |
 | 9.1.3 | Backend-for-frontend with an HttpOnly session cookie (stretch) | 8 | 9 | SCRUM-135 | [#376](https://github.com/StKostyk/award-monitoring-system/issues/376) |
 | 9.2.1 | Signed-in pages reach Lighthouse mobile performance 90 | 3 | 8 | SCRUM-131 | [#372](https://github.com/StKostyk/award-monitoring-system/issues/372) |
 | 9.2.2 | Nightly backups with a restore drill | 5 | 8 | SCRUM-132 | [#373](https://github.com/StKostyk/award-monitoring-system/issues/373) |

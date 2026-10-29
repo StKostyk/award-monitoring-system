@@ -3,6 +3,10 @@ app:
     protection:
       requests-per-minute: 200
       public-requests-per-minute: 60
+      account-requests-per-minute: 50
+  rate-limit:
+    api-requests-per-minute: 1000
+    export-requests-per-minute: 100
   workflow:
     overdue-cron: "-"
   erasure:

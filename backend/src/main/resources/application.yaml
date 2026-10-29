@@ -195,6 +195,9 @@ app:
     notice-versions:
       - version: '1.0'
         published-on: 2026-10-15
+  rate-limit:
+    api-requests-per-minute: ${API_RATE_LIMIT_PER_MINUTE:600}
+    export-requests-per-minute: ${EXPORT_RATE_LIMIT_PER_MINUTE:5}
   auth:
     issuer: ${AUTH_ISSUER:http://localhost:8080}
     frontend-url: ${AUTH_FRONTEND_URL:http://localhost:4200}
@@ -207,8 +210,9 @@ app:
       max-failures: 5
       failure-window: 15m
       lock-duration: 30m
-      requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:20}
+      requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:600}
       public-requests-per-minute: ${PUBLIC_RATE_LIMIT_PER_MINUTE:120}
+      account-requests-per-minute: ${AUTH_ACCOUNT_RATE_LIMIT_PER_MINUTE:10}
     resend-interval: 1m
     allowed-origins: ${AUTH_ALLOWED_ORIGINS:http://localhost:4200,http://localhost,http://localhost:8080}
     client:
@@ -348,11 +352,14 @@ spring:
 app:
   auth:
     protection:
-      # room for the browser test suite; the container and production stacks keep the default
-      requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:120}
+      # room for the browser test suite; the container and production stacks keep the defaults
+      requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:1200}
+      account-requests-per-minute: ${AUTH_ACCOUNT_RATE_LIMIT_PER_MINUTE:100}
     # a restarted development server keeps accepting the tokens it issued
     jwk:
       dev-key-file: ${AUTH_JWK_DEV_KEY_FILE:${user.home}/.award-monitoring/dev-jwk.json}
+  rate-limit:
+    api-requests-per-minute: ${API_RATE_LIMIT_PER_MINUTE:6000}
 
 ---
 spring:

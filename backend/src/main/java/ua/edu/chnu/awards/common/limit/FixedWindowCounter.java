@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.common.limit;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -11,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Fixed one-minute windows in Redis: one counter per subject and minute, kept for two minutes. Without Redis
- * nothing is limited.
+ * nothing is limited, and the failure is logged at most once a minute.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class FixedWindowCounter {
 
     private final StringRedisTemplate redis;
     private final Clock clock;
+    private final AtomicLong lastFailureLogged = new AtomicLong(-1);
 
     /**
      * Counts one event of the subject in the current window.
@@ -35,13 +37,13 @@ public class FixedWindowCounter {
     public long secondsToWait(String keyPrefix, Object subject, long limit) {
         long now = clock.instant().getEpochSecond();
         long window = now / WINDOW_SECONDS;
-        if (count(keyPrefix + subject + ":" + window, keyPrefix) <= limit) {
+        if (count(keyPrefix + subject + ":" + window, window) <= limit) {
             return 0;
         }
         return Math.max(1, (window + 1) * WINDOW_SECONDS - now);
     }
 
-    private long count(String key, String keyPrefix) {
+    private long count(String key, long window) {
         try {
             Long count = redis.opsForValue().increment(key);
             if (count != null && count == 1) {
@@ -49,7 +51,9 @@ public class FixedWindowCounter {
             }
             return count == null ? 0 : count;
         } catch (DataAccessException e) {
-            log.error("Redis unavailable; {}* is not rate limited: {}", keyPrefix, e.getMessage());
+            if (lastFailureLogged.getAndSet(window) != window) {
+                log.error("Redis unavailable; requests are not rate limited: {}", e.getMessage());
+            }
             return 0;
         }
     }

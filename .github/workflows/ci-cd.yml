@@ -137,6 +137,7 @@ jobs:
     env:
       CI: true
       AUTH_RATE_LIMIT_PER_MINUTE: '1000'
+      AUTH_ACCOUNT_RATE_LIMIT_PER_MINUTE: '1000'
       E2E_NGINX_URL: http://127.0.0.1:4280
 
     steps:

@@ -51,6 +51,13 @@ as root so that it owns its volume.
 `urn:awards:problem:file-too-large` problem details as the application. Per user, the application accepts at most
 50 MB of documents and 20 uploads a minute (`APP_DOCUMENTS_USER_QUOTA`, `APP_DOCUMENTS_UPLOAD_RATE`).
 
+**Request limits.** Per client address: 600 requests a minute to the sign-in and token endpoints
+(`AUTH_RATE_LIMIT_PER_MINUTE`) and 120 to the public API (`PUBLIC_RATE_LIMIT_PER_MINUTE`); per account, 10 sign-in
+posts a minute (`AUTH_ACCOUNT_RATE_LIMIT_PER_MINUTE`); per signed-in user, 600 API requests a minute
+(`API_RATE_LIMIT_PER_MINUTE`) and 5 reports or exports a minute (`EXPORT_RATE_LIMIT_PER_MINUTE`). The address
+budgets assume that the proxy passes the client address in `X-Forwarded-For`; refusals are counted in
+`award_rate_limited_total`.
+
 **Malware scanner.** The `clamav` service (`clamav/clamav:stable`, no published port) scans every upload; the
 backend waits for it to be healthy, which takes one to three minutes after a start while the signatures load, and
 refuses uploads while it is down. It needs about 1.2 GB of memory and keeps its signatures in the `clamav_data`

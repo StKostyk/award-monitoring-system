@@ -118,7 +118,7 @@ design note before the story starts (decision 9); the ACs above are the outcome 
 | Sign-in form posted without `username` | Counted under the empty account key; the address budget still applies |
 | `username` differing only in case or surrounding spaces | Same account key (lower-cased, trimmed), like the lockout |
 | A user hits the API budget in the middle of a form save | 429 Problem Details; the frontend shows the existing "too many requests" message and keeps the form; the retry after `Retry-After` succeeds |
-| Swagger UI or the e2e suite bursts | Local profile keeps 120 for authentication and gets a high API budget; the container and production stacks use the defaults |
+| Swagger UI or the e2e suite bursts | Local profile raises authentication to 1200, the account budget to 100 and the API budget to 6000; the container and production stacks use the defaults |
 | Clock window boundary | Fixed one-minute windows as today: up to twice the budget across a boundary is accepted (documented) |
 | Refusal before authentication (API budget) | Not possible: the API limit runs after the bearer token is validated, so an invalid token answers 401 and costs no budget of the user it names |
 | Redis restarts mid-window | Counters start again from zero; acceptable |

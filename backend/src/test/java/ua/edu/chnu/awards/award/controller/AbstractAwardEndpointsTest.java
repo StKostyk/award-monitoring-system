@@ -16,10 +16,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.audit.service.AuditTrailService;
+import ua.edu.chnu.awards.auth.config.ApiSecurityConfig;
 import ua.edu.chnu.awards.auth.config.LoginSessionConfig;
 import ua.edu.chnu.awards.auth.config.PublicApiSecurityConfig;
+import ua.edu.chnu.awards.auth.config.RateLimitConfig;
 import ua.edu.chnu.awards.auth.config.SecurityConfig;
 import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
@@ -48,6 +52,7 @@ import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.service.AwardHistory;
 import ua.edu.chnu.awards.award.service.AwardService;
 import ua.edu.chnu.awards.award.service.AwardSubmission;
+import ua.edu.chnu.awards.common.limit.RateLimitMetrics;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.config.InfrastructureConfig;
 import ua.edu.chnu.awards.organization.OrganizationTree;
@@ -60,7 +65,9 @@ import ua.edu.chnu.awards.organization.entity.OrganizationType;
 @Import({SecurityConfig.class, PublicApiSecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class,
     JwtAuthorityConverter.class, ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class,
     ApiExceptionHandler.class, AccessScope.class, RoleLevels.class, RolePermissions.class, AccessDenials.class,
-    AccessDeniedProblems.class, ProblemDetailsAccessDeniedHandler.class, AwardBodyProblems.class})
+    AccessDeniedProblems.class, ProblemDetailsAccessDeniedHandler.class, AwardBodyProblems.class,
+    ApiSecurityConfig.class, RateLimitConfig.class, RateLimitMetrics.class,
+    SimpleMeterRegistry.class})
 abstract class AbstractAwardEndpointsTest {
 
     @Autowired
