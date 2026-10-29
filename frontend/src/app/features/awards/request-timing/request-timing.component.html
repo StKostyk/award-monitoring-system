@@ -16,7 +16,7 @@
   </span>
 }
 @if (request().overdue) {
-  <mat-chip class="timing__delayed" data-testid="request-delayed">{{
+  <span class="app-chip timing__delayed" data-testid="request-delayed">{{
     'awards.timing.delayed' | transloco
-  }}</mat-chip>
+  }}</span>
 }

@@ -124,7 +124,9 @@
       "dateFrom": "Date from",
       "dateTo": "Date to",
       "search": "Search my awards",
-      "all": "All"
+      "all": "All",
+      "toggle": "Filters",
+      "toggleActive": "Filters: {{count}}"
     },
     "status": {
       "DRAFT": "Draft",

@@ -15,16 +15,28 @@ export function kyivDateTime(iso: string, language: string): string {
 
 /**
  * A day in Kyiv, day first, in the interface language: a `YYYY-MM-DD` date as it is, an instant on the Kyiv
- * calendar.
+ * calendar. A plain date is rearranged without a formatter: the first formatter of a page costs more than a
+ * whole list of rows.
  */
 export function kyivDate(value: string, language: string): string {
-  const instant = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00Z` : value;
-  return format(localeOf(language), DAY).format(new Date(instant));
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-');
+    return [day, month, year].join(language === 'en' ? '/' : '.');
+  }
+  return format(localeOf(language), DAY).format(new Date(value));
 }
 
 /** Today in Kyiv as `YYYY-MM-DD`, the day the server compares award dates with. */
 export function kyivToday(now = new Date()): string {
   return format('en-CA', DAY).format(now);
+}
+
+/**
+ * Creates the first formatter while the start-up requests are under way: the first one of a page loads the
+ * calendar data and blocks the page for a moment when it is created during rendering.
+ */
+export function prepareDateFormats(): void {
+  kyivToday();
 }
 
 /** The calendar year of a moment in Kyiv, by default the present. */

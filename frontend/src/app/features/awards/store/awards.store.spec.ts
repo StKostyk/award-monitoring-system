@@ -9,7 +9,7 @@ import { vi } from 'vitest';
 import { AwardFilters, AwardsService, NO_FILTERS } from '../awards.service';
 import { AwardsActions } from './awards.actions';
 import { AwardsEffects } from './awards.effects';
-import { awardsFeature, initialState } from './awards.feature';
+import { awardsFeature, initialState, openingPageSize } from './awards.feature';
 
 const page = { content: [], totalElements: 3, totalPages: 1, size: 100, number: 0 };
 
@@ -24,6 +24,11 @@ describe('awards feature', () => {
 
     state = awardsFeature.reducer(state, AwardsActions.awardsLoadFailed({ problem: 'network' }));
     expect(state).toMatchObject({ awards: [], total: 0, problem: 'network' });
+  });
+
+  it('ac1_3_a_phone_opens_the_list_with_ten_awards_a_page', () => {
+    expect(openingPageSize(true)).toBe(10);
+    expect(openingPageSize(false)).toBe(20);
   });
 
   it('ac8_keeps_the_page_and_returns_to_the_first_one_when_the_filters_change', () => {

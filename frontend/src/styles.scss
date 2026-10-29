@@ -1,6 +1,7 @@
 @use './styles/brands/chnu/brand' as chnu;
 @use './styles/brands/neutral/brand' as neutral;
 @use './styles/charts';
+@use './styles/chips';
 @use './styles/status';
 @use './styles/touch';
 @use './styles/a11y';
@@ -34,6 +35,7 @@ body {
 }
 
 @include charts.tables();
+@include chips.rules();
 @include touch.rules();
 @include a11y.rules();
 

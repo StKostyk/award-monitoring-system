@@ -46,4 +46,23 @@ test.describe('award form on a phone', () => {
     await page.getByTestId('award-submit').click();
     await expect(page).toHaveURL(/\/awards\/\d+\/submitted$/);
   });
+
+  test('ac1_2 the list shows the search and opens the other filters from a button', async ({
+    browser,
+    page,
+  }) => {
+    const email = await freshEmployee(browser, 'phone-list');
+    await signIn(page, email, FRESH_PASSWORD);
+
+    await page.goto('/awards');
+    const toggle = page.getByTestId('filters-toggle');
+    await expect(page.locator('app-search-field input')).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByTestId('filter-status')).toHaveCount(0);
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('filter-status')).toBeVisible();
+    await expect(page.getByTestId('filter-date-to')).toBeVisible();
+  });
 });

@@ -124,7 +124,9 @@
       "dateFrom": "Дата від",
       "dateTo": "Дата до",
       "search": "Пошук у моїх нагородах",
-      "all": "Усі"
+      "all": "Усі",
+      "toggle": "Фільтри",
+      "toggleActive": "Фільтри: {{count}}"
     },
     "status": {
       "DRAFT": "Чернетка",

@@ -1,7 +1,15 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
-import { MatChip } from '@angular/material/chips';
 import { DateAdapter } from '@angular/material/core';
 import {
   MatDatepicker,
@@ -10,6 +18,7 @@ import {
   MatDatepickerToggle,
 } from '@angular/material/datepicker';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -17,6 +26,7 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
+import { map } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
@@ -25,6 +35,7 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
 import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
+import { NARROW_SCREEN, narrowScreen } from '../../../shared/touch';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import {
   AWARD_STATUSES,
@@ -42,7 +53,7 @@ import { RequestTimingComponent } from '../request-timing/request-timing.compone
 import { AwardsActions } from '../store/awards.actions';
 import { awardsFeature } from '../store/awards.feature';
 
-const PAGE_SIZES = [20, 50, 100];
+const PAGE_SIZES = [10, 20, 50, 100];
 
 @Component({
   selector: 'app-award-list',
@@ -52,7 +63,7 @@ const PAGE_SIZES = [20, 50, 100];
     FormsModule,
     RouterLink,
     MatButton,
-    MatChip,
+    MatIcon,
     MatFormField,
     MatLabel,
     MatInput,
@@ -95,6 +106,17 @@ export class AwardListComponent implements OnInit {
   readonly pageSize = this.store.selectSignal(awardsFeature.selectPageSize);
   protected readonly pageSizes = PAGE_SIZES;
   readonly notice = signal<string | null>(null);
+  protected readonly narrow = toSignal(
+    inject(BreakpointObserver)
+      .observe(NARROW_SCREEN)
+      .pipe(map((state) => state.matches)),
+    { initialValue: narrowScreen() },
+  );
+  protected readonly filtersOpen = signal(false);
+  protected readonly activeFilters = computed(() => {
+    const { status, category, dateFrom, dateTo } = this.filters();
+    return [status, category, dateFrom, dateTo].filter((value) => value !== null).length;
+  });
 
   ngOnInit(): void {
     this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);

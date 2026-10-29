@@ -1,6 +1,38 @@
-import { daysBefore, kyivDateTime, kyivToday, yearsBefore } from './date-format';
+import { vi } from 'vitest';
+
+import { daysBefore, kyivDate, kyivDateTime, kyivToday, yearsBefore } from './date-format';
 
 describe('date format', () => {
+  it('shows_a_plain_date_as_the_locale_formatter_does', () => {
+    const dates = ['2026-01-01', '2026-03-29', '2026-10-25', '2024-02-29', '1976-12-31'];
+    for (const [language, locale] of [
+      ['uk', 'uk-UA'],
+      ['en', 'en-GB'],
+    ]) {
+      const formatter = new Intl.DateTimeFormat(locale, {
+        timeZone: 'Europe/Kyiv',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      for (const date of dates) {
+        expect(kyivDate(date, language)).toBe(formatter.format(new Date(`${date}T12:00:00Z`)));
+      }
+    }
+  });
+
+  it('shows_a_plain_date_without_creating_a_formatter', () => {
+    const created = vi.spyOn(Intl, 'DateTimeFormat');
+
+    try {
+      expect(kyivDate('2026-10-09', 'uk')).toBe('09.10.2026');
+      expect(kyivDate('2026-10-09', 'en')).toBe('09/10/2026');
+      expect(created).not.toHaveBeenCalled();
+    } finally {
+      created.mockRestore();
+    }
+  });
+
   it('ac2_1_formats_times_in_kyiv_in_both_languages', () => {
     expect(kyivDateTime('2026-09-30T21:30:00Z', 'uk')).toBe('01.10.2026, 00:30');
     expect(kyivDateTime('2026-12-01T10:00:00Z', 'en')).toBe('01/12/2026, 12:00');

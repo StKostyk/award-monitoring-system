@@ -401,6 +401,6 @@ Frontend only. A01: the service worker caches no backend path (`ngsw-config.spec
 ### Findings
 
 - **F-1** (AC-2.9, high) A new award whose `POST /awards` reached the server but whose answer was lost is created a second time on reconnect: no id exists for the version check, and the duplicate check compares only awards with the same date. Two tabs on `/awards/new` offline give the same result. Proven by e2e `award-offline.spec.ts` "ac2_9 a new award whose save answer was lost is created once" (red on `develop`). Fix story 8.1.4.
-- **F-2** (AC-3.7, medium) Performance under 90 on `/awards/new` and `/awards` (total blocking time at 4× CPU). Follow-up story in Epic 9; NFR-009 target kept.
+- **F-2** (AC-3.7, medium) Performance under 90 on `/awards/new` and `/awards` (total blocking time at 4× CPU). Follow-up story in Epic 9; NFR-009 target kept. 9.2.1 measured `/awards` at 79 and `/awards/new` at 79; the form follows in 9.2.5 (Feature 9.2 PRD §10).
 - **F-3** (low) A save sent on reconnect while the access token expired on the same tick may refresh twice in sequence (`AuthService.reconnect` and the 401 path); harmless with token rotation, recorded in the tracker notes.
 - **F-4** (low) Values typed while a save is in flight are marked pristine when it finishes (existing since Feature 2.1, more likely with slow connections); recorded in the tracker notes.
