@@ -52,6 +52,7 @@ All six stories are frontend work; none has a backend lane.
 | 5b | 8.1.5 Offline sign-out drops the form copy before the leave question | 8.1 | 2 | SCRUM-122 | #352 | no | Done |
 | 5c | 8.1.6 Offline reload of a draft opens an empty form without Try again | 8.1 | 2 | SCRUM-123 | #353 | no | Done |
 | 5d | 8.1.7 Restored unit-recipient copy cannot be saved after the role is revoked | 8.1 | 2 | SCRUM-124 | #354 | no | Done |
+| 5e | 8.1.8 A late answer after the connection dropped keeps the app offline | 8.1 | 1 | SCRUM-126 | #363 | no | In review |
 | 5e | 8.2.4 Show a not-found page for unknown paths | 8.2 | 1 | SCRUM-125 | #361 | no | In review |
 | - | 8.2.2 Described forms, tables and announced changes | 8.2 | 5 | SCRUM-119 | #335 | no | Icebox |
 

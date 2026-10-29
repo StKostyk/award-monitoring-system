@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { ConnectivityService } from './connectivity.service';
 
@@ -34,5 +35,21 @@ describe('ConnectivityService', () => {
 
     expect(service.online()).toBe(false);
     expect(service.linked()).toBe(navigator.onLine);
+  });
+
+  it('ac2_9_a_late_answer_keeps_the_app_offline_while_the_browser_has_no_link', () => {
+    const link = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    let returns = 0;
+    service.reconnected$.subscribe(() => returns++);
+    window.dispatchEvent(new Event('offline'));
+
+    service.reachable();
+    expect(service.online()).toBe(false);
+
+    link.mockReturnValue(true);
+    window.dispatchEvent(new Event('online'));
+    expect(service.online()).toBe(true);
+    expect(returns).toBe(1);
+    link.mockRestore();
   });
 });

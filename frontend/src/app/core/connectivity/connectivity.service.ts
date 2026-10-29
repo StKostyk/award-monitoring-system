@@ -26,9 +26,12 @@ export class ConnectivityService {
     return this.window?.navigator.onLine ?? true;
   }
 
-  /** A backend request was answered: the server is reachable. */
+  /**
+   * A backend request was answered: the server is reachable, unless the browser has lost its connection since the
+   * request was sent.
+   */
   reachable(): void {
-    if (!this.online()) {
+    if (!this.online() && this.linked()) {
       this.online.set(true);
       this.restored.next();
     }
