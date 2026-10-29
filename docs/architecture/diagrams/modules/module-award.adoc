@@ -11,6 +11,7 @@
 * `u.e.c.a.a.service.AwardLookup`
 * `u.e.c.a.a.service.AwardService`
 * `u.e.c.a.a.service.AwardSharing`
+* `u.e.c.a.a.service.AwardStatistics`
 * `u.e.c.a.a.service.AwardStatusService`
 * `u.e.c.a.a.service.AwardSubmission`
 * `u.e.c.a.a.service.AwardVersionLookup`
@@ -24,23 +25,23 @@
 * `u.e.c.a.a.service.ReviewPeriods`
 * `u.e.c.a.a.service.ReviewQueue`
 * `u.e.c.a.a.service.ReviewTemplates`
+* `u.e.c.a.a.service.UnitStatistics`
 
 _Event listeners_
 
-* `u.e.c.a.a.service.CorrectionMails`
-* `u.e.c.a.a.service.DecisionMails`
 * `u.e.c.a.a.service.OverdueJob`
-* `u.e.c.a.a.service.OverdueMails`
 * `u.e.c.a.a.service.ReviewMetrics`
-* `u.e.c.a.a.service.TakeOverMails`
 
 _Others_
 
 * `u.e.c.a.a.service.ApprovalPath`
+* `u.e.c.a.a.service.AwardCreation`
 * `u.e.c.a.a.service.AwardDateRules`
+* `u.e.c.a.a.service.AwardErasure`
 * `u.e.c.a.a.service.AwardInputRules`
 * `u.e.c.a.a.service.AwardLinks`
 * `u.e.c.a.a.service.AwardOwnership`
+* `u.e.c.a.a.service.AwardSearch`
 * `u.e.c.a.a.service.AwardWarnings`
 * `u.e.c.a.a.service.CorrectionLog`
 * `u.e.c.a.a.service.CorrectionRules`
@@ -50,6 +51,7 @@ _Others_
 * `u.e.c.a.a.service.OrganizationMatcher`
 * `u.e.c.a.a.service.RecipientUnits`
 * `u.e.c.a.a.service.RequestLookup`
+* `u.e.c.a.a.service.ReviewBacklog`
 * `u.e.c.a.a.service.ReviewGuards`
 * `u.e.c.a.a.service.ReviewerAvailability`
 * `u.e.c.a.a.service.ReviewerRule`
@@ -63,7 +65,6 @@ _Others_
 * `u.e.c.a.o.service.OrganizationLookup` (in Organization)
 * `u.e.c.a.a.AccessScope` (in Authz)
 * `u.e.c.a.a.service.AuditService` (in Audit)
-* `u.e.c.a.c.mail.MailDelivery` (in Common)
 * `u.e.c.a.o.OrganizationTree` (in Organization)
 * `u.e.c.a.u.service.RoleHolders` (in User)
 * `u.e.c.a.d.service.DelegationLookup` (in Delegation)
@@ -75,11 +76,7 @@ _Others_
 * `u.e.c.a.a.entity.ReviewDecision`
 * `u.e.c.a.a.entity.ReviewTemplate`
 |Events listened to
-|* `u.e.c.a.a.event.AwardCorrected` (async) 
-* `u.e.c.a.a.event.AwardDecided` (async) 
-* `org.springframework.boot.context.event.ApplicationReadyEvent` 
-* `u.e.c.a.a.event.OverdueNoticed` (async) 
+|* `org.springframework.boot.context.event.ApplicationReadyEvent` 
 * `u.e.c.a.a.event.ReviewMeasured` 
 * `u.e.c.a.a.event.SubmissionMeasured` 
-* `u.e.c.a.a.event.ReviewTakenOver` (async) 
 |===

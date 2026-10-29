@@ -2,24 +2,17 @@
 |===
 |Base package
 |`ua.edu.chnu.awards.analytics`
-|Spring components
-|_Controllers_
-
-* `u.e.c.a.a.controller.AnalyticsController`
-* `u.e.c.a.a.controller.UnitAnalyticsController`
-* `u.e.c.a.a.controller.UniversityAnalyticsController`
-
-_Services_
-
-* `u.e.c.a.a.service.PersonalAnalyticsService`
-* `u.e.c.a.a.service.UnitAnalyticsService`
-* `u.e.c.a.a.service.UniversityAnalyticsService`
-* `u.e.c.a.a.service.UniversityComplianceService`
-
-_Others_
-
-* `u.e.c.a.a.export.BoardReportExporter`
-* `u.e.c.a.a.export.UnitReportExporter`
-* `u.e.c.a.a.config.AnalyticsCacheConfig`
-* `u.e.c.a.a.config.AnalyticsConfig`
+|Bean references
+|* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.u.service.UserAccounts` (in User)
+* `u.e.c.a.a.service.AwardStatistics` (in Award)
+* `u.e.c.a.g.ConsentLookup` (in Gdpr)
+* `u.e.c.a.a.service.UnitStatistics` (in Award)
+* `u.e.c.a.o.OrganizationTree` (in Organization)
+* `u.e.c.a.o.service.OrganizationLookup` (in Organization)
+* `u.e.c.a.a.AccessScope` (in Authz)
+* `u.e.c.a.a.RolePermissions` (in Authz)
+* `u.e.c.a.g.ComplianceFigures` (in Gdpr)
+* `u.e.c.a.a.service.ReviewBacklog` (in Award)
+* `u.e.c.a.c.privacy.PrivacyNoticeVersions` (in Common)
 |===

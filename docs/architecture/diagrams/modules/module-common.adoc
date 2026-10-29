@@ -7,6 +7,8 @@
 
 * `u.e.c.a.c.event.EventProperties`
 * `u.e.c.a.c.limit.ProtectionProperties`
+* `u.e.c.a.c.privacy.PrivacyNoticeProperties`
+* `u.e.c.a.c.retention.RetentionProperties`
 
 _Others_
 
@@ -14,6 +16,8 @@ _Others_
 * `u.e.c.a.c.event.PublicationRetry`
 * `u.e.c.a.c.limit.RequestThrottle`
 * `u.e.c.a.c.mail.MailDelivery`
+* `u.e.c.a.c.mail.MailHtmlRenderer`
+* `u.e.c.a.c.privacy.PrivacyNoticeVersions`
 * `u.e.c.a.c.web.ApiExceptionHandler`
 * `u.e.c.a.c.web.CorrelationIdFilter`
 * `u.e.c.a.c.web.InvalidParameterProblems`
