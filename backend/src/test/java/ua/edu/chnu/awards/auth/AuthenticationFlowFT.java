@@ -31,6 +31,7 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 
 import ua.edu.chnu.awards.auth.security.AuthorizationRevoker;
+import ua.edu.chnu.awards.auth.security.HashingAuthorizationService;
 import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
@@ -165,6 +166,22 @@ class AuthenticationFlowFT extends AbstractIntegrationTest {
 
         AuthorizationCodeFlow.refresh(firstRefresh).then().statusCode(400).body("error", equalTo("invalid_grant"));
         AuthorizationCodeFlow.refresh(secondRefresh).then().statusCode(400).body("error", equalTo("invalid_grant"));
+    }
+
+    @Test
+    void ac1_4_signInAndRefreshStoreOnlyHashesOfTheIssuedTokens() {
+        AuthorizationCodeFlow flow = new AuthorizationCodeFlow();
+        Response tokens = flow.exchange(flow.loginAndGetCode(DEAN, PASSWORD));
+        Response refreshed = AuthorizationCodeFlow.refresh(tokens.jsonPath().getString("refresh_token"));
+        refreshed.then().statusCode(200);
+
+        Map<String, Object> row = jdbc.queryForMap("select access_token_value, refresh_token_value, "
+            + "oidc_id_token_value from oauth2_authorization where refresh_token_value = ?",
+            HashingAuthorizationService.hash(refreshed.jsonPath().getString("refresh_token")));
+        assertThat(row.get("access_token_value"))
+            .isEqualTo(HashingAuthorizationService.hash(refreshed.jsonPath().getString("access_token")));
+        assertThat(row.get("oidc_id_token_value"))
+            .isEqualTo(HashingAuthorizationService.hash(refreshed.jsonPath().getString("id_token")));
     }
 
     @Test

@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Authorization codes, access, id and refresh tokens are stored as SHA-256 hashes; existing sessions are converted in place (V050).
 - The erasure request and the scheduled erasure share one set of checks (legal hold, last system administrator).
 - Marking all notifications read from the toolbar menu keeps the menu open, and a failed mark-read is reported instead of being ignored
 - Backend split into 13 Spring Modulith modules with verified boundaries and generated module diagrams (7.1.2)

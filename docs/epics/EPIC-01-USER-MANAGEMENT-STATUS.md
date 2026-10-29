@@ -102,7 +102,7 @@ Each item is applied in the PR of the story that touches it, after approval.
 
 Findings of the review of the authorization server code (2026-09-20) that were not fixed immediately:
 
-1. Refresh-token values are stored in clear text by the library; hash them at rest through a wrapping `OAuth2AuthorizationService` (backlog, after Feature 1.1).
+1. ~~Refresh-token values are stored in clear text by the library; hash them at rest through a wrapping `OAuth2AuthorizationService`~~ Done in 9.1.1 (SCRUM-129).
 2. ~~Rate limiting (story 1.1.4) must key on the last proxy hop (`X-Real-IP`), never the first `X-Forwarded-For` entry~~ — done in 1.1.4: `server.forward-headers-strategy=native` with `server.tomcat.remoteip.internal-proxies` (loopback and the compose network, `SERVER_TRUSTED_PROXIES`), so `X-Forwarded-*` count only from nginx; the application reads the socket peer.
 3. Deployment hardening (deployment story): do not publish port 8080 outside the compose network, keep Swagger's redirect URI out of the production client, consider a separate client for Swagger, review `spring.profiles.active` default (`local` seeds demo accounts).
 4. ~~`RefreshTokenReuseGuard` answers 500 when Redis is unavailable during a refresh~~ — done in 1.1.4: the guard, the failure counters and the request limit all fail open with an error log entry when Redis is down; the resend and reset email throttles followed in the refactor after Feature 1.1 validation (`RequestThrottle`).

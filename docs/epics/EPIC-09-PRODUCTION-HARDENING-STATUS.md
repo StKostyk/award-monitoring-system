@@ -42,7 +42,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 
 | # | Story | Feature | Pts | Jira | GitHub | Parallel | Status |
 |---|-------|---------|-----|------|--------|----------|--------|
-| 1 | 9.1.1 Refresh tokens and authorization codes hashed at rest | 9.1 | 5 | SCRUM-129 | #370 | no | Planned |
+| 1 | 9.1.1 Refresh tokens and authorization codes hashed at rest | 9.1 | 5 | SCRUM-129 | #370 | no | In review |
 | 2 | 9.1.2 Rate limits keyed by account and address | 9.1 | 5 | SCRUM-130 | #371 | no | Planned |
 | 3 | 9.2.1 Signed-in pages reach Lighthouse mobile performance 90 | 9.2 | 3 | SCRUM-131 | #372 | no | Planned |
 | 4 | 9.2.2 Nightly backups with a restore drill | 9.2 | 5 | SCRUM-132 | #373 | no | Planned |
