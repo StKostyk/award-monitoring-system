@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Rate limits keyed by account, user and address: 600 sign-in requests a minute per address, 10 sign-in posts per account, 600 API requests and 5 reports or exports a minute per user, and the award_rate_limited_total metric.
 - Authorization codes, access, id and refresh tokens are stored as SHA-256 hashes; existing sessions are converted in place (V050).
 - The erasure request and the scheduled erasure share one set of checks (legal hold, last system administrator).
 - Marking all notifications read from the toolbar menu keeps the menu open, and a failed mark-read is reported instead of being ignored

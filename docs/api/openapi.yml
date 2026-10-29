@@ -14,10 +14,13 @@ info:
     The HTML sign-in pages (`GET /login`, `GET /`) are served by the authorization server and are not API operations.
 
     ## Rate Limiting
-    Counters in Redis, answered with 429 and `Retry-After`: the authentication endpoints (sign-in, token, `/auth`)
-    are limited per client address (20 requests a minute by default), document uploads per user (20 a minute).
-    The public API (`/public/**`) is limited per client address too (120 requests a minute by default); anonymous
-    calls of `GET /organizations` count against the same budget.
+    Fixed one-minute windows in Redis, answered with 429 and `Retry-After`: the authentication endpoints (sign-in,
+    token, `/auth`) are limited per client address (600 requests a minute by default), sign-in posts per account
+    (10 a minute naming one `username`, checked before the password). The public API (`/public/**`) is limited per
+    client address too (120 requests a minute by default); anonymous calls of `GET /organizations` count against the
+    same budget. Every other operation is limited per signed-in user (600 requests a minute, counted by the access
+    token's `sub`); the university report, the unit export and the audit-trail export share a budget of 5 a minute
+    per user, and document uploads 20 a minute per user.
     Other operations have no request quota.
     
     ## Response Formats
@@ -172,8 +175,9 @@ paths:
       tags: [Authentication]
       summary: Register an employee account
       description: |
-        Open endpoint. Like every `/auth/**` endpoint, `/oauth2/token` and `/login`, it is limited to 20 requests per
-        minute per client address; the 21st answers 429 with `Retry-After` (`urn:awards:problem:too-many-requests`).
+        Open endpoint. Like every `/auth/**` endpoint, `/oauth2/token` and `/login`, it is limited to 600 requests per
+        minute per client address; the 601st answers 429 with `Retry-After` (`urn:awards:problem:too-many-requests`).
+        Sign-in posts are also limited to 10 a minute per account.
         Every response carries `X-Correlation-Id` (a caller-supplied UUID is kept). Requires an institutional address (`@chnu.edu.ua`), a password of at least 10 characters and
         at most 72 bytes that is not on the common-password list, names made of letters, and an active department.
         Addresses are stored lower-case. The account is created `PENDING` with no role at all and a verification
@@ -1033,6 +1037,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /reviews:
     get:
@@ -3106,6 +3112,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /analytics/university:
     get:
@@ -3205,6 +3213,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   # ============== Compliance ==============
   /compliance/retention-policies:

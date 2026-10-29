@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
+import ua.edu.chnu.awards.common.limit.RateLimitMetrics;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
@@ -24,8 +25,10 @@ public class UploadLimits {
     public static final String RATE_KEY_PREFIX = "documents:rate:";
 
     private static final long QUOTA_LOCK_SPACE = 0x444F_4351L << Integer.SIZE;
+    private static final String UPLOAD_PATH = "/api/v1/awards/{id}/documents";
 
     private final FixedWindowCounter counter;
+    private final RateLimitMetrics metrics;
     private final DocumentRepository documents;
     private final DocumentProperties properties;
 
@@ -39,6 +42,7 @@ public class UploadLimits {
     public void checkRate(long userId) {
         long wait = counter.secondsToWait(RATE_KEY_PREFIX, userId, properties.uploadRate());
         if (wait > 0) {
+            metrics.refused(RateLimitMetrics.UPLOAD, UPLOAD_PATH);
             throw ApiProblemException.tooManyRequests("Too many uploads; try again in a minute", wait);
         }
     }

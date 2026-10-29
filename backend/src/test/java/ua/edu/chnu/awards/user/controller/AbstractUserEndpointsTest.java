@@ -8,8 +8,12 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import ua.edu.chnu.awards.audit.service.AuditService;
+import ua.edu.chnu.awards.auth.config.ApiSecurityConfig;
 import ua.edu.chnu.awards.auth.config.LoginSessionConfig;
+import ua.edu.chnu.awards.auth.config.RateLimitConfig;
 import ua.edu.chnu.awards.auth.config.SecurityConfig;
 import ua.edu.chnu.awards.auth.security.AccessTokenDecoder;
 import ua.edu.chnu.awards.auth.security.AccountStatusChecker;
@@ -26,6 +30,7 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.ProblemDetailsAccessDeniedHandler;
 import ua.edu.chnu.awards.authz.RoleLevels;
 import ua.edu.chnu.awards.authz.RolePermissions;
+import ua.edu.chnu.awards.common.limit.RateLimitMetrics;
 import ua.edu.chnu.awards.common.web.ApiExceptionHandler;
 import ua.edu.chnu.awards.config.InfrastructureConfig;
 import ua.edu.chnu.awards.gdpr.service.DataExportService;
@@ -41,7 +46,9 @@ import ua.edu.chnu.awards.user.service.UserProfileService;
 @Import({SecurityConfig.class, LoginSessionConfig.class, InfrastructureConfig.class, JwtAuthorityConverter.class,
     ProblemDetailsEntryPoint.class, LoginAccessDeniedHandler.class, ApiExceptionHandler.class, AccessScope.class,
     RoleLevels.class, RolePermissions.class, AccessDenials.class, AccessDeniedProblems.class,
-    ProblemDetailsAccessDeniedHandler.class})
+    ProblemDetailsAccessDeniedHandler.class,
+    ApiSecurityConfig.class, RateLimitConfig.class, RateLimitMetrics.class,
+    SimpleMeterRegistry.class})
 abstract class AbstractUserEndpointsTest {
 
     @Autowired
