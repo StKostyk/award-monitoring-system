@@ -10,12 +10,12 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 9.1 Security hardening (tokens hashed at rest, rate limits by account and address; backend-for-frontend as a stretch) | Planned | - | - |
+| 9.1 Security hardening (tokens hashed at rest, rate limits by account and address; backend-for-frontend as a stretch) | PRD approved 2026-10-29 ([PRD](../features/epic-09/feature-9.1-security-hardening.md)) | - | - |
 | 9.2 Demo deployment and operations (Lighthouse 90 on the signed-in pages, nightly backups, deploy job, AWS EC2 server) | Planned | - | - |
 
 ## Current focus
 
-Kickoff done; the next step is the PRD of Feature 9.1.
+Feature 9.1 PRD approved; the next story is 9.1.1 (SCRUM-129).
 
 ## Scope
 
@@ -60,7 +60,8 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 |------|----------|-----------|-----------|
 | 2026-10-29 | Scope: hashed tokens, rate limits, Lighthouse 90, backups, deploy job, AWS EC2 server; backend-for-frontend as a stretch; Spring Session on Redis out | The demo runs one instance, so shared sessions buy nothing before a second one; the four security and operations items are what a public address needs | ADR-021 |
 | 2026-10-29 | No story for a fixed signing key: `docker-compose.prod.yml` already refuses to start without `JWK_KEY_ID`, `JWK_PRIVATE_KEY` and `JWK_PUBLIC_KEY` (SCRUM-33); the deploy story only checks it | Already shipped | DEMO_DEPLOYMENT §1 |
-| 2026-10-29 | Hashing invalidates every stored authorization once (sign-in again); acceptable because it ships before the first deployment | No users yet | 9.1.1 |
+| 2026-10-29 | Hashing converts the stored authorizations in place (V050 computes the hashes in SQL), so nobody signs in again; replaces the kickoff default of invalidating them | Same result without a forced sign-in; the conversion is idempotent | 9.1 PRD §7 decision 4 |
+| 2026-10-29 | Feature 9.1 PRD approved: hashing in a decorator of the authorization service with a `sha256:` prefix, plain SHA-256; budgets 600 a minute per address (authentication), 10 per account (sign-in form), 600 per user (API), 5 per user (report and exports); refusals counted in a metric, not audited; 9.1.3 only after 9.2.4 and before 2026-12-01 | NAT sizing, no double hashing of reloaded rows, no audit flood | 9.1 PRD §7 |
 | 2026-10-29 | Rate limits stay on the existing Redis fixed-window counter (`FixedWindowCounter`, `RateLimitFilter`, `RequestThrottle`); no new library | One mechanism already in use for the authentication, public and upload limits | 9.1.2 |
 | 2026-10-29 | Backups go to an object store outside the server (an S3 bucket in the same AWS account by default), with the document encryption key stored apart | ADR-021 requires off-server copies; the key decrypts every document | 9.2.2 |
 | 2026-10-29 | Lighthouse 90 sits in Feature 9.2: it is measured against the production build that the deployment ships | Same build, same measurement setup as 8.1 | 8.1 PRD F-2 |

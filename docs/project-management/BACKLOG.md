@@ -170,7 +170,7 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.2.4 | Show a not-found page for unknown paths | 1 | ✅ Done | SCRUM-125 | [#361](https://github.com/StKostyk/award-monitoring-system/issues/361) |
 
 ### Epic 9 — Production Hardening (Jira epic SCRUM-128)
-Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance).
+Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md).
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
