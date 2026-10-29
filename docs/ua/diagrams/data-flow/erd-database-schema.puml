@@ -105,6 +105,7 @@ entity "awards\n(нагороди)" as awards {
     awarding_organization : VARCHAR(255)
     award_date : DATE
     external_url : VARCHAR(2048)
+    creation_key : UUID
     * status : VARCHAR(20)
     * verification_badge : BOOLEAN
     * visibility : VARCHAR(20)

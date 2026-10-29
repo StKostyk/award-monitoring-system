@@ -10,6 +10,7 @@
 
 _Others_
 
+* `u.e.c.a.d.service.DelegationErasure`
 * `u.e.c.a.d.service.DelegationRecorder`
 * `u.e.c.a.d.service.DelegationRules`
 |Bean references

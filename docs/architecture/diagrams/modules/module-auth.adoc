@@ -19,8 +19,12 @@ _Event listeners_
 
 _Others_
 
+* `u.e.c.a.a.service.AuthenticationErasure`
+* `u.e.c.a.a.service.AuthorizationRetention`
 * `u.e.c.a.a.service.DeviceFingerprint`
+* `u.e.c.a.a.service.DeviceRetention`
 * `u.e.c.a.a.service.EmailAddressRules`
+* `u.e.c.a.a.service.OneTimeTokenRetention`
 * `u.e.c.a.a.service.PasswordPolicy`
 |Bean references
 |* `u.e.c.a.u.service.UserAccounts` (in User)
@@ -29,11 +33,13 @@ _Others_
 * `u.e.c.a.d.service.DelegationLookup` (in Delegation)
 * `u.e.c.a.a.RolePermissions` (in Authz)
 * `u.e.c.a.c.mail.MailDelivery` (in Common)
+* `u.e.c.a.c.retention.RetentionProperties` (in Common)
 * `u.e.c.a.c.event.AfterCommit` (in Common)
 * `u.e.c.a.c.limit.RequestThrottle` (in Common)
 * `u.e.c.a.c.limit.ProtectionProperties` (in Common)
 * `u.e.c.a.o.service.OrganizationLookup` (in Organization)
 * `u.e.c.a.u.service.MembershipConfirmation` (in User)
+* `u.e.c.a.c.privacy.PrivacyNoticeVersions` (in Common)
 |Aggregate roots
 |* `u.e.c.a.a.entity.OneTimeToken`
 * `u.e.c.a.a.entity.UserDevice`

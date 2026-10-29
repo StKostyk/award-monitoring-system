@@ -10,13 +10,14 @@
 
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
-| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Validated 2026-10-27 with notes ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) §13): fix 8.1.4 (SCRUM-121, AC-2.9) in progress; AC-3.7 partly met, performance of the signed-in pages moves to Epic 9; manual run of §10 pending | 2026-10-26 | - |
-| 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | Validated 2026-10-28 with notes ([PRD](../features/epic-08/feature-8.2-accessibility.md) §13): finding F-1 (failed translation load) checked in the manual run; manual run of §10 pending | 2026-10-27 | - |
+| 8.1 Mobile responsive design and PWA (installable shell, offline draft, touch layouts, camera) | Validated 2026-10-27 with notes ([PRD](../features/epic-08/feature-8.1-mobile-pwa.md) §13): fix 8.1.4 (SCRUM-121, AC-2.9) merged; AC-3.7 partly met, performance of the signed-in pages moves to Epic 9; manual run of §10 on 2026-10-28 (failures fixed by 8.1.5-8.1.7 and rerun; steps 3 and 19 blocked without a real phone), fixes 8.1.8 and 8.1.9 after it | 2026-10-26 | - |
+| 8.2 WCAG 2.1 AA accessibility (page structure, automated audit of every route) | Validated 2026-10-28 with notes ([PRD](../features/epic-08/feature-8.2-accessibility.md) §13): finding F-1 (failed translation load) checked in the manual run; manual run of §10 on 2026-10-28: 24 pass after the fix 8.2.4 (unknown paths) and a rerun of the accessibility sweep | 2026-10-27 | - |
 
 ## Current focus
 
-Feature 8.1 validated 2026-10-27 with notes: fix story 8.1.4 (SCRUM-121) for a new award created twice when the save answer is lost (AC-2.9); AC-3.7 performance of `/awards/new` and `/awards` moves to an Epic 9 story. Feature 8.2 validated 2026-10-28 with notes (PRD §13); the manual runs of 8.1 §10 and 8.2 §10 are next, then the
-documentation reconciliation of the epic.
+Both features are validated and walked through their manual scenarios (2026-10-28). The fix stories from the runs are
+merged except 8.1.9 (in review), and the documentation of the epic is reconciled (2026-10-29). 8.2.2 stays in the
+icebox; the performance of `/awards/new` and `/awards` (AC-3.7 of 8.1) moves to an Epic 9 story.
 
 ## Scope
 

@@ -341,6 +341,7 @@
 | `verification_badge` | `BOOLEAN` | НІ | `FALSE` | - | Встановлюється, коли рецензент затверджує з позначкою «Документи перевірено» (нагорода має хоча б один документ, 4.1.2) |
 | `impact_score` | `INTEGER` | ТАК | - | CK: 0-100 | Розрахований бал значущості |
 | `external_url` | `VARCHAR(2048)` | ТАК | - | - | Посилання на зовнішню верифікацію |
+| `creation_key` | `UUID` | ТАК | - | UQ разом з `user_id` (частковий) | `Idempotency-Key` запиту `POST /awards`, що створив чернетку; браузер генерує його один раз для нової нагороди, і повтор з тим самим ключем повертає цю нагороду замість створення іншої (V049, 8.1.4). Не персональні дані; null для нагород, створених без ключа |
 | `visibility` | `VARCHAR(20)` | НІ | `'PRIVATE'` | CK: `PRIVATE`, `UNIVERSITY`, `PUBLIC` | Вибір власника для схваленої особистої нагороди: `PRIVATE` (власник і рецензенти в області), `UNIVERSITY` (також колеги, що увійшли, на сторінці досягнень), `PUBLIC` (також публічна сторінка, 4.3.2); записується лише `PUT /awards/{id}/visibility`, без нової `version` чи версії нагороди (V035) |
 | `search_vector` | `TSVECTOR` | НІ | згенероване | `GENERATED ALWAYS AS … STORED` | Слова `title` і `title_uk` (вага A), `awarding_organization` (B), `description` і `description_uk` (C), конфігурація `simple`, кожен текст через `search_words()` (NFC, апострофи `'`, `’`, `ʼ` та зворотний апостроф вилучено, кожна послідовність символів, що не є літерами чи цифрами, читається як пробіл, тому `2024-2025` дає `2024` і `2025`); застосунок ніколи його не записує (V047, 5.4.1; V048, 5.4.2) |
 | `search_text` | `TEXT` | НІ | згенероване | `GENERATED ALWAYS AS … STORED` | `search_words()` від `title`, `title_uk` і `awarding_organization` малими літерами, для триграмного запасного пошуку при помилках (V047, V048) |
@@ -389,6 +390,7 @@
 - `idx_awards_search` - Повнотекстовий GIN на `search_vector` (V047; замінює `ftidx_awards_title` і `ftidx_awards_title_uk` з V005, які вилучено)
 - `trgm_awards_search` - Триграмний GIN на `search_text` (V047)
 - `trgm_awards_title` - Триграмний GIN на `title` (V012)
+- `ux_awards_creation_key` - Частковий унікальний B-tree на `(user_id, creation_key)`, де `creation_key IS NOT NULL` (V049): два створення одного власника з одним ключем зберігають одну чернетку, також коли вони надходять одночасно
 
 **Зв'язки**:
 - НАЛЕЖИТЬ ДО `users` (N:1) через `user_id`

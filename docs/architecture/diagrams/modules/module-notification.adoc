@@ -3,14 +3,54 @@
 |Base package
 |`ua.edu.chnu.awards.notification`
 |Spring components
-|_Event listeners_
+|_Services_
+
+* `u.e.c.a.n.service.NotificationLookup`
+* `u.e.c.a.n.service.NotificationPreferenceService`
+* `u.e.c.a.n.service.NotificationService`
+
+_Event listeners_
 
 * `u.e.c.a.n.AuthorityChangeMails`
+* `u.e.c.a.n.CorrectionMails`
+* `u.e.c.a.n.DecisionMails`
+* `u.e.c.a.n.OverdueMails`
+* `u.e.c.a.n.TakeOverMails`
+* `u.e.c.a.n.service.InAppNotifications`
+
+_Others_
+
+* `u.e.c.a.n.service.DeliveryLog`
+* `u.e.c.a.n.service.DeliveryMetrics`
+* `u.e.c.a.n.service.NotificationDrafts`
+* `u.e.c.a.n.service.NotificationErasure`
+* `u.e.c.a.n.service.NotificationKeys`
+* `u.e.c.a.n.service.NotificationRetention`
+* `u.e.c.a.n.service.NotificationRows`
 |Bean references
-|* `u.e.c.a.c.mail.MailDelivery` (in Common)
+|* `u.e.c.a.a.service.AwardLinks` (in Award)
+* `u.e.c.a.a.service.ReviewMetrics` (in Award)
+* `u.e.c.a.a.AccessScope` (in Authz)
+* `u.e.c.a.c.mail.MailDelivery` (in Common)
+* `u.e.c.a.c.event.EventProperties` (in Common)
+* `u.e.c.a.u.service.UserAccounts` (in User)
+* `u.e.c.a.a.service.AuditService` (in Audit)
+* `u.e.c.a.c.retention.RetentionProperties` (in Common)
 |Events listened to
 |* `u.e.c.a.d.event.DelegationCreated` (async) 
 * `u.e.c.a.d.event.DelegationRevoked` (async) 
+* `u.e.c.a.u.event.RoleAssigned` (async) 
+* `u.e.c.a.u.event.RoleRevoked` (async) 
+* `u.e.c.a.a.event.AwardCorrected` (async) 
+* `u.e.c.a.a.event.AwardDecided` (async) 
+* `u.e.c.a.a.event.OverdueNoticed` (async) 
+* `u.e.c.a.a.event.ReviewTakenOver` (async) 
+* `u.e.c.a.a.event.AwardCorrected` (async) 
+* `u.e.c.a.a.event.AwardDecided` (async) 
+* `u.e.c.a.d.event.DelegationCreated` (async) 
+* `u.e.c.a.d.event.DelegationRevoked` (async) 
+* `u.e.c.a.a.event.OverdueNoticed` (async) 
+* `u.e.c.a.a.event.ReviewTakenOver` (async) 
 * `u.e.c.a.u.event.RoleAssigned` (async) 
 * `u.e.c.a.u.event.RoleRevoked` (async) 
 |===

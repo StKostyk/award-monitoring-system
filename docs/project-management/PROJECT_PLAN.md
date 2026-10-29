@@ -344,6 +344,23 @@ Current status: [BACKLOG.md](BACKLOG.md) and the epic trackers in [docs/epics](.
 
 ---
 
+## Addendum 2026-10-29: After Epic 8
+
+- **Velocity**: Epic 8 delivered 35 points between 2026-10-26 and 2026-10-29 (sprint 7): 23 of the kickoff plan (roadmap
+  estimate 21; story 8.2.2, 5 points, moved to the icebox) plus 12 for seven fix stories from the validations and
+  manual runs. About 414 points are delivered.
+- **Delivered scope**: feature 8.1 made the production build an installable web app with an offline application
+  shell (ADR-013 addendum), an award draft that survives a lost connection and is created once on reconnect (V049),
+  touch layouts at 360 px and camera capture; 8.2 added page language and titles, a skip link, focus management after
+  navigation, reduced motion and an automated WCAG 2.1 AA sweep of every route in the end-to-end suite. Both features
+  were walked through their manual scenarios.
+- **Not built**: described form errors, tables and announced changes for screen readers (8.2.2, icebox), an
+  offline-first client (offline is a fallback for the award form), and the Lighthouse mobile performance target of the
+  signed-in pages, which moves to Epic 9.
+- **Next**: Epic 9 (production hardening and the demo deployment).
+
+---
+
 ## Summary
 
 | **Attribute** | **Value** |

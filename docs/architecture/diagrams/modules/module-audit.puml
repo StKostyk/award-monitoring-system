@@ -13,7 +13,7 @@ Container_Boundary("AwardMonitoringSystemApplication.AwardMonitoringSystemApplic
   Component(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, "Audit", $techn="Module", $descr="", $tags="", $link="")
 }
 
-Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "depends on", $techn="", $tags="", $link="")
+Rel(AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Audit, AwardMonitoringSystemApplication.AwardMonitoringSystemApplication.Common, "uses", $techn="", $tags="", $link="")
 
 SHOW_LEGEND(true)
 @enduml

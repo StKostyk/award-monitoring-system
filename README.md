@@ -33,6 +33,8 @@ Development runs in one-week sprints. Delivered so far:
 | 4 Approval workflow | Reviewer queue with claim and hand-over, decisions and batch review with template answers, withdrawal and resubmission, per-faculty review period, overdue notice to the next level, corrections by reviewers, achievements pages shared with colleagues or the public | Done |
 | 7 Notifications | Events kept in the publication registry until handled, module boundaries checked by a test, notification centre in the toolbar, e-mail and in-app choice per notification type, delivery log, HTML e-mails in the university brand | Done |
 | 6 Compliance and audit | Versioned privacy notice and consents, privacy centre, legal holds, erasure of an account after a 30-day grace period across modules, nightly retention job with configurable policies, compliance page for the GDPR officer | Done |
+| 5 Analytics and search | Personal dashboard with a shareable summary, faculty and department analytics with CSV, Excel and PDF export, university dashboard with a board report, full-text award search | Done |
+| 8 Mobile and accessibility | Installable web app with an offline application shell, award drafts kept through a lost connection, touch layouts at 360 px with camera capture, page titles, skip link and focus management, automated WCAG 2.1 AA check of every route | Done |
 
 Detailed progress: [backlog](docs/project-management/BACKLOG.md), [epic trackers](docs/epics/),
 [change log](CHANGELOG.md).
