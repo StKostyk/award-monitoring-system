@@ -216,6 +216,12 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   /** A unit no longer offered was restored or refused; the choice stays so that the award can go to «Я». */
   readonly recipientKept = signal(false);
   readonly recipientShown = computed(() => this.unitOptions().length > 0 || this.recipientKept());
+  private readonly chosenUnit = signal<number | null>(null);
+  /** The chosen unit when the person can no longer choose it, so the picker names it as such. */
+  readonly unavailableUnit = computed(() => {
+    const id = this.chosenUnit();
+    return id !== null && !this.unitOptions().some((unit) => unit.id === id) ? id : null;
+  });
   readonly editing = computed(() => this.current() !== null);
   readonly removable = computed(() => {
     const award = this.current();
@@ -284,6 +290,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
         this.form.controls.recipientOrganizationId.setValue(null);
       }
     });
+    this.form.controls.recipientOrganizationId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => this.chosenUnit.set(id ?? null));
     this.suggestionInput()
       .pipe(
         switchMap(({ title, organization }) =>

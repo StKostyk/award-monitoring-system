@@ -355,6 +355,33 @@ describe('AwardFormComponent', () => {
     expect(component.problem()).toBeNull();
   });
 
+  it('ac1_a_restored_unit_outside_the_choice_shows_as_no_longer_available', async () => {
+    service.recipientUnits.mockReturnValue(of(units));
+    copies.save('21', 'award-new', {
+      ...emptyForm(),
+      titleUk: 'Грамота кафедри',
+      recipientOrganizationId: 70,
+    });
+    await open(null);
+    component.restore();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.unavailableUnit()).toBe(70);
+    const shown = fixture.nativeElement.querySelector('[data-testid="award-recipient-picker"]');
+    expect(shown.textContent).toContain('awards.recipient.unavailable');
+  });
+
+  it('ac3_a_unit_the_person_can_choose_shows_its_name', async () => {
+    service.recipientUnits.mockReturnValue(of(units));
+    await open(null);
+    type('recipient', 'UNIT');
+    type('recipientOrganizationId', units[0].id);
+
+    expect(component.unavailableUnit()).toBeNull();
+  });
+
   it('ac2_a_refused_recipient_beside_other_fields_stays_marked_on_a_shown_picker', async () => {
     copies.save('21', 'award-new', {
       ...emptyForm(),

@@ -102,6 +102,11 @@
                   {{ unitName(unit) }}
                 </mat-option>
               }
+              @if (unavailableUnit(); as id) {
+                <mat-option [value]="id" disabled data-testid="recipient-option-unavailable">
+                  {{ 'awards.recipient.unavailable' | transloco }}
+                </mat-option>
+              }
             </mat-select>
             @if (errorKey('recipientOrganizationId'); as key) {
               <mat-error>{{ key | transloco }}</mat-error>

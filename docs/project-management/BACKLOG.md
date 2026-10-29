@@ -164,6 +164,7 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.1.6 | Offline reload of a draft opens an empty form without Try again | 2 | ✅ Done | SCRUM-123 | [#353](https://github.com/StKostyk/award-monitoring-system/issues/353) |
 | 8.1.7 | Restored unit-recipient copy cannot be saved after the role is revoked | 2 | ✅ Done | SCRUM-124 | [#354](https://github.com/StKostyk/award-monitoring-system/issues/354) |
 | 8.1.8 | A late answer after the connection dropped keeps the app offline | 1 | 👀 In review | SCRUM-126 | [#363](https://github.com/StKostyk/award-monitoring-system/issues/363) |
+| 8.1.9 | Unit picker names a unit the person can no longer choose | 1 | 👀 In review | SCRUM-127 | [#365](https://github.com/StKostyk/award-monitoring-system/issues/365) |
 | 8.2.1 | Page language, titles, skip link and focus management | 5 | ✅ Done | SCRUM-118 | [#334](https://github.com/StKostyk/award-monitoring-system/issues/334) |
 | 8.2.3 | Automated WCAG 2.1 AA sweep of every route | 3 | ✅ Done | SCRUM-120 | [#336](https://github.com/StKostyk/award-monitoring-system/issues/336) |
 
