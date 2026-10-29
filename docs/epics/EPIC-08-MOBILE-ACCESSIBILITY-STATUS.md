@@ -123,6 +123,16 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   route loop and viewport constants for `accessibility.spec.ts` and `mobile-layout.spec.ts`; `openRoute` waits for
   `networkidle` with a swallowed 5 s timeout instead of a page signal; `theme.spec.ts` constant names and its
   400 px phone; `NavigationFocusService.focusPage` (~30 lines of closures) as a small state object.
+- Epic refactor sweep (2026-10-29, after the documentation sync): applied the one in-app path rule for redirects,
+  `shared/local-path.ts`, used by the offline page and the privacy notice. Left open: the award form marks the
+  server unreachable itself although the connectivity interceptor already does (its specs run without the
+  interceptor and rely on it); `today`/`oldest` getters repeated in the award form and the correction form; the
+  scans of `documents.spec.ts` and `profile.spec.ts` build their own axe run without `AXE_TAGS` and fail on any
+  impact (aligning them with `seriousViolations` changes the rule set, to be decided); phone viewport, `LANGUAGES`
+  and offline notice strings repeated across e2e specs; the offline and form-copy state of
+  `award-form.component.ts` (~840 lines) and its 1 650-line spec could move to a component-scoped helper and an
+  offline spec with a `networkError()` factory. Kept on purpose: `ChartThemeService` reads media queries through the
+  injected document (stubbed in its specs) rather than the globals of `shared/touch.ts`.
 
 ## Risks
 

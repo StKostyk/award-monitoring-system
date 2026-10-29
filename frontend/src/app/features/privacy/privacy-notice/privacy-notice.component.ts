@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { fieldProblems, knownProblem, problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
+import { localPath } from '../../../shared/local-path';
 import { ConsentsService, PrivacyNotice } from '../consents.service';
 
 /** Problems of the acknowledgement with a message of their own. */
@@ -84,7 +85,10 @@ export class PrivacyNoticeComponent implements OnInit {
     this.sending.set(true);
     this.error.set(null);
     this.consents.acknowledge(current).subscribe({
-      next: () => void this.router.navigateByUrl(this.returnUrl()),
+      next: () =>
+        void this.router.navigateByUrl(
+          localPath(this.route.snapshot.queryParamMap.get('returnUrl')),
+        ),
       error: (err: unknown) => {
         const outdated = fieldProblems(err).some((problem) => problem.code === 'outdated');
         this.error.set(
@@ -110,11 +114,5 @@ export class PrivacyNoticeComponent implements OnInit {
       },
       error: () => this.failed.set(true),
     });
-  }
-
-  /** The page the person came from; anything but a path inside the application ends on the start page. */
-  private returnUrl(): string {
-    const url = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/';
-    return url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\') ? url : '/';
   }
 }

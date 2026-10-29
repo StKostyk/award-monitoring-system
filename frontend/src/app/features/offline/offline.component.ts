@@ -7,6 +7,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ConnectivityService } from '../../core/connectivity/connectivity.service';
+import { localPath } from '../../shared/local-path';
 
 /** Shown instead of the sign-in when there is no session and no connection; signs in once the connection returns. */
 @Component({
@@ -37,9 +38,4 @@ export class OfflineComponent {
   retry(): void {
     this.auth.login(this.target);
   }
-}
-
-/** Only a path of this application is a sign-in target. */
-function localPath(url: string | null): string {
-  return url && /^\/(?![/\\])/.test(url) ? url : '/';
 }
