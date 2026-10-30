@@ -7,7 +7,8 @@
     that shell ends or is stopped (for example by a memory-pressure clean-up of background shells). Its output goes
     to build/<Name>-run.log; when it finishes, build/<Name>.exit holds its exit code. The log of the previous run is
     kept as build/<Name>-run-<yyyyMMdd-HHmm>.log (the five newest stay). A run of the same name that is still
-    going is refused. Wait for the exit file, then read the log, build/gate-summary.txt or build/e2e-summary.txt.
+    going is refused. Wait with the printed loop (it also ends when the process is gone without an exit file), then
+    read the log, build/gate-summary.txt or build/e2e-summary.txt.
 
 .PARAMETER Name
     Short name of the run (gate, e2e); names the log and the exit file.
@@ -64,3 +65,5 @@ $process = Start-Process -FilePath 'pwsh' -ArgumentList '-NoProfile', '-NonInter
     -WindowStyle Hidden -PassThru
 Set-Content -Path $pidFile -Value $process.Id
 Write-Host "Started $Name detached (PID $($process.Id)); log $runLog, exit code in $exitFile when done."
+Write-Host "Wait (Git Bash): until [ -f build/$Name.exit ] || ! tasklist //NH //FI `"PID eq $($process.Id)`" |" `
+    "grep -qi pwsh; do sleep 15; done; cat build/$Name.exit 2>/dev/null || echo 'no exit file: the run died'"

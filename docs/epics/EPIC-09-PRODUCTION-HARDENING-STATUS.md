@@ -44,7 +44,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 |---|-------|---------|-----|------|--------|----------|--------|
 | 1 | 9.1.1 Refresh tokens and authorization codes hashed at rest | 9.1 | 5 | SCRUM-129 | #370 | no | Done |
 | 2 | 9.1.2 Rate limits keyed by account and address | 9.1 | 5 | SCRUM-130 | #371 | no | Done |
-| 3 | 9.2.1 Signed-in pages reach Lighthouse mobile performance 90 | 9.2 | 3 | SCRUM-131 | #372 | no | In review |
+| 3 | 9.2.1 Signed-in pages reach Lighthouse mobile performance 90 | 9.2 | 3 | SCRUM-131 | #372 | no | Done |
 | 4 | 9.2.2 Nightly backups with a restore drill | 9.2 | 5 | SCRUM-132 | #373 | no | Planned |
 | 5 | 9.2.3 Deploy job and production server settings | 9.2 | 3 | SCRUM-133 | #374 | no | Planned |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
