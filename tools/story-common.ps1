@@ -60,10 +60,19 @@ function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$ep
     if ($last -lt 0) { throw "No started story in $($tracker.Name)" }
     $null = $lines[$last] -match $rowPattern
     $previous, $feature, $number = $Matches[1], $Matches[2], [int]$Matches[3]
-    $order = if ($previous -match '[a-y]$') {
-        $previous.Substring(0, $previous.Length - 1) + [char]([int][char]$previous[-1] + 1)
-    } else { "$($previous)a" }
-    if ($id) { $feature = $id -replace '\.\d+$', '' } else { $id = "$feature.$($number + 1)" }
+    $relative = [IO.Path]::GetRelativePath((Get-Location).Path, $tracker.FullName) -replace '\\', '/'
+    git fetch -q origin develop 2>$null
+    $rows = @($lines) + @(git show "origin/develop:$relative" 2>$null) | Where-Object { $_ -match $rowPattern } |
+        ForEach-Object { [pscustomobject]@{ Order = $Matches[1]; Id = "$($Matches[2]).$($Matches[3])" } }
+    $order = $previous
+    do {
+        $order = if ($order -match '[a-y]$') {
+            $order.Substring(0, $order.Length - 1) + [char]([int][char]$order[-1] + 1)
+        } else { "$($order)a" }
+    } while ($order -in $rows.Order)
+    if ($id) { $feature = $id -replace '\.\d+$', '' } else {
+        do { $number++; $id = "$feature.$number" } while ($id -in $rows.Id)
+    }
     $lines.Insert($last + 1, "| $order | $id $summary | $feature | $points | $key | #$issue | no | To do |")
     Write-Lines $tracker.FullName $lines.ToArray()
 
@@ -187,6 +196,7 @@ function Set-BacklogStatus([string]$key, [string]$status) {
         $cells[3] = switch ($status) {
             'Done' { ' ✅ Done ' }
             'In review' { if ($sprint) { " 👀 In review ($sprint) " } else { ' 👀 In review ' } }
+            'In progress' { if ($sprint) { " 🔨 In progress ($sprint) " } else { ' 🔨 In progress ' } }
             default { " $sprint " }
         }
         '|' + ($cells -join '|') + '|'

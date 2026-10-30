@@ -18,6 +18,9 @@
     empty cell is reported. A rerun on the story
     branch skips the checkout. -Carry stashes uncommitted changes, checks out the base and pops them on the new branch; a base without an
     upstream is not pulled, and a failed pull or GitHub query is retried once.
+    -RowsOnly adds the tracker and BACKLOG rows of an unplanned story on the current branch and stops (no branch,
+    no transitions), for fix stories filed during a manual run. Without a PRD section of the story a warning names
+    the missing PRD or section.
 
 .EXAMPLE
     .\tools\story-start.ps1 SCRUM-49
@@ -25,6 +28,7 @@
     .\tools\story-start.ps1 SCRUM-49 -DryRun    # prints branch, merged stories and PRD section only
     .\tools\story-start.ps1 SCRUM-61 -Summary "Refactor from the Feature 4.2 sweep" -Points 3 -Epic SCRUM-47 -GitHub 171
     .\tools\story-start.ps1 SCRUM-111 -Summary "4.2.7 Stabilise failing and flaky e2e specs" -Epic SCRUM-47 -GitHub 312 -Sprint 6
+    .\tools\story-start.ps1 SCRUM-140 -Summary "7.1.6 Retry mail after restart" -Epic SCRUM-90 -GitHub 400 -RowsOnly
 #>
 #Requires -Version 7
 
@@ -44,6 +48,7 @@ param(
     [switch]$NoTracker,
     [switch]$NoClose,
     [switch]$Carry,
+    [switch]$RowsOnly,
     [switch]$DryRun
 )
 
@@ -68,7 +73,18 @@ if ($Summary) { $Summary = $Summary -replace '^\s*\d+\.\d+\.\d+\s+', '' }
 if (-not ($row -or $Summary)) { throw "No tracker row for $Key in docs/epics" }
 if (-not $Slug) { $Slug = New-Slug $(if ($row) { $row.Title } else { $Summary }) }
 $branch = "feature/$Key-$Slug"
-$closing = if ($NoClose) { @() } else { @(Find-MergedStories) }
+$closing = if ($NoClose -or $RowsOnly) { @() } else { @(Find-MergedStories) }
+
+if ($RowsOnly) {
+    if ($row) { Write-Host "Rows:    $Key already has a tracker row" }
+    else {
+        if (-not $Summary) { throw '-RowsOnly needs -Summary, -Epic and -GitHub' }
+        $hint = if ($Sprint) { $Sprint } elseif ($facts) { $facts.Sprint } else { '' }
+        $id = Add-StoryRows $Key $Summary $Points $Epic $GitHub $number $hint
+        Write-Host "Rows:    $id added to the epic tracker and BACKLOG (To do) on $(git branch --show-current)"
+    }
+    return
+}
 
 if ($DryRun) {
     $closing | ForEach-Object { Write-Host "Would close: $($_.Key) (PR #$($_.Pr) merged)" }
@@ -111,6 +127,7 @@ if ($DryRun) {
 if (-not ($NoTracker -or $DryRun)) {
     Invoke-TrackerSync status -Jira $Key -GitHub $row.Issue -Status InProgress
     $null = Set-TrackerStatus $Key 'In progress'
+    $null = Set-BacklogStatus $Key 'In progress'
 }
 
 Write-Host "Branch:  $branch"
@@ -122,6 +139,12 @@ if ($prd) {
     $prd.Lines | ForEach-Object { Write-Host $_ }
 } else {
     Write-Host 'PRD:     no section with this key under docs/features'
+    $feature = ($row.Line.Trim('|').Split('|') | ForEach-Object { $_.Trim() })[2]
+    if (-not $Summary -and $feature -match '^\d+\.\d+$') {
+        $prdFile = Get-ChildItem docs/features -Recurse -Filter "feature-$feature-*.md" | Select-Object -First 1
+        if ($prdFile) { Write-Warning "$($prdFile.Name) has no '### ... ($Key)' section; write it before the code" }
+        else { Write-Warning "Feature $feature has no PRD under docs/features; write it before the code" }
+    }
 }
 Write-Host ''
 Write-Host 'Next:    tests first; .\tools\gate.ps1 -StaticOnly after writing code'

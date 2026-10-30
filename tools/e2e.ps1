@@ -33,7 +33,8 @@
     (it stopped during the run; the retry starts a new one). Default 3; 0 turns the retry off.
 
 .OUTPUTS
-    build/e2e-summary.txt: result, counts and every failed test with its retry outcome; the JSON reports in
+    build/e2e-summary.txt: result (PASS, FAIL, or INVALID when tests were skipped without test.skip/fixme, as
+    after a machine sleep), counts and every failed test with its retry outcome; the JSON reports in
     build/e2e-results.json and build/e2e-retry-results.json.
 
 .EXAMPLE
@@ -102,10 +103,12 @@ function Get-E2eResults([string]$path) {
         foreach ($spec in @($suite.specs)) {
             foreach ($test in @($spec.tests)) {
                 $last = @($test.results)[-1]
+                $annotations = @($test.annotations) + @($last.annotations) | Where-Object { $_ }
                 [pscustomobject]@{
-                    Name   = "$($spec.file):$($spec.line) $($spec.title)"
-                    Status = if ($test.status -eq 'skipped') { 'skipped' } elseif ($last) { $last.status } else { 'unknown' }
-                    Error  = (@($last.errors) | ForEach-Object { $_.message }) -join ' '
+                    Name     = "$($spec.file):$($spec.line) $($spec.title)"
+                    Status   = if ($test.status -eq 'skipped') { 'skipped' } elseif ($last) { $last.status } else { 'unknown' }
+                    Error    = (@($last.errors) | ForEach-Object { $_.message }) -join ' '
+                    Declared = [bool]($annotations | Where-Object { $_.type -in 'skip', 'fixme' })
                 }
             }
         }
@@ -117,20 +120,27 @@ function Write-E2eSummary([object[]]$first, [object[]]$failed, [object[]]$retrie
     $span = (Get-Date) - $since
     $passed = @($first | Where-Object Status -eq 'passed').Count
     $skipped = @($first | Where-Object Status -eq 'skipped').Count
+    $undeclared = @($first | Where-Object { $_.Status -eq 'skipped' -and -not $_.Declared }).Count
     $stillFailing = if ($retried) { @($retried | Where-Object { $_.Status -notin 'passed', 'skipped' }) } else { $failed }
+    $result = if ($undeclared) { 'INVALID' } elseif ($first -and -not $stillFailing) { 'PASS' } else { 'FAIL' }
     $lines = @(
         "E2E run:  $(Get-Date -Format 'yyyy-MM-dd HH:mm') ($([int]$span.TotalMinutes) min)"
         "Branch:   $(git -C $root rev-parse --abbrev-ref HEAD)"
-        "Result:   $(if ($first -and -not $stillFailing) { 'PASS' } else { 'FAIL' }) - $passed passed, " +
+        "Result:   $result - $passed passed, " +
             "$($failed.Count) failed, $skipped skipped$(if ($retried) { ", $($failed.Count - $stillFailing.Count) passed on retry" })"
     )
     if (-not $first) { $lines += 'No results: Playwright stopped before its report (see build/e2e-run.log).' }
+    if ($undeclared) {
+        $lines += "$undeclared test(s) skipped without test.skip/fixme: the run was cut short (global timeout, " +
+            'machine sleep); run again.'
+    }
     $lines += $failed | ForEach-Object {
         $again = $retried | Where-Object Name -eq $_.Name | Select-Object -First 1
         "  $($_.Status.PadRight(9)) $($_.Name)$(if ($again) { " -> retry $($again.Status)" })"
     }
     Set-Content -Path (Join-Path $root 'build\e2e-summary.txt') -Value $lines -Encoding utf8
     $lines | ForEach-Object { Write-Host $_ }
+    return $undeclared
 }
 
 $inherited = $false
@@ -226,7 +236,7 @@ try {
             $retried = @(Get-E2eResults $retryJson)
             if (-not $exit) { Write-Host "Passed on retry: $($failed.Count) test(s) are flaky." }
         }
-        Write-E2eSummary $first $failed $retried $runStart
+        if ((Write-E2eSummary $first $failed $retried $runStart) -and -not $exit) { $exit = 1 }
     } finally {
         Remove-Item Env:PLAYWRIGHT_JSON_OUTPUT_NAME -ErrorAction SilentlyContinue
         Pop-Location

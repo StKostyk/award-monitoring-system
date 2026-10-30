@@ -7,7 +7,9 @@
   "type": "module",
   "scripts": {
     "flow": "node run.mjs",
-    "profile": "node profile.mjs"
+    "flow:median": "node run.mjs --runs 3",
+    "profile": "node profile.mjs",
+    "timeline": "node timeline.mjs"
   },
   "dependencies": {
     "lighthouse": "^12.8.2",
