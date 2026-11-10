@@ -11,11 +11,12 @@
 | Feature | Status | Started | Done |
 |---------|--------|---------|------|
 | 9.1 Security hardening (tokens hashed at rest, rate limits by account and address; backend-for-frontend as a stretch) | PRD approved 2026-10-29 ([PRD](../features/epic-09/feature-9.1-security-hardening.md)) | - | - |
-| 9.2 Demo deployment and operations (Lighthouse 90 on the signed-in pages, nightly backups, deploy job, AWS EC2 server) | Planned | - | - |
+| 9.2 Demo deployment and operations (Lighthouse 90 on the signed-in pages, nightly backups, deploy job, AWS EC2 server, award form in steps on phones) | PRD approved 2026-11-10 ([PRD](../features/epic-09/feature-9.2-demo-deployment.md)) | 2026-10-29 | - |
 
 ## Current focus
 
-Feature 9.1 PRD approved; the next story is 9.1.1 (SCRUM-129).
+Feature 9.2 PRD approved 2026-11-10 (sections 9.2.2 to 9.2.5); the next story is 9.2.2 (SCRUM-132), then 9.2.3,
+9.2.4 (server before the code freeze around 2026-11-22) and 9.2.5.
 
 ## Scope
 
