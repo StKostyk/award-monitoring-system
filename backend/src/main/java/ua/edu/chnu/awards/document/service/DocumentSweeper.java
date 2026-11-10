@@ -10,6 +10,8 @@ import java.util.Set;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.common.retention.CatchUpJob;
+import ua.edu.chnu.awards.common.retention.CatchUpOrderConstants;
 import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.repository.DocumentRepository;
 
@@ -23,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DocumentSweeper {
+public class DocumentSweeper implements CatchUpJob {
 
     private static final int BATCH = 500;
 
@@ -49,6 +51,21 @@ public class DocumentSweeper {
             log.warn("Document sweep skipped: {}", exception.getCause().getMessage());
             return 0;
         }
+    }
+
+    @Override
+    public String catchUpName() {
+        return "document sweep";
+    }
+
+    @Override
+    public int catchUpOrder() {
+        return CatchUpOrderConstants.DOCUMENT_SWEEP;
+    }
+
+    @Override
+    public String catchUp() {
+        return sweep() + " orphaned objects removed";
     }
 
     private List<String> orphans(List<String> keys) {

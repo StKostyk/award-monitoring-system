@@ -43,7 +43,8 @@ shortly before the defense or when a pilot user appears.
 - Images built by CI and pulled from GHCR; a `deploy-demo` CI job connects over SSH and runs `docker compose pull`
   and `up -d`. Until a server exists the job stays disabled.
 - Fictional demo accounts (`db/seed/demo`, `@demo.example`) are created only when `DEMO_PASSWORD_HASH` is set.
-- Nightly `pg_dump` and a MinIO mirror copied off the server.
+- Nightly `pg_dump` and an archive of the document objects, encrypted with `age` and copied off the server; they
+  expire after 14 days (DEMO_DEPLOYMENT §4).
 
 ### Rationale
 - Runs exactly what the gates and the end-to-end tests run; no second deployment model to maintain.

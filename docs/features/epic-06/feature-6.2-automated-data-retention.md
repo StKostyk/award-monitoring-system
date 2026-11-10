@@ -34,7 +34,8 @@ Personal data outlives its purpose. Expired notifications, used sign-in links, e
 - System log retention: logs are files rolled after 30 days or 1 GB (`logback-spring.xml`), not database rows; container log rotation is part of the Epic 9 runbook (decision 6)
 - Event publications: already purged by `PublicationRetry` after `app.events.keep-failed` (30 days)
 - "Run now" button and editable policies: the cron and the periods are properties (decision 10)
-- Backups: none before Epic 9; the backup procedure then states how expired data leaves them
+- Backups: expired data leaves them 14 days after the nightly job removed it, and a restore runs the retention job
+  through the catch-up at start (DEMO_DEPLOYMENT §4, Feature 9.2 AC-2.4, AC-2.6)
 
 ## 3. Stories
 

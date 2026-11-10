@@ -14,6 +14,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import ua.edu.chnu.awards.common.retention.CatchUpJob;
+import ua.edu.chnu.awards.common.retention.CatchUpOrderConstants;
 import ua.edu.chnu.awards.common.retention.RetentionContext;
 import ua.edu.chnu.awards.common.retention.RetentionPolicy;
 import ua.edu.chnu.awards.common.retention.RetentionProperties;
@@ -33,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RetentionJob {
+public class RetentionJob implements CatchUpJob {
 
     private final RetentionRuns runs;
     private final LegalHolds holds;
@@ -56,6 +58,21 @@ public class RetentionJob {
             log.info("Retention run skipped: another run is still working");
         }
         return run;
+    }
+
+    @Override
+    public String catchUpName() {
+        return "retention job";
+    }
+
+    @Override
+    public int catchUpOrder() {
+        return CatchUpOrderConstants.RETENTION;
+    }
+
+    @Override
+    public String catchUp() {
+        return run().map(id -> "run " + id).orElse("skipped");
     }
 
     private long runLocked() {

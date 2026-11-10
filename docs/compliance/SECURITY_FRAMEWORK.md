@@ -301,7 +301,7 @@ graph TB
 | **I001** | Personal data exposure via API | High | Medium | 8 | Data classification, field-level encryption, access controls |
 | **I002** | Award document unauthorized access | Medium | Medium | 6 | Document access controls, watermarking, audit logging |
 | **I003** | System information leakage | Low | High | 5 | Error message sanitization, security headers |
-| **I004** | Database backup exposure | Critical | Low | 9 | Backup encryption, secure storage, access controls |
+| **I004** | Database backup exposure | Critical | Low | 9 | Backups encrypted with `age` to a public key (the server cannot read them), a separate bucket whose account may not delete, 14-day expiry (DEMO_DEPLOYMENT §4) |
 
 ### **2.5 Threat Mitigation Implementation**
 

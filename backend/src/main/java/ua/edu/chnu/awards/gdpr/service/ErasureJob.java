@@ -7,6 +7,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import ua.edu.chnu.awards.common.retention.CatchUpJob;
+import ua.edu.chnu.awards.common.retention.CatchUpOrderConstants;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ErasureJob {
+public class ErasureJob implements CatchUpJob {
 
     private final ErasureRequestService erasures;
     private final ErasureRunner runner;
@@ -35,6 +38,21 @@ public class ErasureJob {
             log.info("Erasure job queued {} reminders and erased {} accounts", warned, erased);
         }
         return warned + erased;
+    }
+
+    @Override
+    public String catchUpName() {
+        return "erasure job";
+    }
+
+    @Override
+    public int catchUpOrder() {
+        return CatchUpOrderConstants.ERASURE;
+    }
+
+    @Override
+    public String catchUp() {
+        return run() + " reminders and erasures";
     }
 
     private static int attempt(String part, IntSupplier step) {

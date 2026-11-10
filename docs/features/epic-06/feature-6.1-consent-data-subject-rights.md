@@ -36,7 +36,8 @@ The system keeps names, addresses, awards and documents of university staff, yet
 - Retention job, consent record retention (seven years from withdrawal), notification expiry and the GDPR officer's compliance page with runs, erasure requests and holds: Feature 6.2
 - `SMS_NOTIFICATIONS` and `DOCUMENT_AI_PROCESSING` consents: SMS out since Epic 7, OCR deferred (tracker scope)
 - CSV and PDF exports: JSON already meets Art. 20 (tracker deviation 6)
-- Backups: none before Epic 9; the backup procedure then states how erased accounts are excluded
+- Backups: an erased account expires with the backups after 14 days, and a restore re-applies due erasures
+  through the catch-up at start (DEMO_DEPLOYMENT §4, Feature 9.2 AC-2.4, AC-2.6)
 - Erasure requested by the GDPR officer on someone's behalf (letter, deceased person): not planned; `MEMORIAL` covers deceased staff
 - Rectification by request: the profile already edits names and the address (Feature 1.3)
 - Legal review of the notice text and the officer's sign-off: outside the software, recorded in the thesis as a limitation
