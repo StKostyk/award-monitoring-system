@@ -149,7 +149,9 @@ In the repository settings, the `demo` environment allows deployments from `main
 so a workflow edited on another branch never receives the deploy key.
 
 The job scans the two `main-<sha>` images it is about to deploy with Trivy and stops on a critical vulnerability
-that has a fix (also on a rollback, so an old tag with a known hole is refused). It then copies
+that has a fix (also on a rollback, so an old tag with a known hole is refused). A finding whose fix exists only on a
+newer major line than the one in use is accepted in `.trivyignore` with the affected feature, the reason the
+application is not exposed and an expiry date; after that date the scan fails again. It then copies
 `docker-compose.yaml`, `docker-compose.prod.yml`, `infra/caddy/Caddyfile`, `infra/minio/` and `infra/backup/` to
 `DEMO_DIR`, writes `.env.release` with the image names, then runs `pull`,
 `build backup` and `up -d --wait` with `--env-file .env.prod --env-file .env.release`. Its smoke test waits up to
