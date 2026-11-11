@@ -14,6 +14,8 @@
     integration or functional test class only (no unit failure), that class runs once more and, if it passes, the
     coverage check follows; the summary names the class as flaky.
     With less than -MinFreeGb of free memory after the static checks the run switches to -Sequential by itself;
+    with less than 6 GB free when the frontend tests start, vitest runs with 2 workers
+    (frontend/vitest.low-memory.config.ts), since a full worker pool crashes with a Node out-of-memory error;
     when verify fails because a Testcontainers container did not start while the frontend checks ran alongside,
     verify runs once more after them. A second gate, or a
     running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
@@ -167,7 +169,13 @@ $frontendChecks = {
         if ($staticOnly) { return $result }
 
         $testLog = Join-Path $logDir 'gate-frontend.log'
-        & npm run test:ci *> $testLog
+        $freeNowGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
+        if ($freeNowGb -lt 6) {
+            '{0:N1} GB free: vitest runs with 2 workers.' -f $freeNowGb | Out-File $testLog -Encoding utf8
+            & npm run test:ci -- --runner-config vitest.low-memory.config.ts *>> $testLog
+        } else {
+            & npm run test:ci *> $testLog
+        }
         $result.TestOk = $LASTEXITCODE -eq 0
         $plain = (Get-Content $testLog -Raw) -replace '\x1b\[[0-9;]*m', ''
         $result.Tests = if ($plain -match '(?s).*Tests\s+(\d+) passed') { $Matches[1] } else { '?' }

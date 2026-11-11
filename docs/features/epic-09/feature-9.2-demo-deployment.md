@@ -348,6 +348,10 @@ AC-1.1 is not met: the scores in §10 stay under 90; 9.2.5 continues it for the 
   stops on a finding, on a push and on a rollback; `security-scan` and the image scan in `docker-build` only report.
   A dispatch runs only from `main`, and the `demo` environment allows `main` only with my approval, so a branch
   cannot reach the deploy key with an edited workflow.
+- **D-15** (9.2.6) A critical finding fixed only on a newer major line (two spring-webmvc CVEs fixed in Spring
+  Framework 7.0.9, none in 6.2.x) goes into `.trivyignore` with the reason and an expiry date
+  (2027-01-31, after the defense) instead of a Spring Boot 4 migration; both need features the application does
+  not use (XsltView, SSE view fragments). The deploy scans pass the file explicitly.
 - **D-13** (9.2.3) `DEMO_HOST` is a repository variable: a job-level `if` is evaluated before the job enters its
   environment, so a `demo` environment variable would always read empty there and the job would never run. The
   other three variables and both secrets stay in the `demo` environment.

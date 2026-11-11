@@ -512,6 +512,7 @@ jobs:
           image-ref: ${{ steps.images.outputs.backend }}
           severity: 'CRITICAL'
           ignore-unfixed: true
+          trivyignores: '.trivyignore'
           exit-code: '1'
 
       - name: Scan the frontend image
@@ -520,6 +521,7 @@ jobs:
           image-ref: ${{ steps.images.outputs.frontend }}
           severity: 'CRITICAL'
           ignore-unfixed: true
+          trivyignores: '.trivyignore'
           exit-code: '1'
 
       - name: Set up SSH with the pinned host key

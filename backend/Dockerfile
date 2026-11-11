@@ -26,7 +26,7 @@ RUN java -Djarmode=layertools -jar target/*.jar extract --destination extracted
 FROM eclipse-temurin:21-jre-alpine
 
 # Install curl for health checks
-RUN apk add --no-cache curl
+RUN apk upgrade --no-cache && apk add --no-cache curl
 
 # Security: Run as non-root user
 RUN addgroup -g 1000 appgroup && \
