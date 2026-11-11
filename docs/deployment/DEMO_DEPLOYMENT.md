@@ -1,8 +1,8 @@
 # Demo Deployment Runbook
 
-Single-host deployment for the thesis defense (ADR-021): Docker Compose with `docker-compose.prod.yml`, Caddy
-for TLS, Brevo for mail. The server is rented shortly before the defense; until then the same configuration is
-rehearsed on a workstation with `SITE_ADDRESS=localhost`.
+Single-host deployment for the thesis defense (ADR-021, addendum 2026-11-11): Docker Compose with
+`docker-compose.prod.yml` on one AWS EC2 instance, Caddy for TLS, Brevo for mail, backups to S3 in a second region.
+The same configuration is rehearsed on a workstation with `SITE_ADDRESS=localhost`.
 
 ---
 
@@ -13,7 +13,7 @@ Copy `.env.prod.example` to `.env.prod` (ignored by git) and fill it in.
 | Variable | Value |
 |---|---|
 | `SITE_ADDRESS` | Domain, `<server-ip>.sslip.io`, or `localhost` for a rehearsal; also the host name in the SMTP greeting |
-| `BACKEND_IMAGE`, `FRONTEND_IMAGE` | GHCR image references on the server; `award-backend:prod` / `award-frontend:prod` when built locally |
+| `BACKEND_IMAGE`, `FRONTEND_IMAGE` | Not in `.env.prod` on the server: the deploy job writes them to `.env.release` (GHCR `main-<sha>` tags); `award-backend:prod` / `award-frontend:prod` when built locally |
 | `POSTGRES_*`, `REDIS_PASSWORD`, `MINIO_ROOT_*` | Generated random values (`openssl rand -base64 24`) |
 | `MINIO_APP_USER`, `MINIO_APP_PASSWORD` | The backend's MinIO account, created by the one-shot `minio-init` service with rights on the objects of `award-documents` only (no bucket settings, policies or admin); the root account stays with MinIO |
 | `MINIO_KMS_SECRET_KEY` | Encryption key of the document objects, see below |
@@ -60,7 +60,8 @@ budgets assume that the proxy passes the client address in `X-Forwarded-For`; re
 
 **Malware scanner.** The `clamav` service (`clamav/clamav:stable`, no published port) scans every upload; the
 backend waits for it to be healthy, which takes one to three minutes after a start while the signatures load, and
-refuses uploads while it is down. It needs about 1.2 GB of memory and keeps its signatures in the `clamav_data`
+refuses uploads while it is down. It needs about 1 GB of memory, up to 1.9 GB while it reloads new signatures
+next to the old ones (its limit is 2.9 GB, section 3), and keeps its signatures in the `clamav_data`
 volume; `freshclam` inside the container updates them every two hours, so the server needs outbound HTTPS. On the
 very first start the full signature download can take longer than the health check allows (about 5.5 minutes);
 if `docker compose up` then reports `clamav` unhealthy, wait until `docker compose ps clamav` shows `healthy` and
@@ -126,18 +127,64 @@ Afterwards: `$P down -v` (removes only the rehearsal volumes), then `docker comp
 
 ---
 
-## 3. Server deployment (deferred)
+## 3. Server deployment
 
-1. Rent a 4 vCPU / 8 GB server in an EU location; install Docker Engine with the Compose plugin.
-2. Firewall: allow 22, 80, 443 only.
-3. Copy `docker-compose.yaml`, `docker-compose.prod.yml`, `infra/caddy/Caddyfile`, `infra/minio/`, `infra/backup/`
-   and `.env.prod`.
-4. `docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod up -d --wait`.
-5. Run the manual verification below against the public address.
-6. Set up the backup bucket and its account (section 4) before the first start; the `backup` service starts with
-   the stack. Run the drill of section 4 once.
-7. Run one backend instance: the hourly overdue job is a plain `@Scheduled` task without a lock (ShedLock arrives with
-   Epic 9), so a second instance would send the overdue notices twice.
+**Server.** One EC2 `m7i-flex.large` (2 vCPU, 8 GB) in `eu-central-1`, Ubuntu 24.04 LTS, an encrypted 40 GB gp3
+volume, an Elastic IP (`SITE_ADDRESS=<ip>.sslip.io`), a security group with 80 and 443 open and 22 for key sign-in
+only. Install Docker Engine with the Compose plugin and a 2 GB swap file, sign Docker in to GHCR with a read-only
+token (`docker login ghcr.io`), create the deploy directory (`DEMO_DIR`) and put `.env.prod` there (section 1).
+Set up the backup bucket and its account (section 4) before the first start.
+
+**Deploy job.** `deploy-demo` in `.github/workflows/ci-cd.yml` runs after every push to `main` whose images were
+built and scanned. It needs:
+
+| Where | Name | Value |
+|---|---|---|
+| Repository variable | `DEMO_HOST` | The Elastic IP; while it is empty the job is skipped (a job condition cannot read environment variables) |
+| Environment `demo`, variables | `DEMO_USER`, `DEMO_DIR`, `SITE_ADDRESS` | SSH user, deploy directory, the public address |
+| Environment `demo`, secrets | `DEMO_SSH_KEY` | Private key of a key pair used only for deploys, its public key in `~/.ssh/authorized_keys` of `DEMO_USER` |
+| | `DEMO_KNOWN_HOSTS` | `ssh-keyscan -t ed25519 <ip>`, checked against the instance's console output; a changed host key fails the job |
+
+In the repository settings, the `demo` environment allows deployments from `main` only and requires my approval,
+so a workflow edited on another branch never receives the deploy key.
+
+The job scans the two `main-<sha>` images it is about to deploy with Trivy and stops on a critical vulnerability
+that has a fix (also on a rollback, so an old tag with a known hole is refused). It then copies
+`docker-compose.yaml`, `docker-compose.prod.yml`, `infra/caddy/Caddyfile`, `infra/minio/` and `infra/backup/` to
+`DEMO_DIR`, writes `.env.release` with the image names, then runs `pull`,
+`build backup` and `up -d --wait` with `--env-file .env.prod --env-file .env.release`. Its smoke test waits up to
+five minutes for `https://<SITE_ADDRESS>/.well-known/openid-configuration` to answer with the issuer
+`https://<SITE_ADDRESS>` and fails when a service other than `minio-init` is unhealthy or exited; a failure prints
+the last 50 log lines of those services. On the very first start the ClamAV signature download can outlast the
+wait (section 1): run the job again once `clamav` is healthy.
+
+**Rollback.** Actions → CI/CD Pipeline → Run workflow on `main` with `image_tag` set to an earlier `main-<sha>`
+(the tags of earlier runs are in GHCR): the build and test jobs are skipped and the job deploys that tag; a run
+started from another branch is skipped. Database
+migrations do not roll back; a tag older than a migration needs the restore of section 4.
+
+**Limits.** Every service logs through `json-file` with `max-size: 10m` and `max-file: 5`, so its logs stay under
+about 50 MB. Each has a `mem_limit` of about 1.5 times its peak measured on the rehearsal stack (Feature 9.2 PRD
+§10 run notes), rounded up to 64 MB steps:
+
+| Service | Limit | | Service | Limit |
+|---|---|---|---|---|
+| `clamav` | 2 944 MB | | `postgres` | 256 MB |
+| `backup` | 1 152 MB (768 MB tmpfs) | | `caddy`, `minio-init` | 128 MB |
+| `app` | 1 024 MB, `MaxRAMPercentage=60` | | `frontend`, `redis` | 64 MB |
+| `minio` | 512 MB | | | |
+
+6 272 MB in all, which leaves about 1.7 GB and the swap to the host on an 8 GB instance. A container that exceeds
+its limit is killed and restarted (`docker inspect -f '{{.State.OOMKilled}}'`); raise that one limit in
+`docker-compose.prod.yml` and redeploy. The backend has a fixed address in the Compose network, so the frontend
+proxy keeps reaching it after a deploy or a restore recreates the container. The backup stages the copied
+documents and their archive in a 768 MB tmpfs (so plaintext never reaches the disk), which holds a document store
+of about 350 MB; beyond that the run fails with a write error and the health check turns `unhealthy` the next
+day: then raise the tmpfs and the limit together.
+
+**Runs.** Run the manual verification below against the public address, and the drill of section 4 once. Run
+one backend instance: the hourly overdue job is a plain `@Scheduled` task without a lock, so a second instance
+would send the overdue notices twice.
 
 ---
 

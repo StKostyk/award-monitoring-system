@@ -47,7 +47,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 2 | 9.1.2 Rate limits keyed by account and address | 9.1 | 5 | SCRUM-130 | #371 | no | Done |
 | 3 | 9.2.1 Signed-in pages reach Lighthouse mobile performance 90 | 9.2 | 3 | SCRUM-131 | #372 | no | Done |
 | 4 | 9.2.2 Nightly backups with a restore drill | 9.2 | 5 | SCRUM-132 | #373 | no | In review |
-| 5 | 9.2.3 Deploy job and production server settings | 9.2 | 3 | SCRUM-133 | #374 | no | Planned |
+| 5 | 9.2.3 Deploy job and production server settings | 9.2 | 3 | SCRUM-133 | #374 | no | In review |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 
@@ -99,8 +99,8 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 - Existing limits: `auth/security/RateLimitFilter` (per-address windows, prefixes `auth:rate:` and
   `public:rate:`), `auth/service/LoginAttemptService` (failures per address, lock after five),
   `common/limit/RequestThrottle` (registration, password reset, email change, data export).
-- CI already pushes images to GHCR on `main` and `develop` (`docker-build`); `deploy-staging` and the production job
-  are placeholders.
+- CI pushes images to GHCR on `main` and `develop` (`docker-build`); `deploy-demo` deploys the `main-<sha>` images
+  to the demo server over SSH, or an earlier tag on a manual run (9.2.3).
 - Lighthouse runs through `tools/lighthouse` (`run.mjs`, mobile profile) against the Compose build.
 
 ## Documentation quick links

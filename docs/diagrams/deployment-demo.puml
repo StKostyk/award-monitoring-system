@@ -1,6 +1,6 @@
 @startuml Deployment_Demo
 ' =============================================================================
-' Demo deployment for the thesis defense (ADR-021)
+' Demo deployment for the thesis defense (ADR-021, addendum 2026-11-11)
 ' Award Monitoring & Tracking System
 ' =============================================================================
 
@@ -14,34 +14,49 @@ skinparam node {
     BackgroundColor<<security>> LightCoral
 }
 
-title Demo environment - Deployment Diagram (single host, Docker Compose)
+title Demo environment - Deployment Diagram (AWS, single EC2 host, Docker Compose)
 
 cloud "Internet" as internet {
     actor "Users" as users
 }
 
-node "EU virtual server (Ubuntu LTS, Docker Engine)" <<cloud>> as host {
-    component [Caddy\nTLS, Let's Encrypt\n:80 :443] <<security>> as caddy
+node "AWS eu-central-1" <<cloud>> as region {
+    node "Default VPC, public subnet" as vpc {
+        component [Elastic IP\n<ip>.sslip.io] as eip
+        node "Security group\n80, 443 from anywhere; 22 key sign-in only" <<security>> as sg {
+            node "EC2 m7i-flex.large (2 vCPU, 8 GB)\nUbuntu 24.04, Docker Engine, 2 GB swap" as host {
+                component [Caddy\nTLS, Let's Encrypt\n:80 :443] <<security>> as caddy
 
-    node "Compose network (no published ports)" <<container>> as net {
-        component [frontend\nnginx + Angular] as frontend
-        component [app\nSpring Boot, profile production\nauthorization server + API] as app
-        database "PostgreSQL 17" <<database>> as postgres
-        database "Redis 7\n(password)" <<database>> as redis
-        database "MinIO\n(SSE-S3)" <<database>> as minio
-        component [ClamAV clamd\n+ freshclam] as clamav
+                node "Compose network (no published ports; json-file logs 10 MB x 5, mem_limit per service)" <<container>> as net {
+                    component [frontend\nnginx + Angular\n64 MB] as frontend
+                    component [app\nSpring Boot, profile production\nauthorization server + API\n1 GB, fixed address] as app
+                    database "PostgreSQL 17\n256 MB" <<database>> as postgres
+                    database "Redis 7 (password)\n64 MB" <<database>> as redis
+                    database "MinIO (SSE-S3)\n512 MB" <<database>> as minio
+                    component [ClamAV clamd\n+ freshclam\n2.9 GB] as clamav
+                    component [backup\ncron, pg_dump + age, rclone\n1.1 GB with 768 MB tmpfs] as backup
+                }
+            }
+        }
+        storage "EBS gp3 40 GB, encrypted\nDocker volumes" as ebs
     }
+}
 
-    storage "Docker volumes" as volumes
+node "AWS eu-north-1" <<cloud>> as backupRegion {
+    database "S3 bucket\naward-backups\n14-day lifecycle" as s3
+}
+
+node "GitHub" <<external>> as github {
+    component [GitHub Actions\nbuild, scan, deploy-demo\n(scans the deployed tag)] as actions
+    component [GitHub Container Registry\nmain-<sha> images] as ghcr
 }
 
 node "External services" <<external>> as external {
     component [Brevo SMTP relay] as smtp
-    component [GitHub Container Registry] as ghcr
-    component [Backup target] as backup
 }
 
-users --> caddy : HTTPS (443)
+users --> eip : HTTPS (443)
+eip --> caddy
 caddy --> frontend : HTTP (80)
 frontend --> app : /api, /oauth2, /login (8080)
 app --> postgres : JDBC (5432)
@@ -49,13 +64,18 @@ app --> redis : RESP (6379)
 app --> minio : S3 API (9000)
 app --> clamav : INSTREAM (3310)
 app --> smtp : SMTP + STARTTLS (587)
-postgres --> volumes
-minio --> volumes
+postgres --> ebs
+minio --> ebs
+backup --> postgres : pg_dump
+backup --> minio : mirror
+backup ..> s3 : nightly encrypted archive (put-only IAM user)
+actions --> ghcr : push images
+actions ..> host : SSH (pinned host key):\ncopy Compose files, .env.release,\npull, up -d --wait, smoke test
 host ..> ghcr : docker compose pull
-host ..> backup : nightly pg_dump, MinIO mirror
 
 note right of net
-    Secrets from .env.prod on the server only.
+    Secrets from .env.prod on the server only;
+    image tags from .env.release (deploy-demo).
     Demo accounts (@demo.example) only when
     DEMO_PASSWORD_HASH is set.
 end note

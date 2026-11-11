@@ -179,7 +179,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.1.3 | Backend-for-frontend with an HttpOnly session cookie (stretch) | 8 | 9 | SCRUM-135 | [#376](https://github.com/StKostyk/award-monitoring-system/issues/376) |
 | 9.2.1 | Signed-in pages reach Lighthouse mobile performance 90 | 3 | ✅ Done | SCRUM-131 | [#372](https://github.com/StKostyk/award-monitoring-system/issues/372) |
 | 9.2.2 | Nightly backups with a restore drill | 5 | 👀 In review (8) | SCRUM-132 | [#373](https://github.com/StKostyk/award-monitoring-system/issues/373) |
-| 9.2.3 | Deploy job and production server settings | 3 | 9 | SCRUM-133 | [#374](https://github.com/StKostyk/award-monitoring-system/issues/374) |
+| 9.2.3 | Deploy job and production server settings | 3 | 👀 In review (9) | SCRUM-133 | [#374](https://github.com/StKostyk/award-monitoring-system/issues/374) |
 | 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | 9 | SCRUM-134 | [#375](https://github.com/StKostyk/award-monitoring-system/issues/375) |
 
 ### Later epics

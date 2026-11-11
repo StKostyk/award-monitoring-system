@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Demo deploy job: every main build is scanned and deployed to the demo server over SSH, image_tag rolls back; production services rotate their logs and run under measured memory limits (9.2.3)
 - Nightly encrypted backups of the database and documents with a checked restore; the nightly jobs catch up after a start (9.2.2)
 - End-to-end accessibility scans of every spec use the WCAG 2.1 A and AA tags of the route sweep
 - Automated WCAG 2.1 AA check of every page in both languages, both themes and at phone and desktop width, run with the end-to-end tests

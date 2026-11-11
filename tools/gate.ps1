@@ -5,9 +5,9 @@
 .DESCRIPTION
     Static analysis first (about half a minute), then the full build with tests and coverage, so a style
     violation never costs a five-minute run. -StaticOnly stops after the static checks (backend, then the
-    frontend ESLint and Prettier check, the lint and type check of the Playwright specs and nginx -t on the frontend
-    nginx configuration); a compiler error is printed as such. -SkipFrontend leaves the Angular checks, unit
-    tests and the production build (bundle budgets) out. The backend
+    frontend ESLint and Prettier check, the lint and type check of the Playwright specs, nginx -t on the frontend
+    nginx configuration and actionlint on the workflows); a compiler error is printed as such. -SkipFrontend leaves
+    the Angular checks, unit tests and the production build (bundle budgets) out. The backend
     verify runs only when the branch changes something under backend/ compared with develop (develop passed it
     when it was merged); -Full runs it regardless. The frontend checks run in a background job while the backend
     verify runs (-Sequential runs them afterwards); every phase prints its duration. When verify fails on one
@@ -154,8 +154,15 @@ $frontendChecks = {
                 $result.Lines += Select-String -Path $nginxLog -Pattern 'emerg|error' | Select-Object -First 5 |
                     ForEach-Object { "nginx -t: $($_.Line)" }
             }
+            $actionlintLog = Join-Path $logDir 'gate-actionlint.log'
+            & docker run --rm -v "${root}:/repo" -w /repo rhysd/actionlint:1.7.7 -no-color -oneline *> $actionlintLog
+            if ($LASTEXITCODE -ne 0) {
+                $result.LintOk = $false
+                $result.Lines += Get-Content $actionlintLog | Select-Object -First 10 |
+                    ForEach-Object { "actionlint: $_" }
+            }
         } else {
-            $result.Lines += 'nginx -t skipped: Docker is not running.'
+            $result.Lines += 'nginx -t and actionlint skipped: Docker is not running.'
         }
         if ($staticOnly) { return $result }
 
