@@ -86,6 +86,67 @@ services:
     image: ${FRONTEND_IMAGE:-award-frontend:prod}
     ports: !reset []
 
+  # Nightly encrypted backup of the database and the documents (DEMO_DEPLOYMENT §4); restore.sh restores one
+  backup:
+    build: ./infra/backup
+    image: ${BACKUP_IMAGE:-award-backup:prod}
+    container_name: award-backup
+    environment:
+      TZ: Europe/Kyiv
+      BACKUP_CRON: ${BACKUP_CRON:-30 4 * * *}
+      BACKUP_REMOTE: ${BACKUP_REMOTE:?set BACKUP_REMOTE}
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:?set BACKUP_AGE_RECIPIENT}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_IMAGE_TAG: ${BACKEND_IMAGE:-award-backend:prod}
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:-award_monitoring}
+      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_APP_USER:?set MINIO_APP_USER}
+      MINIO_SECRET_KEY: ${MINIO_APP_PASSWORD:?set MINIO_APP_PASSWORD}
+      RCLONE_CONFIG_S3_TYPE: s3
+      RCLONE_CONFIG_S3_PROVIDER: ${RCLONE_CONFIG_S3_PROVIDER:-AWS}
+      RCLONE_CONFIG_S3_REGION: ${RCLONE_CONFIG_S3_REGION:-eu-north-1}
+      RCLONE_CONFIG_S3_ENDPOINT: ${RCLONE_CONFIG_S3_ENDPOINT:-}
+      RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${RCLONE_CONFIG_S3_ACCESS_KEY_ID:?set RCLONE_CONFIG_S3_ACCESS_KEY_ID}
+      RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${RCLONE_CONFIG_S3_SECRET_ACCESS_KEY:?set RCLONE_CONFIG_S3_SECRET_ACCESS_KEY}
+    tmpfs:
+      - /tmp:size=2g,mode=1777
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      backup-bucket-init:
+        condition: service_completed_successfully
+        required: false
+    restart: unless-stopped
+    networks:
+      - award-network
+
+  # Only for a rehearsal on a workstation: the backup bucket on the Compose MinIO (BACKUP_REMOTE=s3:award-backups)
+  backup-bucket-init:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: award-backup-bucket-init
+    profiles: ["local-mail"]
+    user: "0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        export MC_CONFIG_DIR=/tmp/mc &&
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null &&
+        mc mb --ignore-existing local/award-backups
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - award-network
+
   caddy:
     image: caddy:2-alpine
     container_name: award-caddy

@@ -143,6 +143,9 @@ app:
   brand:
     # university brand of the sign-in and error pages; the same ids as the frontend's brand/brand.json
     id: ${APP_BRAND:chnu}
+  jobs:
+    catch-up-on-start: ${APP_JOBS_CATCH_UP_ON_START:false}
+    catch-up-delay: ${APP_JOBS_CATCH_UP_DELAY:PT1M}
   workflow:
     review-working-days: ${APP_REVIEW_WORKING_DAYS:3}
     overdue-cron: ${APP_WORKFLOW_OVERDUE_CRON:0 5 * * * *}
@@ -430,6 +433,9 @@ server:
         same-site: lax
 
 app:
+  jobs:
+    # a stopped server or a restored database catches up on the nightly jobs shortly after the start
+    catch-up-on-start: true
   documents:
     storage:
       access-key: ${STORAGE_S3_ACCESS_KEY}

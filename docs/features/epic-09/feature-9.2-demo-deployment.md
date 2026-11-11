@@ -143,7 +143,9 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
 - **AC-2.5** (Restore) Given a manifest time T and the private key file, when `restore.sh T` runs in the `backup`
   service with the key mounted read-only (`docker compose run --rm -v ./backup.key:/run/backup.key:ro backup
   restore.sh T`) while `app` is stopped, then it checks the SHA-256 of both files against the manifest, restores
-  the database with `pg_restore --clean --if-exists --single-transaction`, replaces the objects of
+  the database in one transaction (schema `public` dropped and recreated, the dump replayed through `psql
+  --single-transaction`; `pg_restore --clean` cannot drop the inherited keys of the audit partitions), replaces
+  the objects of
   `award-documents` with those of the archive (objects not in the archive are removed), and prints the row and
   object counts beside those of the manifest. A wrong key, a changed file or a running `app` stops it before
   anything is written, with a message naming the cause.
@@ -416,11 +418,11 @@ dump holds it and it falls due before the restore; the nightly job does not run 
    again. Expected: that file is gone. (AC-2.3, AC-2.4)
 6. Sign in at `https://localhost` as `employee.fmi@demo.example`, create the draft "Restore drill" with a PDF.
    (preparation for AC-2.8)
-7. `$P stop app`, then `$P run --rm -v ./build/backup.key:/run/backup.key:ro backup restore.sh <T>`. Expected: hash
+7. `$P stop app backup`, then `$P run --rm -v ./build/backup.key:/run/backup.key:ro backup restore.sh <T>`. Expected: hash
    check passed, the database and object counts equal the manifest, the pending request of step 6 is listed as
    due. Run it once with `-v ./build/other.key:...` first. Expected: "cannot decrypt: check the key file", nothing
    changed. (AC-2.5)
-8. `$P start app`; wait two minutes; `$P logs app | grep -i catch-up`. Expected: three catch-up lines; "Restore
+8. `$P start app backup`; wait two minutes; `$P logs app | grep -i catch-up`. Expected: three catch-up lines; "Restore
    drill" is not in the employee's list; `secretary.fmi` shows as "Erased #<id>" in the admin's user list; the
    award with the seed document opens its PDF. (AC-2.6, AC-2.8)
 9. `docker stats --no-stream` after steps 4 to 8 and after the DEMO_DEPLOYMENT scenario; record the peaks.
@@ -505,6 +507,21 @@ spread between runs. `/awards` is limited by the rendering of the filter bar and
 form (D-1, 9.2.5). The best-practices 96 on `/awards` is a 504 the
 service worker returns when `/brand/brand.json` exceeds its 3 s freshness timeout during a throttled run; it does
 not occur on every run.
+
+**9.2.2 drill, 2026-11-10** (rehearsal stack, demo seed, branch build; steps 4 to 8 and the detours named):
+
+| Step | Result |
+|------|--------|
+| Pre | Erasure request #1 for `secretary.fmi` (user 4), due three minutes after the dump. The seed has no awards, so the award "Drill seed award" with `drill.pdf` was added before step 4 |
+| 4 | Pass: `backup.sh now` wrote `db-`, `documents-` and `manifest-20261110T232309` (7 users, 1 award, 1 object); `/tmp` empty |
+| 5 | Pass: `healthy`; a `db-` file dated 15 days back was expired by the next run |
+| 6 | Pass: draft "Restore drill" with a PDF added (award 2) |
+| 7 | Pass after a fix: the first restore stopped at `pg_restore --clean` ("cannot drop inherited constraint `audit_logs_default_pkey1`") and left the database unchanged; with the schema replay the hashes and key were checked, the restored counts equalled the manifest (7 / 1 / 1), request #1 was listed as due. Wrong key: "cannot decrypt: check the key file"; `app` running: refused (11 sessions); `19990101T000000`: "no manifest"; a second restore gave the same counts |
+| 8 | Pass: three catch-up lines at 21:29:00 UTC, 91 s after the start; user 4 is "Erased #4", request `COMPLETED`; "Restore drill" not in the list; the PDF of "Drill seed award" opens |
+
+The browser of the MCP refuses the local certificate of Caddy, so steps 6 and 8 ran through a Playwright script
+with certificate errors ignored; on this workstation `localhost` resolves to `::1` first, which Docker Desktop does
+not forward for port 443, so the first request may time out once.
 
 ## 11. Risks
 

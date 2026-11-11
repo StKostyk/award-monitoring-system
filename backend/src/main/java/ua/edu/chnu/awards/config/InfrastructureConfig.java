@@ -23,6 +23,7 @@ import ua.edu.chnu.awards.common.event.EventProperties;
 import ua.edu.chnu.awards.common.limit.FixedWindowCounter;
 import ua.edu.chnu.awards.common.mail.UndeliveredMailAsyncHandler;
 import ua.edu.chnu.awards.common.privacy.PrivacyNoticeProperties;
+import ua.edu.chnu.awards.common.retention.JobsProperties;
 import ua.edu.chnu.awards.common.retention.RetentionProperties;
 
 /**
@@ -31,7 +32,8 @@ import ua.edu.chnu.awards.common.retention.RetentionProperties;
  */
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties({EventProperties.class, PrivacyNoticeProperties.class, RetentionProperties.class})
+@EnableConfigurationProperties({EventProperties.class, JobsProperties.class, PrivacyNoticeProperties.class,
+    RetentionProperties.class})
 @EnableScheduling
 public class InfrastructureConfig {
 

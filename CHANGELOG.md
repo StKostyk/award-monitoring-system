@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Nightly encrypted backups of the database and documents with a checked restore; the nightly jobs catch up after a start (9.2.2)
 - End-to-end accessibility scans of every spec use the WCAG 2.1 A and AA tags of the route sweep
 - Automated WCAG 2.1 AA check of every page in both languages, both themes and at phone and desktop width, run with the end-to-end tests
 - Accessibility: page language follows the interface, a title per page, a skip link, focus on the page heading after navigation, visible focus rings and reduced motion; user guide section on accessibility

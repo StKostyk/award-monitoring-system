@@ -130,13 +130,79 @@ Afterwards: `$P down -v` (removes only the rehearsal volumes), then `docker comp
 
 1. Rent a 4 vCPU / 8 GB server in an EU location; install Docker Engine with the Compose plugin.
 2. Firewall: allow 22, 80, 443 only.
-3. Copy `docker-compose.yaml`, `docker-compose.prod.yml`, `infra/caddy/Caddyfile` and `.env.prod`.
+3. Copy `docker-compose.yaml`, `docker-compose.prod.yml`, `infra/caddy/Caddyfile`, `infra/minio/`, `infra/backup/`
+   and `.env.prod`.
 4. `docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod up -d --wait`.
 5. Run the manual verification below against the public address.
-6. Schedule the nightly `pg_dump` and MinIO mirror to a target outside the server, with a copy of
-   `MINIO_KMS_SECRET_KEY` stored apart from them; restore once to test it.
+6. Set up the backup bucket and its account (section 4) before the first start; the `backup` service starts with
+   the stack. Run the drill of section 4 once.
 7. Run one backend instance: the hourly overdue job is a plain `@Scheduled` task without a lock (ShedLock arrives with
    Epic 9), so a second instance would send the overdue notices twice.
+
+---
+
+## 4. Backups and restore
+
+The `backup` service of `docker-compose.prod.yml` (image from `infra/backup/`) runs `backup.sh` daily at
+`BACKUP_CRON`, 04:30 Kyiv time by default, after the erasure job (02:30) and the retention job (04:00). A run
+uploads `db-<T>.dump.age` (`pg_dump -Fc`), then `documents-<T>.tar.age` (every object of `award-documents`, read
+through the MinIO API with the backend's own account), then `manifest-<T>.json` (sizes, SHA-256 of both files,
+counts of users, awards and objects, the backend image). Both files are encrypted with `age` to a public key; the
+server cannot read them. A run that fails at any point uploads no manifest. The health check turns `unhealthy` when
+no run succeeded in the last 26 hours (`docker compose ps backup`).
+
+| Variable | Server | Rehearsal |
+|---|---|---|
+| `BACKUP_AGE_RECIPIENT` | public key (`age1...`) | same |
+| `BACKUP_REMOTE` | `s3:<bucket>` | `s3:award-backups` (created by `backup-bucket-init`, profile `local-mail`) |
+| `BACKUP_KEEP_DAYS` | `0` (the lifecycle rule expires) | `14` (`backup.sh` deletes older files itself) |
+| `RCLONE_CONFIG_S3_PROVIDER`, `_REGION`, `_ENDPOINT` | `AWS`, `eu-north-1`, empty | `Minio`, any, `http://minio:9000` |
+| `RCLONE_CONFIG_S3_ACCESS_KEY_ID`, `_SECRET_ACCESS_KEY` | the backup account | the MinIO root account |
+| `BACKUP_CRON` | `30 4 * * *` | same |
+
+**Bucket and account.** One S3 bucket in `eu-north-1` (a second EU region), public access blocked, default
+encryption on, and a lifecycle rule that expires every object 14 days after its upload. The backup's IAM user has
+one policy: `s3:ListBucket` on the bucket and `s3:GetObject`, `s3:PutObject` on its objects; no delete. A stolen
+server key can add files but neither read old ones in clear nor remove them.
+
+**Keys apart.** `age-keygen -o backup.key` on my workstation; the public key goes into `.env.prod`, the file
+`backup.key` into my password manager next to `.env.prod` and a copy of `MINIO_KMS_SECRET_KEY`, and never to the
+server or the bucket. The archive holds the plain document content (inside `age`), so a restore to a new server
+works with a new `MINIO_KMS_SECRET_KEY`.
+
+**Erased and expired data.** Backups are never edited: an erased account or an expired record leaves every backup
+at most 14 days after the nightly job removed it. A restored database may hold erasure requests that fell due after
+its dump; with `app.jobs.catch-up-on-start` (on in the `production` profile) the backend runs the erasure job, the
+retention job and the document sweep one minute after every start, so they are carried out before the next night.
+
+**Restore** (`P` as in section 2, or without `-p`/`--profile` on the server):
+
+```bash
+$P exec backup rclone lsf s3:<bucket> | grep manifest     # pick the time T
+$P stop app backup
+$P run --rm -v ./backup.key:/run/backup.key:ro backup restore.sh <T>
+$P start app backup                                        # the catch-up runs one minute later
+```
+
+`restore.sh` refuses before writing anything when the manifest is missing, a file's SHA-256 differs from the
+manifest, the key cannot decrypt ("cannot decrypt: check the key file") or `app` still holds database sessions. It
+restores the database in one transaction (it drops and recreates the schema `public` and replays the dump through
+`psql --single-transaction`, since `pg_restore --clean` cannot drop the inherited keys of the audit partitions;
+a failure leaves the database as it was), replaces the objects of
+`award-documents` with those of the archive, prints the restored counts beside the manifest's, and lists the pending
+erasure requests whose date has passed. An erasure cancelled or a legal hold placed after the dump is not in the
+restored database: check that list and repeat such a cancellation or hold through psql before `$P start app`.
+Delete `backup.key` from the server afterwards.
+
+The manifest is not signed: the backups are written on the server, so a signing key would sit there too. Someone
+holding the backup account's key could therefore add a forged backup encrypted to the public key, though not read
+or remove the real ones. Restore only a time I picked from the nightly runs and compare the printed counts with the
+manifest before starting `app`.
+
+**Drill** (once before the defense, and after any change of `infra/backup/`): the steps 4 to 8 of the Feature 9.2
+manual verification on the rehearsal stack: one backup, a new draft with a PDF, an erasure due after the dump, the
+restore, then the start with the catch-up. `infra/backup/test.sh` checks the scripts against the development stack
+(`docker compose up -d postgres minio`).
 
 ---
 
