@@ -1,6 +1,7 @@
 #!/bin/sh
-# Script test of the backup image (Feature 9.2 test plan, AC-2.2 to AC-2.5). Needs the development postgres and
-# minio containers (docker compose up -d postgres minio); uses its own databases and buckets and removes them.
+# Script test of the backup image and the production override (Feature 9.2 test plan, AC-2.2 to AC-2.5, AC-3.4,
+# AC-3.5). Needs the development postgres and minio containers (docker compose up -d postgres minio); uses its own
+# databases and buckets and removes them.
 set -eu
 cd "$(dirname "$0")"
 export MSYS_NO_PATHCONV=1
@@ -64,6 +65,22 @@ docker build -q -t "$IMAGE" . >/dev/null
 KEY=$(docker run --rm "$IMAGE" age-keygen 2>/dev/null)
 OTHER_KEY=$(docker run --rm "$IMAGE" age-keygen 2>/dev/null)
 RECIPIENT=$(echo "$KEY" | sed -n 's/^# public key: //p')
+
+# AC-3.4, AC-3.5: every service of the production override rotates its logs and has a memory limit; the limits
+# leave at least 1.5 GB of an 8 GB host free
+config=$(cd ../.. && env $(sed -n 's/.*\${\([A-Z0-9_]*\):?.*/\1=x/p' docker-compose.prod.yml | sort -u) \
+  docker compose -f docker-compose.yaml -f docker-compose.prod.yml --profile local-mail \
+  config --format json) || no "AC-3.4 production configuration"
+echo "$config" | docker run --rm -i "$IMAGE" jq -e '[.services[] | .logging.driver == "json-file"
+  and .logging.options["max-size"] == "10m" and .logging.options["max-file"] == "5"] | all' >/dev/null \
+  || no "AC-3.4 a service without log rotation"
+echo "$config" | docker run --rm -i "$IMAGE" jq -e '[.services[] | .mem_limit != null] | all' >/dev/null \
+  || no "AC-3.5 a service without mem_limit"
+echo "$config" | docker run --rm -i "$IMAGE" jq -e \
+  '[.services[] | .mem_limit | tonumber] | add <= 6.5 * 1024 * 1024 * 1024' >/dev/null \
+  || no "AC-3.5 the limits add up to more than 6.5 GB"
+ok "AC-3.4, AC-3.5 every production service has log rotation and a memory limit, 6.5 GB at most in all"
+
 clean
 trap clean EXIT
 

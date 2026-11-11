@@ -14,14 +14,11 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
     inputs:
-      deploy_environment:
-        description: 'Environment to deploy'
+      image_tag:
+        description: 'Deploy this earlier image tag (main-<sha>) to the demo server without a build'
         required: false
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+        default: ''
+        type: string
 
 env:
   JAVA_VERSION: '21'
@@ -35,6 +32,8 @@ jobs:
   backend-build:
     name: Backend Build & Test
     runs-on: ubuntu-latest
+    # A dispatch with image_tag only deploys
+    if: inputs.image_tag == ''
 
     defaults:
       run:
@@ -79,6 +78,8 @@ jobs:
   frontend-build:
     name: Frontend Build & Test
     runs-on: ubuntu-latest
+    # A dispatch with image_tag only deploys
+    if: inputs.image_tag == ''
     defaults:
       run:
         working-directory: frontend
@@ -133,6 +134,8 @@ jobs:
   e2e:
     name: Playwright E2E
     runs-on: ubuntu-latest
+    # A dispatch with image_tag only deploys
+    if: inputs.image_tag == ''
     timeout-minutes: 45
     env:
       CI: true
@@ -275,8 +278,8 @@ jobs:
           mvn sonar:sonar -B \
             -Dsonar.projectKey=award-monitoring-system \
             -Dsonar.organization=kostyk-stefan \
-            -Dsonar.host.url=${SONAR_HOST_URL} \
-            -Dsonar.token=${SONAR_TOKEN} \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
             -Dsonar.qualitygate.wait=true
 
   # ===========================================================================
@@ -375,9 +378,11 @@ jobs:
         id: prep
         run: |
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "repo=${REPO_LOWER}" >> $GITHUB_OUTPUT
-          echo "backend_image=${REGISTRY}/${REPO_LOWER}-backend" >> $GITHUB_OUTPUT
-          echo "frontend_image=${REGISTRY}/${REPO_LOWER}-frontend" >> $GITHUB_OUTPUT
+          {
+            echo "repo=${REPO_LOWER}"
+            echo "backend_image=${REGISTRY}/${REPO_LOWER}-backend"
+            echo "frontend_image=${REGISTRY}/${REPO_LOWER}-frontend"
+          } >> "$GITHUB_OUTPUT"
 
       # Generate Docker metadata for backend
       # This creates appropriate tags based on branch, PR, or release
@@ -445,100 +450,149 @@ jobs:
           category: 'trivy-backend-image'
 
   # ===========================================================================
-  # Deploy to Staging
+  # Deploy to the demo server (ADR-021, DEMO_DEPLOYMENT §3): a push to main deploys the images it built; a dispatch
+  # with image_tag deploys an earlier main-<sha> without a build. Skipped while DEMO_HOST is not set.
   # ===========================================================================
-  deploy-staging:
-    name: Deploy to Staging
+  deploy-demo:
+    name: Deploy to the demo server
     runs-on: ubuntu-latest
     needs: [docker-build, security-scan]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: >-
+      !cancelled() && vars.DEMO_HOST != '' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+        needs.docker-build.result == 'success' && needs.security-scan.result == 'success') ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.image_tag != ''))
+    permissions:
+      contents: read
+      packages: read
     environment:
-      name: staging
-      url: https://staging.awards.example.com
+      name: demo
+      url: https://${{ vars.SITE_ADDRESS }}
+    concurrency:
+      group: deploy-demo
+      cancel-in-progress: false
+    env:
+      DEMO_HOST: ${{ vars.DEMO_HOST }}
+      DEMO_USER: ${{ vars.DEMO_USER }}
+      DEMO_DIR: ${{ vars.DEMO_DIR }}
+      SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+      IMAGE_TAG_INPUT: ${{ inputs.image_tag }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # For Kubernetes deployment, you would set up kubectl here
-      # This is a placeholder showing the general approach
-      - name: Deploy to staging environment
+      - name: Choose the images
+        id: images
         run: |
-          echo "Deploying to staging..."
-          echo "Backend image: ${{ needs.docker-build.outputs.backend-image }}"
-          echo "Frontend image: ${{ needs.docker-build.outputs.frontend-image }}"
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then tag="$IMAGE_TAG_INPUT"; else tag="main-${GITHUB_SHA::7}"; fi
+          echo "$tag" | grep -Eq '^main-[0-9a-f]{7,40}$' || { echo "image_tag must look like main-<sha>: $tag"; exit 1; }
+          repo=$(echo "${{ env.REGISTRY }}/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "BACKEND_IMAGE=${repo}-backend:${tag}"
+            echo "FRONTEND_IMAGE=${repo}-frontend:${tag}"
+          } > .env.release
+          cat .env.release
+          {
+            echo "backend=${repo}-backend:${tag}"
+            echo "frontend=${repo}-frontend:${tag}"
+          } >> "$GITHUB_OUTPUT"
 
-          # Example deployment commands (customize for your infrastructure):
-          # kubectl set image deployment/award-backend backend=IMAGE -n staging
-          # kubectl set image deployment/award-frontend frontend=IMAGE -n staging
-          # kubectl rollout status deployment/award-backend -n staging
-          # kubectl rollout status deployment/award-frontend -n staging
+      # The exact images to deploy, also on a rollback: a fixable critical vulnerability stops the deploy
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-          echo "Staging deployment would happen here"
-          echo "Configure this based on your infrastructure (K8s, ECS, etc.)"
+      - name: Scan the backend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.images.outputs.backend }}
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+          exit-code: '1'
 
-      - name: Run smoke tests
+      - name: Scan the frontend image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.images.outputs.frontend }}
+          severity: 'CRITICAL'
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Set up SSH with the pinned host key
+        env:
+          DEMO_SSH_KEY: ${{ secrets.DEMO_SSH_KEY }}
+          DEMO_KNOWN_HOSTS: ${{ secrets.DEMO_KNOWN_HOSTS }}
         run: |
-          echo "Running smoke tests against staging..."
-          # curl -f https://staging.awards.example.com/actuator/health || exit 1
-          echo "Smoke tests would run here"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEMO_SSH_KEY" > ~/.ssh/id_demo
+          printf '%s\n' "$DEMO_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_demo ~/.ssh/known_hosts
+          {
+            echo "Host demo"
+            echo "  HostName $DEMO_HOST"
+            echo "  User $DEMO_USER"
+            echo "  IdentityFile ~/.ssh/id_demo"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+            echo "  BatchMode yes"
+            echo "  ConnectTimeout 20"
+          } > ~/.ssh/config
 
-      - name: Notify deployment
-        if: success()
+      - name: Copy the Compose files
         run: |
-          echo "✅ Successfully deployed to staging"
-          echo "Consider integrating with Slack/Teams/Discord for notifications"
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          tar -czf - docker-compose.yaml docker-compose.prod.yml infra/caddy/Caddyfile infra/minio infra/backup \
+            .env.release | ssh demo "mkdir -p '$DEMO_DIR' && tar -xzf - -C '$DEMO_DIR'"
 
-  # ===========================================================================
-  # Deploy to Production
-  # ===========================================================================
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [docker-build, security-scan]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment:
-      name: production
-      url: https://awards.example.com
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to production environment
+      - name: Pull and start
         run: |
-          echo "Deploying to production..."
-          echo "Backend image: ${{ needs.docker-build.outputs.backend-image }}"
-          echo "Frontend image: ${{ needs.docker-build.outputs.frontend-image }}"
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          ssh demo "DEMO_DIR='$DEMO_DIR' bash -s" <<'EOF'
+          set -eu
+          cd "$DEMO_DIR"
+          dc="docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod --env-file .env.release"
+          $dc pull --quiet --ignore-buildable
+          $dc pull --quiet app frontend
+          $dc build --quiet backup
+          $dc up -d --wait --wait-timeout 300 --remove-orphans
+          EOF
 
-          # Production deployment with blue-green or canary strategy
-          # Example for Kubernetes blue-green:
-          # 1. Deploy to green environment
-          # 2. Run smoke tests on green
-          # 3. Switch traffic to green
-          # 4. Monitor for issues
-          # 5. Keep blue as rollback option
-
-          echo "Production deployment would happen here"
-          echo "Implement blue-green or canary deployment strategy"
-
-      - name: Run production smoke tests
+      - name: Smoke test
         run: |
-          echo "Running smoke tests against production..."
-          # Add real smoke test commands here
-          # curl -f https://awards.example.com/actuator/health || exit 1
-          echo "Production smoke tests would run here"
+          deadline=$((SECONDS + 300))
+          until body=$(curl -fsS --max-time 10 "https://$SITE_ADDRESS/.well-known/openid-configuration"); do
+            [ $SECONDS -lt $deadline ] || { echo "no answer from https://$SITE_ADDRESS within 5 minutes"; exit 1; }
+            sleep 10
+          done
+          issuer=$(echo "$body" | jq -r .issuer)
+          echo "issuer: $issuer"
+          [ "$issuer" = "https://$SITE_ADDRESS" ] || { echo "expected the issuer https://$SITE_ADDRESS"; exit 1; }
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          bad=$(ssh demo "DEMO_DIR='$DEMO_DIR' bash -s" <<'EOF'
+          cd "$DEMO_DIR"
+          docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod --env-file .env.release \
+            ps -a --format '{{.Service}} {{.State}} {{.Health}}' \
+            | awk '$1 != "minio-init" && ($2 == "exited" || $2 == "dead" || $3 == "unhealthy") {print $1}'
+          EOF
+          )
+          [ -z "$bad" ] || { echo "unhealthy or exited: $bad"; exit 1; }
+          echo "all services up"
 
-      - name: Notify deployment success
-        if: success()
-        run: |
-          echo "✅ Successfully deployed to production"
-          echo "Version: ${{ github.sha }}"
-
-      - name: Rollback on failure
+      - name: Logs of unhealthy services
         if: failure()
         run: |
-          echo "❌ Production deployment failed - initiating rollback"
-          echo "Implement rollback strategy here"
-          # kubectl rollout undo deployment/award-backend -n production
-          # kubectl rollout undo deployment/award-frontend -n production
+          # shellcheck disable=SC2029 # DEMO_DIR is expanded on the runner on purpose
+          ssh demo "DEMO_DIR='$DEMO_DIR' bash -s" <<'EOF'
+          cd "$DEMO_DIR"
+          dc="docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.prod --env-file .env.release"
+          $dc ps -a
+          for s in $($dc ps -a --format '{{.Service}} {{.State}} {{.Health}}' \
+              | awk '$1 != "minio-init" && ($2 != "running" || $3 == "unhealthy" || $3 == "starting") {print $1}'); do
+            echo "===== $s"
+            $dc logs --no-color --tail 50 "$s"
+          done
+          EOF

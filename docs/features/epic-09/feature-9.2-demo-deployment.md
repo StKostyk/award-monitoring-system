@@ -174,8 +174,10 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
   then `deploy-demo` (needs `docker-build` and `security-scan`, GitHub environment `demo`, `if:
   vars.DEMO_HOST != ''`) copies `docker-compose.yaml`, `docker-compose.prod.yml` and `infra/caddy/Caddyfile` to
   `DEMO_DIR` over SSH (`secrets.DEMO_SSH_KEY`, host key pinned by `secrets.DEMO_KNOWN_HOSTS`, user
-  `vars.DEMO_USER`), writes `.env.release` with `BACKEND_IMAGE` and `FRONTEND_IMAGE` of that tag, and runs
-  `docker compose ... --env-file .env.prod --env-file .env.release pull` and `up -d --wait`. Without `DEMO_HOST`
+  `vars.DEMO_USER`), together with `infra/minio/` and `infra/backup/` (the `minio-init` script and the backup image
+  source), writes `.env.release` with `BACKEND_IMAGE` and `FRONTEND_IMAGE` of that tag, and runs
+  `docker compose ... --env-file .env.prod --env-file .env.release pull`, `build backup` and `up -d --wait`,
+  after a scan of exactly those images that stops on a fixable critical vulnerability (D-14). Without `DEMO_HOST`
   the job is skipped, not failed. The placeholder jobs `deploy-staging` and `deploy-production` are removed.
 - **AC-3.2** (Smoke test) Given the deploy, then the job checks within 5 minutes that
   `https://<SITE_ADDRESS>/.well-known/openid-configuration` answers 200 with the issuer `https://<SITE_ADDRESS>`
@@ -247,7 +249,7 @@ Carried from AC-3.7 of Feature 8.1, restricted to the two pages of F-2.
 |---|---|
 | Backup while a user uploads | The dump comes first, the archive second: an object uploaded in between is in the archive without a row; after a restore the document sweep removes it (AC-2.6). An object deleted in between is in the dump's rows but not the archive: the restore reports the object count below the manifest's row-based expectation and the document opens as "not found"; at 04:30 neither is likely |
 | Upload to S3 fails (network, credentials) | `backup.sh` retries each upload three times, then exits non-zero without the manifest; the health check turns `unhealthy` after 26 hours; the next night tries again |
-| Disk full during a run | The run streams `pg_dump` through `age` into a temporary file in the container's `/tmp` (a tmpfs of 2 GB); at demo scale both files stay under 1 GB; a failed write exits non-zero |
+| Disk full during a run | The run streams `pg_dump` through `age` into a temporary file in the container's `/tmp` (a tmpfs of 768 MB, 9.2.3) next to the copied documents; at demo scale they stay under 350 MB; a failed write exits non-zero |
 | Restore with `app` running | Refused before writing (AC-2.5) |
 | Restore of a manifest older than the latest | Allowed; erasure requests that fell due later are carried out by the catch-up (AC-2.6); an erasure that was cancelled after that dump comes back as pending and is carried out at its old date. The restore prints the pending requests whose date has passed so that I can check them before starting `app` |
 | Wrong or missing private key | `age` fails; nothing is written; message "cannot decrypt: check the key file" |
@@ -335,6 +337,20 @@ AC-1.1 is not met: the scores in §10 stay under 90; 9.2.5 continues it for the 
   eligible for accounts created after 2025-07-15, so the sign-up credits pay for it.
 - **D-11** (9.2.5) Steps are three blocks of one form group under `@switch`, not `mat-stepper`: the stepper renders
   every step's content projection and adds its own animations and header, which is what the step split saves.
+- **D-12** (9.2.3) The backend gets a fixed address (`172.26.255.10`, outside the network's dynamic range
+  `172.26.0.0/17`) in the production override: the frontend's nginx resolves `app` once at start, so a backend
+  recreated by a deploy or a restore came back on another address and every API call answered 502 (seen in the
+  9.2.3 rehearsal). A runtime resolver in nginx would break the e2e harness, whose nginx reaches the local backend
+  through `--add-host`. The backup tmpfs shrinks from 2 GB to 768 MB so that its memory limit (tmpfs plus
+  384 MB for `pg_dump`, `age` and `rclone`) stays inside the 6.5 GB budget; a full tmpfs fails the run with a write
+  error before the limit is reached. Plaintext documents stay off the disk, so a disk work directory is no option.
+- **D-14** (9.2.3) The deploy job scans the exact `main-<sha>` images it deploys (Trivy, critical, fixable only) and
+  stops on a finding, on a push and on a rollback; `security-scan` and the image scan in `docker-build` only report.
+  A dispatch runs only from `main`, and the `demo` environment allows `main` only with my approval, so a branch
+  cannot reach the deploy key with an edited workflow.
+- **D-13** (9.2.3) `DEMO_HOST` is a repository variable: a job-level `if` is evaluated before the job enters its
+  environment, so a `demo` environment variable would always read empty there and the job would never run. The
+  other three variables and both secrets stay in the `demo` environment.
 
 ### Proposed deviations
 
@@ -369,7 +385,8 @@ None.
 | `RCLONE_CONFIG_S3_*` | - | 9.2.2 | Provider, region, key, secret, endpoint of the remote |
 | `BACKUP_AGE_RECIPIENT` | - (required) | 9.2.2 | `age1...` public key |
 | `BACKUP_KEEP_DAYS` | `14` | 9.2.2 | Rehearsal deletion window (S3 uses the lifecycle rule) |
-| `DEMO_HOST`, `DEMO_USER`, `DEMO_DIR`, `SITE_ADDRESS` | - | 9.2.3 | GitHub environment `demo` variables |
+| `DEMO_HOST` | - | 9.2.3 | GitHub repository variable; the deploy job is skipped while it is empty (D-13) |
+| `DEMO_USER`, `DEMO_DIR`, `SITE_ADDRESS` | - | 9.2.3 | GitHub environment `demo` variables |
 | `DEMO_SSH_KEY`, `DEMO_KNOWN_HOSTS` | - | 9.2.3 | GitHub environment `demo` secrets |
 
 ## 9. Test plan
@@ -425,9 +442,12 @@ dump holds it and it falls due before the restore; the nightly job does not run 
 8. `$P start app backup`; wait two minutes; `$P logs app | grep -i catch-up`. Expected: three catch-up lines; "Restore
    drill" is not in the employee's list; `secretary.fmi` shows as "Erased #<id>" in the admin's user list; the
    award with the seed document opens its PDF. (AC-2.6, AC-2.8)
-9. `docker stats --no-stream` after steps 4 to 8 and after the DEMO_DEPLOYMENT scenario; record the peaks.
-   `$P config | grep -c max-size` equals the number of services. Expected: limits at about 1.5 times the peaks,
-   sum at most 6.5 GB. (AC-3.4, AC-3.5)
+9. `docker stats --no-stream` sampled every two seconds during steps 4 to 8, the DEMO_DEPLOYMENT scenario and a
+   forced signature reload (`docker exec award-clamav clamdscan --reload`); record the peaks. `infra/backup/test.sh`
+   passes its AC-3.4/AC-3.5 check (every service with `json-file` 10m × 5 and a `mem_limit`, 6.5 GB at most in all).
+   Expected: limits at about 1.5 times the peaks; `docker inspect` shows no `OOMKilled` after the same steps with
+   the limits on; `$P stop app`, `$P start app` and `$P up -d --force-recreate app` keep `/login` at 200. (AC-3.4,
+   AC-3.5, D-12)
 
 Preconditions for 9.2.4: the EC2 server of the runbook §3, `.env.prod` there, the GitHub environment `demo` filled,
 the bucket and its IAM user, a mailbox I can read for the Brevo test.
@@ -522,6 +542,29 @@ not occur on every run.
 The browser of the MCP refuses the local certificate of Caddy, so steps 6 and 8 ran through a Playwright script
 with certificate errors ignored; on this workstation `localhost` resolves to `::1` first, which Docker Desktop does
 not forward for port 443, so the first request may time out once.
+
+**9.2.3 memory, 2026-11-11** (rehearsal stack, demo seed, branch build, Docker Desktop VM of 4 GB): a Playwright
+script signed in four sessions (admin, secretary, two employee) and opened ten pages five times each, the employee
+sessions uploading two PDFs (9 MB and 2 MB) a round; then `backup.sh now`, a restore of that time, and a forced
+ClamAV reload. First run without limits, second with them (11 uploads scanned and stored, 19 objects backed up):
+
+| Service | Peak MiB | Limit MB | Note |
+|---------|---------:|---------:|------|
+| `clamav` | 1 932 | 2 944 | Concurrent signature reload; 1 664 at start, about 950 at rest |
+| `app` | 666 | 1 024 | `MaxRAMPercentage=60`: heap at most 614 MB |
+| `minio` | 327 | 512 | During the restore |
+| `backup` | 203 | 1 152 | Process plus staged files; set by the 768 MB tmpfs plus 384 MB (D-12); restore run 80 |
+| `postgres` | 160 | 256 | |
+| `caddy` | 49 | 128 | |
+| `mailpit` | 17 | 64 | Rehearsal only |
+| `frontend` | 12 | 64 | |
+| `redis` | 10 | 64 | |
+| `minio-init`, `backup-bucket-init` | - | 128 each | One-shot, ends before a sample |
+
+Sum 6 464 MB (6 272 MB on the server, without the two rehearsal-only services). No container was `OOMKilled` or
+restarted with the limits on. Under the first run a restore left `/login` at 502: the restore container took the
+backend's address while `app` was stopped, and nginx kept the old one (D-12); with the fixed address `/login` stays
+at 200 after a restore and after `up -d --force-recreate app`.
 
 ## 11. Risks
 

@@ -1,6 +1,6 @@
 # ADR-021: Deployment Target for the Thesis Defense
 
-**Status**: Accepted (server provisioning deferred until shortly before the defense)  
+**Status**: Accepted; amended 2026-11-11 (AWS EC2 instead of Hetzner, see the addendum of that date)  
 **Date**: 2026-10-02  
 **Author**: Stefan Kostyk  
 **Stakeholders**: Project Architect, Thesis Supervisor
@@ -153,6 +153,36 @@ server like the one above, rented by the university. Either way, each university
 (ADR-022), and the work left for production is the Epic 9 hardening (backend-for-frontend with an HttpOnly
 cookie, refresh tokens hashed at rest, rate limits that suit a campus NAT, shared sessions in Redis).
 
+## Addendum 2026-11-11: AWS EC2 for the demo (Feature 9.2)
+
+The single-host decision stands; the provider changes. The demo runs on one AWS EC2 `m7i-flex.large` (2 vCPU,
+8 GB, free-plan eligible) in `eu-central-1`, paid from the account's sign-up credits (about 73 USD a month for the
+instance, so the credits cover the weeks up to the defense) instead of a rented Hetzner server. The 8 GB size
+follows from the measured memory limits of the stack (6.3 GB in all, see below), which a 4 GB instance cannot hold
+with ClamAV in it.
+
+- **Environment** (Feature 9.2 PRD §2.1): the default VPC with one public subnet, a security group with 80 and 443
+  open and 22 for key sign-in only, an encrypted 40 GB gp3 volume for every Docker volume, an Elastic IP with the
+  address `<ip>.sslip.io` (Let's Encrypt through Caddy, no domain needed), automatic recovery on a failed system
+  status check, an AWS Budgets alarm at 10 USD.
+- **Backups**: the nightly encrypted archives go to an S3 bucket in `eu-north-1`, a second region, written by an
+  IAM user that may only put objects; a 14-day lifecycle rule deletes them (DEMO_DEPLOYMENT §4).
+- **Delivery**: GitHub Actions builds the images and pushes them to GHCR as `main-<sha>`; the `deploy-demo` job
+  (GitHub environment `demo`) copies the Compose files over SSH with a pinned host key, writes `.env.release` with
+  the two image names, scans exactly those images (a fixable critical vulnerability stops the deploy), runs
+  `docker compose pull` and `up -d --wait`, and checks the issuer at
+  `https://<SITE_ADDRESS>/.well-known/openid-configuration`. A manual run with `image_tag` deploys an earlier tag,
+  which is the rollback. `.env.prod` with the secrets stays on the server only.
+- **Server settings**: every service logs through `json-file` with 10 MB × 5 rotation and has a `mem_limit` of
+  about 1.5 times its peak on the rehearsal stack (ClamAV 2.9 GB for its signature reload, backend 1 GB with
+  `MaxRAMPercentage=60`, backup 1.1 GB for its 768 MB tmpfs); the backend has a fixed address so the frontend proxy
+  keeps reaching it after the backend container is recreated.
+- **One instance, no load balancer or Auto Scaling group**: with one target a load balancer only adds a hop and a
+  monthly charge, and Caddy already terminates TLS. An Auto Scaling group would replace a failed host with an
+  empty disk, while the database and the documents live on the instance's volume; automatic recovery keeps the
+  same instance, volume and address. A second backend instance needs shared sessions and a scheduler lock, which
+  are production work (addendum 2026-10-05).
+
 ---
 
 ## Revision History
@@ -163,9 +193,10 @@ cookie, refresh tokens hashed at rest, rate limits that suit a campus NAT, share
 | 2026-10-02 | Stefan Kostyk | MinIO image `cgr.dev/chainguard/minio` (runs as root), server-side encryption with a static key (`MINIO_KMS_SECRET_KEY`) | MinIO no longer publishes images on Docker Hub or quay.io; Feature 3.1 D-8 |
 | 2026-10-05 | Stefan Kostyk | Addendum: production on university infrastructure, Epic 9 hardening | Design review of 2026-10-04 |
 | 2026-10-05 | Stefan Kostyk | ClamAV (`clamav/clamav:stable`, about 1.2 GB) joins the Compose stack; the backend depends on it being healthy | Feature 3.1.3, PRD assumption A4 |
+| 2026-11-11 | Stefan Kostyk | Addendum: AWS EC2 `m7i-flex.large` in `eu-central-1` on sign-up credits instead of Hetzner, S3 backups in `eu-north-1`, `deploy-demo` job, log rotation and memory limits | Feature 9.2 (D-10, AC-3.6); credits instead of a paid server |
 
 ---
 
 **Document Status**: Approved  
-**Next Review Date**: Before the server is rented  
+**Next Review Date**: After the defense (2026-12-15)  
 **ADR Category**: Technology
