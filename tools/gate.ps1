@@ -13,6 +13,8 @@
     verify runs (-Sequential runs them afterwards); every phase prints its duration. When verify fails on one
     integration or functional test class only (no unit failure), that class runs once more and, if it passes, the
     coverage check follows; the summary names the class as flaky.
+    When infra/backup/ or docker-compose.prod.yml changed since develop, infra/backup/test.sh runs last (it needs
+    the development postgres and minio containers; output in build/gate-backup.log).
     With less than -MinFreeGb of free memory after the static checks the run switches to -Sequential by itself;
     with less than 6 GB free when the frontend tests start, vitest runs with 2 workers
     (frontend/vitest.low-memory.config.ts), since a full worker pool crashes with a Node out-of-memory error;
@@ -303,6 +305,29 @@ if (-not $SkipFrontend) {
         ", prod build $(if ($fe.BuildOk) { "PASS ($($fe.Initial) initial)" } else { 'FAIL' })"
 }
 
+$backup = 'skipped (no infra/backup or docker-compose.prod.yml changes since develop)'
+$backupOk = $true
+$backupPaths = @('infra/backup', 'docker-compose.prod.yml')
+$backupChanged = @(git -C $root diff --name-only develop -- $backupPaths) +
+    @(git -C $root status --porcelain -- $backupPaths)
+if ($backupChanged | Where-Object { $_ }) {
+    $backupStart = Get-Date
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') backup script test..." -NoNewline
+    $running = @(docker ps --format '{{.Names}}' 2>$null)
+    if (-not (($running -contains 'award-postgres') -and ($running -contains 'award-minio'))) {
+        $backupOk = $false
+        $backup = 'FAIL (start the containers: docker compose up -d postgres minio)'
+    } else {
+        $sh = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin\sh.exe'
+        $backupLog = Join-Path $logDir 'gate-backup.log'
+        & $sh (Join-Path $root 'infra/backup/test.sh') *> $backupLog
+        $backupOk = $LASTEXITCODE -eq 0
+        $last = Get-Content $backupLog -Tail 1
+        $backup = if ($backupOk) { "PASS ($last)" } else { "FAIL ($last; build/gate-backup.log)" }
+    }
+    Write-Host " $(if ($backupOk) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $backupStart))"
+}
+
 $summary = @"
 Gate run: $(Get-Date -Format 'yyyy-MM-dd HH:mm')
 Branch:   $(git -C $root rev-parse --abbrev-ref HEAD)
@@ -312,8 +337,9 @@ Coverage: $coverage
 Static:   checkstyle=0, pmd=0, spotbugs=0
 Backend:  $backendStatus
 Frontend: $frontend
+Backup:   $backup
 "@
 Set-Content -Path (Join-Path $logDir 'gate-summary.txt') -Value $summary
 Write-Host $summary
-if (-not ($backendOk -and $frontendOk)) { Exit-Gate 1 }
+if (-not ($backendOk -and $frontendOk -and $backupOk)) { Exit-Gate 1 }
 Exit-Gate 0
