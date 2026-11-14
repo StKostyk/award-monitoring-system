@@ -51,6 +51,12 @@ class DevSeedIT {
     private static final String DOMAIN = "@chnu.edu.ua";
     private static final String LECTURER = "lecturer.fmi" + DOMAIN;
     private static final String ANALYTICS_SEED = "db/seed/local/R__seed_users_dev_analytics.sql";
+    private static final String UNIVERSITY_SEED = "db/seed/local/R__seed_users_dev_university.sql";
+    private static final String ANALYTICS_PEOPLE = "(u.email_address like 'dai.%' or u.email_address like 'dma.%' "
+        + "or u.email_address = 'lecturer.fmi@chnu.edu.ua')";
+    private static final int UNIVERSITY_ACCOUNTS = 145;
+    private static final int FACULTIES_WITH_STAFF = 9;
+    private static final int MIN_DISTINCT_TITLES_2026 = 30;
     private static final int MIN_YEARS = 5;
     private static final int MIN_LEVELS = 4;
     private static final int MIN_DAI_MEMBERS = 12;
@@ -71,9 +77,9 @@ class DevSeedIT {
         List<User> users = userRepository.findAll().stream()
             .filter(user -> EXPECTED_ROLES.containsKey(user.getEmailAddress())).toList();
 
-        assertThat(userRepository.findAll()).extracting(User::getEmailAddress)
-            .containsExactlyInAnyOrderElementsOf(Stream.concat(EXPECTED_ROLES.keySet().stream(),
-                analytics().stream()).toList());
+        List<String> emails = userRepository.findAll().stream().map(User::getEmailAddress).toList();
+        assertThat(emails).containsAll(Stream.concat(EXPECTED_ROLES.keySet().stream(), analytics().stream()).toList());
+        assertThat(emails).hasSize(EXPECTED_ROLES.size() + analytics().size() + UNIVERSITY_ACCOUNTS);
         for (User user : users) {
             AccountStatus expected = "pending@chnu.edu.ua".equals(user.getEmailAddress())
                 ? AccountStatus.PENDING : AccountStatus.ACTIVE;
@@ -108,13 +114,15 @@ class DevSeedIT {
         assertThat(((Number) lecturer.get("levels")).intValue()).isGreaterThanOrEqualTo(MIN_LEVELS);
         assertThat(((Number) lecturer.get("shown")).intValue()).isEqualTo(2);
         assertThat(lecturer.get("decided")).isEqualTo(lecturer.get("awards"));
-        assertThat(jdbc.queryForObject("select count(*) from awards where visibility <> 'PRIVATE' and user_id <> "
-            + "(select user_id from users where email_address = ?)", Integer.class, LECTURER)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from awards a join users u on u.user_id = a.user_id "
+            + "where a.visibility <> 'PRIVATE' and " + ANALYTICS_PEOPLE + " and u.email_address <> ?",
+            Integer.class, LECTURER)).isZero();
         assertThat(jdbc.queryForObject("select bool_and(is_granted) from consent_records c join users u "
             + "on u.user_id = c.user_id where u.email_address = ? and c.consent_type = 'ANALYTICS'", Boolean.class,
             LECTURER)).isTrue();
-        assertThat(jdbc.queryForObject("select count(*) from consent_records where consent_type = 'ANALYTICS'",
-            Integer.class)).isBetween(2, analytics().size() - 1);
+        assertThat(jdbc.queryForObject("select count(*) from consent_records c join users u on u.user_id = c.user_id "
+            + "where c.consent_type = 'ANALYTICS' and " + ANALYTICS_PEOPLE, Integer.class))
+            .isBetween(2, analytics().size() - 1);
         assertThat(jdbc.queryForObject("select count(distinct extract(year from a.award_date)) from awards a "
             + "join users u on u.user_id = a.user_id where u.email_address like 'dma.%'", Integer.class))
             .isEqualTo(8);
@@ -143,6 +151,35 @@ class DevSeedIT {
         assertThat(jdbc.queryForObject("select count(distinct awarding_organization) from awards "
             + "where status = 'APPROVED' and lower(regexp_replace(btrim(awarding_organization), '\\s+', ' ', 'g')) "
             + "= 'міністерство освіти і науки україни'", Integer.class)).isGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void universitySeedStaffsNineFacultiesWithVariedAwardsOnce() {
+        Map<String, Object> before = seedCounts();
+
+        jdbc.execute((ConnectionCallback<Void>) connection -> {
+            ScriptUtils.executeSqlScript(connection, new ClassPathResource(UNIVERSITY_SEED));
+            return null;
+        });
+
+        assertThat(seedCounts()).isEqualTo(before);
+        Map<String, Object> staff = jdbc.queryForMap("select count(distinct organization_id) filter "
+            + "(where role_type = 'DEAN') as deans, count(distinct organization_id) filter "
+            + "(where role_type = 'FACULTY_SECRETARY') as secretaries from user_roles");
+        assertThat(((Number) staff.get("deans")).intValue()).isEqualTo(FACULTIES_WITH_STAFF);
+        assertThat(((Number) staff.get("secretaries")).intValue()).isEqualTo(FACULTIES_WITH_STAFF);
+        assertThat(jdbc.queryForObject("select count(distinct f.org_id) from awards a "
+            + "join organizations d on d.org_id = a.organization_id join organizations f on f.org_id = "
+            + "case when d.org_type = 'FACULTY' then d.org_id else d.parent_org_id end "
+            + "where a.status = 'APPROVED' and a.award_date >= date '2026-01-01'", Integer.class))
+            .isEqualTo(FACULTIES_WITH_STAFF);
+        Map<String, Object> pending = jdbc.queryForMap("select count(*) as open, count(*) filter "
+            + "(where deadline is null or current_level <> 'FACULTY_SECRETARY') as odd from award_requests "
+            + "where status = 'SUBMITTED'");
+        assertThat(((Number) pending.get("open")).intValue()).isPositive();
+        assertThat(((Number) pending.get("odd")).intValue()).isZero();
+        assertThat(jdbc.queryForObject("select count(distinct title_uk) from awards where status = 'APPROVED' "
+            + "and award_date >= date '2026-01-01'", Integer.class)).isGreaterThanOrEqualTo(MIN_DISTINCT_TITLES_2026);
     }
 
     @Test
