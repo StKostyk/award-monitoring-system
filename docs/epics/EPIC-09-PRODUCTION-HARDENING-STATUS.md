@@ -12,11 +12,13 @@
 |---------|--------|---------|------|
 | 9.1 Security hardening (tokens hashed at rest, rate limits by account and address; backend-for-frontend as a stretch) | PRD approved 2026-10-29 ([PRD](../features/epic-09/feature-9.1-security-hardening.md)) | - | - |
 | 9.2 Demo deployment and operations (Lighthouse 90 on the signed-in pages, nightly backups, deploy job, AWS EC2 server, award form in steps on phones) | PRD approved 2026-11-10 ([PRD](../features/epic-09/feature-9.2-demo-deployment.md)) | 2026-10-29 | - |
+| 9.3 New look (burgundy and cream light, Aurora dark, Manrope and Onest, Lucide icons, shell with command palette, review queue with undo, every screen restyled) | PRD approved 2026-11-14 ([PRD](../features/epic-09/feature-9.3-new-look.md)) | - | - |
 
 ## Current focus
 
-Feature 9.2 PRD approved 2026-11-10 (sections 9.2.2 to 9.2.5); the next story is 9.2.2 (SCRUM-132), then 9.2.3,
-9.2.4 (server before the code freeze around 2026-11-22) and 9.2.5.
+Feature 9.3 PRD approved 2026-11-14 (SCRUM-138 to SCRUM-144, 31 points, sprints 10 and 11); the next story is
+9.3.1 (SCRUM-138). Then a new Epic 2 feature for awards of people without an account, Feature 9.4 (dashboards and
+widget layout), and the demo server 9.2.4 (SCRUM-134) last.
 
 ## Scope
 
@@ -66,6 +68,8 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-29 | Feature 9.1 PRD approved: hashing in a decorator of the authorization service with a `sha256:` prefix, plain SHA-256; budgets 600 a minute per address (authentication), 10 per account (sign-in form), 600 per user (API), 5 per user (report and exports); refusals counted in a metric, not audited; 9.1.3 only after 9.2.4 and before 2026-12-01 | NAT sizing, no double hashing of reloaded rows, no audit flood | 9.1 PRD §7 |
 | 2026-10-29 | Rate limits stay on the existing Redis fixed-window counter (`FixedWindowCounter`, `RateLimitFilter`, `RequestThrottle`); no new library | One mechanism already in use for the authentication, public and upload limits | 9.1.2 |
 | 2026-10-29 | Backups go to an object store outside the server (an S3 bucket in the same AWS account by default), with the document encryption key stored apart | ADR-021 requires off-server copies; the key decrypts every document | 9.2.2 |
+| 2026-11-14 | Feature 9.3 New look: the `chnu` palette replaced in place by `light-dark()` pairs (burgundy and cream light, Aurora dark), Manrope and Onest, Lucide icons, `motion` only for count-ups and staggers, six own effect components; the scheme stays in the browser until 9.4; the 10 s undo holds the decision in the browser | The look chosen from the prototype rounds; no new library route (Material stays), no API or schema change, ADR-023 untouched | 9.3 PRD §7, ADR-014 and ADR-016 addenda (9.3.1) |
+| 2026-11-14 | The "remind head of department" mail and the CV export move to 9.4; the demo server 9.2.4 moves after 9.3, the Epic 2 feature for people without an account and 9.4 | Both sit on 9.4 screens; the demo should show the finished look | 9.3 PRD §7 deviation 1 |
 | 2026-10-29 | Lighthouse 90 sits in Feature 9.2: it is measured against the production build that the deployment ships | Same build, same measurement setup as 8.1 | 8.1 PRD F-2 |
 
 ## Documentation deviations found at kickoff
