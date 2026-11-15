@@ -17,7 +17,8 @@
     not count). The BACKLOG sprint cell comes from -Sprint, the PRD's **Sprint** line or the neighbouring row; an
     empty cell is reported. A rerun on the story
     branch skips the checkout. -Carry stashes uncommitted changes, checks out the base and pops them on the new branch; a base without an
-    upstream is not pulled, and a failed pull or GitHub query is retried once.
+    upstream is not pulled, and a failed pull or GitHub query is retried once. A -Base whose pull request is already
+    merged, or which is gone from origin, falls back to develop.
     -RowsOnly adds the tracker and BACKLOG rows of an unplanned story on the current branch and stops (no branch,
     no transitions), for fix stories filed during a manual run. Without a PRD section of the story a warning names
     the missing PRD or section.
@@ -99,6 +100,16 @@ if ($DryRun) {
             git stash push -q -u -m "story-start $Key"
             if ($LASTEXITCODE) { throw 'Cannot stash the carried changes' }
             $stashed = $true
+        }
+        if ($Base -ne 'develop') {
+            $merged = gh pr list --head $Base --state merged --json number --jq '.[0].number' 2>$null
+            git ls-remote --exit-code --heads origin $Base *> $null
+            $gone = $LASTEXITCODE -eq 2
+            if ($merged -or $gone) {
+                $why = if ($merged) { "PR #$merged is merged" } else { 'it is gone from origin' }
+                Write-Host "Base:    $Base -> develop ($why)"
+                $Base = 'develop'
+            }
         }
         git checkout -q $Base
         if ($LASTEXITCODE) { throw "Cannot check out $Base" }
