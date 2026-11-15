@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Sign-in page in the new look with the approved-award count and claim; account pages share its brand panel (9.3.4).
 - Two-hue ChNU theme (burgundy light, aurora dark), Manrope and Onest fonts, Lucide icons (9.3.1)
 - Award list on phones: filters behind a Filters button and 10 awards a page; plain dates formatted without Intl (9.2.1, Lighthouse /awards 76 to 79)
 - Rate limits keyed by account, user and address: 600 sign-in requests a minute per address, 10 sign-in posts per account, 600 API requests and 5 reports or exports a minute per user, and the award_rate_limited_total metric.

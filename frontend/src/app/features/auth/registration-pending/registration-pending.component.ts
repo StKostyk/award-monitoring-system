@@ -10,10 +10,12 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { RegistrationService } from '../registration.service';
+import { AuthLayoutComponent } from '../auth-layout/auth-layout.component';
 
 @Component({
   selector: 'app-registration-pending',
   imports: [
+    AuthLayoutComponent,
     ReactiveFormsModule,
     MatCard,
     MatCardHeader,

@@ -16,6 +16,7 @@ import { PASSWORD_VALIDATORS } from '../password-rules';
 import { OrganizationSummary } from '../../../core/organizations/organizations.service';
 import { ConsentsService } from '../../privacy/consents.service';
 import { RegistrationService } from '../registration.service';
+import { AuthLayoutComponent } from '../auth-layout/auth-layout.component';
 
 export const INSTITUTIONAL_DOMAIN = 'chnu.edu.ua';
 export const INSTITUTIONAL_EMAIL = new RegExp(
@@ -31,6 +32,7 @@ export interface DepartmentGroup {
 @Component({
   selector: 'app-register',
   imports: [
+    AuthLayoutComponent,
     ReactiveFormsModule,
     MatCard,
     MatCardHeader,

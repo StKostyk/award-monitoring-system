@@ -1066,6 +1066,9 @@
       }
     }
   },
+  "authLayout": {
+    "claim": "University awards: submission, review and reports in one place."
+  },
   "register": {
     "title": "Registration",
     "hint": "Registration is open to university addresses @chnu.edu.ua only. After registering, confirm the address with the link from the email.",

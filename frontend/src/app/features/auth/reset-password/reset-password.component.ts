@@ -12,12 +12,14 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { PASSWORD_VALIDATORS } from '../password-rules';
 import { consumeLinkToken } from '../link-token';
 import { RegistrationService } from '../registration.service';
+import { AuthLayoutComponent } from '../auth-layout/auth-layout.component';
 
 export type ResetState = 'form' | 'done' | 'invalid';
 
 @Component({
   selector: 'app-reset-password',
   imports: [
+    AuthLayoutComponent,
     ReactiveFormsModule,
     MatCard,
     MatCardHeader,

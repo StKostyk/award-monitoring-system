@@ -7,12 +7,21 @@ import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { consumeLinkToken } from '../../auth/link-token';
 import { ProfileService } from '../profile.service';
+import { AuthLayoutComponent } from '../../auth/auth-layout/auth-layout.component';
 
 export type ConfirmationState = 'confirming' | 'changed' | 'taken' | 'invalid' | 'failed';
 
 @Component({
   selector: 'app-confirm-email-change',
-  imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatButton, TranslocoPipe],
+  imports: [
+    AuthLayoutComponent,
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardContent,
+    MatButton,
+    TranslocoPipe,
+  ],
   templateUrl: './confirm-email-change.component.html',
 })
 export class ConfirmEmailChangeComponent {
