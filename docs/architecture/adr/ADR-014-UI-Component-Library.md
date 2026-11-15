@@ -179,6 +179,23 @@ Angular Material has no charts. The personal dashboard (Feature 5.1) uses **ngx-
   one hue, so stacked charts fold the five levels below the university into one band; tables and the level chart
   keep all nine.
 
+## Addendum 2026-11-14: Lucide icons (Feature 9.3)
+
+Material Icons (a ligature font of about 2 000 glyphs) give way to **Lucide** line icons (`lucide-angular`), which
+match the thin strokes of the new look and reach the bundle one by one:
+
+- `shared/icons/icons.ts` lists every icon the app uses under a short name; `<app-icon name="…">` draws it as inline
+  SVG in the current text colour, sized by `--app-icon-size`. Icons not listed there stay out of the bundle.
+- Icons are decorative (`aria-hidden`); a control that shows only an icon carries an `aria-label`.
+- The lint rule `no-restricted-imports` blocks `@angular/material/icon`, so `<mat-icon>` does not come back.
+  Material components stay as they are; only their icon content changes.
+
+| Option | Decision |
+|--------|----------|
+| Keep Material Icons (font) | Rejected: one font file for a handful of glyphs, filled style that clashes with the new look |
+| Material Symbols (variable font) | Rejected: larger font, same ligature approach |
+| Lucide SVGs registered per use | **Chosen**: tree-shaken, stroke style, no font request |
+
 ---
 
 ## Related Documents
@@ -195,6 +212,7 @@ Angular Material has no charts. The personal dashboard (Feature 5.1) uses **ngx-
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-19 | Stefan Kostyk | Addendum: chart library | Personal dashboard (Feature 5.1) |
+| 2026-11-14 | Stefan Kostyk | Addendum: Lucide icons | New look (Feature 9.3) |
 
 ---
 

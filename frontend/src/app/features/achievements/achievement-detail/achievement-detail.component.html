@@ -63,7 +63,7 @@
       <div class="detail__footer">
         @if (item.verified) {
           <span class="detail__verified">
-            <mat-icon aria-hidden="true">verified</mat-icon>
+            <app-icon name="badge-check" />
             {{ 'achievements.verified' | transloco }}
           </span>
         }
@@ -75,7 +75,7 @@
             rel="noopener noreferrer nofollow"
           >
             {{ 'achievements.link' | transloco }}
-            <mat-icon aria-hidden="true">open_in_new</mat-icon>
+            <app-icon name="external-link" />
             <span class="cdk-visually-hidden">{{ 'achievements.newTab' | transloco }}</span>
           </a>
         }

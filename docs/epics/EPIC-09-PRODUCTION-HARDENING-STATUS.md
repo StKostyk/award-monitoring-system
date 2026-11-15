@@ -50,7 +50,8 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 3 | 9.2.1 Signed-in pages reach Lighthouse mobile performance 90 | 9.2 | 3 | SCRUM-131 | #372 | no | Done |
 | 4 | 9.2.2 Nightly backups with a restore drill | 9.2 | 5 | SCRUM-132 | #373 | no | Done |
 | 5 | 9.2.3 Deploy job and production server settings | 9.2 | 3 | SCRUM-133 | #374 | no | Done |
-| 5a | 9.2.6 Dependency upgrade for critical CVEs | 9.2 | 2 | SCRUM-137 | #387 | no | In review |
+| 5a | 9.2.6 Dependency upgrade for critical CVEs | 9.2 | 2 | SCRUM-137 | #387 | no | Done |
+| 5b | 9.3.1 Theme tokens, fonts and icons | 9.3 | 5 | SCRUM-138 | #391 | no | In review |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 

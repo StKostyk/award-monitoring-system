@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../core/i18n/language.service';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { awardTitle, categoryName } from '../../awards/awards.service';
@@ -11,7 +11,7 @@ import { Achievement } from '../achievements.service';
 
 @Component({
   selector: 'app-achievement-card',
-  imports: [MatIcon, RouterLink, TranslocoPipe, KyivDatePipe],
+  imports: [IconComponent, RouterLink, TranslocoPipe, KyivDatePipe],
   templateUrl: './achievement-card.component.html',
   styleUrl: './achievement-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

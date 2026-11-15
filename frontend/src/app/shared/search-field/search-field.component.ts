@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatIconButton } from '@angular/material/button';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
+import { IconComponent } from '../icons/icon.component';
 import { MatInput } from '@angular/material/input';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Subject, debounce, filter, map, of, timer } from 'rxjs';
@@ -43,7 +43,7 @@ export function searchTerm(text: string | null | undefined): string | null {
     MatInput,
     MatSuffix,
     MatIconButton,
-    MatIcon,
+    IconComponent,
     TranslocoPipe,
   ],
   templateUrl: './search-field.component.html',

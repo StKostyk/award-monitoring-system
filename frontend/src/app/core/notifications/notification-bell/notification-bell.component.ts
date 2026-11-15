@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { NotificationFeed } from '../notification-feed';
 import { NotificationText } from '../notification-text';
 import { UnreadCount } from '../unread-count';
@@ -16,7 +16,7 @@ export const MENU_SIZE = 10;
 @Component({
   selector: 'app-notification-bell',
   imports: [
-    MatIcon,
+    IconComponent,
     MatIconButton,
     MatMenu,
     MatMenuItem,

@@ -81,11 +81,9 @@
   color: var(--mat-sys-primary);
 }
 
-.detail__verified mat-icon,
-.detail__link mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
+.detail__verified app-icon,
+.detail__link app-icon {
+  --app-icon-size: 18px;
 }
 
 .detail__list {

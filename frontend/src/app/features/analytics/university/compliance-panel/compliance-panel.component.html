@@ -5,9 +5,7 @@
       [class.compliance__status--attention]="summary.status === 'ATTENTION'"
       data-testid="compliance-status"
     >
-      <mat-icon aria-hidden="true">{{
-        summary.status === 'OK' ? 'check_circle' : 'warning'
-      }}</mat-icon>
+      <app-icon [name]="summary.status === 'OK' ? 'circle-check' : 'triangle-alert'" />
       {{
         (summary.status === 'OK'
           ? 'universityAnalytics.compliance.ok'
@@ -29,7 +27,7 @@
       (click)="refresh.emit()"
       data-testid="compliance-refresh"
     >
-      <mat-icon>refresh</mat-icon>
+      <app-icon matButtonIcon name="refresh-cw" />
       {{ 'universityAnalytics.compliance.refresh' | transloco }}
     </button>
   </div>

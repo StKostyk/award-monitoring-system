@@ -7,7 +7,7 @@
       [queryParams]="{ from: period().from, to: period().to }"
       data-testid="dashboard-summary"
     >
-      <mat-icon>description</mat-icon>
+      <app-icon matButtonIcon name="file-text" />
       {{ 'analytics.report.open' | transloco }}
     </a>
     <button
@@ -17,7 +17,7 @@
       (click)="customise()"
       data-testid="dashboard-customise"
     >
-      <mat-icon>tune</mat-icon>
+      <app-icon matButtonIcon name="sliders-horizontal" />
       {{ 'analytics.customise.open' | transloco }}
     </button>
   </div>

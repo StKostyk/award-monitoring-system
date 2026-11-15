@@ -130,7 +130,7 @@
                   <td mat-cell *matCellDef="let result">
                     @if (result.failed) {
                       <span class="compliance__failed" data-testid="result-failed">
-                        <mat-icon aria-hidden="true" inline>error</mat-icon>
+                        <app-icon inline name="circle-alert" />
                         {{ 'compliance.retention.failed' | transloco }}
                       </span>
                       @if (result.error) {

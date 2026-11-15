@@ -23,7 +23,7 @@
       (click)="filtersOpen.set(!filtersOpen())"
       data-testid="filters-toggle"
     >
-      <mat-icon>filter_list</mat-icon>
+      <app-icon matButtonIcon name="list-filter" />
       @if (activeFilters() > 0) {
         {{ 'awards.filters.toggleActive' | transloco: { count: activeFilters() } }}
       } @else {

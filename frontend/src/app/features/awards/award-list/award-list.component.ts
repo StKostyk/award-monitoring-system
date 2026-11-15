@@ -18,7 +18,6 @@ import {
   MatDatepickerToggle,
 } from '@angular/material/datepicker';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -31,6 +30,7 @@ import { map } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
@@ -63,7 +63,7 @@ const PAGE_SIZES = [10, 20, 50, 100];
     FormsModule,
     RouterLink,
     MatButton,
-    MatIcon,
+    IconComponent,
     MatFormField,
     MatLabel,
     MatInput,

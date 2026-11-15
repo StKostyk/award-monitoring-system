@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -11,6 +10,7 @@ import { Store } from '@ngrx/store';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { readPeriod } from '../analytics-period';
 import { AnalyticsPeriod, DASHBOARD_WIDGETS, DashboardWidget } from '../analytics.service';
 import { CategoryChartComponent } from '../category-chart/category-chart.component';
@@ -37,7 +37,7 @@ import { YearTrendChartComponent } from '../year-trend-chart/year-trend-chart.co
     MatCardContent,
     MatCardHeader,
     MatCardTitle,
-    MatIcon,
+    IconComponent,
     MatProgressBar,
     PeriodSelectComponent,
     RankCardComponent,

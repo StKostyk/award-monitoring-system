@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButton, MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@angular/material/list';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
@@ -23,6 +22,8 @@ import { filter, map } from 'rxjs';
 import { DelegationsService } from '../../features/delegations/delegations.service';
 import { PrivacyCentreService } from '../../features/privacy/privacy-centre.service';
 import { kyivDate } from '../../shared/date-format';
+import { IconComponent } from '../../shared/icons/icon.component';
+import { IconName } from '../../shared/icons/icons';
 import { AuthService } from '../auth/auth.service';
 import {
   canDelegate,
@@ -51,7 +52,7 @@ const UNIVERSITY_ANALYTICS = '/analytics/university';
     MatToolbar,
     MatButton,
     MatIconButton,
-    MatIcon,
+    IconComponent,
     MatListItem,
     MatListItemIcon,
     MatListItemTitle,
@@ -85,10 +86,10 @@ export class ShellComponent {
   protected readonly colorScheme = inject(ColorSchemeService);
   protected readonly brand = this.brands.brand;
   protected readonly schemes = COLOR_SCHEMES;
-  protected readonly schemeIcons: Record<ColorScheme, string> = {
-    system: 'brightness_auto',
-    light: 'light_mode',
-    dark: 'dark_mode',
+  protected readonly schemeIcons: Record<ColorScheme, IconName> = {
+    system: 'monitor',
+    light: 'sun',
+    dark: 'moon',
   };
   protected readonly wide = toSignal(
     inject(BreakpointObserver)

@@ -1,20 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
 import { TranslocoPipe } from '@jsverse/transloco';
 
+import { IconComponent } from '../../../../shared/icons/icon.component';
 import { deltaView } from '../delta';
 import { Figure } from '../unit-analytics.service';
 
-const ICONS = { up: 'arrow_upward', down: 'arrow_downward', same: 'arrow_forward' } as const;
+const ICONS = { up: 'arrow-up', down: 'arrow-down', same: 'arrow-right' } as const;
 
 /** The change of a figure against the previous period: arrow, signed count and percentage, or "new". */
 @Component({
   selector: 'app-delta',
-  imports: [MatIcon, TranslocoPipe],
+  imports: [IconComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span [class]="'delta delta--' + view().direction" data-testid="delta">
-      <mat-icon class="delta__icon" aria-hidden="true">{{ icon() }}</mat-icon>
+      <app-icon class="delta__icon" [name]="icon()" />
       @if (view().fresh) {
         <span>{{ view().count }} · {{ 'unitAnalytics.delta.new' | transloco }}</span>
       } @else if (view().percent) {
@@ -38,9 +38,7 @@ const ICONS = { up: 'arrow_upward', down: 'arrow_downward', same: 'arrow_forward
     }
 
     .delta__icon {
-      width: 18px;
-      height: 18px;
-      font-size: 18px;
+      --app-icon-size: 18px;
     }
   `,
 })

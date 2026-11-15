@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
@@ -18,6 +17,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { NotificationFeed } from '../../../core/notifications/notification-feed';
 import { NotificationText } from '../../../core/notifications/notification-text';
 import { UnreadCount } from '../../../core/notifications/unread-count';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 
 /** Notifications per page. */
@@ -29,7 +29,7 @@ const MAX_PAGE = 2_147_483_647;
 /** Every notification of the signed-in person, a page at a time, optionally unread only. */
 @Component({
   selector: 'app-notification-list',
-  imports: [MatButton, MatIcon, MatPaginator, MatProgressBar, MatSlideToggle, TranslocoPipe],
+  imports: [MatButton, IconComponent, MatPaginator, MatProgressBar, MatSlideToggle, TranslocoPipe],
   providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
   templateUrl: './notification-list.component.html',
   styleUrl: './notification-list.component.scss',

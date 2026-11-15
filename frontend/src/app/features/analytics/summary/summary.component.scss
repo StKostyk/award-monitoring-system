@@ -85,10 +85,8 @@
   align-items: center;
   gap: 2px;
 
-  mat-icon {
-    width: 16px;
-    height: 16px;
-    font-size: 16px;
+  app-icon {
+    --app-icon-size: 16px;
   }
 }
 
