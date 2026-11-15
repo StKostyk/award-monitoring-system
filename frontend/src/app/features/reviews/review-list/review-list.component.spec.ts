@@ -7,7 +7,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { BehaviorSubject, EMPTY, catchError, of, throwError } from 'rxjs';
+import { BehaviorSubject, EMPTY, Subject, catchError, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -18,7 +18,10 @@ import {
   OrganizationSummary,
   OrganizationsService,
 } from '../../../core/organizations/organizations.service';
+import { DocumentsService } from '../../awards/award-documents/documents.service';
+import { AwardsService } from '../../awards/awards.service';
 import { DecisionDialogData } from '../decision-dialog/decision-dialog.component';
+import { HeldDecisionService, ReturnedDecision } from '../held-decision.service';
 import { BatchItemResult, NO_REVIEW_FILTERS, ReviewItem, ReviewsService } from '../reviews.service';
 import { ReviewsActions } from '../store/reviews.actions';
 import { reviewsFeature } from '../store/reviews.feature';
@@ -105,6 +108,11 @@ describe('ReviewListComponent', () => {
   );
   const reviews = { decideBatch: vi.fn(), reviewPeriod: vi.fn(() => EMPTY) };
   const dialog = { open: vi.fn() };
+  const held = {
+    heldIds: signal<ReadonlySet<number>>(new Set()),
+    returned: new Subject<ReturnedDecision>(),
+    hold: vi.fn(),
+  };
   const organizations = {
     ofType: (type: OrganizationType) =>
       of(
@@ -131,8 +139,11 @@ describe('ReviewListComponent', () => {
         { provide: OrganizationsService, useValue: organizations },
         { provide: BreakpointObserver, useValue: { observe: () => wide } },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
-        { provide: AuthService, useValue: { permissions } },
+        { provide: AuthService, useValue: { permissions, userId: signal('21') } },
         { provide: ReviewsService, useValue: reviews },
+        { provide: HeldDecisionService, useValue: held },
+        { provide: AwardsService, useValue: { get: () => EMPTY } },
+        { provide: DocumentsService, useValue: { list: () => of([]) } },
         { provide: MatDialog, useValue: dialog },
       ],
     }).compileComponents();
@@ -306,6 +317,29 @@ describe('ReviewListComponent', () => {
     expect(
       element.querySelectorAll('[data-testid="review-cards"] [data-testid="review-item"]').length,
     ).toBe(1);
+  });
+
+  it('ac6_4_a_held_decision_takes_the_request_out_of_the_list_and_the_count', async () => {
+    await create();
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+
+    held.heldIds.set(new Set([6]));
+    fixture.componentInstance.queueDecided(6);
+    fixture.detectChanges();
+
+    expect(store.dispatch).toHaveBeenCalledWith(ReviewsActions.itemsDecided({ awardIds: [6] }));
+    expect(fixture.componentInstance.visible().map((item) => item.awardId)).toEqual([5]);
+    held.heldIds.set(new Set());
+  });
+
+  it('ac6_6_a_decision_that_comes_back_reloads_the_queue', async () => {
+    await create();
+
+    held.returned.next({ awardId: 6, problem: 'reviews.queue.denied', params: {} });
+
+    expect(store.dispatch).toHaveBeenLastCalledWith(
+      ReviewsActions.pageChanged({ pageIndex: 0, pageSize: expect.any(Number) as number }),
+    );
   });
 
   it('ac1_3_shows_the_empty_queue', async () => {
