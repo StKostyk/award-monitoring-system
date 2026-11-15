@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, inject } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
@@ -28,6 +28,11 @@ export class PageTitleStrategy extends TitleStrategy {
   private readonly brands = inject(BrandService);
   private readonly key = new BehaviorSubject<string | null>(null);
 
+  private readonly current = signal<string | null>(null);
+
+  /** The translated name of the current page without the brand, or null on a page without a title. */
+  readonly page = this.current.asReadonly();
+
   constructor() {
     super();
     combineLatest([
@@ -40,12 +45,15 @@ export class PageTitleStrategy extends TitleStrategy {
           const page: Observable<string | null> = key
             ? this.transloco.selectTranslate<string>(key, {}, lang)
             : of(null);
-          return page.pipe(map((text) => this.compose(text, lang, brand)));
+          return page.pipe(map((text) => ({ text, full: this.compose(text, lang, brand) })));
         }),
-        distinctUntilChanged(),
+        distinctUntilChanged((a, b) => a.text === b.text && a.full === b.full),
         takeUntilDestroyed(inject(DestroyRef)),
       )
-      .subscribe((text) => this.title.setTitle(text));
+      .subscribe(({ text, full }) => {
+        this.current.set(text);
+        this.title.setTitle(full);
+      });
   }
 
   override updateTitle(snapshot: RouterStateSnapshot): void {

@@ -31,4 +31,8 @@
   .mat-title-large {
     font-family: var(--app-font-heading);
   }
+
+  :where(a:not([class*='mat-'])) {
+    color: var(--mat-sys-primary);
+  }
 }

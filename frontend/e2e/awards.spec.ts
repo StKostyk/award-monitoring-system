@@ -133,6 +133,7 @@ test.describe('award drafts and submission on a phone', () => {
     await page.getByTestId('award-title-uk').fill(`Подяка декана ${uniqueToken()}`);
     await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
 
+    await page.getByTestId('user-menu').click();
     await page.getByTestId('logout').click();
     await page.getByTestId('confirm-accept').click();
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });

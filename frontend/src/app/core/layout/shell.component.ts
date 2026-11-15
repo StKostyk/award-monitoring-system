@@ -24,27 +24,20 @@ import { PrivacyCentreService } from '../../features/privacy/privacy-centre.serv
 import { kyivDate } from '../../shared/date-format';
 import { IconComponent } from '../../shared/icons/icon.component';
 import { IconName } from '../../shared/icons/icons';
+import { NARROW_SCREEN } from '../../shared/touch';
 import { AuthService } from '../auth/auth.service';
-import {
-  canDelegate,
-  canReadCompliance,
-  canReadDirectory,
-  canReadOwnAnalytics,
-  canReadOwnAwards,
-  canReadUnitAnalytics,
-  canReadUniversityAnalytics,
-  canReview,
-} from '../auth/permissions';
+import { canCreateAwards } from '../auth/permissions';
 import { BrandService } from '../brand/brand.service';
 import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-scheme.service';
 import { OfflineNoticeComponent } from '../connectivity/offline-notice.component';
 import { LanguageService } from '../i18n/language.service';
+import { PageTitleStrategy } from '../i18n/page-title.strategy';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
+import { APPLE, CommandPaletteService } from './command-palette.service';
 import { NavigationFocusService } from './navigation-focus.service';
+import { NavEntry, navEntriesFor } from './nav-entries';
 
 export const WIDE_LAYOUT = '(min-width: 960px)';
-
-const UNIVERSITY_ANALYTICS = '/analytics/university';
 
 @Component({
   selector: 'app-shell',
@@ -84,6 +77,7 @@ export class ShellComponent {
   protected readonly language = inject(LanguageService);
   protected readonly brands = inject(BrandService);
   protected readonly colorScheme = inject(ColorSchemeService);
+  protected readonly palette = inject(CommandPaletteService);
   protected readonly brand = this.brands.brand;
   protected readonly schemes = COLOR_SCHEMES;
   protected readonly schemeIcons: Record<ColorScheme, IconName> = {
@@ -97,36 +91,26 @@ export class ShellComponent {
       .pipe(map((state) => state.matches)),
     { initialValue: true },
   );
-  protected readonly canOpenAwards = computed(
-    () => this.auth.isAuthenticated() && canReadOwnAwards(this.auth.permissions()),
+  protected readonly compact = toSignal(
+    inject(BreakpointObserver)
+      .observe(NARROW_SCREEN)
+      .pipe(map((state) => state.breakpoints[NARROW_SCREEN] === true)),
+    { initialValue: false },
   );
-  protected readonly canOpenDashboard = computed(
-    () => this.auth.isAuthenticated() && canReadOwnAnalytics(this.auth.permissions()),
+  protected readonly entries = computed(() =>
+    navEntriesFor(this.auth.isAuthenticated(), this.auth.permissions()),
   );
-  protected readonly canOpenUnitAnalytics = computed(
-    () => this.auth.isAuthenticated() && canReadUnitAnalytics(this.auth.permissions()),
+  protected readonly canCreate = computed(
+    () => this.auth.isAuthenticated() && canCreateAwards(this.auth.permissions()),
   );
-  protected readonly canOpenUniversityAnalytics = computed(
-    () => this.auth.isAuthenticated() && canReadUniversityAnalytics(this.auth.permissions()),
-  );
-  protected readonly onUniversityAnalytics = toSignal(
+  protected readonly pageTitle = inject(PageTitleStrategy).page;
+  protected readonly shortcut = APPLE.test(globalThis.navigator?.userAgent ?? '') ? '⌘K' : 'Ctrl K';
+  private readonly url = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
-      map((event) => event.urlAfterRedirects.startsWith(UNIVERSITY_ANALYTICS)),
+      map((event) => event.urlAfterRedirects),
     ),
-    { initialValue: this.router.url.startsWith(UNIVERSITY_ANALYTICS) },
-  );
-  protected readonly canOpenUsers = computed(
-    () => this.auth.isAuthenticated() && canReadDirectory(this.auth.permissions()),
-  );
-  protected readonly canOpenReviews = computed(
-    () => this.auth.isAuthenticated() && canReview(this.auth.permissions()),
-  );
-  protected readonly canOpenDelegations = computed(
-    () => this.auth.isAuthenticated() && canDelegate(this.auth.permissions()),
-  );
-  protected readonly canOpenCompliance = computed(
-    () => this.auth.isAuthenticated() && canReadCompliance(this.auth.permissions()),
+    { initialValue: this.router.url },
   );
   protected readonly actingFor = signal('');
   protected readonly erasureDate = computed(() => {
@@ -139,13 +123,30 @@ export class ShellComponent {
   constructor() {
     effect(() => this.readActingFor());
     effect(() => this.readErasure());
-    inject(NavigationFocusService).follow(() => this.main()?.nativeElement, inject(DestroyRef));
+    const destroyRef = inject(DestroyRef);
+    inject(NavigationFocusService).follow(() => this.main()?.nativeElement, destroyRef);
+    this.palette.listen(destroyRef);
+  }
+
+  /**
+   * Whether an active router link should mark its entry current, unless the URL belongs to a child entry.
+   *
+   * @param item the side menu entry
+   * @param active whether its router link is active
+   * @return whether the entry is the current page
+   */
+  protected current(item: NavEntry, active: boolean): boolean {
+    return active && !(item.excludes && this.url().startsWith(item.excludes));
   }
 
   /** Moves the focus to the page content, past the navigation. */
   protected skipToContent(event: Event): void {
     event.preventDefault();
     this.main()?.nativeElement.focus();
+  }
+
+  protected openPalette(): void {
+    void this.palette.open();
   }
 
   logout(): void {

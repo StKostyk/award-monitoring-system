@@ -5,6 +5,7 @@
 @use './styles/status';
 @use './styles/touch';
 @use './styles/a11y';
+@use './styles/aurora';
 @use './styles/tokens';
 
 html {
@@ -40,6 +41,7 @@ body {
 @include chips.rules();
 @include touch.rules();
 @include a11y.rules();
+@include aurora.rules();
 @include tokens.rules();
 
 app-root {

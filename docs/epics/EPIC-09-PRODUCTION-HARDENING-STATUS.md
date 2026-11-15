@@ -52,7 +52,8 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5 | 9.2.3 Deploy job and production server settings | 9.2 | 3 | SCRUM-133 | #374 | no | Done |
 | 5a | 9.2.6 Dependency upgrade for critical CVEs | 9.2 | 2 | SCRUM-137 | #387 | no | Done |
 | 5b | 9.3.1 Theme tokens, fonts and icons | 9.3 | 5 | SCRUM-138 | #391 | no | Done |
-| 5c | 9.3.2 Effect components, motion and chart theme | 9.3 | 3 | SCRUM-139 | #392 | no | In review |
+| 5c | 9.3.2 Effect components, motion and chart theme | 9.3 | 3 | SCRUM-139 | #392 | no | Done |
+| 5d | 9.3.3 Shell, navigation and command palette | 9.3 | 5 | SCRUM-140 | #393 | no | In review |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 

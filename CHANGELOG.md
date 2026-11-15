@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- New shell: phone top bar with page title and new-award button, toolbar scheme switch, dark-scheme aurora background and a Ctrl K command palette for sections and awards (9.3.3).
 - Effect components (beam, border beam, spotlight, ticker, marquee, typed text), count-ups and staggered tiles on analytics, and chart colours that follow the burgundy and aurora schemes (9.3.2)
 - Demo deploy job: every main build is scanned and deployed to the demo server over SSH, image_tag rolls back; production services rotate their logs and run under measured memory limits (9.2.3)
 - Nightly encrypted backups of the database and documents with a checked restore; the nightly jobs catch up after a start (9.2.2)

@@ -19,155 +19,20 @@
     </div>
     <nav [attr.aria-label]="'app.navigation' | transloco">
       <mat-nav-list class="shell__nav">
-        <a
-          mat-list-item
-          (click)="closeDrawer()"
-          routerLink="/"
-          routerLinkActive
-          #homeLink="routerLinkActive"
-          [routerLinkActiveOptions]="{ exact: true }"
-          [activated]="homeLink.isActive"
-          [attr.aria-current]="homeLink.isActive ? 'page' : null"
-          data-testid="nav-home"
-        >
-          <app-icon matListItemIcon name="house" />
-          <span matListItemTitle>{{ 'app.home' | transloco }}</span>
-        </a>
-        @if (canOpenAwards()) {
+        @for (item of entries(); track item.id) {
           <a
             mat-list-item
             (click)="closeDrawer()"
-            routerLink="/awards"
+            [routerLink]="item.path"
             routerLinkActive
-            #awardsLink="routerLinkActive"
-            [activated]="awardsLink.isActive"
-            [attr.aria-current]="awardsLink.isActive ? 'page' : null"
-            data-testid="nav-awards"
+            #link="routerLinkActive"
+            [routerLinkActiveOptions]="{ exact: item.exact }"
+            [activated]="current(item, link.isActive)"
+            [attr.aria-current]="current(item, link.isActive) ? 'page' : null"
+            [attr.data-testid]="'nav-' + item.id"
           >
-            <app-icon matListItemIcon name="award" />
-            <span matListItemTitle>{{ 'awards.title' | transloco }}</span>
-          </a>
-        }
-        @if (canOpenDashboard()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/dashboard"
-            routerLinkActive
-            #dashboardLink="routerLinkActive"
-            [activated]="dashboardLink.isActive"
-            [attr.aria-current]="dashboardLink.isActive ? 'page' : null"
-            data-testid="nav-dashboard"
-          >
-            <app-icon matListItemIcon name="chart-line" />
-            <span matListItemTitle>{{ 'analytics.title' | transloco }}</span>
-          </a>
-        }
-        @if (canOpenUnitAnalytics()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/analytics"
-            routerLinkActive
-            #unitAnalyticsLink="routerLinkActive"
-            [activated]="unitAnalyticsLink.isActive && !onUniversityAnalytics()"
-            [attr.aria-current]="
-              unitAnalyticsLink.isActive && !onUniversityAnalytics() ? 'page' : null
-            "
-            data-testid="nav-unit-analytics"
-          >
-            <app-icon matListItemIcon name="chart-column" />
-            <span matListItemTitle>{{ 'unitAnalytics.title' | transloco }}</span>
-          </a>
-        }
-        @if (canOpenUniversityAnalytics()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/analytics/university"
-            routerLinkActive
-            #universityAnalyticsLink="routerLinkActive"
-            [activated]="universityAnalyticsLink.isActive"
-            [attr.aria-current]="universityAnalyticsLink.isActive ? 'page' : null"
-            data-testid="nav-university-analytics"
-          >
-            <app-icon matListItemIcon name="landmark" />
-            <span matListItemTitle>{{ 'universityAnalytics.title' | transloco }}</span>
-          </a>
-        }
-        @if (auth.isAuthenticated()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/achievements"
-            routerLinkActive
-            #achievementsLink="routerLinkActive"
-            [activated]="achievementsLink.isActive"
-            [attr.aria-current]="achievementsLink.isActive ? 'page' : null"
-            data-testid="nav-achievements"
-          >
-            <app-icon matListItemIcon name="trophy" />
-            <span matListItemTitle>{{ 'achievements.title' | transloco }}</span>
-          </a>
-        }
-        @if (canOpenReviews()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/reviews"
-            routerLinkActive
-            #reviewsLink="routerLinkActive"
-            [activated]="reviewsLink.isActive"
-            [attr.aria-current]="reviewsLink.isActive ? 'page' : null"
-            data-testid="nav-reviews"
-          >
-            <app-icon matListItemIcon name="clipboard-check" />
-            <span matListItemTitle>{{ 'reviews.title' | transloco }}</span>
-          </a>
-        }
-        @if (canOpenUsers()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/admin/users"
-            routerLinkActive
-            #usersLink="routerLinkActive"
-            [activated]="usersLink.isActive"
-            [attr.aria-current]="usersLink.isActive ? 'page' : null"
-            data-testid="nav-users"
-          >
-            <app-icon matListItemIcon name="users" />
-            <span matListItemTitle>{{ 'admin.users.title' | transloco }}</span>
-          </a>
-        }
-        @if (canOpenDelegations()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/delegations"
-            routerLinkActive
-            #delegationsLink="routerLinkActive"
-            [activated]="delegationsLink.isActive"
-            [attr.aria-current]="delegationsLink.isActive ? 'page' : null"
-            data-testid="nav-delegations"
-          >
-            <app-icon matListItemIcon name="arrow-left-right" />
-            <span matListItemTitle>{{ 'delegations.title' | transloco }}</span>
-          </a>
-        }
-        @if (canOpenCompliance()) {
-          <a
-            mat-list-item
-            (click)="closeDrawer()"
-            routerLink="/compliance"
-            routerLinkActive
-            #complianceLink="routerLinkActive"
-            [activated]="complianceLink.isActive"
-            [attr.aria-current]="complianceLink.isActive ? 'page' : null"
-            data-testid="nav-compliance"
-          >
-            <app-icon matListItemIcon name="shield-check" />
-            <span matListItemTitle>{{ 'compliance.title' | transloco }}</span>
+            <app-icon matListItemIcon [name]="item.icon" />
+            <span matListItemTitle>{{ item.label | transloco }}</span>
           </a>
         }
       </mat-nav-list>
@@ -175,6 +40,11 @@
   </mat-sidenav>
 
   <mat-sidenav-content class="shell__main">
+    <div class="shell__aurora" aria-hidden="true" data-testid="aurora">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
     <mat-toolbar class="shell__toolbar">
       @if (auth.isAuthenticated() && !wide()) {
         <button
@@ -188,7 +58,7 @@
           <app-icon name="menu" />
         </button>
       }
-      @if (!auth.isAuthenticated() || !wide()) {
+      @if (!auth.isAuthenticated()) {
         <a
           class="shell__brand shell__brand--bar"
           routerLink="/"
@@ -198,12 +68,52 @@
           <img class="shell__logo shell__logo--small" [src]="brand().logo" alt="" />
           <span class="shell__product">{{ brands.text(brand().name) }}</span>
         </a>
+      } @else if (!wide()) {
+        <span class="shell__title" data-testid="page-title">
+          {{ pageTitle() ?? brands.text(brand().name) }}
+        </span>
+      }
+      @if (auth.isAuthenticated() && !compact()) {
+        <button
+          type="button"
+          class="shell__search"
+          (click)="openPalette()"
+          aria-haspopup="dialog"
+          [attr.aria-keyshortcuts]="shortcut === '⌘K' ? 'Meta+K' : 'Control+K'"
+          data-testid="palette-open"
+        >
+          <app-icon name="search" />
+          <span class="shell__search-text">{{ 'app.palette.open' | transloco }}</span>
+          <kbd class="shell__kbd">{{ shortcut }}</kbd>
+        </button>
       }
       <span class="shell__spacer"></span>
       @if (actingFor(); as delegator) {
         <span class="shell__acting" data-testid="acting-for">
           {{ 'delegations.actingFor' | transloco: { name: delegator } }}
         </span>
+      }
+      @if (auth.isAuthenticated() && compact()) {
+        <button
+          mat-icon-button
+          type="button"
+          (click)="openPalette()"
+          aria-haspopup="dialog"
+          [attr.aria-label]="'app.palette.open' | transloco"
+          data-testid="palette-open"
+        >
+          <app-icon name="search" />
+        </button>
+      }
+      @if (canCreate() && !wide()) {
+        <a
+          mat-icon-button
+          routerLink="/awards/new"
+          [attr.aria-label]="'app.newAward' | transloco"
+          data-testid="new-award"
+        >
+          <app-icon name="plus" />
+        </a>
       }
       <button
         mat-button
@@ -215,6 +125,17 @@
       >
         {{ 'app.language' | transloco }}
       </button>
+      @if (!auth.isAuthenticated() || !compact()) {
+        <button
+          mat-icon-button
+          type="button"
+          [matMenuTriggerFor]="schemeMenu"
+          [attr.aria-label]="'app.scheme.title' | transloco"
+          data-testid="color-scheme-menu"
+        >
+          <app-icon [name]="schemeIcons[colorScheme.scheme()]" />
+        </button>
+      }
       @if (!auth.isAuthenticated()) {
         <button mat-button type="button" (click)="login()" data-testid="login">
           <app-icon matButtonIcon name="log-in" />
@@ -243,44 +164,52 @@
             <app-icon matMenuItemIcon name="shield" />
             <span>{{ 'privacy.centre.menu' | transloco }}</span>
           </a>
-          <button
-            mat-menu-item
-            type="button"
-            [matMenuTriggerFor]="schemeMenu"
-            data-testid="color-scheme-menu"
-          >
-            <app-icon matMenuItemIcon name="contrast" />
-            <span>{{ 'app.scheme.title' | transloco }}</span>
-          </button>
-        </mat-menu>
-        <mat-menu #schemeMenu="matMenu">
-          @for (scheme of schemes; track scheme) {
+          @if (compact()) {
             <button
               mat-menu-item
               type="button"
-              role="menuitemradio"
-              [attr.aria-checked]="colorScheme.scheme() === scheme"
-              (click)="colorScheme.use(scheme)"
-              [attr.data-testid]="'color-scheme-' + scheme"
+              [matMenuTriggerFor]="schemeMenu"
+              data-testid="color-scheme-menu"
             >
-              <app-icon
-                matMenuItemIcon
-                [name]="colorScheme.scheme() === scheme ? 'check' : schemeIcons[scheme]"
-              />
-              <span>{{ 'app.scheme.' + scheme | transloco }}</span>
+              <app-icon matMenuItemIcon name="contrast" />
+              <span>{{ 'app.scheme.title' | transloco }}</span>
+            </button>
+            <button mat-menu-item type="button" (click)="logout()" data-testid="logout">
+              <app-icon matMenuItemIcon name="log-out" />
+              <span>{{ 'app.logout' | transloco }}</span>
             </button>
           }
         </mat-menu>
-        <button
-          mat-icon-button
-          type="button"
-          (click)="logout()"
-          [attr.aria-label]="'app.logout' | transloco"
-          data-testid="logout"
-        >
-          <app-icon name="log-out" />
-        </button>
+        @if (!compact()) {
+          <button
+            mat-icon-button
+            type="button"
+            (click)="logout()"
+            [attr.aria-label]="'app.logout' | transloco"
+            data-testid="logout"
+          >
+            <app-icon name="log-out" />
+          </button>
+        }
       }
+      <mat-menu #schemeMenu="matMenu">
+        @for (scheme of schemes; track scheme) {
+          <button
+            mat-menu-item
+            type="button"
+            role="menuitemradio"
+            [attr.aria-checked]="colorScheme.scheme() === scheme"
+            (click)="colorScheme.use(scheme)"
+            [attr.data-testid]="'color-scheme-' + scheme"
+          >
+            <app-icon
+              matMenuItemIcon
+              [name]="colorScheme.scheme() === scheme ? 'check' : schemeIcons[scheme]"
+            />
+            <span>{{ 'app.scheme.' + scheme | transloco }}</span>
+          </button>
+        }
+      </mat-menu>
     </mat-toolbar>
     <main id="main" class="shell__content" tabindex="-1" #main>
       <app-offline-notice />

@@ -54,13 +54,15 @@ Material component colours are changed with the component's `*-overrides` mixin 
 
 ## 4. Layout
 
-- Shell: side menu from 960 px (`WIDE_LAYOUT`), drawer with a menu button below; the toolbar keeps the language switch, the user menu (profile, theme) and sign-out at every width.
+- Shell: side menu from 960 px (`WIDE_LAYOUT`), drawer with a menu button below; no bottom bar at any width. The sections come from one list, `core/layout/nav-entries.ts`, filtered by the same permission helpers as the route guards; the side menu and the command palette both read it. Below 960 px the top bar shows the menu button, the page title (`PageTitleStrategy.page`) and a «+» button to `/awards/new` for people who may create awards. The toolbar holds the palette field (Ctrl K, Cmd K on macOS), the language switch, the scheme switch, the bell, the user menu and sign-out; below 600 px (`NARROW_SCREEN`) the palette field becomes an icon button and the scheme switch and sign-out move into the user menu.
+- Command palette (`CommandPaletteService`, `core/layout/command-palette`): a dialog with one combobox field; it lists the allowed sections, filters them from 2 characters and after 250 ms adds up to 5 awards from `GET /awards?q=` (a failed search shows sections only). Arrow keys move the selection, Enter or a click opens it, Escape closes it and returns the focus. It never opens over another dialog.
 - Content width up to 1200 px, padding 28 px (16 px on phones). Check every screen at 360 px and 1280 px; nothing scrolls sideways.
 - Navigation items carry an icon and a label; new top-level sections are added to the side menu, guarded by the same permission helper as their route.
 
 ## 5. Dark mode
 
-- The scheme follows the device (`color-scheme: light dark`); the user menu offers «Як на пристрої», «Світла», «Темна», kept in the browser.
+- The scheme follows the device (`color-scheme: light dark`); the toolbar scheme switch offers «Як на пристрої», «Світла», «Темна», kept in the browser.
+- The aurora background of the shell shows only in the dark scheme: three fixed radial gradients from `--app-aurora-*` that move by `transform` only (no `backdrop-filter`, no `filter`), still under reduced motion and below 600 px, `aria-hidden`.
 - New colours are written as `light-dark(<light>, <dark>)` inside a brand or token mixin, never as two separate rule sets.
 - In the ChNU brand the light scheme is burgundy and the dark scheme is the aurora; both come from the same pairs, so no component knows which hue is active.
 
@@ -93,8 +95,8 @@ The authorization server renders the sign-in, error and 429 pages itself (Thymel
 
 1. Run `docker compose up -d --build`, open `http://localhost` and sign in as `employee.fmi@chnu.edu.ua` / `Passw0rd-demo`. Expected (light scheme): cream background `#F6EFE4`, burgundy side menu `#5E1621` with the logo, «Облік нагород ЧНУ» and the university name; the tab title is «Облік нагород ЧНУ»; headings in Manrope, text in Onest; every icon a line icon (Lucide).
 2. Click «EN». Expected: the tab title becomes «ChNU Awards», the menu and the name switch to English. Switch back.
-3. Open the user menu → «Тема» → «Темна». Expected: the aurora scheme (background `#060914`, cyan primary `#7DDCFF`, gold accents), readable text and status chips; reload keeps the dark scheme. Choose «Як на пристрої» and change the system setting: the app follows it.
-4. Narrow the window below 960 px (or use the phone view of the developer tools at 360 px). Expected: the side menu disappears, a menu button opens it as a drawer, choosing «Мої нагороди» opens the list and closes the drawer; no sideways scrolling.
+3. Open the scheme switch in the toolbar (in the user menu below 600 px) → «Темна». Expected: the aurora scheme (background `#060914` with slow cobalt, cyan and gold light behind the content, cyan primary `#7DDCFF`, gold accents), readable text and status chips; reload keeps the dark scheme. Choose «Як на пристрої» and change the system setting: the app follows it.
+4. Narrow the window below 960 px (or use the phone view of the developer tools at 360 px). Expected: the side menu disappears, the top bar shows the page title and a «+» button, a menu button opens the side menu as a drawer, choosing «Мої нагороди» opens the list and closes the drawer; no sideways scrolling.
 5. Open «Мої нагороди» and use the «Статус» filter for the rejected and archived chips (no screen archives an award yet: set one with `update awards set status='ARCHIVED' where award_id=<id>`). Expected: status chips coloured by status (grey draft, amber pending, green approved, red rejected, outlined archived) in both schemes.
 6. In the developer tools, Network tab, reload. Expected: no request to `fonts.googleapis.com` or `fonts.gstatic.com`; the font files (Manrope and Onest, Cyrillic and Latin) come from `localhost`.
 7. Replace the brand: `docker compose exec frontend sh -c "echo '{\"id\":\"neutral\",\"name\":{\"uk\":\"Облік нагород\",\"en\":\"Award Registry\"},\"organization\":{\"uk\":\"Університет\",\"en\":\"University\"},\"logo\":\"brand/neutral/logo.svg\"}' > /usr/share/nginx/html/brand/brand.json"` and reload. Expected: green neutral theme in Manrope and Onest with the neutral logo. Restore with `docker compose up -d --build --force-recreate frontend`.
