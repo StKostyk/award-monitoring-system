@@ -47,12 +47,23 @@ async function submittedBy(browser: Browser, owner: string, title: string): Prom
   return sql(`select award_id from awards where title_uk = '${title}'`);
 }
 
-/** Opens the queue and moves with J, page by page, until the request with the title is selected. */
+/**
+ * Opens the queue filtered to the owner's department and moves with J, page by page, until the request with the
+ * title is selected; the queue lists the oldest deadline first, so a new request is on the last page.
+ */
 async function selectInQueue(page: Page, title: string): Promise<void> {
   await page.goto('/reviews');
+  await page.getByTestId('review-filter-unit').click();
+  const unit = sql(`select name_uk from organizations where org_id = ${DEPARTMENT}`);
+  const filtered = page.waitForResponse((response) =>
+    response.url().includes(`organizationId=${DEPARTMENT}`),
+  );
+  await page.getByRole('option', { name: unit, exact: true }).click();
+  await filtered;
+  await expect(page.getByTestId('reviews-loading')).toHaveCount(0);
   const open = page.getByTestId('queue-open');
   const next = page.locator('.mat-mdc-paginator-navigation-next');
-  for (let pages = 0; pages < 10; pages++) {
+  for (;;) {
     await expect(open).toBeVisible();
     const count = await page.getByTestId('review-item').count();
     for (let step = 0; step < count && (await open.textContent())?.trim() !== title; step++) {

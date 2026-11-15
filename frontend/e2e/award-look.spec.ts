@@ -33,6 +33,7 @@ test.describe('award list, award page and new award in the new look', () => {
     page,
   }) => {
     await signIn(page, SEED.employee, DEMO_PASSWORD);
+    await expect(page.getByTestId('nav-awards')).toBeVisible();
     await page.goto('/awards');
     const item = page.getByTestId('award-item').first();
     await expect(item.getByTestId('award-title')).not.toBeEmpty();

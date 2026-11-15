@@ -60,6 +60,7 @@ test.describe('award form on a phone', () => {
   }) => {
     const email = await freshEmployee(browser, 'phone-list');
     await signIn(page, email, FRESH_PASSWORD);
+    await expect(page.getByTestId('nav-toggle')).toBeVisible();
 
     await page.goto('/awards');
     const toggle = page.getByTestId('filters-toggle');
