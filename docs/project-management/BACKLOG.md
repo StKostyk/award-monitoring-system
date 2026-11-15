@@ -187,6 +187,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.3.3 | Shell, navigation and command palette | 5 | ✅ Done | SCRUM-140 | [#393](https://github.com/StKostyk/award-monitoring-system/issues/393) |
 | 9.3.4 | Sign-in and account pages | 3 | ✅ Done | SCRUM-141 | [#394](https://github.com/StKostyk/award-monitoring-system/issues/394) |
 | 9.3.5 | Award list, award page and new award | 5 | 👀 In review (10) | SCRUM-142 | [#395](https://github.com/StKostyk/award-monitoring-system/issues/395) |
+| 9.3.6 | Review queue with checklist, shortcuts and undo | 5 | 👀 In review (10) | SCRUM-143 | [#396](https://github.com/StKostyk/award-monitoring-system/issues/396) |
 
 ### Later epics
 | ID | Story | Points | Epic |

@@ -81,6 +81,15 @@
     </p>
   }
 
+  @if (!problem()) {
+    <app-review-queue
+      [items]="visible()"
+      [left]="total()"
+      [loading]="loading()"
+      (decided)="queueDecided($event)"
+    />
+  }
+
   @if (summary(); as summary) {
     <section class="reviews__summary" role="status" data-testid="batch-result">
       <p class="reviews__summary-title" data-testid="batch-done">
@@ -174,13 +183,13 @@
   }
 
   @if (wide()) {
-    <table mat-table [dataSource]="items()" class="reviews__table" data-testid="review-table">
+    <table mat-table [dataSource]="visible()" class="reviews__table" data-testid="review-table">
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef class="reviews__select">
           <mat-checkbox
             [checked]="allSelected()"
             [indeterminate]="selection().length > 0 && !allSelected()"
-            [disabled]="items().length === 0"
+            [disabled]="visible().length === 0"
             (change)="toggleAll()"
             [aria-label]="'reviews.batch.selectAll' | transloco"
             data-testid="batch-select-all"
@@ -267,16 +276,9 @@
         (click)="open(row)"
         data-testid="review-item"
       ></tr>
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell reviews__empty" [attr.colspan]="columns.length">
-          @if (!loading() && !problem()) {
-            <span data-testid="reviews-empty">{{ 'reviews.empty' | transloco }}</span>
-          }
-        </td>
-      </tr>
     </table>
   } @else {
-    @if (items().length > 0) {
+    @if (visible().length > 0) {
       <mat-checkbox
         class="reviews__select-all"
         [checked]="allSelected()"
@@ -287,7 +289,7 @@
       >
     }
     <ul class="reviews__cards" data-testid="review-cards">
-      @for (item of items(); track item.requestId) {
+      @for (item of visible(); track item.requestId) {
         <li class="reviews__card" data-testid="review-item">
           <div class="reviews__card-head">
             <mat-checkbox
@@ -336,12 +338,6 @@
             <dd data-testid="review-reviewer">{{ item.reviewer?.name ?? '—' }}</dd>
           </dl>
         </li>
-      } @empty {
-        @if (!loading() && !problem()) {
-          <li class="reviews__empty" data-testid="reviews-empty">
-            {{ 'reviews.empty' | transloco }}
-          </li>
-        }
       }
     </ul>
   }

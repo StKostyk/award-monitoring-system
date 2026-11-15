@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -25,7 +25,6 @@ import {
   MatHeaderCellDef,
   MatHeaderRow,
   MatHeaderRowDef,
-  MatNoDataRow,
   MatRow,
   MatRowDef,
   MatTable,
@@ -54,7 +53,9 @@ import {
   DecisionDialogData,
   DecisionInput,
 } from '../decision-dialog/decision-dialog.component';
+import { HeldDecisionService } from '../held-decision.service';
 import { ReviewPeriodComponent } from '../review-period/review-period.component';
+import { ReviewQueueComponent } from '../review-queue/review-queue.component';
 import {
   BatchItemResult,
   DecisionType,
@@ -121,10 +122,10 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
     MatHeaderRowDef,
     MatRow,
     MatRowDef,
-    MatNoDataRow,
     TranslocoPipe,
     KyivDatePipe,
     ReviewPeriodComponent,
+    ReviewQueueComponent,
   ],
   providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
   templateUrl: './review-list.component.html',
@@ -139,6 +140,7 @@ export class ReviewListComponent implements OnInit {
   private readonly language = inject(LanguageService);
   private readonly dialog = inject(MatDialog);
   private readonly reviews = inject(ReviewsService);
+  private readonly heldDecisions = inject(HeldDecisionService);
 
   protected readonly tabs = TABS;
   protected readonly levels = reviewableLevels(this.auth.permissions()) as ApprovalLevel[];
@@ -165,6 +167,10 @@ export class ReviewListComponent implements OnInit {
   );
 
   readonly items = this.store.selectSignal(reviewsFeature.selectItems);
+  /** The requests of the page without those whose decision is held. */
+  readonly visible = computed(() =>
+    this.items().filter((item) => !this.heldDecisions.heldIds().has(item.awardId)),
+  );
   readonly filters = this.store.selectSignal(reviewsFeature.selectFilters);
   readonly loading = this.store.selectSignal(reviewsFeature.selectLoading);
   readonly problem = this.store.selectSignal(reviewsFeature.selectProblem);
@@ -177,10 +183,10 @@ export class ReviewListComponent implements OnInit {
   /** Award ids the reviewer ticked; only those on the current page count. */
   readonly selected = signal<ReadonlySet<number>>(new Set());
   readonly selection = computed(() =>
-    this.items().filter((item) => this.selected().has(item.awardId)),
+    this.visible().filter((item) => this.selected().has(item.awardId)),
   );
   readonly allSelected = computed(
-    () => this.items().length > 0 && this.selection().length === this.items().length,
+    () => this.visible().length > 0 && this.selection().length === this.visible().length,
   );
   /** «Передати декану» when every selected request waits at the faculty secretary. */
   readonly escalateTarget = computed<ApprovalLevel | null>(() =>
@@ -188,6 +194,10 @@ export class ReviewListComponent implements OnInit {
   );
   readonly busy = signal(false);
   readonly summary = signal<BatchSummary | null>(null);
+
+  constructor() {
+    this.heldDecisions.returned.pipe(takeUntilDestroyed()).subscribe(() => this.reload());
+  }
 
   ngOnInit(): void {
     this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);
@@ -233,7 +243,7 @@ export class ReviewListComponent implements OnInit {
 
   toggleAll(): void {
     this.selected.set(
-      this.allSelected() ? new Set() : new Set(this.items().map((item) => item.awardId)),
+      this.allSelected() ? new Set() : new Set(this.visible().map((item) => item.awardId)),
     );
   }
 
@@ -299,6 +309,22 @@ export class ReviewListComponent implements OnInit {
     return organizationName(unit, this.language.current());
   }
 
+  /**
+   * Takes a request whose decision the queue holds out of the list.
+   *
+   * @param awardId the award decided
+   */
+  queueDecided(awardId: number): void {
+    this.selected.update((selected) => new Set([...selected].filter((id) => id !== awardId)));
+    this.store.dispatch(ReviewsActions.itemsDecided({ awardIds: [awardId] }));
+  }
+
+  private reload(): void {
+    this.store.dispatch(
+      ReviewsActions.pageChanged({ pageIndex: this.pageIndex(), pageSize: this.pageSize() }),
+    );
+  }
+
   private decided(chosen: ReviewItem[], results: BatchItemResult[]): void {
     this.busy.set(false);
     const failed = results.filter((result) => result.outcome === 'FAILED');
@@ -321,9 +347,7 @@ export class ReviewListComponent implements OnInit {
       }),
     );
     if (failed.length > 0) {
-      this.store.dispatch(
-        ReviewsActions.pageChanged({ pageIndex: this.pageIndex(), pageSize: this.pageSize() }),
-      );
+      this.reload();
     }
   }
 

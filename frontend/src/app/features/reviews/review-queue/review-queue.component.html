@@ -1,0 +1,107 @@
+<section class="queue" aria-labelledby="queue-title" data-testid="review-queue">
+  <div class="queue__head">
+    <h2 id="queue-title" class="queue__title">{{ 'reviews.queue.title' | transloco }}</h2>
+    <span class="queue__left" data-testid="queue-left">{{
+      'reviews.queue.left' | transloco: { count: left() }
+    }}</span>
+    @if (items().length > 1) {
+      <span class="queue__moves">
+        <button mat-button type="button" (click)="move(-1)" data-testid="queue-previous">
+          {{ 'reviews.queue.previous' | transloco }}
+        </button>
+        <button mat-button type="button" (click)="move(1)" data-testid="queue-next">
+          {{ 'reviews.queue.next' | transloco }}
+        </button>
+      </span>
+    }
+  </div>
+
+  @if (selected(); as item) {
+    <article class="queue__card" [attr.data-award]="item.awardId" data-testid="queue-selected">
+      <h3 class="queue__name">
+        <a [routerLink]="['/awards', item.awardId]" data-testid="queue-open">{{ title(item) }}</a>
+      </h3>
+      <dl class="queue__fields">
+        <dt>{{ 'reviews.columns.recipient' | transloco }}</dt>
+        <dd data-testid="queue-recipient">{{ recipient(item) }}</dd>
+        <dt>{{ 'reviews.columns.category' | transloco }}</dt>
+        <dd>
+          {{ category(item) }}
+          @if (item.category; as category) {
+            · {{ 'categories.levels.' + category.level | transloco }}
+          }
+        </dd>
+        @if (award(); as award) {
+          <dt>{{ 'reviews.queue.awardingOrganization' | transloco }}</dt>
+          <dd data-testid="queue-organization">{{ award.awardingOrganization ?? '—' }}</dd>
+          <dt>{{ 'reviews.queue.date' | transloco }}</dt>
+          <dd data-testid="queue-date">
+            {{ award.awardDate ? (award.awardDate | kyivDate) : '—' }}
+          </dd>
+        }
+        <dt>{{ 'reviews.columns.level' | transloco }}</dt>
+        <dd>{{ 'roles.' + item.level | transloco }}</dd>
+        <dt>{{ 'reviews.columns.submitted' | transloco }}</dt>
+        <dd>{{ item.submittedAt | kyivDate }}</dd>
+      </dl>
+
+      <app-award-documents class="queue__documents" [awardId]="item.awardId" />
+
+      <fieldset class="queue__checks" data-testid="queue-checklist">
+        <legend>{{ 'reviews.queue.checklist' | transloco }}</legend>
+        @for (check of checks; track check) {
+          <mat-checkbox
+            [checked]="ticked().has(check)"
+            (change)="tick(check, $event.checked)"
+            [attr.data-testid]="'queue-check-' + check"
+            >{{ 'reviews.queue.checks.' + check | transloco }}</mat-checkbox
+          >
+        }
+      </fieldset>
+
+      @if (!canDecide() && item.reviewer; as reviewer) {
+        <p class="queue__held-by" data-testid="queue-held-by">
+          {{ 'reviews.queue.heldBy' | transloco: { name: reviewer.name } }}
+        </p>
+      }
+      <div class="queue__actions">
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="!canDecide()"
+          (click)="decide('APPROVE')"
+          data-testid="queue-approve"
+        >
+          {{ 'reviews.panel.approve' | transloco }}
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!canDecide()"
+          (click)="decide('RETURN')"
+          data-testid="queue-return"
+        >
+          {{ 'reviews.panel.return' | transloco }}
+        </button>
+        <button
+          mat-button
+          type="button"
+          [disabled]="!canDecide()"
+          (click)="decide('REJECT')"
+          data-testid="queue-reject"
+        >
+          {{ 'reviews.panel.reject' | transloco }}
+        </button>
+      </div>
+      <p class="queue__shortcuts" data-testid="queue-shortcuts">
+        {{ 'reviews.queue.shortcuts' | transloco }}
+      </p>
+    </article>
+  } @else if (!loading()) {
+    <app-empty-state
+      icon="circle-check"
+      [text]="'reviews.queue.empty' | transloco"
+      data-testid="reviews-empty"
+    />
+  }
+</section>

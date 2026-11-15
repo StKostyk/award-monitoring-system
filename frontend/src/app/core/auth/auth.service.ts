@@ -42,6 +42,7 @@ export class AuthService {
 
   readonly isAuthenticated = signal(false);
   readonly accessToken = signal<string | null>(null);
+  private readonly signOutHooks: (() => Promise<void>)[] = [];
   readonly profile = signal<UserProfile | null>(null);
   readonly fullName = computed(() => {
     const profile = this.profile();
@@ -152,6 +153,16 @@ export class AuthService {
   }
 
   /** Where the code flow should land after the callback; set by {@link login}. */
+  /**
+   * Registers work that must finish while the person is still signed in, such as sending held decisions; it runs
+   * after the page was left and before the tokens are revoked.
+   *
+   * @param hook the work, resolved when done
+   */
+  beforeSignOut(hook: () => Promise<void>): void {
+    this.signOutHooks.push(hook);
+  }
+
   targetUrl(): string {
     const state = this.oauth.state;
     return state ? decodeURIComponent(state) : '/';
@@ -169,6 +180,7 @@ export class AuthService {
     }
     this.formCopies.clearAll();
     if (online) {
+      await Promise.all(this.signOutHooks.map((hook) => hook()));
       try {
         await this.oauth.revokeTokenAndLogout();
         this.forget();

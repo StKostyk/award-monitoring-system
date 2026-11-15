@@ -286,6 +286,32 @@ describe('AuthService', () => {
     await expect(init).rejects.toBeTruthy();
   });
 
+  it('ac6_5 sign-out waits for the registered work before the token is revoked', async () => {
+    const order: string[] = [];
+    let finish: () => void = () => undefined;
+    service.beforeSignOut(
+      () =>
+        new Promise<void>((resolve) => {
+          order.push('hook');
+          finish = () => {
+            order.push('hook done');
+            resolve();
+          };
+        }),
+    );
+    oauth.revokeTokenAndLogout.mockImplementation(() => {
+      order.push('revoke');
+      return Promise.resolve();
+    });
+
+    const leaving = service.logout();
+    await vi.waitFor(() => expect(order).toEqual(['hook']));
+    finish();
+    await leaving;
+
+    expect(order).toEqual(['hook', 'hook done', 'revoke']);
+  });
+
   it('ac18 revokes the token and forgets the profile on logout', async () => {
     oauth.hasValidAccessToken.mockReturnValue(true);
     const init = service.init();

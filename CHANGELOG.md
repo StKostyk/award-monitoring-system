@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Review queue with document, fields and checklist, J/K/A/R shortcuts and a 10 s «Скасувати» before a decision is sent (9.3.6).
 - Award list with status chips and counts, skeleton rows and empty states; «Шлях нагороди» on the award page; new awards start from their document with «Інший файл» (9.3.5).
 - Sign-in page in the new look with the approved-award count and claim; account pages share its brand panel (9.3.4).
 - Two-hue ChNU theme (burgundy light, aurora dark), Manrope and Onest fonts, Lucide icons (9.3.1)

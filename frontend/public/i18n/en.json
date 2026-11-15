@@ -910,6 +910,29 @@
     }
   },
   "reviews": {
+    "queue": {
+      "title": "Queue",
+      "left": "{{count}} left",
+      "previous": "Previous",
+      "next": "Next",
+      "open": "Open the award",
+      "date": "Award date",
+      "awardingOrganization": "Awarded by",
+      "heldBy": "Reviewed by {{name}}",
+      "checklist": "Checks",
+      "checks": {
+        "readable": "The document is readable",
+        "match": "Title and date match",
+        "level": "The level is right"
+      },
+      "shortcuts": "J / K — next / previous · A — approve · R — return",
+      "held": "Decision saved",
+      "undo": "Undo",
+      "denied": "No access",
+      "offline": "No connection",
+      "waiting": "The decision goes out once the connection is back",
+      "empty": "The queue is empty"
+    },
     "title": "Reviews",
     "tabs": {
       "mine": "Mine",
