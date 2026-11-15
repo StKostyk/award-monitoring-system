@@ -34,6 +34,37 @@
   justify-self: start;
 }
 
+.awards__statuses {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+}
+
+.awards__status {
+  flex-shrink: 0;
+  gap: 6px;
+  min-height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.awards__status--on {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  border-color: transparent;
+}
+
+.awards__count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.awards__level {
+  color: var(--mat-sys-primary);
+}
+
 .awards__list {
   list-style: none;
   margin: 0;
@@ -97,8 +128,7 @@
 }
 
 .awards__empty {
-  padding: 24px;
-  text-align: center;
+  display: block;
 }
 
 .awards__problem {

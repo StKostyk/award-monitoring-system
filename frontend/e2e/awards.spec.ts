@@ -6,10 +6,11 @@ import {
   SEED,
   freshEmployee,
   kyivDay,
+  openNewAward,
   pastDay,
   seriousViolations,
-  signIn,
   signedInAs,
+  signIn,
   storedCopies,
   submitWithoutDocuments,
   uniqueToken,
@@ -66,6 +67,7 @@ test.describe('award drafts and submission on a phone', () => {
     const title = `Грамота МОН ${uniqueToken()}`;
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await expect(page).toHaveURL(/\/awards\/new$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       360,
@@ -104,6 +106,7 @@ test.describe('award drafts and submission on a phone', () => {
     const title = `Подяка ректора ${Date.now()}`;
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await page.getByTestId('award-title-uk').fill(title);
     await page.getByTestId('award-organization').fill('ЧНУ');
     await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
@@ -124,12 +127,14 @@ test.describe('award drafts and submission on a phone', () => {
     await page.getByTestId('confirm-accept').click();
     await expect(page).toHaveURL(/\/awards$/);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await expect(page.getByTestId('restore-offer')).toHaveCount(0);
   });
 
   test('ac1_10 f4 signing out removes the unsaved copy', async ({ page }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await page.getByTestId('award-title-uk').fill(`Подяка декана ${uniqueToken()}`);
     await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
 
@@ -139,7 +144,7 @@ test.describe('award drafts and submission on a phone', () => {
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
     await signIn(page, employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
-    await page.goto('/awards/new');
+    await openNewAward(page);
 
     await expect(page.getByTestId('award-title-uk')).toBeVisible();
     await expect(page.getByTestId('restore-offer')).toHaveCount(0);
@@ -150,6 +155,7 @@ test.describe('award drafts and submission on a phone', () => {
     const title = `Чернетка на видалення ${uniqueToken()}`;
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await expect(page.getByTestId('award-remove')).toHaveCount(0);
     await page.getByTestId('award-title-uk').fill(title);
     await page.getByTestId('award-save').click();
@@ -175,6 +181,7 @@ test.describe('award drafts and submission on a phone', () => {
   }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await page.getByTestId('award-title-uk').fill(`Подяка кафедри ${uniqueToken()}`);
     await page.getByTestId('award-submit').click();
     await expect(page.getByTestId('award-form-error')).toContainText('заповніть категорію');
@@ -186,7 +193,7 @@ test.describe('award drafts and submission on a phone', () => {
     await page.getByTestId('award-cancel').click();
     await expect(page).toHaveURL(new RegExp(`/awards/${id}$`));
 
-    await page.goto('/awards/new');
+    await openNewAward(page);
     await page.getByTestId('award-title-uk').fill('Подяка');
     await page.getByTestId('award-cancel').click();
     await page.getByTestId('confirm-accept').click();
@@ -196,6 +203,7 @@ test.describe('award drafts and submission on a phone', () => {
   test('f1 the confirmation page confirms only an own submitted award', async ({ page }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await page.getByTestId('award-title-uk').fill(`Недопрацьована ${uniqueToken()}`);
     await page.getByTestId('award-save').click();
     await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
@@ -215,6 +223,7 @@ test.describe('award drafts and submission on a phone', () => {
   }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     const date = page.getByTestId('award-date');
     const max = (await date.getAttribute('max')) ?? '';
     expect(max).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -234,6 +243,7 @@ test.describe('award drafts and submission on a phone', () => {
   }) => {
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     const chips = page.locator('[data-testid^="category-suggestion-"]');
 
     await page.getByTestId('award-title').fill('Best paper award');
@@ -270,6 +280,7 @@ test.describe('award drafts and submission on a phone', () => {
     );
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     const failed = page.waitForResponse((response) =>
       response.url().includes('/award-categories/suggestions'),
     );
@@ -287,12 +298,14 @@ test.describe('award drafts and submission on a phone', () => {
     const date = pastDay();
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await fillComplete(page, title, date);
     await submitWithoutDocuments(page);
     await expect(page.getByTestId('award-submitted-name')).toContainText(title);
 
     await openAwards(page);
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await fillComplete(page, `${title} України`, date);
     await submitWithoutDocuments(page);
     await expect(page.getByRole('dialog')).toContainText('Можливо, цю нагороду вже внесено');
@@ -331,6 +344,7 @@ test.describe('searching my awards', () => {
     for (const word of [found, other]) {
       await openAwards(page);
       await page.getByTestId('award-add').click();
+      await page.getByTestId('upload-skip').click();
       await page.getByTestId('award-title-uk').fill(`Грамота ${word}`);
       await page.getByTestId('award-save').click();
       await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
@@ -348,9 +362,10 @@ test.describe('searching my awards', () => {
     expect(await seriousViolations(page)).toEqual([]);
 
     await page.getByTestId('filter-q').fill(uniqueToken());
-    await expect(page.getByTestId('awards-empty')).toHaveText(
+    await expect(page.getByTestId('awards-empty')).toContainText(
       'Немає нагород, що відповідають пошуку.',
     );
+    await expect(page.getByTestId('awards-reset')).toBeVisible();
 
     await page.getByRole('button', { name: 'Очистити пошук' }).click();
     await expect(page.getByTestId('filter-q')).toHaveValue('');

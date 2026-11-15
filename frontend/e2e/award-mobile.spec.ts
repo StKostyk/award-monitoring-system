@@ -1,6 +1,13 @@
 import { expect, test } from './fixtures';
 
-import { FRESH_PASSWORD, freshEmployee, pastDay, signIn, uniqueToken } from './helpers';
+import {
+  FRESH_PASSWORD,
+  freshEmployee,
+  openNewAward,
+  pastDay,
+  signIn,
+  uniqueToken,
+} from './helpers';
 
 test.describe('award form on a phone', () => {
   test('ac3_5 ac3_6 an award is created, photographed and submitted', async ({ browser, page }) => {
@@ -8,7 +15,7 @@ test.describe('award form on a phone', () => {
     await signIn(page, email, FRESH_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
 
-    await page.goto('/awards/new');
+    await openNewAward(page);
     await page.getByTestId('award-title-uk').fill(`Грамота з телефона ${uniqueToken()}`);
     await page.getByTestId('award-category').click();
     await page.getByTestId('category-option-13').click();

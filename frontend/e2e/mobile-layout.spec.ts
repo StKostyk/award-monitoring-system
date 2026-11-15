@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 import { expect, test } from './fixtures';
 
-import { SEED, settled, signInAsSeed } from './helpers';
+import { SEED, openNewAward, settled, signInAsSeed } from './helpers';
 import {
   GDPR_ROUTES,
   PUBLIC_ROUTES,
@@ -123,7 +123,7 @@ test.describe('phone layouts', () => {
   }) => {
     await signInAsSeed(page, SEED.employee);
     await page.setViewportSize(PORTRAIT);
-    await page.goto('/awards/new');
+    await openNewAward(page);
     await page.getByTestId('award-title-uk').fill('Грамота');
     await page.getByTestId('award-organization').fill('МОН України');
     await context.setOffline(true);

@@ -57,6 +57,7 @@ Material component colours are changed with the component's `*-overrides` mixin 
 - Command palette (`CommandPaletteService`, `core/layout/command-palette`): a dialog with one combobox field; it lists the allowed sections, filters them from 2 characters and after 250 ms adds up to 5 awards from `GET /awards?q=` (a failed search shows sections only). Arrow keys move the selection, Enter or a click opens it, Escape closes it and returns the focus. It never opens over another dialog.
 - Content width up to 1200 px, padding 28 px (16 px on phones). Check every screen at 360 px and 1280 px; nothing scrolls sideways.
 - Navigation items carry an icon and a label; new top-level sections are added to the side menu, guarded by the same permission helper as their route.
+- Lists: while a list loads it shows `app-skeleton-rows` (`shared/skeleton`, a named `role="status"` region, the pulse stops under reduced motion) in place of the rows; a list or search without results shows `app-empty-state` (`shared/empty-state`: an icon, one sentence and the next action projected as a button or link) instead of an empty table. Status filters with counts are chips (`aria-pressed`) that scroll inside their own row on phones.
 
 ## 5. Dark mode
 
@@ -90,6 +91,7 @@ The authorization server renders the sign-in, error and 429 pages itself (Thymel
 
 - `e2e/theme.spec.ts`: brand class and title, brand colours and fonts per scheme, fallback to neutral, Lucide icons with named icon-only controls, scheme switch, phone drawer, axe (WCAG 2.1 AA, serious and critical) on home, award list and award form for each brand in light and dark.
 - `e2e/login.spec.ts`: sign-in page brand, count and claim, Manrope and Onest without other hosts, 360 px strip above the form, target sizes and axe in light and dark, also with an error shown; the brand panel on the six account pages, and the phone strip with axe on `/register`.
+- `e2e/award-look.spec.ts`: award list rows, status chips with counts, empty states, skeleton rows, the document step of `/awards/new` (upload, «Інший файл», refused file, scanner outage), axe on the list and the step; `e2e/award-status.spec.ts` covers «Шлях нагороди».
 - `/ui-check` screenshots at 360 and 1280 px, light and dark, Ukrainian and English for every changed screen.
 
 ## Manual verification

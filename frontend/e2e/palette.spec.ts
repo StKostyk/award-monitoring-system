@@ -6,6 +6,7 @@ import {
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
+  openNewAward,
   pastDay,
   seriousViolations,
   signIn,
@@ -20,7 +21,7 @@ async function openWithShortcut(page: Page): Promise<void> {
 }
 
 async function createDraft(page: Page, title: string): Promise<string> {
-  await page.goto('/awards/new');
+  await openNewAward(page);
   await page.getByTestId('award-title-uk').fill(title);
   await page.getByTestId('award-category').click();
   await page.getByTestId('category-option-13').click();

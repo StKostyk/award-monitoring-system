@@ -134,6 +134,13 @@ export async function signIn(page: Page, email: string, password: string): Promi
   await page.click('button[type="submit"]');
 }
 
+/** Opens the new-award form past its document step, as «Заповнити без документа» does. */
+export async function openNewAward(page: Page): Promise<void> {
+  await page.goto('/awards/new');
+  await page.getByTestId('upload-skip').click();
+  await expect(page.getByTestId('award-title-uk')).toBeVisible();
+}
+
 /** Signs a seed account in with the demo password and waits for the navigation. */
 export async function signInAsSeed(page: Page, email: string): Promise<void> {
   await signIn(page, email, DEMO_PASSWORD);

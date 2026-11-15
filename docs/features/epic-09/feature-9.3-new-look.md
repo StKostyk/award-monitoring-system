@@ -294,11 +294,17 @@ awards), accounts `employee.fmi`, `secretary.fmi`, `dean.fmi`, `admin` with the 
 5. Resize to 360 px. Expected: top bar with menu, title and "+"; "+" opens `/awards/new`. (AC-3.2)
 6. Ctrl K, type «алгеб». Expected: matching sections, then up to 5 awards; arrows and Enter open one; Escape returns
    focus. No «Адміністрування». (AC-3.4 to AC-3.6)
-7. `/awards`. Expected: rows with level, title, recipient, date, status chip; filter chips with counts. (AC-5.1)
-8. Filter to a status with no awards. Expected: empty state with one sentence and an action. (AC-5.4)
-9. Open an approved award. Expected: «Шлях нагороди» with submission and each decision. (AC-5.2)
-10. `/awards/new`, drop a 1 MB PDF. Expected: progress, then the form with the document; «Інший файл» replaces it.
-    (AC-5.3)
+7. `/awards`. Expected: rows with level, title, recipient, date, status chip; status chips «Усі», «Чернетка» …
+   with counts; a chip filters the list like the status filter. Throttle the network to Slow 3G and reload:
+   skeleton rows until the list arrives. (AC-5.1, AC-5.5)
+8. Click the chip of a status with no awards. Expected: empty state with an icon, «Немає нагород, що відповідають
+   пошуку.» and «Скинути фільтри». (AC-5.4)
+9. Open an award that went through review (one submitted in an earlier step, or an approved one with a request).
+   Expected: «Шлях нагороди» with «Подано», each decision with level, reviewer and date, and «Зараз» on the current
+   step while it is under review. (AC-5.2)
+10. `/awards/new`, drop a 1 MB PDF. Expected: «Документ додасться до нагороди», progress, then the form of a new
+    draft titled after the file with the document listed; «Інший файл» on that document replaces it;
+    «Заповнити без документа» opens the empty form; a `.txt` file is refused before uploading. (AC-5.3)
 11. DevTools, `prefers-reduced-motion: reduce`, reload `/dashboard`. Expected: numbers final at once, nothing moves.
     (AC-2.2)
 12. Sign in as `dean.fmi`, `/analytics`, switch the scheme. Expected: charts redraw in the new colours without a

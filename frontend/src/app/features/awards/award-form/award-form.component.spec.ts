@@ -19,7 +19,7 @@ import { ConnectivityService } from '../../../core/connectivity/connectivity.ser
 import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
-import { DocumentsService } from '../award-documents/documents.service';
+import { AwardDocument, DocumentsService } from '../award-documents/documents.service';
 import {
   Award,
   AwardCreation,
@@ -123,7 +123,7 @@ describe('AwardFormComponent', () => {
   };
   const auth = { userId: signal<string | null>('21'), isAuthenticated: signal(true) };
 
-  async function open(id: string | null): Promise<void> {
+  async function open(id: string | null, step = false): Promise<void> {
     await TestBed.configureTestingModule({
       deferBlockBehavior: DeferBlockBehavior.Manual,
       imports: [
@@ -156,6 +156,10 @@ describe('AwardFormComponent', () => {
     fixture = TestBed.createComponent(AwardFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    if (!step) {
+      component.stepShown.set(false);
+      fixture.detectChanges();
+    }
     for (const block of await fixture.getDeferBlocks()) {
       await block.render(DeferBlockState.Complete);
     }
@@ -193,6 +197,43 @@ describe('AwardFormComponent', () => {
     dialog.open.mockReset();
     auth.userId.set('21');
     auth.isAuthenticated.set(true);
+  });
+
+  it('ac5_3_a_new_award_starts_with_the_upload_step', async () => {
+    await open(null, true);
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="upload-step"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-title-uk"]')).toBeNull();
+  });
+
+  it('ac5_3_skipping_the_file_opens_the_form_directly', async () => {
+    await open(null, true);
+
+    component.stepDone({ awardId: null, document: null });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="upload-step"]')).toBeNull();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('ac5_3_an_uploaded_document_opens_the_form_of_its_draft', async () => {
+    await open(null, true);
+
+    component.stepDone({ awardId: 9, document: { id: 4 } as AwardDocument });
+
+    expect(router.navigate).toHaveBeenCalledWith(['/awards', 9, 'edit'], {
+      replaceUrl: true,
+      state: { attached: 4 },
+    });
+  });
+
+  it('ac5_3_a_draft_being_restored_skips_the_upload_step', async () => {
+    copies.save('21', 'award-new', { ...emptyForm(), titleUk: 'Грамота' });
+    await open(null, true);
+
+    expect(fixture.nativeElement.querySelector('[data-testid="upload-step"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="restore-offer"]')).not.toBeNull();
   });
 
   it('ac3_5_a_returned_draft_shows_the_reviewers_comment', async () => {

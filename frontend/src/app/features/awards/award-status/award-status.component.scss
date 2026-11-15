@@ -31,40 +31,81 @@
   margin: 0;
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
 }
 
 .award-status__step {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  min-width: 140px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--mat-sys-outline-variant);
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 8px 12px 8px 32px;
+  border-radius: var(--app-radius-sm);
   color: var(--mat-sys-on-surface-variant);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 8px;
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--mat-sys-outline);
+    border-radius: 50%;
+    background: var(--mat-sys-surface);
+  }
+
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 28px;
+    bottom: -12px;
+    left: 13px;
+    width: 2px;
+    background: var(--mat-sys-outline-variant);
+  }
 }
 
 .award-status__step--DONE {
-  border-color: var(--mat-sys-primary);
   color: var(--mat-sys-on-surface);
+
+  &::before {
+    border-color: var(--mat-sys-primary);
+    background: var(--mat-sys-primary);
+  }
 }
 
-.award-status__step--SKIPPED {
+.award-status__step--SKIPPED::before {
   border-style: dashed;
 }
 
 .award-status__step--CURRENT {
-  border-width: 2px;
-  border-color: var(--mat-sys-primary);
   background: var(--mat-sys-primary-container);
   color: var(--mat-sys-on-primary-container);
   font-weight: 500;
+
+  &::before {
+    border-color: var(--mat-sys-primary);
+    box-shadow: 0 0 0 4px var(--mat-sys-surface);
+  }
 }
 
 .award-status__step--STOPPED {
-  border-color: var(--mat-sys-error);
   color: var(--mat-sys-on-surface);
+
+  &::before {
+    border-color: var(--mat-sys-error);
+  }
+}
+
+.award-status__now {
+  padding: 0 8px;
+  border-radius: var(--app-radius-sm);
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font: var(--mat-sys-label-medium);
 }
 
 .award-status__level {

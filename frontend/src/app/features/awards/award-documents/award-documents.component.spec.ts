@@ -465,6 +465,27 @@ describe('AwardDocumentsComponent', () => {
     expect(counts).toEqual([1]);
   });
 
+  it('ac5_3_another_file_replaces_the_attached_document', async () => {
+    const replacement = document({ id: 7, fileName: 'scan.pdf', type: 'DIPLOMA' });
+    service.list.mockReturnValue(of([document({ type: 'DIPLOMA' }), document({ id: 2 })]));
+    service.upload.mockReturnValue(of(new HttpResponse({ body: replacement })));
+    service.remove.mockReturnValue(of(undefined));
+    await render({ awardId: 5, uploads: true, replaceable: 1 });
+
+    expect(all('document-replace')).toHaveLength(1);
+    const input = all('document-replace-input')[0] as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [file('scan.pdf', 1000, 'application/pdf')] });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(service.upload).toHaveBeenCalledWith(5, expect.any(File), 'DIPLOMA');
+    expect(service.remove).toHaveBeenCalledWith(1);
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(component.documents().map((item) => item.id)).toEqual([2, 7]);
+    expect(component.replaceId()).toBe(7);
+    expect(all('document-7')[0].querySelector('[data-testid="document-replace"]')).not.toBeNull();
+  });
+
   it('ac6_cancelled_delete_keeps_the_document', async () => {
     service.list.mockReturnValue(of([document()]));
     dialog.open.mockReturnValue({ afterClosed: () => of(false) });

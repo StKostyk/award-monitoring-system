@@ -6,12 +6,13 @@ import {
   SEED,
   freshEmployee,
   kyivDay,
+  openNewAward,
   pastDay,
   settled,
   shownDay,
-  signIn,
   signedIn,
   signedInAs,
+  signIn,
   uniqueToken,
 } from './helpers';
 
@@ -36,7 +37,7 @@ function jpeg(): Buffer {
 }
 
 async function newAward(page: Page, title: string): Promise<void> {
-  await page.goto('/awards/new');
+  await openNewAward(page);
   await page.getByTestId('award-title-uk').fill(title);
 }
 

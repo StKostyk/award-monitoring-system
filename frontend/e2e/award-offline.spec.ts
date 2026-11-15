@@ -2,9 +2,10 @@ import { expect, test } from './fixtures';
 
 import {
   FRESH_PASSWORD,
-  freshEmployee,
-  pastDay,
   RECONNECT_MS,
+  freshEmployee,
+  openNewAward,
+  pastDay,
   seriousViolations,
   signedInAs,
   submitWithoutDocuments,
@@ -32,7 +33,7 @@ function countCreations(page: Page): () => number {
 }
 
 async function openNewForm(page: Page): Promise<void> {
-  await page.goto('/awards/new');
+  await openNewAward(page);
   await expect(page.getByTestId('award-title-uk')).toBeVisible();
 }
 

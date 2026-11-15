@@ -1,0 +1,73 @@
+<section class="upload-step" aria-labelledby="upload-step-title" data-testid="upload-step">
+  <h2 id="upload-step-title" class="upload-step__title">
+    {{ 'awards.uploadStep.title' | transloco }}
+  </h2>
+
+  <div
+    class="upload-step__drop"
+    [class.upload-step__drop--active]="dragging()"
+    (dragover)="dragOver($event)"
+    (dragleave)="dragging.set(false)"
+    (drop)="dropped($event)"
+    data-testid="upload-drop"
+  >
+    <span class="upload-step__icon" aria-hidden="true"><app-icon name="upload" /></span>
+    @if (state() === 'uploading') {
+      <p class="upload-step__file" data-testid="upload-file">{{ fileName() }}</p>
+      <mat-progress-bar
+        mode="determinate"
+        [value]="progress()"
+        [attr.aria-label]="'awards.documents.uploading' | transloco: { name: fileName() }"
+        data-testid="upload-progress"
+      />
+    } @else {
+      <p class="upload-step__lead">{{ 'awards.uploadStep.drop' | transloco }}</p>
+      <p class="upload-step__hint" id="upload-step-hint">
+        {{ 'awards.uploadStep.hint' | transloco }}
+      </p>
+      <button
+        mat-flat-button
+        type="button"
+        aria-describedby="upload-step-hint"
+        (click)="picker.click()"
+        data-testid="upload-pick"
+      >
+        {{ 'awards.uploadStep.pick' | transloco }}
+      </button>
+    }
+    <input
+      #picker
+      type="file"
+      hidden
+      [accept]="accept"
+      (change)="picked(picker)"
+      data-testid="upload-input"
+    />
+  </div>
+
+  <p class="upload-step__note">{{ 'awards.uploadStep.note' | transloco }}</p>
+
+  @if (problem(); as problem) {
+    <p class="upload-step__problem" role="alert" data-testid="upload-problem">
+      {{ problem | transloco }}
+    </p>
+  }
+
+  <div class="upload-step__actions">
+    @if (state() === 'unavailable') {
+      <button mat-flat-button type="button" (click)="skip()" data-testid="upload-continue">
+        {{ 'awards.uploadStep.continue' | transloco }}
+      </button>
+    } @else {
+      <button
+        mat-button
+        type="button"
+        [disabled]="state() === 'uploading'"
+        (click)="skip()"
+        data-testid="upload-skip"
+      >
+        {{ 'awards.uploadStep.skip' | transloco }}
+      </button>
+    }
+  </div>
+</section>

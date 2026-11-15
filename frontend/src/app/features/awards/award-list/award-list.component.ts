@@ -2,12 +2,13 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { DateAdapter } from '@angular/material/core';
@@ -20,20 +21,22 @@ import {
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
-import { map } from 'rxjs';
+import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { EmptyStateComponent } from '../../../shared/empty-state/empty-state.component';
+import { StaggerDirective } from '../../../shared/effects/stagger.directive';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
+import { SkeletonRowsComponent } from '../../../shared/skeleton/skeleton-rows.component';
 import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 import { NARROW_SCREEN, narrowScreen } from '../../../shared/touch';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
@@ -41,9 +44,11 @@ import {
   AWARD_STATUSES,
   Award,
   AwardFilters,
+  AwardStatus,
   AwardVisibility,
   AwardsService,
   CategoryNode,
+  NO_FILTERS,
   UnitRef,
   awardTitle,
   categoryName,
@@ -73,7 +78,9 @@ const PAGE_SIZES = [10, 20, 50, 100];
     MatSuffix,
     MatSelect,
     MatOption,
-    MatProgressBar,
+    EmptyStateComponent,
+    SkeletonRowsComponent,
+    StaggerDirective,
     MatPaginator,
     TranslocoPipe,
     KyivDatePipe,
@@ -92,6 +99,7 @@ export class AwardListComponent implements OnInit {
   private readonly service = inject(AwardsService);
   private readonly language = inject(LanguageService);
   private readonly dates = inject<DateAdapter<string>>(DateAdapter);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly statuses = AWARD_STATUSES;
   protected readonly canCreate = canCreateAwards(this.auth.permissions());
@@ -113,6 +121,11 @@ export class AwardListComponent implements OnInit {
     { initialValue: narrowScreen() },
   );
   protected readonly filtersOpen = signal(false);
+  /** Awards per status under the other filters; null while unknown. */
+  protected readonly counts = signal<Record<AwardStatus, number> | null>(null);
+  protected readonly filtered = computed(() =>
+    Object.values(this.filters()).some((value) => value !== null),
+  );
   protected readonly activeFilters = computed(() => {
     const { status, category, dateFrom, dateTo } = this.filters();
     return [status, category, dateFrom, dateTo].filter((value) => value !== null).length;
@@ -125,6 +138,24 @@ export class AwardListComponent implements OnInit {
       next: (tree) => this.categories.set(flattenCategories(tree)),
       error: () => this.categories.set([]),
     });
+    this.store
+      .select(awardsFeature.selectFilters)
+      .pipe(
+        map((filters) => ({ ...filters, status: null })),
+        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        switchMap((filters) => this.service.statusCounts(filters).pipe(catchError(() => of(null)))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((counts) => this.counts.set(counts));
+  }
+
+  /** The number of awards of every status together. */
+  allCount(counts: Record<AwardStatus, number>): number {
+    return Object.values(counts).reduce((sum, count) => sum + count, 0);
+  }
+
+  clearFilters(): void {
+    this.store.dispatch(AwardsActions.filtersChanged({ filters: NO_FILTERS }));
   }
 
   filter(change: Partial<AwardFilters>): void {

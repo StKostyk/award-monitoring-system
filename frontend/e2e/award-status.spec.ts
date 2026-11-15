@@ -16,6 +16,7 @@ const { employee, secretary } = SEED;
 async function submitted(page: Page, title: string): Promise<string> {
   await page.getByTestId('nav-awards').click();
   await page.getByTestId('award-add').click();
+  await page.getByTestId('upload-skip').click();
   await page.getByTestId('award-title-uk').fill(title);
   await page.getByTestId('award-save').click();
   await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
@@ -44,7 +45,7 @@ test.describe('award status tracking', () => {
     await expect(page.getByTestId('nav-awards')).toBeVisible();
   });
 
-  test('ac1_12 ac1_17 ac1_19 a submitted award shows its path, estimate and home card', async ({
+  test('ac1_12 ac1_17 ac1_19 ac5_2 a submitted award shows its journey, estimate and home card', async ({
     page,
   }) => {
     const title = `Грамота МОН ${uniqueToken()}`;
@@ -55,6 +56,9 @@ test.describe('award status tracking', () => {
     await expect(page.getByTestId('award-status-path')).toContainText('Подано');
     await expect(steps).toHaveText([/Секретар факультету/, /Декан/, /Секретар ректора/]);
     await expect(steps.first()).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByTestId('award-status-panel')).toContainText('Шлях нагороди');
+    await expect(steps.first().getByTestId('award-status-now')).toHaveText('Зараз');
+    await expect(steps.nth(1).getByTestId('award-status-now')).toHaveCount(0);
     await expect(steps.first()).toContainText(/Очікується до \d{2}\.\d{2}\.\d{4}/);
     await expect(page.getByTestId('award-status-estimate')).toContainText(
       /Орієнтовне завершення: \d{2}\.\d{2}\.\d{4}/,
@@ -69,7 +73,7 @@ test.describe('award status tracking', () => {
     await expect(page).toHaveURL(new RegExp(`/awards/${id}$`));
 
     await page.getByTestId('language-toggle').click();
-    await expect(page.getByTestId('award-status-panel')).toContainText('Review status');
+    await expect(page.getByTestId('award-status-panel')).toContainText('Award journey');
     await expect(page.getByTestId('award-status-step').first()).toContainText('Faculty secretary');
     await expect(page.getByTestId('award-status-estimate')).toContainText('Expected completion');
     await page.getByTestId('language-toggle').click();

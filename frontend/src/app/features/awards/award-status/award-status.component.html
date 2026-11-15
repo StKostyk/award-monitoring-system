@@ -32,6 +32,11 @@
             data-testid="award-status-step"
           >
             <span class="award-status__level">{{ 'roles.' + step.level | transloco }}</span>
+            @if (step.state === 'CURRENT' && pendingReview()) {
+              <span class="award-status__now" data-testid="award-status-now">{{
+                'awards.statusPanel.now' | transloco
+              }}</span>
+            }
             @if (step.state === 'SKIPPED') {
               <span class="award-status__when" data-testid="award-status-skipped">{{
                 'awards.statusPanel.skipped' | transloco

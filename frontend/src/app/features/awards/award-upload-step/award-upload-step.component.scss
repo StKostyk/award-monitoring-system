@@ -1,0 +1,77 @@
+:host {
+  display: block;
+  max-width: 720px;
+}
+
+.upload-step__title {
+  margin: 0 0 16px;
+  font: var(--mat-sys-title-large);
+}
+
+.upload-step__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px;
+  border: 2px dashed var(--mat-sys-outline-variant);
+  border-radius: var(--app-card-radius);
+  background: var(--mat-sys-surface-container-low);
+  text-align: center;
+  transition: border-color 150ms ease;
+
+  mat-progress-bar {
+    width: min(100%, 360px);
+  }
+}
+
+.upload-step__drop--active {
+  border-color: var(--mat-sys-primary);
+}
+
+.upload-step__icon {
+  --app-icon-size: 28px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.upload-step__lead,
+.upload-step__file {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  overflow-wrap: anywhere;
+}
+
+.upload-step__hint,
+.upload-step__note {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.upload-step__note {
+  margin-top: 12px;
+}
+
+.upload-step__problem {
+  color: var(--mat-sys-error);
+}
+
+.upload-step__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-step__drop {
+    transition: none;
+  }
+}

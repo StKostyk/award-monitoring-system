@@ -126,6 +126,19 @@
     "add": "Add award",
     "empty": "No awards yet. Add your first one — you can save it as a draft and finish it later.",
     "noMatch": "No awards match your search.",
+    "resetFilters": "Clear filters",
+    "uploadStep": {
+      "title": "Start with the document",
+      "drop": "Drop the certificate, diploma or letter here",
+      "hint": "PDF, JPG, PNG or WEBP, up to 10 MB",
+      "pick": "Choose a file",
+      "note": "The document will be attached to the award",
+      "skip": "Fill in without a document",
+      "continue": "Continue without a document",
+      "unavailable": "File checking is unavailable. You can fill in the award now and add the document later.",
+      "replace": "Another file",
+      "replaceOf": "Another file instead of {{name}}"
+    },
     "notFound": "Not found",
     "back": "Back to my awards",
     "edit": "Edit",
@@ -430,7 +443,8 @@
       "visibility-fixed": "Visibility can be changed only for an approved personal award."
     },
     "statusPanel": {
-      "title": "Review status",
+      "title": "Award journey",
+      "now": "Now",
       "submitted": "Submitted",
       "resubmitted": "Submitted again",
       "upcomingBy": "by {{date}}",

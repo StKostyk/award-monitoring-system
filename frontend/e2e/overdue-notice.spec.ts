@@ -16,6 +16,7 @@ const { employee, dean } = SEED;
 async function submitted(page: Page, title: string): Promise<string> {
   await page.getByTestId('nav-awards').click();
   await page.getByTestId('award-add').click();
+  await page.getByTestId('upload-skip').click();
   await page.getByTestId('award-title-uk').fill(title);
   await page.getByTestId('award-save').click();
   await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
