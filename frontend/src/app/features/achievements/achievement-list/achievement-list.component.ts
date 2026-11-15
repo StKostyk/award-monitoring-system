@@ -32,6 +32,7 @@ import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { currentKyivYear } from '../../../shared/date-format';
+import { EmptyStateComponent } from '../../../shared/empty-state/empty-state.component';
 import { organizationName } from '../../../shared/organization-name';
 import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
@@ -65,6 +66,7 @@ const UNIT_ID = /^\d{1,9}$/;
   selector: 'app-achievement-list',
   imports: [
     AchievementCardComponent,
+    EmptyStateComponent,
     MatButton,
     MatFormField,
     MatLabel,

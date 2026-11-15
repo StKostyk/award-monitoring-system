@@ -1,3 +1,8 @@
+.admin__name {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+}
+
 .admin__card {
   max-width: 820px;
   margin-bottom: 16px;
@@ -15,6 +20,7 @@
 
   dd {
     margin: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -60,4 +66,11 @@
   display: block;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
+}
+
+@media (max-width: 599.98px) {
+  .admin__facts {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
 }

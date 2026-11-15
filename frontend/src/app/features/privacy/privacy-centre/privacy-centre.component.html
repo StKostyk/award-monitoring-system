@@ -165,36 +165,39 @@
       @if (activity().length === 0 && !activityLoading() && !activityProblem()) {
         <p data-testid="privacy-activity-empty">{{ 'privacy.activity.empty' | transloco }}</p>
       } @else if (activity().length > 0) {
-        <table class="centre__table" data-testid="privacy-activity">
-          <thead>
-            <tr>
-              <th scope="col">{{ 'privacy.activity.columns.action' | transloco }}</th>
-              <th scope="col">{{ 'privacy.activity.columns.time' | transloco }}</th>
-              <th scope="col">{{ 'privacy.activity.columns.who' | transloco }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entry of activity(); track $index) {
-              <tr data-testid="privacy-activity-row">
-                <td data-testid="privacy-activity-action">
-                  @if (actionKey(entry.action); as key) {
-                    {{ key | transloco }}
-                  } @else {
-                    {{ entry.action }}
-                  }
-                </td>
-                <td>
-                  <time [attr.datetime]="entry.occurredAt">{{ time(entry.occurredAt) }}</time>
-                </td>
-                <td>
-                  {{
-                    (entry.byMe ? 'privacy.activity.byMe' : 'privacy.activity.aboutMe') | transloco
-                  }}
-                </td>
+        <div class="table-scroll" tabindex="0">
+          <table class="centre__table" data-testid="privacy-activity">
+            <thead>
+              <tr>
+                <th scope="col">{{ 'privacy.activity.columns.action' | transloco }}</th>
+                <th scope="col">{{ 'privacy.activity.columns.time' | transloco }}</th>
+                <th scope="col">{{ 'privacy.activity.columns.who' | transloco }}</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (entry of activity(); track $index) {
+                <tr data-testid="privacy-activity-row">
+                  <td data-testid="privacy-activity-action">
+                    @if (actionKey(entry.action); as key) {
+                      {{ key | transloco }}
+                    } @else {
+                      {{ entry.action }}
+                    }
+                  </td>
+                  <td>
+                    <time [attr.datetime]="entry.occurredAt">{{ time(entry.occurredAt) }}</time>
+                  </td>
+                  <td>
+                    {{
+                      (entry.byMe ? 'privacy.activity.byMe' : 'privacy.activity.aboutMe')
+                        | transloco
+                    }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
       @if (activityLoading()) {
         <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />

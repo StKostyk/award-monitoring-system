@@ -27,5 +27,23 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    files: ['src/app/**/*.component.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "Property[key.name='styles'] TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b|\\b(rgba?|hsla?)\\(/]",
+          message: 'Colours come from the theme tokens: no hex, rgb or hsl in component styles.',
+        },
+        {
+          selector:
+            "Property[key.name='styles'] Literal[value=/#[0-9a-fA-F]{3,8}\\b|\\b(rgba?|hsla?)\\(/]",
+          message: 'Colours come from the theme tokens: no hex, rgb or hsl in component styles.',
+        },
+      ],
+    },
   }
 );

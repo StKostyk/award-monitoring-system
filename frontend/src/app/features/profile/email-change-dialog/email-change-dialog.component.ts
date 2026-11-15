@@ -47,7 +47,7 @@ const KNOWN_PROBLEMS = [
       min-width: 280px;
     }
     .email-change__problem {
-      color: var(--mat-sys-error, #b3261e);
+      color: var(--mat-sys-error);
       margin: 0;
     }
   `,

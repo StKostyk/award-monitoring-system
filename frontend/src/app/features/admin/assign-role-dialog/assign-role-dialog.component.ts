@@ -66,7 +66,7 @@ import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-
       width: 100%;
     }
     .admin__problem {
-      color: var(--mat-sys-error, #b3261e);
+      color: var(--mat-sys-error);
       margin: 0;
     }
   `,

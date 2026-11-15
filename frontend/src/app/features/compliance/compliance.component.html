@@ -23,7 +23,12 @@
       }
 
       <h2 class="compliance__section">{{ 'compliance.retention.policies' | transloco }}</h2>
-      <div class="compliance__scroll" tabindex="0">
+      <div
+        class="table-card"
+        role="region"
+        tabindex="0"
+        [attr.aria-label]="'compliance.retention.policies' | transloco"
+      >
         <table
           mat-table
           [dataSource]="policies()"
@@ -92,7 +97,14 @@
               </mat-panel-description>
             </mat-expansion-panel-header>
 
-            <div class="compliance__scroll" tabindex="0">
+            <div
+              class="table-card"
+              role="region"
+              tabindex="0"
+              [attr.aria-label]="
+                ('compliance.retention.runs' | transloco) + ' ' + time(run.startedAt)
+              "
+            >
               <table
                 mat-table
                 [dataSource]="run.results"
@@ -197,7 +209,12 @@
         />
       }
 
-      <div class="compliance__scroll" tabindex="0">
+      <div
+        class="table-card"
+        role="region"
+        tabindex="0"
+        [attr.aria-label]="'compliance.tabs.erasures' | transloco"
+      >
         <table
           mat-table
           [dataSource]="erasures().items"
@@ -324,7 +341,12 @@
         />
       }
 
-      <div class="compliance__scroll" tabindex="0">
+      <div
+        class="table-card"
+        role="region"
+        tabindex="0"
+        [attr.aria-label]="'compliance.tabs.holds' | transloco"
+      >
         <table
           mat-table
           [dataSource]="holds().items"

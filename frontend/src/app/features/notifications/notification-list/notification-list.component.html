@@ -26,7 +26,9 @@
     {{ 'notifications.actionFailed' | transloco }}
   </p>
 }
-@if (feed.loading()) {
+@if (feed.loading() && feed.items().length === 0) {
+  <app-skeleton-rows [label]="'app.loading' | transloco" data-testid="notifications-loading" />
+} @else if (feed.loading()) {
   <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
 }
 @if (feed.failed()) {
@@ -62,9 +64,12 @@
     }
   </ul>
 } @else if (!feed.loading() && !feed.failed()) {
-  <p class="notifications__empty" data-testid="notifications-page-empty">
-    {{ (unreadOnly() ? 'notifications.emptyUnread' : 'notifications.empty') | transloco }}
-  </p>
+  <app-empty-state
+    class="notifications__empty"
+    icon="bell"
+    [text]="(unreadOnly() ? 'notifications.emptyUnread' : 'notifications.empty') | transloco"
+    data-testid="notifications-page-empty"
+  />
 }
 
 @if (total() > pageSize) {

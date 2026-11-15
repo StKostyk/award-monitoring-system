@@ -73,7 +73,7 @@ const REASON_LIMIT = 500;
       width: 100%;
     }
     .delegations__problem {
-      color: var(--mat-sys-error, #b3261e);
+      color: var(--mat-sys-error);
       margin: 0;
     }
   `,

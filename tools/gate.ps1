@@ -5,7 +5,7 @@
 .DESCRIPTION
     Static analysis first (about half a minute), then the full build with tests and coverage, so a style
     violation never costs a five-minute run. -StaticOnly stops after the static checks (backend, then the
-    frontend ESLint and Prettier check, the lint and type check of the Playwright specs, nginx -t on the frontend
+    frontend ESLint, Stylelint and Prettier check, the lint and type check of the Playwright specs, nginx -t on the frontend
     nginx configuration and actionlint on the workflows); a compiler error is printed as such. -SkipFrontend leaves
     the Angular checks, unit tests and the production build (bundle budgets) out. The backend
     verify runs only when the branch changes something under backend/ compared with develop (develop passed it
@@ -139,8 +139,10 @@ $frontendChecks = {
         $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
         & npm run lint:e2e *>> $lintLog
         $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
+        & npm run lint:styles *>> $lintLog
+        $result.LintOk = $result.LintOk -and $LASTEXITCODE -eq 0
         if (-not $result.LintOk) {
-            $result.Lines += Select-String -Path $lintLog -Pattern 'error|\[warn\]' | Select-Object -First 20 |
+            $result.Lines += Select-String -Path $lintLog -Pattern 'error|\[warn\]|Unexpected' | Select-Object -First 20 |
                 ForEach-Object { $_.Line }
         }
 

@@ -1,21 +1,15 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
+import { IconComponent } from '../../shared/icons/icon.component';
+import { StatusPageComponent } from '../../shared/status-page/status-page.component';
+
 @Component({
   selector: 'app-forbidden',
-  imports: [
-    MatCard,
-    MatCardHeader,
-    MatCardTitle,
-    MatCardContent,
-    MatButton,
-    RouterLink,
-    TranslocoPipe,
-  ],
+  imports: [MatButton, RouterLink, TranslocoPipe, StatusPageComponent, IconComponent],
   templateUrl: './forbidden.component.html',
-  styles: '.forbidden__card { max-width: 560px; }',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ForbiddenComponent {}

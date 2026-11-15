@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
@@ -11,8 +10,10 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { canDelegate } from '../../../core/auth/permissions';
 import { OrganizationRef } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
+import { SkeletonRowsComponent } from '../../../shared/skeleton/skeleton-rows.component';
 import { Delegation, UserBrief } from '../delegations.service';
 import { DelegateDialogComponent } from '../delegate-dialog/delegate-dialog.component';
 import { RevokeDelegationDialogComponent } from '../revoke-delegation-dialog/revoke-delegation-dialog.component';
@@ -21,7 +22,15 @@ import { delegationsFeature } from '../store/delegations.feature';
 
 @Component({
   selector: 'app-delegation-list',
-  imports: [MatTableModule, MatChip, MatProgressBar, MatButton, TranslocoPipe, KyivDatePipe],
+  imports: [
+    MatTableModule,
+    MatChip,
+    MatButton,
+    IconComponent,
+    SkeletonRowsComponent,
+    TranslocoPipe,
+    KyivDatePipe,
+  ],
   templateUrl: './delegation-list.component.html',
   styleUrl: './delegation-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +55,10 @@ export class DelegationListComponent implements OnInit {
   readonly given = this.store.selectSignal(delegationsFeature.selectGiven);
   readonly received = this.store.selectSignal(delegationsFeature.selectReceived);
   readonly loading = this.store.selectSignal(delegationsFeature.selectLoading);
+  /** True while the lists load and nothing is shown yet: skeleton rows stand in for both tables. */
+  readonly firstLoad = computed(
+    () => this.loading() && this.given().length === 0 && this.received().length === 0,
+  );
   readonly problem = this.store.selectSignal(delegationsFeature.selectProblem);
   readonly revokingId = this.store.selectSignal(delegationsFeature.selectRevokingId);
   readonly revokeProblem = this.store.selectSignal(delegationsFeature.selectRevokeProblem);

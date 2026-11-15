@@ -15,20 +15,17 @@
 }
 
 .admin__filter {
-  min-width: 200px;
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .admin__filter--wide {
   flex: 1 1 280px;
 }
 
-.admin__table {
-  width: 100%;
-}
-
 .admin__badge {
   display: inline-block;
-  margin-left: 8px;
+  margin-inline-start: 8px;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.75rem;

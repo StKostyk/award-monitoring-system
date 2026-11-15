@@ -23,7 +23,7 @@
 
 ## 2. Tokens
 
-Component styles take colours, type and shape from tokens only. No hex, `rgb()` or named colours in component SCSS, and no fallback values inside `var()`.
+Component styles take colours, type and shape from tokens only. No hex, `rgb()` or named colours in component SCSS, and no fallback values inside `var()`. `npm run lint:styles` (Stylelint: `color-no-hex`, `color-named`, no `rgb()`/`hsl()`, `frontend/stylelint.config.mjs`) checks `src/app/**/*.scss`, and an ESLint `no-restricted-syntax` rule keeps hex, `rgb()` and `hsl()` out of the inline `styles` of components; `src/styles/**` holds the brand palette and is not linted for colours. Both run in the gate and in CI.
 
 | Token | Meaning |
 |-------|---------|
@@ -59,6 +59,8 @@ Material component colours are changed with the component's `*-overrides` mixin 
 - Navigation items carry an icon and a label; new top-level sections are added to the side menu, guarded by the same permission helper as their route.
 - Review queue (`features/reviews/review-queue`): one request at a time above the list, with document, fields and a checklist that is never sent. Single-letter shortcuts (J, K, A, R) read `KeyboardEvent.code`, so they work on the Ukrainian layout, and are ignored inside text fields, pickers and menus, with Ctrl, Alt or Meta held and while a dialog is open; the line under the actions lists them. A decision confirmed there is held for 10 s by `HeldDecisionService` with «Скасувати» in a snackbar; it goes out at once on navigation and before sign-out (`AuthService.beforeSignOut`), and with a `fetch` keepalive request and the bearer token when the tab closes.
 - Lists: while a list loads it shows `app-skeleton-rows` (`shared/skeleton`, a named `role="status"` region, the pulse stops under reduced motion) in place of the rows; a list or search without results shows `app-empty-state` (`shared/empty-state`: an icon, one sentence and the next action projected as a button or link) instead of an empty table. Status filters with counts are chips (`aria-pressed`) that scroll inside their own row on phones.
+- Cards and tables: `mat-card` takes the brand radius (`--app-card-radius`), the `surface-container-low` fill and an outline instead of a shadow (`styles/_tokens.scss`). A data table sits in `.table-card` with `role="region"`, `tabindex="0"` and `aria-labelledby` its heading (the same frame, scrolling sideways inside itself on phones and reachable by keyboard) or, inside a card, in `.table-scroll` with `tabindex="0"`; the page itself never scrolls sideways.
+- Pages that only say where the user stands (`/not-found`, `/forbidden`, `/offline`) use `app-status-page` (`shared/status-page`): icon, `h1`, one sentence, the way on. Every screen has a heading (`h1`) in the heading font.
 
 ## 5. Dark mode
 
@@ -90,7 +92,7 @@ The authorization server renders the sign-in, error and 429 pages itself (Thymel
 
 ## 8. Checks
 
-- `e2e/theme.spec.ts`: brand class and title, brand colours and fonts per scheme, fallback to neutral, Lucide icons with named icon-only controls, scheme switch, phone drawer, axe (WCAG 2.1 AA, serious and critical) on home, award list and award form for each brand in light and dark.
+- `e2e/theme.spec.ts`: brand class and title, brand colours and fonts per scheme, fallback to neutral, Lucide icons with named icon-only controls, scheme switch, phone drawer, axe (WCAG 2.1 AA, serious and critical) on home, award list and award form for each brand in light and dark. The `remaining screens` block covers every other screen per role (employee, dean, rector, GDPR officer, no session): no `mat-icon`, named icon-only controls and a Manrope heading; at 360 px neither the page nor the shell content scrolls sideways and every wider table scrolls inside its own box; axe for both brands in light and dark.
 - `e2e/login.spec.ts`: sign-in page brand, count and claim, Manrope and Onest without other hosts, 360 px strip above the form, target sizes and axe in light and dark, also with an error shown; the brand panel on the six account pages, and the phone strip with axe on `/register`.
 - `e2e/award-look.spec.ts`: award list rows, status chips with counts, empty states, skeleton rows, the document step of `/awards/new` (upload, «Інший файл», refused file, scanner outage), axe on the list and the step; `e2e/award-status.spec.ts` covers «Шлях нагороди».
 - `e2e/review-queue.spec.ts`: checklist, A with undo and the 10 s hold checked in the database, flush on navigation, a request changed during the hold coming back.
