@@ -217,6 +217,17 @@ categorical series colours (ECharts `color`, used for lines per unit), `--app-ch
 lightness and at least 2:1 against the surfaces (series colours at least 3:1). `ChartThemeService` resolves all of
 them again when the scheme changes.
 
+## Addendum 2026-11-15: Shell and command palette (Feature 9.3)
+
+**Command palette.** No palette library (cmdk ports, ngx-kbar) is added: the palette is a Material dialog with one
+combobox field and a listbox (`CommandPaletteService`, `core/layout/command-palette`). It reuses the side menu entry
+list (`nav-entries.ts`, filtered by the route permission helpers) and the existing `GET /awards?q=` search, so it
+offers nothing the person could not open from the menu or the award list.
+
+**Aurora background.** Three fixed radial gradients in the shell, coloured by `--app-aurora-*`, shown only in the
+dark scheme and moved by `transform` only; no `backdrop-filter` or `filter`, which cost too much on scrolling pages
+(PRD 9.3 D2). The toolbar is a translucent surface over it.
+
 ## Related Documents
 
 - **Technology Stack**: [Technology Stack Selection](../TECH_STACK.md)
@@ -233,6 +244,7 @@ them again when the scheme changes.
 | 2026-10-19 | Stefan Kostyk | Addendum: chart library | Personal dashboard (Feature 5.1) |
 | 2026-11-14 | Stefan Kostyk | Addendum: Lucide icons | New look (Feature 9.3) |
 | 2026-11-15 | Stefan Kostyk | Addendum: motion, effect components, chart colours | New look (Feature 9.3) |
+| 2026-11-15 | Stefan Kostyk | Addendum: shell and command palette | New look (Feature 9.3) |
 
 ---
 

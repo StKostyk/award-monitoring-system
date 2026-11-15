@@ -151,7 +151,6 @@ test.describe('brand theme', () => {
 
     expect(await background(page, 'body')).toBe('rgb(6, 9, 20)');
 
-    await page.getByTestId('user-menu').click();
     await page.getByTestId('color-scheme-menu').click();
     await page.getByTestId('color-scheme-light').click();
     await expect(page.locator('html')).toHaveAttribute('data-color-scheme', 'light');
@@ -161,7 +160,6 @@ test.describe('brand theme', () => {
     await expect(page.getByTestId('nav-awards')).toBeVisible();
     expect(await background(page, 'body')).toBe('rgb(246, 239, 228)');
 
-    await page.getByTestId('user-menu').click();
     await page.getByTestId('color-scheme-menu').click();
     await page.getByTestId('color-scheme-system').click();
     expect(await background(page, 'body')).toBe('rgb(6, 9, 20)');
@@ -172,7 +170,7 @@ test.describe('brand theme', () => {
     await signIn(page, employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
     await expect(page.getByTestId('nav-awards')).toBeHidden();
-    await expect(page.getByTestId('brand')).toBeVisible();
+    await expect(page.getByTestId('page-title')).toBeVisible();
 
     await page.getByTestId('nav-toggle').click();
     await page.getByTestId('nav-awards').click();
@@ -190,7 +188,7 @@ test.describe('brand theme', () => {
     await expect(page.getByTestId('award-item').first()).not.toBeInViewport();
     await expect(page.getByTestId('nav-toggle')).toBeInViewport();
     await expect(page.getByTestId('user-menu')).toBeVisible();
-    await expect(page.getByTestId('logout')).toBeVisible();
+    await expect(page.getByTestId('palette-open')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       phoneWidth,
     );

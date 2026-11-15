@@ -56,6 +56,17 @@
     },
     "logout": "Sign out",
     "clearSearch": "Clear search",
+    "palette": {
+      "open": "Search and go",
+      "label": "Search sections and awards",
+      "placeholder": "Section or award title",
+      "sections": "Sections",
+      "awards": "Awards",
+      "empty": "Nothing found.",
+      "results": "Options: {{count}}",
+      "hint": "↑ ↓ to move · Enter to open · Esc to close"
+    },
+    "newAward": "New award",
     "login": "Sign in",
     "loading": "Loading…",
     "datePlaceholder": "dd/mm/yyyy",

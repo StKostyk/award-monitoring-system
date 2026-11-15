@@ -212,7 +212,6 @@ test.describe('university analytics', () => {
     await page.evaluate(() => Object.assign(window, { sameDocument: true }));
 
     const light = await chartColours(page);
-    await page.getByTestId('user-menu').click();
     await page.getByTestId('color-scheme-menu').click();
     await page.getByTestId('color-scheme-dark').click();
 

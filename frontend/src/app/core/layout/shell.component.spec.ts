@@ -16,6 +16,8 @@ import { NO_PERMISSIONS, readPermissions } from '../auth/permissions';
 import { BrandService, LocalizedText } from '../brand/brand.service';
 import { LanguageService } from '../i18n/language.service';
 import { NotificationApi } from '../notifications/notification.api';
+import { NARROW_SCREEN } from '../../shared/touch';
+import { CommandPaletteService } from './command-palette.service';
 import { ShellComponent } from './shell.component';
 
 const dean = { id: 2, firstName: 'Мартин', lastName: 'Мартинюк', email: 'dean.fmi@chnu.edu.ua' };
@@ -81,7 +83,11 @@ describe('ShellComponent', () => {
     text: (text: LocalizedText) => text.uk,
   };
 
+  const palette = { listen: vi.fn(), open: vi.fn() };
+
   beforeEach(async () => {
+    palette.listen.mockClear();
+    palette.open.mockClear();
     auth.logout.mockClear();
     auth.permissions.set(NO_PERMISSIONS);
     language.toggle.mockClear();
@@ -103,6 +109,8 @@ describe('ShellComponent', () => {
                 logout: 'Вийти',
                 menu: 'Меню',
                 home: 'Головна',
+                newAward: 'Нова нагорода',
+                palette: { open: 'Пошук і переходи' },
                 scheme: { title: 'Тема', system: 'Як на пристрої', light: 'Світла', dark: 'Темна' },
               },
               admin: { users: { title: 'Користувачі' } },
@@ -127,7 +135,7 @@ describe('ShellComponent', () => {
         }),
       ],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: '**', children: [] }]),
         { provide: AuthService, useValue: auth },
         { provide: LanguageService, useValue: language },
         { provide: DelegationsService, useValue: delegations },
@@ -135,6 +143,7 @@ describe('ShellComponent', () => {
         { provide: NotificationApi, useValue: notifications },
         { provide: BrandService, useValue: brands },
         { provide: BreakpointObserver, useValue: { observe: () => layout } },
+        { provide: CommandPaletteService, useValue: palette },
       ],
     }).compileComponents();
   });
@@ -400,7 +409,7 @@ describe('ShellComponent', () => {
     const drawer = () => element.querySelector('mat-sidenav') as HTMLElement;
 
     expect(drawer().classList).not.toContain('mat-drawer-opened');
-    expect(element.querySelector('[data-testid="brand"]')?.textContent).toContain(
+    expect(element.querySelector('[data-testid="page-title"]')?.textContent).toContain(
       'Облік нагород ЧНУ',
     );
 
@@ -430,20 +439,106 @@ describe('ShellComponent', () => {
     );
   });
 
-  it('ac4_switches_the_colour_scheme_from_the_user_menu', async () => {
+  it('ac3_3_switches_the_colour_scheme_from_the_toolbar', async () => {
     auth.isAuthenticated.set(true);
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('[data-testid="user-menu"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    (document.querySelector('[data-testid="color-scheme-menu"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="color-scheme-menu"]') as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
     await fixture.whenStable();
     (document.querySelector('[data-testid="color-scheme-dark"]') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(document.documentElement.getAttribute('data-color-scheme')).toBe('dark');
+  });
+
+  it('ac3_3_keeps_the_scheme_and_sign_out_in_the_account_menu_on_a_phone', async () => {
+    auth.isAuthenticated.set(true);
+    layout.next({ matches: false, breakpoints: { [NARROW_SCREEN]: true } });
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="color-scheme-menu"]')).toBeNull();
+    expect(element.querySelector('[data-testid="logout"]')).toBeNull();
+
+    (element.querySelector('[data-testid="user-menu"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    (document.querySelector('[data-testid="logout"]') as HTMLButtonElement).click();
+
+    expect(document.querySelector('[data-testid="color-scheme-menu"]')).not.toBeNull();
+    expect(auth.logout).toHaveBeenCalled();
+  });
+
+  it('ac3_1_marks_the_current_section_and_shows_no_bottom_bar', async () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    await TestBed.inject(Router).navigateByUrl('/awards');
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="nav-awards"]')?.getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(
+      element.querySelector('[data-testid="nav-home"]')?.getAttribute('aria-current'),
+    ).toBeNull();
+    expect(element.querySelector('mat-tab-nav-bar, .bottom-bar')).toBeNull();
+  });
+
+  it('ac3_2_offers_a_new_award_button_on_a_phone_to_people_who_may_create_awards', () => {
+    auth.isAuthenticated.set(true);
+    layout.next({ matches: false, breakpoints: {} });
+    const without = TestBed.createComponent(ShellComponent);
+    without.detectChanges();
+
+    expect(without.nativeElement.querySelector('[data-testid="new-award"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:create'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const plus = fixture.nativeElement.querySelector('[data-testid="new-award"]');
+
+    expect(plus.getAttribute('href')).toBe('/awards/new');
+    expect(plus.getAttribute('aria-label')).toBe('Нова нагорода');
+  });
+
+  it('ac3_2_shows_no_new_award_button_on_a_wide_screen', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:create'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="new-award"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="page-title"]')).toBeNull();
+  });
+
+  it('ac3_4_opens_the_palette_from_the_toolbar_and_listens_for_the_shortcut', () => {
+    auth.isAuthenticated.set(true);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    (
+      fixture.nativeElement.querySelector('[data-testid="palette-open"]') as HTMLButtonElement
+    ).click();
+
+    expect(palette.listen).toHaveBeenCalledTimes(1);
+    expect(palette.open).toHaveBeenCalled();
+  });
+
+  it('ac3_4_offers_no_palette_to_an_anonymous_visitor', () => {
+    auth.isAuthenticated.set(false);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="palette-open"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="nav-awards"]')).toBeNull();
   });
 
   it('ac4_8_shows_the_erasure_date_with_a_link_to_the_privacy_centre', () => {

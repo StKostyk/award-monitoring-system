@@ -1,0 +1,79 @@
+<div class="palette">
+  <label class="palette__field">
+    <app-icon name="search" />
+    <span class="cdk-visually-hidden">{{ 'app.palette.label' | transloco }}</span>
+    <input
+      class="palette__input"
+      type="text"
+      role="combobox"
+      autocomplete="off"
+      spellcheck="false"
+      aria-expanded="true"
+      aria-autocomplete="list"
+      aria-controls="palette-list"
+      [attr.aria-activedescendant]="activeId()"
+      [placeholder]="'app.palette.placeholder' | transloco"
+      [value]="query()"
+      (input)="onInput($any($event.target).value)"
+      (keydown)="onKeydown($event)"
+      data-testid="palette-input"
+    />
+  </label>
+  <div
+    id="palette-list"
+    class="palette__list"
+    role="listbox"
+    [attr.aria-label]="'app.palette.label' | transloco"
+  >
+    @if (sections().length > 0) {
+      <div role="group" aria-labelledby="palette-sections">
+        <div id="palette-sections" class="palette__group" role="presentation">
+          {{ 'app.palette.sections' | transloco }}
+        </div>
+        @for (option of sections(); track option.id) {
+          <ng-container
+            [ngTemplateOutlet]="row"
+            [ngTemplateOutletContext]="{ $implicit: option }"
+          />
+        }
+      </div>
+    }
+    @if (awards().length > 0) {
+      <div role="group" aria-labelledby="palette-awards">
+        <div id="palette-awards" class="palette__group" role="presentation">
+          {{ 'app.palette.awards' | transloco }}
+        </div>
+        @for (option of awards(); track option.id) {
+          <ng-container
+            [ngTemplateOutlet]="row"
+            [ngTemplateOutletContext]="{ $implicit: option }"
+          />
+        }
+      </div>
+    }
+  </div>
+  @if (searching() && !pending() && options().length === 0) {
+    <p class="palette__empty" data-testid="palette-empty">{{ 'app.palette.empty' | transloco }}</p>
+  }
+  <p class="cdk-visually-hidden" aria-live="polite">
+    {{ 'app.palette.results' | transloco: { count: options().length } }}
+  </p>
+  <p class="palette__hint" aria-hidden="true">{{ 'app.palette.hint' | transloco }}</p>
+</div>
+
+<ng-template #row let-option>
+  <div
+    class="palette__option"
+    role="option"
+    tabindex="-1"
+    [id]="'palette-' + option.id"
+    [class.palette__option--active]="isActive(option)"
+    [attr.aria-selected]="isActive(option)"
+    (click)="choose(option)"
+    (keydown.enter)="choose(option)"
+    [attr.data-testid]="'palette-' + option.id"
+  >
+    <app-icon [name]="option.icon" />
+    <span>{{ option.label }}</span>
+  </div>
+</ng-template>
