@@ -59,7 +59,7 @@ export interface VersionDialogData {
     }
 
     .version-dialog__fields dt {
-      color: var(--mat-sys-on-surface-variant, #444746);
+      color: var(--mat-sys-on-surface-variant);
     }
 
     .version-dialog__fields dd {

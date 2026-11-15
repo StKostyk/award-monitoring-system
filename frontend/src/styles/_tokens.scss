@@ -35,4 +35,39 @@
   :where(a:not([class*='mat-'])) {
     color: var(--mat-sys-primary);
   }
+
+  :root {
+    --mat-card-elevated-container-shape: var(--app-card-radius);
+    --mat-card-outlined-container-shape: var(--app-card-radius);
+    --mat-card-filled-container-shape: var(--app-card-radius);
+    --mat-card-elevated-container-color: var(--mat-sys-surface-container-low);
+    --mat-card-elevated-container-elevation: var(--mat-sys-level0);
+  }
+
+  .mat-mdc-card:not(.mat-mdc-card-outlined) {
+    border: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .table-card {
+    --mat-table-background-color: transparent;
+
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--app-card-radius);
+    background: var(--mat-sys-surface-container-low);
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: 2px;
+    }
+
+    table {
+      width: 100%;
+    }
+
+    tr:last-child > td {
+      border-bottom: 0;
+    }
+  }
 }

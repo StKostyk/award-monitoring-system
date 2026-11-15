@@ -44,9 +44,9 @@
 
 .achievements__empty {
   grid-column: 1 / -1;
-  padding: 24px;
-  text-align: center;
-  color: var(--mat-sys-on-surface-variant);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-card-radius);
+  background: var(--mat-sys-surface-container-low);
 }
 
 .achievements__problem {

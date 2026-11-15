@@ -51,7 +51,7 @@ import { Award, AwardsService, awardTitle, isOwnAward } from '../awards.service'
     }
     .award-submitted__icon {
       --app-icon-size: 48px;
-      color: var(--mat-sys-primary, #1b5e9e);
+      color: var(--mat-sys-primary);
     }
     .award-submitted__title {
       font: var(--mat-sys-headline-small);
@@ -67,7 +67,7 @@ import { Award, AwardsService, awardTitle, isOwnAward } from '../awards.service'
       gap: 12px;
     }
     .award-submitted__problem {
-      color: var(--mat-sys-error, #b3261e);
+      color: var(--mat-sys-error);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -9,6 +9,7 @@
     "test": "ng test",
     "test:ci": "ng test --watch=false --coverage",
     "lint": "eslint src/**/*.ts",
+    "lint:styles": "stylelint \"src/app/**/*.scss\"",
     "lint:e2e": "eslint e2e/**/*.ts playwright.config.ts && tsc -p tsconfig.e2e.json",
     "format": "prettier --write \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\"",
@@ -69,7 +70,9 @@
     "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9.39.0",
     "jsdom": "^27.1.0",
+    "postcss-scss": "^4.0.9",
     "prettier": "3.9.9",
+    "stylelint": "^16.26.1",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.32.0",
     "vitest": "^4.0.8"

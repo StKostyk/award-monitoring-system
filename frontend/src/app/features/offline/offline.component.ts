@@ -1,28 +1,20 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ConnectivityService } from '../../core/connectivity/connectivity.service';
+import { IconComponent } from '../../shared/icons/icon.component';
 import { localPath } from '../../shared/local-path';
+import { StatusPageComponent } from '../../shared/status-page/status-page.component';
 
 /** Shown instead of the sign-in when there is no session and no connection; signs in once the connection returns. */
 @Component({
   selector: 'app-offline',
-  imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatButton, TranslocoPipe],
+  imports: [MatButton, TranslocoPipe, StatusPageComponent, IconComponent],
   templateUrl: './offline.component.html',
-  styles: `
-    .offline__card {
-      max-width: 560px;
-    }
-    .offline__title {
-      margin: 0;
-      font: inherit;
-    }
-  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OfflineComponent {

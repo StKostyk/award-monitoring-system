@@ -125,7 +125,7 @@
   } @empty {
     @if (!loading() && !problem()) {
       <li class="achievements__empty" data-testid="achievements-empty">
-        {{ 'achievements.empty' | transloco }}
+        <app-empty-state icon="trophy" [text]="'achievements.empty' | transloco" />
       </li>
     }
   }

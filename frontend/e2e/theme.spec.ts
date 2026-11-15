@@ -7,9 +7,11 @@ import {
   SEED,
   background,
   seriousViolations,
+  settled,
   signIn,
   signInAsSeed,
 } from './helpers';
+import { GDPR_ROUTES, RECTOR_ROUTES, RoleRoutes, deanRoutes, openRoute } from './routes';
 
 const { employee } = SEED;
 const phoneWidth = 400;
@@ -21,6 +23,112 @@ const neutralBrand = {
   logo: 'brand/neutral/logo.svg',
 };
 const screens = ['/', '/awards', '/awards/new'];
+const phone = { width: 360, height: 740 };
+/** The user page of the seed employee, resolved when a test opens it. */
+const USER_DETAIL = '/admin/users/:employee';
+
+/** The screens restyled last, grouped by the seed account that opens them; null opens them without a session. */
+function remainingScreens(): RoleRoutes[] {
+  return [
+    {
+      account: SEED.employee,
+      routes: [
+        '/dashboard',
+        '/profile',
+        '/notifications',
+        '/achievements',
+        '/units/64/achievements',
+        '/privacy',
+        '/forbidden',
+      ],
+    },
+    {
+      account: SEED.dean,
+      routes: ['/delegations', '/analytics', '/analytics/units/9', '/admin/users', USER_DETAIL],
+    },
+    RECTOR_ROUTES,
+    GDPR_ROUTES,
+    {
+      account: null,
+      routes: [
+        '/public/achievements',
+        '/public/units/9/achievements',
+        '/privacy-notice',
+        '/not-found',
+        '/offline',
+      ],
+    },
+  ];
+}
+
+/** The name of a screen group in a test title. */
+function groupName(group: RoleRoutes): string {
+  return group.account ? group.account.split('@')[0] : 'public';
+}
+
+/** Signs in as the account of a group, or opens the public pages without a session. */
+async function enter(page: Page, group: RoleRoutes): Promise<void> {
+  if (group.account) {
+    await signInAsSeed(page, group.account);
+  }
+}
+
+let userDetailRoute: string | undefined;
+
+/** The user page of the seed employee, looked up once; fails when the seed has no such user. */
+function userDetail(): string {
+  userDetailRoute ??= deanRoutes().routes.find((path) => path.startsWith('/admin/users/'));
+  expect(userDetailRoute, 'the seed employee has a user page').toBeDefined();
+  return userDetailRoute as string;
+}
+
+/** Opens a screen and fails when the session or the role sent the page elsewhere. */
+async function open(page: Page, screen: string): Promise<void> {
+  const route = screen === USER_DETAIL ? userDetail() : screen;
+  expect(await openRoute(page, route), route).toBeNull();
+  await settled(page);
+}
+
+/**
+ * What runs past the right edge of a phone: the page or the shell content scrolling sideways, or a table wider than
+ * the screen without a scroll box of its own inside the content.
+ */
+function overflowing(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const width = window.innerWidth;
+    const problems: string[] = [];
+    for (const box of [document.documentElement, document.querySelector('.shell__main')]) {
+      if (box && box.scrollWidth > box.clientWidth + 1) {
+        problems.push(
+          `${box.tagName.toLowerCase()} scrolls sideways by ${box.scrollWidth - box.clientWidth}px`,
+        );
+      }
+    }
+    const content = document.querySelector('main') ?? document.body;
+    for (const table of content.querySelectorAll('table')) {
+      const rect = table.getBoundingClientRect();
+      if (rect.width === 0 || rect.right <= width + 1) {
+        continue;
+      }
+      let scroller: Element | null = table.parentElement;
+      while (
+        scroller &&
+        scroller !== content &&
+        getComputedStyle(scroller).overflowX === 'visible'
+      ) {
+        scroller = scroller.parentElement;
+      }
+      const ownBox =
+        scroller && scroller !== content && scroller.getBoundingClientRect().right <= width + 1;
+      if (!ownBox) {
+        problems.push(
+          `table ${table.getAttribute('data-testid') ?? table.className} runs ${rect.right - width}px past`,
+        );
+      }
+    }
+    return problems;
+  });
+}
 
 /** The computed colour a token resolves to under the current colour scheme. */
 async function token(page: Page, name: string): Promise<string> {
@@ -215,6 +323,76 @@ test.describe('brand theme', () => {
           expect(await seriousViolations(page), screen).toEqual([]);
         }
       });
+    }
+  }
+});
+
+test.describe('remaining screens in the new look', () => {
+  for (const group of remainingScreens()) {
+    test(`ac7_1 draws the ${groupName(group)} screens with Lucide icons and the heading font`, async ({
+      page,
+    }) => {
+      await enter(page, group);
+
+      for (const screen of group.routes) {
+        await open(page, screen);
+        await expect(page.locator('mat-icon'), screen).toHaveCount(0);
+        await expect(page.locator('app-icon:not(:has(svg))'), screen).toHaveCount(0);
+        const look = await page.evaluate(() => {
+          const heading = document.querySelector('main h1') ?? document.querySelector('h1');
+          return {
+            heading: heading ? getComputedStyle(heading).fontFamily : 'no heading',
+            unnamed: [...document.querySelectorAll('button, a')]
+              .filter((control) => control.querySelector('app-icon'))
+              .filter((control) => !control.textContent?.trim())
+              .filter(
+                (control) =>
+                  !control.getAttribute('aria-label') && !control.getAttribute('aria-labelledby'),
+              )
+              .map((control) => control.outerHTML.slice(0, 120)),
+          };
+        });
+        expect(look.heading, screen).toContain('Manrope Variable');
+        expect(look.unnamed, screen).toEqual([]);
+      }
+    });
+
+    test(`ac7_2 fits the ${groupName(group)} screens on a 360 px phone`, async ({ page }) => {
+      await enter(page, group);
+      await page.setViewportSize(phone);
+
+      const problems: string[] = [];
+      for (const screen of group.routes) {
+        await open(page, screen);
+        problems.push(...(await overflowing(page)).map((problem) => `${screen}: ${problem}`));
+      }
+      expect(problems).toEqual([]);
+    });
+  }
+
+  for (const brand of ['chnu', 'neutral']) {
+    for (const scheme of ['light', 'dark'] as const) {
+      for (const group of remainingScreens()) {
+        test(`ac7_3 the ${groupName(group)} screens pass axe in the ${brand} brand, ${scheme}`, async ({
+          page,
+        }) => {
+          if (brand === 'neutral') {
+            await page.route('**/brand/brand.json', (route) =>
+              route.fulfill({ json: neutralBrand }),
+            );
+          }
+          await page.emulateMedia({ colorScheme: scheme });
+          await enter(page, group);
+
+          const problems: string[] = [];
+          for (const screen of group.routes) {
+            await open(page, screen);
+            await expect(page.locator('html')).toHaveClass(new RegExp(`brand-${brand}`));
+            problems.push(...(await seriousViolations(page)).map((found) => `${screen}: ${found}`));
+          }
+          expect(problems).toEqual([]);
+        });
+      }
     }
   }
 });
