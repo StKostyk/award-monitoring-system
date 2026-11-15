@@ -114,7 +114,7 @@ if ($url) {
     Write-Host 'PR:      already open for this branch'
 } else {
     $url = gh pr create --base $Base --head $branch --title $prTitle --body-file $BodyFile
-    if ($LASTEXITCODE) { throw 'Pull request was not created.' }
+    if ($LASTEXITCODE) { throw 'Pull request was not created; run the same command again to resume.' }
 }
 
 if ($Key -and -not $NoTracker) {
