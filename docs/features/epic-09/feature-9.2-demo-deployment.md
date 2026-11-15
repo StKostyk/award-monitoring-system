@@ -470,6 +470,10 @@ the bucket and its IAM user, a mailbox I can read for the Brevo test.
 15. On the server: `docker compose stop app`, `restore.sh` of that night with the key copied in for the run and
     deleted afterwards, `docker compose start app`. Expected: counts match the manifest; sign-in works. (AC-4.4)
 16. AWS Budgets shows the 10 USD alarm; GitHub Actions shows `uptime` runs every 30 minutes, green. (AC-4.5)
+    Then, from my machine, `npm run flow:median` in `tools/lighthouse` with `LH_BASE_URL=https://<ip>.sslip.io` and
+    the demo employee's credentials in `LH_EMAIL`/`LH_PASSWORD`. Expected: median mobile performance of `/awards`
+    and `/awards/new` recorded with the Lighthouse version; target 90 (9.3 AC-1.6, accepted below 90 on the
+    development machine on 2026-11-15).
 
 Preconditions for 9.2.5: Compose stack from the branch, `employee.fmi` and `secretary.fmi` (local seed).
 

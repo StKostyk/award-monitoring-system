@@ -15,6 +15,7 @@ import { vi } from 'vitest';
 
 import { chartStub } from '../../../../shared/charts/chart.testing';
 import { currentKyivYear } from '../../../../shared/date-format';
+import { reduceMotion } from '../../../../shared/effects/effects.testing';
 import { languageStub, translations } from '../../analytics.testing';
 import { UnitAnalyticsActions } from '../store/unit-analytics.actions';
 import { UNIT_NOT_FOUND } from '../store/unit-analytics.effects';
@@ -31,6 +32,7 @@ describe('UnitAnalyticsComponent', () => {
   const queryParams = new BehaviorSubject<ParamMap>(convertToParamMap({}));
 
   async function setUp(language: 'en' | 'uk' = 'en'): Promise<void> {
+    reduceMotion();
     params.next(convertToParamMap({ id: '9' }));
     queryParams.next(convertToParamMap({}));
     const stub = chartStub();

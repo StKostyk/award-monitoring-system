@@ -1,11 +1,11 @@
-<dl class="tiles">
+<dl class="tiles" appStagger>
   <div class="tile" data-testid="tile-approved">
     <dt>{{ 'analytics.summary.approved' | transloco }}</dt>
-    <dd class="tile__value">{{ totals().approved }}</dd>
+    <dd class="tile__value" [appCountUp]="totals().approved"></dd>
   </div>
   <div class="tile" data-testid="tile-verified">
     <dt>{{ 'analytics.summary.verified' | transloco }}</dt>
-    <dd class="tile__value">{{ totals().verified }}</dd>
+    <dd class="tile__value" [appCountUp]="totals().verified"></dd>
   </div>
   <div class="tile" data-testid="tile-highest">
     <dt>{{ 'analytics.summary.highestLevel' | transloco }}</dt>

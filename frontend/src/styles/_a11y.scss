@@ -1,7 +1,9 @@
+@use '@angular/cdk' as cdk;
 @use '@angular/material' as mat;
 
 @mixin rules() {
   @include mat.strong-focus-indicators();
+  @include cdk.a11y-visually-hidden();
 
   .shell__skip {
     position: fixed;

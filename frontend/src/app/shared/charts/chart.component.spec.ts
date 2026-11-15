@@ -6,7 +6,25 @@ import { vi } from 'vitest';
 import { translations } from '../../features/analytics/analytics.testing';
 import { ChartComponent } from './chart.component';
 import { ChartStub, chartStub, chartsDrawn } from './chart.testing';
-import { ChartThemeService } from './chart-theme.service';
+import { ChartPalette, ChartThemeService, SERIES_COLOURS } from './chart-theme.service';
+
+const ONEST = "'Onest Variable', sans-serif";
+
+function paletteOf(seriesColour: string): ChartPalette {
+  return {
+    text: 'rgb(0, 0, 0)',
+    mutedText: 'rgb(1, 1, 1)',
+    grid: 'rgb(2, 2, 2)',
+    surface: 'rgb(3, 3, 3)',
+    bar: 'rgb(4, 4, 4)',
+    bands: [],
+    series: Array.from(
+      { length: SERIES_COLOURS },
+      (_, index) => `${seriesColour.slice(0, -1)}, ${index})`,
+    ),
+    fontFamily: ONEST,
+  };
+}
 
 @Component({
   imports: [ChartComponent],
@@ -33,10 +51,12 @@ describe('ChartComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   let stub: ChartStub;
   const reducedMotion = signal(false);
+  const palette = signal<ChartPalette>(paletteOf('rgb(10, 10, 10)'));
 
   beforeEach(async () => {
     stub = chartStub();
     reducedMotion.set(false);
+    palette.set(paletteOf('rgb(10, 10, 10)'));
     await TestBed.configureTestingModule({
       imports: [HostComponent, NoopAnimationsModule, translations('en')],
       providers: [
@@ -45,15 +65,7 @@ describe('ChartComponent', () => {
           provide: ChartThemeService,
           useValue: {
             reducedMotion,
-            palette: signal({
-              text: 'rgb(0, 0, 0)',
-              mutedText: 'rgb(1, 1, 1)',
-              grid: 'rgb(2, 2, 2)',
-              surface: 'rgb(3, 3, 3)',
-              bar: 'rgb(4, 4, 4)',
-              bands: [],
-              fontFamily: 'Nunito, sans-serif',
-            }),
+            palette,
           },
         },
       ],
@@ -77,7 +89,8 @@ describe('ChartComponent', () => {
     expect(stub.initOpts[0]).toEqual({ renderer: 'svg' });
     expect(stub.options.at(-1)).toMatchObject({
       animation: true,
-      textStyle: { color: 'rgb(0, 0, 0)', fontFamily: 'Nunito, sans-serif' },
+      color: palette().series,
+      textStyle: { color: 'rgb(0, 0, 0)', fontFamily: ONEST },
       aria: { enabled: true, label: { description: 'Bars of awards by year' } },
       series: [{ type: 'bar', data: [1] }],
     });
@@ -89,6 +102,17 @@ describe('ChartComponent', () => {
     await chartsDrawn();
 
     expect(stub.options.at(-1)).toMatchObject({ animation: false });
+  });
+
+  it('ac2_4_redraws_with_the_series_colours_of_the_new_scheme', async () => {
+    palette.set(paletteOf('rgb(20, 20, 20)'));
+    fixture.detectChanges();
+    await chartsDrawn();
+
+    expect(stub.options.at(-1)).toMatchObject({
+      color: paletteOf('rgb(20, 20, 20)').series,
+      textStyle: { fontFamily: ONEST },
+    });
   });
 
   it('ac2_6_switches_to_the_projected_table_and_back', () => {

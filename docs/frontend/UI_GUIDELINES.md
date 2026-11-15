@@ -38,6 +38,8 @@ Component styles take colours, type and shape from tokens only. No hex, `rgb()` 
 | `--app-font-heading`, `--app-font-body` | Manrope and Onest stacks |
 | `--app-card-radius`, `--app-radius-sm/md/lg` | brand corner radius for custom cards, and the radius scale |
 | `--app-icon-size` | drawn size of an `app-icon` (24 px by default; `inline` icons take the text size) |
+| `--app-chart-1` … `--app-chart-8` | categorical series colours of charts (burgundy, gold, teal … in light; cyan, gold, rose … in dark), each at least 3:1 against the surfaces |
+| `--app-chart-bar`, `--app-chart-band-1` … `--app-chart-band-5` | single-series bars (`--app-chart-1`) and the five steps of one hue for ordered values such as levels (burgundy in light, cyan in dark; monotone lightness, at least 2:1 against the surfaces) |
 | `--app-status-<status>`, `--app-on-status-<status>` | award status chips (`draft`, `pending`, `approved`, `rejected`, `archived`); the same in every brand |
 
 Brand-independent tokens and their defaults live in `styles/_tokens.scss`; a brand mixin overrides them.
@@ -62,10 +64,14 @@ Material component colours are changed with the component's `*-overrides` mixin 
 - New colours are written as `light-dark(<light>, <dark>)` inside a brand or token mixin, never as two separate rule sets.
 - In the ChNU brand the light scheme is burgundy and the dark scheme is the aurora; both come from the same pairs, so no component knows which hue is active.
 
-## 6. Fonts and icons
+## 6. Fonts, icons and motion
 
 - Manrope (headings, Material brand family) and Onest (text, Material plain family) are variable fonts served by the app (`@fontsource-variable`, `angular.json` styles); the browser loads only the Cyrillic and Latin files the page needs (`unicode-range`). No third-party font requests (CSP `font-src 'self' data:`); a missing file falls back to `system-ui`.
 - Icons are Lucide SVGs drawn by `<app-icon name="…">` (`shared/icons`); `icons.ts` lists every icon the app uses, so only those reach the bundle. A new icon is added there first. Icons are decorative (`aria-hidden`); icon-only buttons need an `aria-label`. The host carries the `mat-icon` class, so Material sizes and spaces it; inside a button or menu item it takes the `matButtonIcon` / `matMenuItemIcon` attribute so Material projects it into the icon slot. `@angular/material/icon` is blocked by the lint rule `no-restricted-imports`.
+- Motion is CSS transitions and Angular `animate.enter`/`animate.leave` first. The `motion` library's `animate` is used only through `MotionHelper` (`shared/effects`) for count-ups (`[appCountUp]`), staggered list entries (`appStagger`) and springs; each animation stops when its component is destroyed. Only `transform` and `opacity` move, never layout properties or `backdrop-filter`.
+- Effect components in `shared/effects`: `app-beam`, `app-border-beam` and `app-spotlight` (decorative, `aria-hidden`, placed inside a positioned parent), `app-ticker` and `app-marquee` (lines of text; screen readers get one static list, the moving copy is hidden; both are focusable and pause under the pointer or while focused) and `app-typed-text` (the whole sentence is in a visually hidden copy from the first render). Colours come from `--app-accent-*`, `--app-gold`, `--app-cyan` and `--app-aurora-*` only.
+- Under `prefers-reduced-motion: reduce` nothing moves: count-ups show the final number, lists appear without a stagger, typed text is complete, the ticker stays on its first line, the marquee wraps, beams and the spotlight stand still, and charts draw without animation.
+- Charts take their colours from the `--app-chart-*` tokens through `ChartThemeService`, which reads them again when the scheme changes, so a chart redraws in the new scheme without a reload; labels use the body font (Onest).
 
 ## 7. Sign-in and error pages
 
