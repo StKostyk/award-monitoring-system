@@ -89,13 +89,41 @@
   }
 </div>
 
-@if (loading()) {
-  <mat-progress-bar
-    [attr.aria-label]="'app.loading' | transloco"
-    mode="indeterminate"
-    data-testid="awards-loading"
-  />
-}
+<div
+  class="awards__statuses"
+  role="group"
+  [attr.aria-label]="'awards.filters.status' | transloco"
+  data-testid="status-chips"
+>
+  <button
+    type="button"
+    class="app-chip awards__status"
+    [class.awards__status--on]="filters().status === null"
+    [attr.aria-pressed]="filters().status === null"
+    (click)="filter({ status: null })"
+    data-testid="status-chip-all"
+  >
+    {{ 'awards.filters.all' | transloco }}
+    @if (counts(); as counts) {
+      <span class="awards__count" data-testid="status-count">{{ allCount(counts) }}</span>
+    }
+  </button>
+  @for (status of statuses; track status) {
+    <button
+      type="button"
+      class="app-chip awards__status"
+      [class.awards__status--on]="filters().status === status"
+      [attr.aria-pressed]="filters().status === status"
+      (click)="filter({ status })"
+      [attr.data-testid]="'status-chip-' + status"
+    >
+      {{ 'awards.status.' + status | transloco }}
+      @if (counts(); as counts) {
+        <span class="awards__count" data-testid="status-count">{{ counts[status] }}</span>
+      }
+    </button>
+  }
+</div>
 
 @if (notice(); as notice) {
   <p class="awards__notice" role="status" data-testid="awards-notice">{{ notice | transloco }}</p>
@@ -107,52 +135,91 @@
   </p>
 }
 
-<ul class="awards__list" data-testid="award-list">
-  @for (award of awards(); track award.id) {
-    <li class="awards__item" data-testid="award-item">
-      <a class="awards__link" [routerLink]="link(award)">
-        <span class="awards__name" data-testid="award-title">{{ title(award) }}</span>
-        <span class="awards__meta">
-          @if (award.recipient.organization; as unit) {
-            <span class="app-chip" data-testid="award-unit">
-              <span class="cdk-visually-hidden">{{ 'awards.fields.recipient' | transloco }}: </span
-              >{{ unitName(unit) }}
+@if (loading()) {
+  <app-skeleton-rows
+    class="awards__loading"
+    [label]="'app.loading' | transloco"
+    data-testid="awards-loading"
+  />
+} @else {
+  <ul class="awards__list" appStagger data-testid="award-list">
+    @for (award of awards(); track award.id) {
+      <li class="awards__item" data-testid="award-item">
+        <a class="awards__link" [routerLink]="link(award)">
+          <span class="awards__name" data-testid="award-title">{{ title(award) }}</span>
+          <span class="awards__meta">
+            @if (award.category; as category) {
+              <span class="app-chip awards__level" data-testid="award-level">{{
+                'categories.levels.' + category.level | transloco
+              }}</span>
+            }
+            @if (award.recipient.organization; as unit) {
+              <span class="app-chip" data-testid="award-unit">
+                <span class="cdk-visually-hidden"
+                  >{{ 'awards.fields.recipient' | transloco }}: </span
+                >{{ unitName(unit) }}
+              </span>
+            } @else {
+              <span data-testid="award-recipient">
+                <span class="cdk-visually-hidden"
+                  >{{ 'awards.fields.recipient' | transloco }}: </span
+                >{{ award.owner.name }}
+              </span>
+            }
+            @if (award.category) {
+              <span>{{ category(award) }}</span>
+            }
+            @if (award.awardDate) {
+              <span>{{ award.awardDate | kyivDate }}</span>
+            }
+          </span>
+        </a>
+        <span class="awards__state">
+          <span
+            class="app-chip app-chip--filled awards__chip"
+            [class]="'awards__chip--' + award.status"
+            data-testid="award-status"
+          >
+            {{ 'awards.status.' + award.status | transloco }}
+          </span>
+          @if (sharedWith(award); as visibility) {
+            <span class="app-chip awards__chip" data-testid="award-visibility">
+              {{ 'awards.visibility.chips.' + visibility | transloco }}
             </span>
           }
-          @if (award.category) {
-            <span>{{ category(award) }}</span>
-          }
-          @if (award.awardDate) {
-            <span>{{ award.awardDate | kyivDate }}</span>
+          @if (award.request; as request) {
+            <app-request-timing [request]="request" />
           }
         </span>
-      </a>
-      <span class="awards__state">
-        <span
-          class="app-chip app-chip--filled awards__chip"
-          [class]="'awards__chip--' + award.status"
-          data-testid="award-status"
-        >
-          {{ 'awards.status.' + award.status | transloco }}
-        </span>
-        @if (sharedWith(award); as visibility) {
-          <span class="app-chip awards__chip" data-testid="award-visibility">
-            {{ 'awards.visibility.chips.' + visibility | transloco }}
-          </span>
-        }
-        @if (award.request; as request) {
-          <app-request-timing [request]="request" />
-        }
-      </span>
-    </li>
-  } @empty {
-    @if (!loading() && !problem()) {
-      <li class="awards__empty" data-testid="awards-empty">
-        {{ (filters().q ? 'awards.noMatch' : 'awards.empty') | transloco }}
       </li>
+    } @empty {
+      @if (!problem()) {
+        <li class="awards__empty" data-testid="awards-empty">
+          @if (filtered()) {
+            <app-empty-state icon="search-x" [text]="'awards.noMatch' | transloco">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="clearFilters()"
+                data-testid="awards-reset"
+              >
+                {{ 'awards.resetFilters' | transloco }}
+              </button>
+            </app-empty-state>
+          } @else {
+            <app-empty-state icon="inbox" [text]="'awards.empty' | transloco">
+              @if (canCreate) {
+                <a mat-flat-button routerLink="/awards/new" data-testid="awards-empty-add">{{
+                  'awards.add' | transloco
+                }}</a>
+              }
+            </app-empty-state>
+          }
+        </li>
+      }
     }
-  }
-</ul>
+  </ul>
+}
 
 @if (total() > 0) {
   <mat-paginator

@@ -3,6 +3,7 @@ import { Browser, Page, expect, test } from './fixtures';
 import {
   FRESH_PASSWORD,
   freshEmployee,
+  openNewAward,
   pastDay,
   seriousViolations,
   signedInAs,
@@ -29,7 +30,7 @@ function notify(email: string, type: string, payload: Record<string, unknown>): 
 }
 
 async function submitted(page: Page, title: string): Promise<string> {
-  await page.goto('/awards/new');
+  await openNewAward(page);
   await page.getByTestId('award-title-uk').fill(title);
   await page.getByTestId('award-category').click();
   await page.getByTestId(`category-option-${UNIVERSITY}`).click();

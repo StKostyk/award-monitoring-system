@@ -35,6 +35,7 @@ async function approvedBy(
   const page = await signedInAs(browser, owner, FRESH_PASSWORD);
   await page.getByTestId('nav-awards').click();
   await page.getByTestId('award-add').click();
+  await page.getByTestId('upload-skip').click();
   await page.getByTestId('award-title-uk').fill(title);
   await page.getByTestId('award-save').click();
   await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
@@ -145,6 +146,7 @@ test.describe('colleague visibility and the achievements page', () => {
     const page = await signedInAs(browser, owner, FRESH_PASSWORD);
     await page.getByTestId('nav-awards').click();
     await page.getByTestId('award-add').click();
+    await page.getByTestId('upload-skip').click();
     await page.getByTestId('award-title-uk').fill(`Чернетка ${uniqueToken()}`);
     await page.getByTestId('award-save').click();
     await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);

@@ -5,14 +5,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { of } from 'rxjs';
-import { vi } from 'vitest';
+import { Observable, of, throwError } from 'rxjs';
+import { beforeEach, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { Award, AwardsService, NO_FILTERS } from '../awards.service';
+import { Award, AwardFilters, AwardsService, NO_FILTERS } from '../awards.service';
 import { AwardsActions } from '../store/awards.actions';
 import { awardsFeature } from '../store/awards.feature';
 import { AwardListComponent } from './award-list.component';
@@ -60,32 +60,50 @@ function token(claims: Record<string, unknown>): string {
 
 const translations = {
   uk: {
+    app: { loading: 'Завантаження' },
+    categories: { levels: { NATIONAL: 'Національний' } },
     awards: {
       title: 'Мої нагороди',
       timing: { expected: 'Очікується до {{date}}', delayed: 'Затримка' },
       statusPanel: { returned: 'Очікує ваших виправлень' },
       add: 'Додати нагороду',
+      resetFilters: 'Скинути фільтри',
       empty: 'Нагород ще немає.',
       noMatch: 'Немає нагород, що відповідають пошуку.',
       filters: {
         search: 'Пошук у моїх нагородах',
         status: 'Статус',
+        all: 'Усі',
         toggle: 'Фільтри',
         toggleActive: 'Фільтри: {{count}}',
       },
       messages: { removed: 'Чернетку видалено.' },
-      status: { DRAFT: 'Чернетка', PENDING: 'На розгляді', APPROVED: 'Затверджено' },
+      status: {
+        DRAFT: 'Чернетка',
+        PENDING: 'На розгляді',
+        APPROVED: 'Затверджено',
+        REJECTED: 'Відхилено',
+        ARCHIVED: 'В архіві',
+      },
+      fields: { recipient: 'Отримувач' },
       visibility: { chips: { UNIVERSITY: 'Колегам', PUBLIC: 'Публічно' } },
     },
   },
 };
 
+const COUNTS = { DRAFT: 2, PENDING: 1, APPROVED: 7, REJECTED: 0, ARCHIVED: 0 };
+
 describe('AwardListComponent', () => {
+  let counts: (filters: AwardFilters) => Observable<typeof COUNTS>;
   let fixture: ComponentFixture<AwardListComponent>;
   let store: Store;
   const permissions = signal(
     readPermissions(token({ permissions: ['award:read:own', 'award:create'] })),
   );
+
+  beforeEach(() => {
+    counts = () => of(COUNTS);
+  });
 
   async function create(narrow = false): Promise<void> {
     await TestBed.configureTestingModule({
@@ -102,7 +120,10 @@ describe('AwardListComponent', () => {
         provideRouter([]),
         provideStore(),
         provideState(awardsFeature),
-        { provide: AwardsService, useValue: { categories: () => of([]) } },
+        {
+          provide: AwardsService,
+          useValue: { categories: () => of([]), statusCounts: (f: AwardFilters) => counts(f) },
+        },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { permissions } },
         {
@@ -430,5 +451,120 @@ describe('AwardListComponent', () => {
 
     expect(element.querySelector('[data-testid="filters-toggle"]')).toBeNull();
     expect(element.querySelector('[data-testid="filter-status"]')).not.toBeNull();
+  });
+
+  function loaded(content: Award[]): void {
+    store.dispatch(
+      AwardsActions.awardsLoaded({
+        page: { content, totalElements: content.length, totalPages: 1, size: 20, number: 0 },
+      }),
+    );
+    fixture.detectChanges();
+  }
+
+  it('ac5_1_a_row_shows_level_title_recipient_date_and_status', async () => {
+    await create();
+    loaded([award()]);
+    const item = fixture.nativeElement.querySelector('[data-testid="award-item"]') as HTMLElement;
+
+    expect(item.querySelector('[data-testid="award-level"]')?.textContent).toContain(
+      'Національний',
+    );
+    expect(item.querySelector('[data-testid="award-title"]')?.textContent).toContain('Грамота');
+    expect(item.querySelector('[data-testid="award-recipient"]')?.textContent).toContain(
+      'Анастасія Коваль',
+    );
+    expect(item.textContent).toContain('01.05.2025');
+    expect(item.querySelector('[data-testid="award-status"]')?.textContent).toContain('Чернетка');
+  });
+
+  it('ac5_1_status_chips_show_their_counts_and_filter_the_list', async () => {
+    await create();
+    loaded([award()]);
+    const element: HTMLElement = fixture.nativeElement;
+    const count = (testId: string): string | undefined =>
+      element.querySelector(`[data-testid="${testId}"] [data-testid="status-count"]`)?.textContent;
+
+    expect(count('status-chip-all')).toBe('10');
+    expect(count('status-chip-APPROVED')).toBe('7');
+    expect(count('status-chip-REJECTED')).toBe('0');
+    expect(
+      element.querySelector('[data-testid="status-chip-all"]')?.getAttribute('aria-pressed'),
+    ).toBe('true');
+
+    (element.querySelector('[data-testid="status-chip-APPROVED"]') as HTMLButtonElement).click();
+
+    expect(store.dispatch).toHaveBeenLastCalledWith(
+      AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, status: 'APPROVED' } }),
+    );
+  });
+
+  it('ac5_1_counts_follow_the_other_filters_but_not_the_status', async () => {
+    const asked: AwardFilters[] = [];
+    counts = (filters) => {
+      asked.push(filters);
+      return of(COUNTS);
+    };
+    await create();
+
+    store.dispatch(AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, status: 'DRAFT' } }));
+    store.dispatch(AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, q: 'horizon' } }));
+
+    expect(asked).toEqual([NO_FILTERS, { ...NO_FILTERS, q: 'horizon' }]);
+  });
+
+  it('ac5_1_chips_stay_without_numbers_when_the_counts_fail', async () => {
+    counts = () => throwError(() => new Error('down'));
+    await create();
+    loaded([award()]);
+
+    expect(fixture.nativeElement.querySelector('[data-testid="status-chips"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="status-count"]')).toBeNull();
+  });
+
+  it('ac5_4_a_filter_without_results_offers_to_clear_the_filters', async () => {
+    await create();
+    store.dispatch(
+      AwardsActions.filtersChanged({ filters: { ...NO_FILTERS, status: 'REJECTED' } }),
+    );
+    loaded([]);
+    const empty = fixture.nativeElement.querySelector(
+      '[data-testid="awards-empty"]',
+    ) as HTMLElement;
+
+    expect(empty.querySelector('app-empty-state app-icon')).not.toBeNull();
+    expect(empty.textContent).toContain('Немає нагород, що відповідають пошуку.');
+    (empty.querySelector('[data-testid="awards-reset"]') as HTMLButtonElement).click();
+
+    expect(store.dispatch).toHaveBeenLastCalledWith(
+      AwardsActions.filtersChanged({ filters: NO_FILTERS }),
+    );
+  });
+
+  it('ac5_4_an_empty_list_offers_the_first_award', async () => {
+    permissions.set(readPermissions(token({ permissions: ['award:read:own', 'award:create'] })));
+    await create();
+    loaded([]);
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="awards-empty-add"]')?.getAttribute('href'),
+    ).toBe('/awards/new');
+  });
+
+  it('ac5_5_skeleton_rows_replace_the_list_while_it_loads', async () => {
+    await create();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(
+      element.querySelector('[data-testid="awards-loading"]')?.getAttribute('aria-label'),
+    ).toBe('Завантаження');
+    expect(element.querySelectorAll('[data-testid="skeleton-row"]').length).toBeGreaterThan(0);
+    expect(element.querySelector('[data-testid="award-list"]')).toBeNull();
+    expect(element.querySelector('[data-testid="awards-empty"]')).toBeNull();
+
+    loaded([award()]);
+
+    expect(element.querySelector('[data-testid="awards-loading"]')).toBeNull();
+    expect(element.querySelector('[data-testid="award-list"]')).not.toBeNull();
   });
 });

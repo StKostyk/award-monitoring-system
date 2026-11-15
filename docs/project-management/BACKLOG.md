@@ -185,7 +185,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.3.1 | Theme tokens, fonts and icons | 5 | ✅ Done | SCRUM-138 | [#391](https://github.com/StKostyk/award-monitoring-system/issues/391) |
 | 9.3.2 | Effect components, motion and chart theme | 3 | ✅ Done | SCRUM-139 | [#392](https://github.com/StKostyk/award-monitoring-system/issues/392) |
 | 9.3.3 | Shell, navigation and command palette | 5 | ✅ Done | SCRUM-140 | [#393](https://github.com/StKostyk/award-monitoring-system/issues/393) |
-| 9.3.4 | Sign-in and account pages | 3 | 👀 In review (10) | SCRUM-141 | [#394](https://github.com/StKostyk/award-monitoring-system/issues/394) |
+| 9.3.4 | Sign-in and account pages | 3 | ✅ Done | SCRUM-141 | [#394](https://github.com/StKostyk/award-monitoring-system/issues/394) |
+| 9.3.5 | Award list, award page and new award | 5 | 👀 In review (10) | SCRUM-142 | [#395](https://github.com/StKostyk/award-monitoring-system/issues/395) |
 
 ### Later epics
 | ID | Story | Points | Epic |

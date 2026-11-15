@@ -4,6 +4,7 @@ import {
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
+  openNewAward,
   pastDay,
   signIn,
   signInAsSeed,
@@ -81,7 +82,7 @@ test.describe('keyboard and page structure', () => {
   test('ac1_5 every focused control shows an indicator', async ({ page }) => {
     await signInAsSeed(page, SEED.employee);
     const screens = [
-      { path: '/awards/new', ready: 'award-title-uk' },
+      { path: '/awards/new', ready: 'upload-pick' },
       { path: '/awards', ready: 'award-add' },
     ];
     for (const [scheme, screen] of (['light', 'dark'] as const).flatMap((each) =>
@@ -126,7 +127,7 @@ test.describe('keyboard and page structure', () => {
   test('ac1_6 dialogs open without motion when the system asks for it', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await signInAsSeed(page, SEED.employee);
-    await page.goto('/awards/new');
+    await openNewAward(page);
     await page.getByTestId('award-title-uk').fill('Грамота');
     await page.getByTestId('award-cancel').click();
 
@@ -157,7 +158,7 @@ test.describe('keyboard and page structure', () => {
     page,
   }) => {
     await signInAsSeed(page, SEED.employee);
-    await page.goto('/awards/new');
+    await openNewAward(page);
     await page.getByTestId('award-title-uk').fill('Грамота');
 
     await page.getByTestId('nav-awards').click();
@@ -199,6 +200,8 @@ async function enterAndSubmit(page: Page, email: string): Promise<void> {
   await tabTo(page, 'award-add');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/awards\/new$/);
+  await tabTo(page, 'upload-skip');
+  await page.keyboard.press('Enter');
 
   await tabTo(page, 'award-title-uk');
   await page.keyboard.type(`Грамота з клавіатури ${uniqueToken()}`);

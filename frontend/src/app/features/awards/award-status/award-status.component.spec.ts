@@ -69,7 +69,8 @@ const translations = {
   uk: {
     awards: {
       statusPanel: {
-        title: 'Статус розгляду',
+        title: 'Шлях нагороди',
+        now: 'Зараз',
         submitted: 'Подано',
         resubmitted: 'Подано повторно',
         upcomingBy: 'до {{date}}',
@@ -183,6 +184,19 @@ describe('AwardStatusComponent', () => {
     expect(steps[1].textContent).toContain('Декан');
     expect(text(element, 'award-status-estimate')).toContain('Орієнтовне завершення: 04.10.2026');
     expect(element.querySelector('[data-testid="award-status-delay"]')).toBeNull();
+  });
+
+  it('ac5_2_the_journey_names_submission_and_marks_the_current_step', async () => {
+    service.status.mockReturnValue(of(submitted));
+    const element = await create();
+    const steps = element.querySelectorAll('[data-testid="award-status-step"]');
+
+    expect(element.querySelector('h2')?.textContent).toContain('Шлях нагороди');
+    expect(text(element, 'award-status-submitted')).toContain('Подано');
+    expect(steps[0].querySelector('[data-testid="award-status-now"]')?.textContent).toContain(
+      'Зараз',
+    );
+    expect(steps[1].querySelector('[data-testid="award-status-now"]')).toBeNull();
   });
 
   it('ac3_4_a_resubmission_after_a_return_is_shown_as_submitted_again', async () => {
@@ -343,6 +357,7 @@ describe('AwardStatusComponent', () => {
 
     expect(steps[0].getAttribute('aria-current')).toBeNull();
     expect(steps[0].classList).toContain('award-status__step--STOPPED');
+    expect(element.querySelector('[data-testid="award-status-now"]')).toBeNull();
   });
 
   it('ac1_15_reloads_every_minute_and_announces_a_change', async () => {

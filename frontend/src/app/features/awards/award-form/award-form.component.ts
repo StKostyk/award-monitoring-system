@@ -60,6 +60,10 @@ import { coarsePointer } from '../../../shared/touch';
 import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import {
+  AwardUploadStepComponent,
+  UploadStepResult,
+} from '../award-upload-step/award-upload-step.component';
+import {
   DESCRIPTION_LIMIT,
   ORGANIZATION_LIMIT,
   TITLE_LIMIT,
@@ -135,6 +139,7 @@ type RecipientChoice = 'PERSON' | 'UNIT';
     RouterLink,
     TranslocoPipe,
     AwardDocumentsComponent,
+    AwardUploadStepComponent,
   ],
   providers: [{ provide: MatDatepickerIntl, useClass: TranslatedDatepickerIntl }],
   templateUrl: './award-form.component.html',
@@ -183,6 +188,10 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   readonly problem = signal<string | null>(null);
   readonly stale = signal(false);
   readonly restoreOffer = signal<AwardForm | null>(null);
+  /** A new award starts with its document while online and nothing is being restored. */
+  readonly stepShown = signal(false);
+  /** The document the award was started from, which offers «Інший файл». */
+  readonly attached = signal<number | null>(null);
   readonly suggestions = signal<CategorySuggestion[]>([]);
   readonly categoryChosen = signal(false);
   readonly documentCount = signal(0);
@@ -317,6 +326,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     const param = this.route.snapshot.paramMap.get('id');
     if (param === null) {
       this.offerCopy();
+      this.stepShown.set(this.restoreOffer() === null && this.connectivity.linked());
       return;
     }
     if (!/^\d+$/.test(param)) {
@@ -324,7 +334,24 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       return;
     }
     this.id = Number(param);
+    this.attached.set((history.state as { attached?: number } | null)?.attached ?? null);
     this.load(this.id);
+  }
+
+  /**
+   * Opens the form after the upload step: on the saved draft with its document, or empty without a file.
+   *
+   * @param result the draft and document the step saved
+   */
+  stepDone(result: UploadStepResult): void {
+    if (result.awardId === null) {
+      this.stepShown.set(false);
+      return;
+    }
+    this.router.navigate(['/awards', result.awardId, 'edit'], {
+      replaceUrl: true,
+      state: { attached: result.document?.id ?? null },
+    });
   }
 
   @HostListener('window:beforeunload', ['$event'])

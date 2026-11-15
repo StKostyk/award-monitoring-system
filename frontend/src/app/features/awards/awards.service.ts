@@ -363,6 +363,27 @@ export class AwardsService {
     return this.http.get<AwardPage>(this.base, { params });
   }
 
+  /**
+   * Counts the awards of each status that match the other filters, one page of one item per status.
+   *
+   * @param filters the filters of the list; its status is replaced by each status in turn
+   * @return the number of matching awards per status
+   */
+  statusCounts(filters: AwardFilters): Observable<Record<AwardStatus, number>> {
+    return forkJoin(
+      AWARD_STATUSES.map((status) =>
+        this.list({ ...filters, status }, 0, 1).pipe(map((page) => page.totalElements)),
+      ),
+    ).pipe(
+      map(
+        (totals) =>
+          Object.fromEntries(
+            AWARD_STATUSES.map((status, index) => [status, totals[index]]),
+          ) as Record<AwardStatus, number>,
+      ),
+    );
+  }
+
   get(id: number): Observable<Award> {
     return this.http.get<Award>(`${this.base}/${id}`);
   }

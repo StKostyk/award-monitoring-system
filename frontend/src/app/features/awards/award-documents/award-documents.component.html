@@ -211,6 +211,27 @@
             >
               {{ 'awards.documents.download' | transloco }}
             </button>
+            @if (document.id === replaceId() && uploads()) {
+              <button
+                mat-button
+                type="button"
+                (click)="pick(replacer, $event)"
+                [attr.aria-label]="
+                  'awards.uploadStep.replaceOf' | transloco: { name: document.fileName }
+                "
+                data-testid="document-replace"
+              >
+                {{ 'awards.uploadStep.replace' | transloco }}
+              </button>
+              <input
+                #replacer
+                type="file"
+                hidden
+                [accept]="accept"
+                (change)="replacePicked(replacer, document)"
+                data-testid="document-replace-input"
+              />
+            }
             @if (removable()) {
               <button
                 mat-button

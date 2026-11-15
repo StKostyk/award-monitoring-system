@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import {
+  AWARD_STATUSES,
   AwardCreation,
   AwardsService,
   CategoryNode,
@@ -57,6 +58,22 @@ describe('AwardsService', () => {
     expect(request.request.params.get('q')).toBe('horizon');
     expect(request.request.params.get('status')).toBe('DRAFT');
     request.flush({ content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 });
+  });
+
+  it('ac5_1_counts_each_status_with_the_other_filters', () => {
+    let counts: Record<string, number> | undefined;
+    service
+      .statusCounts({ ...NO_FILTERS, status: 'DRAFT', q: 'horizon' })
+      .subscribe((value) => (counts = value));
+
+    const requests = http.match((r) => r.url.endsWith('/awards'));
+    expect(requests.map((r) => r.request.params.get('status'))).toEqual(AWARD_STATUSES);
+    requests.forEach((request, index) => {
+      expect(request.request.params.get('q')).toBe('horizon');
+      expect(request.request.params.get('size')).toBe('1');
+      request.flush({ content: [], totalElements: index, totalPages: 0, size: 1, number: 0 });
+    });
+    expect(counts).toEqual({ DRAFT: 0, PENDING: 1, APPROVED: 2, REJECTED: 3, ARCHIVED: 4 });
   });
 
   it('ac1_2_puts_the_chosen_visibility', () => {

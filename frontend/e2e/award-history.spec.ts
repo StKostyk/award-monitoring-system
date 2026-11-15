@@ -27,6 +27,7 @@ test.describe('award history and audit log', () => {
     const owner = await signedIn(browser, employee);
     await owner.getByTestId('nav-awards').click();
     await owner.getByTestId('award-add').click();
+    await owner.getByTestId('upload-skip').click();
     await owner.getByTestId('award-title-uk').fill(first);
     await owner.getByTestId('award-save').click();
     await expect(owner.getByTestId('award-form-message')).toContainText('Чернетку збережено');

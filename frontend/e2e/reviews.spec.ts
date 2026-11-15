@@ -4,6 +4,7 @@ import {
   FRESH_PASSWORD,
   expireOpenRequests,
   freshEmployee,
+  openNewAward,
   pastDay,
   seriousViolations,
   signedInAs,
@@ -38,7 +39,7 @@ async function submittedBy(
   category = NATIONAL,
 ): Promise<string> {
   const page = await signedInAs(browser, owner, FRESH_PASSWORD);
-  await page.goto('/awards/new');
+  await openNewAward(page);
   await page.getByTestId('award-title-uk').fill(title);
   await page.getByTestId('award-category').click();
   await page.getByTestId(`category-option-${category}`).click();

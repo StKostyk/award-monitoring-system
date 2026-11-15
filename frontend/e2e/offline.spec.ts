@@ -4,6 +4,7 @@ import {
   OFFLINE_NOTICE,
   RECONNECT_MS,
   SEED,
+  openNewAward,
   seriousViolations,
   signInAsSeed,
   storedCopies,
@@ -81,7 +82,7 @@ test.describe('connection loss', () => {
         Object.keys(sessionStorage).filter((key) => /access_token|refresh_token/.test(key)),
       );
     await signInAsSeed(page, employee);
-    await page.goto('/awards/new');
+    await openNewAward(page);
     const suggested = page.waitForResponse((response) =>
       response.url().includes('/award-categories/suggestions'),
     );

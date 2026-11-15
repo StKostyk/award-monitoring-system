@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   input,
+  linkedSignal,
   output,
   signal,
   untracked,
@@ -84,6 +85,8 @@ export interface QueuedFile {
   progress: number;
   /** Translation key of the reason the file was not stored. */
   problem: string | null;
+  /** The document this file takes the place of once it is stored. */
+  replaces?: number;
 }
 
 @Component({
@@ -129,6 +132,10 @@ export class AwardDocumentsComponent {
   readonly prepare = input<(() => Observable<number>) | null>(null);
   /** Whether adding files waits for the connection to return. */
   readonly paused = input(false);
+  /** The document that offers «Інший файл»: the one attached when the award was started from its file. */
+  readonly replaceable = input<number | null>(null);
+  /** The document «Інший файл» replaces now: the replaceable one, then each file that took its place. */
+  readonly replaceId = linkedSignal(() => this.replaceable());
   /** The number of stored documents, after every load and change. */
   readonly countChange = output<number>();
   /** The refusal of an upload because the award was deleted or submitted elsewhere. */
@@ -239,6 +246,29 @@ export class AwardDocumentsComponent {
   picked(input: HTMLInputElement): void {
     this.add(input.files);
     input.value = '';
+  }
+
+  /**
+   * Uploads the picked file with the type of the document it replaces, and removes that document once it is stored.
+   *
+   * @param input the file picker of the document
+   * @param document the document to replace
+   */
+  replacePicked(input: HTMLInputElement, document: AwardDocument): void {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || this.paused()) {
+      return;
+    }
+    this.notice.set(null);
+    const item = {
+      ...this.queued(file, document.type, this.refusal(file, 1)),
+      replaces: document.id,
+    };
+    this.queue.update((queue) => [...queue, item]);
+    if (item.state === 'waiting') {
+      this.pending.next(item.key);
+    }
   }
 
   dragOver(event: DragEvent): void {
@@ -409,6 +439,17 @@ export class AwardDocumentsComponent {
   }
 
   private stored(key: number, document: AwardDocument): void {
+    const replaces = this.queue().find((queued) => queued.key === key)?.replaces;
+    if (replaces !== undefined) {
+      this.replaceId.set(document.id);
+      this.service
+        .remove(replaces)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => this.removed(replaces),
+          error: () => this.load(document.awardId),
+        });
+    }
     this.queue.update((queue) => queue.filter((queued) => queued.key !== key));
     this.show([...this.documents(), document]);
     this.announcement.set(

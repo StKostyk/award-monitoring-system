@@ -10,6 +10,7 @@ import {
   SEED,
   freshEmployee,
   isSerious,
+  openNewAward,
   settled,
   signIn,
   signInAsSeed,
@@ -185,7 +186,7 @@ test.describe('accessibility of every route', () => {
       );
     };
 
-    await page.goto('/awards/new');
+    await openNewAward(page);
     await page.getByTestId('award-submit').click();
     await expect(page.getByTestId('award-form-error')).toBeVisible();
     await check('award form with errors');

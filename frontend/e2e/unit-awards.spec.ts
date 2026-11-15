@@ -4,6 +4,7 @@ import {
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
+  openNewAward,
   pastDay,
   seriousViolations,
   signedIn,
@@ -38,7 +39,7 @@ test.describe('awards of a faculty or department', () => {
     const page = await signedInAs(browser, secretary, FRESH_PASSWORD);
     const unitName = sql(`select name_uk from organizations where org_id = ${DEPARTMENT}`);
     const title = `Грамота кафедрі ${uniqueToken()}`;
-    await page.goto('/awards/new');
+    await openNewAward(page);
 
     await expect(page.getByTestId('award-recipient')).toBeVisible();
     await expect(page.getByTestId('award-recipient-picker')).toHaveCount(0);
@@ -75,7 +76,7 @@ test.describe('awards of a faculty or department', () => {
   }) => {
     const page = await signedInAs(browser, secretary, FRESH_PASSWORD);
     const title = `Особиста чернетка ${uniqueToken()}`;
-    await page.goto('/awards/new');
+    await openNewAward(page);
     await page.getByTestId('award-recipient-unit').click();
     await page.getByTestId('award-recipient-picker').click();
     await page.getByTestId(`recipient-option-${DEPARTMENT}`).click();
@@ -92,7 +93,7 @@ test.describe('awards of a faculty or department', () => {
 
   test('ac0_8 an employee is offered no recipient choice', async ({ browser }) => {
     const page = await signedIn(browser, SEED.employee);
-    await page.goto('/awards/new');
+    await openNewAward(page);
 
     await expect(page.getByTestId('award-title-uk')).toBeVisible();
     await expect(page.getByTestId('award-recipient')).toHaveCount(0);
