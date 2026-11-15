@@ -63,7 +63,7 @@ export class UnitTrendChartComponent {
   protected readonly option = computed<EChartsCoreOption>(() => {
     this.language.current();
     const palette = this.theme.palette();
-    const colors = [palette.bar, ...palette.bands];
+    const colors = palette.series;
     const base = {
       grid: { left: 8, right: 8, top: 48, bottom: 8, containLabel: true },
       legend: { type: 'scroll', top: 0, textStyle: { color: palette.text } },

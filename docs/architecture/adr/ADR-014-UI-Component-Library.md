@@ -198,6 +198,25 @@ match the thin strokes of the new look and reach the bundle one by one:
 
 ---
 
+## Addendum 2026-11-15: Motion, effect components and chart colours (Feature 9.3)
+
+**Motion.** CSS and Angular `animate.enter`/`animate.leave` stay the default. The `motion` package (its `animate`
+function only) covers what CSS does poorly: counting a number up, staggering list entries and springs. It is wrapped
+by `MotionHelper` in `shared/effects`, which sets the end state at once under `prefers-reduced-motion: reduce` and
+stops every animation through the owning component's `DestroyRef`. Only lazy routes import it, so the initial bundle
+does not grow.
+
+**Effect components.** Six home-made standalone components replace a third-party effects kit: beam, border beam,
+spotlight (decorative, `aria-hidden`), ticker, marquee and typed text (their text stays readable by screen readers in
+a static copy). They move only `transform` and `opacity`, take colours from tokens and stand still under reduced
+motion.
+
+**Chart colours.** The single blue hue of the 2026-10 addendum gives way to the theme: `--app-chart-1..8` are
+categorical series colours (ECharts `color`, used for lines per unit), `--app-chart-bar` is `--app-chart-1`, and
+`--app-chart-band-1..5` stay one hue per scheme (burgundy in light, cyan in dark) with the same checks: monotone
+lightness and at least 2:1 against the surfaces (series colours at least 3:1). `ChartThemeService` resolves all of
+them again when the scheme changes.
+
 ## Related Documents
 
 - **Technology Stack**: [Technology Stack Selection](../TECH_STACK.md)
@@ -213,6 +232,7 @@ match the thin strokes of the new look and reach the bundle one by one:
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-19 | Stefan Kostyk | Addendum: chart library | Personal dashboard (Feature 5.1) |
 | 2026-11-14 | Stefan Kostyk | Addendum: Lucide icons | New look (Feature 9.3) |
+| 2026-11-15 | Stefan Kostyk | Addendum: motion, effect components, chart colours | New look (Feature 9.3) |
 
 ---
 

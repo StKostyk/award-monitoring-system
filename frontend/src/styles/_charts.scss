@@ -1,10 +1,18 @@
 @mixin tokens() {
-  --app-chart-bar: light-dark(#2a78d6, #3987e5);
-  --app-chart-band-1: light-dark(#86b6ef, #184f95);
-  --app-chart-band-2: light-dark(#3987e5, #2a78d6);
-  --app-chart-band-3: light-dark(#256abf, #5598e7);
-  --app-chart-band-4: light-dark(#184f95, #86b6ef);
-  --app-chart-band-5: light-dark(#0d366b, #cde2fb);
+  --app-chart-1: light-dark(#7a1f2b, #7ddcff);
+  --app-chart-2: light-dark(#a87716, #f5c451);
+  --app-chart-3: light-dark(#0f7c8c, #ff8fa3);
+  --app-chart-4: light-dark(#0047ab, #6ee7b7);
+  --app-chart-5: light-dark(#8e4c8a, #b4a0ff);
+  --app-chart-6: light-dark(#5f7a2e, #ffb070);
+  --app-chart-7: light-dark(#c4553b, #6fa8ff);
+  --app-chart-8: light-dark(#5b6475, #c3c9d6);
+  --app-chart-bar: var(--app-chart-1);
+  --app-chart-band-1: light-dark(#d98f9a, #1f6f9c);
+  --app-chart-band-2: light-dark(#b84a5a, #2e93cc);
+  --app-chart-band-3: light-dark(#952b3a, #4fb6e8);
+  --app-chart-band-4: light-dark(#7a1f2b, #7ddcff);
+  --app-chart-band-5: light-dark(#4e111a, #c8f0ff);
 }
 
 @mixin tables() {

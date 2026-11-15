@@ -200,4 +200,37 @@ test.describe('university analytics', () => {
     await expect(page.getByTestId('section-highlights')).toBeVisible();
     await expect(page.getByTestId('board-report')).toBeEnabled();
   });
+
+  test('9.3 ac2_4 redraws the charts in the colours of the new scheme without a reload', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.rector);
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    await page.goto('/analytics/university');
+    const chart = page.getByTestId('chart-canvas').first().locator('svg');
+    await expect(chart).toBeVisible();
+    await page.evaluate(() => Object.assign(window, { sameDocument: true }));
+
+    const light = await chartColours(page);
+    await page.getByTestId('user-menu').click();
+    await page.getByTestId('color-scheme-menu').click();
+    await page.getByTestId('color-scheme-dark').click();
+
+    await expect.poll(() => chartColours(page)).not.toEqual(light);
+    expect(await page.evaluate(() => 'sameDocument' in window)).toBe(true);
+    expect(
+      await chart
+        .locator('text')
+        .first()
+        .evaluate((node) => getComputedStyle(node).fontFamily),
+    ).toContain('Onest');
+  });
 });
+
+async function chartColours(page: Page): Promise<string[]> {
+  return page
+    .getByTestId('chart-canvas')
+    .first()
+    .locator('svg path[fill], svg text[fill]')
+    .evaluateAll((nodes) => [...new Set(nodes.map((node) => node.getAttribute('fill')!))].sort());
+}

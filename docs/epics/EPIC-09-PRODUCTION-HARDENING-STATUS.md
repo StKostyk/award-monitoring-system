@@ -51,7 +51,8 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 4 | 9.2.2 Nightly backups with a restore drill | 9.2 | 5 | SCRUM-132 | #373 | no | Done |
 | 5 | 9.2.3 Deploy job and production server settings | 9.2 | 3 | SCRUM-133 | #374 | no | Done |
 | 5a | 9.2.6 Dependency upgrade for critical CVEs | 9.2 | 2 | SCRUM-137 | #387 | no | Done |
-| 5b | 9.3.1 Theme tokens, fonts and icons | 9.3 | 5 | SCRUM-138 | #391 | no | In review |
+| 5b | 9.3.1 Theme tokens, fonts and icons | 9.3 | 5 | SCRUM-138 | #391 | no | Done |
+| 5c | 9.3.2 Effect components, motion and chart theme | 9.3 | 3 | SCRUM-139 | #392 | no | In review |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 
@@ -70,6 +71,8 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-10-29 | Rate limits stay on the existing Redis fixed-window counter (`FixedWindowCounter`, `RateLimitFilter`, `RequestThrottle`); no new library | One mechanism already in use for the authentication, public and upload limits | 9.1.2 |
 | 2026-10-29 | Backups go to an object store outside the server (an S3 bucket in the same AWS account by default), with the document encryption key stored apart | ADR-021 requires off-server copies; the key decrypts every document | 9.2.2 |
 | 2026-11-14 | Feature 9.3 New look: the `chnu` palette replaced in place by `light-dark()` pairs (burgundy and cream light, Aurora dark), Manrope and Onest, Lucide icons, `motion` only for count-ups and staggers, six own effect components; the scheme stays in the browser until 9.4; the 10 s undo holds the decision in the browser | The look chosen from the prototype rounds; no new library route (Material stays), no API or schema change, ADR-023 untouched | 9.3 PRD §7, ADR-014 and ADR-016 addenda (9.3.1) |
+| 2026-11-15 | 9.3 AC-1.6 accepted with the development-machine medians below 90 (`/awards` 81, `/awards/new` 77, develop 76 / 76): the new look does not lower them; the 90 target is measured again on the demo server in 9.2.4 | With 3 GB free the local runs vary by up to 30 points; the server is the environment NFR-009 is about | 9.2 PRD §10 step 16, PR #399 |
+| 2026-11-15 | Chart colours follow the theme: `--app-chart-1..8` categorical, bands one hue per scheme (burgundy light, cyan dark) | The blue single hue clashed with both schemes; the contrast checks of the 2026-10 addendum still hold | ADR-014 addendum 2026-11-15 (9.3.2) |
 | 2026-11-14 | The "remind head of department" mail and the CV export move to 9.4; the demo server 9.2.4 moves after 9.3, the Epic 2 feature for people without an account and 9.4 | Both sit on 9.4 screens; the demo should show the finished look | 9.3 PRD §7 deviation 1 |
 | 2026-10-29 | Lighthouse 90 sits in Feature 9.2: it is measured against the production build that the deployment ships | Same build, same measurement setup as 8.1 | 8.1 PRD F-2 |
 

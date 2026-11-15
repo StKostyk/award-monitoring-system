@@ -182,7 +182,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.2.3 | Deploy job and production server settings | 3 | ✅ Done | SCRUM-133 | [#374](https://github.com/StKostyk/award-monitoring-system/issues/374) |
 | 9.2.4 | Demo server on AWS EC2 with a smoke test | 3 | 9 | SCRUM-134 | [#375](https://github.com/StKostyk/award-monitoring-system/issues/375) |
 | 9.2.6 | Dependency upgrade for critical CVEs | 2 | ✅ Done | SCRUM-137 | [#387](https://github.com/StKostyk/award-monitoring-system/issues/387) |
-| 9.3.1 | Theme tokens, fonts and icons | 5 | 👀 In review (10) | SCRUM-138 | [#391](https://github.com/StKostyk/award-monitoring-system/issues/391) |
+| 9.3.1 | Theme tokens, fonts and icons | 5 | ✅ Done | SCRUM-138 | [#391](https://github.com/StKostyk/award-monitoring-system/issues/391) |
+| 9.3.2 | Effect components, motion and chart theme | 3 | 👀 In review (10) | SCRUM-139 | [#392](https://github.com/StKostyk/award-monitoring-system/issues/392) |
 
 ### Later epics
 | ID | Story | Points | Epic |

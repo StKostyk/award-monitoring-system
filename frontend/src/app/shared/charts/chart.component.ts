@@ -81,6 +81,7 @@ export class ChartComponent {
     return {
       backgroundColor: 'transparent',
       animation: !this.theme.reducedMotion(),
+      color: palette.series,
       textStyle: { color: palette.text, fontFamily: palette.fontFamily || 'sans-serif' },
       aria: { enabled: true, label: { description: this.description() } },
       ...this.option(),

@@ -12,6 +12,7 @@ export interface ChartPalette {
   surface: string;
   bar: string;
   bands: string[];
+  series: string[];
   fontFamily: string;
 }
 
@@ -25,6 +26,14 @@ const TOKENS = {
 
 const BAND_TOKENS = [1, 2, 3, 4, 5].map((step) => `--app-chart-band-${step}`);
 
+/** Number of categorical series colours, `--app-chart-1` to `--app-chart-8`. */
+export const SERIES_COLOURS = 8;
+
+const SERIES_TOKENS = Array.from(
+  { length: SERIES_COLOURS },
+  (_, index) => `--app-chart-${index + 1}`,
+);
+
 /** Theme colours and motion preference for charts, following the colour scheme and the device settings. */
 @Injectable({ providedIn: 'root' })
 export class ChartThemeService {
@@ -37,15 +46,22 @@ export class ChartThemeService {
   readonly palette = computed<ChartPalette>(() => {
     this.scheme();
     this.systemDark();
-    return {
-      text: this.resolve(TOKENS.text),
-      mutedText: this.resolve(TOKENS.mutedText),
-      grid: this.resolve(TOKENS.grid),
-      surface: this.resolve(TOKENS.surface),
-      bar: this.resolve(TOKENS.bar),
-      bands: BAND_TOKENS.map((token) => this.resolve(token)),
+    const probe = this.document.createElement('span');
+    probe.style.display = 'none';
+    this.document.body.appendChild(probe);
+    const resolve = (token: string) => this.resolve(probe, token);
+    const palette = {
+      text: resolve(TOKENS.text),
+      mutedText: resolve(TOKENS.mutedText),
+      grid: resolve(TOKENS.grid),
+      surface: resolve(TOKENS.surface),
+      bar: resolve(TOKENS.bar),
+      bands: BAND_TOKENS.map(resolve),
+      series: SERIES_TOKENS.map(resolve),
       fontFamily: this.document.defaultView?.getComputedStyle(this.document.body).fontFamily ?? '',
     };
+    probe.remove();
+    return palette;
   });
 
   constructor() {
@@ -54,14 +70,9 @@ export class ChartThemeService {
     this.watch(REDUCED_MOTION, this.reducedMotion, destroyRef);
   }
 
-  private resolve(token: string): string {
-    const probe = this.document.createElement('span');
-    probe.style.color = `var(${token})`;
-    probe.style.display = 'none';
-    this.document.body.appendChild(probe);
-    const color = this.document.defaultView?.getComputedStyle(probe).color ?? '';
-    probe.remove();
-    return color;
+  private resolve(probe: HTMLElement, token: string): string {
+    probe.style.setProperty('color', `var(${token})`);
+    return this.document.defaultView?.getComputedStyle(probe).color ?? '';
   }
 
   private matches(query: string): boolean {

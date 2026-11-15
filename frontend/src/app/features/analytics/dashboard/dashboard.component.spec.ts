@@ -17,6 +17,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { chartStub } from '../../../shared/charts/chart.testing';
 import { currentKyivYear } from '../../../shared/date-format';
+import { reduceMotion } from '../../../shared/effects/effects.testing';
 import { DashboardWidget } from '../analytics.service';
 import {
   emptyAnalytics,
@@ -40,6 +41,7 @@ describe('DashboardComponent', () => {
   beforeEach(async () => {
     queryParams.next(convertToParamMap({}));
     dialog.open.mockReset();
+    reduceMotion();
     const stub = chartStub();
     await TestBed.configureTestingModule({
       imports: [DashboardComponent, NoopAnimationsModule, translations('en')],
