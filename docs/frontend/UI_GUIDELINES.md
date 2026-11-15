@@ -14,7 +14,6 @@
 | `chnu` | Chernivtsi National University | light: burgundy `#7A1F2B` (gradient to `#A23B47`); dark: aurora cyan `#7DDCFF` | `#5E1621` / `#0B1124` | gold `#C9952B` / `#F5C451` (fill only; text form `#8A5A00`) | `#F6EFE4`, cards `#FFFCF6` / `#060914`, cards `#0B1124` | Manrope (headings), Onest (text) |
 | `neutral` | fallback and second-brand check | green `#2D6A4F` / `#8FD5B0` | `#1E3D30` | amber `#E0A526` | `#F6F7F5` / `#181C1A` | Manrope, Onest |
 
-- The sign-in and error pages (§7) still carry the previous ChNU look (cobalt, Nunito) until story 9.3.4 moves them to the new one; manual steps 8-11 describe that look.
 - The ChNU brand has two hues in one theme: burgundy and cream in the light scheme, the aurora (deep navy with cobalt, cyan and gold light) in the dark one. Every Material colour role in `brands/chnu/_brand.scss` is a `light-dark(<burgundy>, <aurora>)` pair.
 
 - A brand is a folder `frontend/src/styles/brands/<id>/` with `_theme-colors.scss` (tonal palettes from the brand colours, Angular Material `theme-color` schematic) and `_brand.scss` (`theme()` mixin), included in `styles.scss` under `html.brand-<id>`, and the id in `BRAND_IDS` (`core/brand/brand.service.ts`).
@@ -80,15 +79,17 @@ Material component colours are changed with the component's `*-overrides` mixin 
 The authorization server renders the sign-in, error and 429 pages itself (Thymeleaf, `backend/src/main/resources/templates`), so they carry their own copy of the brand:
 
 - `APP_BRAND` (`app.brand.id`, default `chnu`) picks the brand; the ids are those of `brand.json`, and an unknown id gives the neutral brand. The browser application and the backend are configured separately, so a deployment sets both.
-- `static/login-assets/brand-<id>.css` holds the brand tokens (`--lp-*`, `light-dark()` values mirroring the Material theme), `login.css` the layout and the self-hosted fonts, `<id>/logo.svg` the logo; product name and organisation are the message keys `brand.<id>.name` and `brand.<id>.organization`.
-- Layout: brand panel (logo, name, organisation) beside the form from 760 px, a strip above it on phones; controls at least 44 px high.
+- `static/login-assets/brand-<id>.css` holds the brand tokens (`--lp-*`, `light-dark()` values copied from the Material theme roles and the `--app-nav-*`, `--app-aurora-*` tokens of `brands/<id>/_brand.scss`), `login.css` the layout and the self-hosted Manrope and Onest variable fonts (Cyrillic and Latin subsets copied from `@fontsource-variable`, OFL notices beside them), `<id>/logo.svg` the logo; product name and organisation are the message keys `brand.<id>.name` and `brand.<id>.organization`.
+- Layout: brand panel (logo, name, organisation, the count of approved awards and the claim) beside the form from 760 px, a strip above it on phones (logo, name and count); controls at least 44 px high.
+- The count is `select count(*) from awards where status = 'APPROVED'`, held in Redis under `login:award-count` for `app.login.award-count-ttl` (`APP_LOGIN_AWARD_COUNT_TTL`, default 10 minutes); when Redis or the query fails the panel shows the claim without a number. Ukrainian plural forms come from `login.count.one|few|many`.
+- The account pages of the browser application (`/register`, `/registration-pending`, `/verify-email`, `/forgot-password`, `/reset-password`, `/confirm-email-change`) wrap their card in `app-auth-layout` (`features/auth/auth-layout`): the same panel with logo, name, organisation and claim, drawn from `--app-nav-container` and the aurora tokens; it has no count, so the browser application needs no new endpoint.
 - The scheme follows the device; on the application's own origin (production, the container stack) `scheme.js` also applies the scheme chosen in the app. No inline script or style, nothing from another host.
 - A new brand adds `brand-<id>.css`, the logo folder and the message keys next to its Angular theme.
 
 ## 8. Checks
 
 - `e2e/theme.spec.ts`: brand class and title, brand colours and fonts per scheme, fallback to neutral, Lucide icons with named icon-only controls, scheme switch, phone drawer, axe (WCAG 2.1 AA, serious and critical) on home, award list and award form for each brand in light and dark.
-- `e2e/login.spec.ts`: sign-in page brand, fonts without other hosts, 360 px layout, target sizes and axe in light and dark, also with an error shown.
+- `e2e/login.spec.ts`: sign-in page brand, count and claim, Manrope and Onest without other hosts, 360 px strip above the form, target sizes and axe in light and dark, also with an error shown; the brand panel on the six account pages, and the phone strip with axe on `/register`.
 - `/ui-check` screenshots at 360 and 1280 px, light and dark, Ukrainian and English for every changed screen.
 
 ## Manual verification
@@ -100,10 +101,10 @@ The authorization server renders the sign-in, error and 429 pages itself (Thymel
 5. Open «Мої нагороди» and use the «Статус» filter for the rejected and archived chips (no screen archives an award yet: set one with `update awards set status='ARCHIVED' where award_id=<id>`). Expected: status chips coloured by status (grey draft, amber pending, green approved, red rejected, outlined archived) in both schemes.
 6. In the developer tools, Network tab, reload. Expected: no request to `fonts.googleapis.com` or `fonts.gstatic.com`; the font files (Manrope and Onest, Cyrillic and Latin) come from `localhost`.
 7. Replace the brand: `docker compose exec frontend sh -c "echo '{\"id\":\"neutral\",\"name\":{\"uk\":\"Облік нагород\",\"en\":\"Award Registry\"},\"organization\":{\"uk\":\"Університет\",\"en\":\"University\"},\"logo\":\"brand/neutral/logo.svg\"}' > /usr/share/nginx/html/brand/brand.json"` and reload. Expected: green neutral theme in Manrope and Onest with the neutral logo. Restore with `docker compose up -d --build --force-recreate frontend`.
-8. Sign out and open `http://localhost` with the browser language set to Ukrainian (the sign-in page follows the browser language, not the choice made in the app). Expected: the sign-in page has the navy brand panel with the logo, «Облік нагород ЧНУ» and the university name beside the form (a strip above it below 760 px), Nunito text, a cobalt «Увійти» button; «English» switches the page and the brand name to English.
-9. In the app choose «Темна», sign out. Expected: the sign-in page is dark as well (`#1F1F1F`); with «Як на пристрої» it follows the system setting.
+8. Sign out and open `http://localhost` with the browser language set to Ukrainian (the sign-in page follows the browser language, not the choice made in the app). Expected: the sign-in page has the burgundy brand panel with the logo, «Облік нагород ЧНУ», the university name, the gold count («886 нагород» with the dev seed) and the claim beside the form on a cream page (a strip with logo, name and count above it below 760 px), Manrope headings and Onest text, a burgundy «Увійти» button; «English» switches the page and the brand name to English.
+9. In the app choose «Темна», sign out. Expected: the sign-in page is dark as well (aurora: `#060914` page, navy panel with cyan count); with «Як на пристрої» it follows the system setting.
 10. Enter a wrong password. Expected: the error appears in a red box inside the card, readable in both schemes; at 360 px nothing scrolls sideways.
-11. Set `APP_BRAND=neutral` (for example `APP_BRAND=neutral docker compose up -d app`) and reload the sign-in page. Expected: green neutral panel, IBM Plex Sans, «Облік нагород» and «Університет». Restore with `docker compose up -d app`.
+11. Set `APP_BRAND=neutral` (for example `APP_BRAND=neutral docker compose up -d app`) and reload the sign-in page. Expected: green neutral panel, Manrope and Onest, «Облік нагород» and «Університет». Restore with `docker compose up -d app`.
 
 ### Run 2026-10-11
 

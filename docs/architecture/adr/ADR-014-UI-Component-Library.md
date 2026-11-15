@@ -228,6 +228,18 @@ offers nothing the person could not open from the menu or the award list.
 dark scheme and moved by `transform` only; no `backdrop-filter` or `filter`, which cost too much on scrolling pages
 (PRD 9.3 D2). The toolbar is a translucent surface over it.
 
+## Addendum 2026-11-15: Sign-in and account pages (Feature 9.3)
+
+**Sign-in page.** The Thymeleaf sign-in, error and 429 pages keep their own copy of the brand (`login-assets`), now
+with the burgundy and aurora values and self-hosted Manrope and Onest variable fonts copied from `@fontsource-variable`
+(no build step links the backend to `node_modules`; a font update copies the four files again). The brand panel shows
+the number of approved awards, a model attribute of `LoginController` held in Redis for 10 minutes; without Redis the
+page shows the claim only, so the sign-in page never adds a query per visit.
+
+**Account pages.** The six public account pages of the browser application stay inside the shell (toolbar with
+language and scheme) and wrap their card in `app-auth-layout`, the same panel drawn from the Angular tokens. The count
+stays on the sign-in page only, so 9.3 adds no endpoint.
+
 ## Related Documents
 
 - **Technology Stack**: [Technology Stack Selection](../TECH_STACK.md)
@@ -245,6 +257,7 @@ dark scheme and moved by `transform` only; no `backdrop-filter` or `filter`, whi
 | 2026-11-14 | Stefan Kostyk | Addendum: Lucide icons | New look (Feature 9.3) |
 | 2026-11-15 | Stefan Kostyk | Addendum: motion, effect components, chart colours | New look (Feature 9.3) |
 | 2026-11-15 | Stefan Kostyk | Addendum: shell and command palette | New look (Feature 9.3) |
+| 2026-11-15 | Stefan Kostyk | Addendum: sign-in and account pages | New look (Feature 9.3) |
 
 ---
 

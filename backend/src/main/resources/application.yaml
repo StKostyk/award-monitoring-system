@@ -198,6 +198,9 @@ app:
     notice-versions:
       - version: '1.0'
         published-on: 2026-10-15
+  login:
+    # approved-award count on the sign-in page, held in Redis for this long
+    award-count-ttl: ${APP_LOGIN_AWARD_COUNT_TTL:PT10M}
   rate-limit:
     api-requests-per-minute: ${API_RATE_LIMIT_PER_MINUTE:600}
     export-requests-per-minute: ${EXPORT_RATE_LIMIT_PER_MINUTE:5}

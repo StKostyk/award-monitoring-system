@@ -121,7 +121,7 @@ no story splits at a backend gate. 9.3.4 to 9.3.7 can run in any order once 9.3.
   the count of approved awards ("886 нагород" with the dev seed), the claim and the form in the new tokens and fonts,
   with no script or style from another host and no inline script.
 - **AC-4.2** (Count) Given the approved awards, when the sign-in page renders, then the number equals
-  `select count(*) from awards where status = 'APPROVED' and deleted_at is null`, read at most once in 10 minutes;
+  `select count(*) from awards where status = 'APPROVED'` (approved awards are never deleted), held in Redis for 10 minutes;
   when the query fails, the panel shows the claim without a number and the form still works.
 - **AC-4.3** (Account pages) Given `/register`, `/registration-pending`, `/verify-email`, `/forgot-password`,
   `/reset-password` and `/confirm-email-change`, when they open, then they use the same brand panel layout as the
@@ -239,7 +239,7 @@ Agreed at the design of 2026-11-14:
 
 1. The "remind head of department" mail and the CV export move to 9.4: both belong to screens 9.4 builds (dean
    dashboard, "Мої нагороди"), so 9.3 stays without new endpoints.
-2. The sign-in count is all approved, not deleted awards, private ones included: an aggregate number is not personal
+2. The sign-in count is all approved awards, private ones included: an aggregate number is not personal
    data; cached 10 minutes so the sign-in page adds no query per visit.
 3. The review checklist is not stored and does not gate the approval; storing it would be a schema change with no
    use in reports.

@@ -11,12 +11,14 @@ import { problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { consumeLinkToken } from '../link-token';
 import { RegistrationService } from '../registration.service';
+import { AuthLayoutComponent } from '../auth-layout/auth-layout.component';
 
 export type VerificationState = 'form' | 'verified' | 'invalid' | 'failed';
 
 @Component({
   selector: 'app-verify-email',
   imports: [
+    AuthLayoutComponent,
     ReactiveFormsModule,
     MatCard,
     MatCardHeader,

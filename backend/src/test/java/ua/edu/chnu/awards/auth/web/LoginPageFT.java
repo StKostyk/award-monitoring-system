@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import ua.edu.chnu.awards.support.AbstractFunctionalTest;
 
@@ -19,8 +21,13 @@ class LoginPageFT extends AbstractFunctionalTest {
         "/login-assets/scheme.js",
         "/login-assets/chnu/logo.svg",
         "/login-assets/neutral/logo.svg",
-        "/login-assets/fonts/nunito-cyrillic-400-normal.woff2",
-        "/login-assets/fonts/ibm-plex-sans-latin-600-normal.woff2");
+        "/login-assets/fonts/manrope-cyrillic-wght-normal.woff2",
+        "/login-assets/fonts/manrope-latin-wght-normal.woff2",
+        "/login-assets/fonts/onest-cyrillic-wght-normal.woff2",
+        "/login-assets/fonts/onest-latin-wght-normal.woff2");
+
+    @Autowired
+    private StringRedisTemplate redis;
 
     @Test
     void ac1_the_sign_in_page_shows_the_configured_brand_in_ukrainian() {
@@ -40,6 +47,29 @@ class LoginPageFT extends AbstractFunctionalTest {
     @Test
     void ac1_the_error_page_carries_the_brand() {
         assertThat(html("/error")).contains("/login-assets/brand-chnu.css", "Облік нагород ЧНУ");
+    }
+
+    @Test
+    void ac4_1_the_brand_panel_shows_the_approved_award_count_and_the_claim() {
+        redis.opsForValue().set(LoginAwardCount.KEY, "886");
+        try {
+            assertThat(html("/login")).contains("886 нагород", "Нагороди університету");
+            assertThat(html("/login?lang=en")).contains("886 awards", "University awards");
+        } finally {
+            redis.delete(LoginAwardCount.KEY);
+        }
+    }
+
+    @Test
+    void ac4_2_a_corrupt_count_leaves_the_claim_and_the_form() {
+        redis.opsForValue().set(LoginAwardCount.KEY, "unreadable");
+        try {
+            assertThat(html("/login"))
+                .doesNotContain("login-award-count")
+                .contains("Нагороди університету", "name=\"password\"");
+        } finally {
+            redis.delete(LoginAwardCount.KEY);
+        }
     }
 
     @Test

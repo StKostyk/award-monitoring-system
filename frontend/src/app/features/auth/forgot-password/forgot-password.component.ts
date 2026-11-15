@@ -9,12 +9,14 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { knownProblem, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { RegistrationService } from '../registration.service';
+import { AuthLayoutComponent } from '../auth-layout/auth-layout.component';
 
 const KNOWN_PROBLEMS = ['network', 'too-many-requests'];
 
 @Component({
   selector: 'app-forgot-password',
   imports: [
+    AuthLayoutComponent,
     ReactiveFormsModule,
     MatCard,
     MatCardHeader,

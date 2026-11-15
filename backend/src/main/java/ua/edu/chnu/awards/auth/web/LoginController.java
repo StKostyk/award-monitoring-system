@@ -22,8 +22,12 @@ import lombok.RequiredArgsConstructor;
 public class LoginController {
 
     private static final String EXPIRED = "EXPIRED";
+    private static final long TEN = 10;
+    private static final long HUNDRED = 100;
+    private static final long FEW_MAX = 4;
 
     private final AuthProperties properties;
+    private final LoginAwardCount awardCount;
 
     /**
      * Renders the login form; a known error code from a failed attempt is translated by the template. A browser
@@ -42,6 +46,10 @@ public class LoginController {
         model.addAttribute("error", error == null ? null : "login.error." + knownCode(error));
         model.addAttribute("registerUrl", properties.frontendUrl() + "/register");
         model.addAttribute("forgotPasswordUrl", properties.frontendUrl() + "/forgot-password");
+        awardCount.current().ifPresent(count -> {
+            model.addAttribute("awardCount", count);
+            model.addAttribute("awardCountKey", "login.count." + pluralForm(count));
+        });
         return "login";
     }
 
@@ -57,6 +65,23 @@ public class LoginController {
 
     private String toApp() {
         return "redirect:" + properties.frontendUrl();
+    }
+
+    /**
+     * The Ukrainian plural form of a count; English messages give the same text for "few" and "many".
+     *
+     * @param count a non-negative count
+     * @return one, few or many
+     */
+    static String pluralForm(long count) {
+        if (count % HUNDRED / TEN == 1) {
+            return "many";
+        }
+        long lastDigit = count % TEN;
+        if (lastDigit == 1) {
+            return "one";
+        }
+        return lastDigit >= 2 && lastDigit <= FEW_MAX ? "few" : "many";
     }
 
     private static String knownCode(String code) {
