@@ -61,6 +61,19 @@ describe('BrandService', () => {
     }
   });
 
+  it('ac1_1_sets_the_burgundy_browser_bar_colour_of_the_chnu_brand', async () => {
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.appendChild(meta);
+    try {
+      await load((request) => request.flush(chnu));
+
+      expect(meta.content).toBe('#5E1621');
+    } finally {
+      meta.remove();
+    }
+  });
+
   it('ac3_follows_the_language_in_its_texts', async () => {
     await load((request) => request.flush(chnu));
     TestBed.inject(TranslocoService).setActiveLang('en');

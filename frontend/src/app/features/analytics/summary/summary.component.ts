@@ -2,7 +2,6 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -12,6 +11,7 @@ import { Observable, catchError, map, of } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivToday } from '../../../shared/date-format';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import {
@@ -30,7 +30,7 @@ type PublicCheck = 'checking' | 'shared' | 'none' | 'failed';
 /** The printable summary of the counted awards of a period, with the link to the public achievements. */
 @Component({
   selector: 'app-summary',
-  imports: [KyivDatePipe, MatButton, MatIcon, MatProgressBar, RouterLink, TranslocoPipe],
+  imports: [KyivDatePipe, MatButton, IconComponent, MatProgressBar, RouterLink, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './summary.component.html',
   styleUrl: './summary.component.scss',

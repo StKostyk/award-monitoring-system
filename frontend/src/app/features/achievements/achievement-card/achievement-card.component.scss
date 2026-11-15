@@ -94,11 +94,9 @@
   color: var(--mat-sys-primary);
 }
 
-.achievement__verified mat-icon,
-.achievement__link mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
+.achievement__verified app-icon,
+.achievement__link app-icon {
+  --app-icon-size: 18px;
 }
 
 @media (max-width: 599.98px) {

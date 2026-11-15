@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -17,6 +16,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { saveFile } from '../../../shared/file-download';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import {
@@ -32,7 +32,7 @@ const AWARD_ID = /^\d{1,18}$/;
 /** A shared award as a signed-in colleague sees it, with the documents its owner shows. */
 @Component({
   selector: 'app-achievement-detail',
-  imports: [MatButton, MatIcon, MatProgressBar, RouterLink, TranslocoPipe, KyivDatePipe],
+  imports: [MatButton, IconComponent, MatProgressBar, RouterLink, TranslocoPipe, KyivDatePipe],
   templateUrl: './achievement-detail.component.html',
   styleUrl: './achievement-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

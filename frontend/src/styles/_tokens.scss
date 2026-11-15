@@ -1,0 +1,34 @@
+@mixin tokens() {
+  --app-font-heading: 'Manrope Variable', system-ui, sans-serif;
+  --app-font-body: 'Onest Variable', system-ui, sans-serif;
+  --app-gold: light-dark(#e0a526, #f2be4e);
+  --app-on-gold: #2a1c00;
+  --app-gold-text: light-dark(#7a5300, #f2be4e);
+  --app-cyan: light-dark(#00bbff, #4fd0ff);
+  --app-on-cyan: #00243a;
+  --app-ok: light-dark(#2f6b3a, #8fd5b0);
+  --app-bad: light-dark(#b3261e, #ffb4ab);
+  --app-accent-from: var(--mat-sys-primary);
+  --app-accent-to: var(--mat-sys-primary);
+  --app-accent-gradient: linear-gradient(135deg, var(--app-accent-from), var(--app-accent-to));
+  --app-aurora-1: transparent;
+  --app-aurora-2: transparent;
+  --app-aurora-3: transparent;
+  --app-card-radius: 12px;
+  --app-radius-sm: 8px;
+  --app-radius-md: 14px;
+  --app-radius-lg: 22px;
+  --app-icon-size: 1.5rem;
+}
+
+@mixin rules() {
+  h1,
+  h2,
+  h3,
+  .mat-headline-small,
+  .mat-headline-medium,
+  .mat-headline-large,
+  .mat-title-large {
+    font-family: var(--app-font-heading);
+  }
+}

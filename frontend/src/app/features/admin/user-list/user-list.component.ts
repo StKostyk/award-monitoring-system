@@ -7,7 +7,6 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { MatChip, MatChipSet } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -21,6 +20,7 @@ import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 
 import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { ConfirmMembershipDialogComponent } from '../confirm-membership-dialog/confirm-membership-dialog.component';
 import { ROLES, STATUSES } from '../role-organizations';
 import { organizationName } from '../../../shared/organization-name';
@@ -52,7 +52,7 @@ const MINIMUM_QUERY = 2;
     MatChip,
     MatButton,
     MatIconButton,
-    MatIcon,
+    IconComponent,
     MatTooltip,
     RouterLink,
     TranslocoPipe,

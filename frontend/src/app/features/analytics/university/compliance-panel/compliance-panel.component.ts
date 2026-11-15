@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { MatButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { kyivDateTime } from '../../../../shared/date-format';
+import { IconComponent } from '../../../../shared/icons/icon.component';
 import { ComplianceSummary } from '../university-analytics.service';
 
 /** A figure of the compliance panel: a label, a value and an optional note under it. */
@@ -22,7 +22,7 @@ const PERCENT = 100;
 /** The compliance summary of the university: status, the reasons for attention and the figures behind them. */
 @Component({
   selector: 'app-compliance-panel',
-  imports: [MatButton, MatIcon, MatProgressBar, TranslocoPipe],
+  imports: [MatButton, IconComponent, MatProgressBar, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './compliance-panel.component.html',
   styleUrl: './compliance-panel.component.scss',

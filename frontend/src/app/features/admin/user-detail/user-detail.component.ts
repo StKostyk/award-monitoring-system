@@ -3,7 +3,6 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -14,6 +13,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { grantableRoles } from '../../../core/auth/permissions';
 import { OrganizationRef, RoleAssignment } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { AssignRoleDialogComponent } from '../assign-role-dialog/assign-role-dialog.component';
 import { LegalHoldCardComponent } from '../legal-hold-card/legal-hold-card.component';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
@@ -33,7 +33,7 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
     MatCardContent,
     MatProgressBar,
     MatButton,
-    MatIcon,
+    IconComponent,
     RouterLink,
     TranslocoPipe,
     KyivDatePipe,

@@ -227,6 +227,24 @@ The theme configuration above uses the Material 2 API (`define-palette`, `define
 
 **Rules.** Component styles use `--mat-sys-*` and `--app-*` tokens only, without colour literals or fallbacks; award status colours (`--app-status-*`) are the same in every brand; fonts and icons are self-hosted (`@fontsource`), so no request goes to Google Fonts and the CSP allows fonts from `'self'` only. Details: [UI guidelines](../../frontend/UI_GUIDELINES.md).
 
+## Addendum 2026-11-14: Two-hue ChNU theme and new fonts (Feature 9.3)
+
+**Two hues in one brand.** The `chnu` theme is replaced in place: the light scheme is burgundy and cream (primary
+`#7A1F2B`, navigation `#5E1621`, background `#F6EFE4`, gold `#C9952B` as a fill), the dark scheme is the aurora (deep
+navy `#060914`, cyan primary `#7DDCFF`, gold `#F5C451`). Each Material colour role in `brands/chnu/_brand.scss` is a
+`light-dark(<burgundy>, <aurora>)` pair, so `color-scheme` still decides the scheme and no component knows which hue
+is active. `neutral` stays the fallback and second-brand check with its green primary.
+
+**Tokens.** `styles/_tokens.scss` holds the brand-independent `--app-*` tokens and their defaults (gold and cyan as
+fills with their `--app-on-*` text colours, ok/bad, accent gradient, aurora light, font stacks, radius scale); a brand
+mixin overrides them. `--app-brand-accent` is replaced by `--app-gold`.
+
+**Fonts.** Manrope (headings, the Material brand family) and Onest (text, the plain family) replace Nunito and IBM
+Plex Sans. Both are variable fonts from `@fontsource-variable` with Cyrillic and Latin files chosen by
+`unicode-range`; they stay on the app's own origin under the CSP `font-src 'self'`.
+
+**Browser bar.** The manifest `theme_color` and `<meta name="theme-color">` of the ChNU brand are `#5E1621`.
+
 ---
 
 ## Related Documents
@@ -244,6 +262,7 @@ The theme configuration above uses the Material 2 API (`define-palette`, `define
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-04 | Stefan Kostyk | Addendum: Material 3 themes, university brands, dark mode | Story 3.0.2 |
+| 2026-11-14 | Stefan Kostyk | Addendum: two-hue ChNU theme, Manrope and Onest | New look (Feature 9.3) |
 
 ---
 

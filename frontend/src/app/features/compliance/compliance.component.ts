@@ -5,7 +5,6 @@ import { MatButton } from '@angular/material/button';
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
 import { MatChip } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatIcon } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -17,6 +16,7 @@ import { distinctUntilChanged, map } from 'rxjs';
 
 import { LanguageService } from '../../core/i18n/language.service';
 import { kyivDateTime } from '../../shared/date-format';
+import { IconComponent } from '../../shared/icons/icon.component';
 import { TranslatedPaginatorIntl } from '../../shared/translated-paginator-intl';
 import { UserRef } from '../reviews/reviews.service';
 import { Phrase, durationPhrase, isErasedEmail, periodPhrases } from './compliance-format';
@@ -80,7 +80,7 @@ export function readView(params: ParamMap): ComplianceView {
     MatButtonToggleGroup,
     MatButtonToggle,
     MatChip,
-    MatIcon,
+    IconComponent,
     MatButton,
     MatPaginator,
     MatProgressBar,

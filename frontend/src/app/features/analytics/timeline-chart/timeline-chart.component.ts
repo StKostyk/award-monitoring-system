@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import type { ECElementEvent, EChartsCoreOption } from 'echarts/core';
@@ -9,6 +8,7 @@ import { ChartComponent } from '../../../shared/charts/chart.component';
 import { categoryAxis, escapeHtml, tooltip } from '../../../shared/charts/chart-style';
 import { ChartThemeService } from '../../../shared/charts/chart-theme.service';
 import { kyivDate } from '../../../shared/date-format';
+import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { RECOGNITION_LEVELS, awardTitle, categoryName } from '../../awards/awards.service';
 import { TimelineEntry } from '../analytics.service';
@@ -19,7 +19,7 @@ const AXIS_PADDING_MS = 60 * 24 * 60 * 60 * 1000;
 /** Every counted award on a time axis by level; a point or a table row opens the award. */
 @Component({
   selector: 'app-timeline-chart',
-  imports: [ChartComponent, KyivDatePipe, MatIcon, RouterLink, TranslocoPipe],
+  imports: [ChartComponent, KyivDatePipe, IconComponent, RouterLink, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './timeline-chart.component.html',
 })

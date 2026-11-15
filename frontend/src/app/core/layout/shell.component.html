@@ -30,7 +30,7 @@
           [attr.aria-current]="homeLink.isActive ? 'page' : null"
           data-testid="nav-home"
         >
-          <mat-icon matListItemIcon>home</mat-icon>
+          <app-icon matListItemIcon name="house" />
           <span matListItemTitle>{{ 'app.home' | transloco }}</span>
         </a>
         @if (canOpenAwards()) {
@@ -44,7 +44,7 @@
             [attr.aria-current]="awardsLink.isActive ? 'page' : null"
             data-testid="nav-awards"
           >
-            <mat-icon matListItemIcon>workspace_premium</mat-icon>
+            <app-icon matListItemIcon name="award" />
             <span matListItemTitle>{{ 'awards.title' | transloco }}</span>
           </a>
         }
@@ -59,7 +59,7 @@
             [attr.aria-current]="dashboardLink.isActive ? 'page' : null"
             data-testid="nav-dashboard"
           >
-            <mat-icon matListItemIcon>insights</mat-icon>
+            <app-icon matListItemIcon name="chart-line" />
             <span matListItemTitle>{{ 'analytics.title' | transloco }}</span>
           </a>
         }
@@ -76,7 +76,7 @@
             "
             data-testid="nav-unit-analytics"
           >
-            <mat-icon matListItemIcon>leaderboard</mat-icon>
+            <app-icon matListItemIcon name="chart-column" />
             <span matListItemTitle>{{ 'unitAnalytics.title' | transloco }}</span>
           </a>
         }
@@ -91,7 +91,7 @@
             [attr.aria-current]="universityAnalyticsLink.isActive ? 'page' : null"
             data-testid="nav-university-analytics"
           >
-            <mat-icon matListItemIcon>account_balance</mat-icon>
+            <app-icon matListItemIcon name="landmark" />
             <span matListItemTitle>{{ 'universityAnalytics.title' | transloco }}</span>
           </a>
         }
@@ -106,7 +106,7 @@
             [attr.aria-current]="achievementsLink.isActive ? 'page' : null"
             data-testid="nav-achievements"
           >
-            <mat-icon matListItemIcon>emoji_events</mat-icon>
+            <app-icon matListItemIcon name="trophy" />
             <span matListItemTitle>{{ 'achievements.title' | transloco }}</span>
           </a>
         }
@@ -121,7 +121,7 @@
             [attr.aria-current]="reviewsLink.isActive ? 'page' : null"
             data-testid="nav-reviews"
           >
-            <mat-icon matListItemIcon>fact_check</mat-icon>
+            <app-icon matListItemIcon name="clipboard-check" />
             <span matListItemTitle>{{ 'reviews.title' | transloco }}</span>
           </a>
         }
@@ -136,7 +136,7 @@
             [attr.aria-current]="usersLink.isActive ? 'page' : null"
             data-testid="nav-users"
           >
-            <mat-icon matListItemIcon>group</mat-icon>
+            <app-icon matListItemIcon name="users" />
             <span matListItemTitle>{{ 'admin.users.title' | transloco }}</span>
           </a>
         }
@@ -151,7 +151,7 @@
             [attr.aria-current]="delegationsLink.isActive ? 'page' : null"
             data-testid="nav-delegations"
           >
-            <mat-icon matListItemIcon>swap_horiz</mat-icon>
+            <app-icon matListItemIcon name="arrow-left-right" />
             <span matListItemTitle>{{ 'delegations.title' | transloco }}</span>
           </a>
         }
@@ -166,7 +166,7 @@
             [attr.aria-current]="complianceLink.isActive ? 'page' : null"
             data-testid="nav-compliance"
           >
-            <mat-icon matListItemIcon>policy</mat-icon>
+            <app-icon matListItemIcon name="shield-check" />
             <span matListItemTitle>{{ 'compliance.title' | transloco }}</span>
           </a>
         }
@@ -185,7 +185,7 @@
           [attr.aria-expanded]="drawer.opened"
           data-testid="nav-toggle"
         >
-          <mat-icon>menu</mat-icon>
+          <app-icon name="menu" />
         </button>
       }
       @if (!auth.isAuthenticated() || !wide()) {
@@ -217,7 +217,7 @@
       </button>
       @if (!auth.isAuthenticated()) {
         <button mat-button type="button" (click)="login()" data-testid="login">
-          <mat-icon>login</mat-icon>
+          <app-icon matButtonIcon name="log-in" />
           {{ 'app.login' | transloco }}
         </button>
       }
@@ -231,16 +231,16 @@
           [attr.aria-label]="auth.fullName()"
           data-testid="user-menu"
         >
-          <mat-icon>account_circle</mat-icon>
+          <app-icon matButtonIcon name="circle-user" />
           <span class="shell__user-name" data-testid="user-name">{{ auth.fullName() }}</span>
         </button>
         <mat-menu #userMenu="matMenu">
           <a mat-menu-item routerLink="/profile" data-testid="nav-profile">
-            <mat-icon>person</mat-icon>
+            <app-icon matMenuItemIcon name="user" />
             <span>{{ 'profile.menu' | transloco }}</span>
           </a>
           <a mat-menu-item routerLink="/privacy" data-testid="nav-privacy">
-            <mat-icon>privacy_tip</mat-icon>
+            <app-icon matMenuItemIcon name="shield" />
             <span>{{ 'privacy.centre.menu' | transloco }}</span>
           </a>
           <button
@@ -249,7 +249,7 @@
             [matMenuTriggerFor]="schemeMenu"
             data-testid="color-scheme-menu"
           >
-            <mat-icon>contrast</mat-icon>
+            <app-icon matMenuItemIcon name="contrast" />
             <span>{{ 'app.scheme.title' | transloco }}</span>
           </button>
         </mat-menu>
@@ -263,9 +263,10 @@
               (click)="colorScheme.use(scheme)"
               [attr.data-testid]="'color-scheme-' + scheme"
             >
-              <mat-icon>{{
-                colorScheme.scheme() === scheme ? 'check' : schemeIcons[scheme]
-              }}</mat-icon>
+              <app-icon
+                matMenuItemIcon
+                [name]="colorScheme.scheme() === scheme ? 'check' : schemeIcons[scheme]"
+              />
               <span>{{ 'app.scheme.' + scheme | transloco }}</span>
             </button>
           }
@@ -277,7 +278,7 @@
           [attr.aria-label]="'app.logout' | transloco"
           data-testid="logout"
         >
-          <mat-icon>logout</mat-icon>
+          <app-icon name="log-out" />
         </button>
       }
     </mat-toolbar>
@@ -285,7 +286,7 @@
       <app-offline-notice />
       @if (erasureDate(); as date) {
         <div class="shell__erasure" role="status" data-testid="erasure-banner">
-          <mat-icon aria-hidden="true">delete_forever</mat-icon>
+          <app-icon name="trash-2" />
           <span>{{ 'privacy.erasure.banner' | transloco: { date } }}</span>
           <a routerLink="/privacy" data-testid="erasure-banner-link">
             {{ 'privacy.erasure.bannerLink' | transloco }}

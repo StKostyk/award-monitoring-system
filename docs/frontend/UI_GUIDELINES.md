@@ -1,7 +1,7 @@
 # UI Guidelines
 
 **Status**: Active
-**Date**: 2026-10-04
+**Date**: 2026-10-04 (new look 2026-11-14)
 **Author**: Stefan Kostyk
 **Related**: [ADR-016 Styling](../architecture/adr/ADR-016-Styling.md) (addendum 2026-10-04), [ADR-014 UI Component Library](../architecture/adr/ADR-014-UI-Component-Library.md)
 
@@ -11,8 +11,11 @@
 
 | Brand | Use | Primary | Navigation panel | Accent | Surfaces (light / dark) | Font |
 |-------|-----|---------|------------------|--------|-------------------------|------|
-| `chnu` | Chernivtsi National University | cobalt `#0047AB` | navy `#003278` | cyan `#00BBFF` (fill only) | `#F9F8FF`, containers `#E7F4F6`, borders `#DFE9EB` / `#1F1F1F` | Nunito |
-| `neutral` | fallback and second-brand check | green `#2D6A4F` | `#1E3D30` | amber `#E0A526` | `#F6F7F5` / `#181C1A` | IBM Plex Sans |
+| `chnu` | Chernivtsi National University | light: burgundy `#7A1F2B` (gradient to `#A23B47`); dark: aurora cyan `#7DDCFF` | `#5E1621` / `#0B1124` | gold `#C9952B` / `#F5C451` (fill only; text form `#8A5A00`) | `#F6EFE4`, cards `#FFFCF6` / `#060914`, cards `#0B1124` | Manrope (headings), Onest (text) |
+| `neutral` | fallback and second-brand check | green `#2D6A4F` / `#8FD5B0` | `#1E3D30` | amber `#E0A526` | `#F6F7F5` / `#181C1A` | Manrope, Onest |
+
+- The sign-in and error pages (§7) still carry the previous ChNU look (cobalt, Nunito) until story 9.3.4 moves them to the new one; manual steps 8-11 describe that look.
+- The ChNU brand has two hues in one theme: burgundy and cream in the light scheme, the aurora (deep navy with cobalt, cyan and gold light) in the dark one. Every Material colour role in `brands/chnu/_brand.scss` is a `light-dark(<burgundy>, <aurora>)` pair.
 
 - A brand is a folder `frontend/src/styles/brands/<id>/` with `_theme-colors.scss` (tonal palettes from the brand colours, Angular Material `theme-color` schematic) and `_brand.scss` (`theme()` mixin), included in `styles.scss` under `html.brand-<id>`, and the id in `BRAND_IDS` (`core/brand/brand.service.ts`).
 - The deployment chooses the brand with `brand/brand.json`: `id`, `name` and `organization` (each `{ "uk", "en" }`) and `logo` (a path inside the app, `.svg` or `.png`). The image ships the ChNU file; another deployment mounts its own file and logo over `/usr/share/nginx/html/brand/`.
@@ -27,16 +30,24 @@ Component styles take colours, type and shape from tokens only. No hex, `rgb()` 
 |-------|---------|
 | `--mat-sys-*` | Material 3 system tokens (surface, on-surface, primary, outline-variant, error, type scale `--mat-sys-title-medium` …) |
 | `--app-nav-container`, `--app-nav-on-container`, `--app-nav-active` | side menu panel, its text and the current item |
-| `--app-brand-accent`, `--app-on-brand-accent` | brand accent as a fill, with the text colour that reads on it |
-| `--app-card-radius` | brand corner radius for custom cards |
+| `--app-gold`, `--app-on-gold`, `--app-gold-text` | gold accent as a fill, the text colour that reads on it, and the darker gold for text on light surfaces |
+| `--app-cyan`, `--app-on-cyan` | the ChNU cyan as a fill, with its text colour |
+| `--app-ok`, `--app-bad` | positive and negative figures (deltas, checks) |
+| `--app-accent-from`, `--app-accent-to`, `--app-accent-gradient` | gradient stops (each a `light-dark()` colour) and the gradient built from them for primary buttons and highlights (a plain primary in the neutral brand) |
+| `--app-aurora-1` … `--app-aurora-3` | background light of the dark ChNU scheme (transparent in the neutral brand) |
+| `--app-font-heading`, `--app-font-body` | Manrope and Onest stacks |
+| `--app-card-radius`, `--app-radius-sm/md/lg` | brand corner radius for custom cards, and the radius scale |
+| `--app-icon-size` | drawn size of an `app-icon` (24 px by default; `inline` icons take the text size) |
 | `--app-status-<status>`, `--app-on-status-<status>` | award status chips (`draft`, `pending`, `approved`, `rejected`, `archived`); the same in every brand |
+
+Brand-independent tokens and their defaults live in `styles/_tokens.scss`; a brand mixin overrides them.
 
 Material component colours are changed with the component's `*-overrides` mixin or its `--mat-<component>-*` tokens, never by targeting internal `.mdc-*` classes.
 
 ## 3. Colour and contrast
 
 - Text 4.5:1, large text and control borders 3:1 (WCAG 2.2 AA) in light and dark.
-- The ChNU cyan is about 2.2:1 on white: it is a fill behind `--app-on-brand-accent` text, never a text or icon colour on a light surface.
+- Gold and the ChNU cyan are below 3:1 on light surfaces: they are fills behind `--app-on-gold` / `--app-on-cyan` text, never a text or icon colour there (`--app-gold-text` is the text form of gold).
 - State is never colour alone: status chips carry the status name, the archived chip adds a dashed outline.
 
 ## 4. Layout
@@ -49,11 +60,12 @@ Material component colours are changed with the component's `*-overrides` mixin 
 
 - The scheme follows the device (`color-scheme: light dark`); the user menu offers «Як на пристрої», «Світла», «Темна», kept in the browser.
 - New colours are written as `light-dark(<light>, <dark>)` inside a brand or token mixin, never as two separate rule sets.
+- In the ChNU brand the light scheme is burgundy and the dark scheme is the aurora; both come from the same pairs, so no component knows which hue is active.
 
 ## 6. Fonts and icons
 
-- Nunito, IBM Plex Sans and Material Icons are served by the app (`@fontsource`, `angular.json` styles); no third-party font requests (CSP `font-src 'self' data:`).
-- Icons are `<mat-icon>` ligatures; icon-only buttons need an `aria-label`.
+- Manrope (headings, Material brand family) and Onest (text, Material plain family) are variable fonts served by the app (`@fontsource-variable`, `angular.json` styles); the browser loads only the Cyrillic and Latin files the page needs (`unicode-range`). No third-party font requests (CSP `font-src 'self' data:`); a missing file falls back to `system-ui`.
+- Icons are Lucide SVGs drawn by `<app-icon name="…">` (`shared/icons`); `icons.ts` lists every icon the app uses, so only those reach the bundle. A new icon is added there first. Icons are decorative (`aria-hidden`); icon-only buttons need an `aria-label`. The host carries the `mat-icon` class, so Material sizes and spaces it; inside a button or menu item it takes the `matButtonIcon` / `matMenuItemIcon` attribute so Material projects it into the icon slot. `@angular/material/icon` is blocked by the lint rule `no-restricted-imports`.
 
 ## 7. Sign-in and error pages
 
@@ -67,19 +79,19 @@ The authorization server renders the sign-in, error and 429 pages itself (Thymel
 
 ## 8. Checks
 
-- `e2e/theme.spec.ts`: brand class and title, fallback to neutral, scheme switch, phone drawer, axe (WCAG 2.1 AA, serious and critical) on home, award list and award form for each brand in light and dark.
+- `e2e/theme.spec.ts`: brand class and title, brand colours and fonts per scheme, fallback to neutral, Lucide icons with named icon-only controls, scheme switch, phone drawer, axe (WCAG 2.1 AA, serious and critical) on home, award list and award form for each brand in light and dark.
 - `e2e/login.spec.ts`: sign-in page brand, fonts without other hosts, 360 px layout, target sizes and axe in light and dark, also with an error shown.
 - `/ui-check` screenshots at 360 and 1280 px, light and dark, Ukrainian and English for every changed screen.
 
 ## Manual verification
 
-1. Run `docker compose up -d --build`, open `http://localhost` and sign in as `employee.fmi@chnu.edu.ua` / `Passw0rd-demo`. Expected: navy side menu with the logo, «Облік нагород ЧНУ» and the university name; the tab title is «Облік нагород ЧНУ»; text in Nunito.
+1. Run `docker compose up -d --build`, open `http://localhost` and sign in as `employee.fmi@chnu.edu.ua` / `Passw0rd-demo`. Expected (light scheme): cream background `#F6EFE4`, burgundy side menu `#5E1621` with the logo, «Облік нагород ЧНУ» and the university name; the tab title is «Облік нагород ЧНУ»; headings in Manrope, text in Onest; every icon a line icon (Lucide).
 2. Click «EN». Expected: the tab title becomes «ChNU Awards», the menu and the name switch to English. Switch back.
-3. Open the user menu → «Тема» → «Темна». Expected: dark surfaces (`#1F1F1F`), readable text and status chips; reload keeps the dark scheme. Choose «Як на пристрої» and change the system setting: the app follows it.
+3. Open the user menu → «Тема» → «Темна». Expected: the aurora scheme (background `#060914`, cyan primary `#7DDCFF`, gold accents), readable text and status chips; reload keeps the dark scheme. Choose «Як на пристрої» and change the system setting: the app follows it.
 4. Narrow the window below 960 px (or use the phone view of the developer tools at 360 px). Expected: the side menu disappears, a menu button opens it as a drawer, choosing «Мої нагороди» opens the list and closes the drawer; no sideways scrolling.
 5. Open «Мої нагороди» and use the «Статус» filter for the rejected and archived chips (no screen archives an award yet: set one with `update awards set status='ARCHIVED' where award_id=<id>`). Expected: status chips coloured by status (grey draft, amber pending, green approved, red rejected, outlined archived) in both schemes.
-6. In the developer tools, Network tab, reload. Expected: no request to `fonts.googleapis.com` or `fonts.gstatic.com`.
-7. Replace the brand: `docker compose exec frontend sh -c "echo '{\"id\":\"neutral\",\"name\":{\"uk\":\"Облік нагород\",\"en\":\"Award Registry\"},\"organization\":{\"uk\":\"Університет\",\"en\":\"University\"},\"logo\":\"brand/neutral/logo.svg\"}' > /usr/share/nginx/html/brand/brand.json"` and reload. Expected: green neutral theme in IBM Plex Sans with the neutral logo. Restore with `docker compose up -d --build --force-recreate frontend`.
+6. In the developer tools, Network tab, reload. Expected: no request to `fonts.googleapis.com` or `fonts.gstatic.com`; the font files (Manrope and Onest, Cyrillic and Latin) come from `localhost`.
+7. Replace the brand: `docker compose exec frontend sh -c "echo '{\"id\":\"neutral\",\"name\":{\"uk\":\"Облік нагород\",\"en\":\"Award Registry\"},\"organization\":{\"uk\":\"Університет\",\"en\":\"University\"},\"logo\":\"brand/neutral/logo.svg\"}' > /usr/share/nginx/html/brand/brand.json"` and reload. Expected: green neutral theme in Manrope and Onest with the neutral logo. Restore with `docker compose up -d --build --force-recreate frontend`.
 8. Sign out and open `http://localhost` with the browser language set to Ukrainian (the sign-in page follows the browser language, not the choice made in the app). Expected: the sign-in page has the navy brand panel with the logo, «Облік нагород ЧНУ» and the university name beside the form (a strip above it below 760 px), Nunito text, a cobalt «Увійти» button; «English» switches the page and the brand name to English.
 9. In the app choose «Темна», sign out. Expected: the sign-in page is dark as well (`#1F1F1F`); with «Як на пристрої» it follows the system setting.
 10. Enter a wrong password. Expected: the error appears in a red box inside the card, readable in both schemes; at 360 px nothing scrolls sideways.

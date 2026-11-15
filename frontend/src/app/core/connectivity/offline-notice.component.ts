@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
 import { TranslocoPipe } from '@jsverse/transloco';
 
+import { IconComponent } from '../../shared/icons/icon.component';
 import { ConnectivityService } from './connectivity.service';
 
 /** The notice above every page while the server cannot be reached. */
 @Component({
   selector: 'app-offline-notice',
-  imports: [MatIcon, TranslocoPipe],
+  imports: [IconComponent, TranslocoPipe],
   template: `
     @if (!connectivity.online()) {
       <div class="offline-notice" role="status" data-testid="offline-notice">
-        <mat-icon aria-hidden="true">cloud_off</mat-icon>
+        <app-icon name="cloud-off" />
         <span>{{ 'app.offlineNotice' | transloco }}</span>
       </div>
     }
@@ -27,7 +27,7 @@ import { ConnectivityService } from './connectivity.service';
       background: var(--mat-sys-secondary-container);
       color: var(--mat-sys-on-secondary-container);
 
-      mat-icon {
+      app-icon {
         flex: none;
       }
     }

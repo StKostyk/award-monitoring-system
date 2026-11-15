@@ -13,7 +13,7 @@
       [queryParams]="{ from: period().from, to: period().to }"
       data-testid="summary-back"
     >
-      <mat-icon>arrow_back</mat-icon>
+      <app-icon matButtonIcon name="arrow-left" />
       {{ 'analytics.report.back' | transloco }}
     </a>
     <button
@@ -23,12 +23,12 @@
       (click)="print()"
       data-testid="summary-print"
     >
-      <mat-icon>print</mat-icon>
+      <app-icon matButtonIcon name="printer" />
       {{ 'analytics.report.print' | transloco }}
     </button>
     @if (shared() === 'shared') {
       <button mat-stroked-button type="button" (click)="copyLink()" data-testid="summary-copy-link">
-        <mat-icon>link</mat-icon>
+        <app-icon matButtonIcon name="link" />
         {{ 'analytics.report.copyLink' | transloco }}
       </button>
     }
@@ -106,7 +106,7 @@
                   @if (entry.verified) {
                     ·
                     <span class="summary__verified" data-testid="summary-verified-badge">
-                      <mat-icon aria-hidden="true">verified</mat-icon>
+                      <app-icon name="badge-check" />
                       {{ 'achievements.verified' | transloco }}
                     </span>
                   }

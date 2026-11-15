@@ -10,17 +10,17 @@
       ),
       typography: (
         plain-family: (
-          'IBM Plex Sans',
-          'Segoe UI',
+          'Onest Variable',
+          system-ui,
           sans-serif,
         ),
         brand-family: (
-          'IBM Plex Sans',
-          'Segoe UI',
+          'Manrope Variable',
+          system-ui,
           sans-serif,
         ),
-        bold-weight: 600,
-        medium-weight: 500,
+        bold-weight: 700,
+        medium-weight: 600,
         regular-weight: 400,
       ),
       density: 0,
@@ -40,7 +40,5 @@
   --app-nav-container: light-dark(#1e3d30, #121614);
   --app-nav-on-container: light-dark(#ffffff, #e1e4e1);
   --app-nav-active: light-dark(rgb(224 165 38 / 26%), rgb(242 190 78 / 18%));
-  --app-brand-accent: light-dark(#e0a526, #f2be4e);
-  --app-on-brand-accent: #2a1c00;
   --app-card-radius: 6px;
 }

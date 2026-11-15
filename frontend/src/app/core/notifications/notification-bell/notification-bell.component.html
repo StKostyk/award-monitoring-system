@@ -10,7 +10,7 @@
   "
   data-testid="notification-bell"
 >
-  <mat-icon aria-hidden="true">notifications</mat-icon>
+  <app-icon name="bell" />
   @if (unread.badge()) {
     <span class="bell__badge" aria-hidden="true" data-testid="notification-badge">{{
       unread.badge()
@@ -62,11 +62,11 @@
     (click)="$event.stopPropagation(); feed.markAllRead()"
     data-testid="notifications-mark-all"
   >
-    <mat-icon>done_all</mat-icon>
+    <app-icon matMenuItemIcon name="check-check" />
     <span>{{ 'notifications.markAllRead' | transloco }}</span>
   </button>
   <a mat-menu-item routerLink="/notifications" data-testid="notifications-see-all">
-    <mat-icon>list</mat-icon>
+    <app-icon matMenuItemIcon name="list" />
     <span>{{ 'notifications.seeAll' | transloco }}</span>
   </a>
 </mat-menu>

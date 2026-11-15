@@ -25,7 +25,7 @@ const BRAND_IDS: readonly BrandId[] = ['chnu', 'neutral'];
 export const BRAND_URL = 'brand/brand.json';
 
 /** The browser bar colour of each brand, the `theme_color` of its manifest. */
-const THEME_COLORS: Record<BrandId, string> = { chnu: '#0047AB', neutral: '#2D6A4F' };
+const THEME_COLORS: Record<BrandId, string> = { chnu: '#5E1621', neutral: '#2D6A4F' };
 
 export const NEUTRAL_BRAND: Brand = {
   id: 'neutral',
