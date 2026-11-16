@@ -8,20 +8,33 @@ import { readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { IconComponent } from '../../../shared/icons/icon.component';
+import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
 import { Award, AwardsService, awardTitle, isOwnAward } from '../awards.service';
 
 /** Confirms the caller's own submitted award; any other award or id is not a submission to confirm. */
 @Component({
   selector: 'app-award-submitted',
-  imports: [RouterLink, MatButton, IconComponent, MatProgressBar, TranslocoPipe],
+  imports: [
+    RouterLink,
+    MatButton,
+    IconComponent,
+    MatProgressBar,
+    StatusPageComponent,
+    TranslocoPipe,
+  ],
   template: `
     @if (loading()) {
       <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
     }
     @if (notFound()) {
-      <p class="award-submitted__problem" role="alert" data-testid="award-not-found">
-        {{ 'awards.notFound' | transloco }}
-      </p>
+      <app-status-page
+        icon="search-x"
+        [title]="'awards.notFound' | transloco"
+        [text]="'awards.notFoundText' | transloco"
+        data-testid="award-not-found"
+      >
+        <a mat-flat-button routerLink="/awards">{{ 'awards.back' | transloco }}</a>
+      </app-status-page>
     }
     @if (failed()) {
       <p class="award-submitted__problem" role="alert" data-testid="award-submitted-error">

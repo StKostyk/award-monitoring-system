@@ -23,6 +23,7 @@ import { adminUsersFeature } from '../store/admin-users.feature';
 import { UserDetail, UsersService } from '../users.service';
 import { kyivDateTime, kyivToday } from '../../../shared/date-format';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
+import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
 
 @Component({
   selector: 'app-user-detail',
@@ -38,6 +39,7 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
     TranslocoPipe,
     KyivDatePipe,
     LegalHoldCardComponent,
+    StatusPageComponent,
   ],
   templateUrl: './user-detail.component.html',
   styleUrl: './user-detail.component.scss',

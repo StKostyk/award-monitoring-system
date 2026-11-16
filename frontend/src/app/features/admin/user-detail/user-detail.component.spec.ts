@@ -177,6 +177,16 @@ describe('UserDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="detail-error"]')).toBeNull();
   });
 
+  it('ac9_1_an_unknown_user_shows_the_not_found_card', () => {
+    store.dispatch(AdminUsersActions.userLoadFailed({ problem: 'unknown', notFound: true }));
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector(
+      'app-status-page[data-testid="detail-not-found"]',
+    );
+    expect(card?.querySelector('h1')?.textContent).toContain('Користувача не знайдено');
+  });
+
   it('ac2_9_states_that_a_new_role_reaches_the_session_with_the_next_refresh_or_sign_in', () => {
     store.dispatch(AdminUsersActions.userLoaded({ user }));
     fixture.detectChanges();

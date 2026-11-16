@@ -2,9 +2,14 @@
   <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
 }
 @if (notFound()) {
-  <p class="award-detail__problem" role="alert" data-testid="award-not-found">
-    {{ 'awards.notFound' | transloco }}
-  </p>
+  <app-status-page
+    icon="search-x"
+    [title]="'awards.notFound' | transloco"
+    [text]="'awards.notFoundText' | transloco"
+    data-testid="award-not-found"
+  >
+    <a mat-flat-button routerLink="/awards">{{ 'awards.back' | transloco }}</a>
+  </app-status-page>
 }
 @if (failed()) {
   <p class="award-detail__problem" role="alert" data-testid="award-detail-error">

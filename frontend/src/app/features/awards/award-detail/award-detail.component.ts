@@ -23,6 +23,7 @@ import { canEditOwnAwards, canReview } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
+import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
 import { ReviewPanelComponent } from '../../reviews/review-panel/review-panel.component';
 import { DecisionOutcome } from '../../reviews/reviews.service';
 import { AwardAuditTrailComponent } from '../award-audit-trail/award-audit-trail.component';
@@ -62,6 +63,7 @@ import { VisibilitySectionComponent } from './visibility-section.component';
     AwardDocumentsComponent,
     ReviewPanelComponent,
     VisibilitySectionComponent,
+    StatusPageComponent,
     TranslocoPipe,
     KyivDatePipe,
   ],

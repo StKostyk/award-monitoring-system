@@ -9,6 +9,7 @@ import { Store } from '@ngrx/store';
 import { combineLatest } from 'rxjs';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
+import { StatusPageComponent } from '../../../../shared/status-page/status-page.component';
 import { RECOGNITION_LEVELS, categoryName } from '../../../awards/awards.service';
 import { readPeriod } from '../../analytics-period';
 import { AnalyticsPeriod } from '../../analytics.service';
@@ -46,6 +47,7 @@ import { UnitTrendChartComponent } from '../unit-trend-chart/unit-trend-chart.co
     PeriodSelectComponent,
     RouterLink,
     SourceChartComponent,
+    StatusPageComponent,
     TopPerformersComponent,
     TranslocoPipe,
     UnitComparisonComponent,

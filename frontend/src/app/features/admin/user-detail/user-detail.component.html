@@ -12,12 +12,12 @@
 }
 
 @if (notFound()) {
-  <mat-card class="admin__card" data-testid="detail-not-found">
-    <mat-card-content>
-      <h1 class="admin__name">{{ 'admin.detail.notFound' | transloco }}</h1>
-      <p>{{ 'admin.detail.notFoundHint' | transloco }}</p>
-    </mat-card-content>
-  </mat-card>
+  <app-status-page
+    icon="search-x"
+    [title]="'admin.detail.notFound' | transloco"
+    [text]="'admin.detail.notFoundHint' | transloco"
+    data-testid="detail-not-found"
+  />
 } @else if (problem(); as problem) {
   <p class="admin__problem" role="alert" data-testid="detail-error">
     {{ 'admin.problems.' + problem | transloco }}

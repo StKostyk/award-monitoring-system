@@ -35,6 +35,10 @@ interface PaletteOption {
   readonly path: string;
 }
 
+function comparable(text: string): string {
+  return text.normalize('NFC').toLocaleLowerCase();
+}
+
 /** Jumps to a section or finds an award by its title, from the keyboard. */
 @Component({
   selector: 'app-command-palette',
@@ -57,7 +61,7 @@ export class CommandPaletteComponent {
   protected readonly pending = signal(false);
   protected readonly searching = computed(() => this.query().trim().length >= PALETTE_MIN_QUERY);
   protected readonly sections = computed<PaletteOption[]>(() => {
-    const needle = this.query().trim().toLocaleLowerCase();
+    const needle = comparable(this.query().trim());
     return navEntriesFor(this.auth.isAuthenticated(), this.auth.permissions())
       .map((item) => ({
         id: `section-${item.id}`,
@@ -65,7 +69,7 @@ export class CommandPaletteComponent {
         icon: item.icon,
         path: item.path,
       }))
-      .filter((option) => !this.searching() || option.label.toLocaleLowerCase().includes(needle));
+      .filter((option) => !this.searching() || comparable(option.label).includes(needle));
   });
   protected readonly options = computed(() => [...this.sections(), ...this.awards()]);
   protected readonly activeId = computed(() => {

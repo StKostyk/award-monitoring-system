@@ -1,7 +1,12 @@
 @if (notFound()) {
-  <p class="award-form__problem" role="alert" data-testid="award-not-found">
-    {{ 'awards.notFound' | transloco }}
-  </p>
+  <app-status-page
+    icon="search-x"
+    [title]="'awards.notFound' | transloco"
+    [text]="'awards.notFoundText' | transloco"
+    data-testid="award-not-found"
+  >
+    <a mat-flat-button routerLink="/awards">{{ 'awards.back' | transloco }}</a>
+  </app-status-page>
 } @else {
   <h1 class="award-form__title">
     {{ (editing() || loadFailed() ? 'awards.form.editTitle' : 'awards.form.newTitle') | transloco }}

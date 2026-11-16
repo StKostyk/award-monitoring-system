@@ -150,6 +150,9 @@ describe('UnitAnalyticsComponent', () => {
 
     expect(element('unit-not-found')!.textContent).toContain('This unit is not available.');
     expect(element('unit-not-found')!.querySelector('a')!.getAttribute('href')).toBe('/analytics');
+    expect(element('unit-not-found')!.tagName).toBe('APP-STATUS-PAGE');
+    expect(element('unit-not-found')!.querySelector('h1')).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('h1')).toHaveLength(1);
   });
 
   it('ac2_1_does_not_ask_the_api_for_an_id_that_is_not_a_number', async () => {

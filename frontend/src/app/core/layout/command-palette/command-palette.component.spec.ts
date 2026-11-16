@@ -138,6 +138,12 @@ describe('CommandPaletteComponent', () => {
     expect(labels()).toEqual(['Мої нагороди']);
   });
 
+  it('ac9_2_finds_sections_from_text_typed_in_decomposed_form', () => {
+    type('Мої'.normalize('NFD'));
+
+    expect(labels()).toEqual(['Мої нагороди']);
+  });
+
   it('ac3_5_asks_for_five_awards_250_ms_after_the_last_keystroke', () => {
     awards.list.mockReturnValue(of(page([award(7, 'Грамота МОН'), award(8, 'Подяка ректора')])));
 

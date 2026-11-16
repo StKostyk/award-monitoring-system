@@ -2,7 +2,7 @@
 
 > **Epic**: 9 Production hardening (SCRUM-128) · **Tracker**: `docs/epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md`
 > **Sprint**: 10 and 11 (2026-11-16 to 2026-11-29) · **Points**: 31
-> **Status**: Approved 2026-11-14
+> **Status**: Validated 2026-11-16, pending the manual run of §10 (Approved 2026-11-14)
 > **Governing docs**: ADR-014 and ADR-016 (addenda of this feature), `docs/frontend/UI_GUIDELINES.md` §1-8,
 > ADR-023 (decision transitions), Feature 8.1 (phone layout, offline page), Feature 8.2 (WCAG 2.2 AA, focus,
 > reduced motion), Feature 9.2 AC-1.1 (Lighthouse mobile 90), `openapi.yml` `POST /awards/{id}/decisions`,
@@ -118,7 +118,7 @@ no story splits at a backend gate. 9.3.4 to 9.3.7 can run in any order once 9.3.
 ### 9.3.4 Sign-in and account pages (SCRUM-141)
 
 - **AC-4.1** (Sign-in look) Given `/login`, when it renders in either scheme, then it shows the brand panel with
-  the count of approved awards ("886 нагород" with the dev seed), the claim and the form in the new tokens and fonts,
+  the count of approved awards ("789 нагород" with the dev seed), the claim and the form in the new tokens and fonts,
   with no script or style from another host and no inline script.
 - **AC-4.2** (Count) Given the approved awards, when the sign-in page renders, then the number equals
   `select count(*) from awards where status = 'APPROVED'` (approved awards are never deleted), held in Redis for 10 minutes;
@@ -283,13 +283,15 @@ None.
 ## 10. Manual verification
 
 Preconditions: `docker compose up -d --build` from the branch with the dev seed (`.\tools\reset-db.ps1` first, 886
-awards), accounts `employee.fmi`, `secretary.fmi`, `dean.fmi`, `admin` with the seed password; Chrome at
+awards, 789 of them approved, 3 open requests in the queue of `secretary.fmi`), accounts `lecturer.fmi` (9 approved
+awards, two with «алгебр» in the title; `employee.fmi` owns none in the seed), `secretary.fmi`, `dean.fmi`, `admin`
+with the seed password; every seed account acknowledges the privacy notice at its first sign-in; Chrome at
 `http://localhost`; a second browser profile for step 22.
 
 1. `http://localhost/login` in light and dark (DevTools rendering, `prefers-color-scheme`). Expected: burgundy and
-   cream panel with «886 нагород», then the Aurora version; Manrope headings. (AC-4.1, AC-4.2)
+   cream panel with «789 нагород», then the Aurora version; Manrope headings. (AC-4.1, AC-4.2)
 2. Same page at 360 px, wrong password. Expected: strip above the form, error shown, no sideways scroll. (AC-4.4)
-3. Sign in as `employee.fmi`. Expected: left sidebar, current item marked, no bottom bar. (AC-3.1)
+3. Sign in as `lecturer.fmi`. Expected: left sidebar, current item marked, no bottom bar. (AC-3.1)
 4. Toolbar scheme menu, «Темна», reload. Expected: Aurora background, dark kept after reload. (AC-3.3)
 5. Resize to 360 px. Expected: top bar with menu, title and "+"; "+" opens `/awards/new`. (AC-3.2)
 6. Ctrl K, type «алгеб». Expected: matching sections, then up to 5 awards; arrows and Enter open one; Escape returns
@@ -335,7 +337,7 @@ awards), accounts `employee.fmi`, `secretary.fmi`, `dean.fmi`, `admin` with the 
     the dean decides it. (AC-6.6)
 24. Hidden in state: as `secretary.fmi` open an award already approved, then `POST /awards/{id}/decisions` through
     the API. Expected: the queue does not list it, A does nothing on its page, the API answers 409 `request-closed`.
-25. Hidden in state: as `employee.fmi` open `/reviews` directly. Expected: forbidden page; the palette never offers
+25. Hidden in state: as `lecturer.fmi` open `/reviews` directly. Expected: forbidden page; the palette never offers
     the queue; the "+" stays.
 26. Concurrency: `dean.fmi` and `secretary.fmi` both hold a decision on the same request. Expected: the second send
     answers 409, that request comes back with the message. (AC-6.6)
@@ -350,7 +352,10 @@ awards), accounts `employee.fmi`, `secretary.fmi`, `dean.fmi`, `admin` with the 
 31. Server restart (`docker compose restart app`) while the palette searches. Expected: sections stay, awards
     appear after the restart on the next keystroke.
 32. Stop Redis, reload `/login`. Expected: the page renders without the number (AC-4.2).
-33. Direct URLs `/awards/999999` and `/nonexistent`. Expected: the new not-found page.
+33. Direct URLs `/awards/999999`, `/admin/users/999999` (as `admin`) and `/nonexistent`. Expected: the not-found card
+    (icon, heading, one sentence, the way back) in every case, not a bare line of text. (9.3.9)
+34. Palette with decomposed text: paste «Мій дашборд» typed as NFD (`'Мій'.normalize('NFD')`, e.g. from macOS) into
+    the palette. Expected: «Мій дашборд» is offered as for the typed text. (9.3.9)
 
 The expected texts quote the planned wording; the validation replaces them with the merged i18n texts.
 
@@ -372,3 +377,52 @@ The expected texts quote the planned wording; the validation replaces them with 
 - The manual steps of each story run and recorded in §10.
 - Docs updated in the story that changes them: ADR-014 and ADR-016 addenda and `UI_GUIDELINES.md` §1, §2, §5, §6,
   §7 (9.3.1, §7 in 9.3.4), `CHANGELOG.md [Unreleased]`, the epic tracker and `BACKLOG.md`.
+
+## Validation (2026-11-16)
+
+Result: **PASSED WITH NOTES**, pending the manual run of §10. Stories 9.3.1-9.3.7 merged (#399-#403, #405, #406);
+9.3.8 (#408, stable e2e) and 9.3.9 (#409, the two defects below) in review.
+
+Suite on `develop` plus 9.3.8: unit 1 380, IT/FT 574, JaCoCo 98.7 % lines, Checkstyle/PMD/SpotBugs 0; frontend lint
+(ESLint, Stylelint), 1 175 unit tests, production build 845 kB; Playwright 220/220 (one worker: 150 in the first pass
+before the 45 min timeout, 70 in the follow-up; keyboard ac1_7 and the dean accessibility sweep passed on retry).
+
+| AC | Evidence (all passing) |
+|----|------------------------|
+| 1.1, 1.2, 1.3 | `theme.spec` «applies the ChNU brand with self-hosted fonts», «uses the aurora scheme», «applies the neutral brand»; `brand.service.spec` ac1_1 |
+| 1.4 | `theme.spec` «draws every icon as a Lucide SVG»; `icon.component.spec` ac1_4 (3) |
+| 1.5, 7.3 | `theme.spec` axe matrix (brand × scheme), `theme.spec` ac7_3 per screen group |
+| 1.6 | Accepted below 90 on the development machine (tracker decision 2026-11-15); measured again on the demo server in 9.2.4 |
+| 2.1-2.3 | `effects.spec` (unit, 13), `motion.helper.spec` (4), `count-up.directive.spec` (2), e2e `effects.spec` ac2_2, ac2_3 |
+| 2.4 | `chart-theme.service.spec` (2), `chart.component.spec`, e2e `university-analytics.spec` 9.3 ac2_4 |
+| 3.1-3.3 | `shell.component.spec` (7), e2e `shell.spec` ac3_1, ac3_2, ac3_3 |
+| 3.4-3.6 | `command-palette.service.spec` (6), `command-palette.component.spec` (12), e2e `palette.spec` (3) |
+| 4.1, 4.2 | `LoginAwardCountTest` (5), `LoginControllerTest` (3), `LoginPageIT` (3), `LoginPageFT` (2), e2e `login.spec` ac4_1 |
+| 4.3, 4.4 | `auth-layout.component.spec` (2), e2e `login.spec` ac4_3, ac4_4 |
+| 5.1, 5.4, 5.5 | `award-list.component.spec` ac5_1 (4), ac5_4 (2), ac5_5; `empty-state.component.spec`; e2e `award-look.spec` ac5_1, ac5_4 ac5_5 |
+| 5.2 | `award-status.component.spec` ac5_2, e2e `award-status.spec` ac5_2 |
+| 5.3 | `award-upload-step.component.spec` (8), `award-form.component.spec` ac5_3 (4), `award-documents.component.spec`, e2e `award-look.spec` ac5_3 (2) |
+| 6.1-6.3, 6.7 | `review-queue.component.spec` ac6_1, ac6_2, ac6_3, ac6_7 and two edge cases; e2e `review-queue.spec` ac6_1 to ac6_4 |
+| 6.4-6.6 | `held-decision.service.spec` (11), `review-list.component.spec` ac6_4, ac6_6, `auth.service.spec` ac6_5; e2e `review-queue.spec` ac6_5, ac6_6 |
+| 7.1, 7.2 | Stylelint colour rules in the gate; e2e `theme.spec` ac7_1, ac7_2 per screen group |
+
+Edge cases of §5: unknown stored scheme (`color-scheme.service.spec` ac4_ignores_an_unknown_stored_value), palette
+401 and slower answers (ac3_5 tests), Ctrl K inside a dialog (`command-palette.service.spec`), two holds, sign-out,
+offline and revoked role (`held-decision.service.spec` edge tests), shortcuts (review-queue edge test), upload rules
+and ClamAV down (`award-upload-step.component.spec` edge tests, e2e), font fallback (`system-ui` in
+`--app-font-heading/body`). Token refresh during a hold: `auth.service.spec` ac4_6 for the in-page send; see note 2.
+
+Manual walk on the Compose build (2026-11-16, fresh seed): steps 3-10 and 13-17 passed; detours 25, 32 and 33 run
+(33 failed, fixed in 9.3.9); detour 24 accepted on `DecisionFT.ac2_8_aReturnedAwardIsNoLongerReviewableAndARepeatedDecisionIsClosed`.
+Steps 1, 2, 11, 12 and 18-20 rely on the e2e tests above in this pass.
+
+Findings:
+1. Record pages (award, award form, submitted award, user, unit analytics) showed a bare line instead of the
+   not-found card; the palette compared section names without Unicode normalisation (NFD input from macOS found
+   nothing). Fixed in 9.3.9 with unit tests (`ac9_1`, `ac9_2`) and e2e `award-look.spec` ac9_1; steps 33-34.
+2. A held decision sent on tab close uses the stored access token as it is; after a sleep longer than the token's
+   lifetime the send answers 401 and the request reappears in the queue undecided (risk §11, row 4). Kept.
+3. A 429 on a held decision shows the generic message; the request comes back. Kept.
+4. Refactor sweep: shared shortcut guard and Apple-platform check (review queue, palette, shell), repeated card and
+   facts-collapse SCSS blocks (9 files), the brand mark repeated in shell and auth layout, fixed waits in
+   `review-queue.spec`. No defect; listed for a later clean-up.

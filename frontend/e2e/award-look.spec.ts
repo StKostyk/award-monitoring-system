@@ -32,7 +32,7 @@ test.describe('award list, award page and new award in the new look', () => {
   test('ac5_1 rows show level, title, recipient, date and status; chips count and filter', async ({
     page,
   }) => {
-    await signIn(page, SEED.employee, DEMO_PASSWORD);
+    await signIn(page, SEED.lecturer, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-awards')).toBeVisible();
     await page.goto('/awards');
     const item = page.getByTestId('award-item').first();
@@ -56,7 +56,7 @@ test.describe('award list, award page and new award in the new look', () => {
       }
     }
     if (chosen === null) {
-      throw new Error('The seed employee has no awards to filter');
+      throw new Error('The seed lecturer has no awards to filter');
     }
     const { status, count } = chosen;
     const chip = page.getByTestId(`status-chip-${status}`);
@@ -178,5 +178,17 @@ test.describe('award list, award page and new award in the new look', () => {
     await page.getByTestId('upload-continue').click();
     await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
     await expect(page.getByTestId('award-title-uk')).toHaveValue('diploma');
+  });
+
+  test('ac9_1 a direct address of a missing award shows the not-found card', async ({ page }) => {
+    await signIn(page, SEED.employee, DEMO_PASSWORD);
+    await expect(page.getByTestId('nav-awards')).toBeVisible();
+
+    await page.goto('/awards/999999');
+    const card = page.getByTestId('award-not-found');
+    await expect(card.getByRole('heading', { level: 1 })).toHaveText('Не знайдено');
+    await card.getByRole('link', { name: 'До моїх нагород' }).click();
+    await expect(page).toHaveURL(/\/awards$/);
+    expect(await seriousViolations(page)).toEqual([]);
   });
 });
