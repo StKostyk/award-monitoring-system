@@ -2,11 +2,13 @@ import { Browser, Page, expect, test } from './fixtures';
 
 import {
   FRESH_PASSWORD,
+  SEED,
   expireOpenRequests,
   freshEmployee,
   openNewAward,
   pastDay,
   seriousViolations,
+  signedIn,
   signedInAs,
   sql,
   submitWithoutDocuments,
@@ -16,6 +18,9 @@ import {
 /** The faculty of the reviewer queue specs, without seed reviewers. */
 const FACULTY = 5;
 const DEPARTMENT = 41;
+/** The faculty of the seed dean, who may revoke its secretary role, and one of its departments. */
+const DEAN_FACULTY = 9;
+const DEAN_DEPARTMENT = 64;
 /** A university category: the faculty secretary's approval is final. */
 const UNIVERSITY = 21;
 const HOLD = 10_000;
@@ -51,12 +56,12 @@ async function submittedBy(browser: Browser, owner: string, title: string): Prom
  * Opens the queue filtered to the owner's department and moves with J, page by page, until the request with the
  * title is selected; the queue lists the oldest deadline first, so a new request is on the last page.
  */
-async function selectInQueue(page: Page, title: string): Promise<void> {
+async function selectInQueue(page: Page, title: string, department = DEPARTMENT): Promise<void> {
   await page.goto('/reviews');
   await page.getByTestId('review-filter-unit').click();
-  const unit = sql(`select name_uk from organizations where org_id = ${DEPARTMENT}`);
+  const unit = sql(`select name_uk from organizations where org_id = ${department}`);
   const filtered = page.waitForResponse((response) =>
-    response.url().includes(`organizationId=${DEPARTMENT}`),
+    response.url().includes(`organizationId=${department}`),
   );
   await page.getByRole('option', { name: unit, exact: true }).click();
   await filtered;
@@ -174,6 +179,60 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     });
     await expect(page.getByTestId('review-item').filter({ hasText: title })).toHaveCount(1);
     expect(decisions(id)).toBe(0);
+    await page.context().close();
+  });
+});
+
+test.describe('held decision when the role is revoked during the hold', () => {
+  let owner: string;
+  let reviewer: string;
+
+  test.beforeAll(async ({ browser }) => {
+    owner = await freshEmployee(browser, 'revokedowner');
+    reviewer = await freshEmployee(browser, 'revokedreviewer');
+    sql(`update users set organization_id = ${DEAN_DEPARTMENT} where user_id = ${user(owner)}`);
+    sql(
+      `insert into user_roles (user_id, organization_id, role_type) select user_id, ${DEAN_FACULTY}, 'FACULTY_SECRETARY' from users where email_address = '${reviewer}'`,
+    );
+  });
+
+  test.afterAll(() => {
+    expireOpenRequests(`u.email_address = '${owner}'`);
+  });
+
+  test('ac1 the decision lost with the session is named after the next sign-in', async ({
+    browser,
+  }) => {
+    const title = `Грамота відкликаного ${uniqueToken()}`;
+    const id = await submittedBy(browser, owner, title);
+    const page = await signedInAs(browser, reviewer, FRESH_PASSWORD);
+    const dean = await signedIn(browser, SEED.dean);
+    await dean.goto('/admin/users');
+    await dean.getByTestId('filter-q').fill(reviewer);
+    await dean.getByRole('row').filter({ hasText: reviewer }).getByTestId('user-link').click();
+    await dean
+      .getByRole('listitem')
+      .filter({ hasText: 'Секретар факультету' })
+      .getByTestId('revoke-role')
+      .click();
+    await expect(dean.getByTestId('revoke-text')).toContainText('Секретар факультету');
+
+    await selectInQueue(page, title, DEAN_DEPARTMENT);
+    await page.locator('main h1').click();
+    await approveWithKeyboard(page);
+    await dean.getByTestId('revoke-confirm').click();
+    await expect(dean.getByTestId('detail-message')).toContainText('Роль відкликано');
+
+    await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: HOLD + 10_000 });
+    expect(decisions(id)).toBe(0);
+    await page.fill('#username', reviewer);
+    await page.fill('#password', FRESH_PASSWORD);
+    await page.click('button[type="submit"]');
+
+    await expect(page.locator('mat-snack-bar-container')).toContainText(
+      `Рішення не збережено, нагороди: №${id}`,
+    );
+    await dean.context().close();
     await page.context().close();
   });
 });

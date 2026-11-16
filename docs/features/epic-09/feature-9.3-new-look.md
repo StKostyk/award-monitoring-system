@@ -161,7 +161,11 @@ no story splits at a backend gate. 9.3.4 to 9.3.7 can run in any order once 9.3.
   the tab closes, it is sent with `fetch` `keepalive` and the bearer token.
 - **AC-6.6** (Late failure) Given a held decision, when the request returns 409 (`request-claimed`, `request-stale`,
   `request-closed`) or 403 after the 10 s, then the request comes back into the list with the problem's message and
-  the queue reloads.
+  the queue reloads. When the session ends during the hold (a revoked role or delegation signs the holder out
+  everywhere), the decision is not stored, the page goes to sign-in, and the next sign-in of the same account in that
+  tab names the award(s) whose decision was not saved. The request stays at its level; when its review period ends,
+  Feature 4.2 marks it overdue, notifies the next level with a reviewer, and the dean takes it over from «Прострочені
+  нижчого рівня».
 - **AC-6.7** (Empty queue) Given no open requests, when the queue opens or the last one is decided, then «Черга
   порожня» shows with a check mark.
 
@@ -330,10 +334,15 @@ with the seed password; every seed account acknowledges the privacy notice at it
 
 22. Revoked mid-flow: as `secretary.fmi`, confirm an approval; within the 10 s, as `admin` in the second profile,
     revoke the secretary role. Expected: revocation signs the holder out everywhere, so after 10 s the send answers
-    401 and the page goes to `/login`; after a new sign-in `/reviews` shows the forbidden page. (AC-6.6)
+    401 and the page goes to `/login`; after a new sign-in in the same tab `/reviews` shows the forbidden page with
+    «Ваш доступ змінився, поки рішення очікувало. Рішення не збережено, нагороди: №<id>». No decision row exists
+    for the request; it stays at `FACULTY_SECRETARY`. After its deadline passes and the overdue job runs (4.2 §9
+    preconditions), `dean.fmi` gets the overdue e-mail and lists it under «Прострочені нижчого рівня», from where the
+    dean takes it over. (AC-6.6)
 23. Revoked mid-flow (delegation): `dean.fmi` delegates review to `secretary.fmi`; the secretary holds a decision on a
     dean-level request and the dean revokes the delegation within 10 s. Expected: 401 on the send (the delegate is
-    signed out), the decision is not stored and the dean decides it. (AC-6.6)
+    signed out), the decision is not stored, the next sign-in of the secretary names the award, and the dean decides
+    it. (AC-6.6)
 24. Hidden in state: as `secretary.fmi` open an award already approved, then `POST /awards/{id}/decisions` through
     the API. Expected: the queue does not list it, A does nothing on its page, the API answers 409 `request-closed`.
 25. Hidden in state: as `lecturer.fmi` open `/reviews` directly. Expected: forbidden page; the palette never offers
