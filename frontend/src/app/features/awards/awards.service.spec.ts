@@ -28,6 +28,10 @@ const form = {
 
 const CREATION_KEY = '0b9c7f3e-5d1a-4c2b-9e8f-1a2b3c4d5e6f';
 
+function nextTask(): Promise<unknown> {
+  return new Promise((resolve) => setTimeout(resolve));
+}
+
 describe('AwardsService', () => {
   let service: AwardsService;
   let http: HttpTestingController;
@@ -60,11 +64,12 @@ describe('AwardsService', () => {
     request.flush({ content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 });
   });
 
-  it('ac5_1_counts_each_status_with_the_other_filters', () => {
+  it('ac5_1_counts_each_status_with_the_other_filters', async () => {
     let counts: Record<string, number> | undefined;
     service
       .statusCounts({ ...NO_FILTERS, status: 'DRAFT', q: 'horizon' })
       .subscribe((value) => (counts = value));
+    await nextTask();
 
     const requests = http.match((r) => r.url.endsWith('/awards'));
     expect(requests.map((r) => r.request.params.get('status'))).toEqual(AWARD_STATUSES);
@@ -74,6 +79,14 @@ describe('AwardsService', () => {
       request.flush({ content: [], totalElements: index, totalPages: 0, size: 1, number: 0 });
     });
     expect(counts).toEqual({ DRAFT: 0, PENDING: 1, APPROVED: 2, REJECTED: 3, ARCHIVED: 4 });
+  });
+
+  it('ac1_starts_the_count_requests_after_the_current_task', async () => {
+    service.statusCounts(NO_FILTERS).subscribe();
+
+    expect(http.match((r) => r.url.endsWith('/awards'))).toHaveLength(0);
+    await nextTask();
+    expect(http.match((r) => r.url.endsWith('/awards'))).toHaveLength(AWARD_STATUSES.length);
   });
 
   it('ac1_2_puts_the_chosen_visibility', () => {

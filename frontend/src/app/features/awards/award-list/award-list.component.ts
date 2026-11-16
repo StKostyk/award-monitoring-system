@@ -25,7 +25,15 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
-import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
+import {
+  asyncScheduler,
+  catchError,
+  distinctUntilChanged,
+  map,
+  of,
+  subscribeOn,
+  switchMap,
+} from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
@@ -134,10 +142,13 @@ export class AwardListComponent implements OnInit {
   ngOnInit(): void {
     this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);
     this.store.dispatch(AwardsActions.opened());
-    this.service.categories().subscribe({
-      next: (tree) => this.categories.set(flattenCategories(tree)),
-      error: () => this.categories.set([]),
-    });
+    this.service
+      .categories()
+      .pipe(subscribeOn(asyncScheduler), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (tree) => this.categories.set(flattenCategories(tree)),
+        error: () => this.categories.set([]),
+      });
     this.store
       .select(awardsFeature.selectFilters)
       .pipe(

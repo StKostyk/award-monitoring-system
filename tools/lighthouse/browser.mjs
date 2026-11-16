@@ -1,5 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { screenEmulationMetrics } from 'lighthouse/core/config/constants.js';
 import puppeteer from 'puppeteer-core';
 
 export const base = process.env.LH_BASE_URL ?? 'http://localhost';
@@ -26,6 +27,17 @@ function chromePath() {
 
 export function launch() {
   return puppeteer.launch({ executablePath: chromePath(), headless: true, args: ['--no-sandbox'] });
+}
+
+/**
+ * Gives a page the screen of the Lighthouse mobile profile.
+ *
+ * @param page the page to size
+ * @return the promise of the new viewport
+ */
+export function phone(page) {
+  const { width, height, deviceScaleFactor } = screenEmulationMetrics.mobile;
+  return page.setViewport({ width, height, deviceScaleFactor, isMobile: true, hasTouch: true });
 }
 
 export async function signIn(page) {

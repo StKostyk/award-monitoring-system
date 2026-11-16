@@ -1,11 +1,12 @@
 // Cold load of one signed-in route at 4x CPU throttling: long tasks with the scripts they spent their time in, and
 // every request with its timing relative to the navigation.
-import { base, launch, signIn } from './browser.mjs';
+import { base, launch, phone, signIn } from './browser.mjs';
 
 const LONG_TASK_MS = 50;
 const route = process.argv[2] ?? '/awards';
 const browser = await launch();
 const page = await browser.newPage();
+await phone(page);
 await page.goto(`${base}/`);
 await signIn(page);
 await page.goto('about:blank');

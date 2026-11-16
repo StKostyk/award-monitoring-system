@@ -1,9 +1,10 @@
 // CPU profile of a cold load of one signed-in route at 4x CPU throttling: the 25 functions with the most self time.
-import { base, launch, signIn } from './browser.mjs';
+import { base, launch, phone, signIn } from './browser.mjs';
 
 const route = process.argv[2] ?? '/awards/new';
 const browser = await launch();
 const page = await browser.newPage();
+await phone(page);
 await page.goto(`${base}/`);
 await signIn(page);
 const cdp = await page.createCDPSession();

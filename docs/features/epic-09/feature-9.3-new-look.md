@@ -400,6 +400,17 @@ Compose stack rebuilt at a70dd31 (app and frontend), default settings, seed 961 
 | 33 | PASS | admin: /awards/999999, /admin/users/999999, /nonexistent each show the not-found card (icon, heading «Не знайдено»/«Користувача не знайдено»/«Сторінку не знайдено», sentence, link back) |
 | 34 | PASS | palette with NFD «Мій дашборд» (12 code points vs 11) offers «Мій дашборд» like the typed text |
 
+Step 21 after 9.3.21 (SCRUM-148, Compose build, Lighthouse 12.8.2, median of 3): before `/awards/new` 80, `/awards`
+77 (6.5 GB free); after 84 and 77 (3.9 GB free); accessibility 100, best practices 100 and 96. Both pages lose only on
+blocking time. The long tasks (`npm run timeline`, phone-sized since 9.3.21, and a source-mapped CPU profile) hold no
+single hotspot: module evaluation of the 848 kB initial bundle (~600 ms at 4x CPU), one re-render of the shell per
+response of the sign-in chain (users/me, consents, privacy), and the first render of the shell with the page
+(~425 ms on `/awards/new`, ~500 ms on `/awards`), where Material form fields, the drawer list and starting the
+requests (~14 ms each) weigh most. An empty award list template leaves `/awards` at 77. 9.3.21 starts the five
+status-count requests and the category request of `/awards` in tasks of their own (largest `/awards` task 607 →
+449 ms simulated). A CSS stagger and a drawer list built only on opening gained about one point each and were left
+out. AC-1.6 stays as decided on 2026-11-15 (measured again on the demo server in 9.2.4).
+
 ## 11. Risks
 
 | Risk | Likelihood | Impact | Mitigation |
@@ -433,7 +444,7 @@ before the 45 min timeout, 70 in the follow-up; keyboard ac1_7 and the dean acce
 | 1.1, 1.2, 1.3 | `theme.spec` «applies the ChNU brand with self-hosted fonts», «uses the aurora scheme», «applies the neutral brand»; `brand.service.spec` ac1_1 |
 | 1.4 | `theme.spec` «draws every icon as a Lucide SVG»; `icon.component.spec` ac1_4 (3) |
 | 1.5, 7.3 | `theme.spec` axe matrix (brand × scheme), `theme.spec` ac7_3 per screen group |
-| 1.6 | Accepted below 90 on the development machine (tracker decision 2026-11-15); measured again on the demo server in 9.2.4 |
+| 1.6 | Accepted below 90 on the development machine (tracker decision 2026-11-15); measured again on the demo server in 9.2.4; long tasks and 9.3.21 medians under §10 Run 2026-11-16 |
 | 2.1-2.3 | `effects.spec` (unit, 13), `motion.helper.spec` (4), `count-up.directive.spec` (2), e2e `effects.spec` ac2_2, ac2_3 |
 | 2.4 | `chart-theme.service.spec` (2), `chart.component.spec`, e2e `university-analytics.spec` 9.3 ac2_4 |
 | 3.1-3.3 | `shell.component.spec` (7), e2e `shell.spec` ac3_1, ac3_2, ac3_3 |
