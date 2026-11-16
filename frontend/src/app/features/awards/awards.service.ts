@@ -1,6 +1,15 @@
 import { HttpClient, HttpParams, HttpResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, forkJoin, map, shareReplay, throwError } from 'rxjs';
+import {
+  Observable,
+  asyncScheduler,
+  catchError,
+  forkJoin,
+  map,
+  shareReplay,
+  subscribeOn,
+  throwError,
+} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { OrganizationRef, OrganizationType } from '../../core/auth/user-profile';
@@ -364,7 +373,9 @@ export class AwardsService {
   }
 
   /**
-   * Counts the awards of each status that match the other filters, one page of one item per status.
+   * Counts the awards of each status that match the other filters, one page of one item per status. Each request
+   * starts in a task of its own after the caller's, so that starting five requests does not lengthen the task that
+   * renders the list.
    *
    * @param filters the filters of the list; its status is replaced by each status in turn
    * @return the number of matching awards per status
@@ -372,7 +383,10 @@ export class AwardsService {
   statusCounts(filters: AwardFilters): Observable<Record<AwardStatus, number>> {
     return forkJoin(
       AWARD_STATUSES.map((status) =>
-        this.list({ ...filters, status }, 0, 1).pipe(map((page) => page.totalElements)),
+        this.list({ ...filters, status }, 0, 1).pipe(
+          subscribeOn(asyncScheduler),
+          map((page) => page.totalElements),
+        ),
       ),
     ).pipe(
       map(

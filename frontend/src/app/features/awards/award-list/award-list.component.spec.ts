@@ -95,6 +95,7 @@ const COUNTS = { DRAFT: 2, PENDING: 1, APPROVED: 7, REJECTED: 0, ARCHIVED: 0 };
 
 describe('AwardListComponent', () => {
   let counts: (filters: AwardFilters) => Observable<typeof COUNTS>;
+  let categoryLoads: number;
   let fixture: ComponentFixture<AwardListComponent>;
   let store: Store;
   const permissions = signal(
@@ -103,6 +104,7 @@ describe('AwardListComponent', () => {
 
   beforeEach(() => {
     counts = () => of(COUNTS);
+    categoryLoads = 0;
   });
 
   async function create(narrow = false): Promise<void> {
@@ -122,7 +124,15 @@ describe('AwardListComponent', () => {
         provideState(awardsFeature),
         {
           provide: AwardsService,
-          useValue: { categories: () => of([]), statusCounts: (f: AwardFilters) => counts(f) },
+          useValue: {
+            categories: () =>
+              new Observable((subscriber) => {
+                categoryLoads++;
+                subscriber.next([]);
+                subscriber.complete();
+              }),
+            statusCounts: (f: AwardFilters) => counts(f),
+          },
         },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { permissions } },
@@ -137,6 +147,14 @@ describe('AwardListComponent', () => {
     fixture = TestBed.createComponent(AwardListComponent);
     fixture.detectChanges();
   }
+
+  it('ac1_loads_the_categories_in_a_later_task', async () => {
+    await create();
+
+    expect(categoryLoads).toBe(0);
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(categoryLoads).toBe(1);
+  });
 
   it('ac1_9_lists_own_awards_with_their_status_chip_and_links_drafts_to_the_form', async () => {
     await create();
