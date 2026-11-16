@@ -176,10 +176,40 @@ describe('ReviewQueueComponent', () => {
     expect(dialog.open.mock.calls[1][1].data.decision).toBe('RETURN');
   });
 
+  it('ac14_shortcuts_keep_working_after_a_checklist_item_is_ticked', () => {
+    const check = element.querySelector(
+      '[data-testid="queue-check-readable"] input',
+    ) as HTMLInputElement;
+    check.click();
+    check.focus();
+    fixture.detectChanges();
+
+    press('KeyJ', {}, check);
+    expect(text('queue-open')).toBe('Подяка ректора');
+
+    for (const type of ['radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image']) {
+      const control = document.createElement('input');
+      control.type = type;
+      document.body.appendChild(control);
+      press('KeyK', {}, control);
+      expect(text('queue-open')).toBe('Грамота МОН');
+      press('KeyJ', {}, control);
+      expect(text('queue-open')).toBe('Подяка ректора');
+      control.remove();
+    }
+  });
+
   it('edge_shortcuts_are_ignored_while_typing_with_modifiers_and_over_a_dialog', () => {
     const input = document.createElement('textarea');
     document.body.appendChild(input);
     press('KeyJ', {}, input);
+    for (const type of ['text', 'search', 'number']) {
+      const field = document.createElement('input');
+      field.type = type;
+      document.body.appendChild(field);
+      press('KeyJ', {}, field);
+      field.remove();
+    }
     press('KeyJ', { ctrlKey: true });
     const container = document.createElement('mat-dialog-container');
     document.body.appendChild(container);

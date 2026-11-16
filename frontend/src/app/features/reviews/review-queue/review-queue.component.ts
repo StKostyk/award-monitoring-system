@@ -185,6 +185,18 @@ export class ReviewQueueComponent {
   }
 }
 
+const NON_TEXT_INPUTS = new Set([
+  'checkbox',
+  'radio',
+  'button',
+  'submit',
+  'reset',
+  'range',
+  'color',
+  'file',
+  'image',
+]);
+
 /** Shortcuts stay out of the way of typing, of pickers and menus, and of open dialogs. */
 function ignored(target: EventTarget | null): boolean {
   if (document.querySelector('mat-dialog-container, .mat-mdc-select-panel, .mat-mdc-menu-panel')) {
@@ -193,7 +205,8 @@ function ignored(target: EventTarget | null): boolean {
   const element = target instanceof HTMLElement ? target : null;
   return (
     !!element &&
-    (['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName) ||
+    ((element instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(element.type)) ||
+      ['TEXTAREA', 'SELECT'].includes(element.tagName) ||
       element.isContentEditable ||
       !!element.closest('[role="combobox"], [role="listbox"], [role="menu"]'))
   );

@@ -80,7 +80,6 @@ async function selectInQueue(page: Page, title: string): Promise<void> {
 }
 
 async function approveWithKeyboard(page: Page): Promise<void> {
-  await page.locator('main h1').click();
   await page.keyboard.press('a');
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByTestId('decision-title')).toBeVisible();
@@ -123,6 +122,7 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     await page.getByTestId('queue-check-readable').click();
     expect(await seriousViolations(page)).toEqual([]);
 
+    await page.getByTestId('queue-check-readable').locator('input').focus();
     await approveWithKeyboard(page);
     const snackBar = page.locator('mat-snack-bar-container');
     await expect(snackBar).toContainText('Рішення збережено');
@@ -134,6 +134,7 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     expect(decisions(id)).toBe(0);
 
     await selectInQueue(page, title);
+    await page.locator('main h1').click();
     await approveWithKeyboard(page);
     await page.waitForTimeout(HOLD - 2000);
     expect(decisions(id)).toBe(0);
@@ -148,6 +149,7 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     const page = await signedInAs(browser, reviewer, FRESH_PASSWORD);
 
     await selectInQueue(page, title);
+    await page.locator('main h1').click();
     await approveWithKeyboard(page);
     await page.getByTestId('nav-awards').click();
 
@@ -163,6 +165,7 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     const page = await signedInAs(browser, reviewer, FRESH_PASSWORD);
 
     await selectInQueue(page, title);
+    await page.locator('main h1').click();
     await approveWithKeyboard(page);
     sql(`update award_requests set version = version + 1 where award_id = ${id}`);
 
