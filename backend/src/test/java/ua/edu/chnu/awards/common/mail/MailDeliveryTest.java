@@ -74,6 +74,15 @@ class MailDeliveryTest {
     }
 
     @Test
+    void ac1_4_placeholderAndErasedAddressesNeverReceiveMail() throws Exception {
+        delivery.send("unclaimed-1b2c@unclaimed.invalid", "Subject", "Text");
+        delivery.send(List.of("erased-7@erased.invalid", "olena@chnu.edu.ua"), "Subject", "Text");
+
+        verify(sender, times(1)).send(any(MimeMessage.class));
+        assertThat(addresses(sent().getRecipients(Message.RecipientType.TO))).containsExactly("olena@chnu.edu.ua");
+    }
+
+    @Test
     void addressesOneMessageToEveryRecipient() throws Exception {
         delivery.send(List.of("admin@chnu.edu.ua", "admin2@chnu.edu.ua"), "Subject", "Text");
 

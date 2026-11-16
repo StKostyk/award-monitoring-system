@@ -10,7 +10,8 @@ public enum AccountStatus {
     SUSPENDED(false),
     RETIRED(true),
     MEMORIAL(false),
-    DELETED(false);
+    DELETED(false),
+    UNCLAIMED(false);
 
     private final boolean loginAllowed;
 
@@ -28,7 +29,8 @@ public enum AccountStatus {
     }
 
     /**
-     * Whether accounts in this state appear in the user directory: unverified and deleted ones never do.
+     * Whether accounts in this state appear in the user directory: unverified and deleted ones never do, people
+     * without an account do.
      *
      * @return false for {@code PENDING} and {@code DELETED}
      */

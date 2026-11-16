@@ -1,0 +1,140 @@
+<h2 mat-dialog-title>
+  {{ (editing ? 'admin.people.dialog.changeTitle' : 'admin.people.dialog.addTitle') | transloco }}
+</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="admin__form" (ngSubmit)="save()" id="person-form">
+    <mat-form-field appearance="outline" class="admin__field">
+      <mat-label>{{ 'admin.people.dialog.lastName' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="lastName"
+        autocomplete="off"
+        data-testid="person-last-name"
+      />
+      @if (form.controls.lastName.hasError('required')) {
+        <mat-error>{{ 'admin.people.validation.required' | transloco }}</mat-error>
+      } @else if (
+        form.controls.lastName.hasError('maxlength') || form.controls.lastName.hasError('too-long')
+      ) {
+        <mat-error>{{ 'admin.people.validation.tooLong' | transloco }}</mat-error>
+      } @else if (form.controls.lastName.hasError('invalid')) {
+        <mat-error>{{ 'admin.people.validation.name' | transloco }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="admin__field">
+      <mat-label>{{ 'admin.people.dialog.firstName' | transloco }}</mat-label>
+      <input
+        matInput
+        formControlName="firstName"
+        autocomplete="off"
+        data-testid="person-first-name"
+      />
+      @if (form.controls.firstName.hasError('required')) {
+        <mat-error>{{ 'admin.people.validation.required' | transloco }}</mat-error>
+      } @else if (
+        form.controls.firstName.hasError('maxlength') ||
+        form.controls.firstName.hasError('too-long')
+      ) {
+        <mat-error>{{ 'admin.people.validation.tooLong' | transloco }}</mat-error>
+      } @else if (form.controls.firstName.hasError('invalid')) {
+        <mat-error>{{ 'admin.people.validation.name' | transloco }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="admin__field">
+      <mat-label>{{ 'admin.people.dialog.department' | transloco }}</mat-label>
+      <mat-select formControlName="organizationId" data-testid="person-department">
+        @for (unit of departments(); track unit.id) {
+          <mat-option [value]="unit.id">{{ name(unit) }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.organizationId.hasError('required')) {
+        <mat-error>{{ 'admin.people.validation.required' | transloco }}</mat-error>
+      } @else if (form.controls.organizationId.hasError('out-of-scope')) {
+        <mat-error>{{ 'admin.people.validation.outOfScope' | transloco }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="admin__field">
+      <mat-label>{{ 'admin.people.dialog.email' | transloco }}</mat-label>
+      <input
+        matInput
+        type="email"
+        formControlName="email"
+        autocomplete="off"
+        data-testid="person-email"
+      />
+      <mat-hint>
+        {{
+          (data.person?.email ? 'admin.people.dialog.emailKept' : 'admin.people.dialog.emailHint')
+            | transloco
+        }}
+      </mat-hint>
+      @if (form.controls.email.hasError('taken')) {
+        <mat-error>{{ 'admin.people.validation.taken' | transloco }}</mat-error>
+      } @else if (form.controls.email.hasError('required')) {
+        <mat-error>{{ 'admin.people.validation.emailKept' | transloco }}</mat-error>
+      } @else if (
+        form.controls.email.hasError('email') || form.controls.email.hasError('institutional')
+      ) {
+        <mat-error>{{ 'admin.people.validation.institutional' | transloco }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
+  @if (matches().length) {
+    <div role="alert" data-testid="person-duplicates">
+      <p>{{ 'admin.people.dialog.duplicates' | transloco }}</p>
+      <ul class="admin__matches">
+        @for (match of matches(); track match.id) {
+          <li>
+            <a
+              [routerLink]="['/admin/users', match.id]"
+              mat-dialog-close
+              data-testid="person-duplicate-link"
+            >
+              {{ match.lastName }} {{ match.firstName }}
+            </a>
+            ·
+            {{ match.email ?? ('admin.people.unknownAddress' | transloco) }}
+            ·
+            {{ 'admin.people.awardCount' | transloco: { count: match.awardCount } }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (problem(); as problem) {
+    <p class="admin__problem" role="alert" data-testid="person-dialog-error">
+      {{ problem | transloco }}
+    </p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close data-testid="person-cancel">
+    {{ 'admin.people.dialog.cancel' | transloco }}
+  </button>
+  @if (matches().length) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="saving()"
+      (click)="save(true)"
+      data-testid="person-add-anyway"
+    >
+      {{ 'admin.people.dialog.addAnyway' | transloco }}
+    </button>
+  } @else {
+    <button
+      mat-flat-button
+      type="submit"
+      form="person-form"
+      [disabled]="saving()"
+      data-testid="person-save"
+    >
+      {{ (editing ? 'admin.people.dialog.save' : 'admin.people.dialog.add') | transloco }}
+    </button>
+  }
+</mat-dialog-actions>

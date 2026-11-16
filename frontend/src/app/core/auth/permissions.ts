@@ -112,6 +112,14 @@ export function canReadDirectory(permissions: TokenPermissions): boolean {
   return DIRECTORY_PERMISSIONS.some((permission) => permissions.hasPermission(permission));
 }
 
+/** Roles that add and manage people without an account, held or lent. */
+const PEOPLE_ROLES: RoleType[] = ['FACULTY_SECRETARY', 'DEAN'];
+
+/** Whether the caller may add and manage colleagues without an account. */
+export function canManagePeople(permissions: TokenPermissions): boolean {
+  return permissions.roleScopes.some((scope) => PEOPLE_ROLES.includes(scope.role));
+}
+
 /** The roles the caller may grant, in level order. */
 export function grantableRoles(permissions: TokenPermissions): RoleType[] {
   const roles: RoleType[] = [...LEVELS, 'SYSTEM_ADMIN', 'GDPR_OFFICER'];

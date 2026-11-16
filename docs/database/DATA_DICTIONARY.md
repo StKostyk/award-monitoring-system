@@ -37,12 +37,13 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - Email address must be unique across all users
 - Users belong to exactly one primary organization
 - Status transitions: PENDING → ACTIVE ↔ INACTIVE → SUSPENDED → RETIRED/MEMORIAL
+- A faculty secretary or dean can add a colleague without an account (2.5.1): status `UNCLAIMED`, `added_by_id` set, no role, no sign-in; without a known address the row holds a placeholder `unclaimed-<uuid>@unclaimed.invalid`, so `email_address` stays NOT NULL and unique; no mail goes to any `*.invalid` address
 - Password hash uses BCrypt algorithm with strength 12
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `user_id` | `BIGSERIAL` | NO | Auto | PK | Unique user identifier |
-| `email_address` | `VARCHAR(255)` | NO | - | UK | User's email (login credential) |
+| `email_address` | `VARCHAR(255)` | NO | - | UK | User's email (login credential); `unclaimed-<uuid>@unclaimed.invalid` for a person without an account whose address is unknown, replaced once one is entered |
 | `first_name` | `VARCHAR(100)` | NO | - | - | User's first name (GDPR: Personal Data) |
 | `last_name` | `VARCHAR(100)` | NO | - | - | User's last name (GDPR: Personal Data) |
 | `password_hash` | `VARCHAR(255)` | NO | - | - | BCrypt hashed password (GDPR: Confidential) |
@@ -53,6 +54,8 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | Last modification timestamp |
 | `status_changed_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When `account_status` last changed: set by `trg_users_status_changed` (`fn_users_status_changed`, `BEFORE UPDATE OF account_status`, only when the value differs); backfilled with `updated_at` (V045, 6.2.3); the `former-staff` retention policy counts its period from it |
 | `version` | `BIGINT` | NO | `1` | - | Optimistic locking version |
+| `added_by_id` | `BIGINT` | YES | - | FK→users (`fk_users_added_by`, ON DELETE SET NULL) | Faculty secretary or dean who added the person without an account (V051, 2.5.1); null for self-registered accounts |
+| `invited_at` | `TIMESTAMPTZ` | YES | - | - | When the last invitation to register went to the person (V051); null when none did; a repeat is refused within `app.people.invitation-interval` |
 
 **Status Values** (`account_status`):
 | Value | Description | Transitions To |
@@ -63,6 +66,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `SUSPENDED` | Administrative hold | ACTIVE, RETIRED |
 | `RETIRED` | Former employee (read-only access) | MEMORIAL |
 | `MEMORIAL` | Deceased (awards preserved, no access) | - |
+| `UNCLAIMED` | Person without an account added by a faculty secretary or dean (2.5.1): random password hash, no role, sign-in answers as a wrong password | PENDING (claim by registration, 2.5.3), DELETED (removal while every award is a draft) |
 | `DELETED` | Erased on request (GDPR, 6.1.5): the row stays with `first_name` `Erased`, `last_name` `#<id>`, `email_address` `erased-<id>@erased.invalid`, a random password hash and no `last_login_at`; the old address can register a new account | - |
 
 **Indexes**:
@@ -72,9 +76,11 @@ This Data Dictionary provides comprehensive documentation for all database entit
 - `idx_users_status` - B-tree on `account_status`
 - `idx_users_status_changed` - Composite on `(account_status, status_changed_at)` (V045)
 - `uk_users_email_lower` - Unique expression index on `LOWER(email_address)` (V015); addresses are stored lower-case
+- `idx_users_unclaimed` - Partial on `(organization_id, last_name)` where `account_status = 'UNCLAIMED'` (V051): the people list and the duplicate check
 
 **Relationships**:
 - BELONGS TO `organizations` (N:1) via `organization_id`
+- ADDED BY `users` (N:1, optional) via `added_by_id`
 - HAS MANY `user_roles` (1:N)
 - HAS MANY `awards` (1:N)
 - HAS MANY `audit_logs` (1:N)

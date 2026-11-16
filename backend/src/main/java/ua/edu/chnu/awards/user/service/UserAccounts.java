@@ -1,9 +1,13 @@
 package ua.edu.chnu.awards.user.service;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import ua.edu.chnu.awards.user.entity.User;
@@ -17,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class UserAccounts {
+
+    private static final int MIN_FRAGMENT = 2;
 
     private final UserRepository users;
 
@@ -99,5 +105,32 @@ public class UserAccounts {
      */
     public int recordLogin(Long id, Instant at) {
         return users.recordLogin(id, at);
+    }
+
+    /**
+     * People without an account of one department.
+     *
+     * @param organizationId the department
+     * @return the people
+     */
+    public List<User> findWithoutAccount(long organizationId) {
+        return users.findWithoutAccount(organizationId);
+    }
+
+    /**
+     * A page of people without an account in the departments, by last and first name.
+     *
+     * @param organizationIds the departments, none for an empty page
+     * @param fragment        part of the name or address; under two characters for all
+     * @param pageable        page and size
+     * @return the page
+     */
+    public Page<User> findWithoutAccount(Collection<Long> organizationIds, String fragment, Pageable pageable) {
+        if (organizationIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        String pattern = fragment == null || fragment.strip().length() < MIN_FRAGMENT ? "%"
+            : "%" + fragment.strip().toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
+        return users.findWithoutAccount(organizationIds, pattern, pageable);
     }
 }

@@ -1,13 +1,19 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
+import { AuthService } from '../../../core/auth/auth.service';
+import { readPermissions } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { PersonDialogComponent } from '../person-dialog/person-dialog.component';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
 import { UserPage, UserSummary } from '../users.service';
@@ -45,6 +51,23 @@ const employee: UserSummary = {
   membershipConfirmed: true,
 };
 
+const unclaimed: UserSummary = {
+  id: 41,
+  email: 'unclaimed-1f2e@unclaimed.invalid',
+  firstName: 'Оксана',
+  lastName: 'Мельник',
+  organization: department,
+  status: 'UNCLAIMED',
+  roles: [],
+  membershipConfirmed: false,
+};
+
+function token(claims: Record<string, unknown>): string {
+  return `header.${btoa(JSON.stringify(claims))}.signature`;
+}
+
+const permissions = signal(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] })));
+
 const page: UserPage = {
   content: [newcomer, employee],
   totalElements: 2,
@@ -70,7 +93,12 @@ const translations = {
         columns: { name: 'Користувач', email: 'Пошта', organization: 'Підрозділ' },
         paginator: { itemsPerPage: 'Рядків на сторінці', range: '{{from}}–{{to}} з {{total}}' },
       },
-      status: { ACTIVE: 'Активний' },
+      status: { ACTIVE: 'Активний', UNCLAIMED: 'Без облікового запису' },
+      people: {
+        add: 'Додати колегу без облікового запису',
+        badge: 'Без облікового запису',
+        unknownAddress: 'Адреса невідома',
+      },
       problems: { 'role-already-assigned': 'Роль уже призначено' },
     },
   },
@@ -97,8 +125,10 @@ describe('UserListComponent', () => {
         provideStore(),
         provideState(adminUsersFeature),
         { provide: LanguageService, useValue: { current: () => 'uk' } },
+        { provide: AuthService, useValue: { permissions } },
       ],
     }).compileComponents();
+    permissions.set(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] })));
     store = TestBed.inject(Store);
     fixture = TestBed.createComponent(UserListComponent);
     fixture.detectChanges();
@@ -190,5 +220,47 @@ describe('UserListComponent', () => {
     expect(
       fixture.nativeElement.querySelector('[data-testid="users-empty"]').textContent,
     ).toContain('Користувачів не знайдено');
+  });
+
+  it('ac1_9_lists_a_person_without_an_account_with_the_chip_and_no_placeholder_address', () => {
+    store.dispatch(AdminUsersActions.usersLoaded({ page: { ...page, content: [unclaimed] } }));
+    fixture.detectChanges();
+    const row: HTMLElement = fixture.nativeElement.querySelector('tbody tr');
+
+    expect(row.querySelector('[data-testid="unclaimed-badge"]')?.textContent).toContain(
+      'Без облікового запису',
+    );
+    expect(row.querySelector('[data-testid="unconfirmed-badge"]')).toBeNull();
+    expect(row.querySelector('[data-testid="confirm-membership"]')).toBeNull();
+    expect(row.textContent).toContain('Адреса невідома');
+    expect(row.textContent).not.toContain('unclaimed.invalid');
+  });
+
+  it('ac1_9_offers_the_add_button_to_a_secretary_and_opens_the_new_person', () => {
+    const dialog = TestBed.inject(MatDialog);
+    const open = vi
+      .spyOn(dialog, 'open')
+      .mockReturnValue({ afterClosed: () => of({ id: 41 }) } as ReturnType<typeof dialog.open>);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-testid="person-add-open"]',
+    );
+
+    expect(button.textContent).toContain('Додати колегу без облікового запису');
+    button.click();
+
+    expect(open).toHaveBeenCalledWith(
+      PersonDialogComponent,
+      expect.objectContaining({ data: { person: null } }),
+    );
+    expect(navigate).toHaveBeenCalledWith(['/admin/users', 41]);
+  });
+
+  it('ac1_9_hides_the_add_button_without_a_secretary_or_dean_role', () => {
+    permissions.set(readPermissions(token({ role_scopes: ['RECTOR_SECRETARY:1'] })));
+    const other = TestBed.createComponent(UserListComponent);
+    other.detectChanges();
+
+    expect(other.nativeElement.querySelector('[data-testid="person-add-open"]')).toBeNull();
   });
 });

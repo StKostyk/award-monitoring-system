@@ -6,13 +6,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { LegalHoldsService } from '../legal-holds.service';
+import { PeopleService } from '../people.service';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
@@ -65,6 +66,7 @@ const translations = {
     roles: { EMPLOYEE: 'Працівник', FACULTY_SECRETARY: 'Секретар факультету' },
     admin: {
       status: { ACTIVE: 'Активний' },
+      people: { unknownAddress: 'Адреса невідома' },
       detail: {
         back: 'До списку',
         email: 'Пошта',
@@ -124,6 +126,7 @@ describe('UserDetailComponent', () => {
         provideState(adminUsersFeature),
         { provide: MatDialog, useValue: dialog },
         { provide: UsersService, useValue: api },
+        { provide: PeopleService, useValue: { get: vi.fn().mockReturnValue(NEVER) } },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         {
           provide: AuthService,
@@ -256,6 +259,35 @@ describe('UserDetailComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="legal-hold-card"]')).toBeNull();
+  });
+
+  it('ac1_9_shows_the_person_card_and_no_role_assignment_for_a_person_without_an_account', () => {
+    store.dispatch(
+      AdminUsersActions.userLoaded({
+        user: {
+          ...user,
+          status: 'UNCLAIMED',
+          email: 'unclaimed-1f2e@unclaimed.invalid',
+          roles: [],
+          roleHistory: [],
+        },
+      }),
+    );
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('app-person-card')).not.toBeNull();
+    expect(element.querySelector('[data-testid="assign-role-open"]')).toBeNull();
+    expect(element.querySelector('[data-testid="detail-email"]')?.textContent).toContain(
+      'Адреса невідома',
+    );
+  });
+
+  it('ac1_9_shows_no_person_card_for_an_account', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-person-card')).toBeNull();
   });
 });
 

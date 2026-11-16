@@ -1,6 +1,8 @@
 package ua.edu.chnu.awards.user.entity;
 
 import java.time.Instant;
+import java.util.Locale;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,6 +43,11 @@ import lombok.ToString;
 @ToString(exclude = {"passwordHash", "organization"})
 public class User {
 
+    /**
+     * The reserved domain of placeholder addresses.
+     */
+    public static final String PLACEHOLDER_DOMAIN = "unclaimed.invalid";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
@@ -80,6 +87,42 @@ public class User {
     @Version
     @Column(name = "version", nullable = false)
     private Long version;
+
+    @Column(name = "added_by_id")
+    private Long addedById;
+
+    @Column(name = "invited_at")
+    private Instant invitedAt;
+
+    /**
+     * A placeholder address for a person whose address is unknown; it never collides and no mail goes to it.
+     *
+     * @return a unique address under the reserved {@code .invalid} domain
+     */
+    public static String placeholderAddress() {
+        return "unclaimed-" + UUID.randomUUID() + "@" + PLACEHOLDER_DOMAIN;
+    }
+
+    /**
+     * Whether mail can reach the person: false for the placeholder address of a person added without one and for
+     * the address of an erased account.
+     *
+     * @return true for a real address
+     */
+    public boolean hasMailbox() {
+        return emailAddress != null && !emailAddress.toLowerCase(Locale.ROOT).endsWith(".invalid");
+    }
+
+    /**
+     * Whether the person has no account of their own yet: added by a faculty secretary or dean and not yet
+     * verified.
+     *
+     * @return true for {@code UNCLAIMED}, and for {@code PENDING} when someone else added the person
+     */
+    public boolean isWithoutAccount() {
+        return accountStatus == AccountStatus.UNCLAIMED
+            || accountStatus == AccountStatus.PENDING && addedById != null;
+    }
 
     /**
      * First and last name separated by a space.

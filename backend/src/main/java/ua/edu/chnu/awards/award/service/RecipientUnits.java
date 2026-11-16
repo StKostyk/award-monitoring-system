@@ -68,6 +68,26 @@ public class RecipientUnits {
             && scopes().stream().anyMatch(scope -> tree.covers(scope.organizationId(), organizationId));
     }
 
+    /**
+     * Whether the caller holds or was lent a faculty secretary or dean role.
+     *
+     * @return true with at least one such scope
+     */
+    public boolean held() {
+        return !scopes().isEmpty();
+    }
+
+    /**
+     * The faculties and departments of every scope, inactive ones included.
+     *
+     * @return the organisation ids
+     */
+    public Set<Long> subtree() {
+        return scopes().stream()
+            .flatMap(scope -> tree.subtree(scope.organizationId()).stream())
+            .collect(Collectors.toSet());
+    }
+
     private List<RoleScope> scopes() {
         return access.scopes().stream().filter(scope -> ROLES.contains(scope.role())).toList();
     }

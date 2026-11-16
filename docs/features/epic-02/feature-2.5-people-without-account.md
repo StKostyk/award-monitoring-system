@@ -232,7 +232,8 @@ story starts.
 ## 6. Dependencies
 
 ### Tables
-- `users`: new status `UNCLAIMED`, address nullable for it, new columns `added_by_id`, `invited_at` (V051, 2.5.1).
+- `users`: new status `UNCLAIMED`, new columns `added_by_id`, `invited_at` (V051, 2.5.1); a person without a known
+  address holds the placeholder `unclaimed-<uuid>@unclaimed.invalid`, so `email_address` stays NOT NULL.
 - `awards`: new column `source` (V052, 2.5.5).
 - `award_requests`, `audit_logs`, `notifications`, `user_roles`: unchanged.
 
@@ -245,10 +246,12 @@ story starts.
   `POST /auth/register`, `POST /auth/verify-email` (claimed count) (2.5.3).
 
 ### Services
-- `user`: new `PeopleService`, `PeopleController`; `RegistrationService` take-over and verification;
-  `AccountErasure` reused for removal.
-- `award`: `AwardOwnership` (manage rule), `AwardInputRules` (`recipientUserId`), `RecipientUnits` (people scope);
-  notice events carry the submitter for an unclaimed owner.
+- `user`: `RegistrationService` take-over and verification through the interface `WaitingAwards` (defined in
+  `user`, implemented in `award`); `User.hasMailbox()`; role assignment refuses `UNCLAIMED`.
+- `award`: `PeopleController`, `People`, `PersonRules`, `PersonInvitations`, `PersonRemoval` (the erasure chain
+  of 6.1.5 run at once), `PersonLink` (2.5.4); `AwardOwnership` (manage rule), `AwardInputRules`
+  (`recipientUserId`), `RecipientUnits` (people scope); notice events carry the submitter for an unclaimed owner.
+- `common`: `MailDelivery` drops every `*.invalid` recipient.
 - `notification`: `InvitationMails`; decision, correction and overdue mails read the recipient from the event.
 
 ### Frontend
@@ -265,8 +268,8 @@ story starts.
 
 ## 7. Technical decisions
 
-Inherited: ADR-001 (modular monolith; `user` publishes `PersonAdded` and `AccountClaimed`, `award` and
-`notification` listen), ADR-006 addendum (Spring events with the publication registry), ADR-023 (award and request
+Inherited: ADR-001 (modular monolith; the people code lives in `award`, which already depends on `user`; `award`
+publishes `PersonInvited` and `notification` sends the mail; see the ADR-001 addendum 2026-11), ADR-006 addendum (Spring events with the publication registry), ADR-023 (award and request
 transitions unchanged), 4.1.0 (submitter never reviews), 6.1 (privacy notice versions, erasure scrub), 7.1 (mail
 delivery log and retries).
 
@@ -298,6 +301,12 @@ delivery log and retries).
   and recorded by the faculty already; the secretary who imports answers for them, the audit row names the file and
   row, and `awards.source` keeps them apart in reports. This is a new path around ADR-023's submission and is the
   one point of the feature that changes the approval rule.
+- **D-10** (2.5.1) A person without a known address holds a placeholder `unclaimed-<uuid>@unclaimed.invalid` instead
+  of a null address: the column, its unique index and every query that reads an address stay as they are, and one
+  guard in `MailDelivery` keeps mail away from `*.invalid`. All `/people` code lives in `award` to avoid a
+  `user` → `award` module cycle (ADR-001 addendum 2026-11). The invitation's delivery state is not part of
+  `Person`: a person without an account has no notification row, so the mail goes through `MailDelivery` with its
+  retries and a failed send is logged.
 
 ## 8. Contract
 
@@ -309,8 +318,7 @@ pins those schemas to the DTOs and the entity enum.
 
 - `/people` `post` (2.5.1): `PersonCreateRequest` {`firstName`, `lastName`, `email`, `organizationId`} → 201
   `Person` {`id`, `firstName`, `lastName`, `email` (nullable), `organization` (`OrganizationRef`), `status`
-  (`UNCLAIMED` | `PENDING` | `ACTIVE`), `addedBy` (`UserRef`), `invitedAt` (nullable), `invitationDelivered`
-  (boolean, null while unknown), `awardCount`, `version`}; request also `duplicateAcknowledged` (boolean); 409
+  (`AccountStatus`), `addedBy` (`UserRef`), `invitedAt` (nullable), `awardCount`, `version`}; request also `duplicateAcknowledged` (boolean); 409
   `email-taken`, `possible-duplicate` (`PersonDuplicateProblem` with `matches`: id, names, `maskedEmail`,
   `awardCount`); 422 `validation-failed`; 403 `access-denied`.
 - `/people` `get` (2.5.1): `q` (≥ 2 characters), `organization`, `page`, `size` → `PersonPage`; people without an
@@ -337,15 +345,17 @@ pins those schemas to the DTOs and the entity enum.
 `V051__people_without_account.sql` (2.5.1):
 - `users.added_by_id BIGINT NULL` FK → `users(user_id)` `ON DELETE SET NULL`; `users.invited_at TIMESTAMPTZ NULL`.
 - `ck_users_status` recreated with `UNCLAIMED`.
-- `users.email_address` nullable; `ck_users_email_present`: `email_address IS NOT NULL OR account_status =
-  'UNCLAIMED'` (the unique index `uk_users_email_lower` admits many nulls).
+- `users.email_address` unchanged (NOT NULL, unique): a person without a known address gets
+  `unclaimed-<uuid>@unclaimed.invalid`, like the `erased-<id>@erased.invalid` of an erased account; the API answers
+  `email: null` for it and no mail goes to any `*.invalid` address.
 - Partial index `idx_users_unclaimed` on `(organization_id, last_name)` where `account_status = 'UNCLAIMED'`.
 
 `V052__award_source.sql` (2.5.5): `awards.source VARCHAR(10) NOT NULL DEFAULT 'FORM'`, CK `FORM`, `IMPORT`.
 
 ### 8.3 Properties
 
-`app.people.invitation-interval` (default `PT1H`), 2.5.1; `app.award-import.max-rows` (1000) and
+`app.people.invitation-interval` (default `PT1H`, `APP_PEOPLE_INVITATION_INTERVAL`) and
+`app.people.data-protection-contact` (default `gdpr@chnu.edu.ua`), 2.5.1; `app.award-import.max-rows` (1000) and
 `app.award-import.max-size` (2MB), 2.5.5.
 
 ## 9. Test plan
@@ -372,13 +382,16 @@ Preconditions: stack from `docker compose up -d --build` with the 2.5 build; dev
 for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
 
 1. Sign in as `secretary.fmi@`, open `/admin/users`, press «Додати колегу без облікового запису», enter Петро
-   Іваненко, `p.ivanenko@chnu.edu.ua`, a department of FMI. Expected: the person is listed with «Без облікового
-   запису». (AC-1.1, AC-1.9)
+   Іваненко, `p.ivanenko@chnu.edu.ua`, a department of FMI. Expected: the person page opens with «Надіслано <time>»
+   under «Запрошення» and no «Призначити роль»; back in the list, the person carries «Без облікового запису» and the
+   status filter offers it. (AC-1.1, AC-1.9)
 2. Mailpit. Expected: one mail to `p.ivanenko@` naming the secretary, the department, the purpose, the rights and a
    registration link with the address. (AC-1.4)
 3. psql `select account_status, added_by_id from users where email_address = 'p.ivanenko@chnu.edu.ua'`. Expected:
    `UNCLAIMED`, the secretary's id; `audit_logs` has `PERSON_ADDED` and `INVITATION_SENT`. (AC-1.1, AC-1.4)
-4. Add the same address again. Expected: «Ця адреса вже використовується», nothing new. (AC-1.2)
+4. Add the same address again. Expected: «Ця адреса вже використовується», nothing new. (AC-1.2) Add a second
+   person without an address. Expected: «Запрошення не надіслано: адреса невідома», no mail in Mailpit, and psql
+   shows `email_address` `unclaimed-<uuid>@unclaimed.invalid` for the row. (AC-1.4, D-10)
 5. Sign in at `/login` as `p.ivanenko@` with any password. Expected: the wrong-password message. Request a password
    reset for it. Expected: no mail. (AC-1.8)
 6. As `secretary.fmi@`, open the person, «Додати нагороду». Expected: `/awards/new?person=<id>` with the person
@@ -423,7 +436,8 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
 22. `/awards/new?person=<id of a claimed or unknown person>`. Expected: the recipient is not preselected; a crafted
     `POST /awards` with that id answers 422 `out-of-scope`.
 23. Hidden in state: the person page of a claimed person. Expected: no «Змінити», «Надіслати запрошення ще раз»,
-    «Видалити»; `PUT`, `DELETE` and the invitation answer 409 `person-claimed`.
+    «Видалити»; `GET /api/v1/people/{id}` answers 404 (the user directory shows the account), `PUT`, `DELETE` and
+    the invitation answer 409 `person-claimed`.
 24. Hidden in state: a person with a pending or approved award. Expected: no «Видалити»; `DELETE` 409
     `person-has-awards`.
 25. Hidden in state: after the claim, as `secretary.fmi@` open the award. Expected: no edit, submit or withdraw;
