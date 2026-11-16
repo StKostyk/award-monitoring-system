@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.user.service;
 
 import java.time.LocalDate;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,7 @@ import ua.edu.chnu.awards.authz.AccessScope;
 import ua.edu.chnu.awards.authz.RoleLevels;
 import ua.edu.chnu.awards.authz.RoleType;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
+import ua.edu.chnu.awards.common.web.FieldViolation;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.service.OrganizationLookup;
 import ua.edu.chnu.awards.user.dto.RoleAssignmentRequest;
@@ -100,6 +102,10 @@ public class RoleAssignmentRules {
      * @return the same user
      */
     public User requireActive(User target) {
+        if (target.getAccountStatus() == AccountStatus.UNCLAIMED) {
+            throw ApiProblemException.validationFailed("A person without an account cannot hold a role",
+                List.of(new FieldViolation("userId", "unclaimed", "The person has not registered yet")));
+        }
         if (target.getAccountStatus() != AccountStatus.ACTIVE) {
             throw new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "user-not-active",
                 "Only an active account can hold a role");

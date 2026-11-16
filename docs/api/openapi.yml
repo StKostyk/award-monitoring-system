@@ -1943,7 +1943,8 @@ paths:
       summary: User directory
       description: |
         Everybody for `user:read:all`; for `user:read:scope` only members of the organisations inside the
-        caller's role scopes. Unverified accounts never appear. Sorted by last name, first name.
+        caller's role scopes. Unverified accounts never appear; people without an account (`UNCLAIMED`) do.
+        Sorted by last name, first name.
       security:
         - bearerAuth: []
       operationId: listUsers
@@ -2085,7 +2086,8 @@ paths:
         '422':
           description: |
             `urn:awards:problem:role-organization-mismatch` (the organisation type does not fit the role),
-            `organisation-invalid` (unknown or inactive), `user-not-active`, `role-validity`, or
+            `organisation-invalid` (unknown or inactive), `user-not-active`, `role-validity`, `validation-failed`
+            with `userId` `unclaimed` for a person without an account, or
             `membership-role-required` when `updateOrganization` is sent with a role other than `EMPLOYEE`
           content:
             application/problem+json:
@@ -2945,7 +2947,7 @@ paths:
         as a `users` row in the state `UNCLAIMED`: no sign-in, no role. With an address the person receives the
         invitation (the Art. 14 notice) once the transaction commits. A person of the same name in the same
         department answers 409 `possible-duplicate` unless `duplicateAcknowledged` is true (2.5.1).
-      x-status: planned
+      x-status: implemented
       security:
         - bearerAuth: []
       operationId: addPerson
@@ -2982,7 +2984,7 @@ paths:
       description: >
         People in the state `UNCLAIMED` (or `PENDING` with `addedBy` set) of the departments inside the caller's
         faculty secretary or dean scopes, sorted by last name; addresses masked (2.5.1).
-      x-status: planned
+      x-status: implemented
       security:
         - bearerAuth: []
       operationId: listPeople
@@ -3023,8 +3025,11 @@ paths:
     get:
       tags: [Users]
       summary: A person without an account with their awards
-      description: Also answers a claimed person, as a regular user without actions (2.5.1).
-      x-status: planned
+      description: >
+        Answers while the person has no account of their own (`UNCLAIMED`, or `PENDING` while a claim waits for
+        verification); once the account is claimed, 404 as for an unknown id, and the user directory shows the
+        account instead (2.5.1).
+      x-status: implemented
       security:
         - bearerAuth: []
       operationId: getPerson
@@ -3045,7 +3050,7 @@ paths:
       description: >
         Name, address and department; a new or first address receives the invitation; an address once entered
         cannot be removed (2.5.1).
-      x-status: planned
+      x-status: implemented
       security:
         - bearerAuth: []
       operationId: updatePerson
@@ -3080,7 +3085,7 @@ paths:
       description: >
         Deletes the person's drafts and scrubs the row as an erased account (6.1.5); refused while any award is
         outside `DRAFT` (2.5.1).
-      x-status: planned
+      x-status: implemented
       security:
         - bearerAuth: []
       operationId: removePerson
@@ -3103,7 +3108,7 @@ paths:
       tags: [Users]
       summary: Send the invitation again
       description: At most once per `app.people.invitation-interval` (2.5.1).
-      x-status: planned
+      x-status: implemented
       security:
         - bearerAuth: []
       operationId: resendInvitation
@@ -3975,7 +3980,8 @@ components:
 
     AccountStatus:
       type: string
-      enum: [PENDING, ACTIVE, INACTIVE, SUSPENDED, RETIRED, MEMORIAL, DELETED]
+      enum: [PENDING, ACTIVE, INACTIVE, SUSPENDED, RETIRED, MEMORIAL, DELETED, UNCLAIMED]
+      description: "`UNCLAIMED`: a person without an account, added by a faculty secretary or dean (2.5.1)"
 
     RoleAssignment:
       type: object
@@ -4264,7 +4270,7 @@ components:
 
     PersonCreateRequest:
       type: object
-      description: A person without an account (2.5.1, planned)
+      description: A person without an account (2.5.1)
       required: [firstName, lastName, organizationId]
       properties:
         firstName:
@@ -4299,7 +4305,7 @@ components:
 
     Person:
       type: object
-      description: A person without an account, or one who claimed it (2.5.1, planned)
+      description: A person without an account, or one who claimed it (2.5.1)
       properties:
         id:
           type: integer
@@ -4310,20 +4316,16 @@ components:
           type: string
         email:
           type: [string, 'null']
-          description: Masked (`p***@chnu.edu.ua`) in lists
+          description: Masked (`p***@chnu.edu.ua`) in lists and duplicate matches; null when unknown
         organization:
           $ref: '#/components/schemas/OrganizationRef'
         status:
-          type: string
-          enum: [UNCLAIMED, PENDING, ACTIVE]
+          $ref: '#/components/schemas/AccountStatus'
         addedBy:
           $ref: '#/components/schemas/UserRef'
         invitedAt:
           type: [string, 'null']
           format: date-time
-        invitationDelivered:
-          type: [boolean, 'null']
-          description: Null while the delivery is unknown or no invitation was sent
         awardCount:
           type: integer
         version:

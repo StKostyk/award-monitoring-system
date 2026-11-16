@@ -4,9 +4,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Binds the approval workflow settings.
+ * Binds the approval workflow settings and those of people without an account.
  */
 @Configuration
-@EnableConfigurationProperties(WorkflowProperties.class)
+@EnableConfigurationProperties({WorkflowProperties.class, PeopleProperties.class})
 public class WorkflowConfig {
 }

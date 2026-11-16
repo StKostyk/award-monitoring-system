@@ -13,15 +13,19 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltip } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 
+import { AuthService } from '../../../core/auth/auth.service';
+import { canManagePeople } from '../../../core/auth/permissions';
 import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { ConfirmMembershipDialogComponent } from '../confirm-membership-dialog/confirm-membership-dialog.component';
+import { Person, placeholderAddress } from '../people.service';
+import { PersonDialogComponent, PersonDialogData } from '../person-dialog/person-dialog.component';
 import { ROLES, STATUSES } from '../role-organizations';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
@@ -66,7 +70,9 @@ export class UserListComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly language = inject(LanguageService);
+  private readonly router = inject(Router);
 
+  protected readonly canAddPeople = canManagePeople(inject(AuthService).permissions());
   protected readonly columns = ['name', 'email', 'organization', 'status', 'roles', 'actions'];
   protected readonly roles = ROLES;
   protected readonly statuses = STATUSES;
@@ -119,6 +125,23 @@ export class UserListComponent implements OnInit {
     this.store.dispatch(
       AdminUsersActions.pageChanged({ page: event.pageIndex, size: event.pageSize }),
     );
+  }
+
+  addPerson(): void {
+    const data: PersonDialogData = { person: null };
+    this.dialog
+      .open(PersonDialogComponent, { data, width: '520px' })
+      .afterClosed()
+      .subscribe((person?: Person) => {
+        if (person) {
+          void this.router.navigate(['/admin/users', person.id]);
+        }
+      });
+  }
+
+  /** The address to show; a person whose address is unknown carries a placeholder that stays hidden. */
+  address(user: UserSummary): string | null {
+    return user.status === 'UNCLAIMED' && placeholderAddress(user.email) ? null : user.email;
   }
 
   confirm(user: UserSummary): void {

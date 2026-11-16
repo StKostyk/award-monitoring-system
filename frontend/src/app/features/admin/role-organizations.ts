@@ -21,7 +21,14 @@ export const ROLES: RoleType[] = [
 ];
 
 /** Statuses the directory can list; unverified and deleted accounts never appear in it. */
-export const STATUSES: AccountStatus[] = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'RETIRED', 'MEMORIAL'];
+export const STATUSES: AccountStatus[] = [
+  'ACTIVE',
+  'INACTIVE',
+  'SUSPENDED',
+  'RETIRED',
+  'MEMORIAL',
+  'UNCLAIMED',
+];
 
 /** Organisation types an assignment of the role may point at; the server has the final say. */
 export function organizationTypesFor(role: RoleType): OrganizationType[] {

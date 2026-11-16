@@ -74,3 +74,14 @@
     gap: 2px;
   }
 }
+
+.admin__subtitle {
+  margin: 16px 0 8px;
+  font: var(--mat-sys-title-small);
+}
+
+.admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

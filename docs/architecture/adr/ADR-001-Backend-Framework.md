@@ -173,12 +173,27 @@ by Spring Security with the embedded Spring Authorization Server (see ADR-009 ad
 
 ---
 
+## Addendum 2026-11: people without an account and module direction
+
+Feature 2.5 lets a faculty secretary or dean add a colleague who has not registered, enter awards for that person
+and later hand them over when the person registers. The person is a `users` row (status `UNCLAIMED`), but every
+`/api/v1/people` endpoint, the rules and the removal live in the `award` module (`PeopleController`, `People`,
+`PersonInvitations`, `PersonRemoval`): `award` already depends on `user` through `UserAccounts`, and placing the
+code in `user` would make `user` depend on `award` for award counts and drafts, a cycle Spring Modulith refuses.
+The invitation mail is sent by `notification` on a `PersonInvited` event from `award`. Where `user` must ask about
+awards (registration telling a claimed person how many awards wait, 2.5.3), `user` defines the interface
+`WaitingAwards` and `award` implements it, so the dependency keeps pointing from `award` to `user`. Removal of a
+person reuses the `ErasureContributor` chain of the account erasure (6.1.5) instead of a second deletion path.
+
+---
+
 ## Revision History
 
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-20 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-01 | Stefan Kostyk | Addendum: spring cloud not used | Documentation sync after Epic 2 |
+| 2026-11-16 | Stefan Kostyk | Addendum: people without an account and module direction | Feature 2.5 |
 
 ---
 

@@ -1,0 +1,57 @@
+@startuml Sequence_Person_Claim_Link
+!theme plain
+skinparam sequenceMessageAlign center
+
+title People Without an Account: Add, Claim, Link (Feature 2.5)
+
+actor "Faculty secretary\nor dean" as secretary
+actor "Person" as person
+participant "PeopleController" as ctrl
+participant "People /\nPersonRules" as people
+participant "PersonInvitations" as invitations
+participant "RegistrationService\n(user)" as registration
+participant "WaitingAwards\n(award implements)" as waiting
+participant "PersonLink" as link
+participant "InvitationMails\n(notification)" as mails
+participant "AuditService" as audit
+database "PostgreSQL" as db
+
+== Add (2.5.1) ==
+secretary -> ctrl: POST /api/v1/people {names, department, email?}
+ctrl -> people: add(form)
+people -> people: requireRole(); department in scope;\nuniversity address; same name in department?
+alt same name and no duplicateAcknowledged
+    people --> ctrl: 409 possible-duplicate (matches, masked addresses)
+else address of any account
+    people --> ctrl: 409 email-taken
+else accepted
+    people -> db: INSERT users (UNCLAIMED, added_by_id,\naddress or unclaimed-<uuid>@unclaimed.invalid)
+    people -> audit: PERSON_ADDED (ids only)
+    opt address known
+        people -> invitations: send(person)
+        invitations -> db: invited_at = now
+        invitations -> audit: INVITATION_SENT
+        invitations ->> mails: PersonInvited (after commit)
+        mails ->> person: bilingual invitation + Art. 14 notice,\nlink /register?email=<address>
+    end
+    people --> ctrl: 201 Person
+end
+
+== Claim by registration (2.5.3, planned) ==
+person -> registration: POST /api/v1/auth/register (invited address)
+registration -> db: lock row; UNCLAIMED -> PENDING (same user_id)
+registration -> waiting: count(userId)
+registration --> person: 201 {waitingAwards}
+note right of registration
+    Verification makes the row ACTIVE;
+    the awards never move: they already
+    belong to this user_id.
+end note
+
+== Link to an existing account (2.5.4, planned) ==
+secretary -> link: POST /api/v1/people/{id}/link {userId}
+link -> db: lock person and account;\nUPDATE awards SET user_id = account
+link -> db: person scrubbed through the erasure chain
+link -> audit: ACCOUNT_LINKED
+link --> secretary: 200
+@enduml

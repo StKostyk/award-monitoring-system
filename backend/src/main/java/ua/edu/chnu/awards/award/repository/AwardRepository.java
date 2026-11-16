@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +19,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ua.edu.chnu.awards.award.entity.Award;
+import ua.edu.chnu.awards.award.entity.AwardStatus;
 
 /**
  * Access to {@link Award} rows.
@@ -104,4 +106,43 @@ public interface AwardRepository extends JpaRepository<Award, Long>, JpaSpecific
      */
     @EntityGraph(attributePaths = {"organization", "category"})
     List<Award> findByOwnerIdOrderByCreatedAtDescIdDesc(Long ownerId);
+
+    /**
+     * How many awards each of the owners has, in every status.
+     *
+     * @param ownerIds the owners
+     * @return one row per owner with awards
+     */
+    @Query("select a.owner.id as ownerId, count(a) as total from Award a where a.owner.id in :ownerIds"
+        + " group by a.owner.id")
+    List<OwnerTotal> countByOwners(@Param("ownerIds") Collection<Long> ownerIds);
+
+    /**
+     * Whether the owner has an award outside the status.
+     *
+     * @param ownerId the owner
+     * @param status  the status
+     * @return true when at least one award is in another status
+     */
+    boolean existsByOwnerIdAndStatusNot(Long ownerId, AwardStatus status);
+
+    /**
+     * The award count of one owner.
+     */
+    interface OwnerTotal {
+
+        /**
+         * The owner.
+         *
+         * @return the owner's id
+         */
+        Long getOwnerId();
+
+        /**
+         * The count.
+         *
+         * @return how many awards the owner has
+         */
+        long getTotal();
+    }
 }

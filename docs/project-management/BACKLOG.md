@@ -53,7 +53,7 @@ Feature 2.5 (awards of people without an account) planned 2026-11-16: [feature-2
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
-| 2.5.1 | People without an account: add, change, invite, remove | 8 | 10 | SCRUM-150 | [#420](https://github.com/StKostyk/award-monitoring-system/issues/420) |
+| 2.5.1 | People without an account: add, change, invite, remove | 8 | 👀 In review (10) | SCRUM-150 | [#420](https://github.com/StKostyk/award-monitoring-system/issues/420) |
 | 2.5.2 | Awards for a person without an account | 8 | 10 | SCRUM-151 | [#421](https://github.com/StKostyk/award-monitoring-system/issues/421) |
 | 2.5.3 | Claim at registration | 5 | 11 | SCRUM-152 | [#422](https://github.com/StKostyk/award-monitoring-system/issues/422) |
 | 2.5.4 | Link at membership confirmation | 3 | 11 | SCRUM-153 | [#423](https://github.com/StKostyk/award-monitoring-system/issues/423) |

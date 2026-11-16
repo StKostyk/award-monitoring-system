@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.common.mail;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.LongConsumer;
@@ -33,6 +34,7 @@ public class MailDelivery {
     static final int ATTEMPTS = 3;
     private static final long[] PAUSE_MS = {2_000, 5_000};
     private static final String UTF_8 = StandardCharsets.UTF_8.name();
+    private static final String INVALID_DOMAIN = ".invalid";
 
     /** One conversation with the SMTP server at a time; parallel sends make it drop connections. */
     private final Lock smtp = new ReentrantLock();
@@ -105,7 +107,12 @@ public class MailDelivery {
      * @throws MailNotDeliveredException when the mail server refused every attempt
      */
     public void send(List<String> to, String subject, MailContent content) {
-        MimeMessage message = message(to, subject, content);
+        List<String> reachable = to.stream().filter(MailDelivery::isReachable).toList();
+        if (reachable.isEmpty()) {
+            log.info("Email '{}' not sent: no recipient has a mailbox", subject);
+            return;
+        }
+        MimeMessage message = message(reachable, subject, content);
         MailException last = null;
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             try {
@@ -127,6 +134,10 @@ public class MailDelivery {
         }
         log.error("Email '{}' to {} was not delivered", subject, to);
         throw new MailNotDeliveredException(subject, to, last);
+    }
+
+    private static boolean isReachable(String address) {
+        return address != null && !address.toLowerCase(Locale.ROOT).endsWith(INVALID_DOMAIN);
     }
 
     private MimeMessage message(List<String> to, String subject, MailContent content) {

@@ -612,6 +612,67 @@
         "actions": "Actions"
       }
     },
+    "people": {
+      "add": "Add a colleague without an account",
+      "badge": "No account",
+      "unknownAddress": "Address unknown",
+      "awardCount": "awards: {{count}}",
+      "cardTitle": "Colleague without an account",
+      "addedBy": "Added by",
+      "invitation": "Invitation",
+      "invitedAt": "Sent {{at}}",
+      "notInvited": "Invitation not sent: the address is unknown",
+      "notInvitedYet": "Not sent yet",
+      "awards": "Awards",
+      "noAwards": "No awards yet",
+      "change": "Change",
+      "invite": "Send the invitation again",
+      "removeAction": "Remove",
+      "changed": "The changes are saved.",
+      "invited": "The invitation is sent.",
+      "remove": {
+        "title": "Remove the colleague?",
+        "text": "{{name}} and their draft awards will be removed. Awards already submitted keep the person in the system.",
+        "confirm": "Remove",
+        "cancel": "Cancel"
+      },
+      "dialog": {
+        "addTitle": "Add a colleague without an account",
+        "changeTitle": "Change the colleague's details",
+        "lastName": "Last name",
+        "firstName": "First name",
+        "department": "Department",
+        "email": "University email (optional)",
+        "emailHint": "With an address the colleague receives an invitation to claim the account.",
+        "emailKept": "An address once entered can be changed but not removed.",
+        "duplicates": "A colleague with this name already exists in this department:",
+        "addAnyway": "This is a different person, add",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "validation": {
+        "required": "Required field",
+        "tooLong": "Too long",
+        "name": "Use letters, apostrophes, hyphens and spaces only",
+        "institutional": "Enter a university address",
+        "emailKept": "The address cannot be removed",
+        "taken": "This address is already in use",
+        "outOfScope": "Choose a department of your faculty"
+      },
+      "problems": {
+        "person-has-awards": "The colleague has awards that are not drafts, so they cannot be removed.",
+        "person-claimed": "The colleague has claimed the account in the meantime. The page has been reloaded.",
+        "no-address": "The address is unknown, so no invitation can be sent.",
+        "too-many-requests": "The invitation was sent recently. Try again later.",
+        "version-conflict": "Somebody changed this colleague in the meantime. Close the dialog and try again.",
+        "email-taken": "This address is already in use.",
+        "departments": "The departments could not be loaded.",
+        "access-denied": "You lack the permission for this action.",
+        "network": "The server is unreachable. Try again later.",
+        "unknown": "The action failed. Try again later."
+      }
+    },
     "status": {
       "PENDING": "Pending confirmation",
       "ACTIVE": "Active",
@@ -619,7 +680,8 @@
       "SUSPENDED": "Suspended",
       "RETIRED": "Retired",
       "MEMORIAL": "Memorial",
-      "DELETED": "Deleted"
+      "DELETED": "Deleted",
+      "UNCLAIMED": "No account"
     },
     "detail": {
       "back": "Back to the user list",

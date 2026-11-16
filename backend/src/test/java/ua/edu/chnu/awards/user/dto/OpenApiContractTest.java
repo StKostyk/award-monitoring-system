@@ -9,9 +9,11 @@ import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,8 @@ import ua.edu.chnu.awards.award.dto.AwardCategoryResponse;
 import ua.edu.chnu.awards.award.dto.AwardForm;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.OpenAwards;
+import ua.edu.chnu.awards.award.dto.Person;
+import ua.edu.chnu.awards.award.dto.PersonForm;
 import ua.edu.chnu.awards.award.dto.TimelineEntry;
 import ua.edu.chnu.awards.award.dto.YearRange;
 import ua.edu.chnu.awards.award.entity.ApprovalLevel;
@@ -216,6 +220,19 @@ class OpenApiContractTest {
         assertThat((List<String>) property(rank, "status").get("enum")).containsExactlyElementsOf(
             Arrays.stream(RankStatus.values()).map(RankStatus::name).toList());
         assertThat(schemas.get("PersonalAnalytics").toString()).doesNotContain("x-status");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac1_1_personSchemasMatchTheFormAndTheResponse() throws IOException {
+        Map<String, Object> schemas = schemas();
+        Set<String> form = new HashSet<>(property((Map<String, Object>) schemas.get("PersonCreateRequest"),
+            "properties").keySet());
+        form.add("version");
+
+        assertThat(property((Map<String, Object>) schemas.get("Person"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(Person.class));
+        assertThat(form).containsExactlyInAnyOrderElementsOf(components(PersonForm.class));
     }
 
     private static List<String> components(Class<? extends Record> type) {

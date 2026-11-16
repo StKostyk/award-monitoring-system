@@ -10,12 +10,14 @@ import { Store } from '@ngrx/store';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
-import { grantableRoles } from '../../../core/auth/permissions';
+import { canManagePeople, grantableRoles } from '../../../core/auth/permissions';
 import { OrganizationRef, RoleAssignment } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { AssignRoleDialogComponent } from '../assign-role-dialog/assign-role-dialog.component';
 import { LegalHoldCardComponent } from '../legal-hold-card/legal-hold-card.component';
+import { PersonCardComponent } from '../person-card/person-card.component';
+import { placeholderAddress } from '../people.service';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
 import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
@@ -39,6 +41,7 @@ import { StatusPageComponent } from '../../../shared/status-page/status-page.com
     TranslocoPipe,
     KyivDatePipe,
     LegalHoldCardComponent,
+    PersonCardComponent,
     StatusPageComponent,
   ],
   templateUrl: './user-detail.component.html',
@@ -54,6 +57,7 @@ export class UserDetailComponent implements OnInit {
 
   protected readonly id = Number(this.route.snapshot.paramMap.get('id'));
   protected readonly canAssign = grantableRoles(this.auth.permissions()).length > 0;
+  protected readonly canManagePeople = canManagePeople(this.auth.permissions());
   protected readonly canManageHolds = this.auth.permissions().hasPermission('legal-hold:manage');
 
   readonly user = this.store.selectSignal(adminUsersFeature.selectSelected);
@@ -65,6 +69,15 @@ export class UserDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.dispatch(AdminUsersActions.userOpened({ id: this.id }));
+  }
+
+  reload(): void {
+    this.store.dispatch(AdminUsersActions.userReloaded({ id: this.id }));
+  }
+
+  /** The address to show; a person whose address is unknown carries a placeholder that stays hidden. */
+  address(user: UserDetail): string | null {
+    return user.status === 'UNCLAIMED' && placeholderAddress(user.email) ? null : user.email;
   }
 
   assign(user: UserDetail): void {

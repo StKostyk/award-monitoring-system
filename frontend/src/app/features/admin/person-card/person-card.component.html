@@ -1,0 +1,84 @@
+@if (person(); as person) {
+  <mat-card class="admin__card" data-testid="person-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'admin.people.cardTitle' | transloco }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <dl class="admin__facts">
+        <dt>{{ 'admin.people.addedBy' | transloco }}</dt>
+        <dd data-testid="person-added-by">{{ person.addedBy.name }}</dd>
+        <dt>{{ 'admin.people.invitation' | transloco }}</dt>
+        <dd data-testid="person-invitation">
+          @if (person.email === null) {
+            {{ 'admin.people.notInvited' | transloco }}
+          } @else if (person.invitedAt) {
+            {{ 'admin.people.invitedAt' | transloco: { at: moment(person.invitedAt) } }}
+          } @else {
+            {{ 'admin.people.notInvitedYet' | transloco }}
+          }
+        </dd>
+      </dl>
+
+      <h2 class="admin__subtitle">{{ 'admin.people.awards' | transloco }}</h2>
+      @if (person.awards.length) {
+        <ul class="admin__roles" data-testid="person-awards">
+          @for (award of person.awards; track award.id) {
+            <li class="admin__role">
+              <span>{{ title(award) }}</span>
+              <span class="admin__validity">{{ 'awards.status.' + award.status | transloco }}</span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p data-testid="person-no-awards">{{ 'admin.people.noAwards' | transloco }}</p>
+      }
+
+      @if (message(); as message) {
+        <p class="admin__message" role="status" data-testid="person-message">
+          {{ message | transloco }}
+        </p>
+      }
+      @if (problem(); as problem) {
+        <p class="admin__problem" role="alert" data-testid="person-error">
+          {{ problem | transloco }}
+        </p>
+      }
+
+      @if (person.status === 'UNCLAIMED') {
+        <div class="admin__actions">
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="busy()"
+            (click)="change(person)"
+            data-testid="person-change"
+          >
+            {{ 'admin.people.change' | transloco }}
+          </button>
+          @if (person.email !== null) {
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="busy()"
+              (click)="invite(person)"
+              data-testid="person-invite"
+            >
+              {{ 'admin.people.invite' | transloco }}
+            </button>
+          }
+          <button
+            mat-button
+            type="button"
+            [disabled]="busy()"
+            (click)="remove(person)"
+            data-testid="person-remove"
+          >
+            {{ 'admin.people.removeAction' | transloco }}
+          </button>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+} @else if (problem(); as problem) {
+  <p class="admin__problem" role="alert" data-testid="person-error">{{ problem | transloco }}</p>
+}

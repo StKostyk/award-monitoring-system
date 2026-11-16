@@ -10,7 +10,14 @@ export type RoleType =
 export type OrganizationType = 'UNIVERSITY' | 'COLLEGE' | 'FACULTY' | 'SPECIALITY' | 'DEPARTMENT';
 
 export type AccountStatus =
-  'PENDING' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'RETIRED' | 'MEMORIAL' | 'DELETED';
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'SUSPENDED'
+  | 'RETIRED'
+  | 'MEMORIAL'
+  | 'DELETED'
+  | 'UNCLAIMED';
 
 export interface OrganizationRef {
   id: number;

@@ -17,6 +17,7 @@ import ua.edu.chnu.awards.audit.service.AuditService;
 import ua.edu.chnu.awards.auth.service.LoginAttemptService;
 import ua.edu.chnu.awards.common.EmailUtils;
 import ua.edu.chnu.awards.common.web.ClientRequest;
+import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 import ua.edu.chnu.awards.user.service.UserAccounts;
 
@@ -61,7 +62,8 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
     }
 
     private static String codeOf(AuthenticationException exception) {
-        if (exception instanceof AccountStatusRefusedException refused) {
+        if (exception instanceof AccountStatusRefusedException refused
+            && refused.getStatus() != AccountStatus.UNCLAIMED) {
             return refused.getStatus().name();
         }
         return exception instanceof LockedException ? LOCKED : BAD_CREDENTIALS;

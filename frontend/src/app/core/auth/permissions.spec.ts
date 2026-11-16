@@ -3,6 +3,7 @@ import {
   canCreateAwards,
   canDelegate,
   canReadCompliance,
+  canManagePeople,
   canReadDirectory,
   canReadOwnAnalytics,
   canReadUnitAnalytics,
@@ -43,6 +44,17 @@ describe('permissions', () => {
     expect(permissions.hasPermission('user:manage:scope')).toBe(true);
     expect(permissions.hasPermission('user:manage')).toBe(false);
     expect(canReadDirectory(permissions)).toBe(true);
+  });
+
+  it('ac1_9_lets_a_faculty_secretary_or_dean_manage_people_without_an_account', () => {
+    expect(canManagePeople(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] })))).toBe(
+      true,
+    );
+    expect(canManagePeople(readPermissions(token({ role_scopes: ['DEAN:9'] })))).toBe(true);
+    expect(canManagePeople(readPermissions(token({ role_scopes: ['RECTOR_SECRETARY:1'] })))).toBe(
+      false,
+    );
+    expect(canManagePeople(readPermissions(token({ role_scopes: ['EMPLOYEE:64'] })))).toBe(false);
   });
 
   it('reads a non-ascii claim and a space separated permission string', () => {

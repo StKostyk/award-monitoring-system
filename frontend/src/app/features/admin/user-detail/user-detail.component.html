@@ -34,7 +34,9 @@
     <mat-card-content>
       <dl class="admin__facts">
         <dt>{{ 'admin.detail.email' | transloco }}</dt>
-        <dd data-testid="detail-email">{{ user.email }}</dd>
+        <dd data-testid="detail-email">
+          {{ address(user) ?? ('admin.people.unknownAddress' | transloco) }}
+        </dd>
         <dt>{{ 'admin.detail.organization' | transloco }}</dt>
         <dd>{{ name(user.organization) }}</dd>
         <dt>{{ 'admin.detail.status' | transloco }}</dt>
@@ -62,6 +64,10 @@
     <p class="admin__problem" role="alert" data-testid="detail-action-error">
       {{ problem | transloco }}
     </p>
+  }
+
+  @if (canManagePeople && user.status === 'UNCLAIMED') {
+    <app-person-card [personId]="user.id" (changed)="reload()" />
   }
 
   @if (canManageHolds) {
@@ -113,7 +119,7 @@
       } @else {
         <p data-testid="no-current-roles">{{ 'admin.detail.noRoles' | transloco }}</p>
       }
-      @if (canAssign) {
+      @if (canAssign && user.status !== 'UNCLAIMED') {
         <button mat-flat-button type="button" (click)="assign(user)" data-testid="assign-role-open">
           {{ 'admin.detail.assign' | transloco }}
         </button>

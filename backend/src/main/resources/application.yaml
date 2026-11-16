@@ -146,6 +146,10 @@ app:
   jobs:
     catch-up-on-start: ${APP_JOBS_CATCH_UP_ON_START:false}
     catch-up-delay: ${APP_JOBS_CATCH_UP_DELAY:PT1M}
+  people:
+    # a person without an account receives the invitation again at most this often
+    invitation-interval: ${APP_PEOPLE_INVITATION_INTERVAL:PT1H}
+    data-protection-contact: ${APP_PEOPLE_DATA_PROTECTION_CONTACT:gdpr@chnu.edu.ua}
   workflow:
     review-working-days: ${APP_REVIEW_WORKING_DAYS:3}
     overdue-cron: ${APP_WORKFLOW_OVERDUE_CRON:0 5 * * * *}
