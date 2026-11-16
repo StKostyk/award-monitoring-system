@@ -170,7 +170,7 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.2.4 | Show a not-found page for unknown paths | 1 | ✅ Done | SCRUM-125 | [#361](https://github.com/StKostyk/award-monitoring-system/issues/361) |
 
 ### Epic 9 — Production Hardening (Jira epic SCRUM-128)
-Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md). Feature 9.2 PRD approved 2026-11-10: [feature-9.2-demo-deployment.md](../features/epic-09/feature-9.2-demo-deployment.md). Feature 9.3 PRD approved 2026-11-14: [feature-9.3-new-look.md](../features/epic-09/feature-9.3-new-look.md).
+Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md). Feature 9.2 PRD approved 2026-11-10: [feature-9.2-demo-deployment.md](../features/epic-09/feature-9.2-demo-deployment.md). Feature 9.3 PRD approved 2026-11-14, Done 2026-11-16 (41 points with five fixes): [feature-9.3-new-look.md](../features/epic-09/feature-9.3-new-look.md).
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
@@ -193,7 +193,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.3.9 | Not-found card on record pages and palette text normalisation | 2 | ✅ Done | SCRUM-146 | [#409](https://github.com/StKostyk/award-monitoring-system/issues/409) |
 | 9.3.14 | Review queue shortcuts stop after ticking a checklist item | 1 | ✅ Done | SCRUM-147 | [#412](https://github.com/StKostyk/award-monitoring-system/issues/412) |
 | 9.3.21 | Lighthouse performance below 90 on the signed-in pages | 3 | ✅ Done | SCRUM-148 | [#413](https://github.com/StKostyk/award-monitoring-system/issues/413) |
-| 9.3.22 | Held decision after a revoked role ends at sign-in and the request is orphaned | 2 | 👀 In review | SCRUM-149 | [#414](https://github.com/StKostyk/award-monitoring-system/issues/414) |
+| 9.3.22 | Held decision after a revoked role ends at sign-in and the request is orphaned | 2 | ✅ Done | SCRUM-149 | [#414](https://github.com/StKostyk/award-monitoring-system/issues/414) |
 
 ### Later epics
 | ID | Story | Points | Epic |
