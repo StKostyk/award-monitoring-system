@@ -49,6 +49,7 @@ test.describe('role assignment', () => {
     const email = `assignee.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, password);
     await signIn(page, dean, DEMO_PASSWORD);
+    await expect(page.getByTestId('nav-awards')).toBeVisible();
     await page.goto('/admin/users');
     await page.getByTestId('filter-q').fill(email);
     await page.getByRole('row').filter({ hasText: email }).getByTestId('user-link').click();

@@ -177,6 +177,7 @@ test.describe('award documents', () => {
 
     const other = await (await browser.newContext()).newPage();
     await signIn(other, employee, FRESH_PASSWORD);
+    await expect(other.getByTestId('nav-awards')).toBeVisible();
     await other.goto(`/awards/${id}`);
     await row(other, 'диплом.pdf').getByTestId('document-remove').click();
     await other.getByTestId('confirm-accept').click();
