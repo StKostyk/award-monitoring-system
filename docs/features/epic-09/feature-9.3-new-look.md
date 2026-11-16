@@ -329,18 +329,18 @@ with the seed password; every seed account acknowledges the privacy notice at it
 ### Detours
 
 22. Revoked mid-flow: as `secretary.fmi`, confirm an approval; within the 10 s, as `admin` in the second profile,
-    revoke the secretary role. Expected: after 10 s the send answers 403, the request comes back with «Немає
-    доступу», the queue reloads and `/reviews` then shows the forbidden page; `dean.fmi` still sees the request in
-    the faculty queue. (AC-6.6)
+    revoke the secretary role. Expected: revocation signs the holder out everywhere, so after 10 s the send answers
+    401 and the page goes to `/login`; after a new sign-in `/reviews` shows the forbidden page. (AC-6.6)
 23. Revoked mid-flow (delegation): `dean.fmi` delegates review to `secretary.fmi`; the secretary holds a decision on a
-    dean-level request and the dean revokes the delegation within 10 s. Expected: 403 on the send, request back,
-    the dean decides it. (AC-6.6)
+    dean-level request and the dean revokes the delegation within 10 s. Expected: 401 on the send (the delegate is
+    signed out), the decision is not stored and the dean decides it. (AC-6.6)
 24. Hidden in state: as `secretary.fmi` open an award already approved, then `POST /awards/{id}/decisions` through
     the API. Expected: the queue does not list it, A does nothing on its page, the API answers 409 `request-closed`.
 25. Hidden in state: as `lecturer.fmi` open `/reviews` directly. Expected: forbidden page; the palette never offers
     the queue; the "+" stays.
-26. Concurrency: `dean.fmi` and `secretary.fmi` both hold a decision on the same request. Expected: the second send
-    answers 409, that request comes back with the message. (AC-6.6)
+26. Concurrency: two sessions of `secretary.fmi` both hold a decision on the same request. Expected: the second send
+    answers 409 and the message «Розгляд цієї нагороди вже завершено» shows; the reloaded queue no longer lists it.
+    (AC-6.6)
 27. Navigate away during the hold (click «Нагороди»). Expected: the call is sent at once. Close the tab during a
     hold. Expected: the decision is stored (check the award's status). (AC-6.5)
 28. Stop the network (DevTools offline) during a hold. Expected: snackbar stays; on reconnect the call goes out, else
@@ -358,6 +358,47 @@ with the seed password; every seed account acknowledges the privacy notice at it
     the palette. Expected: «Мій дашборд» is offered as for the typed text. (9.3.9)
 
 The expected texts quote the planned wording; the validation replaces them with the merged i18n texts.
+
+### Run 2026-11-16
+
+Compose stack rebuilt at a70dd31 (app and frontend), default settings, seed 961 awards (808 approved) after earlier e2e runs; secretary role and delegation restored. Result: 31 pass, 3 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | login light: cream bg + burgundy panel rgb(94,22,33), «808 нагород» (seed now 961/808 after e2e runs); dark: Aurora navy rgb(6,9,20); Manrope headings |
+| 2 | PASS | 360px wrong password: strip (brand) above form, error «Невірна адреса або пароль.», scrollWidth 360=clientWidth |
+| 3 | PASS | lecturer.fmi: sidenav 264px left, aria-current=«Мій дашборд», no bottom bar in screenshots |
+| 4 | PASS | scheme menu «Темна»: Aurora glow visible, body rgb(6,9,20) kept after reload |
+| 5 | PASS | 360px: top bar menu + title «Мій дашборд» (truncated) + search + '+'; '+' -> /awards/new; scrollWidth 360 |
+| 6 | PASS | Ctrl K «алгеб»: no section matches, 2 awards; ArrowDown+Enter opened /awards/9; Escape returns focus to the opener; no «Адміністрування» (palette «нагород» lists «Мої нагороди» + award) |
+| 7 | PASS | /awards 10 rows: level chip, title, recipient, date, status chip; chips Усі 10/Чернетка 1/Затверджено 9/…; Затверджено chip -> 9 approved rows; Slow-3G-like throttle shows awards-loading skeleton |
+| 8 | PASS | chip «На розгляді 0»: empty state «Немає нагород, що відповідають пошуку.» + «Скинути фільтри» |
+| 9 | PASS | /awards/968 (under review): «Шлях нагороди», «Подано», «Секретар факультету · Зараз · очікується до 19.11»; /awards/897 and 932 after the secretary's decision: «Схвалено · Аліна Секретаренко · Секретар факультету · date», dean step «Зараз». (/awards/9 seed has no request: «пропущено») |
+| 10 | PASS | fresh mr93a: 1 MB PDF -> progress, /awards/970/edit titled «Грамота МОН» with document; «Інший файл» replaced it (scan.pdf, 1 item); .txt refused «Непідтримуваний формат файлу»; «Заповнити без документа» opens empty form at /awards/new |
+| 11 | PASS | reduced-motion: dashboard numbers 9/3 final in the first sample; normal motion counts 1..9 over ~0.5 s |
+| 12 | PASS | dean.fmi /analytics (-> units/9): chart fills change in place with the scheme (light rgb(122,31,43)… -> dark rgb(125,220,255)…), no reload |
+| 13 | PASS | secretary.fmi /reviews: «Залишилось: 3», document block, fields, checklist (3 items), shortcuts hint |
+| 14 | FAIL | A is ignored after ticking a checklist item (focus on the checkbox INPUT); after a click on the heading A works: snackbar «Рішення збережено / Скасувати», no call at 1 s, one POST after ~10 s. SCRUM-147 |
+| 15 | PASS | decided next (queue 2->1), «Скасувати» within 10 s: request back (2), no decision POST in 12 s |
+| 16 | PASS | J moves to the next request, K back; in the return dialog comment field «jk J» typed as text, dialog closes with Esc |
+| 17 | PASS | last open request (968) decided with A: queue «Залишилось: 0 / Черга порожня» |
+| 18 | PASS | admin (+dean, gdpr for /delegations, /analytics, /compliance) 14 screens x 1280/360 x light/dark: 0 sideways scroll, new look; compliance table scrolls inside its card at 360 |
+| 19 | PASS | brand.json id replaced with an unknown id (route fulfil): html.brand-neutral, primary #2d6a4f green, Onest Variable font, cream-green bg |
+| 20 | PASS | /awards load + reload: only host localhost (4 woff2 fonts, svg logo/icons) |
+| 21 | FAIL | flow:median twice: /login 99, /awards/new 85 and 84, /awards 75 and 75 (TBT 0.27-0.53). SCRUM-148 |
+| 22 | FAIL | secretary holds 971, admin revokes FACULTY_SECRETARY: send answers 401 (signed out everywhere, by design; step text corrected), page -> /login; fresh sign-in gets 403 on /reviews. FAIL: dean.fmi does not see the orphaned secretary-level request (lists DEAN-level only), see SCRUM-149 |
+| 23 | PASS | step text corrected: secretary (delegated DEAN) holds 932, dean DELETE /delegations/2 within the hold -> send answers 401 (loss of authority signs the holder out everywhere, AUTHENTICATION_AUTHORIZATION role assignment/delegation), page goes to /login, decision not stored, dean's queue still lists 932 |
+| 24 | PASS | secretary on /awards/9 (approved): A opens no dialog; not in the queue; POST /awards/9/decisions -> 409 urn:awards:problem:request-closed |
+| 25 | PASS | lecturer.fmi /reviews -> /forbidden; no nav item, palette 'розгляд' offers nothing; '+' stays at 360 px (phone-only control) |
+| 26 | PASS | two secretary sessions hold APPROVE on 981: A 200, B 409 «Розгляд цієї нагороди вже завершено» (request leaves B's reloaded queue). Step text corrected: dean and secretary never see the same request (secretary queue lists level-1, dean DEAN-level); with two dean sessions B got 404 instead of 409 on 897 (moved to rector level) |
+| 27 | PASS | 974: click «Нагороди» during hold -> POST /awards/974/decisions sent at once, APPROVED; 975: tab closed during hold -> APPROVED (psql) |
+| 28 | PASS | 976: offline during hold -> snackbar «Рішення надішлеться, щойно з'єднання відновиться» stays, no call; back online -> POST sent (16 s), APPROVED |
+| 29 | PASS | 977: reload within the hold -> decision stored (APPROVED) and request not in the queue after reload |
+| 30 | PASS | dean.fmi left /reviews open 16 min (token ttl 15m): silent POST /oauth2/token 200 at 12:33, held approve of 932 at 12:38 answered 200 with the new token, no error (it was a DEAN-level request, the 'крок 30' item is not in the dean's queue) |
+| 31 | PASS | backend stopped/started (docker stop/start, same JVM restart) while the palette was open: during the outage typing gave 0 options and no crash (502), after healthy the next keystroke «алгеб» listed the 2 awards again (401 after key rotation handled) |
+| 32 | PASS | redis stopped, /login reloaded: form renders, no «N нагород» number; redis restarted (healthy) |
+| 33 | PASS | admin: /awards/999999, /admin/users/999999, /nonexistent each show the not-found card (icon, heading «Не знайдено»/«Користувача не знайдено»/«Сторінку не знайдено», sentence, link back) |
+| 34 | PASS | palette with NFD «Мій дашборд» (12 code points vs 11) offers «Мій дашборд» like the typed text |
 
 ## 11. Risks
 
