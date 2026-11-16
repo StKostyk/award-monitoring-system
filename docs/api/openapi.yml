@@ -3925,10 +3925,6 @@ components:
           format: email
         status:
           $ref: '#/components/schemas/AccountStatus'
-        waitingAwards:
-          type: integer
-          description: >
-            After verification only: awards entered for the person before the claim, 0 otherwise (2.5.3, planned)
 
     OrganizationSummary:
       allOf:
@@ -3979,8 +3975,7 @@ components:
 
     AccountStatus:
       type: string
-      enum: [PENDING, ACTIVE, INACTIVE, SUSPENDED, RETIRED, MEMORIAL, DELETED, UNCLAIMED]
-      description: "`UNCLAIMED` — a person without an account, added by a secretary or dean (2.5.1, planned)"
+      enum: [PENDING, ACTIVE, INACTIVE, SUSPENDED, RETIRED, MEMORIAL, DELETED]
 
     RoleAssignment:
       type: object
@@ -4721,18 +4716,6 @@ components:
           description: >
             Who sees the award beyond its owner and scoped readers; `PRIVATE` by default, chosen by the owner once
             the award is approved (4.3.1); null for a unit award, which is shared once approved
-        ownerWithoutAccount:
-          type: boolean
-          description: The owner is a person without an account (2.5.2, planned)
-        managedByCaller:
-          type: boolean
-          description: >
-            The caller may edit, submit and withdraw it for an owner without an account: a faculty secretary or
-            dean whose scope covers the owner's department (2.5.2, planned)
-        source:
-          type: string
-          enum: [FORM, IMPORT]
-          description: "`IMPORT` for an award from a spreadsheet import (2.5.5, planned)"
         createdAt:
           type: string
           format: date-time
@@ -5059,14 +5042,6 @@ components:
             `DEPARTMENT` inside the scope of the caller's `FACULTY_SECRETARY` or `DEAN` role, own or delegated
             (`GET /awards/recipient-units`); anything else answers 422 `validation-failed` on this field with
             code `out-of-scope`. Null or absent: a personal award of the caller.
-        recipientUserId:
-          type: [integer, 'null']
-          format: int64
-          description: >
-            A person without an account inside the scope of the caller's `FACULTY_SECRETARY` or `DEAN` role
-            (`GET /people`); the award is owned by that person (2.5.2, planned). Out of scope, claimed or unknown:
-            422 `validation-failed` code `out-of-scope`; together with `recipientOrganizationId`: code
-            `one-recipient`.
 
     AwardUpdateRequest:
       allOf:

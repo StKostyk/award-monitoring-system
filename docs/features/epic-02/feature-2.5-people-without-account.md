@@ -303,7 +303,9 @@ delivery log and retries).
 
 ### 8.1 OpenAPI changes
 
-All `x-status: planned` in the PR of this PRD.
+The new paths and schemas are `x-status: planned` in the PR of this PRD. Changes to existing schemas
+(`AccountStatus`, `AwardCreateRequest`, `Award`, `RegistrationResponse`) land with their story: `OpenApiContractTest`
+pins those schemas to the DTOs and the entity enum.
 
 - `/people` `post` (2.5.1): `PersonCreateRequest` {`firstName`, `lastName`, `email`, `organizationId`} → 201
   `Person` {`id`, `firstName`, `lastName`, `email` (nullable), `organization` (`OrganizationRef`), `status`
