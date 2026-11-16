@@ -932,6 +932,8 @@
       "denied": "No access",
       "offline": "No connection",
       "waiting": "The decision goes out once the connection is back",
+      "signedOut": "Your access changed while the decision was held. Not saved, awards: #{{id}}",
+      "gotIt": "Got it",
       "empty": "The queue is empty"
     },
     "title": "Reviews",

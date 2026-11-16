@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { AuthService } from './auth.service';
+import { SignInNoticeService } from './sign-in-notice.service';
 
 @Component({
   selector: 'app-callback',
@@ -27,9 +28,13 @@ import { AuthService } from './auth.service';
 export class CallbackComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly notice = inject(SignInNoticeService);
 
   ngOnInit(): void {
     const target = this.auth.isAuthenticated() ? this.auth.targetUrl() : '/';
     void this.router.navigateByUrl(target);
+    if (this.auth.isAuthenticated()) {
+      this.notice.showPending();
+    }
   }
 }

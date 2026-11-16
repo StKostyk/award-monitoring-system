@@ -60,8 +60,8 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5h | 9.3.7 Remaining screens in the new look | 9.3 | 5 | SCRUM-144 | #397 | no | Done |
 | 5i | 9.3.8 Stable review-queue and award-mobile e2e | 9.3 | 2 | SCRUM-145 | #407 | no | Done |
 | 5j | 9.3.9 Not-found card on record pages and palette text normalisation | 9.3 | 2 | SCRUM-146 | #409 | no | Done |
-| 5m | 9.3.22 Held decision after a revoked role ends at sign-in and the request is orphaned | 9.3 | 2 | SCRUM-149 | #414 | no | To do |
-| 5l | 9.3.21 Lighthouse performance below 90 on the signed-in pages | 9.3 | 3 | SCRUM-148 | #413 | no | In review |
+| 5m | 9.3.22 Held decision after a revoked role ends at sign-in and the request is orphaned | 9.3 | 2 | SCRUM-149 | #414 | no | In review |
+| 5l | 9.3.21 Lighthouse performance below 90 on the signed-in pages | 9.3 | 3 | SCRUM-148 | #413 | no | Done |
 | 5k | 9.3.14 Review queue shortcuts stop after ticking a checklist item | 9.3 | 1 | SCRUM-147 | #412 | no | Done |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |

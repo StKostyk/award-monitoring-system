@@ -8,12 +8,14 @@ import { Subject, filter, firstValueFrom, fromEvent } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { problemStatus, problemType } from '../../core/api/problem';
 import { AuthService } from '../../core/auth/auth.service';
+import { SignInNoticeService } from '../../core/auth/sign-in-notice.service';
 import { ConnectivityService } from '../../core/connectivity/connectivity.service';
 import { reviewProblemKey, reviewerOf } from './review-problems';
 import { DecisionOutcome, DecisionRequest, ReviewsService } from './reviews.service';
 
 /** How long a confirmed decision waits for «Скасувати» before it is sent, in milliseconds. */
 export const HOLD_MILLIS = 10_000;
+const UNAUTHORIZED = 401;
 const FORBIDDEN = 403;
 const RELOADING = ['request-claimed', 'request-stale', 'request-closed'];
 
@@ -43,12 +45,14 @@ export class HeldDecisionService {
   private readonly reviews = inject(ReviewsService);
   private readonly auth = inject(AuthService);
   private readonly connectivity = inject(ConnectivityService);
+  private readonly notice = inject(SignInNoticeService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly transloco = inject(TranslocoService);
   private readonly held = new Map<number, Held>();
   private readonly returnedSubject = new Subject<ReturnedDecision>();
   private readonly sentSubject = new Subject<DecisionOutcome>();
   private readonly sending = new Set<Promise<void>>();
+  private readonly lost = new Set<number>();
 
   /** The awards whose decision is held now. */
   readonly heldIds = signal<ReadonlySet<number>>(new Set());
@@ -133,8 +137,23 @@ export class HeldDecisionService {
     try {
       this.sentSubject.next(await firstValueFrom(this.reviews.decide(awardId, request)));
     } catch (error: unknown) {
+      if (owner && this.signedOut(error)) {
+        this.lostWith(owner, awardId);
+        return;
+      }
       this.refused(awardId, error);
     }
+  }
+
+  /** The session ended before the decision reached the server: the next sign-in of the owner names the award. */
+  private lostWith(owner: string, awardId: number): void {
+    this.lost.add(awardId);
+    this.notice.leave(owner, 'reviews.queue.signedOut', { id: [...this.lost].join(', ') });
+  }
+
+  /** The send was refused because the session ended (revoked role or delegation); the page goes to sign-in. */
+  private signedOut(error: unknown): boolean {
+    return problemStatus(error) === UNAUTHORIZED && !this.auth.isAuthenticated();
   }
 
   private refused(awardId: number, error: unknown): void {
@@ -159,6 +178,10 @@ export class HeldDecisionService {
     const token = this.auth.accessToken();
     for (const [awardId, held] of this.held) {
       this.cancel(awardId);
+      if (held.owner && !this.auth.isAuthenticated()) {
+        this.lostWith(held.owner, awardId);
+        continue;
+      }
       if (this.auth.userId() !== held.owner) {
         continue;
       }

@@ -8,6 +8,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, vi } from 'vitest';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { SignInNoticeService } from '../../core/auth/sign-in-notice.service';
 import { ConnectivityService } from '../../core/connectivity/connectivity.service';
 import { HOLD_MILLIS, HeldDecisionService, ReturnedDecision } from './held-decision.service';
 import { DecisionRequest, ReviewsService } from './reviews.service';
@@ -35,8 +36,10 @@ describe('HeldDecisionService', () => {
   const auth = {
     accessToken: signal<string | null>('token-1'),
     userId: signal<string | null>('21'),
+    isAuthenticated: signal(true),
     beforeSignOut: (hook: () => Promise<void>) => (signOut = hook),
   };
+  const notice = { leave: vi.fn() };
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -49,10 +52,13 @@ describe('HeldDecisionService', () => {
     });
     online.set(true);
     auth.userId.set('21');
+    auth.isAuthenticated.set(true);
+    notice.leave.mockReset();
     TestBed.configureTestingModule({
       providers: [
         { provide: ReviewsService, useValue: reviews },
         { provide: AuthService, useValue: auth },
+        { provide: SignInNoticeService, useValue: notice },
         { provide: ConnectivityService, useValue: { online, reconnected$: reconnected } },
         { provide: MatSnackBar, useValue: snackBar },
         { provide: Router, useValue: { events } },
@@ -204,6 +210,56 @@ describe('HeldDecisionService', () => {
     await vi.advanceTimersByTimeAsync(HOLD_MILLIS);
 
     expect(returned[0].problem).toBe('reviews.queue.denied');
+  });
+
+  it('ac1_a_session_ended_during_the_hold_leaves_a_notice_for_the_next_sign_in', async () => {
+    reviews.decide.mockImplementation(() => {
+      auth.isAuthenticated.set(false);
+      auth.userId.set(null);
+      return throwError(() => problem(401));
+    });
+    service.hold(5, approve);
+
+    await vi.advanceTimersByTimeAsync(HOLD_MILLIS);
+
+    expect(notice.leave).toHaveBeenCalledWith('21', 'reviews.queue.signedOut', { id: '5' });
+    expect(returned).toEqual([]);
+  });
+
+  it('ac1_every_decision_lost_with_the_session_is_named_in_one_notice', async () => {
+    reviews.decide.mockImplementation(() => {
+      auth.isAuthenticated.set(false);
+      return throwError(() => problem(401));
+    });
+    service.hold(5, approve);
+    service.hold(7, approve);
+
+    await vi.advanceTimersByTimeAsync(HOLD_MILLIS);
+
+    expect(notice.leave).toHaveBeenLastCalledWith('21', 'reviews.queue.signedOut', { id: '5, 7' });
+  });
+
+  it('ac1_a_session_ended_by_another_request_leaves_the_notice_when_the_page_goes_to_sign_in', () => {
+    const fetchSpy = vi.spyOn(window, 'fetch').mockResolvedValue(new Response());
+    service.hold(5, approve);
+    auth.isAuthenticated.set(false);
+    auth.userId.set(null);
+
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+
+    expect(notice.leave).toHaveBeenCalledWith('21', 'reviews.queue.signedOut', { id: '5' });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('edge_a_401_that_keeps_the_session_brings_the_request_back_without_a_notice', async () => {
+    reviews.decide.mockReturnValue(throwError(() => problem(401)));
+    service.hold(5, approve);
+
+    await vi.advanceTimersByTimeAsync(HOLD_MILLIS);
+
+    expect(notice.leave).not.toHaveBeenCalled();
+    expect(returned).toHaveLength(1);
   });
 
   it('edge_offline_waits_for_the_connection_and_a_lost_one_brings_the_request_back', async () => {

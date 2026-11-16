@@ -118,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- A decision held in the review queue when a revoked role or delegation ends the session is named after the next sign-in, instead of disappearing silently
 - Review queue shortcuts (J/K/A/R) keep working after a checklist item is ticked.
 - Record pages show the not-found card for a missing record; the command palette finds sections from text typed in decomposed form
 - End-to-end review queue specs filter by unit and walk every page; specs wait for the app shell after signing in

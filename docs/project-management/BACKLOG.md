@@ -192,8 +192,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.3.8 | Stable review-queue and award-mobile e2e | 2 | ✅ Done | SCRUM-145 | [#407](https://github.com/StKostyk/award-monitoring-system/issues/407) |
 | 9.3.9 | Not-found card on record pages and palette text normalisation | 2 | ✅ Done | SCRUM-146 | [#409](https://github.com/StKostyk/award-monitoring-system/issues/409) |
 | 9.3.14 | Review queue shortcuts stop after ticking a checklist item | 1 | ✅ Done | SCRUM-147 | [#412](https://github.com/StKostyk/award-monitoring-system/issues/412) |
-| 9.3.21 | Lighthouse performance below 90 on the signed-in pages | 3 | 👀 In review | SCRUM-148 | [#413](https://github.com/StKostyk/award-monitoring-system/issues/413) |
-| 9.3.22 | Held decision after a revoked role ends at sign-in and the request is orphaned | 2 |  | SCRUM-149 | [#414](https://github.com/StKostyk/award-monitoring-system/issues/414) |
+| 9.3.21 | Lighthouse performance below 90 on the signed-in pages | 3 | ✅ Done | SCRUM-148 | [#413](https://github.com/StKostyk/award-monitoring-system/issues/413) |
+| 9.3.22 | Held decision after a revoked role ends at sign-in and the request is orphaned | 2 | 👀 In review | SCRUM-149 | [#414](https://github.com/StKostyk/award-monitoring-system/issues/414) |
 
 ### Later epics
 | ID | Story | Points | Epic |
