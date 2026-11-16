@@ -2,7 +2,7 @@
 
 > **Epic**: 9 Production hardening (SCRUM-128) · **Tracker**: `docs/epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md`
 > **Sprint**: 10 and 11 (2026-11-16 to 2026-11-29) · **Points**: 31
-> **Status**: Validated 2026-11-16, pending the manual run of §10 (Approved 2026-11-14)
+> **Status**: Done 2026-11-16 (Validated 2026-11-16, Approved 2026-11-14)
 > **Governing docs**: ADR-014 and ADR-016 (addenda of this feature), `docs/frontend/UI_GUIDELINES.md` §1-8,
 > ADR-023 (decision transitions), Feature 8.1 (phone layout, offline page), Feature 8.2 (WCAG 2.2 AA, focus,
 > reduced motion), Feature 9.2 AC-1.1 (Lighthouse mobile 90), `openapi.yml` `POST /awards/{id}/decisions`,
@@ -419,6 +419,14 @@ requests (~14 ms each) weigh most. An empty award list template leaves `/awards`
 status-count requests and the category request of `/awards` in tasks of their own (largest `/awards` task 607 →
 449 ms simulated). A CSS stagger and a drawer list built only on opening gained about one point each and were left
 out. AC-1.6 stays as decided on 2026-11-15 (measured again on the demo server in 9.2.4).
+
+Close-out 2026-11-16: all 34 steps were run by hand. The failed steps are accepted on the tests of their fix
+stories: step 14 (SCRUM-147, PR #416) on `review-queue.component.spec`
+ac14_shortcuts_keep_working_after_a_checklist_item_is_ticked and e2e `review-queue.spec` «ac6_1 to ac6_4», which
+now ticks a checklist item before A; step 22 (SCRUM-149, PR #418) on e2e `review-queue.spec` «ac1 the decision lost
+with the session is named after the next sign-in», `sign-in-notice.service.spec` and `held-decision.service.spec`,
+with the orphaned secretary-level request left to 4.2 (overdue at the deadline, taken over by the dean); step 21
+(SCRUM-148, PR #417) under the AC-1.6 decision above.
 
 ## 11. Risks
 
