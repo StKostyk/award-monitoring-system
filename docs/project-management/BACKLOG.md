@@ -189,8 +189,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.3.5 | Award list, award page and new award | 5 | ✅ Done | SCRUM-142 | [#395](https://github.com/StKostyk/award-monitoring-system/issues/395) |
 | 9.3.6 | Review queue with checklist, shortcuts and undo | 5 | ✅ Done | SCRUM-143 | [#396](https://github.com/StKostyk/award-monitoring-system/issues/396) |
 | 9.3.7 | Remaining screens in the new look | 5 | ✅ Done | SCRUM-144 | [#397](https://github.com/StKostyk/award-monitoring-system/issues/397) |
-| 9.3.8 | Stable review-queue and award-mobile e2e | 2 | 👀 In review | SCRUM-145 | [#407](https://github.com/StKostyk/award-monitoring-system/issues/407) |
-| 9.3.9 | Not-found card on record pages and palette text normalisation | 2 | 👀 In review | SCRUM-146 | [#409](https://github.com/StKostyk/award-monitoring-system/issues/409) |
+| 9.3.8 | Stable review-queue and award-mobile e2e | 2 | ✅ Done | SCRUM-145 | [#407](https://github.com/StKostyk/award-monitoring-system/issues/407) |
+| 9.3.9 | Not-found card on record pages and palette text normalisation | 2 | ✅ Done | SCRUM-146 | [#409](https://github.com/StKostyk/award-monitoring-system/issues/409) |
 
 ### Later epics
 | ID | Story | Points | Epic |

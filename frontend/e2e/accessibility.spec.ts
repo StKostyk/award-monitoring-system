@@ -35,6 +35,7 @@ const DESKTOP = { width: 1280, height: 800 };
 const PHONE = { width: 360, height: 740 };
 const OPEN_STATES_MS = 180_000;
 const UPLOAD_MS = 60_000;
+const ROUTE_MS = 60_000;
 const REPORT = join(process.cwd(), '..', 'build', 'accessibility-report.json');
 
 /**
@@ -115,20 +116,38 @@ async function sweep(page: Page, role: RoleRoutes): Promise<string[]> {
     for (const scheme of SCHEMES) {
       await page.emulateMedia({ colorScheme: scheme });
       for (const route of role.routes) {
-        await page.setViewportSize(DESKTOP);
-        const elsewhere = await openRoute(page, route);
-        if (elsewhere) {
-          problems.push(`${route} ${language} ${scheme}: ${elsewhere}`);
-          continue;
-        }
-        for (const size of [DESKTOP, PHONE]) {
-          await page.setViewportSize(size);
-          const where = `${route} ${language} ${scheme} ${size.width}`;
-          const signedIn = role.account !== null;
-          problems.push(...(await scan({ page, label: route, where, language, signedIn })));
-        }
+        const found = await test.step(
+          `${route} ${language} ${scheme}`,
+          () => scanRoute(page, role, route, `${language} ${scheme}`, language),
+          { timeout: ROUTE_MS },
+        );
+        problems.push(...found);
       }
     }
+  }
+  return problems;
+}
+
+/** Opens one route and scans it at desktop and phone width; a step over ROUTE_MS fails the test with its name. */
+async function scanRoute(
+  page: Page,
+  role: RoleRoutes,
+  route: string,
+  variant: string,
+  language: string,
+): Promise<string[]> {
+  await page.setViewportSize(DESKTOP);
+  const elsewhere = await openRoute(page, route);
+  if (elsewhere) {
+    return [`${route} ${variant}: ${elsewhere}`];
+  }
+  const problems: string[] = [];
+  for (const size of [DESKTOP, PHONE]) {
+    await page.setViewportSize(size);
+    const where = `${route} ${variant} ${size.width}`;
+    problems.push(
+      ...(await scan({ page, label: route, where, language, signedIn: role.account !== null })),
+    );
   }
   return problems;
 }

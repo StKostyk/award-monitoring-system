@@ -32,6 +32,10 @@
     result of that run counts. More failures are retried too when one of them could not reach the dev server
     (it stopped during the run; the retry starts a new one). Default 3; 0 turns the retry off.
 
+.PARAMETER StartMinutes
+    How long the backend may take to report UP before the run stops. Default 3; 6 below 4 GB free memory,
+    where the first start compiles and migrates slowly. An explicit value stays.
+
 .OUTPUTS
     build/e2e-summary.txt: result (PASS, FAIL, or INVALID when tests were skipped without test.skip/fixme, as
     after a machine sleep), counts and every failed test with its retry outcome; the JSON reports in
@@ -46,7 +50,8 @@ param(
     [string]$Grep,
     [int]$Workers = 2,
     [int]$TimeoutMinutes = 45,
-    [int]$RetryLimit = 3
+    [int]$RetryLimit = 3,
+    [int]$StartMinutes = 3
 )
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -60,8 +65,17 @@ if (Test-Path $gateLock) {
 }
 $freeGb = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB
 if ($Workers -gt 1 -and -not $PSBoundParameters.ContainsKey('Workers') -and $freeGb -lt 6) {
-    Write-Host ('{0:N1} GB free (under 6 GB): one Playwright worker.' -f $freeGb)
+    Write-Host ('{0:N1} GB free (under 6 GB): one Playwright worker. {1:N1} GB more free memory allows two.' -f
+        $freeGb, (6 - $freeGb))
+    Write-Host 'Largest memory users:'
+    Get-Process | Group-Object ProcessName |
+        Select-Object Name, Count, @{ Name = 'Gb'; Expression = { ($_.Group | Measure-Object WorkingSet64 -Sum).Sum / 1GB } } |
+        Sort-Object Gb -Descending | Select-Object -First 6 |
+        ForEach-Object { Write-Host ('  {0,5:N1} GB  {1} ({2})' -f $_.Gb, $_.Name, $_.Count) }
     $Workers = 1
+}
+if (-not $PSBoundParameters.ContainsKey('StartMinutes') -and $freeGb -lt 4) {
+    $StartMinutes = 6
 }
 $devServer = Get-NetTCPConnection -LocalPort 4200 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($devServer) {
@@ -200,13 +214,13 @@ try {
             -ArgumentList 'spring-boot:run', '-Dspring-boot.run.profiles=local' `
             -WorkingDirectory (Join-Path $root 'backend') -RedirectStandardOutput $log -PassThru -WindowStyle Hidden
         Save-State
-        $deadline = (Get-Date).AddMinutes(3)
+        $deadline = (Get-Date).AddMinutes($StartMinutes)
         do {
             Start-Sleep -Seconds 5
             try { $health = (Invoke-RestMethod -Uri 'http://localhost:8080/actuator/health' -TimeoutSec 3).status } catch { $health = 'starting' }
         } while ($health -ne 'UP' -and (Get-Date) -lt $deadline)
         if ($health -ne 'UP') {
-            Write-Host "Backend did not start; see $log"
+            Write-Host "Backend did not start within $StartMinutes min; see $log (-StartMinutes allows more)"
             exit 1
         }
     }
