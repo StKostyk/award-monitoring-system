@@ -2935,6 +2935,325 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  # ============== People without an account (Feature 2.5) ==============
+  /people:
+    post:
+      tags: [Users]
+      summary: Add a person without an account
+      description: >
+        A faculty secretary or dean (own or delegated role) adds a colleague of a department inside the role's scope
+        as a `users` row in the state `UNCLAIMED`: no sign-in, no role. With an address the person receives the
+        invitation (the Art. 14 notice) once the transaction commits. A person of the same name in the same
+        department answers 409 `possible-duplicate` unless `duplicateAcknowledged` is true (2.5.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: addPerson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonCreateRequest'
+      responses:
+        '201':
+          description: The person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: |
+            `urn:awards:problem:email-taken` — the address belongs to an account or another person;
+            `urn:awards:problem:possible-duplicate` — same name in the department (`PersonDuplicateProblem`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/PersonDuplicateProblem'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    get:
+      tags: [Users]
+      summary: People without an account in the caller's scope
+      description: >
+        People in the state `UNCLAIMED` (or `PENDING` with `addedBy` set) of the departments inside the caller's
+        faculty secretary or dean scopes, sorted by last name; addresses masked (2.5.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: listPeople
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: q
+          in: query
+          description: Fragment of the name or address; ignored under two characters
+          schema:
+            type: string
+        - name: organization
+          in: query
+          description: Only this department
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: One page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /people/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      tags: [Users]
+      summary: A person without an account with their awards
+      description: Also answers a claimed person, as a regular user without actions (2.5.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getPerson
+      responses:
+        '200':
+          description: The person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Users]
+      summary: Change a person without an account
+      description: >
+        Name, address and department; a new or first address receives the invitation; an address once entered
+        cannot be removed (2.5.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: updatePerson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonUpdateRequest'
+      responses:
+        '200':
+          description: The changed person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: "`version-conflict`, `person-claimed` or `email-taken`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    delete:
+      tags: [Users]
+      summary: Remove a person without an account
+      description: >
+        Deletes the person's drafts and scrubs the row as an erased account (6.1.5); refused while any award is
+        outside `DRAFT` (2.5.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: removePerson
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: "`person-has-awards` or `person-claimed`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /people/{id}/invitation:
+    post:
+      tags: [Users]
+      summary: Send the invitation again
+      description: At most once per `app.people.invitation-interval` (2.5.1).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: resendInvitation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '202':
+          description: The mail is queued
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: "`person-claimed` or `no-address`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /people/{id}/link:
+    post:
+      tags: [Users]
+      summary: Join a person without an account to a registered account
+      description: >
+        Moves every award of the person to the account in one transaction, grants `EMPLOYEE` in the department
+        when the account holds no role yet (the membership confirmation), scrubs the person (6.1.5) and writes
+        `ACCOUNT_LINKED`. The account must be `ACTIVE` and inside the caller's scope (2.5.4).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: linkPerson
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonLinkRequest'
+      responses:
+        '200':
+          description: The link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonLinkResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /award-imports/preview:
+    post:
+      tags: [Awards]
+      summary: Preview a spreadsheet of people and past awards
+      description: >
+        Reads an `.xlsx` or `.csv` file (at most `app.award-import.max-size` and `app.award-import.max-rows`
+        rows, scanned like any upload) and answers every row with its matches and problems; stores nothing. The
+        columns follow a faculty's sample spreadsheet (2.5.5, provisional).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: previewAwardImport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: The preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AwardImportPreview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /award-imports:
+    post:
+      tags: [Awards]
+      summary: Import a previewed spreadsheet
+      description: >
+        Stores the rows of a preview without blocking problems in one transaction: missing people are added
+        without an address, each row becomes an `APPROVED` award with `source` `IMPORT` and no review request;
+        rows already stored are skipped (2.5.5, provisional).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: importAwards
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, checksum]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                checksum:
+                  type: string
+                  description: The `checksum` of the preview of this file
+      responses:
+        '201':
+          description: The import
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AwardImportResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: "`urn:awards:problem:preview-stale` — the file differs from the previewed one"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
   # ============== Analytics ==============
   /analytics/me:
     get:
@@ -3942,6 +4261,164 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/UserSummary'
+
+    PersonCreateRequest:
+      type: object
+      description: A person without an account (2.5.1, planned)
+      required: [firstName, lastName, organizationId]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: [string, 'null']
+          format: email
+          description: "`@chnu.edu.ua` only; optional"
+        organizationId:
+          type: integer
+          format: int64
+          description: A department inside the caller's faculty secretary or dean scope
+        duplicateAcknowledged:
+          type: boolean
+          default: false
+
+    PersonUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/PersonCreateRequest'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              format: int64
+
+    Person:
+      type: object
+      description: A person without an account, or one who claimed it (2.5.1, planned)
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: [string, 'null']
+          description: Masked (`p***@chnu.edu.ua`) in lists
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+        status:
+          type: string
+          enum: [UNCLAIMED, PENDING, ACTIVE]
+        addedBy:
+          $ref: '#/components/schemas/UserRef'
+        invitedAt:
+          type: [string, 'null']
+          format: date-time
+        invitationDelivered:
+          type: [boolean, 'null']
+          description: Null while the delivery is unknown or no invitation was sent
+        awardCount:
+          type: integer
+        version:
+          type: integer
+          format: int64
+
+    PersonDetail:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          properties:
+            awards:
+              type: array
+              items:
+                $ref: '#/components/schemas/Award'
+
+    PersonPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Person'
+
+    PersonDuplicateProblem:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetail'
+        - type: object
+          properties:
+            matches:
+              type: array
+              items:
+                $ref: '#/components/schemas/Person'
+
+    PersonLinkRequest:
+      type: object
+      required: [userId, version]
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: The registered account
+        version:
+          type: integer
+          format: int64
+          description: The person's version
+
+    PersonLinkResult:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        movedAwards:
+          type: integer
+
+    AwardImportPreview:
+      type: object
+      description: Provisional until a sample spreadsheet fixes the columns (2.5.5, planned)
+      properties:
+        checksum:
+          type: string
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              row:
+                type: integer
+              person:
+                type: [object, 'null']
+                description: The matched account or person without an account; null when one will be added
+              category:
+                type: [object, 'null']
+              problems:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                    blocking:
+                      type: boolean
+
+    AwardImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        peopleAdded:
+          type: integer
+        skipped:
+          type: integer
 
     DelegationState:
       type: string

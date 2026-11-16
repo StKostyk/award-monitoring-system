@@ -48,8 +48,16 @@ Features 1.1–1.3 done (Sprints 2–3); this table holds the fixes found in the
 | 1.2.5 | Repeated department move answers role-already-assigned | 1 | ✅ Done | SCRUM-81 | [#209](https://github.com/StKostyk/award-monitoring-system/issues/209) |
 | 1.2.6 | Role revocation: last-holder guard for GDPR_OFFICER and SYSTEM_ADMIN | 2 | ✅ Done | SCRUM-110 | [#310](https://github.com/StKostyk/award-monitoring-system/issues/310) |
 
-### Epic 2 — done (Jira epic SCRUM-20)
-Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) were fixed in 2.1.5 (Sprint 3). Epic 2 done 2026-10-01.
+### Epic 2 — Award Lifecycle (Jira epic SCRUM-20)
+Feature 2.5 (awards of people without an account) planned 2026-11-16: [feature-2.5-people-without-account.md](../features/epic-02/feature-2.5-people-without-account.md); 2.5.1 to 2.5.4 in sprints 10 and 11, 2.5.5 after Feature 9.4 once a sample spreadsheet is in. Features 2.1, 2.2 and 2.3 done (Sprint 3): [feature-2.1-award-creation-validation.md](../features/epic-02/feature-2.1-award-creation-validation.md), [feature-2.2-award-version-history.md](../features/epic-02/feature-2.2-award-version-history.md), [feature-2.3-award-status-tracking.md](../features/epic-02/feature-2.3-award-status-tracking.md). Feature 2.4 stories are tracked with Epics 4 and 6. The database views and functions that disagreed with the award model (documentation sync of 2026-10-01) were fixed in 2.1.5 (Sprint 3). Features 2.1 to 2.3 done 2026-10-01.
+
+| ID | Story | Points | Sprint | Jira | Issue |
+|----|-------|--------|--------|------|-------|
+| 2.5.1 | People without an account: add, change, invite, remove | 8 | 10 | SCRUM-150 | [#420](https://github.com/StKostyk/award-monitoring-system/issues/420) |
+| 2.5.2 | Awards for a person without an account | 8 | 10 | SCRUM-151 | [#421](https://github.com/StKostyk/award-monitoring-system/issues/421) |
+| 2.5.3 | Claim at registration | 5 | 11 | SCRUM-152 | [#422](https://github.com/StKostyk/award-monitoring-system/issues/422) |
+| 2.5.4 | Link at membership confirmation | 3 | 11 | SCRUM-153 | [#423](https://github.com/StKostyk/award-monitoring-system/issues/423) |
+| 2.5.5 | Import people and past awards from a spreadsheet | 8 | 12 | SCRUM-154 | [#424](https://github.com/StKostyk/award-monitoring-system/issues/424) |
 
 ### Epic 3 — Document Processing (Jira epic SCRUM-34)
 Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCESSING-STATUS.md). Upload only in this delivery; OCR and confidence scoring (US-006, US-007) are deferred until after Epic 8. Feature 3.1 PRD approved 2026-10-02: [feature-3.1-document-upload-storage.md](../features/epic-03/feature-3.1-document-upload-storage.md). Feature 3.1 validated 2026-10-05 and its fixes merged (3.1.5); documentation synced with the code on 2026-10-05; the epic closes after the manual run of 2026-10-11.
