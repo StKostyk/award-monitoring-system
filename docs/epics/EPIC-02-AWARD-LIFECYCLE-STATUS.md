@@ -1,7 +1,7 @@
 # Epic 2: Award Lifecycle Management — Status
 
 > **Started**: 2026-09-28
-> **Done**: 2026-10-01
+> **Done**: 2026-10-01 (Features 2.1 to 2.3); reopened 2026-11-16 for Feature 2.5
 > **Author**: Stefan Kostyk
 > **Jira epic**: SCRUM-20
 > **Roadmap**: [DEVELOPMENT_ROADMAP.md § Epic 2](../../DEVELOPMENT_ROADMAP.md#epic-2-award-lifecycle-management)
@@ -14,8 +14,12 @@
 | 2.2 Award Version History & Audit Trail | Done (validated, PRD §12; fixes 2.2.3 merged; manual run of §9 2026-10-05, findings fixed in SCRUM-42, after-merge steps passed 2026-10-11) ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | 2026-09-30 |
 | 2.3 Award Status Tracking | Done (validated, PRD §12; fixes 2.3.2 merged; manual run of §9 2026-10-05, findings fixed in SCRUM-42) ([feature-2.3](../features/epic-02/feature-2.3-award-status-tracking.md)) | 2026-10-01 | 2026-10-01 |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
+| 2.5 Awards of people without an account | Approved 2026-11-16, 32 points; 2.5.5 after Feature 9.4 ([feature-2.5](../features/epic-02/feature-2.5-people-without-account.md)) | | |
 
 ## Current focus
+
+Feature 2.5 approved 2026-11-16 (SCRUM-150 to SCRUM-154): next 2.5.1 (SCRUM-150), then 2.5.2 to 2.5.4; 2.5.5 waits
+for a faculty's sample spreadsheet and follows Feature 9.4.
 
 Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the manual run of PRD §9 walked 2026-10-05. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) done 2026-09-30 (#96); validated 2026-09-30 (PRD §12, passed with notes F-1…F-4), fixes and refactor sweep in 2.2.3 (SCRUM-30), merged 2026-10-01 (#98). Feature 2.3 PRD approved 2026-10-01; 2.3.1 (SCRUM-27) done 2026-10-01 (#100); validated 2026-10-01 (PRD §12, passed with notes F-1…F-6), fixes and refactor sweep in 2.3.2 (SCRUM-31), merged 2026-10-01 (#102). Epic documentation sync 2026-10-01: docs reconciled with the code; three unused database objects disagree with the award model and are fixed in 2.1.5 (SCRUM-32), merged 2026-10-01 (#106). Epic 2 done 2026-10-01; the manual runs of PRD §9 for Features 2.1–2.3 were walked 2026-10-05, their findings fixed in SCRUM-42 (#128); the steps added by SCRUM-42 (2.1 steps 33–43, 2.2 step 15) passed 2026-10-11.
 
@@ -47,6 +51,11 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 12 | 2.1.6 Fixes from the manual run of Feature 2.1 | 2.1 | 2 | SCRUM-38 | #117 | no | Done |
 | 13 | 2.1.7 Fixes from the manual runs of Features 2.1 and 2.2 | 2.1 | 3 | SCRUM-42 | #127 | no | Done |
 | 14 | 2.1.8 Review decisions: approval levels, working-day review period, role assignment, GDPR and audit fixes | 2.1 | 8 | SCRUM-43 | #130 | no | Done |
+| 14e | 2.5.5 Import people and past awards from a spreadsheet | 2.5 | 8 | SCRUM-154 | #424 | no | To do |
+| 14d | 2.5.4 Link at membership confirmation | 2.5 | 3 | SCRUM-153 | #423 | no | To do |
+| 14c | 2.5.3 Claim at registration | 2.5 | 5 | SCRUM-152 | #422 | no | To do |
+| 14b | 2.5.2 Awards for a person without an account | 2.5 | 8 | SCRUM-151 | #421 | no | To do |
+| 14a | 2.5.1 People without an account: add, change, invite, remove | 2.5 | 8 | SCRUM-150 | #420 | no | To do |
 
 Total: 57 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 
@@ -70,6 +79,7 @@ Total: 57 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 st
 | 2026-09-30 | Award versions are full snapshots in `award_versions`, written by the application in the transaction of the change; no Envers; trigger rows get the actor and correlation id per transaction; the per-award audit trail and CSV export are for `audit:read`, the system-wide search is Epic 6 | Business actions (submitted, later returned) need names Envers lacks; the history follows the award for erasure while `audit_logs` stays the immutable record | Feature 2.2 PRD D-1–D-6 |
 | 2026-09-30 | History and audit lists offer «Спробувати ще раз» only when a retry can help; a 404 or 403 on a later page says the award or the access is gone, and an export reloads the audit list from its first page | A retry of a refused page loops; the export's own `AUDIT_EXPORT` row shifted the next page | Feature 2.2 validation, SCRUM-30 |
 | 2026-10-01 | Status tracking: `deadline` per level (3 calendar days, configurable), estimate computed over the remaining levels of the path, late requests explained (`REVIEW_OVERDUE`, `NO_REVIEWER`) but not expired; the award page polls every 60 s; WebSocket and push move to Epic 7 | Research targets of under 7 and 14 days; expiry and escalation are workflow-engine scope | Feature 2.3 PRD D-1–D-7 |
+| 2026-11-16 | Feature 2.5: a person without an account is a `users` row in the state `UNCLAIMED` owning the awards entered for them; the address is optional; with an address the person claims the row at registration, without one a secretary or dean links it at the membership confirmation; never a name match of the system; legitimate interest with the invitation as the Art. 14 notice; a spreadsheet import of past awards as approved (2.5.5) | Faculties keep awards of people who never register in spreadsheets with names only; one owner id keeps scopes, statistics and the claim simple | Feature 2.5 PRD §7 D-1–D-9 |
 
 ## Documentation deviations to resolve
 
