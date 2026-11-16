@@ -964,6 +964,11 @@ describe('AwardFormComponent', () => {
     await open('999');
 
     expect(component.notFound()).toBe(true);
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector(
+      'app-status-page[data-testid="award-not-found"]',
+    );
+    expect(card?.querySelector('a')?.getAttribute('href')).toBe('/awards');
   });
 
   it('edge_a_deactivated_category_stays_visible_on_its_draft', async () => {

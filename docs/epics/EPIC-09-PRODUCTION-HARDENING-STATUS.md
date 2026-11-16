@@ -59,6 +59,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5g | 9.3.6 Review queue with checklist, shortcuts and undo | 9.3 | 5 | SCRUM-143 | #396 | no | Done |
 | 5h | 9.3.7 Remaining screens in the new look | 9.3 | 5 | SCRUM-144 | #397 | no | Done |
 | 5i | 9.3.8 Stable review-queue and award-mobile e2e | 9.3 | 2 | SCRUM-145 | #407 | no | In review |
+| 5j | 9.3.9 Not-found card on record pages and palette text normalisation | 9.3 | 2 | SCRUM-146 | #409 | no | In review |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 
@@ -117,6 +118,10 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 - CI pushes images to GHCR on `main` and `develop` (`docker-build`); `deploy-demo` deploys the `main-<sha>` images
   to the demo server over SSH, or an earlier tag on a manual run (9.2.3).
 - Lighthouse runs through `tools/lighthouse` (`run.mjs`, mobile profile) against the Compose build.
+- 9.3 clean-up candidates (validation sweep, no defect): one shortcut guard and one Apple-platform check shared by
+  the review queue, palette and shell; a card-surface and facts-collapse mixin for the nine SCSS copies; one brand
+  mark component for the shell and the auth layout; Playwright clock instead of the fixed waits in
+  `review-queue.spec`.
 
 ## Documentation quick links
 

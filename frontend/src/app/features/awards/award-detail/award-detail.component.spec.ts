@@ -430,6 +430,17 @@ describe('AwardDetailComponent', () => {
     ).toContain('Не знайдено');
   });
 
+  it('ac9_1_an_unknown_award_shows_the_not_found_card_with_the_way_back', async () => {
+    service.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    const fixture = await open(AwardDetailComponent, '999999');
+
+    const card = fixture.nativeElement.querySelector(
+      'app-status-page[data-testid="award-not-found"]',
+    );
+    expect(card?.querySelector('h1')?.textContent).toContain('Не знайдено');
+    expect(card?.querySelector('a')?.getAttribute('href')).toBe('/awards');
+  });
+
   it('ac1_8_a_malformed_id_is_not_found_without_a_request', async () => {
     const fixture = await open(AwardDetailComponent, 'abc');
 

@@ -1,15 +1,19 @@
 <div class="units__header">
-  <h1 class="units__title">{{ 'unitAnalytics.title' | transloco }}</h1>
   @if (!notFound()) {
+    <h1 class="units__title">{{ 'unitAnalytics.title' | transloco }}</h1>
     <app-export-menu [unitId]="unitId()" [period]="shownPeriod()" [disabled]="exportDisabled()" />
   }
 </div>
 
 @if (notFound()) {
-  <section class="units__problem" role="alert" data-testid="unit-not-found">
-    <p>{{ 'unitAnalytics.notFound' | transloco }}</p>
-    <a mat-stroked-button routerLink="/analytics">{{ 'unitAnalytics.back' | transloco }}</a>
-  </section>
+  <app-status-page
+    icon="search-x"
+    [title]="'unitAnalytics.notFoundTitle' | transloco"
+    [text]="'unitAnalytics.notFound' | transloco"
+    data-testid="unit-not-found"
+  >
+    <a mat-flat-button routerLink="/analytics">{{ 'unitAnalytics.back' | transloco }}</a>
+  </app-status-page>
 } @else {
   <div class="units__controls">
     @if (units().length > 0) {

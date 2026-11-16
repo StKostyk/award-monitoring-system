@@ -140,6 +140,7 @@
       "replaceOf": "Another file instead of {{name}}"
     },
     "notFound": "Not found",
+    "notFoundText": "There is no such award, or it is not available to you.",
     "back": "Back to my awards",
     "edit": "Edit",
     "filters": {
@@ -1621,6 +1622,7 @@
     "unitsFailed": "The list of faculties and departments could not be loaded.",
     "noUnits": "No faculty or department is open to you for analytics.",
     "notFound": "This unit is not available.",
+    "notFoundTitle": "Unit not found",
     "back": "Back to unit analytics",
     "comparedWith": "{{period}}, compared with {{previous}}.",
     "partialYear": "{{year}} is not over yet, so its figures are still growing.",
