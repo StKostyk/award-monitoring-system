@@ -38,6 +38,7 @@ import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.analytics.config.AnalyticsProperties;
 import ua.edu.chnu.awards.analytics.dto.AnalysableUnit;
+import ua.edu.chnu.awards.analytics.dto.MonthCount;
 import ua.edu.chnu.awards.analytics.dto.TopPerformers;
 import ua.edu.chnu.awards.analytics.dto.UnitAnalytics;
 import ua.edu.chnu.awards.analytics.dto.UnitComparisonRow;
@@ -89,6 +90,8 @@ class UnitAnalyticsServiceTest {
         assertThat(analytics.period()).isEqualTo(PERIOD);
         assertThat(analytics.previousPeriod()).isEqualTo(PREVIOUS);
         assertThat(analytics.partialYear()).isTrue();
+        assertThat(analytics.byMonth()).hasSize(24).allMatch(month -> month.count() == 0);
+        assertThat(analytics.byMonth().getFirst()).isEqualTo(new MonthCount(2025, 1, 0));
         assertThat(analytics.generatedAt()).isEqualTo(GENERATED);
         assertThat(analytics.unit()).isEqualTo(FACULTY);
         verify(aggregates).of(FMI, PREVIOUS, PERIOD);
@@ -103,6 +106,7 @@ class UnitAnalyticsServiceTest {
 
         assertThat(analytics.previousPeriod()).isEqualTo(new YearRange(2023, 2023));
         assertThat(analytics.partialYear()).isFalse();
+        assertThat(analytics.byMonth()).extracting(MonthCount::year).containsOnly(2023, 2024);
         assertThat(service.of(DAI, 2026, null).period()).isEqualTo(new YearRange(2026, 2026));
         verify(aggregates).of(DAI, new YearRange(2023, 2023), new YearRange(2024, 2024));
     }

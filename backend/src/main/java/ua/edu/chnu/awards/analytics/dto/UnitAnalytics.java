@@ -15,6 +15,7 @@ import ua.edu.chnu.awards.award.dto.YearRange;
  * @param generatedAt    when the aggregates were computed
  * @param totals         totals of the counted awards
  * @param byYear         every year of the period in order
+ * @param byMonth        every month of the last year and the year before
  * @param units          the child departments and the faculty level; empty for a department
  * @param byCategory     highest count first, then by English name
  * @param byLevel        in level order
@@ -24,9 +25,9 @@ import ua.edu.chnu.awards.award.dto.YearRange;
  */
 public record UnitAnalytics(AnalysableUnit unit, YearRange period, YearRange previousPeriod, boolean partialYear,
                             Instant generatedAt, UnitTotals totals, List<UnitYearCount> byYear,
-                            List<UnitComparisonRow> units, List<CategoryComparison> byCategory,
-                            List<LevelComparison> byLevel, SourceSummary bySource, TopPerformers topPerformers,
-                            List<UnitHighlight> highlights) {
+                            List<MonthCount> byMonth, List<UnitComparisonRow> units,
+                            List<CategoryComparison> byCategory, List<LevelComparison> byLevel,
+                            SourceSummary bySource, TopPerformers topPerformers, List<UnitHighlight> highlights) {
 
     /**
      * Copies the lists.
@@ -38,6 +39,7 @@ public record UnitAnalytics(AnalysableUnit unit, YearRange period, YearRange pre
      * @param generatedAt    when the aggregates were computed
      * @param totals         totals of the counted awards
      * @param byYear         every year of the period
+     * @param byMonth        every month of the last two years
      * @param units          the comparison rows
      * @param byCategory     counts per category
      * @param byLevel        counts per level
@@ -47,6 +49,7 @@ public record UnitAnalytics(AnalysableUnit unit, YearRange period, YearRange pre
      */
     public UnitAnalytics {
         byYear = List.copyOf(byYear);
+        byMonth = List.copyOf(byMonth);
         units = List.copyOf(units);
         byCategory = List.copyOf(byCategory);
         byLevel = List.copyOf(byLevel);

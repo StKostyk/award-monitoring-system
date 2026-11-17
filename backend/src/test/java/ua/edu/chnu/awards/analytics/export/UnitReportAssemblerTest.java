@@ -124,8 +124,8 @@ class UnitReportAssemblerTest {
         UnitAnalytics shown = department();
         UnitAnalytics singleYear = new UnitAnalytics(shown.unit(), new YearRange(2026, 2026),
             new YearRange(2025, 2025), shown.partialYear(), shown.generatedAt(), shown.totals(), shown.byYear(),
-            shown.units(), shown.byCategory(), shown.byLevel(), shown.bySource(), shown.topPerformers(),
-            shown.highlights());
+            shown.byMonth(), shown.units(), shown.byCategory(), shown.byLevel(), shown.bySource(),
+            shown.topPerformers(), shown.highlights());
 
         UnitReport report = report(singleYear, ReportLanguage.EN);
 

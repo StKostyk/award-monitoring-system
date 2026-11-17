@@ -90,7 +90,7 @@ class TrendRulesTest {
 
     private static UnitFigures figures(List<UnitAwardCount> counts, List<SourceSpelling> sources,
                                        List<SourceSpelling> previousSources) {
-        return new UnitFigures(GENERATED, counts, List.of(), sources, previousSources, List.of());
+        return new UnitFigures(GENERATED, counts, List.of(), sources, previousSources, List.of(), List.of());
     }
 
     private static CategoryRef category(long id) {

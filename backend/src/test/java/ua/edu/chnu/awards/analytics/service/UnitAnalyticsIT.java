@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
+import ua.edu.chnu.awards.analytics.dto.MonthCount;
 import ua.edu.chnu.awards.analytics.dto.TopPerformers;
 import ua.edu.chnu.awards.analytics.dto.UnitAnalytics;
 import ua.edu.chnu.awards.analytics.dto.UnitComparisonRow;
@@ -131,6 +132,25 @@ class UnitAnalyticsIT extends AbstractIntegrationTest {
         assertThat(result.byYear()).extracting(year -> year.year(), year -> year.personal(), year -> year.unitAwards())
             .containsExactly(tuple(2022, 0L, 0L), tuple(2023, 0L, 1L), tuple(2024, 2L, 0L), tuple(2025, 1L, 0L),
                 tuple(2026, 0L, 1L));
+    }
+
+    @Test
+    void ac2_1_monthsCountTheApprovedAwardsOfTheLastYearAndTheYearBeforeByAwardDate() {
+        long first = user("it.units.first", FIRST_DEPARTMENT_ID);
+        award(first, FIRST_DEPARTMENT_ID, false, "APPROVED", LocalDate.of(2023, 12, 31), MINISTRY_NAME, false);
+        award(first, FIRST_DEPARTMENT_ID, false, "APPROVED", LocalDate.of(2024, 12, 31), MINISTRY_NAME, false);
+        award(first, FIRST_DEPARTMENT_ID, false, "APPROVED", LocalDate.of(2025, 1, 1), MINISTRY_NAME, false);
+        award(first, FACULTY_ID, true, "APPROVED", LocalDate.of(2025, 1, 31), MINISTRY_NAME, false);
+        award(first, FIRST_DEPARTMENT_ID, false, "PENDING", LocalDate.of(2025, 2, 1), MINISTRY_NAME, false);
+        award(first, OTHER_FACULTY_DEPARTMENT_ID, false, "APPROVED", LocalDate.of(2025, 3, 1), MINISTRY_NAME,
+            false);
+
+        UnitAnalytics result = analytics.of(FACULTY_ID, 2021, 2025);
+
+        assertThat(result.byMonth()).hasSize(24);
+        assertThat(result.byMonth()).filteredOn(month -> month.count() > 0)
+            .extracting(MonthCount::year, MonthCount::month, MonthCount::count)
+            .containsExactly(tuple(2024, 12, 1L), tuple(2025, 1, 2L));
     }
 
     @Test

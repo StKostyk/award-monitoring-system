@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import ua.edu.chnu.awards.award.dto.MemberCount;
+import ua.edu.chnu.awards.award.dto.MonthAwardCount;
 import ua.edu.chnu.awards.award.dto.OwnerAwardCount;
 import ua.edu.chnu.awards.award.dto.SourceSpelling;
 import ua.edu.chnu.awards.award.dto.UnitAwardCount;
@@ -17,11 +18,12 @@ import ua.edu.chnu.awards.award.dto.UnitAwardCount;
  * @param sources         counted awards of the period per spelling of the awarding organisation
  * @param previousSources counted awards of the previous period per spelling of the awarding organisation
  * @param members         active accounts per organisation
+ * @param months          counted awards of the last year of the period and the year before, per month
  */
 @SuppressWarnings("PMD.DataClass")
 public record UnitFigures(Instant generatedAt, List<UnitAwardCount> counts, List<OwnerAwardCount> owners,
                           List<SourceSpelling> sources, List<SourceSpelling> previousSources,
-                          List<MemberCount> members) {
+                          List<MemberCount> members, List<MonthAwardCount> months) {
 
     /**
      * Copies the lists.
@@ -32,6 +34,7 @@ public record UnitFigures(Instant generatedAt, List<UnitAwardCount> counts, List
      * @param sources         counted awards per spelling of the awarding organisation
      * @param previousSources counted awards of the previous period per spelling
      * @param members         active accounts per organisation
+     * @param months          counted awards per month
      */
     public UnitFigures {
         counts = List.copyOf(counts);
@@ -39,6 +42,7 @@ public record UnitFigures(Instant generatedAt, List<UnitAwardCount> counts, List
         sources = List.copyOf(sources);
         previousSources = List.copyOf(previousSources);
         members = List.copyOf(members);
+        months = List.copyOf(months);
     }
 
     @Override
@@ -64,5 +68,10 @@ public record UnitFigures(Instant generatedAt, List<UnitAwardCount> counts, List
     @Override
     public List<MemberCount> members() {
         return List.copyOf(members);
+    }
+
+    @Override
+    public List<MonthAwardCount> months() {
+        return List.copyOf(months);
     }
 }

@@ -1,7 +1,7 @@
 package ua.edu.chnu.awards.analytics.service;
 
 import java.time.Clock;
-import java.time.Year;
+import java.time.YearMonth;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +53,8 @@ public class UniversityAnalyticsService {
      */
     @Transactional(readOnly = true)
     public UniversityAnalytics of(Integer from, Integer to) {
-        int currentYear = Year.now(clock).getValue();
+        YearMonth now = YearMonth.now(clock);
+        int currentYear = now.getYear();
         YearRange period = PeriodHelper.resolve(from, to, currentYear);
         YearRange previous = period.previous();
         Organization university = university();
@@ -63,7 +64,8 @@ public class UniversityAnalyticsService {
         List<UnitYearCount> byYear = UnitFiguresHelper.byYear(figures, period);
         return new UniversityAnalytics(new OrganizationRef(university.getId(), university.getName(),
             university.getNameUk(), university.getCode(), university.getOrgType()), period, previous,
-            period.to() == currentYear, figures.generatedAt(), totals, byYear, rows,
+            period.to() == currentYear, figures.generatedAt(), totals, byYear,
+            MonthCountsHelper.byMonth(figures, period.to(), now), rows,
             UnitFiguresHelper.byCategory(figures, period, previous), UnitFiguresHelper.byLevel(figures, period,
                 previous), UnitFiguresHelper.bySource(figures), trends.of(figures, period, previous),
             ProjectionHelper.of(byYear, currentYear), highlights.ofUniversity(rows, totals));

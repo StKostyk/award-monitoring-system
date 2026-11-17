@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Monthly award counts on the unit and university analytics, and the dashboard widget kit with generated facts (9.4.2).
 - Colour scheme and per-dashboard widget layout kept on the account; «Налаштувати» edit mode reorders and hides widgets by drag or keyboard (SCRUM-155)
 - Secretaries and deans join a colleague without an account to the colleague's own registered account, moving the awards
 - A colleague added without an account registers with their address and finds the awards entered for them

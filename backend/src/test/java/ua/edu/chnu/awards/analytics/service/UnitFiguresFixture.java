@@ -6,6 +6,7 @@ import java.util.List;
 import ua.edu.chnu.awards.analytics.dto.UnitFigures;
 import ua.edu.chnu.awards.award.dto.CategoryRef;
 import ua.edu.chnu.awards.award.dto.MemberCount;
+import ua.edu.chnu.awards.award.dto.MonthAwardCount;
 import ua.edu.chnu.awards.award.dto.OwnerAwardCount;
 import ua.edu.chnu.awards.award.dto.SourceSpelling;
 import ua.edu.chnu.awards.award.dto.UnitAwardCount;
@@ -30,7 +31,15 @@ final class UnitFiguresFixture {
 
     static UnitFigures figures(List<UnitAwardCount> counts, List<OwnerAwardCount> owners,
                                List<SourceSpelling> sources, List<MemberCount> members) {
-        return new UnitFigures(GENERATED, counts, owners, sources, List.of(), members);
+        return new UnitFigures(GENERATED, counts, owners, sources, List.of(), members, List.of());
+    }
+
+    static UnitFigures months(List<MonthAwardCount> months) {
+        return new UnitFigures(GENERATED, List.of(), List.of(), List.of(), List.of(), List.of(), months);
+    }
+
+    static MonthAwardCount month(int year, int month, long count) {
+        return new MonthAwardCount(year, month, count);
     }
 
     static UnitFigures empty() {

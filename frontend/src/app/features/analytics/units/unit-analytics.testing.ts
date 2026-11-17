@@ -1,5 +1,5 @@
 import { OrganizationRef } from '../../../core/auth/user-profile';
-import { AnalysableUnit, Figure, UnitAnalytics } from './unit-analytics.service';
+import { AnalysableUnit, Figure, MonthCount, UnitAnalytics } from './unit-analytics.service';
 
 export const FACULTY: AnalysableUnit = {
   id: 9,
@@ -43,6 +43,15 @@ export function figure(current: number, previous: number): Figure {
   };
 }
 
+/** The monthly counts of a year from January on; the months left out count 0. */
+export function monthCounts(year: number, counts: number[]): MonthCount[] {
+  return Array.from({ length: 12 }, (_, index) => ({
+    year,
+    month: index + 1,
+    count: counts[index] ?? 0,
+  }));
+}
+
 /** Analytics of the faculty for 2024–2026 against 2021–2023, with two departments and the faculty level. */
 export function facultyAnalytics(): UnitAnalytics {
   return {
@@ -64,6 +73,10 @@ export function facultyAnalytics(): UnitAnalytics {
       { year: 2024, total: 4, personal: 3, unitAwards: 1 },
       { year: 2025, total: 5, personal: 4, unitAwards: 1 },
       { year: 2026, total: 6, personal: 5, unitAwards: 1 },
+    ],
+    byMonth: [
+      ...monthCounts(2025, [0, 1, 0, 1, 0, 1, 0, 1, 0, 1]),
+      ...monthCounts(2026, [2, 0, 1, 3]),
     ],
     units: [
       {

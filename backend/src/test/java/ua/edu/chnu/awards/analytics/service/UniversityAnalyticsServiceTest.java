@@ -38,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.analytics.config.AnalyticsProperties;
+import ua.edu.chnu.awards.analytics.dto.MonthCount;
 import ua.edu.chnu.awards.analytics.dto.TrendProjection;
 import ua.edu.chnu.awards.analytics.dto.UnitComparisonRow;
 import ua.edu.chnu.awards.analytics.dto.UnitFigures;
@@ -86,6 +87,7 @@ class UniversityAnalyticsServiceTest {
         assertThat(analytics.period()).isEqualTo(PERIOD);
         assertThat(analytics.previousPeriod()).isEqualTo(PREVIOUS);
         assertThat(analytics.partialYear()).isTrue();
+        assertThat(analytics.byMonth()).hasSize(24).extracting(MonthCount::year).startsWith(2025).endsWith(2026);
         assertThat(analytics.generatedAt()).isEqualTo(GENERATED);
         verify(aggregates).of(UNIVERSITY, PREVIOUS, PERIOD);
     }

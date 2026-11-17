@@ -74,6 +74,7 @@ final class UniversityReportFixture {
             new UnitTotals(Figure.of(120, 100), Figure.of(70, 64), 104, 16, 90, 220, new BigDecimal("54.5")),
             IntStream.rangeClosed(PERIOD.from(), PERIOD.to())
                 .mapToObj(y -> new UnitYearCount(y, y - 2000L, y - 2002L, 2)).toList(),
+            List.of(),
             rows, byCategory,
             List.of(new LevelComparison(RecognitionLevel.NATIONAL, 70, 60),
                 new LevelComparison(RecognitionLevel.INTERNATIONAL, 50, 40)),
@@ -87,7 +88,7 @@ final class UniversityReportFixture {
             Instant.parse("2026-10-25T12:00:00Z"),
             new UnitTotals(Figure.of(0, 0), Figure.of(0, 0), 0, 0, 0, 0, null),
             List.of(new UnitYearCount(2025, 0, 0, 0), new UnitYearCount(2026, 0, 0, 0)), List.of(), List.of(),
-            List.of(), new SourceSummary(List.of(), 0),
+            List.of(), List.of(), new SourceSummary(List.of(), 0),
             new AnalyticsTrends(new AnalyticsTrends.Directions<>(List.of(), List.of()),
                 new AnalyticsTrends.Directions<>(List.of(), List.of())),
             TrendProjection.TOO_FEW_YEARS, List.of());

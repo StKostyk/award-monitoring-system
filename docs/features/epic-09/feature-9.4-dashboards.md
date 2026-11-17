@@ -317,8 +317,11 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
 
 1. Sign in as `rector`, open `/`. Expected: redirect to `/hall-of-fame`, university numbers, K1 with delta against the
    same months of last year, T2 with both years. (AC-3.1, AC-3.3, AC-2.2, AC-2.3)
-2. Compare K1 and T1 with `/analytics/university` for the same year. Expected: same totals. (AC-2.1)
-3. Reload twice. Expected: the «did you know» fact may change; every fact true against the analytics page. (AC-2.4)
+2. Compare K1 and T1 with `/analytics/university` for the same year; `GET /api/v1/analytics/university`. Expected:
+   same totals; `byMonth` has 24 rows, Y-1 and Y, whose sums equal `byYear` of those years, 0 after the current
+   month. (AC-2.1)
+3. Reload twice. Expected: the same «did you know» fact (it is picked by the day of the month); every fact and
+   record true against the analytics page. (AC-2.4)
 4. «Налаштувати», move T2 first with the buttons, hide V6, «Готово», reload. Expected: T2 first, V6 gone. (AC-1.3)
 5. Toolbar scheme «Темна». Open the second profile, sign in as `rector`. Expected: dark scheme there. (AC-1.1)
 6. psql: `select color_scheme, layouts from dashboard_preferences` for the rector. Expected: `DARK`, the
