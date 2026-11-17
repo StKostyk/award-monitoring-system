@@ -9,7 +9,7 @@ actor "Person" as person
 participant "PeopleController" as ctrl
 participant "People /\nPersonRules" as people
 participant "PersonInvitations" as invitations
-participant "RegistrationService\n(user)" as registration
+participant "RegistrationService /\nAccountClaim (auth)" as registration
 participant "WaitingAwards\n(award implements)" as waiting
 participant "PersonLink" as link
 participant "InvitationMails\n(notification)" as mails
@@ -37,14 +37,18 @@ else accepted
     people --> ctrl: 201 Person
 end
 
-== Claim by registration (2.5.3, planned) ==
+== Claim by registration (2.5.3) ==
 person -> registration: POST /api/v1/auth/register (invited address)
-registration -> db: lock row; UNCLAIMED -> PENDING (same user_id)
+registration -> db: lock row; UNCLAIMED -> PENDING (same user_id),\nnew password, prepared name and department kept
+registration -> audit: REGISTRATION_REPLACED {claim: true}
+registration --> person: 201 {email, PENDING} (as any registration)
+person -> registration: POST /api/v1/auth/verify-email {token, password}
+registration -> db: PENDING -> ACTIVE; EMPLOYEE role in the prepared department
 registration -> waiting: count(userId)
-registration --> person: 201 {waitingAwards}
+registration -> audit: ACCOUNT_CLAIMED {awards}
+registration --> person: 200 {waitingAwards}
 note right of registration
-    Verification makes the row ACTIVE;
-    the awards never move: they already
+    The awards never move: they already
     belong to this user_id.
 end note
 

@@ -185,6 +185,10 @@ paths:
         (membership confirmation), so a freshly verified account carries no roles or permissions in its token.
         Registering an address that already has a `PENDING` account whose newest verification link has expired
         replaces that account (name, organisation, password, fresh link) and answers 201.
+        An address of a person added without an account (`UNCLAIMED`, or `PENDING` with an adder whose link has
+        expired) is a claim: the same row becomes `PENDING` with the new password and keeps the prepared name and
+        department (the request's name and department are ignored); the answer is the one of a new registration and
+        `REGISTRATION_REPLACED` is audited with `claim: true`.
         `privacyNoticeVersion` must be the current notice version (`GET /public/privacy-notice`); the account is
         stored with a `DATA_PROCESSING` consent record for that version in the same transaction and
         `PRIVACY_NOTICE_ACKNOWLEDGED` is audited.
@@ -222,6 +226,9 @@ paths:
       description: |
         The password chosen at registration must be presented with the token, so that only the person who
         registered can activate the account; a wrong password leaves the token usable.
+        Verifying a claimed account grants the `EMPLOYEE` role in the prepared department at once (the person's
+        adding counts as the membership confirmation), audits `ACCOUNT_CLAIMED` with the award count and answers
+        it as `waitingAwards`.
       operationId: verifyEmail
       requestBody:
         required: true
@@ -3931,6 +3938,11 @@ components:
           format: email
         status:
           $ref: '#/components/schemas/AccountStatus'
+        waitingAwards:
+          type: integer
+          format: int64
+          description: Awards entered for the person before the account was claimed; 0 on registration and for a
+            self-registered account.
 
     OrganizationSummary:
       allOf:

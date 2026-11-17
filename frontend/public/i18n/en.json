@@ -1228,6 +1228,7 @@
   "verify": {
     "title": "Address confirmation",
     "success": "The address {{email}} is confirmed. You can sign in now.",
+    "successWaiting": "The address {{email}} is confirmed. Awards already waiting for you: {{count}}.",
     "signIn": "Sign in",
     "invalid": "The link is invalid, expired or already used.",
     "resendHint": "Request a new link by entering your address.",

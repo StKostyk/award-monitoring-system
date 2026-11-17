@@ -53,10 +53,12 @@ public class RegistrationService {
     private final AuditService audit;
     private final MembershipConfirmation membership;
     private final PrivacyNoticeVersions noticeVersions;
+    private final AccountClaim claim;
 
     /**
      * Creates a pending account with the acknowledgement of the current privacy notice and requests the
-     * verification email.
+     * verification email. The row of a person added without an account is taken over instead, keeping its name
+     * and department; the answer is the same.
      *
      * @param request registration data
      * @return the address and its {@code PENDING} status
@@ -72,11 +74,19 @@ public class RegistrationService {
             .filter(org -> org.getOrgType() == OrganizationType.DEPARTMENT && org.isActive())
             .orElseThrow(() -> new ApiProblemException(HttpStatus.UNPROCESSABLE_ENTITY, "organisation-invalid",
                 "Choose an active department"));
-        User user = users.findByEmailAddressIgnoreCase(email)
-            .map(existing -> replaceAbandoned(existing, request, department))
-            .orElseGet(() -> create(email, request, department));
+        User found = users.findByEmailAddressIgnoreCase(email).orElse(null);
+        User user;
+        if (found == null) {
+            user = create(email, request, department);
+        } else if (found.isWithoutAccount()) {
+            user = claim.takeOver(found, request.password());
+        } else {
+            user = replaceAbandoned(found, request, department);
+        }
 
-        membership.confirm(user, department).ifPresent(roleHolders::save);
+        if (!user.isWithoutAccount()) {
+            membership.confirm(user, department).ifPresent(roleHolders::save);
+        }
         noticeVersions.recordAcknowledgement(user.getId(), request.privacyNoticeVersion());
         throttle.claimForTransaction(RESEND_KEY_PREFIX + email, properties.resendInterval());
         sendVerification(user);
@@ -125,7 +135,7 @@ public class RegistrationService {
      *
      * @param rawToken token from the link
      * @param password the password chosen at registration
-     * @return the address and its new status
+     * @return the address, its new status and the awards waiting for a claimed account
      */
     @Transactional
     public RegistrationResponse verify(String rawToken, String password) {
@@ -141,7 +151,8 @@ public class RegistrationService {
         }
         user.setAccountStatus(AccountStatus.ACTIVE);
         audit.record(AuditAction.EMAIL_VERIFIED, user.getId());
-        return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus());
+        long waiting = claim.complete(user);
+        return new RegistrationResponse(user.getEmailAddress(), user.getAccountStatus(), waiting);
     }
 
     /**

@@ -24,6 +24,7 @@ describe('VerifyEmailComponent', () => {
             uk: {
               verify: {
                 success: 'Підтверджено {{email}}',
+                successWaiting: 'Чекають {{count}} для {{email}}',
                 invalid: 'Недійсне',
                 errors: { 'password-mismatch': 'Пароль не збігається' },
               },
@@ -70,6 +71,20 @@ describe('VerifyEmailComponent', () => {
       fixture.nativeElement.querySelector('[data-testid="verify-sign-in"]') as HTMLButtonElement
     ).click();
     expect(auth.login).toHaveBeenCalledWith('/');
+  });
+
+  it('ac3_2 names the awards waiting for a claimed account', async () => {
+    const fixture = await setup('raw');
+    fixture.componentInstance.password.setValue('correct-horse-battery');
+    fixture.componentInstance.submit();
+    http
+      .expectOne(`${environment.apiUrl}/auth/verify-email`)
+      .flush({ email: 'x@chnu.edu.ua', status: 'ACTIVE', waitingAwards: 3 });
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="verify-success"]').textContent.trim(),
+    ).toBe('Чекають 3 для x@chnu.edu.ua');
   });
 
   it('ac25 keeps the form open after a wrong password', async () => {
