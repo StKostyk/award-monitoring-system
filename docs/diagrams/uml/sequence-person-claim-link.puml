@@ -52,10 +52,12 @@ note right of registration
     belong to this user_id.
 end note
 
-== Link to an existing account (2.5.4, planned) ==
-secretary -> link: POST /api/v1/people/{id}/link {userId}
-link -> db: lock person and account;\nUPDATE awards SET user_id = account
+== Link to an existing account (2.5.4) ==
+secretary -> link: POST /api/v1/people/{id}/link {userId, version}
+link -> db: lock person; check UNCLAIMED, version, account ACTIVE
+link -> db: no current role: EMPLOYEE in the person's department\n(role assignment, the account moves there)
+link -> db: UPDATE awards SET user_id = account
 link -> db: person scrubbed through the erasure chain
-link -> audit: ACCOUNT_LINKED
-link --> secretary: 200
+link -> audit: ACCOUNT_LINKED {accountId, movedAwards}
+link --> secretary: 200 {userId, movedAwards}
 @enduml

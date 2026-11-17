@@ -197,6 +197,22 @@ describe('UserListComponent', () => {
     );
   });
 
+  it('ac4_2_links_the_chosen_colleague_instead_of_a_plain_confirmation', () => {
+    store.dispatch(AdminUsersActions.usersLoaded({ page }));
+    fixture.detectChanges();
+    const dialog = TestBed.inject(MatDialog);
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of({ organizationId: 64, person: { id: 41, version: 3 } }),
+    } as ReturnType<typeof dialog.open>);
+    const dispatch = vi.spyOn(store, 'dispatch');
+
+    fixture.nativeElement.querySelector('[data-testid="correct-department"]').click();
+
+    expect(dispatch).toHaveBeenCalledWith(
+      AdminUsersActions.membershipLinked({ id: 7, personId: 41, version: 3 }),
+    );
+  });
+
   it('ac2_7_renders_a_refused_confirmation_inline_on_its_row', () => {
     store.dispatch(AdminUsersActions.usersLoaded({ page }));
     store.dispatch(

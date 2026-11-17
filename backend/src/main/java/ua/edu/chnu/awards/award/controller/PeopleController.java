@@ -16,8 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import ua.edu.chnu.awards.award.dto.Person;
 import ua.edu.chnu.awards.award.dto.PersonDetail;
 import ua.edu.chnu.awards.award.dto.PersonForm;
+import ua.edu.chnu.awards.award.dto.PersonLinkRequest;
+import ua.edu.chnu.awards.award.dto.PersonLinkResult;
 import ua.edu.chnu.awards.award.service.People;
 import ua.edu.chnu.awards.award.service.PersonInvitations;
+import ua.edu.chnu.awards.award.service.PersonLink;
 import ua.edu.chnu.awards.award.service.PersonRemoval;
 import ua.edu.chnu.awards.common.web.PageResponse;
 
@@ -37,6 +40,7 @@ public class PeopleController {
     private final People people;
     private final PersonInvitations invitations;
     private final PersonRemoval removal;
+    private final PersonLink links;
 
     /**
      * Adds a person.
@@ -116,5 +120,18 @@ public class PeopleController {
     @PreAuthorize(SIGNED_IN)
     public void invite(@PathVariable long id) {
         invitations.resend(id);
+    }
+
+    /**
+     * Joins the person to a registered account: the awards move to it and the person row is scrubbed.
+     *
+     * @param id      the person
+     * @param request the account and the person's version
+     * @return the account and how many awards moved
+     */
+    @PostMapping("/{id}/link")
+    @PreAuthorize(SIGNED_IN)
+    public PersonLinkResult link(@PathVariable long id, @RequestBody PersonLinkRequest request) {
+        return links.link(id, request);
     }
 }

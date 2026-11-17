@@ -3,6 +3,7 @@ package ua.edu.chnu.awards.award.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -77,8 +78,25 @@ public class AwardErasure implements ErasureContributor {
     }
 
     private int releaseClaims(long userId) {
-        List<AwardRequest> held = requests.findByCurrentReviewerIdAndStatus(userId, RequestStatus.IN_REVIEW).stream()
-            .filter(request -> request.getAward().getOwner().getId() != userId)
+        return release(userId, request -> request.getAward().getOwner().getId() != userId, "erasure");
+    }
+
+    /**
+     * Releases the claims a reviewer holds on the awards of one owner, so the reviewer does not end up deciding on
+     * awards that become their own.
+     *
+     * @param reviewerId the reviewer
+     * @param ownerId    the owner of the awards
+     * @return how many claims were released
+     */
+    int releaseClaimsOnAwardsOf(long reviewerId, long ownerId) {
+        return release(reviewerId, request -> request.getAward().getOwner().getId() == ownerId, "link");
+    }
+
+    private int release(long reviewerId, Predicate<AwardRequest> which, String reason) {
+        List<AwardRequest> held = requests.findByCurrentReviewerIdAndStatus(reviewerId, RequestStatus.IN_REVIEW)
+            .stream()
+            .filter(which)
             .toList();
         held.forEach(request -> {
             List<ApprovalLevel> below = request.getCurrentLevel().below();
@@ -88,7 +106,7 @@ public class AwardErasure implements ErasureContributor {
             request.setStatus(decidedBelow ? RequestStatus.ESCALATED : RequestStatus.SUBMITTED);
             audit.record(AuditAction.REVIEW_RELEASED, AuditEntityConstants.AWARDS, null, request.getAward().getId(),
                 Map.of("requestId", request.getId(), "level", request.getCurrentLevel().name(),
-                    "reason", "erasure"));
+                    "reason", reason));
         });
         requests.saveAllAndFlush(held);
         return held.size();

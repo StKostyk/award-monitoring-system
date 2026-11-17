@@ -60,6 +60,12 @@
     </p>
   }
 
+  @if (linked() !== null) {
+    <p class="admin__message" role="status" data-testid="person-linked">
+      {{ 'admin.users.linked' | transloco: { count: linked() } }}
+    </p>
+  }
+
   @if (actionProblem(); as problem) {
     <p class="admin__problem" role="alert" data-testid="detail-action-error">
       {{ problem | transloco }}
@@ -122,6 +128,16 @@
       @if (canAssign && user.status !== 'UNCLAIMED') {
         <button mat-flat-button type="button" (click)="assign(user)" data-testid="assign-role-open">
           {{ 'admin.detail.assign' | transloco }}
+        </button>
+      }
+      @if (canManagePeople && user.status === 'ACTIVE' && user.roles.length > 0) {
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="linkPerson(user)"
+          data-testid="person-link-open"
+        >
+          {{ 'admin.users.linkPerson' | transloco }}
         </button>
       }
     </mat-card-content>

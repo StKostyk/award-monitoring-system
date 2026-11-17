@@ -58,6 +58,17 @@ public interface AwardRepository extends JpaRepository<Award, Long>, JpaSpecific
     void keepCreationKey(@Param("id") Long id, @Param("creationKey") UUID creationKey);
 
     /**
+     * Hands every award of one owner to another, bumping each version so open forms see the change.
+     *
+     * @param from the current owner
+     * @param to   the new owner
+     * @return how many awards moved
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "update awards set user_id = :to, version = version + 1 where user_id = :from", nativeQuery = true)
+    int moveOwner(@Param("from") long from, @Param("to") long to);
+
+    /**
      * An award locked for the rest of the transaction, so two submissions of it run one after the other.
      *
      * @param id the award

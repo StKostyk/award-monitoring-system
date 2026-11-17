@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Secretaries and deans join a colleague without an account to the colleague's own registered account, moving the awards
 - A colleague added without an account registers with their address and finds the awards entered for them
 - Faculty secretaries and deans enter and submit awards of colleagues without an account
 - Faculty secretaries and deans add colleagues without an account, invite them and change or remove them from the user directory (2.5.1).

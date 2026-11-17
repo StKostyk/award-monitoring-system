@@ -23,7 +23,10 @@ import { canManagePeople } from '../../../core/auth/permissions';
 import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { IconComponent } from '../../../shared/icons/icon.component';
-import { ConfirmMembershipDialogComponent } from '../confirm-membership-dialog/confirm-membership-dialog.component';
+import {
+  ConfirmMembershipDialogComponent,
+  MembershipChoice,
+} from '../confirm-membership-dialog/confirm-membership-dialog.component';
 import { Person, placeholderAddress } from '../people.service';
 import { PersonDialogComponent, PersonDialogData } from '../person-dialog/person-dialog.component';
 import { ROLES, STATUSES } from '../role-organizations';
@@ -154,10 +157,21 @@ export class UserListComponent implements OnInit {
     this.dialog
       .open(ConfirmMembershipDialogComponent, { data: user, width: '480px' })
       .afterClosed()
-      .subscribe((organizationId?: number) => {
-        if (organizationId) {
+      .subscribe((choice?: MembershipChoice) => {
+        if (choice?.person) {
           this.store.dispatch(
-            AdminUsersActions.membershipConfirmed({ id: user.id, organizationId }),
+            AdminUsersActions.membershipLinked({
+              id: user.id,
+              personId: choice.person.id,
+              version: choice.person.version,
+            }),
+          );
+        } else if (choice) {
+          this.store.dispatch(
+            AdminUsersActions.membershipConfirmed({
+              id: user.id,
+              organizationId: choice.organizationId,
+            }),
           );
         }
       });
