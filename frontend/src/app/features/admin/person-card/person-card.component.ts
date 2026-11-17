@@ -1,9 +1,9 @@
 import { HttpStatusCode } from '@angular/common/http';
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
-import { MatButton } from '@angular/material/button';
+import { MatAnchor, MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { knownProblem, problemStatus, problemType } from '../../../core/api/problem';
@@ -26,7 +26,16 @@ const KNOWN = [
 
 @Component({
   selector: 'app-person-card',
-  imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatButton, TranslocoPipe],
+  imports: [
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardContent,
+    MatAnchor,
+    MatButton,
+    RouterLink,
+    TranslocoPipe,
+  ],
   templateUrl: './person-card.component.html',
   styleUrl: '../user-detail/user-detail.component.scss',
 })

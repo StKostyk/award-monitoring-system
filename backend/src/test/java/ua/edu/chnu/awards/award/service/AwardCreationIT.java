@@ -98,7 +98,7 @@ class AwardCreationIT extends AbstractIntegrationTest {
     void ac4_2_theRepeatAnswersTheDraftAsItIsNowAndKeepsItsValues() {
         UUID key = UUID.randomUUID();
         long id = creation.create(form("Letter"), key).award().id();
-        awardService.update(id, new AwardForm("Diploma", null, null, null, null, null, null, null, null, 1L));
+        awardService.update(id, new AwardForm("Diploma", null, null, null, null, null, null, null, null, null, 1L));
 
         AwardCreation.Created again = creation.create(form("Other tab"), key);
 
@@ -137,6 +137,6 @@ class AwardCreationIT extends AbstractIntegrationTest {
     }
 
     private static AwardForm form(String title) {
-        return new AwardForm(title, null, null, null, null, null, null, null, null, null);
+        return new AwardForm(title, null, null, null, null, null, null, null, null, null, null);
     }
 }

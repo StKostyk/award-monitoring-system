@@ -135,3 +135,18 @@
 .award-form__documents-placeholder {
   min-height: 240px;
 }
+
+.award-form__owner {
+  margin: 0;
+  font: var(--mat-sys-body-large);
+}
+
+.award-form__unclaimed {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font: var(--mat-sys-label-medium);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}

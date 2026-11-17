@@ -37,6 +37,7 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
+import ua.edu.chnu.awards.award.service.ManagedOwners;
 import ua.edu.chnu.awards.document.config.DocumentProperties;
 import ua.edu.chnu.awards.document.dto.DocumentResponse;
 import ua.edu.chnu.awards.document.entity.Document;
@@ -71,7 +72,8 @@ class DocumentUploadTest {
     private final DocumentProperties properties = new DocumentProperties("award-documents",
         DataSize.ofMegabytes(10), DOCUMENT_LIMIT, null, DataSize.ofMegabytes(50), UPLOAD_RATE, null, null);
     private final DocumentUpload upload = new DocumentUpload(documents,
-        new AwardOwnership(awards, mock(UserAccounts.class), mock(OrganizationLookup.class), access),
+        new AwardOwnership(awards, mock(UserAccounts.class), mock(OrganizationLookup.class), access,
+            mock(ManagedOwners.class)),
         new DocumentContent(), storage, properties,
         events, new TransactionTemplate(mock(PlatformTransactionManager.class)), malware, limits, access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);

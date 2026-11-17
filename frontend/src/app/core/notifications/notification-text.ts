@@ -74,7 +74,13 @@ export class NotificationText {
     const payload = notification.payload ?? {};
     const key = `notifications.types.${notification.type}`;
     const rendered = this.transloco.translate(key, this.params(payload, language));
-    return rendered === key ? this.transloco.translate('notifications.types.unknown') : rendered;
+    if (rendered === key) {
+      return this.transloco.translate('notifications.types.unknown');
+    }
+    const person = text(payload['person']);
+    return person
+      ? this.transloco.translate('notifications.colleague', { person, text: rendered })
+      : rendered;
   }
 
   /** How long ago it was sent. */

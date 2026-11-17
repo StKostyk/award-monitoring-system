@@ -1,9 +1,10 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AccountStatus, OrganizationRef } from '../../core/auth/user-profile';
+import { Page } from '../../shared/page';
 import { Award, UnitRef } from '../awards/awards.service';
 
 /** A colleague added without an account, or one who has claimed it since. */
@@ -35,6 +36,9 @@ export interface PersonForm {
   version?: number;
 }
 
+/** People offered by one search. */
+const SEARCH_SIZE = 10;
+
 /** The domain of the placeholder address a person without a known address carries. */
 const PLACEHOLDER_DOMAIN = '@unclaimed.invalid';
 
@@ -50,6 +54,17 @@ export class PeopleService {
 
   add(form: PersonForm): Observable<Person> {
     return this.http.post<Person>(this.base, form);
+  }
+
+  /**
+   * People of the caller's scope whose name or address contains the text, sorted by last name.
+   *
+   * @param q the text, ignored by the server under two characters
+   * @param size the page size
+   */
+  list(q: string, size = SEARCH_SIZE): Observable<Page<Person>> {
+    const params = new HttpParams().set('q', q).set('size', size);
+    return this.http.get<Page<Person>>(this.base, { params });
   }
 
   get(id: number): Observable<PersonDetail> {

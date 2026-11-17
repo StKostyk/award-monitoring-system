@@ -6,8 +6,9 @@ import java.util.List;
 /**
  * A reviewer corrected a pending award; its owner is told once the surrounding transaction commits.
  *
- * @param userId     the owner, null in events stored before it was carried
- * @param email      the owner's address
+ * @param userId     who is told: the owner, or the submitter for an owner without an account; null in
+ *                   events stored before it was carried
+ * @param email      the address of who is told
  * @param firstName  used in the greeting
  * @param awardId    the award
  * @param title      the award's title, the Ukrainian one when it has no English title
@@ -16,10 +17,11 @@ import java.util.List;
  * @param reason     why the reviewer corrected the award
  * @param changes    the corrected fields with their old and new values
  * @param occurredAt when the correction was announced
+ * @param person     surname and first name of an owner without an account, null when the owner is told
  */
 public record AwardCorrected(Long userId, String email, String firstName, long awardId, String title,
                              String titleUk, String reviewer, String reason, List<Change> changes,
-                             Instant occurredAt) {
+                             Instant occurredAt, String person) {
 
     /**
      * Keeps an unmodifiable copy of the changes.

@@ -610,7 +610,8 @@ paths:
       description: >
         Creates a `DRAFT` owned by the caller in the caller's department (`award:create`), or, with
         `recipientOrganizationId`, an award of that faculty or department owned by the caller and belonging to
-        the unit. A title in one language is enough; fields that are present are checked (lengths, active category, `http`/`https` link,
+        the unit, or, with `recipientUserId`, a draft owned by a person without an account in the caller's scope
+        and placed in the person's department (2.5.2). A title in one language is enough; fields that are present are checked (lengths, active category, `http`/`https` link,
         award date not after today in Europe/Kyiv). Surrounding spaces are removed and blank texts count as empty.
         A request repeated with the same `Idempotency-Key` (a lost answer, or a second tab with the same form copy)
         creates nothing and answers 200 with the award that key created, as it is now; the key is stored in
@@ -4728,6 +4729,16 @@ components:
           type: integer
           format: int64
           description: Optimistic-lock version, sent back on update and submit
+        ownerWithoutAccount:
+          type: boolean
+          description: >
+            The owner has no account of their own yet (2.5.2); review notices go to the request's submitter and
+            the visibility stays `PRIVATE`
+        managedByCaller:
+          type: boolean
+          description: >
+            The caller manages the award in place of an owner without an account (2.5.2): edit, delete, upload,
+            submit and withdraw work as for the owner; false for the caller's own awards
 
     AwardStatus:
       type: string
@@ -5044,6 +5055,17 @@ components:
             `DEPARTMENT` inside the scope of the caller's `FACULTY_SECRETARY` or `DEAN` role, own or delegated
             (`GET /awards/recipient-units`); anything else answers 422 `validation-failed` on this field with
             code `out-of-scope`. Null or absent: a personal award of the caller.
+        recipientUserId:
+          type: [integer, 'null']
+          format: int64
+          description: >
+            A person without an account (2.5.2, `UNCLAIMED`, or `PENDING` added by a secretary or dean) who
+            received the award. Only a person whose department is inside the scope of the caller's
+            `FACULTY_SECRETARY` or `DEAN` role (`GET /people`); an unknown, claimed or out-of-scope person answers
+            422 `validation-failed` on this field with code `out-of-scope`, and together with
+            `recipientOrganizationId` code `one-recipient`. The draft belongs to the person, in the person's
+            department, and is managed by the secretaries and deans of that scope. Read on create only: an update
+            keeps the owner.
 
     AwardUpdateRequest:
       allOf:

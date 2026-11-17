@@ -22,7 +22,6 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
-import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
@@ -45,7 +44,7 @@ class ReturnedDraftTest {
     private final AwardService service = new AwardService(awards, new RequestLookup(requests, decisions),
         mock(AwardSpecifications.class), mock(AwardInputRules.class),
         TestAwards.ownership(awards, mock(UserRepository.class), access), mock(AwardWarnings.class),
-        new AwardMapper(TestWorkflow.estimator()), access, mock(AwardHistory.class), documents,
+        TestAwards.mapper(TestWorkflow.estimator()), access, mock(AwardHistory.class), documents,
         mock(AwardSearch.class));
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private Award draft;

@@ -111,7 +111,8 @@ public class DecisionLog {
     }
 
     /**
-     * Publishes the decision for the owner's e-mail, sent once the transaction commits.
+     * Publishes the decision for the owner's e-mail, sent once the transaction commits; the decision on an award
+     * of an owner without an account goes to the request's submitter.
      *
      * @param request  the request after the decision
      * @param reviewer who decided
@@ -119,9 +120,10 @@ public class DecisionLog {
      */
     public void announce(AwardRequest request, User reviewer, String comment) {
         Award award = request.getAward();
-        User owner = award.getOwner();
-        events.publishEvent(new AwardDecided(owner.getId(), owner.getEmailAddress(), owner.getFirstName(),
+        User told = NoticeRecipientHelper.recipient(request);
+        events.publishEvent(new AwardDecided(told.getId(), told.getEmailAddress(), told.getFirstName(),
             award.getId(), award.titleInEnglish(), award.titleInUkrainian(), request.getStatus(),
-            request.getCurrentLevel(), reviewer.getFullName(), comment, clock.instant()));
+            request.getCurrentLevel(), reviewer.getFullName(), comment, clock.instant(),
+            NoticeRecipientHelper.person(award)));
     }
 }

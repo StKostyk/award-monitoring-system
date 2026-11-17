@@ -26,6 +26,7 @@ import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.repository.AwardCategoryRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.common.web.FieldViolation;
+import ua.edu.chnu.awards.user.entity.User;
 
 class AwardInputRulesTest {
 
@@ -36,8 +37,9 @@ class AwardInputRulesTest {
     private final RecipientUnits recipients = mock(RecipientUnits.class);
     private final Clock justAfterKyivMidnight = Clock.fixed(Instant.parse("2026-09-27T21:30:00Z"),
         ZoneId.of("Europe/Kyiv"));
+    private final ManagedOwners managedOwners = mock(ManagedOwners.class);
     private final AwardInputRules rules = new AwardInputRules(categories,
-        new AwardDateRules(justAfterKyivMidnight), recipients);
+        new AwardDateRules(justAfterKyivMidnight), recipients, managedOwners);
     private final AwardCategory active = category(13L, true);
     private final AwardCategory retired = category(14L, false);
 
@@ -51,10 +53,10 @@ class AwardInputRulesTest {
     @Test
     void ac1_1_normalizeTrimsTextsAndTreatsBlankAsEmpty() {
         AwardForm clean = rules.normalize(new AwardForm("  Letter  ", " ", null, "\t", 13L, " MON ", null,
-            " https://mon.gov.ua ", 70L, 3L));
+            " https://mon.gov.ua ", 70L, null, 3L));
 
         assertThat(clean).isEqualTo(new AwardForm("Letter", null, null, null, 13L, "MON", null,
-            "https://mon.gov.ua", 70L, 3L));
+            "https://mon.gov.ua", 70L, null, 3L));
     }
 
     @Test
@@ -74,7 +76,7 @@ class AwardInputRulesTest {
     @Test
     void ac1_1_everyRefusedFieldIsListed() {
         AwardForm form = new AwardForm("x".repeat(501), "т".repeat(501), "d".repeat(4001), "о".repeat(4001),
-            999L, "o".repeat(256), KYIV_TODAY.plusDays(1), "javascript:alert(1)", null, null);
+            999L, "o".repeat(256), KYIV_TODAY.plusDays(1), "javascript:alert(1)", null, null, null);
 
         assertThatThrownBy(() -> rules.check(form, Optional.empty()))
             .extracting(e -> ((ApiProblemException) e).getProperties().get("errors"), list(FieldViolation.class))
@@ -86,7 +88,7 @@ class AwardInputRulesTest {
     @Test
     void ac1_1_limitsAreInclusive() {
         AwardForm form = new AwardForm("x".repeat(500), null, "d".repeat(4000), null, 13L, "o".repeat(255),
-            KYIV_TODAY, "https://example.org/" + "p".repeat(2028), null, null);
+            KYIV_TODAY, "https://example.org/" + "p".repeat(2028), null, null, null);
 
         assertThat(rules.check(form, Optional.empty())).contains(active);
     }
@@ -205,11 +207,36 @@ class AwardInputRulesTest {
     }
 
     private static AwardForm form(String title, String titleUk, Long categoryId, LocalDate date, String link) {
-        return new AwardForm(title, titleUk, null, null, categoryId, null, date, link, null, null);
+        return new AwardForm(title, titleUk, null, null, categoryId, null, date, link, null, null, null);
+    }
+
+    @Test
+    void ac2_2_aPersonTheCallerManagesIsAccepted() {
+        when(managedOwners.find(40L)).thenReturn(Optional.of(User.builder().id(40L).build()));
+
+        assertThat(rules.check(personForm(40L, null), Optional.empty())).isEmpty();
+    }
+
+    @Test
+    void ac2_2_anUnmanagedPersonOrBothRecipientsAreRefusedOnThePerson() {
+        when(recipients.covers(64L)).thenReturn(true);
+
+        assertThatThrownBy(() -> rules.check(personForm(41L, null), Optional.empty()))
+            .extracting(e -> ((ApiProblemException) e).getProperties().get("errors"), list(FieldViolation.class))
+            .extracting(FieldViolation::field, FieldViolation::code)
+            .containsExactly(tuple("recipientUserId", "out-of-scope"));
+        assertThatThrownBy(() -> rules.check(personForm(41L, 64L), Optional.empty()))
+            .extracting(e -> ((ApiProblemException) e).getProperties().get("errors"), list(FieldViolation.class))
+            .extracting(FieldViolation::field, FieldViolation::code)
+            .containsExactly(tuple("recipientUserId", "one-recipient"));
+    }
+
+    private static AwardForm personForm(long personId, Long unitId) {
+        return new AwardForm(null, TITLE, null, null, null, null, null, null, unitId, personId, null);
     }
 
     private static AwardForm unitForm(long unitId) {
-        return new AwardForm(null, TITLE, null, null, null, null, null, null, unitId, null);
+        return new AwardForm(null, TITLE, null, null, null, null, null, null, unitId, null, null);
     }
 
     private static AwardCategory category(long id, boolean isActive) {

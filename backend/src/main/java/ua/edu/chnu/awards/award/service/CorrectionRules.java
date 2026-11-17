@@ -61,7 +61,7 @@ public class CorrectionRules {
     public AwardForm form(Award award) {
         return new AwardForm(award.getTitle(), award.getTitleUk(), award.getDescription(), award.getDescriptionUk(),
             award.getCategory() == null ? null : award.getCategory().getId(), award.getAwardingOrganization(),
-            award.getAwardDate(), award.getExternalUrl(), null, award.getVersion());
+            award.getAwardDate(), award.getExternalUrl(), null, null, award.getVersion());
     }
 
     private static ApiProblemException invalidReason(String code, String message) {

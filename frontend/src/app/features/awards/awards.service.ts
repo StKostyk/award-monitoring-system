@@ -212,6 +212,10 @@ export interface Award {
   status: AwardStatus;
   impactScore: number | null;
   owner: { id: number; name: string; email: string };
+  /** The owner is a colleague added without an account (2.5.2). */
+  ownerWithoutAccount?: boolean;
+  /** The caller manages this award of someone else: a person without an account in the caller's scope. */
+  managedByCaller?: boolean;
   recipient: AwardRecipient;
   organization: OrganizationRef;
   /** Null for a unit award, which is shown to everybody once approved. */
@@ -241,6 +245,8 @@ export interface AwardForm {
   externalUrl: string | null;
   /** The faculty or department that received the award; null for the caller. */
   recipientOrganizationId: number | null;
+  /** A colleague without an account who received the award; sent on creation only. */
+  recipientUserId?: number | null;
 }
 
 export interface AwardFilters {
@@ -319,7 +325,10 @@ export interface AwardVersion {
 }
 
 /** Fields a reviewer may correct; a field left out stays unchanged, null clears it. */
-export type CorrectableField = Exclude<keyof AwardForm, 'recipientOrganizationId'>;
+export type CorrectableField = Exclude<
+  keyof AwardForm,
+  'recipientOrganizationId' | 'recipientUserId'
+>;
 
 /** A reviewer's correction of a pending award. */
 export type AwardCorrection = Partial<Pick<AwardForm, CorrectableField>> & {
@@ -505,6 +514,14 @@ export class AwardsService {
 /** Whether the signed-in user owns the award. */
 export function isOwnAward(award: Pick<Award, 'owner'>, userId: string | null): boolean {
   return userId !== null && String(award.owner.id) === userId;
+}
+
+/** Whether the signed-in user manages the award: their own, or one of a colleague without an account. */
+export function managesAward(
+  award: Pick<Award, 'owner' | 'managedByCaller'>,
+  userId: string | null,
+): boolean {
+  return isOwnAward(award, userId) || award.managedByCaller === true;
 }
 
 /** Title in the interface language, falling back to the other one. */

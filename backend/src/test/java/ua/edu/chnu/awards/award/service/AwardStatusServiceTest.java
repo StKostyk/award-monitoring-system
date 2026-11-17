@@ -57,7 +57,7 @@ class AwardStatusServiceTest {
     private final ReviewDecisionRepository decisions = mock(ReviewDecisionRepository.class);
     private final AccessScope access = mock(AccessScope.class);
     private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserAccounts.class),
-        mock(OrganizationLookup.class), access);
+        mock(OrganizationLookup.class), access, mock(ManagedOwners.class));
     private final ReviewerAvailability reviewers = mock(ReviewerAvailability.class);
     private final AwardStatusService service = new AwardStatusService(requests, decisions, ownership,
         TestWorkflow.estimator(Clock.fixed(NOW, ZoneId.of("Europe/Kyiv"))), reviewers);

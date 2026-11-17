@@ -33,7 +33,6 @@ import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
-import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
@@ -52,7 +51,7 @@ class AwardWithdrawalTest {
     private final AuditService audit = mock(AuditService.class);
     private final Clock clock = Clock.fixed(TestAwards.SUBMITTED_AT, ZoneId.of("Europe/Kyiv"));
     private final AwardWithdrawal withdrawal = new AwardWithdrawal(requests, awards, ownership,
-        new AwardMapper(TestWorkflow.estimator(clock)), audit);
+        TestAwards.mapper(TestWorkflow.estimator(clock)), audit);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
     private Award award;
@@ -64,7 +63,8 @@ class AwardWithdrawalTest {
         request = TestAwards.request(award).deadline(TestAwards.SUBMITTED_AT.plusSeconds(86_400)).build();
         when(requests.findByAwardIdForUpdate(5L)).thenReturn(Optional.of(request));
         when(awards.findForUpdate(5L)).thenReturn(Optional.of(award));
-        when(ownership.isOwn(award)).thenReturn(true);
+        when(ownership.isManaged(award)).thenReturn(true);
+        when(ownership.callerId()).thenReturn(21L);
     }
 
     @ParameterizedTest
@@ -121,7 +121,7 @@ class AwardWithdrawalTest {
 
     @Test
     void ac3_2_someoneElsesAwardIsNotFound() {
-        when(ownership.isOwn(award)).thenReturn(false);
+        when(ownership.isManaged(award)).thenReturn(false);
 
         assertThatThrownBy(() -> withdrawal.withdraw(5L, new WithdrawRequest(TestAwards.VERSION)))
             .isInstanceOf(AwardNotFoundException.class);

@@ -65,15 +65,16 @@ public class CorrectionLog {
      * Publishes the correction for the owner's e-mail, sent once the transaction commits. The derived impact
      * score is left out, categories are named in both languages and dates are shown day first.
      *
-     * @param award    the corrected award
+     * @param request  the request of the corrected award
      * @param reviewer who corrected it
      * @param reason   why
      * @param changes  the changed snapshot fields
      * @param before   the category before the correction, null when none
      */
-    public void announce(Award award, User reviewer, String reason, List<FieldChange> changes,
+    public void announce(AwardRequest request, User reviewer, String reason, List<FieldChange> changes,
                          AwardCategory before) {
-        User owner = award.getOwner();
+        Award award = request.getAward();
+        User told = NoticeRecipientHelper.recipient(request);
         List<AwardCorrected.Change> mailed = changes.stream()
             .filter(change -> !IMPACT_SCORE.equals(change.field()))
             .map(change -> CATEGORY.equals(change.field())
@@ -82,9 +83,9 @@ public class CorrectionLog {
                 : new AwardCorrected.Change(change.field(), shown(change.from()), shown(change.to()),
                     shown(change.from()), shown(change.to())))
             .toList();
-        events.publishEvent(new AwardCorrected(owner.getId(), owner.getEmailAddress(), owner.getFirstName(),
+        events.publishEvent(new AwardCorrected(told.getId(), told.getEmailAddress(), told.getFirstName(),
             award.getId(), award.titleInEnglish(), award.titleInUkrainian(), reviewer.getFullName(), reason, mailed,
-            clock.instant()));
+            clock.instant(), NoticeRecipientHelper.person(award)));
     }
 
     private static String name(AwardCategory category, boolean ukrainian) {

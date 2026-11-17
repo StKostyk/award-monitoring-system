@@ -53,7 +53,7 @@ class NotificationDraftsTest {
     void ac1_2_aCorrectionNamesTheFieldsButNotTheirValues() {
         NotificationDraft draft = drafts.of(new AwardCorrected(7L, EMAIL, "Олена", 5L, "Certificate", "Грамота",
             "Ірина Бойко", "Typo", List.of(new AwardCorrected.Change("awardDate", "2025-05-01", "2025-06-01",
-                "2025-05-01", "2025-06-01")), AT));
+                "2025-05-01", "2025-06-01")), AT, null));
 
         assertThat(draft.type()).isEqualTo(NotificationType.AWARD_CORRECTED);
         assertThat(draft.payload()).containsOnlyKeys("title", "titleUk", "reviewer", "fields")

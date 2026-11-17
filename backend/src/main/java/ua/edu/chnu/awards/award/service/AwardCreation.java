@@ -39,7 +39,7 @@ public class AwardCreation {
         if (creationKey == null) {
             return new Created(awards.create(form), false);
         }
-        Optional<AwardResponse> earlier = createdWith(creationKey);
+        Optional<AwardResponse> earlier = createdWith(form, creationKey);
         if (earlier.isPresent()) {
             return new Created(earlier.get(), true);
         }
@@ -50,12 +50,13 @@ public class AwardCreation {
                 return created;
             })), false);
         } catch (DataIntegrityViolationException e) {
-            return new Created(createdWith(creationKey).orElseThrow(() -> e), true);
+            return new Created(createdWith(form, creationKey).orElseThrow(() -> e), true);
         }
     }
 
-    private Optional<AwardResponse> createdWith(UUID creationKey) {
-        return repository.findIdByCreationKey(access.callerId(), creationKey).map(awards::get);
+    private Optional<AwardResponse> createdWith(AwardForm form, UUID creationKey) {
+        long ownerId = form.recipientUserId() == null ? access.callerId() : form.recipientUserId();
+        return repository.findIdByCreationKey(ownerId, creationKey).map(awards::get);
     }
 
     /**

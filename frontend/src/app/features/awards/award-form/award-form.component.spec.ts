@@ -19,6 +19,7 @@ import { ConnectivityService } from '../../../core/connectivity/connectivity.ser
 import { provideIsoDateAdapter } from '../../../core/i18n/iso-date-adapter';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
+import { PeopleService, Person } from '../../admin/people.service';
 import { AwardDocument, DocumentsService } from '../award-documents/documents.service';
 import {
   Award,
@@ -121,7 +122,13 @@ describe('AwardFormComponent', () => {
     download: vi.fn(),
     remove: vi.fn(),
   };
-  const auth = { userId: signal<string | null>('21'), isAuthenticated: signal(true) };
+  const auth = {
+    userId: signal<string | null>('21'),
+    isAuthenticated: signal(true),
+    permissions: signal({ roleScopes: [] as { role: string }[] }),
+  };
+  const people = { list: vi.fn(), get: vi.fn() };
+  let query: Record<string, string> = {};
 
   async function open(id: string | null, step = false): Promise<void> {
     await TestBed.configureTestingModule({
@@ -139,13 +146,19 @@ describe('AwardFormComponent', () => {
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } },
+          useValue: {
+            snapshot: {
+              paramMap: convertToParamMap(id ? { id } : {}),
+              queryParamMap: convertToParamMap(query),
+            },
+          },
         },
         { provide: AwardsService, useValue: service },
         { provide: MatDialog, useValue: dialog },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: auth },
         { provide: DocumentsService, useValue: documents },
+        { provide: PeopleService, useValue: people },
       ],
     }).compileComponents();
     router = TestBed.inject(Router);
@@ -197,6 +210,10 @@ describe('AwardFormComponent', () => {
     dialog.open.mockReset();
     auth.userId.set('21');
     auth.isAuthenticated.set(true);
+    auth.permissions.set({ roleScopes: [] });
+    people.list.mockReset();
+    people.get.mockReset();
+    query = {};
   });
 
   it('ac5_3_a_new_award_starts_with_the_upload_step', async () => {
@@ -266,6 +283,150 @@ describe('AwardFormComponent', () => {
 
     expect(component.returned()).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="award-returned"]')).toBeNull();
+  });
+
+  describe('colleague without an account', () => {
+    const petro: Person = {
+      id: 77,
+      firstName: 'Петро',
+      lastName: 'Іваненко',
+      email: 'p***@chnu.edu.ua',
+      organization: units[1] as unknown as Person['organization'],
+      status: 'UNCLAIMED',
+      addedBy: { id: 21, name: 'Анастасія Коваль', email: 'secretary.fmi@chnu.edu.ua' },
+      invitedAt: null,
+      awardCount: 0,
+      version: 0,
+    };
+
+    function asSecretary(): void {
+      auth.permissions.set({ roleScopes: [{ role: 'FACULTY_SECRETARY' }] });
+      service.recipientUnits.mockReturnValue(of(units));
+    }
+
+    function element(testId: string): HTMLElement | null {
+      return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+    }
+
+    it('ac2_1_offers_the_colleague_choice_to_a_secretary_only', async () => {
+      service.recipientUnits.mockReturnValue(of(units));
+      await open(null);
+      expect(element('award-recipient-colleague')).toBeNull();
+
+      TestBed.resetTestingModule();
+      asSecretary();
+      await open(null);
+
+      expect(element('award-recipient-colleague')).not.toBeNull();
+    });
+
+    it('ac2_1_searches_unclaimed_people_from_two_characters', async () => {
+      vi.useFakeTimers();
+      try {
+        asSecretary();
+        people.list.mockReturnValue(
+          of({ content: [petro, { ...petro, id: 78, status: 'PENDING' }], totalElements: 2 }),
+        );
+        await open(null);
+        type('recipient', 'COLLEAGUE');
+        type('colleague', 'І');
+        vi.advanceTimersByTime(500);
+        expect(people.list).not.toHaveBeenCalled();
+
+        type('colleague', 'Іва');
+        vi.advanceTimersByTime(500);
+
+        expect(people.list).toHaveBeenCalledWith('Іва');
+        expect(component.colleagues()).toEqual([petro]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('ac2_1_creates_the_draft_for_the_chosen_colleague', async () => {
+      asSecretary();
+      await open(null);
+      service.create.mockReturnValue(created(award({ ownerWithoutAccount: true })));
+      type('titleUk', 'Грамота');
+      type('recipient', 'COLLEAGUE');
+      type('colleague', petro as never);
+
+      component.save();
+
+      expect(service.create).toHaveBeenCalledWith(
+        expect.objectContaining({ recipientUserId: 77, recipientOrganizationId: null }),
+        expect.any(String),
+      );
+      expect(component.colleagueName(petro)).toBe('Іваненко Петро');
+    });
+
+    it('ac2_1_a_colleague_choice_without_a_person_is_marked', async () => {
+      asSecretary();
+      await open(null);
+      type('titleUk', 'Грамота');
+      type('recipient', 'COLLEAGUE');
+
+      component.save();
+
+      expect(service.create).not.toHaveBeenCalled();
+      expect(component.errorKey('colleague')).toBe('awards.errors.required');
+    });
+
+    it('ac2_1_the_person_parameter_preselects_the_colleague_and_skips_the_upload_step', async () => {
+      asSecretary();
+      query = { person: '77' };
+      people.get.mockReturnValue(of({ ...petro, awards: [] }));
+
+      await open(null, true);
+
+      expect(people.get).toHaveBeenCalledWith(77);
+      expect(component.stepShown()).toBe(false);
+      expect(component.form.controls.recipient.value).toBe('COLLEAGUE');
+      expect(component.form.controls.recipientUserId.value).toBe(77);
+    });
+
+    it('ac2_2_a_refused_colleague_is_marked_on_the_search', async () => {
+      asSecretary();
+      await open(null);
+      service.create.mockReturnValue(
+        throwError(() =>
+          problem('validation-failed', 422, [
+            { field: 'recipientUserId', code: 'out-of-scope', message: 'x' },
+          ]),
+        ),
+      );
+      type('titleUk', 'Грамота');
+      type('recipient', 'COLLEAGUE');
+      type('colleague', petro as never);
+
+      component.save();
+
+      expect(component.errorKey('colleague')).toBe('awards.errors.person-out-of-scope');
+    });
+
+    it('ac2_3_a_colleagues_draft_names_the_owner_and_saves_without_a_recipient', async () => {
+      asSecretary();
+      const draft = award({
+        owner: { id: 77, name: 'Іваненко Петро', email: 'p***@chnu.edu.ua' },
+        ownerWithoutAccount: true,
+        managedByCaller: true,
+      });
+      service.get.mockReturnValue(of(draft));
+      service.update.mockReturnValue(of(draft));
+      await open('5');
+      fixture.detectChanges();
+
+      expect(element('award-form-owner')?.textContent).toContain('Іваненко Петро');
+      expect(element('award-recipient')).toBeNull();
+      type('titleUk', 'Грамота колеги');
+      component.save();
+
+      expect(service.update).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({ recipientUserId: null, recipientOrganizationId: null }),
+        1,
+      );
+    });
   });
 
   it('ac0_8_offers_no_recipient_choice_to_anyone_without_units', async () => {

@@ -64,16 +64,24 @@ public class CorrectionMails {
 
     static String body(AwardCorrected event, String link) {
         return helloUk(event.firstName())
-            + event.reviewer() + " виправив(ла) нагороду «" + event.titleUk() + "»:\n"
+            + event.reviewer() + " виправив(ла) " + correctedUk(event.person()) + "«" + event.titleUk() + "»:\n"
             + changes(event, LABELS_UK, change -> pair(change.fromUk(), change.toUk()))
             + "Причина: " + event.reason() + "\n"
             + "Переглянути нагороду: " + link + "\n\n"
             + SEPARATOR
             + helloEn(event.firstName())
-            + event.reviewer() + " corrected the award \"" + event.title() + "\":\n"
+            + event.reviewer() + " corrected " + correctedEn(event.person()) + "\"" + event.title() + "\":\n"
             + changes(event, LABELS_EN, change -> pair(change.from(), change.to()))
             + "Reason: " + event.reason() + "\n"
             + "View the award: " + link + "\n";
+    }
+
+    private static String correctedUk(String person) {
+        return person == null ? "нагороду " : "нагороду колеги " + person + " ";
+    }
+
+    private static String correctedEn(String person) {
+        return person == null ? "the award " : "the award of your colleague " + person + " ";
     }
 
     private static String changes(AwardCorrected event, Map<String, String> labels,

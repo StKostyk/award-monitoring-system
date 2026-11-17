@@ -82,7 +82,7 @@ public class AwardCorrection {
         awards.saveAndFlush(award);
         history.corrected(award, reason);
         log.audit(request, callerId, changes, reason);
-        log.announce(award, caller, reason, changes, before);
+        log.announce(request, caller, reason, changes, before);
         return new CorrectionOutcome(mapper.toResponse(award, request), request.getVersion(),
             changes.stream().map(FieldChange::field).toList());
     }

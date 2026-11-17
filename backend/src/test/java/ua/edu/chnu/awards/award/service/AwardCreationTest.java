@@ -33,7 +33,7 @@ class AwardCreationTest {
     private final AccessScope access = mock(AccessScope.class);
     private final TransactionTemplate transactions = mock(TransactionTemplate.class);
     private final AwardCreation creation = new AwardCreation(awards, repository, access, transactions);
-    private final AwardForm form = new AwardForm("Letter", null, null, null, null, null, null, null, null, null);
+    private final AwardForm form = new AwardForm("Letter", null, null, null, null, null, null, null, null, null, null);
     private final AwardResponse award = mock(AwardResponse.class);
 
     @BeforeEach

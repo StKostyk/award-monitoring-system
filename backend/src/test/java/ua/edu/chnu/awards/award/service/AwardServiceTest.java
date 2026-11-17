@@ -33,7 +33,6 @@ import ua.edu.chnu.awards.award.entity.ApprovalLevel;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
-import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
@@ -63,7 +62,7 @@ class AwardServiceTest {
     private final AwardWarnings warnings = mock(AwardWarnings.class);
     private final AwardDocuments documents = mock(AwardDocuments.class);
     private final AwardService service = new AwardService(awards, TestAwards.requestLookup(requests),
-        specifications, rules, ownership, warnings, new AwardMapper(TestWorkflow.estimator()), access,
+        specifications, rules, ownership, warnings, TestAwards.mapper(TestWorkflow.estimator()), access,
         mock(AwardHistory.class), documents, TestAwards.search(awards, specifications));
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
@@ -95,7 +94,7 @@ class AwardServiceTest {
         when(users.findById(OWNER_ID)).thenReturn(Optional.of(owner));
 
         AwardResponse created = service.create(new AwardForm("Letter", null, null, null, null, null, null, null,
-            9L, null));
+            9L, null, null));
 
         assertThat(created.owner().id()).isEqualTo(OWNER_ID);
         assertThat(created.organization().id()).isEqualTo(9L);
@@ -121,7 +120,7 @@ class AwardServiceTest {
         Award draft = award(OWNER_ID, AwardStatus.DRAFT);
         when(awards.findForUpdate(5L)).thenReturn(Optional.of(draft));
 
-        service.update(5L, new AwardForm(null, "Подяка", null, null, null, "МОН", null, null, null, 4L));
+        service.update(5L, new AwardForm(null, "Подяка", null, null, null, "МОН", null, null, null, null, 4L));
 
         assertThat(draft.getTitle()).isNull();
         assertThat(draft.getTitleUk()).isEqualTo("Подяка");
@@ -221,6 +220,6 @@ class AwardServiceTest {
     }
 
     private static AwardForm form(Long version) {
-        return new AwardForm("Letter", null, null, null, null, null, null, null, null, version);
+        return new AwardForm("Letter", null, null, null, null, null, null, null, null, null, version);
     }
 }

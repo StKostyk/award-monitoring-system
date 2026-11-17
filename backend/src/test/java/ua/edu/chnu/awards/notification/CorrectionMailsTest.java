@@ -80,6 +80,16 @@ class CorrectionMailsTest {
             .contains("Переглянути нагороду: " + LINK).contains("View the award: " + LINK);
     }
 
+    @Test
+    void ac2_5_theSubmitterIsToldWhoseAwardWasCorrected() {
+        AwardCorrected event = new AwardCorrected(31L, "secretary@chnu.edu.ua", "Аліна", 5L, "Prize", "Премія",
+            "Олег Декан", "Дата з наказу", List.of(), null, "Тестовий Петро");
+
+        assertThat(CorrectionMails.body(event, LINK))
+            .contains("Олег Декан виправив(ла) нагороду колеги Тестовий Петро «Премія»")
+            .contains("Олег Декан corrected the award of your colleague Тестовий Петро \"Prize\"");
+    }
+
     private static AwardCorrected event(String email) {
         return new AwardCorrected(21L, email, "Ірина", 5L, "Prize", "Премія", "Аліна Мартинюк", "Дата з наказу",
             List.of(
@@ -87,6 +97,6 @@ class CorrectionMailsTest {
                 new AwardCorrected.Change("categoryId", "University Award", "Ministry Recognition",
                     "Університетська нагорода", "Відзнака міністерства"),
                 new AwardCorrected.Change("externalUrl", null, "https://mon.gov.ua", null, "https://mon.gov.ua")),
-            null);
+            null, null);
     }
 }

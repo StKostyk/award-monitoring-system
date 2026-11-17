@@ -30,7 +30,6 @@ import ua.edu.chnu.awards.award.entity.AwardRequest;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.SubmissionMeasured;
-import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.organization.entity.Organization;
@@ -54,7 +53,7 @@ class AwardResubmissionTest {
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final StatusEstimator estimator = TestWorkflow.estimator(clock);
     private final AwardSubmission submission = new AwardSubmission(mock(AwardRepository.class), requests, ownership,
-        mock(AwardInputRules.class), duplicates, new AwardMapper(estimator), audit, mock(AwardHistory.class),
+        mock(AwardInputRules.class), duplicates, TestAwards.mapper(estimator), audit, mock(AwardHistory.class),
         estimator, startLevel, clock, events);
     private final Organization department = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
@@ -66,6 +65,8 @@ class AwardResubmissionTest {
             .level(RecognitionLevel.NATIONAL).active(true).build();
         draft = TestAwards.award(owner, department).category(category).build();
         when(ownership.lockedDraft(5L)).thenReturn(draft);
+        when(ownership.callerId()).thenReturn(21L);
+        when(ownership.caller()).thenReturn(owner);
         when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.FACULTY_SECRETARY);
         when(requests.saveAndFlush(any(AwardRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }

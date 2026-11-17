@@ -92,6 +92,13 @@ describe('NotificationText', () => {
     );
   });
 
+  it('ac2_5_names_the_colleague_of_an_award_entered_for_them', () => {
+    expect(render('AWARD_APPROVED', { ...award, level: 'DEAN', person: 'Іваненко Петро' })).toBe(
+      'Award of Іваненко Петро: «Best teacher» approved by Аліна Мартинюк at the dean level',
+    );
+    expect(render('AWARD_RETURNED', { ...award, level: 'DEAN', person: '' })).toMatch(/^«Best/);
+  });
+
   it('ac2_3_renders_overdue_role_and_delegation_types', () => {
     expect(render('REVIEW_OVERDUE', { count: 3, oldestDeadline: '2026-10-01' })).toBe(
       'Requests past their review period: 3, oldest deadline 01/10/2026',

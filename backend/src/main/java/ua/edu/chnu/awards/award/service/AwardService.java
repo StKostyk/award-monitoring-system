@@ -45,7 +45,8 @@ public class AwardService {
     private final AwardSearch search;
 
     /**
-     * Creates a draft owned by the caller in the caller's department, or in the unit that received it.
+     * Creates a draft owned by the caller, or by a person without an account the caller manages, in the owner's
+     * department, or in the unit that received it.
      *
      * @param form the form
      * @return the draft
@@ -54,7 +55,7 @@ public class AwardService {
     public AwardResponse create(AwardForm form) {
         AwardForm clean = rules.normalize(form);
         Optional<AwardCategory> category = rules.check(clean, Optional.empty());
-        Award award = ownership.newDraft();
+        Award award = ownership.newDraft(clean.recipientUserId());
         apply(award, clean, category);
         ownership.assignRecipient(award, clean.recipientOrganizationId());
         Award created = awards.saveAndFlush(award);
@@ -74,7 +75,8 @@ public class AwardService {
         Award award = ownership.lockedDraft(id);
         AwardForm clean = rules.normalize(form);
         ownership.requireVersion(award, clean.version());
-        apply(award, clean, rules.check(clean, Optional.ofNullable(award.getCategory())));
+        apply(award, clean, rules.check(clean.recipientOrganizationId() != null && !ownership.isOwn(award)
+            ? asForPerson(clean, award) : clean, Optional.ofNullable(award.getCategory())));
         ownership.assignRecipient(award, clean.recipientOrganizationId());
         Award saved = awards.saveAndFlush(award);
         history.updated(saved);
@@ -126,6 +128,12 @@ public class AwardService {
         Map<Long, List<AwardWarning>> hints = warnings.forDrafts(found.getContent());
         return found.map(award -> mapper.toResponse(award, byAward.get(award.getId()),
             hints.getOrDefault(award.getId(), List.of())));
+    }
+
+    private static AwardForm asForPerson(AwardForm form, Award award) {
+        return new AwardForm(form.title(), form.titleUk(), form.description(), form.descriptionUk(),
+            form.categoryId(), form.awardingOrganization(), form.awardDate(), form.externalUrl(),
+            form.recipientOrganizationId(), award.getOwner().getId(), form.version());
     }
 
     private AwardResponse draftResponse(Award draft) {

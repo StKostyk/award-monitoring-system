@@ -54,7 +54,7 @@ public class AwardRequest {
     private Award award;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "submitter_id", nullable = false, updatable = false)
+    @JoinColumn(name = "submitter_id", nullable = false)
     private User submitter;
 
     @ManyToOne(fetch = FetchType.LAZY)

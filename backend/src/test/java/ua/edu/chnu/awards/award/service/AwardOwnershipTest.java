@@ -30,7 +30,7 @@ class AwardOwnershipTest {
     private final AwardRepository awards = mock(AwardRepository.class);
     private final AccessScope access = mock(AccessScope.class);
     private final AwardOwnership ownership = new AwardOwnership(awards, mock(UserAccounts.class),
-        mock(OrganizationLookup.class), access);
+        mock(OrganizationLookup.class), access, mock(ManagedOwners.class));
 
     @BeforeEach
     void setUp() {

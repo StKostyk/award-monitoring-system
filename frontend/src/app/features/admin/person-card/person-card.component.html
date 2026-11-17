@@ -24,7 +24,9 @@
         <ul class="admin__roles" data-testid="person-awards">
           @for (award of person.awards; track award.id) {
             <li class="admin__role">
-              <span>{{ title(award) }}</span>
+              <a [routerLink]="['/awards', award.id]" data-testid="person-award-link">{{
+                title(award)
+              }}</a>
               <span class="admin__validity">{{ 'awards.status.' + award.status | transloco }}</span>
             </li>
           }
@@ -46,6 +48,14 @@
 
       @if (person.status === 'UNCLAIMED') {
         <div class="admin__actions">
+          <a
+            mat-stroked-button
+            [routerLink]="['/awards/new']"
+            [queryParams]="{ person: person.id }"
+            data-testid="person-add-award"
+          >
+            {{ 'admin.people.addAward' | transloco }}
+          </a>
           <button
             mat-flat-button
             type="button"

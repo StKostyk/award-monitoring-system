@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
-import { Award, AwardsService, awardTitle, isOwnAward } from '../awards.service';
+import { Award, AwardsService, awardTitle, managesAward } from '../awards.service';
 
 /** Confirms the caller's own submitted award; any other award or id is not a submission to confirm. */
 @Component({
@@ -123,7 +123,7 @@ export class AwardSubmittedComponent implements OnInit {
 
   private show(award: Award): void {
     this.loading.set(false);
-    if (!isOwnAward(award, this.auth.userId())) {
+    if (!managesAward(award, this.auth.userId())) {
       void this.router.navigate(['/awards', award.id], { replaceUrl: true });
     } else if (award.status === 'DRAFT') {
       void this.router.navigate(['/awards', award.id, 'edit'], { replaceUrl: true });

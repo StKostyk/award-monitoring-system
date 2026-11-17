@@ -80,6 +80,14 @@
       </p>
     } @else {
       <form class="award-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+        @if (managedOwner(); as owner) {
+          <p class="award-form__owner" data-testid="award-form-owner">
+            {{ 'awards.recipient.label' | transloco }}: {{ owner }}
+            <span class="award-form__unclaimed">{{
+              'awards.recipient.withoutAccount' | transloco
+            }}</span>
+          </p>
+        }
         @if (recipientShown()) {
           <div class="award-form__recipient" data-testid="award-recipient">
             <span class="award-form__recipient-label" id="award-recipient-label">{{
@@ -92,8 +100,36 @@
               <mat-radio-button value="UNIT" data-testid="award-recipient-unit">{{
                 'awards.recipient.unit' | transloco
               }}</mat-radio-button>
+              @if (colleagueOffered() || colleagueChosen()) {
+                <mat-radio-button value="COLLEAGUE" data-testid="award-recipient-colleague">{{
+                  'awards.recipient.colleague' | transloco
+                }}</mat-radio-button>
+              }
             </mat-radio-group>
           </div>
+          @if (colleagueChosen()) {
+            <mat-form-field class="award-form__field">
+              <mat-label>{{ 'awards.recipient.colleagueSearch' | transloco }}</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="colleague"
+                [matAutocomplete]="colleagueOptions"
+                data-testid="award-recipient-colleague-search"
+              />
+              <mat-autocomplete #colleagueOptions="matAutocomplete" [displayWith]="colleagueName">
+                @for (person of colleagues(); track person.id) {
+                  <mat-option [value]="person" [attr.data-testid]="'colleague-option-' + person.id">
+                    {{ colleagueName(person) }}
+                  </mat-option>
+                }
+              </mat-autocomplete>
+              <mat-hint>{{ 'awards.recipient.colleagueHint' | transloco }}</mat-hint>
+              @if (errorKey('colleague'); as key) {
+                <mat-error>{{ key | transloco }}</mat-error>
+              }
+            </mat-form-field>
+          }
           @if (unitChosen()) {
             <mat-form-field class="award-form__field">
               <mat-label>{{ 'awards.recipient.unitPicker' | transloco }}</mat-label>

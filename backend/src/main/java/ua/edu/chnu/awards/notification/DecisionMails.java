@@ -55,14 +55,22 @@ public class DecisionMails {
         String comment = event.comment() == null ? "" : "Коментар: " + event.comment() + "\n";
         String commentEn = event.comment() == null ? "" : "Comment: " + event.comment() + "\n";
         return helloUk(event.firstName())
-            + "«" + event.titleUk() + "»: " + outcomeUk(event) + "\n"
+            + ofColleagueUk(event.person()) + "«" + event.titleUk() + "»: " + outcomeUk(event) + "\n"
             + comment
             + "Переглянути нагороду: " + link + "\n\n"
             + SEPARATOR
             + helloEn(event.firstName())
-            + "\"" + event.title() + "\": " + outcomeEn(event) + "\n"
+            + ofColleagueEn(event.person()) + "\"" + event.title() + "\": " + outcomeEn(event) + "\n"
             + commentEn
             + "View the award: " + link + "\n";
+    }
+
+    private static String ofColleagueUk(String person) {
+        return person == null ? "" : "Нагорода колеги " + person + " ";
+    }
+
+    private static String ofColleagueEn(String person) {
+        return person == null ? "" : "Award of your colleague " + person + " ";
     }
 
     private static String outcomeUk(AwardDecided event) {
