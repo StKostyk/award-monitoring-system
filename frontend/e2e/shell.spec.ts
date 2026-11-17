@@ -2,7 +2,14 @@ import { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, SEED, seriousViolations, signIn, signInAsSeed } from './helpers';
+import {
+  DEMO_PASSWORD,
+  SEED,
+  keepPreferencesLocal,
+  seriousViolations,
+  signIn,
+  signInAsSeed,
+} from './helpers';
 
 const PHONE = { width: 360, height: 780 };
 const DESKTOP = { width: 1280, height: 900 };
@@ -61,6 +68,7 @@ test.describe('shell', () => {
   }) => {
     await page.setViewportSize(DESKTOP);
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+    await keepPreferencesLocal(page);
     await signInAsSeed(page, SEED.employee);
     expect((await aurora(page)).display).toBe('none');
 

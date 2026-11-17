@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -39,7 +40,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param activityLog     the person's own application events, newest first
  * @param notifications   in-app notifications and the delivery log of mails, newest first
  * @param notificationPreferences the notification choices the person changed from the default
- * @param dashboardPreferences    the widgets hidden on the personal dashboard; none and no time when never saved
+ * @param dashboardPreferences    the colour scheme and dashboard layouts; system and default when never saved
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PersonalDataFile(Metadata exportMetadata, PersonalData personalData, List<RoleEntry> roles,
@@ -407,19 +408,13 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
     }
 
     /**
-     * The widget choice of the personal dashboard.
+     * The colour scheme and the dashboard layouts.
      *
-     * @param hiddenWidgets the hidden widget names, empty when every widget is shown
-     * @param updatedAt     when the choice was saved, null when never
+     * @param colorScheme {@code SYSTEM}, {@code LIGHT} or {@code DARK}
+     * @param layouts     the stored layouts as JSON, written into the file as they are
+     * @param updatedAt   when the choice was saved, null when never
      */
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-    public record DashboardPreferenceEntry(List<String> hiddenWidgets, Instant updatedAt) {
-
-        /**
-         * Keeps an unmodifiable copy of the names.
-         */
-        public DashboardPreferenceEntry {
-            hiddenWidgets = List.copyOf(hiddenWidgets);
-        }
+    public record DashboardPreferenceEntry(String colorScheme, @JsonRawValue String layouts, Instant updatedAt) {
     }
 }

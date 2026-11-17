@@ -16,7 +16,7 @@ import ua.edu.chnu.awards.user.service.DashboardPreferenceService;
 import lombok.RequiredArgsConstructor;
 
 /**
- * The caller's widget choice on the personal dashboard.
+ * The caller's colour scheme and dashboard layouts.
  */
 @RestController
 @RequestMapping("/api/v1/users/me/dashboard-preferences")
@@ -28,7 +28,7 @@ public class DashboardPreferenceController {
     private final AccessScope access;
 
     /**
-     * The hidden widgets; an empty list until a choice was saved.
+     * The scheme and the layouts; the system scheme and the defaults until a choice was saved.
      *
      * @return the choice
      */
@@ -39,9 +39,9 @@ public class DashboardPreferenceController {
     }
 
     /**
-     * Replaces the hidden widgets.
+     * Replaces the whole choice.
      *
-     * @param request the widgets to hide
+     * @param request the scheme and the layouts
      * @return the stored choice
      */
     @PutMapping

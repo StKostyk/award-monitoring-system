@@ -3,6 +3,7 @@ import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -16,6 +17,7 @@ import { NO_PERMISSIONS, readPermissions } from '../auth/permissions';
 import { BrandService, LocalizedText } from '../brand/brand.service';
 import { LanguageService } from '../i18n/language.service';
 import { NotificationApi } from '../notifications/notification.api';
+import { PreferencesActions } from '../preferences/store/preferences.actions';
 import { NARROW_SCREEN } from '../../shared/touch';
 import { CommandPaletteService } from './command-palette.service';
 import { ShellComponent } from './shell.component';
@@ -136,6 +138,7 @@ describe('ShellComponent', () => {
       ],
       providers: [
         provideRouter([{ path: '**', children: [] }]),
+        provideMockStore(),
         { provide: AuthService, useValue: auth },
         { provide: LanguageService, useValue: language },
         { provide: DelegationsService, useValue: delegations },
@@ -439,8 +442,9 @@ describe('ShellComponent', () => {
     );
   });
 
-  it('ac3_3_switches_the_colour_scheme_from_the_toolbar', async () => {
+  it('ac1_1_picks_the_colour_scheme_from_the_toolbar', async () => {
     auth.isAuthenticated.set(true);
+    const dispatch = vi.spyOn(TestBed.inject(MockStore), 'dispatch');
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
 
@@ -452,7 +456,7 @@ describe('ShellComponent', () => {
     (document.querySelector('[data-testid="color-scheme-dark"]') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    expect(document.documentElement.getAttribute('data-color-scheme')).toBe('dark');
+    expect(dispatch).toHaveBeenCalledWith(PreferencesActions.schemePicked({ scheme: 'dark' }));
   });
 
   it('ac3_3_keeps_the_scheme_and_sign_out_in_the_account_menu_on_a_phone', async () => {

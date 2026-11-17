@@ -1,6 +1,5 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import {
   ActivatedRoute,
@@ -10,15 +9,17 @@ import {
   provideRouter,
 } from '@angular/router';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
+import { DashboardLayout } from '../../../core/preferences/dashboard-preferences';
+import { PreferencesActions } from '../../../core/preferences/store/preferences.actions';
+import { preferencesFeature } from '../../../core/preferences/store/preferences.feature';
 import { chartStub } from '../../../shared/charts/chart.testing';
 import { currentKyivYear } from '../../../shared/date-format';
 import { reduceMotion } from '../../../shared/effects/effects.testing';
-import { DashboardWidget } from '../analytics.service';
 import {
   emptyAnalytics,
   languageStub,
@@ -36,11 +37,9 @@ describe('DashboardComponent', () => {
   let dispatch: ReturnType<typeof vi.spyOn>;
   let navigate: ReturnType<typeof vi.spyOn>;
   const queryParams = new BehaviorSubject<ParamMap>(convertToParamMap({}));
-  const dialog = { open: vi.fn() };
 
   beforeEach(async () => {
     queryParams.next(convertToParamMap({}));
-    dialog.open.mockReset();
     reduceMotion();
     const stub = chartStub();
     await TestBed.configureTestingModule({
@@ -49,10 +48,10 @@ describe('DashboardComponent', () => {
         provideRouter([]),
         provideStore({}),
         provideState(analyticsFeature),
+        provideState(preferencesFeature),
         stub.provider,
         languageStub('en').provider,
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParams } },
-        { provide: MatDialog, useValue: dialog },
         {
           provide: AuthService,
           useValue: {
@@ -80,14 +79,17 @@ describe('DashboardComponent', () => {
     );
   }
 
-  function load(hidden: DashboardWidget[] = [], analytics = sampleAnalytics()): void {
-    store.dispatch(AnalyticsActions.preferencesLoaded({ hidden }));
+  function load(layout?: DashboardLayout, analytics = sampleAnalytics()): void {
+    store.dispatch(
+      PreferencesActions.loaded({
+        preferences: { colorScheme: 'SYSTEM', layouts: layout ? { MY_AWARDS: layout } : {} },
+      }),
+    );
     store.dispatch(AnalyticsActions.analyticsLoaded({ analytics }));
     fixture.detectChanges();
   }
 
   it('ac2_5_reads_the_period_from_the_url_and_reloads_on_change', () => {
-    expect(dispatch).toHaveBeenCalledWith(AnalyticsActions.opened());
     expect(dispatch).toHaveBeenCalledWith(
       AnalyticsActions.periodSelected({ period: { from: null, to: null } }),
     );
@@ -139,26 +141,22 @@ describe('DashboardComponent', () => {
     );
   });
 
-  it('ac4_2_keeps_the_dialog_closed_while_the_widget_choice_is_not_loaded', () => {
-    store.dispatch(AnalyticsActions.preferencesLoadFailed());
+  it('ac4_2_keeps_customising_off_while_the_layout_is_not_loaded', () => {
+    store.dispatch(PreferencesActions.loadFailed());
     store.dispatch(AnalyticsActions.analyticsLoaded({ analytics: sampleAnalytics() }));
     fixture.detectChanges();
 
     expect(element('dashboard-preferences-error')?.textContent).toContain(
-      'The widget choice could not be loaded.',
+      'The dashboard settings could not be loaded.',
     );
     expect((element('dashboard-customise') as HTMLButtonElement).disabled).toBe(true);
-    element('dashboard-customise')!.click();
-
-    expect(dialog.open).not.toHaveBeenCalled();
 
     dispatch.mockClear();
     element('dashboard-preferences-error')!.querySelector('button')!.click();
 
-    expect(dispatch).toHaveBeenCalledWith(AnalyticsActions.preferencesRetried());
+    expect(dispatch).toHaveBeenCalledWith(PreferencesActions.loadRetried());
 
-    store.dispatch(AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
-    fixture.detectChanges();
+    load({ order: [], hidden: ['RANK'] });
 
     expect(element('dashboard-preferences-error')).toBeNull();
     expect((element('dashboard-customise') as HTMLButtonElement).disabled).toBe(false);
@@ -167,14 +165,7 @@ describe('DashboardComponent', () => {
   it('ac2_5_shows_the_widgets_in_order_and_keeps_the_choice_in_the_url', () => {
     load();
 
-    expect(widgets()).toEqual([
-      'SUMMARY',
-      'TIMELINE',
-      'YEAR_TREND',
-      'BY_CATEGORY',
-      'BY_LEVEL',
-      'RANK',
-    ]);
+    expect(widgets()).toEqual(['KPI', 'TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK', 'TIMELINE']);
     expect(element('tile-approved')?.textContent).toContain('3');
     expect(element('period-all-years')).toBeNull();
 
@@ -198,39 +189,42 @@ describe('DashboardComponent', () => {
     expect(navigate).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: {} }));
   });
 
-  it('ac2_9_leaves_out_hidden_widgets_and_hints_when_all_are_hidden', () => {
-    load(['TIMELINE', 'RANK']);
+  it('ac1_3_shows_the_stored_order_and_leaves_out_hidden_widgets', () => {
+    load({ order: ['RANK', 'KPI'], hidden: ['TREND'] });
 
-    expect(widgets()).toEqual(['SUMMARY', 'YEAR_TREND', 'BY_CATEGORY', 'BY_LEVEL']);
+    expect(widgets()).toEqual(['RANK', 'KPI', 'LEVEL_STAIRS', 'BY_CATEGORY', 'TIMELINE']);
 
-    load(['SUMMARY', 'TIMELINE', 'YEAR_TREND', 'BY_CATEGORY', 'BY_LEVEL', 'RANK']);
+    load({ order: [], hidden: ['KPI', 'TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK'] });
 
-    expect(widgets()).toEqual([]);
+    expect(widgets()).toEqual(['TIMELINE']);
     expect(element('dashboard-all-hidden')?.textContent).toContain('All widgets are hidden');
   });
 
-  it('ac2_9_saves_the_choice_of_the_dialog', () => {
-    load(['RANK']);
-    dialog.open.mockReturnValueOnce({ afterClosed: () => of(['TIMELINE']) });
+  it('ac1_3_saves_the_layout_edited_on_the_dashboard', () => {
+    load({ order: [], hidden: ['RANK'] });
     element('dashboard-customise')!.click();
-
-    expect(dialog.open.mock.calls[0][1]).toMatchObject({ data: ['RANK'] });
-    expect(dispatch).toHaveBeenCalledWith(AnalyticsActions.saveRequested({ hidden: ['TIMELINE'] }));
-
+    fixture.detectChanges();
+    element('layout-up-BY_CATEGORY')!.click();
+    element('layout-hide-RANK')!.click();
+    fixture.detectChanges();
     dispatch.mockClear();
-    dialog.open.mockReturnValueOnce({ afterClosed: () => of(undefined) });
-    element('dashboard-customise')!.click();
+    element('layout-done')!.click();
 
-    expect(dispatch).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith(
+      PreferencesActions.layoutChanged({
+        dashboard: 'MY_AWARDS',
+        layout: { order: ['KPI', 'TREND', 'BY_CATEGORY', 'LEVEL_STAIRS', 'RANK'], hidden: [] },
+      }),
+    );
 
-    store.dispatch(AnalyticsActions.saveFailed({ problem: 'unknown' }));
+    store.dispatch(PreferencesActions.saveFailed({ problem: 'unknown' }));
     fixture.detectChanges();
 
     expect(element('dashboard-save-error')).not.toBeNull();
   });
 
   it('ac2_8_gives_guidance_instead_of_charts_without_counted_awards', () => {
-    load([], emptyAnalytics(1, 2));
+    load(undefined, emptyAnalytics(1, 2));
 
     expect(widgets()).toEqual([]);
     expect(element('dashboard-empty-first')).not.toBeNull();
@@ -238,7 +232,7 @@ describe('DashboardComponent', () => {
     expect(element('empty-in-progress')?.textContent).toContain('Awards in review: 2.');
 
     queryParams.next(convertToParamMap({ from: '2010', to: '2012' }));
-    load([], emptyAnalytics());
+    load(undefined, emptyAnalytics());
 
     expect(element('dashboard-empty-period')).not.toBeNull();
     element('empty-all-years')!.click();

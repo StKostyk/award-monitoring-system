@@ -85,7 +85,9 @@ demo server waits for it (§11 risk 1).
 - **AC-1.5** (New widgets) Given a stored `order` that misses a widget of the dashboard (added in a later release),
   when the dashboard renders, then the missing widget is shown after the ordered ones in its default position order.
 - **AC-1.6** (Migration) Given rows of V046 with hidden widgets, when V052 runs, then each row's list is in
-  `layouts.MY_AWARDS.hidden` with an empty `order`, `color_scheme` is `SYSTEM`, and `hidden_widgets` is gone.
+  `layouts.MY_AWARDS.hidden` with the 9.4 names (`SUMMARY`→`KPI`, `YEAR_TREND`→`TREND`, `BY_LEVEL`→`LEVEL_STAIRS`,
+  `BY_CATEGORY` and `RANK` unchanged, `TIMELINE` dropped; a row left with nothing hidden keeps `{}`) and an empty
+  `order`, `color_scheme` is `SYSTEM`, and `hidden_widgets` is gone.
 - **AC-1.7** (Export and erasure) Given an account with preferences, when it exports its data, then
   `dashboard_preferences` carries `color_scheme`, `layouts` and `updated_at` (format 1.8); the erasure still deletes
   the row (`dashboardPreferencesDeleted`).
@@ -321,7 +323,8 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
 5. Toolbar scheme «Темна». Open the second profile, sign in as `rector`. Expected: dark scheme there. (AC-1.1)
 6. psql: `select color_scheme, layouts from dashboard_preferences` for the rector. Expected: `DARK`, the
    `HALL_OF_FAME` order and hidden list. (AC-1.1, AC-1.3)
-7. «Скинути». Expected: default order, nothing hidden. (AC-1.3)
+7. «Налаштувати» → «Скинути» → «Готово». Expected: default order, nothing hidden; psql `layouts` has no key for
+   that dashboard. (AC-1.3)
 8. Sign in as `dean.fmi`, open `/`. Expected: Hall of Fame of the faculty, no unit picker. (AC-3.2)
 9. Sign in as `secretary.fmi`, open `/`. Expected: Command centre, K3 with the queue count, three requests listed.
    (AC-5.1)

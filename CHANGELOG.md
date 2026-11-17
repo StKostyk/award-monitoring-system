@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Colour scheme and per-dashboard widget layout kept on the account; «Налаштувати» edit mode reorders and hides widgets by drag or keyboard (SCRUM-155)
 - Secretaries and deans join a colleague without an account to the colleague's own registered account, moving the awards
 - A colleague added without an account registers with their address and finds the awards entered for them
 - Faculty secretaries and deans enter and submit awards of colleagues without an account

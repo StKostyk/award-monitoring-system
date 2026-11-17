@@ -2902,11 +2902,10 @@ paths:
   /users/me/dashboard-preferences:
     get:
       tags: [Analytics]
-      summary: The caller's dashboard widget choice
+      summary: The caller's colour scheme and dashboard layouts
       description: >
-        An empty `hiddenWidgets` list until a choice was saved (5.1.2). Planned for 9.4.1 (SCRUM-155): the body
-        becomes `colorScheme` (`SYSTEM` until saved) and `layouts` (empty until saved), and `hiddenWidgets` leaves
-        the schema (moved to `layouts.MY_AWARDS.hidden` by V052).
+        `colorScheme` is `SYSTEM` and `layouts` empty until a choice was saved (5.1.2, 9.4.1). The former
+        `hiddenWidgets` list moved to `layouts.MY_AWARDS.hidden` (V052).
       security:
         - bearerAuth: []
       operationId: getDashboardPreferences
@@ -2921,10 +2920,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     put:
       tags: [Analytics]
-      summary: Save the caller's dashboard widget choice
+      summary: Save the caller's colour scheme and dashboard layouts
       description: >
-        Replaces the stored list (duplicates collapsed, display order kept); not audited (5.1.2). Planned for 9.4.1
-        (SCRUM-155): replaces the whole document (scheme and every layout, last write wins); a widget outside the
+        Replaces the whole document (scheme and every layout, last write wins); not audited (5.1.2, 9.4.1). A
+        missing `colorScheme` stores `SYSTEM`, a missing dashboard or list its default. A widget outside the
         dashboard's set, a duplicate in `order` or `hidden`, an unknown dashboard key or scheme answers 400
         `invalid-parameter` naming the field (`layouts.HALL_OF_FAME.order`, `colorScheme`) and stores nothing.
       security:
@@ -2944,7 +2943,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardPreferences'
         '400':
-          description: "`urn:awards:problem:invalid-parameter` naming `hiddenWidgets` (unknown widget)"
+          description: >-
+            `urn:awards:problem:invalid-parameter`; `parameter` is `colorScheme`, `layouts` (unknown dashboard) or
+            `layouts.<DASHBOARD>.order` / `layouts.<DASHBOARD>.hidden`
           content:
             application/problem+json:
               schema:
@@ -4208,14 +4209,14 @@ components:
 
     PersonalDataExport:
       type: object
-      description: GDPR Article 20 export, format version 1.7; every section is present, possibly empty
+      description: GDPR Article 20 export, format version 1.8; every section is present, possibly empty
       required: [export_metadata, personal_data, roles, delegations, awards, award_versions, documents,
                  review_decisions, decisions_made, consent_history, legal_holds, erasure_requests, devices, activity_log,
                  notifications, notification_preferences, dashboard_preferences]
       properties:
         export_metadata:
           type: object
-          description: '`export_date` (instant), `user_id`, `format_version` (`1.7`), `gdpr_article`'
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.8`), `gdpr_article`'
         personal_data:
           type: object
           description: |
@@ -4321,9 +4322,9 @@ components:
         dashboard_preferences:
           type: object
           description: >-
-            Dashboard widget choice (since 1.7): `hidden_widgets` (widget names, empty when every widget is shown),
-            `updated_at` (null when never saved). Planned for format 1.8 (9.4.1, SCRUM-155): `color_scheme` and
-            `layouts` instead of `hidden_widgets`
+            Colour scheme and dashboard layouts (since 1.8, 9.4.1): `color_scheme` (`SYSTEM` when never saved),
+            `layouts` (as stored, `{}` when never saved), `updated_at` (null when never saved). Format 1.7 carried
+            `hidden_widgets` instead
 
     EmailChangeConfirmRequest:
       type: object
@@ -5443,34 +5444,32 @@ components:
     DashboardWidget:
       type: string
       description: >
-        Planned for 9.4.1 (SCRUM-155): `KPI`, `TREND`, `RACE`, `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`, `LEVEL_STAIRS`,
-        `TODAY`, `QUEUE`, `UNITS`, `VISIBILITY`, `IN_PROGRESS`. Sets per dashboard: `MY_AWARDS` = `KPI`, `TREND`,
+        A dashboard widget (9.4.1). Sets per dashboard, in default order: `MY_AWARDS` = `KPI`, `TREND`,
         `LEVEL_STAIRS`, `IN_PROGRESS`, `BY_CATEGORY`, `RANK`, `VISIBILITY`; `HALL_OF_FAME` = `KPI`, `TREND`, `RACE`,
         `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`; `COMMAND_CENTRE` = `TODAY`, `QUEUE`, `UNITS`, `TOP`
-      enum: [SUMMARY, TIMELINE, YEAR_TREND, BY_CATEGORY, BY_LEVEL, RANK]
+      enum: [KPI, TREND, RACE, RECORDS, FACT, TOP, LEVEL_MAP, LEVEL_STAIRS, IN_PROGRESS, BY_CATEGORY, RANK, VISIBILITY,
+             TODAY, QUEUE, UNITS]
 
     DashboardPreferences:
       type: object
       description: >
-        Widgets the account hid on its dashboard (5.1.2). Planned for 9.4.1 (SCRUM-155): `{colorScheme, layouts}`,
-        both required in responses, `hiddenWidgets` removed.
-      required: [hiddenWidgets]
+        The colour scheme and the dashboard layouts of the account (9.4.1); both are always present in responses,
+        and a request may leave either out
+      required: [colorScheme, layouts]
       properties:
-        hiddenWidgets:
-          type: array
-          items:
-            $ref: '#/components/schemas/DashboardWidget'
+        colorScheme:
+          $ref: '#/components/schemas/ColorScheme'
+        layouts:
+          $ref: '#/components/schemas/DashboardLayouts'
 
     ColorScheme:
       type: string
       description: The colour scheme stored on the account; `SYSTEM` follows the device (9.4.1)
-      x-status: planned
       enum: [SYSTEM, LIGHT, DARK]
 
     DashboardLayouts:
       type: object
       description: The layout of each dashboard; a missing key means the default order with nothing hidden (9.4.1)
-      x-status: planned
       additionalProperties: false
       properties:
         MY_AWARDS:
@@ -5484,8 +5483,7 @@ components:
       type: object
       description: >
         Widget order and hidden widgets of one dashboard, both from its set without duplicates; widgets missing
-        from `order` follow the ordered ones in default order (9.4.1)
-      x-status: planned
+        from `order` follow the ordered ones in default order (9.4.1); a request may leave a list out (empty)
       required: [order, hidden]
       properties:
         order:

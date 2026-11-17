@@ -17,6 +17,7 @@ import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/mat
 import { MatToolbar } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { Store } from '@ngrx/store';
 import { filter, map } from 'rxjs';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
@@ -33,6 +34,7 @@ import { OfflineNoticeComponent } from '../connectivity/offline-notice.component
 import { LanguageService } from '../i18n/language.service';
 import { PageTitleStrategy } from '../i18n/page-title.strategy';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
+import { PreferencesActions } from '../preferences/store/preferences.actions';
 import { APPLE, CommandPaletteService } from './command-palette.service';
 import { NavigationFocusService } from './navigation-focus.service';
 import { NavEntry, navEntriesFor } from './nav-entries';
@@ -78,6 +80,7 @@ export class ShellComponent {
   protected readonly brands = inject(BrandService);
   protected readonly colorScheme = inject(ColorSchemeService);
   protected readonly palette = inject(CommandPaletteService);
+  private readonly store = inject(Store);
   protected readonly brand = this.brands.brand;
   protected readonly schemes = COLOR_SCHEMES;
   protected readonly schemeIcons: Record<ColorScheme, IconName> = {
@@ -143,6 +146,10 @@ export class ShellComponent {
   protected skipToContent(event: Event): void {
     event.preventDefault();
     this.main()?.nativeElement.focus();
+  }
+
+  protected pickScheme(scheme: ColorScheme): void {
+    this.store.dispatch(PreferencesActions.schemePicked({ scheme }));
   }
 
   protected openPalette(): void {

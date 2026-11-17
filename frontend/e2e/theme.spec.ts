@@ -4,12 +4,15 @@ import { expect, test } from './fixtures';
 
 import {
   DEMO_PASSWORD,
+  FRESH_PASSWORD,
   SEED,
   background,
+  freshEmployee,
   seriousViolations,
   settled,
   signIn,
   signInAsSeed,
+  signedInAs,
 } from './helpers';
 import { GDPR_ROUTES, RECTOR_ROUTES, RoleRoutes, deanRoutes, openRoute } from './routes';
 
@@ -253,9 +256,10 @@ test.describe('brand theme', () => {
     }
   });
 
-  test('ac4 follows the device colour scheme and keeps the chosen one', async ({ page }) => {
+  test('ac4 follows the device colour scheme and keeps the chosen one', async ({ browser }) => {
+    const email = await freshEmployee(browser, 'theme');
+    const page = await signedInAs(browser, email, FRESH_PASSWORD);
     await page.emulateMedia({ colorScheme: 'dark' });
-    await signInAsSeed(page, employee);
 
     expect(await background(page, 'body')).toBe('rgb(6, 9, 20)');
 

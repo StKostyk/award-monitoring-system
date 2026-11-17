@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { Page, expect, test } from './fixtures';
 
-import { SEED, seriousViolations, signedIn } from './helpers';
+import { SEED, keepPreferencesLocal, seriousViolations, signedIn } from './helpers';
 
 /** US-010 DoD: the university analytics page is usable within this time on the seed. */
 const USABLE_WITHIN_MS = 10000;
@@ -205,6 +205,7 @@ test.describe('university analytics', () => {
     browser,
   }) => {
     const page = await signedIn(browser, SEED.rector);
+    await keepPreferencesLocal(page);
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
     await page.goto('/analytics/university');
     const chart = page.getByTestId('chart-canvas').first().locator('svg');

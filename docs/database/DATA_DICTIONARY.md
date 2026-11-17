@@ -18,7 +18,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 | **Domain** | **Entities** | **Purpose** |
 |------------|--------------|-------------|
-| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations`, `dashboard_preferences` | Identity, access control, approval authority lent to a colleague, organizational structure, dashboard widget choice |
+| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations`, `dashboard_preferences` | Identity, access control, approval authority lent to a colleague, organizational structure, colour scheme and dashboard layouts |
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
@@ -296,19 +296,21 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ### 1.8 Entity: `dashboard_preferences`
 
-**Description**: The widgets a person hid on the personal dashboard (V046, 5.1.2). No row means every widget is shown.
+**Description**: The colour scheme and the dashboard layouts a person chose (V046, 5.1.2; V052, 9.4.1). No row means the system scheme and every dashboard in its default layout.
 
 **Business Rules**:
-- At most one row per account; a save replaces the whole list (`insert ... on conflict (user_id) do update`), last write wins
-- `hidden_widgets` holds names of `DashboardWidget` only (`SUMMARY`, `TIMELINE`, `YEAR_TREND`, `BY_CATEGORY`, `BY_LEVEL`, `RANK`), without duplicates and in display order; the service rejects any other value with `invalid-parameter`
+- At most one row per account; a save replaces the whole choice (`insert ... on conflict (user_id) do update`), last write wins
+- `layouts` maps a dashboard (`MY_AWARDS`, `HALL_OF_FAME`, `COMMAND_CENTRE`) to `{"order": [...], "hidden": [...]}`; both lists hold widgets of that dashboard only (`MY_AWARDS`: `KPI`, `TREND`, `LEVEL_STAIRS`, `IN_PROGRESS`, `BY_CATEGORY`, `RANK`, `VISIBILITY`; `HALL_OF_FAME`: `KPI`, `TREND`, `RACE`, `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`; `COMMAND_CENTRE`: `TODAY`, `QUEUE`, `UNITS`, `TOP`), without duplicates; the service rejects anything else with `invalid-parameter` naming the field. A missing dashboard keeps its default; widgets missing from `order` follow in their default order
+- V052 moved the V046 `hidden_widgets` lists into `layouts.MY_AWARDS.hidden` with the 9.4 names (`SUMMARY`→`KPI`, `YEAR_TREND`→`TREND`, `BY_LEVEL`→`LEVEL_STAIRS`, `BY_CATEGORY` and `RANK` unchanged, `TIMELINE` dropped) and removed the column
 - Not audited (no trigger, no audit row): it records a display choice, not a processing decision
-- Personal data: part of the export (`dashboard_preferences`, format 1.7 and later, with `updated_at`) and deleted by the erasure (`RoleErasure`, order 20, count `dashboardPreferencesDeleted`)
+- Personal data: part of the export (`dashboard_preferences`, `color_scheme`, `layouts` and `updated_at` since format 1.8) and deleted by the erasure (`RoleErasure`, order 20, count `dashboardPreferencesDeleted`)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `user_id` | `BIGINT` | NO | - | PK, FK→users (`ON DELETE CASCADE`) | The account the choice belongs to |
-| `hidden_widgets` | `TEXT[]` | NO | `'{}'` | - | Hidden widget names |
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the choice was last saved |
+| `color_scheme` | `VARCHAR(10)` | NO | `'SYSTEM'` | CHECK `ck_dashboard_preferences_color_scheme` (`SYSTEM`, `LIGHT`, `DARK`) | `SYSTEM` follows the browser |
+| `layouts` | `JSONB` | NO | `'{}'` | - | Widget order and hidden widgets per dashboard |
 
 **Indexes**: `pk_dashboard_preferences`
 

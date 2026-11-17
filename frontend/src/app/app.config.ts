@@ -25,6 +25,8 @@ import { connectivityInterceptor } from './core/connectivity/connectivity.interc
 import { provideIsoDateAdapter } from './core/i18n/iso-date-adapter';
 import { LanguageService } from './core/i18n/language.service';
 import { PageTitleStrategy } from './core/i18n/page-title.strategy';
+import { PreferencesEffects } from './core/preferences/store/preferences.effects';
+import { preferencesFeature } from './core/preferences/store/preferences.feature';
 import { UpdatePromptService } from './core/pwa/update-prompt.service';
 import { TranslocoHttpLoader } from './core/i18n/transloco.loader';
 import { prepareDateFormats } from './shared/date-format';
@@ -72,8 +74,8 @@ export const appConfig: ApplicationConfig = {
       registrationStrategy: 'registerWhenStable:30000',
     }),
     provideIsoDateAdapter(),
-    provideStore(),
-    provideEffects(),
+    provideStore({ [preferencesFeature.name]: preferencesFeature.reducer }),
+    provideEffects(PreferencesEffects),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
   ],
 };
