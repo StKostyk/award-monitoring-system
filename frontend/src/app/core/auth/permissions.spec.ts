@@ -2,6 +2,7 @@ import {
   approvalScopes,
   canCreateAwards,
   canDelegate,
+  canOpenHallOfFame,
   canReadCompliance,
   canManagePeople,
   canReadDirectory,
@@ -15,6 +16,7 @@ import {
   grantableRoles,
   readPermissions,
   readSubject,
+  readsUniversityHallOfFame,
   reviewableLevels,
 } from './permissions';
 
@@ -257,5 +259,30 @@ describe('permissions', () => {
     );
 
     expect(permissions.roleScopes).toEqual([{ role: 'DEAN', organizationId: 9 }]);
+  });
+
+  it('ac3_1_ac3_2_opens_the_hall_of_fame_for_held_roles_only_and_tells_whether_it_shows_the_university', () => {
+    const rector = readPermissions(
+      token({ role_scopes: ['RECTOR:1'], permissions: ['analytics:read:university'] }),
+    );
+    const dean = readPermissions(
+      token({ role_scopes: ['DEAN:9'], permissions: ['analytics:read:department'] }),
+    );
+    const delegate = readPermissions(
+      token({ role_scopes: ['EMPLOYEE:5', 'DEAN:9'], delegations: ['DEAN:9:4'] }),
+    );
+    const secretary = readPermissions(token({ role_scopes: ['RECTOR_SECRETARY:1'] }));
+
+    expect([rector, dean, delegate, secretary].map(canOpenHallOfFame)).toEqual([
+      true,
+      true,
+      false,
+      false,
+    ]);
+    expect(readsUniversityHallOfFame(rector)).toBe(true);
+    expect(readsUniversityHallOfFame(dean)).toBe(false);
+    expect(readsUniversityHallOfFame(readPermissions(token({ role_scopes: ['RECTOR:1'] })))).toBe(
+      false,
+    );
   });
 });

@@ -2,6 +2,7 @@
   "titles": {
     "signingIn": "Signing in",
     "home": "Home",
+    "hallOfFame": "Hall of Fame",
     "register": "Registration",
     "registrationPending": "Registration sent",
     "verifyEmail": "Address confirmation",
@@ -1849,6 +1850,26 @@
         "reviewsOpen": "Open reviews",
         "reviewsOverdue": "Overdue reviews"
       }
+    }
+  },
+  "hallOfFame": {
+    "title": "Hall of Fame",
+    "approvedIn": "Approved in {{year}}",
+    "topFaculties": "Leading faculties",
+    "topPeople": "Faculty leaders",
+    "universityAnalytics": "University analytics",
+    "facultyAnalytics": "Faculty analytics",
+    "noFaculty": "There is no faculty you are dean of.",
+    "failed": "The Hall of Fame could not be loaded.",
+    "retry": "Try again",
+    "widgets": {
+      "KPI": "Awards this year",
+      "TREND": "Awards by year",
+      "RACE": "This year against last year",
+      "RECORDS": "Records",
+      "FACT": "Did you know",
+      "TOP": "Leaders",
+      "LEVEL_MAP": "Award levels"
     }
   },
   "dashboardLayout": {

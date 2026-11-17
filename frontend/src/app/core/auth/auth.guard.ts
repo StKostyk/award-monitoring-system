@@ -5,6 +5,7 @@ import { ConnectivityService } from '../connectivity/connectivity.service';
 import { AuthService } from './auth.service';
 import {
   canDelegate,
+  canOpenHallOfFame,
   canReadCompliance,
   canReadDirectory,
   canReadOwnAnalytics,
@@ -65,6 +66,20 @@ export const unitAnalyticsGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return canReadUnitAnalytics(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** The Hall of Fame needs a rector or dean role held, not borrowed; otherwise the route ends on the forbidden page. */
+export const hallOfFameGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return canOpenHallOfFame(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** The home of a rector or dean is the Hall of Fame; anybody else stays on the home page. */
+export const roleHomeGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return !canOpenHallOfFame(auth.permissions()) || router.createUrlTree(['/hall-of-fame']);
 };
 
 /** University analytics need `analytics:read:university`; without it the route ends on the forbidden page. */

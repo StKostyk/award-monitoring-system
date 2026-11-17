@@ -1,0 +1,56 @@
+<div class="hall__header">
+  <div class="hall__heading">
+    <h1 class="hall__title">{{ 'hallOfFame.title' | transloco }}</h1>
+    @if (unitName()) {
+      <p class="hall__unit" data-testid="hall-unit">{{ unitName() }}</p>
+    }
+  </div>
+  <div class="hall__actions">
+    @if (university) {
+      <a mat-stroked-button routerLink="/analytics/university" data-testid="hall-analytics">
+        <app-icon matButtonIcon name="landmark" />
+        {{ 'hallOfFame.universityAnalytics' | transloco }}
+      </a>
+      <app-board-report-button [period]="allYears" [disabled]="!view()" />
+    } @else if (facultyId() !== null) {
+      <a
+        mat-stroked-button
+        [routerLink]="['/analytics/units', facultyId()]"
+        data-testid="hall-analytics"
+      >
+        <app-icon matButtonIcon name="chart-column" />
+        {{ 'hallOfFame.facultyAnalytics' | transloco }}
+      </a>
+    }
+  </div>
+</div>
+
+@if (faculties().length > 1) {
+  <app-unit-picker
+    class="hall__picker"
+    [units]="faculties()"
+    [selected]="facultyId()"
+    (choose)="choose($event)"
+  />
+}
+
+@if (loading()) {
+  <mat-progress-bar
+    mode="indeterminate"
+    [attr.aria-label]="'app.loading' | transloco"
+    data-testid="hall-loading"
+  />
+}
+
+@if (problem()) {
+  <div class="hall__problem" role="alert" data-testid="hall-error">
+    <p>{{ 'hallOfFame.failed' | transloco }}</p>
+    <button mat-stroked-button type="button" (click)="retry()">
+      {{ 'hallOfFame.retry' | transloco }}
+    </button>
+  </div>
+} @else if (noFaculty()) {
+  <p class="hall__empty" data-testid="hall-no-faculty">{{ 'hallOfFame.noFaculty' | transloco }}</p>
+} @else if (view(); as data) {
+  <app-hall-of-fame-board [view]="data" [university]="university" />
+}

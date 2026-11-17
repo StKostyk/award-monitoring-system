@@ -1,0 +1,86 @@
+@let data = view();
+<app-dashboard-layout dashboard="HALL_OF_FAME" labels="hallOfFame.widgets.">
+  <ng-template appDashboardWidget="KPI" wide>
+    <mat-card class="board__widget" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <h2>{{ 'hallOfFame.widgets.KPI' | transloco }}</h2>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-kpi-widget
+          [label]="'hallOfFame.approvedIn' | transloco: { year: data.year }"
+          [value]="data.approved"
+          [years]="data.sparkline"
+          [delta]="data.delta"
+        />
+      </mat-card-content>
+    </mat-card>
+  </ng-template>
+  <ng-template appDashboardWidget="TREND" wide>
+    <mat-card class="board__widget" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <h2>{{ 'hallOfFame.widgets.TREND' | transloco }}</h2>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-trend-widget [years]="data.years" [partialYear]="data.partialYear" />
+      </mat-card-content>
+    </mat-card>
+  </ng-template>
+  <ng-template appDashboardWidget="RACE" wide>
+    <mat-card class="board__widget" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <h2>{{ 'hallOfFame.widgets.RACE' | transloco }}</h2>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-race-widget [byMonth]="data.byMonth" [year]="data.year" [today]="data.today" />
+      </mat-card-content>
+    </mat-card>
+  </ng-template>
+  <ng-template appDashboardWidget="RECORDS">
+    <mat-card class="board__widget" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <h2>{{ 'hallOfFame.widgets.RECORDS' | transloco }}</h2>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content><app-records-widget [records]="data.records" /></mat-card-content>
+    </mat-card>
+  </ng-template>
+  <ng-template appDashboardWidget="FACT">
+    <mat-card class="board__widget" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <h2>{{ 'hallOfFame.widgets.FACT' | transloco }}</h2>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content><app-fact-widget [fact]="data.fact" /></mat-card-content>
+    </mat-card>
+  </ng-template>
+  <ng-template appDashboardWidget="TOP">
+    <mat-card class="board__widget" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <h2>
+            {{ (university() ? 'hallOfFame.topFaculties' : 'hallOfFame.topPeople') | transloco }}
+          </h2>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content><app-top-widget [people]="data.top" /></mat-card-content>
+    </mat-card>
+  </ng-template>
+  <ng-template appDashboardWidget="LEVEL_MAP">
+    <mat-card class="board__widget" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>
+          <h2>{{ 'hallOfFame.widgets.LEVEL_MAP' | transloco }}</h2>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content><app-level-map-widget [areas]="data.areas" /></mat-card-content>
+    </mat-card>
+  </ng-template>
+</app-dashboard-layout>

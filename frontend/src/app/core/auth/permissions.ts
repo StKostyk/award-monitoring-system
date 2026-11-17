@@ -32,6 +32,9 @@ const GRANTS: Partial<Record<RoleType, RoleType[]>> = {
   RECTOR: ['RECTOR_SECRETARY', 'DEAN'],
 };
 
+/** Roles whose home is the Hall of Fame. */
+const HALL_OF_FAME_ROLES: RoleType[] = ['RECTOR', 'DEAN'];
+
 /** Permissions that open the user directory. */
 export const DIRECTORY_PERMISSIONS = ['user:read:scope', 'user:read:all'];
 
@@ -100,6 +103,22 @@ export function canReadUnitAnalytics(permissions: TokenPermissions): boolean {
 /** Whether the caller may open the analytics of the whole university and its compliance summary. */
 export function canReadUniversityAnalytics(permissions: TokenPermissions): boolean {
   return permissions.hasPermission('analytics:read:university');
+}
+
+/**
+ * Whether the caller holds the rector or dean role of their own and so opens the Hall of Fame; a borrowed role
+ * does not count, since delegations never carry analytics.
+ */
+export function canOpenHallOfFame(permissions: TokenPermissions): boolean {
+  return permissions.heldScopes.some((scope) => HALL_OF_FAME_ROLES.includes(scope.role));
+}
+
+/** Whether the Hall of Fame of the caller shows the whole university rather than a faculty. */
+export function readsUniversityHallOfFame(permissions: TokenPermissions): boolean {
+  return (
+    permissions.heldScopes.some((scope) => scope.role === 'RECTOR') &&
+    canReadUniversityAnalytics(permissions)
+  );
 }
 
 /** Whether the caller may open the compliance page: retention runs, erasure requests and legal holds. */

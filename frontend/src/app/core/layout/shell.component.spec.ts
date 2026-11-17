@@ -287,6 +287,23 @@ describe('ShellComponent', () => {
     ).not.toBeNull();
   });
 
+  it('ac3_3_lists_the_hall_of_fame_for_a_rector_or_dean_only', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['FACULTY_SECRETARY:9'] })));
+    const secretary = TestBed.createComponent(ShellComponent);
+    secretary.detectChanges();
+
+    expect(secretary.nativeElement.querySelector('[data-testid="nav-hall-of-fame"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['DEAN:9'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="nav-hall-of-fame"]').getAttribute('href'),
+    ).toBe('/hall-of-fame');
+  });
+
   it('ac3_6_shows_the_delegations_entry_only_to_a_holder_of_an_approval_role', () => {
     auth.isAuthenticated.set(true);
     auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));

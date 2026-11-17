@@ -14,6 +14,8 @@ import {
   authGuard,
   complianceGuard,
   delegationGuard,
+  hallOfFameGuard,
+  roleHomeGuard,
   unitAnalyticsGuard,
   universityAnalyticsGuard,
   userDirectoryGuard,
@@ -227,5 +229,39 @@ describe('authGuard', () => {
     );
 
     expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
+  });
+
+  it('ac3_4_opens_the_hall_of_fame_for_a_held_rector_or_dean_role_only', () => {
+    const open = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        hallOfFameGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const forbidden = TestBed.inject(Router).createUrlTree(['/forbidden']).toString();
+
+    expect(open({ role_scopes: ['RECTOR:1'] })).toBe(true);
+    expect(open({ role_scopes: ['DEAN:9'] })).toBe(true);
+    expect(String(open({ role_scopes: ['EMPLOYEE:5', 'DEAN:9'], delegations: ['DEAN:9:4'] }))).toBe(
+      forbidden,
+    );
+    expect(String(open({ role_scopes: ['EMPLOYEE:5'] }))).toBe(forbidden);
+    expect(String(open({ role_scopes: ['FACULTY_SECRETARY:9'] }))).toBe(forbidden);
+    expect(String(open({ role_scopes: ['RECTOR_SECRETARY:1'] }))).toBe(forbidden);
+  });
+
+  it('ac3_3_sends_a_rector_or_dean_home_to_the_hall_of_fame_and_keeps_anybody_else', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const hallOfFame = TestBed.inject(Router).createUrlTree(['/hall-of-fame']).toString();
+
+    expect(String(home({ role_scopes: ['RECTOR:1'] }))).toBe(hallOfFame);
+    expect(String(home({ role_scopes: ['DEAN:9', 'RECTOR_SECRETARY:1'] }))).toBe(hallOfFame);
+    expect(home({ role_scopes: ['FACULTY_SECRETARY:9'] })).toBe(true);
+    expect(home({ role_scopes: ['EMPLOYEE:5'] })).toBe(true);
   });
 });

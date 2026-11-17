@@ -6,6 +6,8 @@ import {
   authGuard,
   complianceGuard,
   delegationGuard,
+  hallOfFameGuard,
+  roleHomeGuard,
   unitAnalyticsGuard,
   userDirectoryGuard,
 } from './core/auth/auth.guard';
@@ -111,6 +113,12 @@ export const routes: Routes = [
           import('./features/analytics/analytics.routes').then((m) => m.ANALYTICS_ROUTES),
       },
       {
+        path: 'hall-of-fame',
+        canActivate: [authGuard, hallOfFameGuard],
+        loadChildren: () =>
+          import('./features/hall-of-fame/hall-of-fame.routes').then((m) => m.HALL_OF_FAME_ROUTES),
+      },
+      {
         path: 'analytics',
         canActivate: [authGuard, unitAnalyticsGuard],
         loadChildren: () =>
@@ -193,7 +201,7 @@ export const routes: Routes = [
         title: 'titles.home',
         loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
         pathMatch: 'full',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleHomeGuard],
       },
       { path: '**', title: 'titles.notFound', component: NotFoundComponent },
     ],
