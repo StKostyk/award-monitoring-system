@@ -85,11 +85,15 @@ export const adminUsersFeature = createFeature({
       loading: false,
       problem,
     })),
-    on(AdminUsersActions.membershipConfirmed, (state, { id }) => ({
-      ...state,
-      confirmingId: id,
-      confirmProblem: null,
-    })),
+    on(
+      AdminUsersActions.membershipConfirmed,
+      AdminUsersActions.membershipLinked,
+      (state, { id }) => ({
+        ...state,
+        confirmingId: id,
+        confirmProblem: null,
+      }),
+    ),
     on(AdminUsersActions.membershipConfirmFailed, (state, { id, problem }) => ({
       ...state,
       confirmingId: null,

@@ -26,6 +26,11 @@ export interface PersonDetail extends Person {
   awards: Award[];
 }
 
+export interface PersonLinkResult {
+  userId: number;
+  movedAwards: number;
+}
+
 /** The fields of an added or changed person; a null address means it is unknown. */
 export interface PersonForm {
   firstName: string;
@@ -62,9 +67,17 @@ export class PeopleService {
    * @param q the text, ignored by the server under two characters
    * @param size the page size
    */
-  list(q: string, size = SEARCH_SIZE): Observable<Page<Person>> {
-    const params = new HttpParams().set('q', q).set('size', size);
+  list(q: string, size = SEARCH_SIZE, organization?: number): Observable<Page<Person>> {
+    let params = new HttpParams().set('q', q).set('size', size);
+    if (organization) {
+      params = params.set('organization', organization);
+    }
     return this.http.get<Page<Person>>(this.base, { params });
+  }
+
+  /** Joins the person to a registered account: the awards move to it and the person row is scrubbed. */
+  link(id: number, userId: number, version: number): Observable<PersonLinkResult> {
+    return this.http.post<PersonLinkResult>(`${this.base}/${id}/link`, { userId, version });
   }
 
   get(id: number): Observable<PersonDetail> {

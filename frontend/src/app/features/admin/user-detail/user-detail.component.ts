@@ -17,7 +17,11 @@ import { IconComponent } from '../../../shared/icons/icon.component';
 import { AssignRoleDialogComponent } from '../assign-role-dialog/assign-role-dialog.component';
 import { LegalHoldCardComponent } from '../legal-hold-card/legal-hold-card.component';
 import { PersonCardComponent } from '../person-card/person-card.component';
-import { placeholderAddress } from '../people.service';
+import {
+  ConfirmMembershipDialogComponent,
+  MembershipChoice,
+} from '../confirm-membership-dialog/confirm-membership-dialog.component';
+import { PeopleService, placeholderAddress } from '../people.service';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
 import { organizationName } from '../../../shared/organization-name';
 import { AdminUsersActions } from '../store/admin-users.actions';
@@ -52,6 +56,7 @@ export class UserDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly api = inject(UsersService);
+  private readonly people = inject(PeopleService);
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
 
@@ -66,6 +71,7 @@ export class UserDetailComponent implements OnInit {
   readonly notFound = this.store.selectSignal(adminUsersFeature.selectNotFound);
   readonly message = signal<string | null>(null);
   readonly actionProblem = signal<string | null>(null);
+  readonly linked = signal<number | null>(null);
 
   ngOnInit(): void {
     this.store.dispatch(AdminUsersActions.userOpened({ id: this.id }));
@@ -89,6 +95,31 @@ export class UserDetailComponent implements OnInit {
           this.actionProblem.set(null);
           this.message.set('admin.detail.assigned');
           this.store.dispatch(AdminUsersActions.userReloaded({ id: this.id }));
+        }
+      });
+  }
+
+  /** Offers the people without an account of a department whose awards this member takes over. */
+  linkPerson(user: UserDetail): void {
+    this.dialog
+      .open(ConfirmMembershipDialogComponent, {
+        data: { ...user, linkOnly: true },
+        width: '480px',
+      })
+      .afterClosed()
+      .subscribe((choice?: MembershipChoice) => {
+        if (choice?.person) {
+          this.people.link(choice.person.id, user.id, choice.person.version).subscribe({
+            next: (result) => {
+              this.actionProblem.set(null);
+              this.message.set(null);
+              this.linked.set(result.movedAwards);
+            },
+            error: (err: unknown) => {
+              this.linked.set(null);
+              this.actionProblem.set(`admin.problems.${problemType(err)}`);
+            },
+          });
         }
       });
   }

@@ -179,7 +179,7 @@ public class People {
         return changed;
     }
 
-    private static void requireVersion(User person, Long version) {
+    static void requireVersion(User person, Long version) {
         if (version == null) {
             throw ApiProblemException.validationFailed("The version last read is required",
                 List.of(new FieldViolation("version", "required", "The version last read is required")));

@@ -3148,10 +3148,16 @@ paths:
       tags: [Users]
       summary: Join a person without an account to a registered account
       description: >
-        Moves every award of the person to the account in one transaction, grants `EMPLOYEE` in the department
-        when the account holds no role yet (the membership confirmation), scrubs the person (6.1.5) and writes
-        `ACCOUNT_LINKED`. The account must be `ACTIVE` and inside the caller's scope (2.5.4).
-      x-status: planned
+        Moves every award of the person to the account in one transaction (open requests keep their submitter),
+        grants `EMPLOYEE` in the person's department when the account holds no current role (the membership
+        confirmation of `POST /users/{id}/roles` with `updateOrganization`, so the account moves to that department),
+        scrubs the person (6.1.5) and writes `ACCOUNT_LINKED` (`accountId`, `movedAwards`). The account's name and
+        address stay (2.5.4). Only a faculty secretary or dean (own or delegated) may link; a person outside the
+        scope, linked or removed meanwhile answers 404. 422 `validation-failed`: `userId` `required`, or
+        `not-active` for an account that is unknown, not `ACTIVE`, the person itself or outside the caller's scope
+        (one answer, so ids cannot be probed); `person` `claimed` once the person registered. 409 `version-conflict`
+        for a stale person version. Review claims the account holds on the person's awards are released first, so
+        the account never reviews its own award.
       security:
         - bearerAuth: []
       operationId: linkPerson

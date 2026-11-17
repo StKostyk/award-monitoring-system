@@ -61,7 +61,19 @@ public class PersonRemoval {
             throw new ApiProblemException(HttpStatus.CONFLICT, "person-has-awards",
                 "The person has awards beyond drafts, so they stay on record");
         }
-        final long organizationId = person.getOrganization().getId();
+        erase(person, AuditAction.PERSON_REMOVED, Map.of("organizationId", person.getOrganization().getId()));
+    }
+
+    /**
+     * Scrubs a person row through the erasure chain, records the action and redacts the person's name from the
+     * audit trail, as a removal does.
+     *
+     * @param person  the locked person
+     * @param action  the audited action
+     * @param details ids and counts recorded with the action
+     */
+    void erase(User person, AuditAction action, Map<String, Object> details) {
+        long id = person.getId();
         Set<String> names = new LinkedHashSet<>();
         names.add(person.getFullName());
         names.addAll(redaction.formerNames(id));
@@ -71,8 +83,7 @@ public class PersonRemoval {
         contributors.stream()
             .sorted(Comparator.comparingInt(ErasureContributor::order))
             .forEach(contributor -> contributor.erase(context));
-        audit.record(AuditAction.PERSON_REMOVED, AuditEntityConstants.USER, access.callerId(), id,
-            Map.of("organizationId", organizationId));
+        audit.record(action, AuditEntityConstants.USER, access.callerId(), id, details);
         redaction.redactSubject(id, context.names(), context.erasedRecords());
     }
 }

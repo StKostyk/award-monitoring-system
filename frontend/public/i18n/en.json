@@ -616,7 +616,9 @@
         "status": "Status",
         "roles": "Roles",
         "actions": "Actions"
-      }
+      },
+      "linkPerson": "Join the awards of a colleague without an account",
+      "linked": "Awards joined: {{count}}."
     },
     "people": {
       "add": "Add a colleague without an account",
@@ -765,7 +767,13 @@
       "text": "{{name}} will receive the Employee role in the selected department.",
       "department": "Department",
       "submit": "Confirm",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "samePerson": "This is the same person",
+      "awards": "awards: {{count}}",
+      "linkTitle": "Join the awards of a colleague without an account",
+      "linkText": "The awards of the chosen colleague move to the account of {{name}}; the roles do not change.",
+      "linkSubmit": "Join",
+      "noCandidates": "This department has no colleagues without an account."
     },
     "assign": {
       "title": "Assign role",
@@ -802,7 +810,10 @@
       "membership-already-confirmed": "This membership has already been confirmed or changed. The page has been reloaded.",
       "too-many-requests": "Too many requests. Try again later.",
       "network": "The server is unreachable. Try again later.",
-      "unknown": "The action failed. Try again later."
+      "unknown": "The action failed. Try again later.",
+      "not-found": "The colleague has been joined or removed meanwhile; the list is reloaded.",
+      "version-conflict": "The colleague was changed meanwhile; open the dialog again.",
+      "validation-failed": "This account cannot take the awards."
     },
     "forbidden": {
       "title": "Access denied",

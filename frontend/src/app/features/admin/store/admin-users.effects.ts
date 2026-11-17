@@ -5,6 +5,7 @@ import { Store } from '@ngrx/store';
 import { catchError, map, mergeMap, of, switchMap, withLatestFrom } from 'rxjs';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
+import { PeopleService } from '../people.service';
 import { UsersService } from '../users.service';
 import { AdminUsersActions } from './admin-users.actions';
 import { adminUsersFeature } from './admin-users.feature';
@@ -13,6 +14,7 @@ import { adminUsersFeature } from './admin-users.feature';
 export class AdminUsersEffects {
   private readonly actions$ = inject(Actions);
   private readonly users = inject(UsersService);
+  private readonly people = inject(PeopleService);
   private readonly store = inject(Store);
 
   readonly loadUsers$ = createEffect(() =>
@@ -54,6 +56,23 @@ export class AdminUsersEffects {
                 : of(failed);
             }),
           ),
+      ),
+    ),
+  );
+
+  readonly linkMembership$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AdminUsersActions.membershipLinked),
+      mergeMap(({ id, personId, version }) =>
+        this.people.link(personId, id, version).pipe(
+          map(() => AdminUsersActions.reloaded()),
+          catchError((error: unknown) =>
+            of(
+              AdminUsersActions.membershipConfirmFailed({ id, problem: problemType(error) }),
+              AdminUsersActions.refreshed(),
+            ),
+          ),
+        ),
       ),
     ),
   );
