@@ -14,10 +14,12 @@ import java.time.LocalDate;
  * @param awardingOrganization    who granted the award
  * @param awardDate               when it was granted
  * @param externalUrl             http or https link to the award
- * @param recipientOrganizationId faculty or department that received the award, null for the caller
+ * @param recipientOrganizationId faculty or department that received the award, null for a person
+ * @param recipientUserId         person without an account who received the award, set on create only; null for
+ *                                the caller
  * @param version                 version last read, for updates
  */
 public record AwardForm(String title, String titleUk, String description, String descriptionUk, Long categoryId,
                         String awardingOrganization, LocalDate awardDate, String externalUrl,
-                        Long recipientOrganizationId, Long version) {
+                        Long recipientOrganizationId, Long recipientUserId, Long version) {
 }

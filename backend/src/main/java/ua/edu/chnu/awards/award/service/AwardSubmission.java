@@ -89,7 +89,7 @@ public class AwardSubmission {
         if (award.isUnitAward()) {
             details.put("recipientOrganizationId", award.getRecipientOrganizationId());
         }
-        audit.record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, award.getOwner().getId(), award.getId(),
+        audit.record(AuditAction.AWARD_SUBMITTED, AuditEntityConstants.AWARDS, ownership.callerId(), award.getId(),
             details);
         events.publishEvent(new SubmissionMeasured(created.getCurrentLevel(), previous != null));
         return mapper.toResponse(award, created);
@@ -110,10 +110,10 @@ public class AwardSubmission {
 
     private AwardRequest newRequest(Award award) {
         Instant now = clock.instant();
-        ApprovalLevel level = startLevel.of(award.getOrganization().getId(), award.getOwner().getId());
+        ApprovalLevel level = startLevel.of(award.getOrganization().getId(), ownership.callerId());
         return AwardRequest.builder()
             .award(award)
-            .submitter(award.getOwner())
+            .submitter(ownership.caller())
             .status(RequestStatus.SUBMITTED)
             .currentLevel(level)
             .submittedAt(now)
@@ -123,7 +123,8 @@ public class AwardSubmission {
 
     private AwardRequest reopened(Award award, AwardRequest request) {
         long organizationId = award.getOrganization().getId();
-        long submitterId = award.getOwner().getId();
+        long submitterId = ownership.callerId();
+        request.setSubmitter(ownership.caller());
         Instant now = clock.instant();
         request.setCurrentLevel(request.getStatus() == RequestStatus.RETURNED
             ? startLevel.from(request.getCurrentLevel(), organizationId, submitterId)

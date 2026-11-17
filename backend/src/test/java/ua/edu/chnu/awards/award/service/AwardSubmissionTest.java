@@ -38,7 +38,6 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.event.SubmissionMeasured;
-import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
@@ -66,7 +65,7 @@ class AwardSubmissionTest {
     private final List<Object> published = new ArrayList<>();
     private final StatusEstimator estimator = TestWorkflow.estimator(clock);
     private final AwardSubmission submission = new AwardSubmission(awards, requests, ownership, rules, duplicates,
-        new AwardMapper(estimator), audit, history, estimator, startLevel, clock, published::add);
+        TestAwards.mapper(estimator), audit, history, estimator, startLevel, clock, published::add);
     private final Organization oldDepartment = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final Organization newDepartment = TestUsers.organization(69L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", newDepartment);
@@ -79,6 +78,8 @@ class AwardSubmissionTest {
         draft = TestAwards.award(owner, oldDepartment).category(category).awardingOrganization("MON")
             .awardDate(LocalDate.of(2025, 5, 1)).build();
         when(ownership.lockedDraft(5L)).thenReturn(draft);
+        when(ownership.callerId()).thenReturn(21L);
+        when(ownership.caller()).thenReturn(owner);
         when(startLevel.of(69L, 21L)).thenReturn(ApprovalLevel.FACULTY_SECRETARY);
         when(requests.saveAndFlush(any(AwardRequest.class))).thenAnswer(invocation -> {
             AwardRequest request = invocation.getArgument(0);

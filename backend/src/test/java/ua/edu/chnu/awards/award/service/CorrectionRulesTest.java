@@ -58,7 +58,7 @@ class CorrectionRulesTest {
         assertThat(current.categoryId()).isEqualTo(13L);
         assertThat(current.version()).isEqualTo(TestAwards.VERSION);
         assertThat(corrected).isEqualTo(new AwardForm("Letter", "Подяка", null, null, 21L, "МОН",
-            LocalDate.of(2025, 5, 1), null, null, 4L));
+            LocalDate.of(2025, 5, 1), null, null, null, 4L));
         assertThat(rules.form(TestAwards.award(owner, owner.getOrganization()).build()).categoryId()).isNull();
     }
 }

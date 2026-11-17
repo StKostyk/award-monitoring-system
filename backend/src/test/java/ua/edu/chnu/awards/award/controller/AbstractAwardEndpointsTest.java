@@ -161,6 +161,6 @@ abstract class AbstractAwardEndpointsTest {
             new UserRef(21L, "Анастасія Коваль", "employee.fmi@chnu.edu.ua"), AwardRecipient.PERSON,
             new OrganizationRef(64L, "Algebra and Informatics", "Кафедра алгебри та інформатики", "DAI",
                 OrganizationType.DEPARTMENT), request, List.of(), AwardVisibility.PRIVATE,
-            Instant.parse("2026-09-28T08:00:00Z"), Instant.parse("2026-09-28T08:30:00Z"), 3L);
+            Instant.parse("2026-09-28T08:00:00Z"), Instant.parse("2026-09-28T08:30:00Z"), 3L, false, false);
     }
 }

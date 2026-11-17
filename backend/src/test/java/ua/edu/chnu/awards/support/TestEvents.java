@@ -201,7 +201,7 @@ public final class TestEvents {
          */
         public AwardDecided build() {
             return new AwardDecided(userId(), email(), firstName(), awardId, title, titleUk, outcome, level, reviewer,
-                comment, occurredAt());
+                comment, occurredAt(), null);
         }
     }
 

@@ -60,7 +60,14 @@
       } @else {
         <dt>{{ 'awards.fields.owner' | transloco }}</dt>
       }
-      <dd>{{ award.owner.name }}</dd>
+      <dd data-testid="award-detail-owner">
+        {{ award.owner.name }}
+        @if (award.ownerWithoutAccount) {
+          <mat-chip class="award-detail__unclaimed" data-testid="award-owner-unclaimed">{{
+            'awards.recipient.withoutAccount' | transloco
+          }}</mat-chip>
+        }
+      </dd>
       @if (!award.recipient.organization) {
         <dt>{{ 'awards.fields.organization' | transloco }}</dt>
         <dd>{{ organization(award) }}</dd>

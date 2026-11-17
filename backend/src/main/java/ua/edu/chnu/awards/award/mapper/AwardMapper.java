@@ -13,6 +13,7 @@ import ua.edu.chnu.awards.award.dto.UserRef;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardCategory;
 import ua.edu.chnu.awards.award.entity.AwardRequest;
+import ua.edu.chnu.awards.award.service.ManagedOwners;
 import ua.edu.chnu.awards.award.service.StatusEstimator;
 import ua.edu.chnu.awards.organization.dto.OrganizationRef;
 import ua.edu.chnu.awards.organization.entity.Organization;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class AwardMapper {
 
     private final StatusEstimator estimator;
+    private final ManagedOwners managedOwners;
 
     /**
      * Builds the response of an award without warnings.
@@ -68,7 +70,7 @@ public class AwardMapper {
             UserRef.of(award.getOwner()), recipient(award), organizationRef(award.getOrganization()),
             toSummary(award, request, returnComment), List.copyOf(warnings),
             award.isUnitAward() ? null : award.getVisibility(), award.getCreatedAt(), award.getUpdatedAt(),
-            award.getVersion());
+            award.getVersion(), award.getOwner().isWithoutAccount(), managedOwners.manages(award.getOwner()));
     }
 
     static AwardRecipient recipient(Award award) {

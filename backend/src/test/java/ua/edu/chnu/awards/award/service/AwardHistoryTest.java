@@ -52,7 +52,8 @@ class AwardHistoryTest {
     private final UserRepository users = mock(UserRepository.class);
     private final AccessScope access = mock(AccessScope.class);
     private final AwardHistory history = new AwardHistory(versions, new UserAccounts(users),
-        new AwardOwnership(awards, new UserAccounts(users), mock(OrganizationLookup.class), access), access);
+        new AwardOwnership(awards, new UserAccounts(users), mock(OrganizationLookup.class), access,
+            mock(ManagedOwners.class)), access);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
 

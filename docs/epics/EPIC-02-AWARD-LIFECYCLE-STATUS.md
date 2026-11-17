@@ -54,8 +54,8 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 14e | 2.5.5 Import people and past awards from a spreadsheet | 2.5 | 8 | SCRUM-154 | #424 | no | To do |
 | 14d | 2.5.4 Link at membership confirmation | 2.5 | 3 | SCRUM-153 | #423 | no | To do |
 | 14c | 2.5.3 Claim at registration | 2.5 | 5 | SCRUM-152 | #422 | no | To do |
-| 14b | 2.5.2 Awards for a person without an account | 2.5 | 8 | SCRUM-151 | #421 | no | To do |
-| 14a | 2.5.1 People without an account: add, change, invite, remove | 2.5 | 8 | SCRUM-150 | #420 | no | In review |
+| 14b | 2.5.2 Awards for a person without an account | 2.5 | 8 | SCRUM-151 | #421 | no | In review |
+| 14a | 2.5.1 People without an account: add, change, invite, remove | 2.5 | 8 | SCRUM-150 | #420 | no | Done |
 
 Total: 57 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 

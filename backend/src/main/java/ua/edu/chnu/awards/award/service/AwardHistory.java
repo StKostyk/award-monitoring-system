@@ -165,7 +165,7 @@ public class AwardHistory {
     }
 
     private long firstVisible(Award award) {
-        if (ownership.isOwn(award)) {
+        if (ownership.isManaged(award)) {
             return Long.MIN_VALUE;
         }
         return versions.firstNumber(award.getId(), VersionAction.SUBMITTED)

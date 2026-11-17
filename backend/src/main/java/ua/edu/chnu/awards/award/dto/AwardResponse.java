@@ -31,6 +31,8 @@ import ua.edu.chnu.awards.organization.dto.OrganizationRef;
  * @param createdAt            when it was created
  * @param updatedAt            when it was last changed
  * @param version              optimistic-lock version
+ * @param ownerWithoutAccount  true when the owner has no account of their own yet
+ * @param managedByCaller      true when the caller manages the award in place of an owner without an account
  */
 @SuppressWarnings("PMD.CommentSize")
 public record AwardResponse(Long id, String title, String titleUk, String description, String descriptionUk,
@@ -38,5 +40,6 @@ public record AwardResponse(Long id, String title, String titleUk, String descri
                             String externalUrl, AwardStatus status, Integer impactScore, UserRef owner,
                             AwardRecipient recipient, OrganizationRef organization, RequestSummary request,
                             List<AwardWarning> warnings, AwardVisibility visibility,
-                            Instant createdAt, Instant updatedAt, Long version) {
+                            Instant createdAt, Instant updatedAt, Long version,
+                            boolean ownerWithoutAccount, boolean managedByCaller) {
 }

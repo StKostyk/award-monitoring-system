@@ -36,11 +36,14 @@ public class AwardInputRules {
     static final String TITLE = "title";
     static final String CATEGORY = "categoryId";
     static final String RECIPIENT = "recipientOrganizationId";
+    static final String PERSON = "recipientUserId";
+    private static final String OUT_OF_SCOPE = "out-of-scope";
     private static final Set<String> WEB_SCHEMES = Set.of("http", "https");
 
     private final AwardCategoryRepository categories;
     private final AwardDateRules dates;
     private final RecipientUnits recipients;
+    private final ManagedOwners managedOwners;
 
     /**
      * The form with surrounding spaces removed and blank texts treated as empty.
@@ -51,12 +54,12 @@ public class AwardInputRules {
     public AwardForm normalize(AwardForm form) {
         return new AwardForm(clean(form.title()), clean(form.titleUk()), clean(form.description()),
             clean(form.descriptionUk()), form.categoryId(), clean(form.awardingOrganization()), form.awardDate(),
-            clean(form.externalUrl()), form.recipientOrganizationId(), form.version());
+            clean(form.externalUrl()), form.recipientOrganizationId(), form.recipientUserId(), form.version());
     }
 
     /**
      * Checks the fields of a draft; fields that are empty are not checked beyond the title. A recipient unit
-     * must be one the caller may enter awards for.
+     * must be one the caller may enter awards for, a recipient person one whose awards the caller manages.
      *
      * @param form    the cleaned form
      * @param current the category the draft already has, which may stay even if it was deactivated since
@@ -74,13 +77,27 @@ public class AwardInputRules {
             errors.add(inactiveCategory());
         }
         if (form.recipientOrganizationId() != null && !recipients.covers(form.recipientOrganizationId())) {
-            errors.add(new FieldViolation(RECIPIENT, "out-of-scope",
+            errors.add(new FieldViolation(RECIPIENT, OUT_OF_SCOPE,
                 "Awards can be entered only for a faculty or department of your secretary or dean role"));
         }
+        personError(form).ifPresent(errors::add);
         if (!errors.isEmpty()) {
             throw ApiProblemException.validationFailed("The award form has invalid fields", errors);
         }
         return category;
+    }
+
+    private Optional<FieldViolation> personError(AwardForm form) {
+        if (form.recipientUserId() == null) {
+            return Optional.empty();
+        }
+        if (form.recipientOrganizationId() != null) {
+            return Optional.of(new FieldViolation(PERSON, "one-recipient",
+                "An award goes either to a person or to a faculty or department"));
+        }
+        return managedOwners.find(form.recipientUserId()).isPresent() ? Optional.empty()
+            : Optional.of(new FieldViolation(PERSON, OUT_OF_SCOPE,
+                "Awards can be entered only for people without an account in your faculty or department"));
     }
 
     private static List<FieldViolation> textErrors(AwardForm form) {

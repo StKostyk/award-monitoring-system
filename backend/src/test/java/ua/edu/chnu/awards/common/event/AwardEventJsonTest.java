@@ -32,7 +32,7 @@ class AwardEventJsonTest {
     @Test
     void ac1_8_awardDecided() throws Exception {
         assertRoundTrip(new AwardDecided(7L, "olena@chnu.edu.ua", "Олена", 5L, "Certificate", "Грамота",
-            RequestStatus.APPROVED, ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", "Добре", AT));
+            RequestStatus.APPROVED, ApprovalLevel.FACULTY_SECRETARY, "Ірина Бойко", "Добре", AT, null));
     }
 
     @Test
@@ -52,7 +52,7 @@ class AwardEventJsonTest {
     void ac1_8_awardCorrected() throws Exception {
         assertRoundTrip(new AwardCorrected(7L, "olena@chnu.edu.ua", "Олена", 5L, "Certificate", "Грамота",
             "Ірина Бойко", "Typo", List.of(new AwardCorrected.Change("title", "Certifcate", "Certificate",
-                "Грамта", "Грамота")), AT));
+                "Грамта", "Грамота")), AT, null));
     }
 
     @Test

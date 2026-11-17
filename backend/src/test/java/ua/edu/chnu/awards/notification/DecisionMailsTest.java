@@ -109,6 +109,16 @@ class DecisionMailsTest {
             .contains("rejected the award.").contains("Коментар: Не відповідає положенню");
     }
 
+    @Test
+    void ac2_5_theSubmitterIsToldWhoseAwardItIs() {
+        AwardDecided event = new AwardDecided(31L, "secretary@chnu.edu.ua", "Аліна", 5L, "Prize", "Премія",
+            RequestStatus.RETURNED, ApprovalLevel.DEAN, "Олег Декан", null, null, "Тестовий Петро");
+
+        assertThat(DecisionMails.body(event, LINK))
+            .contains("Нагорода колеги Тестовий Петро «Премія»: Олег Декан повернув(ла)")
+            .contains("Award of your colleague Тестовий Петро \"Prize\": Олег Декан returned");
+    }
+
     private static AwardDecided event(RequestStatus outcome, ApprovalLevel level, String comment) {
         return TestEvents.decided().to(21L, "employee@chnu.edu.ua", "Ірина").award(5L, "Prize", "Премія")
             .outcome(outcome, level).by("Аліна Мартинюк", comment).build();

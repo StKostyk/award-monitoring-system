@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatAnchor, MatButton } from '@angular/material/button';
 import {
   MatDatepicker,
@@ -51,6 +52,7 @@ import {
   readProblem,
 } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
+import { canManagePeople } from '../../../core/auth/permissions';
 import { ConnectivityService } from '../../../core/connectivity/connectivity.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { FormCopiesService } from '../../../core/storage/form-copies.service';
@@ -59,6 +61,7 @@ import { organizationName } from '../../../shared/organization-name';
 import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
 import { coarsePointer } from '../../../shared/touch';
 import { TranslatedDatepickerIntl } from '../../../shared/translated-datepicker-intl';
+import { PeopleService, Person } from '../../admin/people.service';
 import { AwardDocumentsComponent } from '../award-documents/award-documents.component';
 import {
   AwardUploadStepComponent,
@@ -113,9 +116,11 @@ const KNOWN_PROBLEMS = [
   'network',
 ];
 const SUBMISSION_FIELDS = ['categoryId', 'awardingOrganization', 'awardDate'] as const;
+/** Characters typed before colleagues are searched for. */
+const COLLEAGUE_MIN_LENGTH = 2;
 
-type FieldName = keyof AwardForm;
-type RecipientChoice = 'PERSON' | 'UNIT';
+type FieldName = keyof AwardForm | 'colleague';
+type RecipientChoice = 'PERSON' | 'UNIT' | 'COLLEAGUE';
 
 @Component({
   selector: 'app-award-form',
@@ -137,6 +142,7 @@ type RecipientChoice = 'PERSON' | 'UNIT';
     MatProgressBar,
     MatRadioGroup,
     MatRadioButton,
+    MatAutocompleteModule,
     RouterLink,
     TranslocoPipe,
     AwardDocumentsComponent,
@@ -159,6 +165,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private readonly copies = inject(FormCopiesService);
   private readonly language = inject(LanguageService);
   private readonly connectivity = inject(ConnectivityService);
+  private readonly people = inject(PeopleService);
 
   private id: number | null = null;
   private owner: string | null = null;
@@ -226,7 +233,22 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   });
   /** A unit no longer offered was restored or refused; the choice stays so that the award can go to «Я». */
   readonly recipientKept = signal(false);
-  readonly recipientShown = computed(() => this.unitOptions().length > 0 || this.recipientKept());
+  /** A new award may go to a colleague without an account of the caller's faculty secretary or dean scope. */
+  readonly colleagueOffered = computed(
+    () => this.current() === null && canManagePeople(this.auth.permissions()),
+  );
+  readonly colleagueChosen = signal(false);
+  readonly colleagues = signal<Person[]>([]);
+  /** The colleague without an account who owns the draft; the recipient no longer changes then. */
+  readonly managedOwner = computed(() => {
+    const award = this.current();
+    return award?.ownerWithoutAccount ? award.owner.name : null;
+  });
+  readonly recipientShown = computed(
+    () =>
+      this.managedOwner() === null &&
+      (this.unitOptions().length > 0 || this.recipientKept() || this.colleagueOffered()),
+  );
   private readonly chosenUnit = signal<number | null>(null);
   /** The chosen unit when the person can no longer choose it, so the picker names it as such. */
   readonly unavailableUnit = computed(() => {
@@ -258,6 +280,8 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     {
       recipient: ['PERSON' as RecipientChoice],
       recipientOrganizationId: [null as number | null],
+      recipientUserId: [null as number | null],
+      colleague: [null as Person | string | null],
       title: ['', Validators.maxLength(TITLE_LIMIT)],
       titleUk: ['', Validators.maxLength(TITLE_LIMIT)],
       description: ['', Validators.maxLength(DESCRIPTION_LIMIT)],
@@ -297,10 +321,33 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       .subscribe((id) => this.categoryChosen.set(id !== null));
     this.form.controls.recipient.valueChanges.pipe(takeUntilDestroyed()).subscribe((choice) => {
       this.unitChosen.set(choice === 'UNIT');
-      if (choice === 'PERSON') {
+      this.colleagueChosen.set(choice === 'COLLEAGUE');
+      if (choice !== 'UNIT') {
         this.form.controls.recipientOrganizationId.setValue(null);
       }
+      if (choice !== 'COLLEAGUE') {
+        this.form.controls.colleague.setValue(null);
+      }
     });
+    this.form.controls.colleague.valueChanges
+      .pipe(
+        filter(() => this.current() === null),
+        takeUntilDestroyed(),
+      )
+      .subscribe((value) =>
+        this.form.controls.recipientUserId.setValue(
+          typeof value === 'object' && value ? value.id : null,
+        ),
+      );
+    this.form.controls.colleague.valueChanges
+      .pipe(
+        debounceTime(SUGGEST_DEBOUNCE),
+        map((value) => (typeof value === 'string' ? value.trim() : '')),
+        distinctUntilChanged(),
+        switchMap((query) => this.searchColleagues(query)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((people) => this.colleagues.set(people));
     this.form.controls.recipientOrganizationId.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((id) => this.chosenUnit.set(id ?? null));
@@ -328,6 +375,11 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     const param = this.route.snapshot.paramMap.get('id');
     if (param === null) {
       this.offerCopy();
+      const person = this.route.snapshot.queryParamMap.get('person');
+      if (person !== null && /^\d+$/.test(person) && this.colleagueOffered()) {
+        this.preselect(Number(person));
+        return;
+      }
       this.stepShown.set(this.restoreOffer() === null && this.connectivity.linked());
       return;
     }
@@ -390,8 +442,11 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       this.recipientKept.update((kept) => kept || copy.recipientOrganizationId !== null);
       this.form.patchValue({
         ...copy,
-        recipient: copy.recipientOrganizationId ? 'UNIT' : 'PERSON',
+        recipient: recipientOf(copy),
       });
+      if (copy.recipientUserId && this.current() === null) {
+        this.preselect(copy.recipientUserId);
+      }
       this.form.markAsDirty();
       this.form.markAllAsTouched();
     }
@@ -567,6 +622,12 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.form.controls.categoryId.markAsDirty();
   }
 
+  /** The name of a colleague as offered, and as shown in the search once chosen. */
+  readonly colleagueName = (person: Person | string | null): string =>
+    typeof person === 'object' && person
+      ? `${person.lastName} ${person.firstName}`
+      : (person ?? '');
+
   unitName(unit: UnitRef): string {
     return organizationName(unit, this.language.current());
   }
@@ -579,14 +640,41 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     return awardTitle(match, this.language.current());
   }
 
-  /** Marks the unit picker when «Підрозділ» is chosen without a unit. */
+  /** Marks the unit picker or the colleague search when that choice is made without a unit or colleague. */
   private unitMissing(): boolean {
-    const { recipient, recipientOrganizationId } = this.form.controls;
+    const { recipient, recipientOrganizationId, recipientUserId, colleague } = this.form.controls;
     const missing = recipient.value === 'UNIT' && recipientOrganizationId.value === null;
     if (missing) {
       recipientOrganizationId.setErrors({ required: true });
     }
-    return missing;
+    const noColleague = recipient.value === 'COLLEAGUE' && recipientUserId.value === null;
+    if (noColleague) {
+      colleague.setErrors({ required: true });
+    }
+    return missing || noColleague;
+  }
+
+  private searchColleagues(query: string): Observable<Person[]> {
+    if (query.length < COLLEAGUE_MIN_LENGTH) {
+      return of([]);
+    }
+    return this.people.list(query).pipe(
+      map((page) => page.content.filter((person) => person.status === 'UNCLAIMED')),
+      catchError(() => of([])),
+    );
+  }
+
+  /** Opens a new award for a colleague without an account; the upload step is left out, it saves an own draft. */
+  private preselect(personId: number): void {
+    this.form.controls.recipient.setValue('COLLEAGUE');
+    this.people.get(personId).subscribe({
+      next: (person) => {
+        if (person.status === 'UNCLAIMED' && this.form.controls.recipient.value === 'COLLEAGUE') {
+          this.form.controls.colleague.setValue(person);
+        }
+      },
+      error: () => this.colleagues.set([]),
+    });
   }
 
   private startRemoval(id: number): Observable<void> {
@@ -688,7 +776,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     const value = this.value();
     if (this.id !== null) {
       return this.service
-        .update(this.id, value, this.version)
+        .update(this.id, { ...value, recipientUserId: null }, this.version)
         .pipe(tap((award) => this.show(award)));
     }
     this.creationKey ??= crypto.randomUUID();
@@ -711,8 +799,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
     this.current.set(award);
     this.version = award.version;
     this.form.reset({
-      recipient: award.recipient.type,
+      recipient: award.ownerWithoutAccount ? 'COLLEAGUE' : award.recipient.type,
       recipientOrganizationId: award.recipient.organization?.id ?? null,
+      recipientUserId: award.ownerWithoutAccount ? award.owner.id : null,
       title: award.title ?? '',
       titleUk: award.titleUk ?? '',
       description: award.description ?? '',
@@ -765,8 +854,9 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       this.stale.set(true);
     }
     for (const problem of fieldProblems(error)) {
-      const control = this.form.get(problem.field);
-      control?.setErrors({ server: problem.code });
+      const person = problem.field === 'recipientUserId';
+      const control = this.form.get(person ? 'colleague' : problem.field);
+      control?.setErrors({ server: person ? `person-${problem.code}` : problem.code });
       control?.markAsTouched();
       if (problem.field === 'recipientOrganizationId') {
         this.recipientKept.set(true);
@@ -828,6 +918,7 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
       externalUrl: text(raw.externalUrl),
       recipientOrganizationId:
         raw.recipient === 'UNIT' ? (raw.recipientOrganizationId ?? null) : null,
+      recipientUserId: raw.recipient === 'COLLEAGUE' ? (raw.recipientUserId ?? null) : null,
     };
   }
 
@@ -871,4 +962,11 @@ export class AwardFormComponent implements OnInit, LeavesUnsavedChanges {
   private copyName(): string {
     return this.id === null ? 'award-new' : `award-${this.id}`;
   }
+}
+
+function recipientOf(copy: AwardForm): RecipientChoice {
+  if (copy.recipientUserId) {
+    return 'COLLEAGUE';
+  }
+  return copy.recipientOrganizationId ? 'UNIT' : 'PERSON';
 }

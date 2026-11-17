@@ -6,6 +6,7 @@ import {
   DEMO_PASSWORD,
   SEED,
   countMessages,
+  openNewAward,
   seriousViolations,
   signIn,
   uniqueToken,
@@ -103,6 +104,76 @@ test.describe('people without an account', () => {
 
     await removeOpenPerson(page);
     await page.goto(first);
+    await removeOpenPerson(page);
+  });
+
+  test('ac2_1 ac2_7 the secretary enters a draft for a colleague without an account', async ({
+    page,
+  }) => {
+    const lastName = surname();
+    const title = `Грамота колеги ${uniqueToken()}`;
+    await signIn(page, secretary, DEMO_PASSWORD);
+    await page.goto('/admin/users');
+    await addPerson(page, lastName, '');
+    await expect(page).toHaveURL(/\/admin\/users\/\d+$/);
+    const personPage = page.url();
+
+    await page.getByTestId('person-add-award').click();
+
+    await expect(page).toHaveURL(/\/awards\/new\?person=\d+$/);
+    await expect(page.getByTestId('upload-step')).toHaveCount(0);
+    await expect(page.getByTestId('award-recipient-colleague')).toHaveClass(
+      /mat-mdc-radio-checked/,
+    );
+    await expect(page.getByTestId('award-recipient-colleague-search')).toHaveValue(
+      `${lastName} Petro`,
+    );
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.getByTestId('award-title-uk').fill(title);
+    await page.getByTestId('award-save').click();
+
+    await expect(page).toHaveURL(/\/awards\/\d+\/edit$/);
+    await expect(page.getByTestId('award-form-owner')).toContainText(lastName);
+    await expect(page.getByTestId('award-recipient')).toHaveCount(0);
+    const awardPage = page.url().replace(/\/edit$/, '');
+
+    await page.goto(awardPage);
+
+    await expect(page.getByTestId('award-owner-unclaimed')).toHaveText('Без облікового запису');
+    await expect(page.getByTestId('award-edit')).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.goto(personPage);
+    await expect(page.getByTestId('person-award-link')).toHaveText(title);
+    await page.getByTestId('person-award-link').click();
+    await page.getByTestId('award-remove').click();
+    await page.getByTestId('confirm-accept').click();
+    await expect(page).toHaveURL(/\/awards$/);
+
+    await page.goto(personPage);
+    await removeOpenPerson(page);
+  });
+
+  test('ac2_1 the colleague search finds an unclaimed person by name', async ({ page }) => {
+    const lastName = surname();
+    await signIn(page, secretary, DEMO_PASSWORD);
+    await page.goto('/admin/users');
+    await addPerson(page, lastName, '');
+    await expect(page).toHaveURL(/\/admin\/users\/\d+$/);
+    const personPage = page.url();
+    const personId = personPage.split('/').pop();
+    await openNewAward(page);
+
+    await page.getByTestId('award-recipient-colleague').click();
+    await page.getByTestId('award-recipient-colleague-search').fill(lastName);
+    await page.getByTestId(`colleague-option-${personId}`).click();
+
+    await expect(page.getByTestId('award-recipient-colleague-search')).toHaveValue(
+      `${lastName} Petro`,
+    );
+
+    await page.goto(personPage);
     await removeOpenPerson(page);
   });
 

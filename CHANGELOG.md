@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Faculty secretaries and deans enter and submit awards of colleagues without an account
 - Faculty secretaries and deans add colleagues without an account, invite them and change or remove them from the user directory (2.5.1).
 - New shell: phone top bar with page title and new-award button, toolbar scheme switch, dark-scheme aurora background and a Ctrl K command palette for sections and awards (9.3.3).
 - Effect components (beam, border beam, spotlight, ticker, marquee, typed text), count-ups and staggered tiles on analytics, and chart colours that follow the burgundy and aurora schemes (9.3.2)

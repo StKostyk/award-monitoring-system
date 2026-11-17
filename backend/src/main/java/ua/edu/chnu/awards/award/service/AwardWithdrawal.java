@@ -55,7 +55,7 @@ public class AwardWithdrawal {
     @Transactional
     public AwardResponse withdraw(long id, WithdrawRequest body) {
         AwardRequest request = requests.findByAwardIdForUpdate(id).orElse(null);
-        Award award = awards.findForUpdate(id).filter(ownership::isOwn)
+        Award award = awards.findForUpdate(id).filter(ownership::isManaged)
             .orElseThrow(() -> new AwardNotFoundException(id));
         requireWithdrawable(award, request);
         ownership.requireVersion(award, body == null ? null : body.version());
@@ -65,7 +65,7 @@ public class AwardWithdrawal {
         award.setStatus(AwardStatus.DRAFT);
         requests.saveAndFlush(request);
         awards.saveAndFlush(award);
-        audit.record(AuditAction.AWARD_WITHDRAWN, AuditEntityConstants.AWARDS, award.getOwner().getId(),
+        audit.record(AuditAction.AWARD_WITHDRAWN, AuditEntityConstants.AWARDS, ownership.callerId(),
             award.getId(), Map.of("requestId", request.getId(), "from", from.name(),
                 "level", request.getCurrentLevel().name()));
         return mapper.toResponse(award, request);

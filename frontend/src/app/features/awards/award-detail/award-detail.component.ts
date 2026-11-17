@@ -42,6 +42,7 @@ import {
   awardTitle,
   categoryName,
   isOwnAward,
+  managesAward,
 } from '../awards.service';
 import { confirmAction } from '../confirm-dialog/confirm-dialog.component';
 import { VisibilitySectionComponent } from './visibility-section.component';
@@ -177,7 +178,7 @@ export class AwardDetailComponent implements OnInit {
 
   /** Drafts are private to their owner; everybody else who may open the award sees it from the submission on. */
   showHistory(award: Award): boolean {
-    return award.status !== 'DRAFT' || isOwnAward(award, this.auth.userId());
+    return award.status !== 'DRAFT' || managesAward(award, this.auth.userId());
   }
 
   /** A pending award of somebody else, which an approver may be able to review. */
@@ -189,9 +190,9 @@ export class AwardDetailComponent implements OnInit {
     );
   }
 
-  /** The caller's own draft, which the caller may delete. */
+  /** The caller's own draft, or one of a colleague without an account, which the caller may delete. */
   ownDraft(award: Award): boolean {
-    return award.status === 'DRAFT' && isOwnAward(award, this.auth.userId());
+    return award.status === 'DRAFT' && managesAward(award, this.auth.userId());
   }
 
   /** An own draft never submitted; a returned or withdrawn draft keeps its request and decisions. */
@@ -203,8 +204,8 @@ export class AwardDetailComponent implements OnInit {
   withdrawable(award: Award): boolean {
     return (
       award.status === 'PENDING' &&
-      isOwnAward(award, this.auth.userId()) &&
-      canEditOwnAwards(this.auth.permissions()) &&
+      managesAward(award, this.auth.userId()) &&
+      (award.managedByCaller === true || canEditOwnAwards(this.auth.permissions())) &&
       !!award.request &&
       WITHDRAWABLE_REQUEST_STATUSES.includes(award.request.status)
     );

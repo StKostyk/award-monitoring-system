@@ -68,10 +68,10 @@ class CorrectionLogTest {
     @Test
     void ac3_5_theEventNamesCategoriesInBothLanguagesAndLeavesTheScoreOut() {
         AwardCategory before = category(21L, "University Award", "Університетська нагорода");
-        Award award = award(category(13L, "Ministry", "Відзнака"));
+        AwardRequest request = TestAwards.request(award(category(13L, "Ministry", "Відзнака"))).build();
         User reviewer = TestUsers.person(31L, "secretary@chnu.edu.ua", "Аліна", owner.getOrganization());
 
-        log.announce(award, reviewer, "Категорія", List.of(new FieldChange("categoryId", 21L, 13L),
+        log.announce(request, reviewer, "Категорія", List.of(new FieldChange("categoryId", 21L, 13L),
             new FieldChange("impactScore", 50, 80), new FieldChange("externalUrl", null, "https://mon.gov.ua")),
             before);
 
@@ -87,9 +87,9 @@ class CorrectionLogTest {
 
     @Test
     void theEventShowsTheAwardDateDayFirst() {
-        Award award = award(null);
+        AwardRequest request = TestAwards.request(award(null)).build();
 
-        log.announce(award, owner, "Дата", List.of(new FieldChange("awardDate", LocalDate.of(2026, 9, 1),
+        log.announce(request, owner, "Дата", List.of(new FieldChange("awardDate", LocalDate.of(2026, 9, 1),
             LocalDate.of(2026, 9, 2))), null);
 
         ArgumentCaptor<AwardCorrected> event = ArgumentCaptor.forClass(AwardCorrected.class);
@@ -100,9 +100,9 @@ class CorrectionLogTest {
 
     @Test
     void ac3_5_aClearedCategoryHasNoName() {
-        Award award = award(null);
+        AwardRequest request = TestAwards.request(award(null)).build();
 
-        log.announce(award, owner, "Категорія", List.of(new FieldChange("categoryId", 21L, null)),
+        log.announce(request, owner, "Категорія", List.of(new FieldChange("categoryId", 21L, null)),
             category(21L, "University Award", "Університетська нагорода"));
 
         ArgumentCaptor<AwardCorrected> event = ArgumentCaptor.forClass(AwardCorrected.class);

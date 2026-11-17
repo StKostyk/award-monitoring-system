@@ -38,6 +38,7 @@ public class NotificationDrafts {
     public NotificationDraft of(AwardDecided event) {
         Map<String, Object> payload = award(event.title(), event.titleUk(), event.reviewer());
         payload.put("level", event.level().name());
+        putPerson(payload, event.person());
         return new NotificationDraft(event.userId(), typeOf(event), payload, AWARD, event.awardId(),
             event.occurredAt());
     }
@@ -51,6 +52,7 @@ public class NotificationDrafts {
     public NotificationDraft of(AwardCorrected event) {
         Map<String, Object> payload = award(event.title(), event.titleUk(), event.reviewer());
         payload.put("fields", event.changes().stream().map(AwardCorrected.Change::field).toList());
+        putPerson(payload, event.person());
         return new NotificationDraft(event.userId(), NotificationType.AWARD_CORRECTED, payload, AWARD,
             event.awardId(), event.occurredAt());
     }
@@ -150,6 +152,12 @@ public class NotificationDrafts {
             case ESCALATED -> NotificationType.AWARD_ESCALATED;
             default -> throw new IllegalArgumentException("Not a decision: " + event.outcome());
         };
+    }
+
+    private static void putPerson(Map<String, Object> payload, String person) {
+        if (person != null) {
+            payload.put("person", person);
+        }
     }
 
     private static Map<String, Object> award(String title, String titleUk, String reviewer) {

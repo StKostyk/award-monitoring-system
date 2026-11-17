@@ -44,7 +44,7 @@ public class AwardCorrectionRequest {
         return new AwardForm(pick(title, current.title()), pick(titleUk, current.titleUk()),
             pick(description, current.description()), pick(descriptionUk, current.descriptionUk()),
             pick(categoryId, current.categoryId()), pick(awardingOrganization, current.awardingOrganization()),
-            pick(awardDate, current.awardDate()), pick(externalUrl, current.externalUrl()), null, version);
+            pick(awardDate, current.awardDate()), pick(externalUrl, current.externalUrl()), null, null, version);
     }
 
     /**

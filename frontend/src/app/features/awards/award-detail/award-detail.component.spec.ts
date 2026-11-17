@@ -414,6 +414,36 @@ describe('AwardDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="award-edit"]')).not.toBeNull();
   });
 
+  it('ac2_7_a_colleagues_draft_shows_the_chip_and_the_owner_actions', async () => {
+    granted.set(['award:update:own']);
+    const colleague = {
+      ...pending,
+      status: 'DRAFT' as const,
+      request: null,
+      owner: { id: 77, name: 'Іваненко Петро', email: 'p***@chnu.edu.ua' },
+      ownerWithoutAccount: true,
+      managedByCaller: true,
+    };
+    service.get.mockReturnValue(of(colleague));
+    const fixture = await open(AwardDetailComponent, '5');
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('[data-testid="award-owner-unclaimed"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-edit"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="award-remove"]')).not.toBeNull();
+    const component = fixture.componentInstance;
+    expect(component.showHistory(colleague)).toBe(true);
+    expect(component.sharable({ ...colleague, status: 'APPROVED' })).toBe(false);
+    expect(
+      component.withdrawable({
+        ...colleague,
+        status: 'PENDING',
+        request: { ...returnedRequest, status: 'ESCALATED' },
+      }),
+    ).toBe(true);
+    expect(component.ownDraft({ ...colleague, managedByCaller: false })).toBe(false);
+  });
+
   it('ac1_9_offers_no_editing_without_award_update_own', async () => {
     service.get.mockReturnValue(of({ ...pending, status: 'DRAFT', request: null }));
     const fixture = await open(AwardDetailComponent, '5');

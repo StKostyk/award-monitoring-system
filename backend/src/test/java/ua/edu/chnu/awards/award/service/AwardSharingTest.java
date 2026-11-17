@@ -30,7 +30,6 @@ import ua.edu.chnu.awards.award.dto.AwardVisibilityUpdate;
 import ua.edu.chnu.awards.award.entity.Award;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
-import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.organization.entity.Organization;
@@ -49,7 +48,7 @@ class AwardSharingTest {
     private final AwardDocuments documents = mock(AwardDocuments.class);
     private final Clock clock = Clock.fixed(TestAwards.SUBMITTED_AT, ZoneId.of("Europe/Kyiv"));
     private final AwardSharing sharing = new AwardSharing(awards, ownership, requests,
-        new AwardMapper(TestWorkflow.estimator(clock)), audit, documents);
+        TestAwards.mapper(TestWorkflow.estimator(clock)), audit, documents);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(21L, "owner@chnu.edu.ua", department);
     private Award award;
@@ -156,6 +155,6 @@ class AwardSharingTest {
         award.setRecipientOrganizationId(department.getId());
         when(ownership.isOwn(award)).thenReturn(false);
 
-        assertThat(new AwardMapper(TestWorkflow.estimator(clock)).toResponse(award, null).visibility()).isNull();
+        assertThat(TestAwards.mapper(TestWorkflow.estimator(clock)).toResponse(award, null).visibility()).isNull();
     }
 }

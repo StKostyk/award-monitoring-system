@@ -18,7 +18,7 @@ import ua.edu.chnu.awards.user.service.UserAccounts;
 import lombok.RequiredArgsConstructor;
 
 /**
- * The checks every change of an award starts with: it is the caller's, it is still a draft and the caller
+ * The checks every change of an award starts with: the caller manages it, it is still a draft and the caller
  * read its current version.
  */
 @Component
@@ -29,16 +29,37 @@ public class AwardOwnership {
     private final UserAccounts users;
     private final OrganizationLookup organizations;
     private final AccessScope access;
+    private final ManagedOwners managedOwners;
 
     /**
-     * A new, unsaved draft owned by the caller in the caller's department.
+     * A new, unsaved draft owned by the caller, or by a person without an account the caller manages, in the
+     * owner's department. The person was checked by {@link AwardInputRules}.
      *
+     * @param personId the person without an account who received the award, null for the caller
      * @return the draft
      */
-    public Award newDraft() {
-        User owner = users.findById(access.callerId())
-            .orElseThrow(() -> new IllegalStateException("Caller has no account"));
+    public Award newDraft(Long personId) {
+        User owner = personId == null ? caller()
+            : managedOwners.find(personId).orElseThrow(() -> new IllegalStateException("Unknown person " + personId));
         return Award.builder().owner(owner).organization(owner.getOrganization()).build();
+    }
+
+    /**
+     * The caller's id.
+     *
+     * @return the caller
+     */
+    public long callerId() {
+        return access.callerId();
+    }
+
+    /**
+     * The account of the caller, who submits, withdraws and changes the awards they manage.
+     *
+     * @return the caller
+     */
+    public User caller() {
+        return users.findById(access.callerId()).orElseThrow(() -> new IllegalStateException("Caller has no account"));
     }
 
     /**
@@ -65,13 +86,25 @@ public class AwardOwnership {
     }
 
     /**
-     * Whether the caller may read the award: their own, or a submitted award inside a scope that reads awards.
+     * Whether the caller manages the award as its owner would: their own, or one of a person without an account
+     * inside the caller's faculty secretary or dean scope.
+     *
+     * @param award the award
+     * @return true for the owner and for the owner's managers
+     */
+    public boolean isManaged(Award award) {
+        return isOwn(award) || managedOwners.manages(award.getOwner());
+    }
+
+    /**
+     * Whether the caller may read the award: one they manage, or a submitted award inside a scope that reads
+     * awards.
      *
      * @param award the award
      * @return true when readable
      */
     public boolean isReadable(Award award) {
-        return isOwn(award) || !award.isDraft() && access.canReadAwards(award.getOrganization().getId());
+        return isManaged(award) || !award.isDraft() && access.canReadAwards(award.getOrganization().getId());
     }
 
     /**
@@ -98,16 +131,16 @@ public class AwardOwnership {
     }
 
     /**
-     * The caller's draft, locked for the rest of the transaction so that saves and submissions of one award run
-     * one after the other.
+     * A draft the caller manages, locked for the rest of the transaction so that saves and submissions of one
+     * award run one after the other.
      *
      * @param id the award
      * @return the draft
-     * @throws AwardNotFoundException when it does not exist or is not the caller's
+     * @throws AwardNotFoundException when it does not exist or the caller does not manage it
      * @throws ApiProblemException    409 {@code award-not-editable} when it was submitted
      */
     public Award lockedDraft(long id) {
-        Award award = awards.findForUpdate(id).filter(this::isOwn)
+        Award award = awards.findForUpdate(id).filter(this::isManaged)
             .orElseThrow(() -> new AwardNotFoundException(id));
         if (!award.isDraft()) {
             throw new ApiProblemException(HttpStatus.CONFLICT, "award-not-editable",

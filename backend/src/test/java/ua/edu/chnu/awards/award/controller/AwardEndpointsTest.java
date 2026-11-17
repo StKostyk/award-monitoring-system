@@ -68,7 +68,7 @@ class AwardEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.recipient.type").value("PERSON"))
             .andExpect(jsonPath("$.version").value(3));
         verify(creation).create(new AwardForm(null, "Грамота МОН", null, null, null, null,
-            LocalDate.of(2025, 5, 1), null, null, null), null);
+            LocalDate.of(2025, 5, 1), null, null, null, null), null);
     }
 
     @Test

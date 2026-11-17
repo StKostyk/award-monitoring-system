@@ -199,7 +199,11 @@
       "person": "Me",
       "unit": "Faculty or department",
       "unitPicker": "Faculty or department",
-      "unavailable": "A unit no longer available to you"
+      "unavailable": "A unit no longer available to you",
+      "colleague": "Colleague without an account",
+      "colleagueSearch": "Find a colleague",
+      "colleagueHint": "Name or address, 2+ characters",
+      "withoutAccount": "No account"
     },
     "correction": {
       "title": "Correct the award",
@@ -415,7 +419,9 @@
       "inactive": "The category is no longer available",
       "future": "The award date cannot be in the future",
       "too-old": "The award date cannot be more than 50 years ago",
-      "out-of-scope": "You cannot enter awards for this faculty or department"
+      "out-of-scope": "You cannot enter awards for this faculty or department",
+      "person-out-of-scope": "You cannot enter awards for this colleague",
+      "person-one-recipient": "An award goes either to a colleague or to a faculty or department"
     },
     "warnings": {
       "RECENT_DATE": "Check the date: it lies within the last 30 days. Is it the date of the award rather than of the submission?",
@@ -614,6 +620,7 @@
     },
     "people": {
       "add": "Add a colleague without an account",
+      "addAward": "Add an award",
       "badge": "No account",
       "unknownAddress": "Address unknown",
       "awardCount": "awards: {{count}}",
@@ -1522,6 +1529,7 @@
     "until": ", until {{date}}",
     "lastDay": ", last day {{date}}",
     "oldest": ", oldest deadline {{date}}",
+    "colleague": "Award of {{person}}: {{text}}",
     "types": {
       "AWARD_APPROVED": "«{{title}}» approved by {{reviewer}} at the {{level}} level",
       "AWARD_REJECTED": "«{{title}}» rejected by {{reviewer}} at the {{level}} level",

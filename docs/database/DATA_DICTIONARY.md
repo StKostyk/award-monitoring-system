@@ -337,7 +337,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `award_id` | `BIGSERIAL` | NO | Auto | PK | Unique award identifier |
-| `user_id` | `BIGINT` | NO | - | FK→users | Owner: the recipient of a personal award, the person who entered a unit award (V027) |
+| `user_id` | `BIGINT` | NO | - | FK→users | Owner: the recipient of a personal award, the person who entered a unit award (V027); for a person without an account (2.5.2) the person, whose awards the faculty secretaries and deans of the person's department manage |
 | `organization_id` | `BIGINT` | NO | - | FK→organizations | Owner's department at submission (V020); the recipient unit of a unit award |
 | `recipient_org_id` | `BIGINT` | YES | - | FK→organizations; CK: NULL or = `organization_id`; partial index with `award_date` | Faculty or department that received the award; NULL for a personal award (V027) |
 | `category_id` | `BIGINT` | YES (draft) | - | FK→award_categories | Award classification; required outside `DRAFT` |
@@ -613,7 +613,7 @@ The minimum approval level is the lowest role that may give the final approval; 
 |------------|---------------|--------------|-------------|-----------------|-----------------|
 | `request_id` | `BIGSERIAL` | NO | Auto | PK | Unique request identifier |
 | `award_id` | `BIGINT` | NO | - | FK→awards, UK | Associated award (unique) |
-| `submitter_id` | `BIGINT` | NO | - | FK→users | User who submitted |
+| `submitter_id` | `BIGINT` | NO | - | FK→users | User who submitted first: the owner, or the secretary or dean who submitted the award of a person without an account (2.5.2), who then receives its review notices; kept on later submissions |
 | `status` | `VARCHAR(20)` | NO | `'SUBMITTED'` | CK | Current request status |
 | `current_reviewer_id` | `BIGINT` | YES | - | FK→users | Reviewer who claimed the request; NULL while nobody holds it (claim, release, hand-over, take-over since 4.1.1) |
 | `current_level` | `VARCHAR(30)` | NO | - | CK | Current approval level |

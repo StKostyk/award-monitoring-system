@@ -14,13 +14,16 @@ import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.RequestStatus;
 import ua.edu.chnu.awards.award.entity.ReviewDecision;
 import ua.edu.chnu.awards.award.entity.ReviewDecisionType;
+import ua.edu.chnu.awards.award.mapper.AwardMapper;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.repository.AwardRequestRepository;
 import ua.edu.chnu.awards.award.repository.AwardSpecifications;
 import ua.edu.chnu.awards.award.repository.ReviewDecisionRepository;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
 import ua.edu.chnu.awards.award.service.AwardSearch;
+import ua.edu.chnu.awards.award.service.ManagedOwners;
 import ua.edu.chnu.awards.award.service.RequestLookup;
+import ua.edu.chnu.awards.award.service.StatusEstimator;
 import ua.edu.chnu.awards.organization.entity.Organization;
 import ua.edu.chnu.awards.organization.repository.OrganizationRepository;
 import ua.edu.chnu.awards.organization.service.OrganizationLookup;
@@ -107,7 +110,18 @@ public final class TestAwards {
         for (Organization unit : units) {
             when(organizations.findById(unit.getId())).thenReturn(Optional.of(unit));
         }
-        return new AwardOwnership(awards, new UserAccounts(users), new OrganizationLookup(organizations), access);
+        return new AwardOwnership(awards, new UserAccounts(users), new OrganizationLookup(organizations), access,
+            mock(ManagedOwners.class));
+    }
+
+    /**
+     * The award mapper for a caller who manages no award of another person.
+     *
+     * @param estimator the status estimator
+     * @return the mapper
+     */
+    public static AwardMapper mapper(StatusEstimator estimator) {
+        return new AwardMapper(estimator, mock(ManagedOwners.class));
     }
 
     /**

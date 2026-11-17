@@ -115,6 +115,16 @@ describe('PersonCardComponent', () => {
     expect(element.querySelector('[data-testid="person-remove"]')).not.toBeNull();
   });
 
+  it('ac2_1_offers_a_new_award_for_the_person_and_links_the_awards', () => {
+    const element = render(person);
+
+    const add = element.querySelector('[data-testid="person-add-award"]');
+    expect(add?.getAttribute('href')).toBe(`/awards/new?person=${person.id}`);
+    expect(element.querySelector('[data-testid="person-award-link"]')?.getAttribute('href')).toBe(
+      `/awards/${person.awards[0].id}`,
+    );
+  });
+
   it('ac1_4_says_no_invitation_went_and_offers_no_resend_without_an_address', () => {
     const element = render({ ...person, email: null, invitedAt: null, awards: [] });
 

@@ -47,6 +47,15 @@ describe('PeopleService', () => {
     removed.flush(null, { status: 204, statusText: 'No Content' });
   });
 
+  it('ac2_1_searches_people_by_name_or_address', () => {
+    service.list('Іва').subscribe();
+    const listed = http.expectOne((request) => request.url === base);
+    expect(listed.request.method).toBe('GET');
+    expect(listed.request.params.get('q')).toBe('Іва');
+    expect(listed.request.params.get('size')).toBe('10');
+    listed.flush({ content: [], totalElements: 0, totalPages: 0, size: 10, number: 0 });
+  });
+
   it('ac1_3_offers_departments_only', () => {
     let names: string[] = [];
     service.departments().subscribe((units) => (names = units.map((unit) => unit.name)));

@@ -30,6 +30,7 @@ import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.repository.AwardRepository;
 import ua.edu.chnu.awards.award.service.AwardNotFoundException;
 import ua.edu.chnu.awards.award.service.AwardOwnership;
+import ua.edu.chnu.awards.award.service.ManagedOwners;
 import ua.edu.chnu.awards.common.web.ApiProblemException;
 import ua.edu.chnu.awards.document.dto.DocumentDownload;
 import ua.edu.chnu.awards.document.entity.Document;
@@ -61,7 +62,8 @@ class DocumentServiceTest {
     private final AuditService audit = mock(AuditService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final DocumentService service = new DocumentService(documents,
-        new AwardOwnership(awards, mock(UserAccounts.class), mock(OrganizationLookup.class), access), storage,
+        new AwardOwnership(awards, mock(UserAccounts.class), mock(OrganizationLookup.class), access,
+            mock(ManagedOwners.class)), storage,
         audit, access, events);
     private final Organization department = TestUsers.organization(64L, OrganizationType.DEPARTMENT);
     private final User owner = TestUsers.person(OWNER_ID, "owner@chnu.edu.ua", department);
