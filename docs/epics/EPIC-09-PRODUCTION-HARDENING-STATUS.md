@@ -13,11 +13,12 @@
 | 9.1 Security hardening (tokens hashed at rest, rate limits by account and address; backend-for-frontend as a stretch) | PRD approved 2026-10-29 ([PRD](../features/epic-09/feature-9.1-security-hardening.md)) | - | - |
 | 9.2 Demo deployment and operations (Lighthouse 90 on the signed-in pages, nightly backups, deploy job, AWS EC2 server, award form in steps on phones) | PRD approved 2026-11-10 ([PRD](../features/epic-09/feature-9.2-demo-deployment.md)) | 2026-10-29 | - |
 | 9.3 New look (burgundy and cream light, Aurora dark, Manrope and Onest, Lucide icons, shell with command palette, review queue with undo, every screen restyled) | Done 2026-11-16: 7 planned stories and 5 fixes, 41 points; manual run of §10 34 steps, the three failed steps fixed in 9.3.14, 9.3.21 and 9.3.22 ([PRD](../features/epic-09/feature-9.3-new-look.md)) | 2026-11-15 | 2026-11-16 |
+| 9.4 Dashboards and widget layout (scheme and layout on the account, widget kit, Hall of Fame, «Мої нагороди» with the CV export, Command centre with the department reminder) | PRD approved 2026-11-17, 23 points ([PRD](../features/epic-09/feature-9.4-dashboards.md)) | - | - |
 
 ## Current focus
 
-Feature 9.3 Done 2026-11-16 (SCRUM-138 to SCRUM-149). Next: a new Epic 2 feature for awards of people without an
-account, Feature 9.4 (dashboards and widget layout), and the demo server 9.2.4 (SCRUM-134) last.
+Feature 9.4 planned 2026-11-17 (SCRUM-155 to SCRUM-159), 9.4.1 first. Then 2.5.5 (Epic 2) and the demo server
+9.2.4 (SCRUM-134) last; 9.4.5 may follow 2.5.5 if the freeze of 2026-11-22 comes first.
 
 ## Scope
 
@@ -62,6 +63,11 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5m | 9.3.22 Held decision after a revoked role ends at sign-in and the request is orphaned | 9.3 | 2 | SCRUM-149 | #414 | no | Done |
 | 5l | 9.3.21 Lighthouse performance below 90 on the signed-in pages | 9.3 | 3 | SCRUM-148 | #413 | no | Done |
 | 5k | 9.3.14 Review queue shortcuts stop after ticking a checklist item | 9.3 | 1 | SCRUM-147 | #412 | no | Done |
+| 5r | 9.4.5 Command centre with the department reminder | 9.4 | 5 | SCRUM-159 | #434 | no | To do |
+| 5q | 9.4.4 My awards with the CV export | 9.4 | 5 | SCRUM-158 | #433 | no | To do |
+| 5p | 9.4.3 Hall of Fame for the rector and the dean, role home | 9.4 | 3 | SCRUM-157 | #432 | no | To do |
+| 5o | 9.4.2 Widget kit, generated facts and monthly counts | 9.4 | 5 | SCRUM-156 | #431 | no | To do |
+| 5n | 9.4.1 Scheme and dashboard layout on the account | 9.4 | 5 | SCRUM-155 | #430 | no | To do |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 
@@ -84,6 +90,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-11-15 | Chart colours follow the theme: `--app-chart-1..8` categorical, bands one hue per scheme (burgundy light, cyan dark) | The blue single hue clashed with both schemes; the contrast checks of the 2026-10 addendum still hold | ADR-014 addendum 2026-11-15 (9.3.2) |
 | 2026-11-16 | 9.3.21 keeps the 2026-11-15 decision: only the request deferral on `/awards` ships (medians 84 / 77 after, 80 / 77 before); 90 at 4x CPU needs fewer start-up requests and a lighter phone shell, not trimming | The long tasks are spread over bootstrap, the sign-in chain and Material rendering; an empty award list left `/awards` at 77 | 9.3 PRD §10 Run 2026-11-16, SCRUM-148 |
 | 2026-11-16 | Feature 9.3 closed: steps 14 and 22 of the manual run, failed in the run, are accepted on the tests of their fix stories instead of a second walk (`review-queue.component.spec` ac14, e2e `review-queue.spec` ac6_1 to ac6_4 and «the decision lost with the session is named after the next sign-in»); step 21 stays under the 2026-11-15 decision | The fixes are frontend-only and their e2e cases replay the failed steps on the Compose stack | 9.3 PRD §10 Run 2026-11-16, PRs #416, #417, #418 |
+| 2026-11-17 | Feature 9.4 PRD approved: widget order and visibility only (no free grid); the scheme and layouts in `dashboard_preferences` (V052 drops `hidden_widgets`, export format 1.8); facts generated in the browser; the reminder goes to a colleague the sender picks, once a week per department; CV export as PDF and text; `/` opens the dashboard of the highest role | The cut named on 2026-11-14; no head-of-department data exists; no stored text to translate | 9.4 PRD §7 |
 | 2026-11-14 | The "remind head of department" mail and the CV export move to 9.4; the demo server 9.2.4 moves after 9.3, the Epic 2 feature for people without an account and 9.4 | Both sit on 9.4 screens; the demo should show the finished look | 9.3 PRD §7 deviation 1 |
 | 2026-10-29 | Lighthouse 90 sits in Feature 9.2: it is measured against the production build that the deployment ships | Same build, same measurement setup as 8.1 | 8.1 PRD F-2 |
 

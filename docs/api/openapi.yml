@@ -2903,7 +2903,10 @@ paths:
     get:
       tags: [Analytics]
       summary: The caller's dashboard widget choice
-      description: An empty `hiddenWidgets` list until a choice was saved (5.1.2).
+      description: >
+        An empty `hiddenWidgets` list until a choice was saved (5.1.2). Planned for 9.4.1 (SCRUM-155): the body
+        becomes `colorScheme` (`SYSTEM` until saved) and `layouts` (empty until saved), and `hiddenWidgets` leaves
+        the schema (moved to `layouts.MY_AWARDS.hidden` by V052).
       security:
         - bearerAuth: []
       operationId: getDashboardPreferences
@@ -2919,7 +2922,11 @@ paths:
     put:
       tags: [Analytics]
       summary: Save the caller's dashboard widget choice
-      description: Replaces the stored list (duplicates collapsed, display order kept); not audited (5.1.2).
+      description: >
+        Replaces the stored list (duplicates collapsed, display order kept); not audited (5.1.2). Planned for 9.4.1
+        (SCRUM-155): replaces the whole document (scheme and every layout, last write wins); a widget outside the
+        dashboard's set, a duplicate in `order` or `hidden`, an unknown dashboard key or scheme answers 400
+        `invalid-parameter` naming the field (`layouts.HALL_OF_FAME.order`, `colorScheme`) and stores nothing.
       security:
         - bearerAuth: []
       operationId: setDashboardPreferences
@@ -2944,6 +2951,55 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /users/me/awards/cv:
+    get:
+      tags: [Users]
+      summary: Export the caller's approved awards for a CV
+      description: >
+        The caller's approved awards, private ones included, grouped by award year (newest first) with title,
+        level, awarding organisation and date, labelled in `lang`; `Cache-Control: no-store`. Shares the per-user
+        export window of 9.1 (`app.rate-limit.export-requests-per-minute`) and writes one audit row with the
+        format and the count, no award content. Without approved awards: a text with the heading only, or a
+        one-page PDF (9.4.4).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: exportMyAwardsCv
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [pdf, text]
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [uk, en]
+            default: uk
+      responses:
+        '200':
+          description: "The file, sent with `Content-Disposition: attachment`"
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `format` or `lang`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   # ============== People without an account (Feature 2.5) ==============
   /people:
@@ -3452,6 +3508,62 @@ paths:
                 $ref: '#/components/schemas/ProblemDetail'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+
+  /analytics/units/{id}/reminders:
+    post:
+      tags: [Analytics]
+      summary: Remind a department that has no award this year
+      description: >
+        A faculty secretary or dean (own or delegated role, the department inside the role's scope) sends the
+        «Нагадати завідувачу» reminder to an active member of a department with no counted award in the current
+        Kyiv year. Once the transaction commits the member receives the `AWARDS_REMINDER` notification in the app
+        and by mail, naming the department, the year and the sender. One reminder per department within
+        `app.reminders.unit-interval` (default 7 days), checked under the department's advisory lock (9.4.5).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: remindUnit
+      parameters:
+        - $ref: '#/components/parameters/AnalysableUnitId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitReminderRequest'
+      responses:
+        '202':
+          description: The reminder is accepted; the mail follows the commit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitReminder'
+        '400':
+          description: "`urn:awards:problem:invalid-parameter` naming `recipientId`"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >
+            `urn:awards:problem:recently-reminded` (with `lastSentAt`) or `urn:awards:problem:has-awards` (the
+            department has a counted award this year, or the unit is a faculty)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: "`urn:awards:problem:invalid-recipient`: not an active member of the department"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   /analytics/university:
     get:
@@ -4210,7 +4322,8 @@ components:
           type: object
           description: >-
             Dashboard widget choice (since 1.7): `hidden_widgets` (widget names, empty when every widget is shown),
-            `updated_at` (null when never saved)
+            `updated_at` (null when never saved). Planned for format 1.8 (9.4.1, SCRUM-155): `color_scheme` and
+            `layouts` instead of `hidden_widgets`
 
     EmailChangeConfirmRequest:
       type: object
@@ -5329,17 +5442,99 @@ components:
 
     DashboardWidget:
       type: string
+      description: >
+        Planned for 9.4.1 (SCRUM-155): `KPI`, `TREND`, `RACE`, `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`, `LEVEL_STAIRS`,
+        `TODAY`, `QUEUE`, `UNITS`, `VISIBILITY`, `IN_PROGRESS`. Sets per dashboard: `MY_AWARDS` = `KPI`, `TREND`,
+        `LEVEL_STAIRS`, `IN_PROGRESS`, `BY_CATEGORY`, `RANK`, `VISIBILITY`; `HALL_OF_FAME` = `KPI`, `TREND`, `RACE`,
+        `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`; `COMMAND_CENTRE` = `TODAY`, `QUEUE`, `UNITS`, `TOP`
       enum: [SUMMARY, TIMELINE, YEAR_TREND, BY_CATEGORY, BY_LEVEL, RANK]
 
     DashboardPreferences:
       type: object
-      description: Widgets the account hid on its dashboard (5.1.2)
+      description: >
+        Widgets the account hid on its dashboard (5.1.2). Planned for 9.4.1 (SCRUM-155): `{colorScheme, layouts}`,
+        both required in responses, `hiddenWidgets` removed.
       required: [hiddenWidgets]
       properties:
         hiddenWidgets:
           type: array
           items:
             $ref: '#/components/schemas/DashboardWidget'
+
+    ColorScheme:
+      type: string
+      description: The colour scheme stored on the account; `SYSTEM` follows the device (9.4.1)
+      x-status: planned
+      enum: [SYSTEM, LIGHT, DARK]
+
+    DashboardLayouts:
+      type: object
+      description: The layout of each dashboard; a missing key means the default order with nothing hidden (9.4.1)
+      x-status: planned
+      additionalProperties: false
+      properties:
+        MY_AWARDS:
+          $ref: '#/components/schemas/DashboardLayout'
+        HALL_OF_FAME:
+          $ref: '#/components/schemas/DashboardLayout'
+        COMMAND_CENTRE:
+          $ref: '#/components/schemas/DashboardLayout'
+
+    DashboardLayout:
+      type: object
+      description: >
+        Widget order and hidden widgets of one dashboard, both from its set without duplicates; widgets missing
+        from `order` follow the ordered ones in default order (9.4.1)
+      x-status: planned
+      required: [order, hidden]
+      properties:
+        order:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardWidget'
+        hidden:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardWidget'
+
+    MonthCount:
+      type: object
+      description: Approved awards of one calendar month, counted as `byYear` counts them (9.4.2)
+      x-status: planned
+      required: [year, month, count]
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        count:
+          type: integer
+
+    UnitReminderRequest:
+      type: object
+      description: The colleague of the department who receives the reminder (9.4.5)
+      x-status: planned
+      required: [recipientId]
+      properties:
+        recipientId:
+          type: integer
+          format: int64
+
+    UnitReminder:
+      type: object
+      description: A reminder accepted for sending (9.4.5)
+      x-status: planned
+      required: [unit, recipient, sentAt]
+      properties:
+        unit:
+          $ref: '#/components/schemas/OrganizationRef'
+        recipient:
+          $ref: '#/components/schemas/UserRef'
+        sentAt:
+          type: string
+          format: date-time
 
     AnalysableUnit:
       type: object
@@ -5431,6 +5626,12 @@ components:
           description: Counts per year of the period, zeros included
           items:
             type: integer
+        lastReminderAt:
+          type: [string, 'null']
+          format: date-time
+          description: >
+            Planned for 9.4.5 (SCRUM-159): the last «Нагадати завідувачу» reminder for a department within
+            `app.reminders.unit-interval`, null otherwise and for the faculty level
 
     TopPerformers:
       type: object
@@ -5514,6 +5715,13 @@ components:
                 type: integer
               unitAwards:
                 type: integer
+        byMonth:
+          type: array
+          description: >
+            Planned for 9.4.2 (SCRUM-156): the 12 months of the period's last year and of the year before, by
+            `award_date`, zeros included (months after the current one are 0)
+          items:
+            $ref: '#/components/schemas/MonthCount'
         units:
           type: array
           description: Empty for a department
@@ -5596,6 +5804,11 @@ components:
                 type: integer
               unitAwards:
                 type: integer
+        byMonth:
+          type: array
+          description: Planned for 9.4.2 (SCRUM-156), as in `UnitAnalytics`
+          items:
+            $ref: '#/components/schemas/MonthCount'
         units:
           type: array
           items:
