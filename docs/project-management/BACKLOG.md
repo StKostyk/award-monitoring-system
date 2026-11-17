@@ -54,9 +54,9 @@ Feature 2.5 (awards of people without an account) planned 2026-11-16: [feature-2
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
 | 2.5.1 | People without an account: add, change, invite, remove | 8 | ✅ Done | SCRUM-150 | [#420](https://github.com/StKostyk/award-monitoring-system/issues/420) |
-| 2.5.2 | Awards for a person without an account | 8 | 👀 In review (10) | SCRUM-151 | [#421](https://github.com/StKostyk/award-monitoring-system/issues/421) |
-| 2.5.3 | Claim at registration | 5 | 👀 In review (11) | SCRUM-152 | [#422](https://github.com/StKostyk/award-monitoring-system/issues/422) |
-| 2.5.4 | Link at membership confirmation | 3 | 👀 In review (11) | SCRUM-153 | [#423](https://github.com/StKostyk/award-monitoring-system/issues/423) |
+| 2.5.2 | Awards for a person without an account | 8 | ✅ Done | SCRUM-151 | [#421](https://github.com/StKostyk/award-monitoring-system/issues/421) |
+| 2.5.3 | Claim at registration | 5 | ✅ Done | SCRUM-152 | [#422](https://github.com/StKostyk/award-monitoring-system/issues/422) |
+| 2.5.4 | Link at membership confirmation | 3 | ✅ Done | SCRUM-153 | [#423](https://github.com/StKostyk/award-monitoring-system/issues/423) |
 | 2.5.5 | Import people and past awards from a spreadsheet | 8 | 12 | SCRUM-154 | [#424](https://github.com/StKostyk/award-monitoring-system/issues/424) |
 
 ### Epic 3 — Document Processing (Jira epic SCRUM-34)
@@ -178,7 +178,7 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.2.4 | Show a not-found page for unknown paths | 1 | ✅ Done | SCRUM-125 | [#361](https://github.com/StKostyk/award-monitoring-system/issues/361) |
 
 ### Epic 9 — Production Hardening (Jira epic SCRUM-128)
-Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md). Feature 9.2 PRD approved 2026-11-10: [feature-9.2-demo-deployment.md](../features/epic-09/feature-9.2-demo-deployment.md). Feature 9.3 PRD approved 2026-11-14, Done 2026-11-16 (41 points with five fixes): [feature-9.3-new-look.md](../features/epic-09/feature-9.3-new-look.md).
+Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md). Feature 9.2 PRD approved 2026-11-10: [feature-9.2-demo-deployment.md](../features/epic-09/feature-9.2-demo-deployment.md). Feature 9.3 PRD approved 2026-11-14, Done 2026-11-16 (41 points with five fixes): [feature-9.3-new-look.md](../features/epic-09/feature-9.3-new-look.md). Feature 9.4 PRD approved 2026-11-17 (23 points): [feature-9.4-dashboards.md](../features/epic-09/feature-9.4-dashboards.md).
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
@@ -202,6 +202,11 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.3.14 | Review queue shortcuts stop after ticking a checklist item | 1 | ✅ Done | SCRUM-147 | [#412](https://github.com/StKostyk/award-monitoring-system/issues/412) |
 | 9.3.21 | Lighthouse performance below 90 on the signed-in pages | 3 | ✅ Done | SCRUM-148 | [#413](https://github.com/StKostyk/award-monitoring-system/issues/413) |
 | 9.3.22 | Held decision after a revoked role ends at sign-in and the request is orphaned | 2 | ✅ Done | SCRUM-149 | [#414](https://github.com/StKostyk/award-monitoring-system/issues/414) |
+| 9.4.1 | Scheme and dashboard layout on the account | 5 | 11 | SCRUM-155 | [#430](https://github.com/StKostyk/award-monitoring-system/issues/430) |
+| 9.4.2 | Widget kit, generated facts and monthly counts | 5 | 11 | SCRUM-156 | [#431](https://github.com/StKostyk/award-monitoring-system/issues/431) |
+| 9.4.3 | Hall of Fame for the rector and the dean, role home | 3 | 11 | SCRUM-157 | [#432](https://github.com/StKostyk/award-monitoring-system/issues/432) |
+| 9.4.4 | My awards with the CV export | 5 | 11 | SCRUM-158 | [#433](https://github.com/StKostyk/award-monitoring-system/issues/433) |
+| 9.4.5 | Command centre with the department reminder | 5 | 11 | SCRUM-159 | [#434](https://github.com/StKostyk/award-monitoring-system/issues/434) |
 
 ### Later epics
 | ID | Story | Points | Epic |
