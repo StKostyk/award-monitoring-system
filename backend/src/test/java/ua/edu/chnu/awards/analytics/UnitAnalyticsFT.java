@@ -181,6 +181,9 @@ class UnitAnalyticsFT extends AbstractFunctionalTest {
             .body("totals.approved.current", equalTo(2)).body("totals.awardedPeople.current", equalTo(1))
             .body("totals.personal", equalTo(1)).body("totals.unitAwards", equalTo(1))
             .body("byYear", hasSize(5)).body("byLevel", hasSize(1))
+            .body("byMonth", hasSize(24)).body("byMonth[-1].year", equalTo(CURRENT_YEAR))
+            .body("byMonth.count.sum()", equalTo(2)).body("byMonth[1].count", equalTo(1))
+            .body("byMonth[12].count", equalTo(1))
             .body("units.find { it.facultyLevel }.approved.current", equalTo(1))
             .body("units.find { it.unit.id == " + DEPARTMENT_ID + " }.approved.current", equalTo(1))
             .body("bySource.sources[0].name", equalTo("МОН")).body("bySource.otherCount", equalTo(0));

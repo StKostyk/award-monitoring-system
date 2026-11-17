@@ -128,6 +128,6 @@ class TopPerformersRankingTest {
 
     private static UnitFigures figures(List<OwnerAwardCount> owners) {
         return new UnitFigures(Instant.parse("2026-10-19T09:58:00Z"), List.of(), owners, List.of(), List.of(),
-            List.of());
+            List.of(), List.of());
     }
 }

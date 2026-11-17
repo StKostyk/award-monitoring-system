@@ -44,6 +44,7 @@ public class UnitAggregates {
         Set<Long> subtree = tree.subtree(unitId);
         return new UnitFigures(generatedAt, statistics.counts(subtree, new YearRange(previous.from(), period.to())),
             statistics.owners(subtree, previous, period), statistics.sources(subtree, period),
-            statistics.sources(subtree, previous), statistics.members(subtree));
+            statistics.sources(subtree, previous), statistics.members(subtree),
+            statistics.months(subtree, new YearRange(period.to() - 1, period.to())));
     }
 }

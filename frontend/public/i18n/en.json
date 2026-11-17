@@ -1873,5 +1873,53 @@
   },
   "charts": {
     "showTable": "Show as table"
+  },
+  "widgets": {
+    "data": "Data",
+    "empty": "No data for this period yet.",
+    "year": "Year",
+    "month": "Month",
+    "level": "Level",
+    "awards": "Awards",
+    "note": "Note",
+    "kpi": {
+      "up": "up {{percent}}",
+      "down": "down {{percent}}",
+      "same": "no change",
+      "samePeriod": "{{count}} in the same period of {{year}}"
+    },
+    "trend": {
+      "title": "Awards by year",
+      "peak": "Peak",
+      "partial": "Year to date",
+      "description": "Bars of approved awards by year from {{from}} to {{to}}; the most, {{peak}}, in {{peakYear}}."
+    },
+    "race": {
+      "title": "Running total {{year}} against {{previous}}",
+      "description": "Two lines of the running total of awards by month: {{year}} at {{current}}, {{previous}} at {{previousCount}} by the same month.",
+      "OVERTOOK": "overtook",
+      "FELL_BEHIND": "fell behind"
+    },
+    "focus": {
+      "empty": "Nothing needs your attention."
+    },
+    "stairs": {
+      "list": "Awards by level, from the unit levels up to the international one"
+    },
+    "map": {
+      "title": "Awards by level",
+      "description": "Level map: each area is as large as its number of awards; the largest is “{{level}}” ({{count}})."
+    }
+  },
+  "facts": {
+    "records": {
+      "peakYear": "Record year: {{year}} with {{count}} awards",
+      "leader": "Most awards: {{name}} ({{count}})",
+      "highestLevel": "Highest level in {{period}}: {{level}}"
+    },
+    "levelShare": "{{percent}} % of the awards in {{period}} are {{level}}.",
+    "growth": "{{percent}} % more awards so far this year than in the same months of {{year}}.",
+    "streak": "Awards every year since {{since}} without a break ({{years}} years in a row).",
+    "streakPeriod": "Awards every year of {{period}} without a break."
   }
 }

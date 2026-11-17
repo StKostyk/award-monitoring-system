@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import ua.edu.chnu.awards.award.dto.CategoryRef;
 import ua.edu.chnu.awards.award.dto.MemberCount;
+import ua.edu.chnu.awards.award.dto.MonthAwardCount;
 import ua.edu.chnu.awards.award.dto.OwnerAwardCount;
 import ua.edu.chnu.awards.award.dto.SourceSpelling;
 import ua.edu.chnu.awards.award.dto.UnitAwardCount;
@@ -28,10 +29,12 @@ import lombok.RequiredArgsConstructor;
 public class UnitStatistics {
 
     static final String COUNTS;
+    static final String MONTHS;
     static final String OWNERS;
     static final String SOURCES;
 
     private static final String ORGANIZATION_IDS = "organizationIds";
+    private static final String AWARDS = "awards";
 
     private static final String COUNTED = """
         a.organization_id in (:organizationIds) and a.status = 'APPROVED'
@@ -57,6 +60,13 @@ public class UnitStatistics {
               join award_categories c on c.category_id = a.category_id
              where\s""" + COUNTED + """
              group by a.organization_id, award_year, c.category_id, c.name, c.name_uk, c.level, unit_award
+            """;
+        MONTHS = """
+            select cast(extract(year from a.award_date) as integer) as award_year,
+                   cast(extract(month from a.award_date) as integer) as award_month, count(*) as awards
+              from awards a
+             where\s""" + COUNTED + """
+             group by award_year, award_month
             """;
         OWNERS = """
             select a.user_id, a.organization_id, a.award_date >= make_date(:currentFrom, 1, 1) as current_period,
@@ -93,7 +103,22 @@ public class UnitStatistics {
             row.getLong("organization_id"), row.getInt("award_year"),
             new CategoryRef(row.getLong("category_id"), row.getString("name"), row.getString("name_uk"),
                 RecognitionLevel.valueOf(row.getString("level"))),
-            row.getBoolean("unit_award"), row.getLong("awards"), row.getLong("verified")));
+            row.getBoolean("unit_award"), row.getLong(AWARDS), row.getLong("verified")));
+    }
+
+    /**
+     * Counted awards per calendar month; months without awards are absent.
+     *
+     * @param organizationIds the organisations of the submission
+     * @param period          the calendar years
+     * @return the counts
+     */
+    public List<MonthAwardCount> months(Collection<Long> organizationIds, YearRange period) {
+        if (organizationIds.isEmpty()) {
+            return List.of();
+        }
+        return jdbc.query(MONTHS, counted(organizationIds, period), (row, index) -> new MonthAwardCount(
+            row.getInt("award_year"), row.getInt("award_month"), row.getLong(AWARDS)));
     }
 
     /**
@@ -111,7 +136,7 @@ public class UnitStatistics {
         MapSqlParameterSource parameters = counted(organizationIds, new YearRange(previous.from(), period.to()))
             .addValue("currentFrom", period.from());
         return jdbc.query(OWNERS, parameters, (row, index) -> new OwnerAwardCount(row.getLong("user_id"),
-            row.getLong("organization_id"), row.getBoolean("current_period"), row.getLong("awards"),
+            row.getLong("organization_id"), row.getBoolean("current_period"), row.getLong(AWARDS),
             RecognitionLevel.values()[row.getInt("level_rank") - 1]));
     }
 
@@ -127,7 +152,7 @@ public class UnitStatistics {
             return List.of();
         }
         return jdbc.query(SOURCES, counted(organizationIds, period), (row, index) ->
-            new SourceSpelling(row.getString("source_key"), row.getString("spelling"), row.getLong("awards")));
+            new SourceSpelling(row.getString("source_key"), row.getString("spelling"), row.getLong(AWARDS)));
     }
 
     /**

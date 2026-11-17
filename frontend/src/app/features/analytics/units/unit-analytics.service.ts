@@ -6,7 +6,10 @@ import { environment } from '../../../../environments/environment';
 import { OrganizationRef } from '../../../core/auth/user-profile';
 import { AppLanguage } from '../../../core/i18n/language.service';
 import { CategoryRef, RecognitionLevel } from '../../awards/awards.service';
+import { MonthCount } from '../../../shared/widgets/widget-data';
 import { AnalyticsPeriod, periodParams } from '../analytics.service';
+
+export type { MonthCount } from '../../../shared/widgets/widget-data';
 
 export type UnitType = 'FACULTY' | 'DEPARTMENT';
 export type TopPerformersStatus = 'LISTED' | 'GROUP_TOO_SMALL';
@@ -80,6 +83,8 @@ export interface UnitAnalytics {
   generatedAt: string;
   totals: UnitTotals;
   byYear: { year: number; total: number; personal: number; unitAwards: number }[];
+  /** The last year of the period and the year before, twelve months each. */
+  byMonth: MonthCount[];
   units: UnitComparisonRow[];
   byCategory: { category: CategoryRef; count: number; previous: number }[];
   byLevel: { level: RecognitionLevel; count: number; previous: number }[];

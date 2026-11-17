@@ -72,6 +72,7 @@ final class UnitAnalyticsFixture {
         return new UnitAnalytics(FMI, PERIOD, PREVIOUS, true, Instant.parse("2026-10-23T11:00:00Z"),
             new UnitTotals(Figure.of(50, 40), Figure.of(30, 28), 44, 6, 41, 100, new BigDecimal("50.0")),
             IntStream.rangeClosed(PERIOD.from(), PERIOD.to()).mapToObj(y -> new UnitYearCount(y, 10, 9, 1)).toList(),
+            List.of(),
             rows, byCategory,
             List.of(new LevelComparison(RecognitionLevel.NATIONAL, 30, 20),
                 new LevelComparison(RecognitionLevel.INTERNATIONAL, 20, 20)),
@@ -86,7 +87,7 @@ final class UnitAnalyticsFixture {
             OrganizationType.DEPARTMENT, FACULTY_ID);
         return new UnitAnalytics(unit, PERIOD, PREVIOUS, false, Instant.parse("2026-10-23T11:00:00Z"),
             new UnitTotals(Figure.of(3, 0), Figure.of(2, 0), 3, 0, 1, 4, new BigDecimal("75.0")),
-            List.of(new UnitYearCount(2026, 3, 3, 0)), List.of(), List.of(), List.of(),
+            List.of(new UnitYearCount(2026, 3, 3, 0)), List.of(), List.of(), List.of(), List.of(),
             new SourceSummary(List.of(), 0), new TopPerformers(TopPerformers.Status.GROUP_TOO_SMALL, List.of()),
             List.of());
     }

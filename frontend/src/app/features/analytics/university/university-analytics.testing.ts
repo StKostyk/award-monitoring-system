@@ -1,5 +1,5 @@
 import { OrganizationRef } from '../../../core/auth/user-profile';
-import { figure } from '../units/unit-analytics.testing';
+import { figure, monthCounts } from '../units/unit-analytics.testing';
 import { ComplianceSummary, UniversityAnalytics } from './university-analytics.service';
 
 export const UNIVERSITY: OrganizationRef = {
@@ -49,6 +49,10 @@ export function universityAnalytics(): UniversityAnalytics {
       { year: 2024, total: 30, personal: 26, unitAwards: 4 },
       { year: 2025, total: 35, personal: 30, unitAwards: 5 },
       { year: 2026, total: 30, personal: 24, unitAwards: 6 },
+    ],
+    byMonth: [
+      ...monthCounts(2025, [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]),
+      ...monthCounts(2026, [1, 1, 6, 4, 4, 4, 4, 3, 3]),
     ],
     units: [
       {

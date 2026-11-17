@@ -1,7 +1,7 @@
 package ua.edu.chnu.awards.analytics.service;
 
 import java.time.Clock;
-import java.time.Year;
+import java.time.YearMonth;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -56,7 +56,8 @@ public class UnitAnalyticsService {
     @Transactional(readOnly = true)
     public UnitAnalytics of(long unitId, Integer from, Integer to) {
         AnalysableUnit unit = scope.require(unitId);
-        int currentYear = Year.now(clock).getValue();
+        YearMonth now = YearMonth.now(clock);
+        int currentYear = now.getYear();
         YearRange period = PeriodHelper.resolve(from, to, currentYear);
         YearRange previous = period.previous();
         UnitFigures figures = aggregates.of(unitId, previous, period);
@@ -64,7 +65,8 @@ public class UnitAnalyticsService {
         boolean faculty = unit.type() == OrganizationType.FACULTY;
         List<UnitComparisonRow> rows = faculty ? comparison.rows(unitId, figures, period, previous) : List.of();
         return new UnitAnalytics(unit, period, previous, period.to() == currentYear, figures.generatedAt(), totals,
-            UnitFiguresHelper.byYear(figures, period), rows, UnitFiguresHelper.byCategory(figures, period, previous),
+            UnitFiguresHelper.byYear(figures, period), MonthCountsHelper.byMonth(figures, period.to(), now), rows,
+            UnitFiguresHelper.byCategory(figures, period, previous),
             UnitFiguresHelper.byLevel(figures, period, previous), UnitFiguresHelper.bySource(figures),
             ranking.of(figures, totals.members()), faculty ? highlights.of(rows, totals) : List.of());
     }

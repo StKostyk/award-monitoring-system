@@ -32,7 +32,7 @@ export const CHART_INIT = { renderer: 'svg' };
       (change)="asTable.set($event.checked)"
       data-testid="chart-table-switch"
     >
-      {{ 'charts.showTable' | transloco }}
+      {{ label() | transloco }}
     </mat-slide-toggle>
     @if (asTable()) {
       <div class="chart__table" data-testid="chart-table"><ng-content /></div>
@@ -72,6 +72,8 @@ export class ChartComponent {
   readonly option = input.required<EChartsCoreOption>();
   readonly description = input.required<string>();
   readonly height = input(280);
+  /** The translation key of the switch label. */
+  readonly label = input('charts.showTable');
   readonly pointClicked = output<ECElementEvent>();
 
   protected readonly asTable = signal(false);

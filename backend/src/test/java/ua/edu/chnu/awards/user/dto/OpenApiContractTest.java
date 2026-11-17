@@ -20,9 +20,12 @@ import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import ua.edu.chnu.awards.analytics.dto.AnalyticsTotals;
+import ua.edu.chnu.awards.analytics.dto.MonthCount;
 import ua.edu.chnu.awards.analytics.dto.PersonalAnalytics;
 import ua.edu.chnu.awards.analytics.dto.PersonalRank;
 import ua.edu.chnu.awards.analytics.dto.RankStatus;
+import ua.edu.chnu.awards.analytics.dto.UnitAnalytics;
+import ua.edu.chnu.awards.analytics.dto.UniversityAnalytics;
 import ua.edu.chnu.awards.analytics.dto.YearCount;
 import ua.edu.chnu.awards.auth.dto.EmailChangeConfirmRequest;
 import ua.edu.chnu.awards.auth.dto.EmailChangeRequest;
@@ -220,6 +223,20 @@ class OpenApiContractTest {
         assertThat((List<String>) property(rank, "status").get("enum")).containsExactlyElementsOf(
             Arrays.stream(RankStatus.values()).map(RankStatus::name).toList());
         assertThat(schemas.get("PersonalAnalytics").toString()).doesNotContain("x-status");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac2_1_unitAndUniversitySchemasCarryTheMonthlyCounts() throws IOException {
+        Map<String, Object> schemas = schemas();
+
+        assertThat(property((Map<String, Object>) schemas.get("UnitAnalytics"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(UnitAnalytics.class));
+        assertThat(property((Map<String, Object>) schemas.get("UniversityAnalytics"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(UniversityAnalytics.class));
+        assertThat(property((Map<String, Object>) schemas.get("MonthCount"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(MonthCount.class));
+        assertThat(schemas.get("MonthCount").toString()).doesNotContain("x-status");
     }
 
     @Test

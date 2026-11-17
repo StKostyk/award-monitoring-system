@@ -17,6 +17,7 @@ import ua.edu.chnu.awards.organization.dto.OrganizationRef;
  * @param generatedAt    when the aggregates were computed
  * @param totals         totals of the counted awards
  * @param byYear         every year of the period in order
+ * @param byMonth        every month of the last year and the year before
  * @param units          the faculties and colleges by Ukrainian name, then the university level
  * @param byCategory     highest count first, then by English name
  * @param byLevel        in level order
@@ -27,7 +28,8 @@ import ua.edu.chnu.awards.organization.dto.OrganizationRef;
  */
 public record UniversityAnalytics(OrganizationRef unit, YearRange period, YearRange previousPeriod,
                                   boolean partialYear, Instant generatedAt, UnitTotals totals,
-                                  List<UnitYearCount> byYear, List<UnitComparisonRow> units,
+                                  List<UnitYearCount> byYear, List<MonthCount> byMonth,
+                                  List<UnitComparisonRow> units,
                                   List<CategoryComparison> byCategory, List<LevelComparison> byLevel,
                                   SourceSummary bySource, AnalyticsTrends trends, TrendProjection projection,
                                   List<UnitHighlight> highlights) {
@@ -42,6 +44,7 @@ public record UniversityAnalytics(OrganizationRef unit, YearRange period, YearRa
      * @param generatedAt    when the aggregates were computed
      * @param totals         totals of the counted awards
      * @param byYear         every year of the period
+     * @param byMonth        every month of the last two years
      * @param units          the comparison rows
      * @param byCategory     counts per category
      * @param byLevel        counts per level
@@ -52,6 +55,7 @@ public record UniversityAnalytics(OrganizationRef unit, YearRange period, YearRa
      */
     public UniversityAnalytics {
         byYear = List.copyOf(byYear);
+        byMonth = List.copyOf(byMonth);
         units = List.copyOf(units);
         byCategory = List.copyOf(byCategory);
         byLevel = List.copyOf(byLevel);

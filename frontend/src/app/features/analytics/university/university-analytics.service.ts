@@ -7,7 +7,12 @@ import { OrganizationRef } from '../../../core/auth/user-profile';
 import { AppLanguage } from '../../../core/i18n/language.service';
 import { CategoryRef, RecognitionLevel } from '../../awards/awards.service';
 import { AnalyticsPeriod, periodParams } from '../analytics.service';
-import { UnitComparisonRow, UnitHighlight, UnitTotals } from '../units/unit-analytics.service';
+import {
+  MonthCount,
+  UnitComparisonRow,
+  UnitHighlight,
+  UnitTotals,
+} from '../units/unit-analytics.service';
 
 export type ProjectionStatus = 'PROJECTED' | 'TOO_FEW_YEARS';
 export type ComplianceStatus = 'OK' | 'ATTENTION';
@@ -59,6 +64,8 @@ export interface UniversityAnalytics {
   generatedAt: string;
   totals: UnitTotals;
   byYear: { year: number; total: number; personal: number; unitAwards: number }[];
+  /** The last year of the period and the year before, twelve months each. */
+  byMonth: MonthCount[];
   units: UnitComparisonRow[];
   byCategory: { category: CategoryRef; count: number; previous: number }[];
   byLevel: { level: RecognitionLevel; count: number; previous: number }[];

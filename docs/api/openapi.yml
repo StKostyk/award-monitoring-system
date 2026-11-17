@@ -5498,7 +5498,6 @@ components:
     MonthCount:
       type: object
       description: Approved awards of one calendar month, counted as `byYear` counts them (9.4.2)
-      x-status: planned
       required: [year, month, count]
       properties:
         year:
@@ -5716,8 +5715,8 @@ components:
         byMonth:
           type: array
           description: >
-            Planned for 9.4.2 (SCRUM-156): the 12 months of the period's last year and of the year before, by
-            `award_date`, zeros included (months after the current one are 0)
+            The 12 months of the period's last year and of the year before (24 entries in order), by
+            `award_date`, zeros included; months after the current Kyiv month are 0
           items:
             $ref: '#/components/schemas/MonthCount'
         units:
@@ -5804,7 +5803,7 @@ components:
                 type: integer
         byMonth:
           type: array
-          description: Planned for 9.4.2 (SCRUM-156), as in `UnitAnalytics`
+          description: The 24 months of the period's last year and of the year before, as in `UnitAnalytics`
           items:
             $ref: '#/components/schemas/MonthCount'
         units:

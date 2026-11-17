@@ -169,6 +169,7 @@ class UniversityAnalyticsFT extends AbstractFunctionalTest {
             .body("units[-1].unit.id", equalTo((int) UNIVERSITY_ID)).body("units[-1].facultyLevel", equalTo(true))
             .body("units.findAll { !it.facultyLevel }.unit.type", everyItem(oneOf("FACULTY", "COLLEGE")))
             .body("totals.approved.current", notNullValue()).body("byYear", hasSize(5))
+            .body("byMonth", hasSize(24)).body("byMonth[0].year", equalTo(CURRENT_YEAR - 1))
             .body("trends.categories", allOf(hasKey("rising"), hasKey("falling")))
             .body("trends.sources", allOf(hasKey("rising"), hasKey("falling")))
             .body("projection.status", equalTo("PROJECTED")).body("projection.year", equalTo(CURRENT_YEAR))
