@@ -40,7 +40,11 @@
         }
         @case ('verified') {
           <p role="status" data-testid="verify-success">
-            {{ 'verify.success' | transloco: { email: email() } }}
+            @if (waitingAwards() > 0) {
+              {{ 'verify.successWaiting' | transloco: { email: email(), count: waitingAwards() } }}
+            } @else {
+              {{ 'verify.success' | transloco: { email: email() } }}
+            }
           </p>
           <div class="auth-actions">
             <button mat-flat-button type="button" (click)="signIn()" data-testid="verify-sign-in">

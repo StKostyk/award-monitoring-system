@@ -118,6 +118,14 @@ public interface AwardRepository extends JpaRepository<Award, Long>, JpaSpecific
     List<OwnerTotal> countByOwners(@Param("ownerIds") Collection<Long> ownerIds);
 
     /**
+     * How many awards the owner has, in every status.
+     *
+     * @param ownerId the owner
+     * @return the award count
+     */
+    long countByOwnerId(Long ownerId);
+
+    /**
      * Whether the owner has an award outside the status.
      *
      * @param ownerId the owner

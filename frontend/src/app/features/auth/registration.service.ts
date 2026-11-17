@@ -21,6 +21,7 @@ export interface RegisterRequest {
 export interface RegistrationResponse {
   email: string;
   status: AccountStatus;
+  waitingAwards?: number;
 }
 
 @Injectable({ providedIn: 'root' })

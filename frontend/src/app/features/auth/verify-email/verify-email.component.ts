@@ -43,6 +43,7 @@ export class VerifyEmailComponent {
   readonly password = new FormControl('', { nonNullable: true, validators: Validators.required });
   readonly state = signal<VerificationState>(this.token ? 'form' : 'invalid');
   readonly email = signal('');
+  readonly waitingAwards = signal(0);
   readonly error = signal<string | null>(null);
   readonly submitting = signal(false);
 
@@ -56,6 +57,7 @@ export class VerifyEmailComponent {
     this.api.verifyEmail(this.token, this.password.value).subscribe({
       next: (response) => {
         this.email.set(response.email);
+        this.waitingAwards.set(response.waitingAwards ?? 0);
         this.state.set('verified');
       },
       error: (err) => {

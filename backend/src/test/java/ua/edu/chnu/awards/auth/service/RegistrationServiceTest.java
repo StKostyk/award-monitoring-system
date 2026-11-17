@@ -59,11 +59,8 @@ class RegistrationServiceTest {
     private final RequestThrottle throttle = mock(RequestThrottle.class);
     private final AuditService audit = mock(AuditService.class);
     private final PrivacyNoticeVersions noticeVersions = mock(PrivacyNoticeVersions.class);
-    private final AuthProperties properties = new AuthProperties("http://localhost:8080", "http://localhost:4200",
-        List.of(), List.of("chnu.edu.ua"), Duration.ofHours(24), Duration.ofHours(1), Duration.ofHours(24),
-        Duration.ofHours(1), Duration.ofMinutes(1),
-        new AuthProperties.Client("award-web", List.of(), List.of(), Duration.ofMinutes(15), Duration.ofDays(7)),
-        new AuthProperties.Jwk("", "", "", ""));
+    private final AccountClaim claim = mock(AccountClaim.class);
+    private final AuthProperties properties = AuthPropertiesFixture.properties();
     private final Organization department = Organization.builder().id(64L).orgType(OrganizationType.DEPARTMENT)
         .active(true).build();
     private RegistrationService service;
@@ -73,7 +70,7 @@ class RegistrationServiceTest {
         service = new RegistrationService(users, roleHolders,
             organizations, tokens,
             new PasswordPolicy(), passwordEncoder, events, throttle, new EmailAddressRules(properties), properties,
-            audit, (user, where) -> Optional.empty(), noticeVersions);
+            audit, (user, where) -> Optional.empty(), noticeVersions, claim);
         when(passwordEncoder.encode(any())).thenReturn("$2a$12$hash");
         when(organizations.findById(64L)).thenReturn(Optional.of(department));
         when(users.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
@@ -141,7 +138,7 @@ class RegistrationServiceTest {
             throttle,
             new EmailAddressRules(properties), properties, audit, (user, where) -> Optional.of(UserRole.builder()
                 .user(user).roleType(RoleType.EMPLOYEE).organization(where).validFrom(LocalDate.of(2026, 9, 21))
-                .build()), noticeVersions);
+                .build()), noticeVersions, claim);
 
         proven.register(VALID);
 
@@ -183,6 +180,57 @@ class RegistrationServiceTest {
                 assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
                 assertThat(e.getType()).isEqualTo("email-taken");
             });
+    }
+
+    @Test
+    void ac3_1_aPreparedPersonIsClaimedWithTheAnswerOfANewRegistration() {
+        Organization prepared = Organization.builder().id(65L).orgType(OrganizationType.DEPARTMENT).active(true)
+            .build();
+        User person = User.builder().id(7L).emailAddress("new.user@chnu.edu.ua").firstName("Петро")
+            .lastName("Підготовлений").accountStatus(AccountStatus.UNCLAIMED).addedById(3L).organization(prepared)
+            .build();
+        User claimed = User.builder().id(7L).emailAddress("new.user@chnu.edu.ua").firstName("Петро")
+            .accountStatus(AccountStatus.PENDING).addedById(3L).organization(prepared).build();
+        when(users.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(person));
+        when(claim.takeOver(person, "correct-horse-battery")).thenReturn(claimed);
+
+        RegistrationResponse response = service.register(VALID);
+
+        assertThat(response).isEqualTo(new RegistrationResponse("new.user@chnu.edu.ua", AccountStatus.PENDING));
+        assertThat(claimed.getFirstName()).isEqualTo("Петро");
+        assertThat(claimed.getOrganization()).isSameAs(prepared);
+        verify(users, never()).saveAndFlush(any(User.class));
+        verify(roleHolders, never()).save(any(UserRole.class));
+        verify(noticeVersions).recordAcknowledgement(7L, "1.0");
+        verify(events).publish(any(VerificationRequested.class));
+    }
+
+    @Test
+    void ac3_4_anAbandonedClaimIsClaimedAgainNotReplaced() {
+        User pending = User.builder().id(7L).emailAddress("new.user@chnu.edu.ua").firstName("Петро")
+            .accountStatus(AccountStatus.PENDING).addedById(3L).build();
+        when(users.findByEmailAddressIgnoreCase("new.user@chnu.edu.ua")).thenReturn(Optional.of(pending));
+        when(claim.takeOver(pending, "correct-horse-battery")).thenReturn(pending);
+
+        service.register(VALID);
+
+        assertThat(pending.getFirstName()).isEqualTo("Петро");
+        verify(claim).takeOver(pending, "correct-horse-battery");
+        verify(audit, never()).record(eq(AuditAction.REGISTRATION_REPLACED), anyLong(), any());
+    }
+
+    @Test
+    void ac3_2_verifyingAClaimAnswersWithTheWaitingAwards() {
+        User user = User.builder().id(42L).emailAddress("x@chnu.edu.ua").passwordHash("$2a$12$hash")
+            .accountStatus(AccountStatus.PENDING).addedById(3L).build();
+        when(tokens.peekOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
+        when(tokens.redeemOwner("raw", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(user);
+        when(passwordEncoder.matches("correct-horse-battery", "$2a$12$hash")).thenReturn(true);
+        when(claim.complete(user)).thenReturn(3L);
+
+        RegistrationResponse response = service.verify("raw", "correct-horse-battery");
+
+        assertThat(response).isEqualTo(new RegistrationResponse("x@chnu.edu.ua", AccountStatus.ACTIVE, 3));
     }
 
     @Test
