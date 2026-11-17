@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -10,11 +9,12 @@ import { Store } from '@ngrx/store';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
+import { DashboardLayoutComponent } from '../../../shared/dashboard/dashboard-layout.component';
+import { DashboardWidgetDirective } from '../../../shared/dashboard/dashboard-widget.directive';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { readPeriod } from '../analytics-period';
-import { AnalyticsPeriod, DASHBOARD_WIDGETS, DashboardWidget } from '../analytics.service';
+import { AnalyticsPeriod } from '../analytics.service';
 import { CategoryChartComponent } from '../category-chart/category-chart.component';
-import { CustomiseDialogComponent } from '../customise-dialog/customise-dialog.component';
 import { DashboardEmptyComponent } from '../dashboard-empty/dashboard-empty.component';
 import { LevelChartComponent } from '../level-chart/level-chart.component';
 import { PeriodSelectComponent } from '../period-select/period-select.component';
@@ -25,12 +25,14 @@ import { SummaryTilesComponent } from '../summary-tiles/summary-tiles.component'
 import { TimelineChartComponent } from '../timeline-chart/timeline-chart.component';
 import { YearTrendChartComponent } from '../year-trend-chart/year-trend-chart.component';
 
-/** The personal dashboard: period choice, the widgets the account keeps, guidance when nothing counts. */
+/** The personal dashboard: period choice, the widgets in the account's layout, guidance when nothing counts. */
 @Component({
   selector: 'app-dashboard',
   imports: [
     CategoryChartComponent,
     DashboardEmptyComponent,
+    DashboardLayoutComponent,
+    DashboardWidgetDirective,
     LevelChartComponent,
     MatButton,
     MatCard,
@@ -53,7 +55,6 @@ import { YearTrendChartComponent } from '../year-trend-chart/year-trend-chart.co
 })
 export class DashboardComponent {
   private readonly store = inject(Store);
-  private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -63,22 +64,14 @@ export class DashboardComponent {
   readonly analytics = this.store.selectSignal(analyticsFeature.selectAnalytics);
   readonly loading = this.store.selectSignal(analyticsFeature.selectLoading);
   readonly problem = this.store.selectSignal(analyticsFeature.selectProblem);
-  readonly hidden = this.store.selectSignal(analyticsFeature.selectHidden);
-  readonly saveProblem = this.store.selectSignal(analyticsFeature.selectSaveProblem);
-  readonly preferences = this.store.selectSignal(analyticsFeature.selectPreferences);
   readonly invalid = signal(false);
 
-  protected readonly visible = computed(() => {
-    const hidden = this.hidden();
-    return new Set(DASHBOARD_WIDGETS.filter((widget) => !hidden.includes(widget)));
-  });
   protected readonly chosen = computed(
     () => this.period().from !== null || this.period().to !== null,
   );
   protected readonly empty = computed(() => this.analytics()?.totals.approved === 0);
 
   constructor() {
-    this.store.dispatch(AnalyticsActions.opened());
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const period = readPeriod(params);
       this.invalid.set(period === null);
@@ -102,23 +95,5 @@ export class DashboardComponent {
 
   protected retry(): void {
     this.store.dispatch(AnalyticsActions.periodSelected({ period: this.period() }));
-  }
-
-  protected reloadPreferences(): void {
-    this.store.dispatch(AnalyticsActions.preferencesRetried());
-  }
-
-  protected customise(): void {
-    this.dialog
-      .open<CustomiseDialogComponent, DashboardWidget[], DashboardWidget[]>(
-        CustomiseDialogComponent,
-        { data: this.hidden(), width: '420px' },
-      )
-      .afterClosed()
-      .subscribe((hidden) => {
-        if (hidden) {
-          this.store.dispatch(AnalyticsActions.saveRequested({ hidden }));
-        }
-      });
   }
 }

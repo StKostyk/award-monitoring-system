@@ -2,7 +2,6 @@ package ua.edu.chnu.awards.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.util.List;
@@ -63,52 +62,80 @@ class DashboardPreferenceFT extends AbstractFunctionalTest {
     }
 
     @Test
-    void ac2_2_withoutASavedChoiceNothingIsHidden() {
+    void ac1_1_withoutASavedChoiceTheSchemeIsSystemAndTheLayoutsDefault() {
         as(token).get(PREFERENCES).then().statusCode(HttpStatus.OK.value())
             .header("Cache-Control", equalTo("no-store"))
-            .body("hiddenWidgets", empty());
+            .body("colorScheme", equalTo("SYSTEM"))
+            .body("layouts.size()", equalTo(0));
     }
 
     @Test
-    void ac2_2_aChoiceIsStoredWithoutDuplicatesAndReadBackWithoutAnAuditRow() {
-        put(List.of("BY_LEVEL", "TIMELINE", "TIMELINE")).statusCode(HttpStatus.OK.value())
+    void ac1_1_ac1_3_theSchemeAndALayoutAreStoredAndReadBackWithoutAnAuditRow() {
+        Map<String, Object> body = Map.of("colorScheme", "DARK", "layouts",
+            Map.of("MY_AWARDS", Map.of("order", List.of("RANK", "KPI"), "hidden", List.of("TREND"))));
+
+        put(body).statusCode(HttpStatus.OK.value())
             .header("Cache-Control", equalTo("no-store"))
-            .body("hiddenWidgets", contains("TIMELINE", "BY_LEVEL"));
+            .body("colorScheme", equalTo("DARK"))
+            .body("layouts.MY_AWARDS.order", contains("RANK", "KPI"));
 
         as(token).get(PREFERENCES).then().statusCode(HttpStatus.OK.value())
-            .body("hiddenWidgets", contains("TIMELINE", "BY_LEVEL"));
-        assertThat(jdbc.queryForObject("select array_to_string(hidden_widgets, ',') from dashboard_preferences "
-            + "where user_id = ?", String.class, personId)).isEqualTo("TIMELINE,BY_LEVEL");
+            .body("colorScheme", equalTo("DARK"))
+            .body("layouts.MY_AWARDS.order", contains("RANK", "KPI"))
+            .body("layouts.MY_AWARDS.hidden", contains("TREND"));
+        assertThat(jdbc.queryForObject("select color_scheme from dashboard_preferences where user_id = ?",
+            String.class, personId)).isEqualTo("DARK");
         assertThat(jdbc.queryForObject("select count(*) from audit_logs where log_id > ? and user_id = ?",
             Integer.class, lastLogId, personId)).isZero();
     }
 
     @Test
-    void ac2_2_anEmptyListShowsEveryWidgetAgain() {
-        put(List.of("RANK")).statusCode(HttpStatus.OK.value());
+    void ac1_3_anEmptyBodyRestoresTheSystemSchemeAndTheDefaults() {
+        put(Map.of("colorScheme", "LIGHT", "layouts", Map.of("HALL_OF_FAME",
+            Map.of("order", List.of("TOP"), "hidden", List.of())))).statusCode(HttpStatus.OK.value());
 
-        put(List.of()).statusCode(HttpStatus.OK.value()).body("hiddenWidgets", empty());
+        put(Map.of()).statusCode(HttpStatus.OK.value())
+            .body("colorScheme", equalTo("SYSTEM"))
+            .body("layouts.size()", equalTo(0));
     }
 
     @Test
-    void ac2_2_anUnknownValueIsAnInvalidParameterNamingTheField() {
-        put(List.of("SUMMARY", "WEATHER")).statusCode(HttpStatus.BAD_REQUEST.value())
+    void ac1_4_anUnknownSchemeIsAnInvalidParameterNamingTheField() {
+        put(Map.of("colorScheme", "BLUE")).statusCode(HttpStatus.BAD_REQUEST.value())
             .body("type", equalTo("urn:awards:problem:invalid-parameter"))
-            .body("parameter", equalTo("hiddenWidgets"));
+            .body("parameter", equalTo("colorScheme"));
 
+        assertNothingStored();
+    }
+
+    @Test
+    void ac1_4_aWidgetOfAnotherDashboardOrADuplicateNamesTheList() {
+        put(Map.of("layouts", Map.of("HALL_OF_FAME", Map.of("order", List.of("KPI", "QUEUE")))))
+            .statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("parameter", equalTo("layouts.HALL_OF_FAME.order"));
+        put(Map.of("layouts", Map.of("COMMAND_CENTRE", Map.of("hidden", List.of("TOP", "TOP")))))
+            .statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("parameter", equalTo("layouts.COMMAND_CENTRE.hidden"));
+        put(Map.of("layouts", Map.of("ADMIN", Map.of("order", List.of()))))
+            .statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("parameter", equalTo("layouts"));
+
+        assertNothingStored();
+    }
+
+    @Test
+    void ac1_1_anAnonymousCallerIsUnauthorised() {
+        RestAssured.get(PREFERENCES).then().statusCode(HttpStatus.UNAUTHORIZED.value());
+        RestAssured.given().contentType(ContentType.JSON).body(Map.of("colorScheme", "DARK")).put(PREFERENCES)
+            .then().statusCode(HttpStatus.UNAUTHORIZED.value());
+    }
+
+    private void assertNothingStored() {
         assertThat(jdbc.queryForObject("select count(*) from dashboard_preferences where user_id = ?",
             Integer.class, personId)).isZero();
     }
 
-    @Test
-    void ac2_2_anAnonymousCallerIsUnauthorised() {
-        RestAssured.get(PREFERENCES).then().statusCode(HttpStatus.UNAUTHORIZED.value());
-        RestAssured.given().contentType(ContentType.JSON).body(Map.of("hiddenWidgets", List.of())).put(PREFERENCES)
-            .then().statusCode(HttpStatus.UNAUTHORIZED.value());
-    }
-
-    private ValidatableResponse put(List<String> widgets) {
-        return as(token).contentType(ContentType.JSON).body(Map.of("hiddenWidgets", widgets)).put(PREFERENCES)
-            .then();
+    private ValidatableResponse put(Map<String, Object> body) {
+        return as(token).contentType(ContentType.JSON).body(body).put(PREFERENCES).then();
     }
 }

@@ -1604,12 +1604,12 @@
       "allYears": "All years"
     },
     "widgets": {
-      "SUMMARY": "Summary",
-      "TIMELINE": "Timeline",
-      "YEAR_TREND": "Awards by year",
+      "KPI": "Summary",
+      "TREND": "Awards by year",
+      "LEVEL_STAIRS": "By level",
       "BY_CATEGORY": "By category",
-      "BY_LEVEL": "By level",
-      "RANK": "Place in the department"
+      "RANK": "Place in the department",
+      "TIMELINE": "Timeline"
     },
     "summary": {
       "approved": "Approved awards",
@@ -1672,16 +1672,6 @@
       "drafts": "Drafts: {{count}}.",
       "openAwards": "Open my awards",
       "newAward": "Enter an award"
-    },
-    "customise": {
-      "open": "Customise",
-      "title": "Customise the dashboard",
-      "hint": "Choose the widgets to show. The choice is kept for your account.",
-      "save": "Save",
-      "cancel": "Cancel",
-      "failed": "The widget choice could not be saved. Please try again.",
-      "loadFailed": "The widget choice could not be loaded.",
-      "allHidden": "All widgets are hidden. Choose the ones to show."
     },
     "report": {
       "open": "Summary",
@@ -1860,6 +1850,26 @@
         "reviewsOverdue": "Overdue reviews"
       }
     }
+  },
+  "dashboardLayout": {
+    "customise": "Customise",
+    "hint": "Drag the widgets or use the arrows to change the order; the eye hides a widget.",
+    "reset": "Reset",
+    "done": "Done",
+    "listLabel": "Dashboard widgets",
+    "moveUp": "Move “{{widget}}” up",
+    "moveDown": "Move “{{widget}}” down",
+    "hide": "Hide “{{widget}}”",
+    "hiddenLabel": "hidden",
+    "moved": "“{{widget}}”: position {{position}} of {{total}}",
+    "hiddenNow": "“{{widget}}” hidden",
+    "shownNow": "“{{widget}}” shown",
+    "resetDone": "Default order restored, all widgets shown",
+    "saved": "Widget layout saved",
+    "allHidden": "All widgets are hidden. Press “Customise” to bring back the ones you need.",
+    "loadFailed": "The dashboard settings could not be loaded.",
+    "saveFailed": "The dashboard settings could not be saved. Please try again.",
+    "retry": "Try again"
   },
   "charts": {
     "showTable": "Show as table"

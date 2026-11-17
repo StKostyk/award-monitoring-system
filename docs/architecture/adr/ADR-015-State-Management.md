@@ -187,6 +187,16 @@ export class AwardsEffects {
 - **Error Tracking**: Track state-related errors through NgRx Effects
 - **Bundle Size**: Monitor NgRx impact on application bundle size
 
+## Addendum 2026-11-17: Root-level preferences slice (Feature 9.4)
+
+Feature state stays lazy (`provideState` in the route), with one exception: `core/preferences` registers the
+`preferences` feature and its effects in `app.config.ts`, because the colour scheme in the toolbar and the layout of
+every dashboard need it on any page. The effects load `GET /users/me/dashboard-preferences` once the profile of a
+signed-in account is known, reset the slice on sign-out, and send the whole document (scheme and every layout) with
+`PUT` after each change, in order (`concatMap`); before the preferences have loaded, a change stays in the browser so
+that it cannot overwrite the stored layouts. `shared/dashboard/DashboardLayoutComponent` reads and changes
+`layouts.<DASHBOARD>`; dashboards provide their widgets as `ng-template[appDashboardWidget]`.
+
 ---
 
 ## Related Documents
@@ -202,6 +212,7 @@ export class AwardsEffects {
 | **Date** | **Author** | **Changes** | **Reason** |
 |----------|------------|-------------|------------|
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
+| 2026-11-17 | Stefan Kostyk | Addendum: root-level preferences slice | Story 9.4.1 |
 
 ---
 

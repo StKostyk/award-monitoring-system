@@ -20,16 +20,12 @@ describe('AnalyticsEffects', () => {
   let effects: AnalyticsEffects;
   let api: {
     read: ReturnType<typeof vi.fn>;
-    hiddenWidgets: ReturnType<typeof vi.fn>;
-    saveHiddenWidgets: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     actions$ = new Subject<Action>();
     api = {
       read: vi.fn().mockReturnValue(of(sampleAnalytics())),
-      hiddenWidgets: vi.fn().mockReturnValue(of(['RANK'])),
-      saveHiddenWidgets: vi.fn((hidden: string[]) => of(hidden)),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -60,38 +56,6 @@ describe('AnalyticsEffects', () => {
       AnalyticsActions.analyticsLoadFailed({ problem: 'invalid-parameter' }),
     );
   });
-
-  it('ac2_9_reads_the_widget_choice_when_the_dashboard_opens', async () => {
-    const loaded = firstValueFrom(effects.preferences$);
-    actions$.next(AnalyticsActions.opened());
-
-    expect(await loaded).toEqual(AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
-
-    api.hiddenWidgets.mockReturnValue(throwError(() => problem('internal', 500)));
-    const failed = firstValueFrom(effects.preferences$);
-    actions$.next(AnalyticsActions.opened());
-
-    expect(await failed).toEqual(AnalyticsActions.preferencesLoadFailed());
-
-    api.hiddenWidgets.mockReturnValue(of(['RANK']));
-    const retried = firstValueFrom(effects.preferences$);
-    actions$.next(AnalyticsActions.preferencesRetried());
-
-    expect(await retried).toEqual(AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
-  });
-
-  it('ac2_9_saves_the_widget_choice', async () => {
-    const saved = firstValueFrom(effects.save$);
-    actions$.next(AnalyticsActions.saveRequested({ hidden: ['TIMELINE'] }));
-
-    expect(await saved).toEqual(AnalyticsActions.saved({ hidden: ['TIMELINE'] }));
-
-    api.saveHiddenWidgets.mockReturnValue(throwError(() => problem('invalid-parameter', 400)));
-    const failed = firstValueFrom(effects.save$);
-    actions$.next(AnalyticsActions.saveRequested({ hidden: ['TIMELINE'] }));
-
-    expect(await failed).toEqual(AnalyticsActions.saveFailed({ problem: 'invalid-parameter' }));
-  });
 });
 
 describe('analyticsFeature', () => {
@@ -120,43 +84,5 @@ describe('analyticsFeature', () => {
     const failed = reducer(loaded, AnalyticsActions.analyticsLoadFailed({ problem: 'unknown' }));
 
     expect(failed).toMatchObject({ analytics: null, loading: false, problem: 'unknown' });
-  });
-
-  it('ac2_9_tracks_the_saved_choice_and_a_failed_save', () => {
-    const shown = reducer(initialState, AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
-
-    expect(shown.hidden).toEqual(['RANK']);
-
-    const saving = reducer(shown, AnalyticsActions.saveRequested({ hidden: [] }));
-
-    expect(saving.saving).toBe(true);
-
-    const failed = reducer(saving, AnalyticsActions.saveFailed({ problem: 'unknown' }));
-
-    expect(failed).toMatchObject({ saving: false, saveProblem: 'unknown', hidden: ['RANK'] });
-
-    const reopened = reducer(failed, AnalyticsActions.opened());
-
-    expect(reopened.saveProblem).toBeNull();
-
-    const saved = reducer(saving, AnalyticsActions.saved({ hidden: [] }));
-
-    expect(saved).toMatchObject({ saving: false, hidden: [] });
-  });
-
-  it('ac4_2_knows_whether_the_widget_choice_is_loaded', () => {
-    expect(initialState.preferences).toBe('loading');
-
-    const failed = reducer(initialState, AnalyticsActions.preferencesLoadFailed());
-
-    expect(failed).toMatchObject({ preferences: 'failed', hidden: [] });
-
-    const retrying = reducer(failed, AnalyticsActions.preferencesRetried());
-
-    expect(retrying.preferences).toBe('loading');
-
-    const loaded = reducer(retrying, AnalyticsActions.preferencesLoaded({ hidden: ['RANK'] }));
-
-    expect(loaded).toMatchObject({ preferences: 'loaded', hidden: ['RANK'] });
   });
 });

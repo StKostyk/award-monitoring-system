@@ -99,7 +99,7 @@ public class PersonalDataQueries {
         """;
 
     private static final String DASHBOARD_PREFERENCES = """
-        select array_to_string(hidden_widgets, ',') as widgets, updated_at
+        select color_scheme, layouts::text as layouts, updated_at
           from dashboard_preferences
          where user_id = :userId
         """;
@@ -202,18 +202,14 @@ public class PersonalDataQueries {
     }
 
     /**
-     * The widget choice of the personal dashboard.
+     * The colour scheme and the dashboard layouts.
      *
      * @param userId the person
-     * @return the hidden widgets with the time of the choice; none and no time when never saved
+     * @return the choice with its time; the system scheme, default layouts and no time when never saved
      */
     public DashboardPreferenceEntry dashboardPreferences(long userId) {
         return jdbc.query(DASHBOARD_PREFERENCES, Map.of(USER_ID, userId), (row, index) -> new DashboardPreferenceEntry(
-                widgets(row.getString("widgets")), instant(row, "updated_at")))
-            .stream().findFirst().orElseGet(() -> new DashboardPreferenceEntry(List.of(), null));
-    }
-
-    private static List<String> widgets(String joined) {
-        return joined.isEmpty() ? List.of() : List.of(joined.split(","));
+                row.getString("color_scheme"), row.getString("layouts"), instant(row, "updated_at")))
+            .stream().findFirst().orElseGet(() -> new DashboardPreferenceEntry("SYSTEM", "{}", null));
     }
 }

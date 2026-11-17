@@ -67,7 +67,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5q | 9.4.4 My awards with the CV export | 9.4 | 5 | SCRUM-158 | #433 | no | To do |
 | 5p | 9.4.3 Hall of Fame for the rector and the dean, role home | 9.4 | 3 | SCRUM-157 | #432 | no | To do |
 | 5o | 9.4.2 Widget kit, generated facts and monthly counts | 9.4 | 5 | SCRUM-156 | #431 | no | To do |
-| 5n | 9.4.1 Scheme and dashboard layout on the account | 9.4 | 5 | SCRUM-155 | #430 | no | To do |
+| 5n | 9.4.1 Scheme and dashboard layout on the account | 9.4 | 5 | SCRUM-155 | #430 | no | In review |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 

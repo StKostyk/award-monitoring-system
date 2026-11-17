@@ -14,7 +14,7 @@ import {
 /** US-008 DoD: the dashboard is usable within this time. */
 const USABLE_WITHIN_MS = 3000;
 
-const WIDGETS = ['SUMMARY', 'TIMELINE', 'YEAR_TREND', 'BY_CATEGORY', 'BY_LEVEL', 'RANK'];
+const WIDGETS = ['KPI', 'TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK', 'TIMELINE'];
 
 async function shownWidgets(page: Page): Promise<string[]> {
   return page
@@ -38,7 +38,7 @@ test.describe('personal dashboard', () => {
     const page = await signedIn(browser, SEED.lecturer);
     const started = Date.now();
     await page.getByTestId('nav-dashboard').click();
-    await expect(page.getByTestId('widget-SUMMARY')).toBeVisible();
+    await expect(page.getByTestId('widget-KPI')).toBeVisible();
     await expect(page.getByTestId('widget-RANK')).toBeVisible();
     expect(Date.now() - started).toBeLessThan(USABLE_WITHIN_MS);
 
@@ -55,7 +55,7 @@ test.describe('personal dashboard', () => {
   }) => {
     const page = await signedIn(browser, SEED.lecturer);
     await page.goto('/dashboard?from=2024&to=2024');
-    await expect(page.getByTestId('widget-YEAR_TREND')).toBeVisible();
+    await expect(page.getByTestId('widget-TREND')).toBeVisible();
     await expect(page.getByTestId('period-from')).toContainText('2024');
     await expect(page.getByTestId('period-to')).toContainText('2024');
 
@@ -65,7 +65,7 @@ test.describe('personal dashboard', () => {
     );
     await page.getByTestId('empty-all-years').click();
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByTestId('widget-SUMMARY')).toBeVisible();
+    await expect(page.getByTestId('widget-KPI')).toBeVisible();
   });
 
   test('ac2_6 shows a chart as a table whose entries open the award', async ({ browser }) => {
@@ -90,7 +90,7 @@ test.describe('personal dashboard', () => {
     await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/dashboard');
-    await expect(page.getByTestId('widget-BY_LEVEL')).toBeVisible();
+    await expect(page.getByTestId('widget-LEVEL_STAIRS')).toBeVisible();
     await page.getByTestId('language-toggle').click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('My dashboard');
 
@@ -98,34 +98,12 @@ test.describe('personal dashboard', () => {
     expect(await seriousViolations(page)).toEqual([]);
   });
 
-  test('ac2_8 ac2_9 guides a new employee and keeps the widget choice across browsers', async ({
-    browser,
-  }) => {
+  test('ac2_8 guides a new employee without counted awards', async ({ browser }) => {
     const email = await freshEmployee(browser, 'dashboard');
     const page = await signedInAs(browser, email, FRESH_PASSWORD);
     await page.goto('/dashboard');
     await expect(page.getByTestId('dashboard-empty-first').locator('li')).toHaveCount(3);
     await expect(page.getByTestId('empty-new-award')).toHaveAttribute('href', '/awards/new');
-
-    await page.getByTestId('dashboard-customise').click();
-    await page.getByTestId('customise-TIMELINE').locator('input').uncheck();
-    await page.getByTestId('customise-RANK').locator('input').uncheck();
-    const saved = page.waitForResponse(
-      (response) =>
-        response.url().endsWith('/users/me/dashboard-preferences') &&
-        response.request().method() !== 'GET' &&
-        response.ok(),
-    );
-    await page.getByTestId('customise-save').click();
-    await saved;
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-
-    const other = await signedInAs(browser, email, FRESH_PASSWORD);
-    await other.goto('/dashboard');
-    await other.getByTestId('dashboard-customise').click();
-    await expect(other.getByTestId('customise-TIMELINE').locator('input')).not.toBeChecked();
-    await expect(other.getByTestId('customise-RANK').locator('input')).not.toBeChecked();
-    await expect(other.getByTestId('customise-SUMMARY').locator('input')).toBeChecked();
   });
 
   test('ac2_4 an account without a role has no entry and lands on the forbidden page', async ({
@@ -212,7 +190,7 @@ test.describe('shareable achievement summary', () => {
     await expect(page.getByTestId('dashboard-error')).toHaveCount(0);
     await page.getByTestId('dashboard-invalid').getByRole('button').click();
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByTestId('widget-SUMMARY')).toBeVisible();
+    await expect(page.getByTestId('widget-KPI')).toBeVisible();
 
     await page.goto(`/dashboard/summary?to=${nextYear}`);
     await expect(page.getByTestId('summary-invalid')).toBeVisible();

@@ -1,25 +1,12 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { OrganizationRef } from '../../core/auth/user-profile';
 import { CategoryRef, RecognitionLevel } from '../awards/awards.service';
 
 export type RankStatus = 'RANKED' | 'CONSENT_REQUIRED' | 'NO_DEPARTMENT' | 'GROUP_TOO_SMALL';
-
-export type DashboardWidget =
-  'SUMMARY' | 'TIMELINE' | 'YEAR_TREND' | 'BY_CATEGORY' | 'BY_LEVEL' | 'RANK';
-
-/** Widgets in display order. */
-export const DASHBOARD_WIDGETS: DashboardWidget[] = [
-  'SUMMARY',
-  'TIMELINE',
-  'YEAR_TREND',
-  'BY_CATEGORY',
-  'BY_LEVEL',
-  'RANK',
-];
 
 export type LevelBand = 'UNIT' | 'UNIVERSITY' | 'REGIONAL' | 'NATIONAL' | 'INTERNATIONAL';
 
@@ -85,27 +72,14 @@ export function levelBand(level: RecognitionLevel): LevelBand {
   return (LEVEL_BANDS as string[]).includes(level) ? (level as LevelBand) : 'UNIT';
 }
 
-/** The caller's personal analytics and dashboard widget choice. */
+/** The caller's personal analytics. */
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
   private readonly http = inject(HttpClient);
   private readonly analyticsUrl = `${environment.apiUrl}/analytics/me`;
-  private readonly preferencesUrl = `${environment.apiUrl}/users/me/dashboard-preferences`;
 
   read(period: AnalyticsPeriod): Observable<PersonalAnalytics> {
     return this.http.get<PersonalAnalytics>(this.analyticsUrl, { params: periodParams(period) });
-  }
-
-  hiddenWidgets(): Observable<DashboardWidget[]> {
-    return this.http
-      .get<{ hiddenWidgets: DashboardWidget[] }>(this.preferencesUrl)
-      .pipe(map((body) => body.hiddenWidgets));
-  }
-
-  saveHiddenWidgets(hiddenWidgets: DashboardWidget[]): Observable<DashboardWidget[]> {
-    return this.http
-      .put<{ hiddenWidgets: DashboardWidget[] }>(this.preferencesUrl, { hiddenWidgets })
-      .pipe(map((body) => body.hiddenWidgets));
   }
 }
 

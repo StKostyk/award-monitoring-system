@@ -24,30 +24,4 @@ export class AnalyticsEffects {
       ),
     ),
   );
-
-  readonly preferences$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AnalyticsActions.opened, AnalyticsActions.preferencesRetried),
-      switchMap(() =>
-        this.analytics.hiddenWidgets().pipe(
-          map((hidden) => AnalyticsActions.preferencesLoaded({ hidden })),
-          catchError(() => of(AnalyticsActions.preferencesLoadFailed())),
-        ),
-      ),
-    ),
-  );
-
-  readonly save$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AnalyticsActions.saveRequested),
-      switchMap(({ hidden }) =>
-        this.analytics.saveHiddenWidgets(hidden).pipe(
-          map((saved) => AnalyticsActions.saved({ hidden: saved })),
-          catchError((error: unknown) =>
-            of(AnalyticsActions.saveFailed({ problem: problemType(error) })),
-          ),
-        ),
-      ),
-    ),
-  );
 }

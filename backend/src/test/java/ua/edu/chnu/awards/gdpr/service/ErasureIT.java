@@ -298,7 +298,7 @@ class ErasureIT extends AbstractIntegrationTest {
         jdbc.update("insert into audit_logs (user_id, action_type, entity_type, entity_id, new_values, ip_address, "
             + "user_agent) values (?, 'LOGIN_SUCCESS', 'AUTHENTICATION', ?, ?::jsonb, ?::inet, ?)", personId,
             personId, "{\"email\": \"erik@chnu.edu.ua\", \"devices\": 1}", IP, AGENT);
-        jdbc.update("insert into dashboard_preferences (user_id, hidden_widgets) values (?, '{RANK}')", personId);
+        jdbc.update("insert into dashboard_preferences (user_id, color_scheme) values (?, 'DARK')", personId);
         jdbc.update("insert into erasure_requests (user_id, requested_at, scheduled_for) "
             + "values (?, now() - interval '31 days', now() - interval '1 hour')", personId);
     }

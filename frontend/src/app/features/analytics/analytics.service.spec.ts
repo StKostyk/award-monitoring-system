@@ -43,23 +43,6 @@ describe('AnalyticsService', () => {
     expect(read).toBe(3);
   });
 
-  it('ac2_9_reads_and_saves_the_hidden_widgets', () => {
-    const url = `${environment.apiUrl}/users/me/dashboard-preferences`;
-    let hidden: string[] = [];
-    service.hiddenWidgets().subscribe((value) => (hidden = value));
-    http.expectOne(url).flush({ hiddenWidgets: ['RANK'] });
-
-    expect(hidden).toEqual(['RANK']);
-
-    service.saveHiddenWidgets(['TIMELINE', 'RANK']).subscribe((value) => (hidden = value));
-    const put = http.expectOne(url);
-
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.body).toEqual({ hiddenWidgets: ['TIMELINE', 'RANK'] });
-    put.flush({ hiddenWidgets: ['TIMELINE', 'RANK'] });
-    expect(hidden).toEqual(['TIMELINE', 'RANK']);
-  });
-
   it('ac2_5_folds_the_unit_levels_into_one_band', () => {
     const unitLevels = ['SPECIALITY', 'DEPARTMENT', 'COLLEGE', 'FACULTY', 'LOCAL'] as const;
 

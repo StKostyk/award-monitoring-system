@@ -1,23 +1,22 @@
 package ua.edu.chnu.awards.user.dto;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * The widgets a person hid on the personal dashboard.
+ * The colour scheme of a person and the arrangement of their dashboards.
  *
- * @param hiddenWidgets widget names; the request may hold unknown names, which the service rejects
+ * @param colorScheme {@code SYSTEM}, {@code LIGHT} or {@code DARK}; null in a request means {@code SYSTEM}
+ * @param layouts     the arrangement per dashboard name; a dashboard left out keeps its default
  */
-public record DashboardPreferences(List<String> hiddenWidgets) {
+public record DashboardPreferences(String colorScheme, Map<String, DashboardLayout> layouts) {
 
     /**
-     * Keeps an unmodifiable copy, null entries included for the service to reject; a missing list means none
-     * hidden.
+     * Keeps an unmodifiable copy of the layouts, null values included for the service to treat as the default.
      */
     public DashboardPreferences {
-        hiddenWidgets = Collections.unmodifiableList(
-            new ArrayList<>(Objects.requireNonNullElse(hiddenWidgets, List.of())));
+        layouts = Collections.unmodifiableMap(new LinkedHashMap<>(Objects.requireNonNullElse(layouts, Map.of())));
     }
 }

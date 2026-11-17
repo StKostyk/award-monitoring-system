@@ -231,6 +231,21 @@ export function expireOpenRequests(condition: string): void {
 }
 
 /**
+ * Answers the page's preference requests in the browser, starting from the system scheme and no layouts and keeping
+ * the last save for the next read, so that a test on a shared seed account can switch the scheme without storing it
+ * for the other tests.
+ */
+export async function keepPreferencesLocal(page: Page): Promise<void> {
+  let stored: unknown = { colorScheme: 'SYSTEM', layouts: {} };
+  await page.route('**/users/me/dashboard-preferences', (route) => {
+    if (route.request().method() === 'PUT') {
+      stored = route.request().postDataJSON();
+    }
+    return route.fulfill({ json: stored });
+  });
+}
+
+/**
  * Runs one statement on the development database inside the `award-postgres` container and answers its output
  * without headers; for fixtures the user interface cannot create, such as reviewer decisions before Epic 4.
  */

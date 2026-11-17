@@ -245,6 +245,14 @@ Plex Sans. Both are variable fonts from `@fontsource-variable` with Cyrillic and
 
 **Browser bar.** The manifest `theme_color` and `<meta name="theme-color">` of the ChNU brand are `#5E1621`.
 
+## Addendum 2026-11-17: Colour scheme on the account (Feature 9.4)
+
+The scheme picked in the toolbar is also stored on the account (`dashboard_preferences.color_scheme`, `SYSTEM`,
+`LIGHT` or `DARK`, `PUT /users/me/dashboard-preferences`). `localStorage` stays the first source: `ColorSchemeService`
+applies it before the first paint, so signed-out pages and the time before the preferences arrive keep the browser's
+value; once the preferences load after the profile, the stored scheme replaces it and is written back to
+`localStorage`, so the next start in that browser opens in it without a flash. Signed out, nothing is sent.
+
 ---
 
 ## Related Documents
@@ -263,6 +271,7 @@ Plex Sans. Both are variable fonts from `@fontsource-variable` with Cyrillic and
 | 2025-08-21 | Stefan Kostyk | Initial version | Document creation |
 | 2026-10-04 | Stefan Kostyk | Addendum: Material 3 themes, university brands, dark mode | Story 3.0.2 |
 | 2026-11-14 | Stefan Kostyk | Addendum: two-hue ChNU theme, Manrope and Onest | New look (Feature 9.3) |
+| 2026-11-17 | Stefan Kostyk | Addendum: colour scheme stored on the account | Story 9.4.1 |
 
 ---
 

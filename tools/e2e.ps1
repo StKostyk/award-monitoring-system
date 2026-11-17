@@ -5,7 +5,11 @@
 .DESCRIPTION
     Starts the infrastructure containers (the malware scanner included, waited for until healthy) and the backend with the local profile (request limit raised so the suite
     is not rate limited) unless port 8080 is already in use (a port Docker still holds after `docker compose stop app` is waited for),
-    runs `npx playwright test` in frontend/ (Playwright starts the dev server itself), then stops the backend it started.
+    starts the dev server (`npm start`, log build\e2e-devserver.log) unless port 4200 is already in use, warms it
+    (tools\e2e-warmup.mjs loads every served module; a library imported since the last run answers "504 Outdated
+    Optimize Dep" for the life of that server, so a server this run started is restarted once and warmed again, and
+    an older one is refused), runs `npx playwright test` in frontend/ (Playwright reuses that server), then stops
+    the backend and the dev server it started.
     The frontend nginx configuration also runs in a throwaway container on port 4280 in front of the local backend
     (`E2E_NGINX_URL`), so that the upload limits are tested through it.
     A running award-backend container is stopped for the run and started again afterwards, also when the run fails
@@ -90,6 +94,7 @@ if ($devServer) {
     }
 }
 $started = $null
+$devStarted = $null
 $nginx = 'award-e2e-nginx'
 $stateFile = Join-Path $root 'build\e2e.state'
 if (-not $env:PLAYWRIGHT_BROWSERS_PATH) {
@@ -103,8 +108,65 @@ function Wait-PortClosed([int]$seconds) {
     }
 }
 
+function Stop-DevServer([int]$processId) {
+    if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {
+        & taskkill.exe /T /F /PID $processId 2>$null | Out-Null
+    }
+}
+
+function Start-DevServer {
+    $log = Join-Path $root 'build\e2e-devserver.log'
+    $script:devStarted = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'npm start' `
+        -WorkingDirectory (Join-Path $root 'frontend') -RedirectStandardOutput $log -PassThru -WindowStyle Hidden
+    Save-State
+    $deadline = (Get-Date).AddMinutes(3)
+    while (-not (Get-NetTCPConnection -LocalPort 4200 -State Listen -ErrorAction SilentlyContinue) -and
+        (Get-Date) -lt $deadline) {
+        Start-Sleep -Seconds 2
+    }
+    if (-not (Get-NetTCPConnection -LocalPort 4200 -State Listen -ErrorAction SilentlyContinue)) {
+        Write-Host "The dev server did not start within 3 min; see $log."
+        exit 1
+    }
+}
+
+function Wait-DevPortClosed {
+    $deadline = (Get-Date).AddSeconds(30)
+    while ((Get-NetTCPConnection -LocalPort 4200 -State Listen -ErrorAction SilentlyContinue) -and
+        (Get-Date) -lt $deadline) {
+        Start-Sleep -Seconds 1
+    }
+}
+
+function Start-WarmDevServer {
+    if (-not (Get-NetTCPConnection -LocalPort 4200 -State Listen -ErrorAction SilentlyContinue)) {
+        Start-DevServer
+    }
+    $warmup = Join-Path $root 'tools\e2e-warmup.mjs'
+    & node $warmup 'http://localhost:4200'
+    if (-not $LASTEXITCODE) { return }
+    if (-not $devStarted) {
+        Write-Host 'The dev server on port 4200 serves an outdated dependency until it restarts;'
+        Write-Host 'stop it (Ctrl+C in its terminal) and run again; the run then starts a current one.'
+        exit 1
+    }
+    Write-Host 'Restarting the dev server so that it serves the dependencies the optimizer just added.'
+    Stop-DevServer $devStarted.Id
+    Wait-DevPortClosed
+    Start-DevServer
+    & node $warmup 'http://localhost:4200'
+    if ($LASTEXITCODE) {
+        Write-Host 'The restarted dev server still serves an outdated dependency; see build\e2e-devserver.log.'
+        exit 1
+    }
+}
+
 function Save-State {
-    $state = @{ BackendPid = if ($started) { $started.Id } else { 0 }; Container = $container }
+    $state = @{
+        BackendPid = if ($started) { $started.Id } else { 0 }
+        DevServerPid = if ($devStarted) { $devStarted.Id } else { 0 }
+        Container = $container
+    }
     Set-Content -Path $stateFile -Value ($state | ConvertTo-Json -Compress)
 }
 
@@ -168,6 +230,9 @@ if (Test-Path $stateFile) {
         Stop-Process -Id $previous.BackendPid -Force -ErrorAction SilentlyContinue
         Wait-PortClosed 30
     }
+    if ($previous.DevServerPid) {
+        Stop-DevServer $previous.DevServerPid
+    }
     docker rm -f $nginx 2>$null | Out-Null
     $inherited = [bool]$previous.Container
     Remove-Item $stateFile
@@ -225,6 +290,8 @@ try {
         }
     }
 
+    Start-WarmDevServer
+
     Push-Location (Join-Path $root 'frontend')
     try {
         $runStart = Get-Date
@@ -262,6 +329,7 @@ try {
         Stop-Process -Id $started.Id -Force -ErrorAction SilentlyContinue
         Wait-PortClosed 30
     }
+    if ($devStarted) { Stop-DevServer $devStarted.Id }
     docker rm -f $nginx 2>$null | Out-Null
     if ($container) { docker start award-backend | Out-Null }
     Remove-Item $stateFile -ErrorAction SilentlyContinue
