@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hall of Fame («Зала визнання») for the rector and the dean, opened from the home page (SCRUM-157)
 - Monthly award counts on the unit and university analytics, and the dashboard widget kit with generated facts (9.4.2).
 - Colour scheme and per-dashboard widget layout kept on the account; «Налаштувати» edit mode reorders and hides widgets by drag or keyboard (SCRUM-155)
 - Secretaries and deans join a colleague without an account to the colleague's own registered account, moving the awards

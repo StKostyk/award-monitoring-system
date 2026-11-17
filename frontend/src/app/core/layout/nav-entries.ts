@@ -2,6 +2,7 @@ import { IconName } from '../../shared/icons/icons';
 import {
   TokenPermissions,
   canDelegate,
+  canOpenHallOfFame,
   canReadCompliance,
   canReadDirectory,
   canReadOwnAnalytics,
@@ -32,6 +33,7 @@ const ANYONE = (): boolean => true;
 
 export const NAV_ENTRIES: readonly NavEntry[] = [
   entry('home', '/', 'app.home', 'house', ANYONE, { exact: true, anonymous: true }),
+  entry('hall-of-fame', '/hall-of-fame', 'hallOfFame.title', 'crown', canOpenHallOfFame),
   entry('awards', '/awards', 'awards.title', 'award', canReadOwnAwards),
   entry('dashboard', '/dashboard', 'analytics.title', 'chart-line', canReadOwnAnalytics),
   entry(

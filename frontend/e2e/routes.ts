@@ -59,6 +59,7 @@ export function deanRoutes(): RoleRoutes {
       '/reviews',
       `/awards/${awardOf(SEED.employee, 'PENDING')}/correct`,
       '/delegations',
+      '/hall-of-fame',
       '/analytics',
       '/analytics/units/9',
       '/admin/users',
@@ -69,7 +70,7 @@ export function deanRoutes(): RoleRoutes {
 
 export const RECTOR_ROUTES: RoleRoutes = {
   account: SEED.rector,
-  routes: ['/analytics/university'],
+  routes: ['/hall-of-fame', '/analytics/university'],
 };
 
 export const GDPR_ROUTES: RoleRoutes = { account: SEED.gdpr, routes: ['/compliance'] };
