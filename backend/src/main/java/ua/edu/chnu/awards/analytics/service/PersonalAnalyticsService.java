@@ -57,7 +57,7 @@ public class PersonalAnalyticsService {
         return new PersonalAnalytics(period,
             new AnalyticsTotals(totals.approved(), totals.verified(), highest, totals.firstAwardDate(),
                 totals.latestAwardDate()),
-            statistics.openAwards(userId), AwardCountsHelper.byYear(period, counts),
+            statistics.openAwards(userId), statistics.visibility(userId), AwardCountsHelper.byYear(period, counts),
             AwardCountsHelper.byCategory(counts), byLevel,
             truncated ? timeline.subList(0, properties.timelineLimit()) : timeline, truncated,
             ranking.of(userId, totals.approved(), period));

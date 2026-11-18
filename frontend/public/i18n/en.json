@@ -104,13 +104,6 @@
       "title": "Department membership not confirmed",
       "text": "Your department membership is not confirmed yet: {{organization}}.",
       "hint": "Ask your faculty secretary or the head of your department. Once it is confirmed, the roles reach your session after the next sign-in."
-    },
-    "submissions": {
-      "title": "My submissions",
-      "empty": "No awards under review",
-      "create": "New award",
-      "all": "All awards",
-      "failed": "Your submissions could not be loaded."
     }
   },
   "roles": {
@@ -147,6 +140,7 @@
     "filters": {
       "status": "Status",
       "category": "Category",
+      "visibility": "Visibility",
       "dateFrom": "Date from",
       "dateTo": "Date to",
       "search": "Search my awards",
@@ -1610,7 +1604,30 @@
       "LEVEL_STAIRS": "By level",
       "BY_CATEGORY": "By category",
       "RANK": "Place in the department",
-      "TIMELINE": "Timeline"
+      "TIMELINE": "Timeline",
+      "IN_PROGRESS": "In progress",
+      "VISIBILITY": "Who sees my awards"
+    },
+    "thisYear": "Awards this year",
+    "streak": "Awards every year since {{since}}",
+    "inProgress": {
+      "pending": "Under review: {{count}}",
+      "drafts": "Drafts: {{count}}",
+      "empty": "No awards under review",
+      "create": "New award",
+      "failed": "Your submissions could not be loaded."
+    },
+    "visibility": {
+      "PUBLIC": "Public",
+      "UNIVERSITY": "Colleagues only",
+      "PRIVATE": "Only me and the reviewers",
+      "withDocument": "With a document: {{count}}"
+    },
+    "cv": {
+      "menu": "Export for a CV",
+      "pdf": "PDF",
+      "text": "Plain text",
+      "failed": "The list could not be exported."
     },
     "summary": {
       "approved": "Approved awards",

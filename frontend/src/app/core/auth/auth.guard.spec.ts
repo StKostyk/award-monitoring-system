@@ -264,4 +264,22 @@ describe('authGuard', () => {
     expect(home({ role_scopes: ['FACULTY_SECRETARY:9'] })).toBe(true);
     expect(home({ role_scopes: ['EMPLOYEE:5'] })).toBe(true);
   });
+
+  it('ac4_1_sends_an_account_with_personal_analytics_home_to_its_dashboard', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const router = TestBed.inject(Router);
+
+    expect(String(home({ permissions: ['analytics:read:own'] }))).toBe(
+      router.createUrlTree(['/dashboard']).toString(),
+    );
+    expect(String(home({ role_scopes: ['DEAN:9'], permissions: ['analytics:read:own'] }))).toBe(
+      router.createUrlTree(['/hall-of-fame']).toString(),
+    );
+    expect(home({ permissions: [] })).toBe(true);
+  });
 });

@@ -63,6 +63,10 @@ public class AwardSpecifications {
             if (query.dateTo() != null) {
                 predicates.add(builder.lessThanOrEqualTo(root.get(AWARD_DATE), query.dateTo()));
             }
+            if (query.visibility() != null) {
+                predicates.add(builder.isNull(root.get(RECIPIENT_UNIT)));
+                predicates.add(builder.equal(root.get("visibility"), query.visibility()));
+            }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
     }

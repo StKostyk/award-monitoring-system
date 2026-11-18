@@ -1,6 +1,12 @@
-.submissions {
-  max-width: 720px;
-  margin-top: 16px;
+:host {
+  display: block;
+}
+
+.submissions__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 8px;
 }
 
 .submissions__list {

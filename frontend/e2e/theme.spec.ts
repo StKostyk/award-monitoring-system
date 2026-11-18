@@ -162,7 +162,7 @@ test.describe('brand theme', () => {
     await signInAsSeed(page, employee);
 
     await expect(page.locator('html')).toHaveClass(/brand-chnu/);
-    await expect(page).toHaveTitle('Головна — Облік нагород ЧНУ');
+    await expect(page).toHaveTitle('Мій дашборд — Облік нагород ЧНУ');
     await expect(page.getByTestId('side-nav')).toContainText(
       'Чернівецький національний університет',
     );
@@ -192,7 +192,7 @@ test.describe('brand theme', () => {
       .toEqual(expect.arrayContaining(['Onest Variable', 'Manrope Variable']));
 
     await page.getByTestId('language-toggle').click();
-    await expect(page).toHaveTitle('Home — ChNU Awards');
+    await expect(page).toHaveTitle('My dashboard — ChNU Awards');
     await page.getByTestId('language-toggle').click();
     expect(external).toEqual([]);
   });
@@ -202,7 +202,7 @@ test.describe('brand theme', () => {
     await signInAsSeed(page, employee);
 
     await expect(page.locator('html')).toHaveClass(/brand-neutral/);
-    await expect(page).toHaveTitle('Головна — Облік нагород');
+    await expect(page).toHaveTitle('Мій дашборд — Облік нагород');
     expect(await background(page, 'mat-sidenav')).toBe('rgb(30, 61, 48)');
   });
 

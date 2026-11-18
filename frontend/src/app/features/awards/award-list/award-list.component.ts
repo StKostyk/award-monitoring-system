@@ -22,7 +22,7 @@ import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field'
 import { MatInput } from '@angular/material/input';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import {
@@ -58,6 +58,7 @@ import {
   CategoryNode,
   NO_FILTERS,
   UnitRef,
+  VISIBILITIES,
   awardTitle,
   categoryName,
   flattenCategories,
@@ -108,8 +109,10 @@ export class AwardListComponent implements OnInit {
   private readonly language = inject(LanguageService);
   private readonly dates = inject<DateAdapter<string>>(DateAdapter);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly statuses = AWARD_STATUSES;
+  protected readonly visibilities = VISIBILITIES;
   protected readonly canCreate = canCreateAwards(this.auth.permissions());
   protected readonly categories = signal<{ category: CategoryNode; depth: number }[]>([]);
 
@@ -135,13 +138,17 @@ export class AwardListComponent implements OnInit {
     Object.values(this.filters()).some((value) => value !== null),
   );
   protected readonly activeFilters = computed(() => {
-    const { status, category, dateFrom, dateTo } = this.filters();
-    return [status, category, dateFrom, dateTo].filter((value) => value !== null).length;
+    const { status, category, dateFrom, dateTo, visibility } = this.filters();
+    return [status, category, dateFrom, dateTo, visibility].filter((value) => value !== null)
+      .length;
   });
 
   ngOnInit(): void {
     this.notice.set((history.state as { notice?: string } | null)?.notice ?? null);
-    this.store.dispatch(AwardsActions.opened());
+    const linked = linkedFilters(this.route.snapshot.queryParamMap);
+    this.store.dispatch(
+      linked ? AwardsActions.filtersChanged({ filters: linked }) : AwardsActions.opened(),
+    );
     this.service
       .categories()
       .pipe(subscribeOn(asyncScheduler), takeUntilDestroyed(this.destroyRef))
@@ -209,4 +216,16 @@ export class AwardListComponent implements OnInit {
   optionName(category: CategoryNode): string {
     return categoryName(category, this.language.current());
   }
+}
+
+/**
+ * The filters a link to the list carries in its address, such as the dashboard's counts by status or visibility.
+ *
+ * @param params the query of the address
+ * @return the filters with the known status and visibility, or null when the address carries neither
+ */
+export function linkedFilters(params: ParamMap): AwardFilters | null {
+  const status = AWARD_STATUSES.find((value) => value === params.get('status')) ?? null;
+  const visibility = VISIBILITIES.find((value) => value === params.get('visibility')) ?? null;
+  return status === null && visibility === null ? null : { ...NO_FILTERS, status, visibility };
 }

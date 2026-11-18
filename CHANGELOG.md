@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- «Мій дашборд» as the employee home: work in progress, visibility counts linked to the filtered award list, and «Експорт для резюме» (PDF or text) of approved awards.
 - Hall of Fame («Зала визнання») for the rector and the dean, opened from the home page (SCRUM-157)
 - Monthly award counts on the unit and university analytics, and the dashboard widget kit with generated facts (9.4.2).
 - Colour scheme and per-dashboard widget layout kept on the account; «Налаштувати» edit mode reorders and hides widgets by drag or keyboard (SCRUM-155)

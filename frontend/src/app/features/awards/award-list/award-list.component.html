@@ -46,6 +46,21 @@
       </mat-select>
     </mat-form-field>
     <mat-form-field class="awards__filter" subscriptSizing="dynamic">
+      <mat-label>{{ 'awards.filters.visibility' | transloco }}</mat-label>
+      <mat-select
+        [ngModel]="filters().visibility"
+        (ngModelChange)="filter({ visibility: $event })"
+        data-testid="filter-visibility"
+      >
+        <mat-option [value]="null">{{ 'awards.filters.all' | transloco }}</mat-option>
+        @for (visibility of visibilities; track visibility) {
+          <mat-option [value]="visibility">{{
+            'analytics.visibility.' + visibility | transloco
+          }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="awards__filter" subscriptSizing="dynamic">
       <mat-label>{{ 'awards.filters.category' | transloco }}</mat-label>
       <mat-select
         [ngModel]="filters().category"

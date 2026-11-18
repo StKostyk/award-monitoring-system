@@ -1,0 +1,35 @@
+<p class="submissions__counts" data-testid="in-progress-counts">
+  <a routerLink="/awards" [queryParams]="{ status: 'PENDING' }" data-testid="in-progress-pending">
+    {{ 'analytics.inProgress.pending' | transloco: { count: pending() } }}
+  </a>
+  <a routerLink="/awards" [queryParams]="{ status: 'DRAFT' }" data-testid="in-progress-drafts">
+    {{ 'analytics.inProgress.drafts' | transloco: { count: drafts() } }}
+  </a>
+</p>
+@if (failed()) {
+  <p class="submissions__problem" role="alert" data-testid="my-submissions-error">
+    {{ 'analytics.inProgress.failed' | transloco }}
+  </p>
+} @else if (awards(); as awards) {
+  @if (awards.length) {
+    <ul class="submissions__list">
+      @for (award of awards; track award.id) {
+        <li class="submissions__item" data-testid="my-submission">
+          <a class="submissions__link" [routerLink]="['/awards', award.id]">{{ title(award) }}</a>
+          @if (award.request; as request) {
+            <app-request-timing [request]="request" [showLevel]="true" />
+          }
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="submissions__empty" data-testid="my-submissions-empty">
+      {{ 'analytics.inProgress.empty' | transloco }}
+    </p>
+    @if (canCreate()) {
+      <a mat-button routerLink="/awards/new" data-testid="my-submissions-create">{{
+        'analytics.inProgress.create' | transloco
+      }}</a>
+    }
+  }
+}

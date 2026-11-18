@@ -20,10 +20,11 @@ test.describe('authentication', () => {
     await page.fill('#password', employee.password);
     await page.click('button[type="submit"]');
 
-    await expect(page).toHaveURL('http://localhost:4200/');
+    await expect(page).toHaveURL('http://localhost:4200/dashboard');
     await expect(page.getByTestId('user-name')).toHaveText(employee.name);
+    await page.goto('/profile');
     await expect(page.getByTestId('profile-email')).toHaveText(employee.email);
-    await expect(page.getByTestId('profile-roles')).toContainText('Працівник');
+    await expect(page.getByTestId('profile-role').first()).toContainText('Працівник');
 
     await page.getByTestId('logout').click();
 
@@ -75,11 +76,11 @@ test.describe('authentication', () => {
     await page.fill('#password', employee.password);
     await page.click('button[type="submit"]');
 
-    await expect(page).toHaveURL('http://localhost:4200/');
+    await expect(page).toHaveURL('http://localhost:4200/dashboard');
     await expect(page.getByTestId('user-name')).toHaveText(employee.name);
 
     await page.goto('http://localhost:8080/login');
-    await expect(page).toHaveURL('http://localhost:4200/');
+    await expect(page).toHaveURL('http://localhost:4200/dashboard');
   });
 
   test('ac16 a pending account is refused with an explanation', async ({ page }) => {
@@ -105,6 +106,6 @@ test.describe('authentication', () => {
     await expect(page.getByTestId('user-name')).toHaveText(employee.name);
 
     await page.getByTestId('language-toggle').click();
-    await expect(page.getByTestId('profile-roles')).toContainText('Employee');
+    await expect(page.getByTestId('nav-dashboard')).toContainText('My dashboard');
   });
 });

@@ -4,6 +4,7 @@ import java.util.List;
 
 import ua.edu.chnu.awards.award.dto.OpenAwards;
 import ua.edu.chnu.awards.award.dto.TimelineEntry;
+import ua.edu.chnu.awards.award.dto.VisibilityCounts;
 import ua.edu.chnu.awards.award.dto.YearRange;
 
 /**
@@ -12,6 +13,7 @@ import ua.edu.chnu.awards.award.dto.YearRange;
  * @param period            the calendar years
  * @param totals            totals of the counted awards
  * @param inProgress        own drafts and pending awards, whatever the period
+ * @param visibility        approved personal awards by visibility, whatever the period
  * @param byYear            every year of the period in order
  * @param byCategory        highest count first, then by English name
  * @param byLevel           non-zero levels in level order
@@ -20,6 +22,7 @@ import ua.edu.chnu.awards.award.dto.YearRange;
  * @param rank              the department rank
  */
 public record PersonalAnalytics(YearRange period, AnalyticsTotals totals, OpenAwards inProgress,
+                                VisibilityCounts visibility,
                                 List<YearCount> byYear, List<CategoryCount> byCategory, List<LevelCount> byLevel,
                                 List<TimelineEntry> timeline, boolean timelineTruncated, PersonalRank rank) {
 
@@ -29,6 +32,7 @@ public record PersonalAnalytics(YearRange period, AnalyticsTotals totals, OpenAw
      * @param period            the calendar years
      * @param totals            totals of the counted awards
      * @param inProgress        own drafts and pending awards
+     * @param visibility        approved personal awards by visibility, whatever the period
      * @param byYear            every year of the period
      * @param byCategory        counts per category
      * @param byLevel           counts per level

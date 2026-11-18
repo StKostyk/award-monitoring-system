@@ -2,7 +2,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
 import { Observable, of, throwError } from 'rxjs';
@@ -15,7 +15,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { Award, AwardFilters, AwardsService, NO_FILTERS } from '../awards.service';
 import { AwardsActions } from '../store/awards.actions';
 import { awardsFeature } from '../store/awards.feature';
-import { AwardListComponent } from './award-list.component';
+import { AwardListComponent, linkedFilters } from './award-list.component';
 
 function award(overrides: Partial<Award> = {}): Award {
   return {
@@ -382,7 +382,7 @@ describe('AwardListComponent', () => {
 
     expect(store.dispatch).toHaveBeenCalledWith(
       AwardsActions.filtersChanged({
-        filters: { status: 'PENDING', category: null, dateFrom: null, dateTo: null, q: null },
+        filters: { ...NO_FILTERS, status: 'PENDING' },
       }),
     );
   });
@@ -584,5 +584,24 @@ describe('AwardListComponent', () => {
 
     expect(element.querySelector('[data-testid="awards-loading"]')).toBeNull();
     expect(element.querySelector('[data-testid="award-list"]')).not.toBeNull();
+  });
+});
+
+describe('linkedFilters', () => {
+  it('ac4_2_reads_the_status_and_visibility_of_a_dashboard_link', () => {
+    expect(linkedFilters(convertToParamMap({ status: 'APPROVED', visibility: 'PUBLIC' }))).toEqual({
+      ...NO_FILTERS,
+      status: 'APPROVED',
+      visibility: 'PUBLIC',
+    });
+    expect(linkedFilters(convertToParamMap({ status: 'DRAFT' }))).toEqual({
+      ...NO_FILTERS,
+      status: 'DRAFT',
+    });
+  });
+
+  it('ac4_2_ignores_unknown_values_and_keeps_the_stored_filters_without_a_link', () => {
+    expect(linkedFilters(convertToParamMap({ status: 'LOST', visibility: 'ALL' }))).toBeNull();
+    expect(linkedFilters(convertToParamMap({}))).toBeNull();
   });
 });

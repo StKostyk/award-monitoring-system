@@ -1,9 +1,10 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { OrganizationRef } from '../../core/auth/user-profile';
+import { AppLanguage } from '../../core/i18n/language.service';
 import { CategoryRef, RecognitionLevel } from '../awards/awards.service';
 
 export type RankStatus = 'RANKED' | 'CONSENT_REQUIRED' | 'NO_DEPARTMENT' | 'GROUP_TOO_SMALL';
@@ -65,7 +66,22 @@ export interface PersonalAnalytics {
   timeline: TimelineEntry[];
   timelineTruncated: boolean;
   rank: PersonalRank;
+  /** Approved personal awards by whom they are shown to, whatever the period. */
+  visibility: AwardVisibilityCounts;
 }
+
+/** Approved personal awards by visibility and how many carry a document. */
+export interface AwardVisibilityCounts {
+  publicAwards: number;
+  universityAwards: number;
+  privateAwards: number;
+  withDocument: number;
+}
+
+/** The file formats of the CV export. */
+export type CvFormat = 'pdf' | 'text';
+
+export const CV_FORMATS: CvFormat[] = ['pdf', 'text'];
 
 /** The band a recognition level belongs to. */
 export function levelBand(level: RecognitionLevel): LevelBand {
@@ -80,6 +96,15 @@ export class AnalyticsService {
 
   read(period: AnalyticsPeriod): Observable<PersonalAnalytics> {
     return this.http.get<PersonalAnalytics>(this.analyticsUrl, { params: periodParams(period) });
+  }
+
+  /** The caller's approved awards as a CV list in the given format and language. */
+  exportCv(format: CvFormat, lang: AppLanguage): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${environment.apiUrl}/users/me/awards/cv`, {
+      params: new HttpParams().set('format', format).set('lang', lang),
+      observe: 'response',
+      responseType: 'blob',
+    });
   }
 }
 

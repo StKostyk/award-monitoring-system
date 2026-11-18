@@ -133,6 +133,20 @@ class ApiRateLimitFT extends AbstractFunctionalTest {
             + "and user_id = ?", Integer.class, rectorId)).isZero();
     }
 
+    @Test
+    void ac4_4_theCvExportSharesTheExportWindow() throws InterruptedException {
+        String rector = tokenOf(RECTOR);
+        waitForAFreshWindow();
+        fill(ApiUserRateLimitFilter.EXPORT_KEY_PREFIX, rectorId, exportRequestsPerMinute);
+
+        as(rector).queryParam("format", "text").get("/api/v1/users/me/awards/cv").then()
+            .statusCode(HttpStatus.TOO_MANY_REQUESTS.value())
+            .header("Retry-After", notNullValue())
+            .body("type", equalTo(TOO_MANY));
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where action_type = 'ANALYTICS_EXPORTED' "
+            + "and user_id = ?", Integer.class, rectorId)).isZero();
+    }
+
     private void fill(String keyPrefix, Object subject, int budget) {
         String key = keyPrefix + subject + ":" + Instant.now().getEpochSecond() / MINUTE;
         redis.opsForValue().set(key, String.valueOf(budget), Duration.ofMinutes(2));

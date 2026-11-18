@@ -14,7 +14,16 @@ import {
 /** US-008 DoD: the dashboard is usable within this time. */
 const USABLE_WITHIN_MS = 3000;
 
-const WIDGETS = ['KPI', 'TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK', 'TIMELINE'];
+const WIDGETS = [
+  'KPI',
+  'TREND',
+  'LEVEL_STAIRS',
+  'IN_PROGRESS',
+  'BY_CATEGORY',
+  'RANK',
+  'VISIBILITY',
+  'TIMELINE',
+];
 
 async function shownWidgets(page: Page): Promise<string[]> {
   return page

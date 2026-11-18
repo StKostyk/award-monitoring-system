@@ -4,9 +4,9 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { LanguageService } from '../../core/i18n/language.service';
-import { Award, AwardsService } from '../awards/awards.service';
-import { MySubmissionsComponent } from './my-submissions.component';
+import { LanguageService } from '../../../core/i18n/language.service';
+import { Award, AwardsService } from '../../awards/awards.service';
+import { InProgressComponent } from './in-progress.component';
 
 function pending(id: number, overdue: boolean): Award {
   return {
@@ -40,17 +40,23 @@ function pending(id: number, overdue: boolean): Award {
   };
 }
 
-describe('MySubmissionsComponent', () => {
+describe('InProgressComponent', () => {
   const service = { list: vi.fn() };
 
-  async function create() {
+  async function create(canCreate = true) {
     await TestBed.configureTestingModule({
       imports: [
-        MySubmissionsComponent,
+        InProgressComponent,
         TranslocoTestingModule.forRoot({
           langs: {
             uk: {
-              home: { submissions: { title: 'Мої подання', empty: 'Немає нагород на розгляді' } },
+              analytics: {
+                inProgress: {
+                  empty: 'Немає нагород на розгляді',
+                  pending: 'На розгляді: {{count}}',
+                  drafts: 'Чернетки: {{count}}',
+                },
+              },
               awards: {
                 statusPanel: { returned: 'Очікує ваших виправлень' },
                 timing: { expected: 'Очікується до {{date}}', delayed: 'Затримка' },
@@ -67,7 +73,10 @@ describe('MySubmissionsComponent', () => {
         { provide: LanguageService, useValue: { current: () => 'uk' } },
       ],
     }).compileComponents();
-    const fixture = TestBed.createComponent(MySubmissionsComponent);
+    const fixture = TestBed.createComponent(InProgressComponent);
+    fixture.componentRef.setInput('drafts', 1);
+    fixture.componentRef.setInput('pending', 2);
+    fixture.componentRef.setInput('canCreate', canCreate);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -116,6 +125,19 @@ describe('MySubmissionsComponent', () => {
     expect(
       element.querySelector('[data-testid="my-submissions-create"]')?.getAttribute('href'),
     ).toBe('/awards/new');
+  });
+
+  it('ac4_1_counts_drafts_and_pending_with_links_to_the_filtered_list', async () => {
+    service.list.mockReturnValue(of({ content: [], totalElements: 0, totalPages: 0 }));
+    const element = await create(false);
+    const pendingLink = element.querySelector('[data-testid="in-progress-pending"]');
+    const draftsLink = element.querySelector('[data-testid="in-progress-drafts"]');
+
+    expect(pendingLink?.textContent?.trim()).toBe('На розгляді: 2');
+    expect(pendingLink?.getAttribute('href')).toBe('/awards?status=PENDING');
+    expect(draftsLink?.textContent?.trim()).toBe('Чернетки: 1');
+    expect(draftsLink?.getAttribute('href')).toBe('/awards?status=DRAFT');
+    expect(element.querySelector('[data-testid="my-submissions-create"]')).toBeNull();
   });
 
   it('shows_a_problem_when_the_list_fails', async () => {
