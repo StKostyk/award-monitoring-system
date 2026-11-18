@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
+import ua.edu.chnu.awards.award.entity.AwardSource;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
 import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.organization.dto.OrganizationRef;
@@ -33,6 +34,7 @@ import ua.edu.chnu.awards.organization.dto.OrganizationRef;
  * @param version              optimistic-lock version
  * @param ownerWithoutAccount  true when the owner has no account of their own yet
  * @param managedByCaller      true when the caller manages the award in place of an owner without an account
+ * @param source               how the award was entered
  */
 @SuppressWarnings("PMD.CommentSize")
 public record AwardResponse(Long id, String title, String titleUk, String description, String descriptionUk,
@@ -41,5 +43,5 @@ public record AwardResponse(Long id, String title, String titleUk, String descri
                             AwardRecipient recipient, OrganizationRef organization, RequestSummary request,
                             List<AwardWarning> warnings, AwardVisibility visibility,
                             Instant createdAt, Instant updatedAt, Long version,
-                            boolean ownerWithoutAccount, boolean managedByCaller) {
+                            boolean ownerWithoutAccount, boolean managedByCaller, AwardSource source) {
 }

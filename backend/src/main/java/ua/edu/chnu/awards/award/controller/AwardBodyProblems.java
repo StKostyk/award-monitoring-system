@@ -21,7 +21,7 @@ import ua.edu.chnu.awards.common.web.FieldViolation;
  * answered like any other refused field: 422 {@code validation-failed} naming the field.
  */
 @RestControllerAdvice(assignableTypes = {AwardController.class, AwardCreationController.class,
-    SharingController.class, PeopleController.class})
+    SharingController.class, PeopleController.class, AwardImportController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class AwardBodyProblems {
 

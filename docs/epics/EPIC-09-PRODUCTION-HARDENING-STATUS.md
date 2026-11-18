@@ -63,7 +63,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5m | 9.3.22 Held decision after a revoked role ends at sign-in and the request is orphaned | 9.3 | 2 | SCRUM-149 | #414 | no | Done |
 | 5l | 9.3.21 Lighthouse performance below 90 on the signed-in pages | 9.3 | 3 | SCRUM-148 | #413 | no | Done |
 | 5k | 9.3.14 Review queue shortcuts stop after ticking a checklist item | 9.3 | 1 | SCRUM-147 | #412 | no | Done |
-| 5r | 9.4.5 Command centre with the department reminder | 9.4 | 5 | SCRUM-159 | #434 | no | In review |
+| 5r | 9.4.5 Command centre with the department reminder | 9.4 | 5 | SCRUM-159 | #434 | no | Done |
 | 5q | 9.4.4 My awards with the CV export | 9.4 | 5 | SCRUM-158 | #433 | no | Done |
 | 5p | 9.4.3 Hall of Fame for the rector and the dean, role home | 9.4 | 3 | SCRUM-157 | #432 | no | Done |
 | 5o | 9.4.2 Widget kit, generated facts and monthly counts | 9.4 | 5 | SCRUM-156 | #431 | no | Done |

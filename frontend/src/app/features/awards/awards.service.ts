@@ -196,6 +196,9 @@ export type AwardRecipient =
 /** Who besides the owner and the reviewers may see an approved personal award. */
 export type AwardVisibility = 'PRIVATE' | 'UNIVERSITY' | 'PUBLIC';
 
+/** How an award was entered. */
+export type AwardSource = 'FORM' | 'IMPORT';
+
 /** The visibility choices, narrowest first. */
 export const VISIBILITIES: AwardVisibility[] = ['PRIVATE', 'UNIVERSITY', 'PUBLIC'];
 
@@ -222,6 +225,8 @@ export interface Award {
   visibility: AwardVisibility | null;
   request: AwardRequestSummary | null;
   warnings: AwardWarning[];
+  /** How the award was entered: the form, or a spreadsheet import (2.5.5). */
+  source?: AwardSource;
   createdAt: string;
   updatedAt: string;
   version: number;

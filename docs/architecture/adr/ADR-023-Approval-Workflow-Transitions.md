@@ -130,3 +130,15 @@ without adding transitions:
   award version.
 - **Withdrawal** returns an unclaimed request to a draft (`WITHDRAWN`, audit `AWARD_WITHDRAWN`); batch decisions run
   the single decision per item in its own transaction (audit `REVIEW_BATCH`).
+
+## Addendum 2026-11-18: Imported past awards (Feature 2.5, story 2.5.5)
+
+- **One path around the transitions.** A faculty secretary or dean imports past awards from a faculty
+  spreadsheet: each row is stored directly as `APPROVED` with `awards.source` = `IMPORT`, no `award_requests` row
+  and no review decision. The importer is the reviewer of record (`AWARD_IMPORTED` audit row with the file and
+  the row, first award version `CREATED` by the importer). The rule that only a decision approves an award holds
+  for everything entered through the form (`source` = `FORM`).
+- **Scope instead of a decision.** The import is limited to the departments of the caller's faculty secretary or
+  dean scope; a row outside it blocks the whole file.
+- **Afterwards like any approved award.** The owner sees the award marked «Імпортовано» and asks a reviewer for a
+  correction (4.4) like for any approved award; awards of people without an account stay private (AC-2.6).

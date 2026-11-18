@@ -115,7 +115,7 @@ describe('ShellComponent', () => {
                 palette: { open: 'Пошук і переходи' },
                 scheme: { title: 'Тема', system: 'Як на пристрої', light: 'Світла', dark: 'Темна' },
               },
-              admin: { users: { title: 'Користувачі' } },
+              admin: { users: { title: 'Користувачі' }, import: { title: 'Імпорт нагород' } },
               notifications: {
                 bell: 'Сповіщення',
                 bellUnread: 'Сповіщення, непрочитаних: {{count}}',
@@ -202,6 +202,23 @@ describe('ShellComponent', () => {
 
     expect(link.getAttribute('href')).toBe('/admin/users');
     expect(link.textContent).toContain('Користувачі');
+  });
+
+  it('ac5_1_shows_the_import_entry_only_to_a_faculty_secretary_or_dean', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['user:read:scope'] })));
+    const reader = TestBed.createComponent(ShellComponent);
+    reader.detectChanges();
+
+    expect(reader.nativeElement.querySelector('[data-testid="nav-import"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['FACULTY_SECRETARY:9'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const link = fixture.nativeElement.querySelector('[data-testid="nav-import"]');
+
+    expect(link.getAttribute('href')).toBe('/admin/import');
+    expect(link.textContent).toContain('Імпорт нагород');
   });
 
   it('ac1_9_shows_my_awards_to_a_holder_of_award_read_own', () => {

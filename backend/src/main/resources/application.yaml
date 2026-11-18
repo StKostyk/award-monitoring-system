@@ -150,6 +150,10 @@ app:
     # a person without an account receives the invitation again at most this often
     invitation-interval: ${APP_PEOPLE_INVITATION_INTERVAL:PT1H}
     data-protection-contact: ${APP_PEOPLE_DATA_PROTECTION_CONTACT:gdpr@chnu.edu.ua}
+  award-import:
+    # spreadsheet of people and past awards (2.5.5): largest file and most rows below the header
+    max-size: ${APP_AWARD_IMPORT_MAX_SIZE:2MB}
+    max-rows: ${APP_AWARD_IMPORT_MAX_ROWS:1000}
   workflow:
     review-working-days: ${APP_REVIEW_WORKING_DAYS:3}
     overdue-cron: ${APP_WORKFLOW_OVERDUE_CRON:0 5 * * * *}

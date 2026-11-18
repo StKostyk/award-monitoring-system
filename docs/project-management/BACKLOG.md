@@ -57,7 +57,7 @@ Feature 2.5 (awards of people without an account) planned 2026-11-16: [feature-2
 | 2.5.2 | Awards for a person without an account | 8 | ✅ Done | SCRUM-151 | [#421](https://github.com/StKostyk/award-monitoring-system/issues/421) |
 | 2.5.3 | Claim at registration | 5 | ✅ Done | SCRUM-152 | [#422](https://github.com/StKostyk/award-monitoring-system/issues/422) |
 | 2.5.4 | Link at membership confirmation | 3 | ✅ Done | SCRUM-153 | [#423](https://github.com/StKostyk/award-monitoring-system/issues/423) |
-| 2.5.5 | Import people and past awards from a spreadsheet | 8 | 12 | SCRUM-154 | [#424](https://github.com/StKostyk/award-monitoring-system/issues/424) |
+| 2.5.5 | Import people and past awards from a spreadsheet | 8 | 👀 In review (12) | SCRUM-154 | [#424](https://github.com/StKostyk/award-monitoring-system/issues/424) |
 
 ### Epic 3 — Document Processing (Jira epic SCRUM-34)
 Tracker: [EPIC-03-DOCUMENT-PROCESSING-STATUS.md](../epics/EPIC-03-DOCUMENT-PROCESSING-STATUS.md). Upload only in this delivery; OCR and confidence scoring (US-006, US-007) are deferred until after Epic 8. Feature 3.1 PRD approved 2026-10-02: [feature-3.1-document-upload-storage.md](../features/epic-03/feature-3.1-document-upload-storage.md). Feature 3.1 validated 2026-10-05 and its fixes merged (3.1.5); documentation synced with the code on 2026-10-05; the epic closes after the manual run of 2026-10-11.
@@ -206,7 +206,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.4.2 | Widget kit, generated facts and monthly counts | 5 | ✅ Done | SCRUM-156 | [#431](https://github.com/StKostyk/award-monitoring-system/issues/431) |
 | 9.4.3 | Hall of Fame for the rector and the dean, role home | 3 | ✅ Done | SCRUM-157 | [#432](https://github.com/StKostyk/award-monitoring-system/issues/432) |
 | 9.4.4 | My awards with the CV export | 5 | ✅ Done | SCRUM-158 | [#433](https://github.com/StKostyk/award-monitoring-system/issues/433) |
-| 9.4.5 | Command centre with the department reminder | 5 | 👀 In review (11) | SCRUM-159 | [#434](https://github.com/StKostyk/award-monitoring-system/issues/434) |
+| 9.4.5 | Command centre with the department reminder | 5 | ✅ Done | SCRUM-159 | [#434](https://github.com/StKostyk/award-monitoring-system/issues/434) |
 
 ### Later epics
 | ID | Story | Points | Epic |

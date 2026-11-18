@@ -1,0 +1,162 @@
+:host {
+  display: block;
+}
+
+.import__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 0 8px;
+}
+
+.import__title {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+}
+
+.import__intro,
+.import__hint {
+  margin: 0 0 16px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.import__problem {
+  margin: 0 0 16px;
+  color: var(--mat-sys-error);
+}
+
+.import__step,
+.import__result {
+  margin-bottom: 16px;
+}
+
+.import__subtitle {
+  font: var(--mat-sys-title-medium);
+  margin: 0 0 12px;
+}
+
+.import__minor {
+  font: var(--mat-sys-title-small);
+  margin: 8px 0 12px;
+}
+
+.import__file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.import__file-name {
+  overflow-wrap: anywhere;
+}
+
+.import__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.import__field {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.import__field--wide {
+  flex-basis: 320px;
+}
+
+.import__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.import__summary,
+.import__row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 12px;
+}
+
+.import__counts {
+  margin: 0 0 12px;
+  padding-inline-start: 20px;
+}
+
+.import__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.import__row {
+  padding: 12px 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.import__row--blocked {
+  border-color: var(--mat-sys-error);
+}
+
+.import__row--skipped {
+  opacity: 0.7;
+}
+
+.import__row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.import__row-number {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+}
+
+.import__person {
+  font: var(--mat-sys-title-small);
+  overflow-wrap: anywhere;
+}
+
+.import__row-title {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.import__row-meta {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.import__problems {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.import__chip {
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 10px;
+}
+
+.import__chip--blocking {
+  border-color: var(--mat-sys-error);
+  color: var(--mat-sys-error);
+}

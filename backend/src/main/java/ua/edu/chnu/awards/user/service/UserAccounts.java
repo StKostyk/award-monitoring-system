@@ -133,4 +133,14 @@ public class UserAccounts {
             : "%" + fragment.strip().toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
         return users.findWithoutAccount(organizationIds, pattern, pageable);
     }
+
+    /**
+     * The members of one department, accounts and people without an account.
+     *
+     * @param organizationId the department
+     * @return the members
+     */
+    public List<User> findMembers(long organizationId) {
+        return users.findMembers(organizationId);
+    }
 }

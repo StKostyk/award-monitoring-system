@@ -197,6 +197,11 @@
           >
             {{ 'awards.status.' + award.status | transloco }}
           </span>
+          @if (award.source === 'IMPORT') {
+            <span class="app-chip awards__chip" data-testid="award-imported">
+              {{ 'awards.imported' | transloco }}
+            </span>
+          }
           @if (sharedWith(award); as visibility) {
             <span class="app-chip awards__chip" data-testid="award-visibility">
               {{ 'awards.visibility.chips.' + visibility | transloco }}

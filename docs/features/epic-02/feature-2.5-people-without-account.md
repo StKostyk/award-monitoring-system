@@ -2,7 +2,7 @@
 
 > **Epic**: 2 Award lifecycle management (SCRUM-20) · **Tracker**: `docs/epics/EPIC-02-AWARD-LIFECYCLE-STATUS.md`
 > **Sprint**: 10 and 11 (2026-11-16 to 2026-11-29); 2.5.5 after Feature 9.4 · **Points**: 32
-> **Status**: Approved 2026-11-16 (2.5.5 ACs provisional until a sample spreadsheet)
+> **Status**: Approved 2026-11-16; 2.5.5 revised 2026-11-18 (column mapping instead of one sample layout)
 > **Governing docs**: US-001 and FR-005 (account creation and profile linking), US-003, Feature 1.2 (registration,
 > verification, membership confirmation, AUTH §9 table), Feature 4.1.0 (unit awards, `RecipientUnits`, submitter
 > never reviews), Feature 6.1 (consent, privacy notice, erasure 6.1.5), Feature 7.1 (mail delivery),
@@ -191,18 +191,26 @@ for a sample spreadsheet of a faculty; its ACs are provisional until the sample 
 
 ### 2.5.5 Import people and past awards from a spreadsheet (SCRUM-154)
 
-Provisional: the columns and the date and level formats are fixed from a faculty's sample spreadsheet before the
-story starts.
+The faculties' spreadsheets differ (risk 7), so the import maps the columns instead of fixing one layout: the
+columns are guessed from the Ukrainian or English headers and the caller confirms or changes the mapping. Required
+fields: the full name (or surname and first name), the title and the date; optional: department, level, awarding
+organisation, address (only to tell apart people of one name) and notes. The department, level and awarding
+organisation of rows that leave them empty come from the mapping. Formats read: a full name «Прізвище Ім'я [По
+батькові]» or with initials («Петренко І. П.», matching one member only); dates `dd.MM.yyyy`, `yyyy-MM-dd`, a month
+`MM.yyyy` (its first day), a year (1 January) or an Excel date; levels by the stems of their names («всеукраїнський»,
+«обласна», «International»). A template workbook with the recognised columns can be downloaded.
 
-- **AC-5.1** (Upload and preview) Given a secretary or dean, when an `.xlsx` or `.csv` file of at most 2 MB and 1,000
-  rows is uploaded on `/admin/import`, then nothing is stored yet and a preview lists every row with the matched
-  person (an account or a person without an account of the department, by name), the matched category and level,
-  and its problems (unknown department outside the scope, missing title or date, a date after today, a probable
-  duplicate of a stored award).
+- **AC-5.1** (Upload, mapping and preview) Given a secretary or dean, when an `.xlsx` or `.csv` file of at most
+  2 MB and 1,000 rows is uploaded on `/admin/import`, then nothing is stored yet, the columns are mapped from the
+  headers and can be changed, and a preview lists every row with the matched person (an account or a person without
+  an account of the department, by name), the category of its level, and its problems (a department unknown or
+  outside the scope, a missing name, title, date, level or awarding organisation, an unreadable or future date, two
+  people of the name, a probable duplicate of an approved award, a row of the caller or of who lent them the role).
 - **AC-5.2** (Import) Given a preview without blocking problems, when «Імпортувати» is pressed, then in one
   transaction people missing from the department are added without an address (AC-1.1), each row becomes an
   `APPROVED` award with `source = IMPORT`, no review request and an `AWARD_IMPORTED` audit row naming the file and
-  the row; a repeated import of the same file adds nothing (rows are matched by person, title and date).
+  the row; a repeated import of the same file adds nothing (rows are matched with approved awards by person, title
+  and date).
 - **AC-5.3** (Ownership) Given an imported award of an account, then the account's owner sees it marked «Імпортовано»
   and may hide or correct it through a reviewer (4.4) like any approved award; imported awards of people without an
   account follow AC-2.6.
@@ -234,7 +242,7 @@ story starts.
 ### Tables
 - `users`: new status `UNCLAIMED`, new columns `added_by_id`, `invited_at` (V051, 2.5.1); a person without a known
   address holds the placeholder `unclaimed-<uuid>@unclaimed.invalid`, so `email_address` stays NOT NULL.
-- `awards`: new column `source` (V052, 2.5.5).
+- `awards`: new column `source` (V054, 2.5.5).
 - `award_requests`, `audit_logs`, `notifications`, `user_roles`: unchanged.
 
 ### Endpoints
@@ -263,8 +271,9 @@ story starts.
 
 ### External systems
 - Mail (Mailpit locally, Brevo on the demo server) for the invitation.
-- Spreadsheet reading (2.5.5): Apache POI for `.xlsx` (new dependency), Commons CSV for `.csv`; the files pass the
-  ClamAV scan of Feature 3.1 and are not stored.
+- Spreadsheet reading (2.5.5): fastexcel-reader for `.xlsx` (already used by the analytics export tests, now in
+  the main code), Commons CSV for `.csv` (new dependency; UTF-8 or Windows-1251, semicolon, comma or tab); the
+  files pass the ClamAV scan of Feature 3.1 and are not stored.
 
 ## 7. Technical decisions
 
@@ -330,9 +339,11 @@ pins those schemas to the DTOs and the entity enum.
 - `/people/{id}/invitation` `post` (2.5.1): 202; 429 with `Retry-After`; 409 `person-claimed`, `no-address`.
 - `/people/{id}/link` `post` (2.5.4): `PersonLinkRequest` {`userId`, `version`} → 200 {`userId`, `movedAwards`};
   404; 409 `version-conflict`; 422 `validation-failed`.
-- `/award-imports/preview` `post` (2.5.5): multipart `file` → `AwardImportPreview` {`rows`: row number, person
-  match, category match, `problems`}; 422 (size, type, scope). `/award-imports` `post` (2.5.5): the same file and
-  the preview's `checksum` → 201 {`imported`, `peopleAdded`, `skipped`}. Shapes fixed after the sample spreadsheet.
+- `/award-imports/preview` `post` (2.5.5): multipart `file` and an optional `ImportMapping` {`columns`,
+  `departmentId`, `defaultLevel`, `defaultAwardingOrganization`} → `AwardImportPreview` {`checksum`, `headers`,
+  `mapping` (the one sent or the guess), `rows`}; 422 (size, type, rows, mapping). `/award-imports` `post`: the
+  same file, the mapping and the preview's `checksum` → 201 {`imported`, `peopleAdded`, `skipped`}; 409
+  `preview-stale`; 422 `rows-blocked` with the row numbers. `/award-imports/template` `get`: the `.xlsx` template.
 - `AccountStatus` (2.5.1): adds `UNCLAIMED`. `/users/{id}/roles` `post` (2.5.1): 422 code `unclaimed`.
 - `AwardCreateRequest` (2.5.2): `recipientUserId` (integer, nullable); 422 `out-of-scope`, or with
   `recipientOrganizationId` code `one-recipient`.
@@ -350,7 +361,7 @@ pins those schemas to the DTOs and the entity enum.
   `email: null` for it and no mail goes to any `*.invalid` address.
 - Partial index `idx_users_unclaimed` on `(organization_id, last_name)` where `account_status = 'UNCLAIMED'`.
 
-`V052__award_source.sql` (2.5.5): `awards.source VARCHAR(10) NOT NULL DEFAULT 'FORM'`, CK `FORM`, `IMPORT`.
+`V054__award_source.sql` (2.5.5): `awards.source VARCHAR(10) NOT NULL DEFAULT 'FORM'`, CK `FORM`, `IMPORT`.
 
 ### 8.3 Properties
 
@@ -426,9 +437,10 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
     and confirm. (AC-4.1)
 19. Sign in as `o.melnyk@`. Expected: the role «Працівник», the approved award in `/awards`; psql shows the
     placeholder `DELETED` and `ACCOUNT_LINKED` with `movedAwards` 1. (AC-4.2)
-20. 2.5.5 (after the sample spreadsheet): upload the sample on `/admin/import`. Expected: the preview lists every row
-    with its matches and problems, nothing stored; «Імпортувати» stores the rows as approved awards marked
-    «Імпортовано» and adds the missing people; a second import adds nothing. (AC-5.1 to AC-5.3)
+20. 2.5.5: download the template on `/admin/import`, or take a faculty spreadsheet; upload it. Expected: the
+    columns are mapped from the headers (change one and preview again), the preview lists every row with its
+    person, department, category and problems, nothing stored; «Імпортувати» stores the rows as approved awards
+    marked «Імпортовано» and adds the missing people; a second import of the file adds nothing. (AC-5.1 to AC-5.3)
 
 ### Detours
 
@@ -476,7 +488,7 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
 | 4 | Duplicate rows when the person registers under another address | Out of scope merge; secretary sees both in the directory |
 | 5 | Ownership checks spread over many services miss the manage rule | One `AwardOwnership.canManage`; `ProxyAwardFT` walks every owner endpoint |
 | 6 | A secretary links the wrong person of the same name | Masked address and award count in the dialog, nothing preselected, audit row; undo by a reviewer correction or an admin |
-| 7 | The spreadsheets differ between faculties | 2.5.5 waits for a sample; a column mapping step if two samples differ |
+| 7 | The spreadsheets differ between faculties | A column mapping step guessed from the headers (decided 2026-11-18); real samples tune the header words |
 
 ## 12. Definition of Done
 

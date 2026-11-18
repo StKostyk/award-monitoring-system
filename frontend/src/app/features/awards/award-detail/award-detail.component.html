@@ -29,6 +29,9 @@
       <mat-chip data-testid="award-detail-status">{{
         'awards.status.' + award.status | transloco
       }}</mat-chip>
+      @if (award.source === 'IMPORT') {
+        <mat-chip data-testid="award-detail-imported">{{ 'awards.imported' | transloco }}</mat-chip>
+      }
     </div>
     <dl class="award-detail__fields">
       @if (award.titleUk && award.title) {
