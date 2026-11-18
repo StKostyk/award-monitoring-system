@@ -245,8 +245,10 @@ Inherited:
 5. **`/` redirects by highest role**; the 5.1 summary page `/dashboard/summary` stays; `HomeComponent` is removed.
 6. **CV export as PDF and text, not DOCX**: the PDF reuses the 5.3 report renderer; text is for pasting. The export
    includes private awards because the list is the account's own.
-7. **Reminder once a week per department**, checked in `notifications` by type and department (`payload.unitId`), no
-   new table.
+7. **Reminder once a week per department**, checked against the `UNIT_REMINDED` audit row the reminder writes in its
+   own transaction under the department's advisory lock, no new table (the in-app row appears only after the commit
+   and is skipped when the recipient switched reminders off, so it cannot settle two senders at once; ADR-006
+   addendum 2026-11-18).
 8. **Rector's secretary gets the Command centre at faculty level without the reminder**; reminding a faculty is out.
 
 ## 8. Contract
@@ -271,7 +273,9 @@ Written in this PRD's PR, `x-status: planned`:
   `UnitReminder {unit: OrganizationRef, recipient: UserRef, sentAt}`; 400 `invalid-parameter`; 403 (scope); 404
   (unknown unit); 409 `recently-reminded` (with `lastSentAt`) or `has-awards`; 422 `invalid-recipient`.
 - `GET /analytics/units/{id}` (9.4.5): `units[].lastReminderAt` (date-time, null) for departments, so the card shows
-  «Нагадано …» without a second call.
+  «Нагадано …» without a second call. A faculty secretary whose role is held on a faculty may read that faculty here
+  (AC-5.2 needs its department comparison and top people); it stays out of `GET /analytics/units` and the export.
+- `GET /reviews/today` (9.4.5): `ReviewDay {decided, since}`, the caller's decisions since 00:00 Kyiv time, for K3.
 
 ### 8.2 Migration outlines
 
@@ -279,9 +283,9 @@ Written in this PRD's PR, `x-status: planned`:
   'SYSTEM'` with `ck_dashboard_preferences_color_scheme` (`SYSTEM`, `LIGHT`, `DARK`), add `layouts JSONB NOT NULL
   DEFAULT '{}'`; `UPDATE` rows with a non-empty `hidden_widgets` to
   `{"MY_AWARDS": {"order": [], "hidden": [...]}}`; drop `hidden_widgets`; comments on both columns.
-- `V053__awards_reminder_notification.sql` (9.4.5): replace `ck_notifications_type` with the current list plus
-  `AWARDS_REMINDER`; partial index `ix_notifications_awards_reminder` on `((payload->>'unitId'), sent_at)` where
-  `type = 'AWARDS_REMINDER' AND channel = 'IN_APP'`.
+- `V053__awards_reminder_notification.sql` (9.4.5): replace `ck_notifications_type` and
+  `ck_notification_preferences_event` with the current list plus `AWARDS_REMINDER`; no index (the weekly check reads
+  `audit_logs` through `idx_audit_logs_entity`).
 
 ### 8.3 Properties
 

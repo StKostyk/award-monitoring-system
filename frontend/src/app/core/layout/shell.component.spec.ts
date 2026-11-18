@@ -304,6 +304,25 @@ describe('ShellComponent', () => {
     ).toBe('/hall-of-fame');
   });
 
+  it('ac5_1_lists_the_command_centre_for_a_secretary_or_dean_only', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:5'] })));
+    const employee = TestBed.createComponent(ShellComponent);
+    employee.detectChanges();
+
+    expect(employee.nativeElement.querySelector('[data-testid="nav-command-centre"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['FACULTY_SECRETARY:9'] })));
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="nav-command-centre"]')
+        .getAttribute('href'),
+    ).toBe('/command-centre');
+  });
+
   it('ac3_6_shows_the_delegations_entry_only_to_a_holder_of_an_approval_role', () => {
     auth.isAuthenticated.set(true);
     auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));

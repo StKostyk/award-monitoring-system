@@ -120,6 +120,21 @@ describe('NotificationText', () => {
     );
   });
 
+  it('ac5_3_renders_the_awards_reminder_with_the_department_year_and_sender_and_leads_to_the_awards', () => {
+    const reminder = {
+      unitId: 41,
+      unit: 'Department of Algebra',
+      unitUk: 'Кафедра алгебри',
+      year: 2026,
+      sender: 'Ірина Секретар',
+    };
+
+    expect(render('AWARDS_REMINDER', reminder)).toBe(
+      'Reminder from Ірина Секретар: Department of Algebra has no award in 2026',
+    );
+    expect(notificationTarget(notification('AWARDS_REMINDER', reminder))).toEqual(['/awards']);
+  });
+
   it('ac2_7_renders_in_ukrainian_after_the_language_switch', () => {
     TestBed.inject(TranslocoService).setActiveLang('uk');
     language.set('uk');

@@ -4,6 +4,7 @@ import {
   analyticsGuard,
   approverGuard,
   authGuard,
+  commandCentreGuard,
   complianceGuard,
   delegationGuard,
   hallOfFameGuard,
@@ -117,6 +118,14 @@ export const routes: Routes = [
         canActivate: [authGuard, hallOfFameGuard],
         loadChildren: () =>
           import('./features/hall-of-fame/hall-of-fame.routes').then((m) => m.HALL_OF_FAME_ROUTES),
+      },
+      {
+        path: 'command-centre',
+        canActivate: [authGuard, commandCentreGuard],
+        loadChildren: () =>
+          import('./features/command-centre/command-centre.routes').then(
+            (m) => m.COMMAND_CENTRE_ROUTES,
+          ),
       },
       {
         path: 'analytics',

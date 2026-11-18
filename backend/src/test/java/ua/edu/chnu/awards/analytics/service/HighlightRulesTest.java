@@ -57,7 +57,7 @@ class HighlightRulesTest {
         UnitComparisonRow empty = row(2, 3, 0, 0);
         UnitComparisonRow withoutMembers = row(3, 0, 0, 9);
         UnitComparisonRow facultyLevel = new UnitComparisonRow(unit(4), true, true, 3, Figure.of(0, 0), 0, null, 0,
-            List.of());
+            List.of(), null);
 
         List<UnitHighlight> highlights = rules.of(List.of(growing, empty, withoutMembers, facultyLevel),
             totals(8, 9));
@@ -88,7 +88,7 @@ class HighlightRulesTest {
         UnitComparisonRow strong = row(1, 10, 60, 30);
         UnitComparisonRow empty = row(2, 10, 0, 0);
         UnitComparisonRow universityLevel = new UnitComparisonRow(unit(3), true, true, 10, Figure.of(0, 9), 0, null,
-            0, List.of());
+            0, List.of(), null);
 
         List<UnitHighlight> highlights = rules.ofUniversity(List.of(strong, empty, universityLevel), totals(60, 30));
 
@@ -107,7 +107,7 @@ class HighlightRulesTest {
 
     private static UnitComparisonRow row(long id, long members, long current, long previous) {
         return new UnitComparisonRow(unit(id), false, true, members, Figure.of(current, previous), 0, null, 0,
-            List.of());
+            List.of(), null);
     }
 
     private static OrganizationRef unit(long id) {

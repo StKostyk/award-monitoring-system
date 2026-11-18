@@ -275,6 +275,7 @@ try {
         $log = Join-Path $root 'build\e2e-backend.log'
         New-Item -ItemType Directory -Force -Path (Split-Path $log) | Out-Null
         $env:AUTH_RATE_LIMIT_PER_MINUTE = '1000'
+        $env:APP_REMINDERS_UNIT_INTERVAL = 'PT1M'
         $started = Start-Process -FilePath (Join-Path $root 'backend\mvnw.cmd') `
             -ArgumentList 'spring-boot:run', '-Dspring-boot.run.profiles=local' `
             -WorkingDirectory (Join-Path $root 'backend') -RedirectStandardOutput $log -PassThru -WindowStyle Hidden

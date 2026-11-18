@@ -31,11 +31,21 @@ export interface TopPerson {
   count: number;
 }
 
-/** A card that points at one piece of work: a title, a line about it and one action. */
+/** What a focus card offers: a link, or a command the page carries out; a disabled command explains itself. */
+export interface FocusAction {
+  label: string;
+  link?: string | unknown[];
+  command?: string;
+  disabled?: boolean;
+}
+
+/** A card that points at one piece of work: a title, a line about it and at most one action. */
 export interface FocusCard {
+  /** Suffix of the card's `focus-` test id. */
+  id?: string;
   title: string;
   line: string;
-  action: { label: string; link: string | unknown[] };
+  action: FocusAction | null;
 }
 
 /** One bar, step or area of a widget: a translation key for its label and its count. */

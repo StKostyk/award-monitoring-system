@@ -58,10 +58,10 @@ final class UniversityReportFixture {
         List<OrganizationRef> units = IntStream.rangeClosed(1, faculties)
             .mapToObj(UniversityReportFixture::facultyRef).toList();
         List<UnitComparisonRow> rows = new ArrayList<>();
-        rows.add(new UnitComparisonRow(UNIVERSITY, true, true, 3, Figure.of(1, 0), 0, null, 0, years(0)));
+        rows.add(new UnitComparisonRow(UNIVERSITY, true, true, 3, Figure.of(1, 0), 0, null, 0, years(0), null));
         for (int i = 0; i < units.size(); i++) {
             rows.add(new UnitComparisonRow(units.get(i), false, i != 1, 20 + i, Figure.of(10 + i, 8), 6,
-                BigDecimal.valueOf(40 + i * 10L, 0).setScale(1), 7, years(2)));
+                BigDecimal.valueOf(40 + i * 10L, 0).setScale(1), 7, years(2), null));
         }
         List<CategoryComparison> byCategory = IntStream.rangeClosed(1, 6)
             .mapToObj(i -> new CategoryComparison(category(i), 12 - i, 5)).toList();

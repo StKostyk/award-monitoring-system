@@ -60,6 +60,7 @@ export function deanRoutes(): RoleRoutes {
       `/awards/${awardOf(SEED.employee, 'PENDING')}/correct`,
       '/delegations',
       '/hall-of-fame',
+      '/command-centre',
       '/analytics',
       '/analytics/units/9',
       '/admin/users',

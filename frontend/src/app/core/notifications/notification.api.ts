@@ -18,6 +18,7 @@ export const NOTIFICATION_TYPES = [
   'ROLE_REVOKED',
   'DELEGATION_CREATED',
   'DELEGATION_REVOKED',
+  'AWARDS_REMINDER',
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

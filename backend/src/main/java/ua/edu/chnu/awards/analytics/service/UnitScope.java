@@ -78,6 +78,24 @@ public class UnitScope {
         return organizations.findById(unitId).map(this::unit).orElseThrow(() -> new UnitNotFoundException(unitId));
     }
 
+    /**
+     * One unit the caller may view: an analysable unit, or the faculty on which the caller holds a role that
+     * grants {@code analytics:read:department}, whose figures add up its departments and faculty level.
+     *
+     * @param unitId the unit
+     * @return the unit
+     * @throws UnitNotFoundException when it is unknown, of another type or not viewable for the caller
+     */
+    public AnalysableUnit requireOverview(long unitId) {
+        boolean ownFaculty = tree.node(unitId).filter(node -> node.type() == OrganizationType.FACULTY).isPresent()
+            && access.heldScopes().stream().anyMatch(scope -> scope.organizationId() == unitId
+                && permissions.of(scope.role()).contains(READ_DEPARTMENT));
+        if (!ownFaculty) {
+            return require(unitId);
+        }
+        return organizations.findById(unitId).map(this::unit).orElseThrow(() -> new UnitNotFoundException(unitId));
+    }
+
     private Set<Long> analysable() {
         Set<Long> result = new HashSet<>();
         for (RoleScope scope : access.heldScopes()) {

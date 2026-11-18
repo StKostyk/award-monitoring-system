@@ -38,6 +38,7 @@ export const PREFERENCE_GROUPS: readonly PreferenceGroup[] = [
       'AWARD_RETURNED',
       'AWARD_ESCALATED',
       'AWARD_CORRECTED',
+      'AWARDS_REMINDER',
     ],
   },
   { key: 'reviewing', types: ['REVIEW_OVERDUE', 'REVIEW_TAKEN_OVER'] },

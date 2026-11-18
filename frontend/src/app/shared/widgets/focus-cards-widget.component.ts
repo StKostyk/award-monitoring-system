@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -15,10 +15,24 @@ import { FocusCard } from './widget-data';
     @if (cards().length > 0) {
       <ul class="focus" data-testid="focus-cards">
         @for (card of cards(); track $index) {
-          <li class="focus__card">
+          <li class="focus__card" [attr.data-testid]="card.id ? 'focus-' + card.id : null">
             <h3 class="focus__title">{{ card.title }}</h3>
             <p class="focus__line">{{ card.line }}</p>
-            <a mat-button [routerLink]="card.action.link">{{ card.action.label }}</a>
+            @if (card.action; as action) {
+              @if (action.link; as link) {
+                <a mat-button [routerLink]="link">{{ action.label }}</a>
+              } @else {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="focus__command"
+                  [disabled]="action.disabled ?? false"
+                  (click)="command.emit(action.command ?? '')"
+                >
+                  {{ action.label }}
+                </button>
+              }
+            }
           </li>
         }
       </ul>
@@ -55,6 +69,10 @@ import { FocusCard } from './widget-data';
       font: var(--mat-sys-title-medium);
     }
 
+    .focus__command {
+      min-height: 44px;
+    }
+
     .focus__line {
       flex: 1;
       margin: 0;
@@ -66,4 +84,6 @@ import { FocusCard } from './widget-data';
 export class FocusCardsWidgetComponent {
   /** The cards, translated by the caller. */
   readonly cards = input.required<FocusCard[]>();
+  /** The command of the card whose button was pressed. */
+  readonly command = output<string>();
 }

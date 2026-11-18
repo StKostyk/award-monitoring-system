@@ -18,6 +18,7 @@ import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.document.event.ObjectsReleased;
 import ua.edu.chnu.awards.gdpr.event.DataExported;
+import ua.edu.chnu.awards.notification.event.UnitReminderRequested;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
@@ -81,6 +82,12 @@ class AccountEventJsonTest {
     @Test
     void ac1_8_emailRestored() throws Exception {
         assertRoundTrip(new EmailRestored("olena.new@chnu.edu.ua", "olena@chnu.edu.ua", "Олена"));
+    }
+
+    @Test
+    void ac5_3_unitReminderRequested() throws Exception {
+        assertRoundTrip(new UnitReminderRequested(8L, "olena@chnu.edu.ua", "Олена", 70L, "Department of Music",
+            "Кафедра музики", 2026, "Ірина Бойко", AT));
     }
 
     private void assertRoundTrip(Object event) throws Exception {

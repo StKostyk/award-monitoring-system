@@ -29,6 +29,8 @@ export function notificationTarget(notification: AppNotification): unknown[] | n
     case 'DELEGATION_CREATED':
     case 'DELEGATION_REVOKED':
       return ['/delegations'];
+    case 'AWARDS_REMINDER':
+      return ['/awards'];
     default:
       return null;
   }
@@ -103,6 +105,9 @@ export class NotificationText {
       until: this.dated('notifications.until', payload['validTo'], language),
       lastDay: this.dated('notifications.lastDay', payload['validTo'], language),
       otherParty: text(payload['otherParty']),
+      unit: localized(payload['unit'], payload['unitUk'], language),
+      year: text(payload['year']),
+      sender: text(payload['sender']),
     };
   }
 

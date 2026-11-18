@@ -57,6 +57,8 @@ export interface UnitComparisonRow {
   perHundredMembers: number | null;
   verified: number;
   byYear: number[];
+  /** The last department reminder within the server's interval; null when none or at faculty level. */
+  lastReminderAt?: string | null;
 }
 
 export interface TopPerformer {

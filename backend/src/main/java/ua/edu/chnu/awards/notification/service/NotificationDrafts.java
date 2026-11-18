@@ -15,6 +15,7 @@ import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.event.UnitReminderRequested;
 import ua.edu.chnu.awards.user.event.RoleAssigned;
 import ua.edu.chnu.awards.user.event.RoleRevoked;
 
@@ -135,6 +136,23 @@ public class NotificationDrafts {
             return new NotificationDraft(recipient.userId(), NotificationType.DELEGATION_REVOKED, payload, null,
                 null, event.occurredAt());
         }).toList();
+    }
+
+    /**
+     * The colleague's reminder that the department has no award this year.
+     *
+     * @param event the reminder
+     * @return one draft
+     */
+    public NotificationDraft of(UnitReminderRequested event) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("unitId", event.unitId());
+        payload.put("unit", event.unit());
+        payload.put("unitUk", event.unitUk());
+        payload.put("year", event.year());
+        payload.put("sender", event.sender());
+        return new NotificationDraft(event.userId(), NotificationType.AWARDS_REMINDER, payload, null, null,
+            event.occurredAt());
     }
 
     /**

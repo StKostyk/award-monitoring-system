@@ -85,6 +85,7 @@ export const LABELLED_ACTIONS: ReadonlySet<string> = new Set([
   'ERASURE_REQUESTED',
   'ERASURE_CANCELLED',
   'ERASURE_POSTPONED',
+  'UNIT_REMINDED',
 ]);
 
 export const VISIBILITIES: readonly Visibility[] = ['PRIVATE', 'UNIVERSITY', 'PUBLIC'];

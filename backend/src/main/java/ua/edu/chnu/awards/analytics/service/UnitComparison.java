@@ -106,7 +106,8 @@ public class UnitComparison {
             unit.getCode(), unit.getOrgType()), facultyLevel, unit.isActive(), members,
             Figure.of(approved, UnitFiguresHelper.approved(figures, part, previous)),
             UnitFiguresHelper.awardedPeople(figures, part, true), UnitFiguresHelper.perHundred(approved, members),
-            UnitFiguresHelper.verified(figures, part, period), UnitFiguresHelper.yearSeries(figures, part, period));
+            UnitFiguresHelper.verified(figures, part, period), UnitFiguresHelper.yearSeries(figures, part, period),
+            null);
     }
 
     private static String name(OrganizationRef unit) {

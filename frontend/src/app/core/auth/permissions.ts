@@ -35,6 +35,15 @@ const GRANTS: Partial<Record<RoleType, RoleType[]>> = {
 /** Roles whose home is the Hall of Fame. */
 const HALL_OF_FAME_ROLES: RoleType[] = ['RECTOR', 'DEAN'];
 
+/** Roles whose Command centre shows a faculty, in the order the page prefers them. */
+const FACULTY_DESK_ROLES: RoleType[] = ['FACULTY_SECRETARY', 'DEAN'];
+
+/** The queue level and the faculty of the Command centre; a null faculty means the faculties of the university. */
+export interface CommandCentreScope {
+  level: 'FACULTY_SECRETARY' | 'DEAN' | 'RECTOR_SECRETARY';
+  facultyId: number | null;
+}
+
 /** Permissions that open the user directory. */
 export const DIRECTORY_PERMISSIONS = ['user:read:scope', 'user:read:all'];
 
@@ -111,6 +120,33 @@ export function canReadUniversityAnalytics(permissions: TokenPermissions): boole
  */
 export function canOpenHallOfFame(permissions: TokenPermissions): boolean {
   return permissions.heldScopes.some((scope) => HALL_OF_FAME_ROLES.includes(scope.role));
+}
+
+/**
+ * Whether the caller holds a faculty secretary, dean or rector's secretary role of their own and so opens the
+ * Command centre; a borrowed role does not count, since delegations never carry analytics.
+ */
+export function canOpenCommandCentre(permissions: TokenPermissions): boolean {
+  return commandCentreScope(permissions) !== null;
+}
+
+/**
+ * What the Command centre of the caller shows: the faculty of a held faculty secretary role, else of a held dean
+ * role, else the faculties of the university for a rector's secretary.
+ *
+ * @param permissions the permissions of the access token
+ * @return the scope, or null when the caller holds none of these roles
+ */
+export function commandCentreScope(permissions: TokenPermissions): CommandCentreScope | null {
+  for (const role of FACULTY_DESK_ROLES) {
+    const scope = permissions.heldScopes.find((held) => held.role === role);
+    if (scope) {
+      return { level: role as CommandCentreScope['level'], facultyId: scope.organizationId };
+    }
+  }
+  return permissions.heldScopes.some((held) => held.role === 'RECTOR_SECRETARY')
+    ? { level: 'RECTOR_SECRETARY', facultyId: null }
+    : null;
 }
 
 /** Whether the Hall of Fame of the caller shows the whole university rather than a faculty. */
