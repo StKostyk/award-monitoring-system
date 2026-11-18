@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.analytics.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import ua.edu.chnu.awards.organization.dto.OrganizationRef;
@@ -17,11 +18,12 @@ import ua.edu.chnu.awards.organization.dto.OrganizationRef;
  * @param perHundredMembers counted awards per 100 members, one decimal; null without members
  * @param verified          counted awards with a verification badge in the period
  * @param byYear            counted awards per year of the period, zeros included
+ * @param lastReminderAt    the department's last reminder within the reminder interval; null for none and for
+ *                          a faculty level
  */
 public record UnitComparisonRow(OrganizationRef unit, boolean facultyLevel, boolean active, long members,
                                 Figure approved, long awardedPeople, BigDecimal perHundredMembers, long verified,
-                                List<Long> byYear) {
-
+                                List<Long> byYear, Instant lastReminderAt) {
     /**
      * Copies the series.
      *
@@ -34,8 +36,20 @@ public record UnitComparisonRow(OrganizationRef unit, boolean facultyLevel, bool
      * @param perHundredMembers counted awards per 100 members
      * @param verified          counted awards with a verification badge
      * @param byYear            counted awards per year of the period
+     * @param lastReminderAt    the last reminder within the interval
      */
     public UnitComparisonRow {
         byYear = List.copyOf(byYear);
+    }
+
+    /**
+     * The same row with the time of the department's last reminder.
+     *
+     * @param sentAt the last reminder, or null
+     * @return the row
+     */
+    public UnitComparisonRow withLastReminderAt(Instant sentAt) {
+        return new UnitComparisonRow(unit, facultyLevel, active, members, approved, awardedPeople, perHundredMembers,
+            verified, byYear, sentAt);
     }
 }

@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.award;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -131,6 +132,20 @@ class DecisionFT extends AbstractFunctionalTest {
         assertThat(mailpit.latestTextTo(EMPLOYEE, "Нагороду передано далі", 2)).contains("секретарю ректора");
         decide(office, id, "REJECT", "Пізно").then().statusCode(HttpStatus.CONFLICT.value())
             .body(TYPE, equalTo(PROBLEM + "request-closed"));
+    }
+
+    @Test
+    void ac5_1_todaysDecisionsCountTheCallersOwnSinceMidnightInKyiv() {
+        String secretary = tokenOf(SECRETARY);
+        int before = as(secretary).get("/api/v1/reviews/today").then().statusCode(HttpStatus.OK.value())
+            .header("Cache-Control", "no-store").extract().path("decided");
+        long id = submitted(AUTHOR, "Грамота для лічильника дня");
+
+        decide(secretary, id, "APPROVE", null).then().statusCode(HttpStatus.OK.value());
+
+        as(secretary).get("/api/v1/reviews/today").then().statusCode(HttpStatus.OK.value())
+            .body("decided", equalTo(before + 1)).body("since", endsWith(":00Z"));
+        as(tokenOf(EMPLOYEE)).get("/api/v1/reviews/today").then().statusCode(HttpStatus.FORBIDDEN.value());
     }
 
     @Test

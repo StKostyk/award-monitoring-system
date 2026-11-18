@@ -10,6 +10,8 @@ const USABLE_WITHIN_MS = 5000;
 /** Faculty of Mathematics and Informatics and its Department of Algebra and Informatics (seed). */
 const FMI = 9;
 const DAI = 64;
+/** A faculty outside the seed secretary's role. */
+const PHILOLOGY = 12;
 
 /** An empty chart draws only its category axis line. */
 const AXIS_ONLY_PATHS = 1;
@@ -95,7 +97,9 @@ test.describe('unit analytics', () => {
     await expect(page.getByTestId('section-comparison')).toBeVisible();
   });
 
-  test('ac2_2 lists only the departments of the faculty to its secretary', async ({ browser }) => {
+  test('ac2_2 lists only the departments of the faculty to its secretary and opens no other faculty', async ({
+    browser,
+  }) => {
     const page = await signedIn(browser, SEED.secretary);
     await page.goto('/analytics');
     await expect(page).toHaveURL(/\/analytics\/units\/\d+$/);
@@ -108,6 +112,8 @@ test.describe('unit analytics', () => {
     await page.keyboard.press('Escape');
 
     await page.goto(`/analytics/units/${FMI}`);
+    await expect(page.getByTestId('section-totals')).toBeVisible();
+    await page.goto(`/analytics/units/${PHILOLOGY}`);
     await expect(page.getByTestId('unit-not-found')).toContainText('Цей підрозділ недоступний.');
   });
 

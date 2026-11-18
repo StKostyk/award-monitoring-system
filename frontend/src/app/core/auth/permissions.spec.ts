@@ -2,7 +2,9 @@ import {
   approvalScopes,
   canCreateAwards,
   canDelegate,
+  canOpenCommandCentre,
   canOpenHallOfFame,
+  commandCentreScope,
   canReadCompliance,
   canManagePeople,
   canReadDirectory,
@@ -284,5 +286,33 @@ describe('permissions', () => {
     expect(readsUniversityHallOfFame(readPermissions(token({ role_scopes: ['RECTOR:1'] })))).toBe(
       false,
     );
+  });
+  it('ac5_1_ac5_6_opens_the_command_centre_for_held_secretary_and_dean_roles_with_their_queue_level', () => {
+    const secretary = readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] }));
+    const dean = readPermissions(token({ role_scopes: ['DEAN:9'] }));
+    const rectorSecretary = readPermissions(token({ role_scopes: ['RECTOR_SECRETARY:1'] }));
+    const delegate = readPermissions(
+      token({
+        role_scopes: ['EMPLOYEE:5', 'FACULTY_SECRETARY:9'],
+        delegations: ['FACULTY_SECRETARY:9:4'],
+      }),
+    );
+    const employee = readPermissions(token({ role_scopes: ['EMPLOYEE:5'] }));
+
+    expect(
+      [secretary, dean, rectorSecretary, delegate, employee].map(canOpenCommandCentre),
+    ).toEqual([true, true, true, false, false]);
+    expect(commandCentreScope(secretary)).toEqual({ level: 'FACULTY_SECRETARY', facultyId: 9 });
+    expect(commandCentreScope(dean)).toEqual({ level: 'DEAN', facultyId: 9 });
+    expect(commandCentreScope(rectorSecretary)).toEqual({
+      level: 'RECTOR_SECRETARY',
+      facultyId: null,
+    });
+    expect(
+      commandCentreScope(
+        readPermissions(token({ role_scopes: ['RECTOR_SECRETARY:1', 'FACULTY_SECRETARY:9'] })),
+      ),
+    ).toEqual({ level: 'FACULTY_SECRETARY', facultyId: 9 });
+    expect(commandCentreScope(delegate)).toBeNull();
   });
 });

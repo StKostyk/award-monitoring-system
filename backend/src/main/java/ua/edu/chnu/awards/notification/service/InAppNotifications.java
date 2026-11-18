@@ -10,6 +10,7 @@ import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.event.UnitReminderRequested;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
 import ua.edu.chnu.awards.notification.service.DeliveryMetrics.Outcome;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
@@ -116,6 +117,16 @@ public class InAppNotifications {
     @ApplicationModuleListener
     public void onDelegationRevoked(DelegationRevoked event) {
         drafts.of(event).forEach(this::write);
+    }
+
+    /**
+     * Reminds a colleague that the department has no award this year.
+     *
+     * @param event the committed reminder
+     */
+    @ApplicationModuleListener
+    public void onUnitReminderRequested(UnitReminderRequested event) {
+        write(drafts.of(event));
     }
 
     void write(NotificationDraft draft) {

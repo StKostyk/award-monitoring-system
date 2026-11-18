@@ -26,6 +26,7 @@ import ua.edu.chnu.awards.award.event.ReviewTakenOver;
 import ua.edu.chnu.awards.delegation.event.DelegationCreated;
 import ua.edu.chnu.awards.delegation.event.DelegationRevoked;
 import ua.edu.chnu.awards.notification.entity.NotificationType;
+import ua.edu.chnu.awards.notification.event.UnitReminderRequested;
 import ua.edu.chnu.awards.notification.repository.NewNotification;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
 import ua.edu.chnu.awards.support.TestDeliveries;
@@ -83,6 +84,19 @@ class InAppNotificationsRoutingTest {
         assertThat(rows.getAllValues()).extracting(NewNotification::type).containsExactly("AWARD_CORRECTED",
             "REVIEW_OVERDUE", "REVIEW_TAKEN_OVER", "ROLE_ASSIGNED", "ROLE_REVOKED", "DELEGATION_CREATED",
             "DELEGATION_REVOKED", "DELEGATION_REVOKED");
+    }
+
+    @Test
+    void ac5_3_aReminderReachesTheWriter() {
+        UnitReminderRequested reminder = mock(UnitReminderRequested.class);
+        when(users.findById(7L)).thenReturn(Optional.of(TestUsers.person(7L, "olena@chnu.edu.ua")));
+        when(drafts.of(reminder)).thenReturn(draft(NotificationType.AWARDS_REMINDER));
+
+        notifications.onUnitReminderRequested(reminder);
+
+        ArgumentCaptor<NewNotification> rows = ArgumentCaptor.forClass(NewNotification.class);
+        verify(repository).insertOnce(rows.capture());
+        assertThat(rows.getValue().type()).isEqualTo("AWARDS_REMINDER");
     }
 
     private static NotificationDraft draft(NotificationType type) {

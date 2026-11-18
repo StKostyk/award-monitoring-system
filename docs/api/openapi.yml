@@ -1168,6 +1168,28 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationFailed'
 
+  /reviews/today:
+    get:
+      tags: [Workflows]
+      summary: The caller's decisions of the day
+      description: >
+        Counts the decisions the caller made since 00:00 Kyiv time, under an own or a delegated role, batch items
+        included; the Command centre shows it beside the queue (`award:approve:level1`, 9.4.5).
+      security:
+        - bearerAuth: []
+      operationId: getReviewDay
+      responses:
+        '200':
+          description: The count and the start of the day
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewDay'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /reviews/templates:
     get:
       tags: [Workflows]
@@ -3418,7 +3440,9 @@ paths:
         the previous period of the same length: totals, counts by year, the child departments, by category, by
         level and by awarding organisation, top performers under the `ANALYTICS` consent and rule-based
         highlights. Aggregates are cached for `app.analytics.unit-cache-ttl`; names and consent are applied per
-        request (5.2.1).
+        request (5.2.1). Besides the analysable units, a faculty secretary may read the faculty on which the role
+        itself is held, for the department comparison and top people of the Command centre; that faculty stays
+        out of `GET /analytics/units` and of the export (9.4.5). Department rows carry `lastReminderAt`.
       security:
         - bearerAuth: []
       operationId: getUnitAnalytics
@@ -3524,8 +3548,8 @@ paths:
         «Нагадати завідувачу» reminder to an active member of a department with no counted award in the current
         Kyiv year. Once the transaction commits the member receives the `AWARDS_REMINDER` notification in the app
         and by mail, naming the department, the year and the sender. One reminder per department within
-        `app.reminders.unit-interval` (default 7 days), checked under the department's advisory lock (9.4.5).
-      x-status: planned
+        `app.reminders.unit-interval` (default 7 days), checked under the department's advisory lock against the
+        `UNIT_REMINDED` audit rows written in the same transaction (9.4.5).
       security:
         - bearerAuth: []
       operationId: remindUnit
@@ -4689,6 +4713,7 @@ components:
         - ROLE_REVOKED
         - DELEGATION_CREATED
         - DELEGATION_REVOKED
+        - AWARDS_REMINDER
 
     Notification:
       type: object
@@ -4707,7 +4732,8 @@ components:
             `reviewer`, `level`; `AWARD_CORRECTED` `title`, `titleUk`, `reviewer`, `fields` (names only);
             `REVIEW_TAKEN_OVER` `title`, `titleUk`, `reviewer`; `REVIEW_OVERDUE` `count`, `oldestDeadline`;
             role types `role`, `organization`, `organizationUk`, `validTo` (null when open-ended); delegation
-            types the same plus `otherParty`. Never the reviewer's comment or corrected values
+            types the same plus `otherParty`; `AWARDS_REMINDER` `unitId`, `unit`, `unitUk`, `year`, `sender`. Never
+            the reviewer's comment or corrected values
         referenceType:
           type: [string, 'null']
           enum: [AWARD, null]
@@ -5531,7 +5557,6 @@ components:
     UnitReminderRequest:
       type: object
       description: The colleague of the department who receives the reminder (9.4.5)
-      x-status: planned
       required: [recipientId]
       properties:
         recipientId:
@@ -5541,7 +5566,6 @@ components:
     UnitReminder:
       type: object
       description: A reminder accepted for sending (9.4.5)
-      x-status: planned
       required: [unit, recipient, sentAt]
       properties:
         unit:
@@ -5646,8 +5670,8 @@ components:
           type: [string, 'null']
           format: date-time
           description: >
-            Planned for 9.4.5 (SCRUM-159): the last «Нагадати завідувачу» reminder for a department within
-            `app.reminders.unit-interval`, null otherwise and for the faculty level
+            The last «Нагадати завідувачу» reminder of a department within `app.reminders.unit-interval`; null
+            otherwise, for the faculty level and in the export (9.4.5)
 
     TopPerformers:
       type: object
@@ -6118,6 +6142,19 @@ components:
             Whether the caller may escalate the request: false at the rector's level and when the caller already
             reviews at the next level; set on `GET /awards/{id}/reviewer`, null on queue pages and on `PUT`
             responses
+
+    ReviewDay:
+      type: object
+      description: The caller's review work of the current Kyiv day (9.4.5)
+      required: [decided, since]
+      properties:
+        decided:
+          type: integer
+          format: int64
+        since:
+          type: string
+          format: date-time
+          description: 00:00 of the current day in Kyiv
 
     ReviewItemPage:
       allOf:

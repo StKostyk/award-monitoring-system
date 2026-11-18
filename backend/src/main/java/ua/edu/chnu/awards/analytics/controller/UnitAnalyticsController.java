@@ -62,7 +62,7 @@ public class UnitAnalyticsController {
     @PreAuthorize(CAN_READ)
     public ResponseEntity<UnitAnalytics> unit(@PathVariable long id, @RequestParam(required = false) Integer from,
                                               @RequestParam(required = false) Integer to) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(unitAnalytics.of(id, from, to));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(unitAnalytics.overview(id, from, to));
     }
 
     /**

@@ -57,9 +57,9 @@ final class UnitAnalyticsFixture {
         List<OrganizationRef> units = IntStream.rangeClosed(1, departments)
             .mapToObj(UnitAnalyticsFixture::departmentRef).toList();
         List<UnitComparisonRow> rows = new ArrayList<>();
-        rows.add(new UnitComparisonRow(FMI_REF, true, true, 0, Figure.of(2, 1), 2, null, 1, years(1)));
+        rows.add(new UnitComparisonRow(FMI_REF, true, true, 0, Figure.of(2, 1), 2, null, 1, years(1), null));
         units.forEach(unit -> rows.add(new UnitComparisonRow(unit, false, unit.id() != 101L, 25,
-            Figure.of(12, 10), 8, new BigDecimal("48.0"), 9, years(2))));
+            Figure.of(12, 10), 8, new BigDecimal("48.0"), 9, years(2), null)));
         List<CategoryComparison> byCategory = IntStream.rangeClosed(1, categories)
             .mapToObj(i -> new CategoryComparison(new CategoryRef((long) i, "Category " + i, "Категорія " + i,
                 RecognitionLevel.NATIONAL), 10 - i, 5)).toList();

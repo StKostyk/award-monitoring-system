@@ -32,7 +32,7 @@ class NotificationPreferenceFT extends AbstractFunctionalTest {
     private static final String PERSON = "ft.preferences@chnu.edu.ua";
     private static final String PREFERENCES = "/api/v1/users/me/notification-preferences";
     private static final String CHANGED = "NOTIFICATION_PREFERENCES_CHANGED";
-    private static final int TYPES = 11;
+    private static final int TYPES = 12;
 
     @Autowired
     private UserRepository userRepository;

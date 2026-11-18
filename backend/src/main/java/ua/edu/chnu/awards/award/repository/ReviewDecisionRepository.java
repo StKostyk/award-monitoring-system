@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.repository;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -48,4 +49,13 @@ public interface ReviewDecisionRepository extends JpaRepository<ReviewDecision, 
      * @return true when such a decision exists
      */
     boolean existsByRequestIdAndLevelIn(Long requestId, Collection<ApprovalLevel> levels);
+
+    /**
+     * The decisions a reviewer made since a moment.
+     *
+     * @param reviewerId the reviewer
+     * @param since      the earliest decision time that counts
+     * @return the count
+     */
+    long countByReviewerIdAndDecidedAtGreaterThanEqual(Long reviewerId, Instant since);
 }

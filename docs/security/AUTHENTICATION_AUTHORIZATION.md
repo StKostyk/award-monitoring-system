@@ -530,6 +530,12 @@ public class TotpService {
 | `compliance:read` | - | - | - | - | - | - | ✅ |
 | `audit:read` | - | - | - | - | - | ✅ | ✅ |
 
+Command centre (9.4.5): a faculty secretary whose role is held on a faculty may read that faculty in
+`GET /analytics/units/{id}` (department comparison and top people, which add up the departments the role already
+reads); the faculty stays out of `GET /analytics/units` and of the export. `POST /analytics/units/{id}/reminders`
+takes `analytics:read:department` plus an own or delegated `FACULTY_SECRETARY` or `DEAN` role whose scope covers the
+department (403 otherwise); the rector and the rector's secretary cannot remind.
+
 ### 3.4 RBAC Implementation
 
 > Design sketch. The implemented form is recorded in [§9 Implementation Addendum](#9-implementation-addendum-september-2026).
@@ -1228,6 +1234,7 @@ public class SessionManagementService {
 | `PERMISSION_DENIED` | Warning | User ID, Resource, Action | Yes (if repeated) |
 | `PRIVILEGE_ESCALATION` | Critical | User ID, From Role, To Role | Always |
 | Row changes (`INSERT`/`UPDATE`/`DELETE`, table triggers) | Info | Actor = access token subject bound per read-write transaction (`app.current_user_id`), correlation id, old and new values; readable per award by `audit:read` (`GET /awards/{id}/audit-trail`, CSV export `…/audit-trail/export` audited as `AUDIT_EXPORT`, Feature 2.2) | No |
+| `UNIT_REMINDED` | Info | Sender, department, recipient ID and year (`POST /analytics/units/{id}/reminders`, 9.4.5); the newest row within `app.reminders.unit-interval` refuses the next reminder | No |
 | `ANALYTICS_EXPORTED` | Info | User ID, unit, format, period, language, number of people named (`GET /analytics/units/{id}/export`, 5.2.3); for the own CV export the format, language and award count (`GET /users/me/awards/cv`, 9.4.4) | No |
 
 ### 7.2 Audit Implementation

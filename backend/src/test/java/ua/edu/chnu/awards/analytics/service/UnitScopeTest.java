@@ -92,6 +92,26 @@ class UnitScopeTest {
         }
     }
 
+    @Test
+    void ac5_2_aFacultySecretaryViewsTheFacultyOfItsRoleButCannotAnalyseIt() {
+        holds(RoleType.FACULTY_SECRETARY, FMI);
+
+        assertThat(scope.requireOverview(FMI).id()).isEqualTo(FMI);
+        assertThat(scope.requireOverview(DAI).id()).isEqualTo(DAI);
+        assertThatThrownBy(() -> scope.require(FMI)).isInstanceOf(UnitNotFoundException.class);
+        assertThatThrownBy(() -> scope.requireOverview(HISTORY)).isInstanceOf(UnitNotFoundException.class);
+        assertThat(scope.list()).extracting(AnalysableUnit::id).doesNotContain(FMI);
+    }
+
+    @Test
+    void ac5_2_aSecretaryOfADepartmentOrAnEmployeeOfTheFacultyGetsNoFacultyView() {
+        holds(RoleType.FACULTY_SECRETARY, DAI);
+        assertThatThrownBy(() -> scope.requireOverview(FMI)).isInstanceOf(UnitNotFoundException.class);
+
+        holds(RoleType.EMPLOYEE, FMI);
+        assertThatThrownBy(() -> scope.requireOverview(FMI)).isInstanceOf(UnitNotFoundException.class);
+    }
+
     private void holds(RoleType role, long organizationId) {
         when(access.heldScopes()).thenReturn(List.of(new RoleScope(role, organizationId)));
     }

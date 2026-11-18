@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Command centre for faculty and rector's secretaries: today's queue with one-click decisions, units without awards and a weekly «Нагадати завідувачу» reminder by mail and in the app (9.4.5).
 - «Мій дашборд» as the employee home: work in progress, visibility counts linked to the filtered award list, and «Експорт для резюме» (PDF or text) of approved awards.
 - Hall of Fame («Зала визнання») for the rector and the dean, opened from the home page (SCRUM-157)
 - Monthly award counts on the unit and university analytics, and the dashboard widget kit with generated facts (9.4.2).

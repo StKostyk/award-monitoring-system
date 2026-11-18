@@ -12,6 +12,7 @@ import {
   analyticsGuard,
   approverGuard,
   authGuard,
+  commandCentreGuard,
   complianceGuard,
   delegationGuard,
   hallOfFameGuard,
@@ -261,7 +262,6 @@ describe('authGuard', () => {
 
     expect(String(home({ role_scopes: ['RECTOR:1'] }))).toBe(hallOfFame);
     expect(String(home({ role_scopes: ['DEAN:9', 'RECTOR_SECRETARY:1'] }))).toBe(hallOfFame);
-    expect(home({ role_scopes: ['FACULTY_SECRETARY:9'] })).toBe(true);
     expect(home({ role_scopes: ['EMPLOYEE:5'] })).toBe(true);
   });
 
@@ -281,5 +281,46 @@ describe('authGuard', () => {
       router.createUrlTree(['/hall-of-fame']).toString(),
     );
     expect(home({ permissions: [] })).toBe(true);
+  });
+  it('ac5_1_sends_a_faculty_or_rector_secretary_home_to_the_command_centre', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const router = TestBed.inject(Router);
+    const commandCentre = router.createUrlTree(['/command-centre']).toString();
+
+    expect(String(home({ role_scopes: ['FACULTY_SECRETARY:9'] }))).toBe(commandCentre);
+    expect(String(home({ role_scopes: ['RECTOR_SECRETARY:1'] }))).toBe(commandCentre);
+    expect(
+      String(home({ role_scopes: ['FACULTY_SECRETARY:9'], permissions: ['analytics:read:own'] })),
+    ).toBe(commandCentre);
+    expect(String(home({ role_scopes: ['DEAN:9', 'FACULTY_SECRETARY:9'] }))).toBe(
+      router.createUrlTree(['/hall-of-fame']).toString(),
+    );
+    expect(
+      home({
+        role_scopes: ['EMPLOYEE:5', 'FACULTY_SECRETARY:9'],
+        delegations: ['FACULTY_SECRETARY:9:4'],
+      }),
+    ).toBe(true);
+  });
+
+  it('ac3_4_opens_the_command_centre_for_a_held_secretary_or_dean_role_only', () => {
+    const open = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        commandCentreGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const forbidden = TestBed.inject(Router).createUrlTree(['/forbidden']).toString();
+
+    expect(open({ role_scopes: ['FACULTY_SECRETARY:9'] })).toBe(true);
+    expect(open({ role_scopes: ['RECTOR_SECRETARY:1'] })).toBe(true);
+    expect(open({ role_scopes: ['DEAN:9'] })).toBe(true);
+    expect(String(open({ role_scopes: ['EMPLOYEE:5'] }))).toBe(forbidden);
+    expect(String(open({ role_scopes: ['RECTOR:1'] }))).toBe(forbidden);
   });
 });

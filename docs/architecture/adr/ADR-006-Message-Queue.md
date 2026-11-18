@@ -173,6 +173,16 @@ not record.
 (one test per type) and must not carry a secret. Listener class and method names are the registry key: renaming
 or moving a listener with incomplete rows orphans them, so such a change ships when the table is empty.
 
+## Addendum 2026-11-18: Reminder to a department
+
+`UnitReminderRequested` (named interface `notification.event`, published by the analytics module so the modules keep
+no cycle) is a registry event: the notification module writes the in-app row (`@ApplicationModuleListener`) and the mail (`ReminderMails`, after commit) with its
+delivery log and dedupe key, like every other notification. The once-a-week limit per department is not read from
+those rows: the in-app row appears only after the commit and is skipped when the recipient switched reminders off, so
+two senders could both pass the check. The reminder writes the audit row `UNIT_REMINDED` (entity `organizations`,
+the department) in its own transaction under a per-department advisory lock, and the check reads that row; two
+senders at the same moment get one 202 and one 409 `recently-reminded`. No notifications index is needed (9.4.5).
+
 ---
 
 ## Revision History
@@ -184,6 +194,7 @@ or moving a listener with incomplete rows orphans them, so such a change ships w
 | 2026-10-05 | Stefan Kostyk | Addendum: Spring events with a publication registry, Kafka for external consumers | Design review of 2026-10-04 |
 | 2026-10-09 | Stefan Kostyk | Epic 4 mails use after-commit listeners without the registry | Documentation sync after Epic 4 |
 | 2026-10-09 | Stefan Kostyk | Addendum: decision for the event publication registry, at-least-once delivery, transient events | Story 7.1.1 |
+| 2026-11-18 | Stefan Kostyk | Addendum: reminder event, weekly limit from the audit row | Story 9.4.5 |
 
 ---
 

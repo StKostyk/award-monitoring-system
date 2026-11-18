@@ -783,6 +783,7 @@
 - `LEGAL_HOLD_PLACED`, `LEGAL_HOLD_LIFTED` - уповноважений з питань захисту даних наклав або зняв юридичне утримання (`entity_type` = `GDPR`, `entity_id` = обліковий запис, `user_id` = уповноважений; `new_values` = `holdId` і `reasonLength`, ніколи текст)
 - `DATA_EXPORT` - особа завантажила власні дані (`entity_type` = `GDPR`, `entity_id` = користувач; `new_values` містить кількість записів у кожному розділі-списку файлу)
 - `AUDIT_EXPORT` - власник `audit:read` завантажив журнал аудиту нагороди у CSV (`entity_type` = `awards`, `entity_id` = нагорода, `user_id` = аудитор; `new_values` = записані `rows` і `truncated`, якщо старіші рядки понад 10 000 пропущено)
+- `UNIT_REMINDED` - секретар факультету або декан (власна чи делегована роль) надіслав «Нагадати завідувачу» колезі кафедри без жодної врахованої нагороди цього року (`entity_type` = `organizations`, `entity_id` = кафедра, `user_id` = відправник; `new_values` = `recipientId`, `year`). Пишеться в транзакції нагадування під advisory-блокуванням кафедри; найновіший рядок у межах `app.reminders.unit-interval` відхиляє наступне нагадування з 409 `recently-reminded` і є `lastReminderAt` кафедри (9.4.5)
 - `ANALYTICS_EXPORTED` - декан, секретар факультету або ректор експортував аналітику факультету чи кафедри (`entity_type` = `ANALYTICS`, `entity_id` = підрозділ, `user_id` = той, хто експортував; `new_values` = `format` (`csv`, `xlsx`, `pdf`), період `from` і `to`, `language` і `peopleNamed`, кількість названих у файлі осіб); для відхиленого запиту не записується (5.2.3). Коли ректор або секретар ректора експортує звіт для ради, записується такий самий рядок з `entity_id` = університет, `format` = `board-pdf` і `peopleNamed` = 0 (5.3.3)
 - `DOCUMENT_DOWNLOAD` - читач нагороди завантажив документ (`entity_type` = `documents`, `entity_id` = документ, `user_id` = читач; `new_values` = `awardId`); завантаження на сервер і видалення — це рядки тригера `INSERT` і `DELETE` з тим, хто викликав, як виконавцем (функція 3.1)
 - `DOCUMENT_REJECTED` - антивірусний сканер відхилив завантаження (`entity_type` = `documents`, `entity_id` null, бо нічого не збережено, `user_id` = той, хто завантажує; `new_values` = `awardId` і знайдена ClamAV `signature`; ніколи не назва файлу) (функція 3.1.3)
@@ -1004,6 +1005,7 @@
 | `REVIEW_TAKEN_OVER` | `ReviewTakenOver` | `title`, `titleUk`, `reviewer` |
 | `ROLE_ASSIGNED`, `ROLE_REVOKED` | `RoleAssigned`, `RoleRevoked` | `role`, `organization`, `organizationUk`, `validTo` |
 | `DELEGATION_CREATED`, `DELEGATION_REVOKED` | `DelegationCreated`, `DelegationRevoked` (по рядку на одержувача) | `role`, `organization`, `organizationUk`, `otherParty`, `validTo` |
+| `AWARDS_REMINDER` | `UnitReminderRequested` (V053, 9.4.5) | `unitId`, `unit`, `unitUk`, `year`, `sender` |
 
 **Канали Сповіщень** (`channel`):
 | Значення | Опис |

@@ -146,13 +146,17 @@ class UnitAnalyticsFT extends AbstractFunctionalTest {
     }
 
     @Test
-    void ac1_3_unitsOutsideTheCallersAnalysableUnitsAnswerNotFoundAlike() {
+    void ac1_3_ac5_2_unitsOutsideTheCallersAnalysableUnitsAnswerNotFoundAlike() {
         String secretary = tokenOf(SECRETARY);
-        for (long unit : new long[] {FACULTY_ID, UNIVERSITY_ID, OTHER_DEPARTMENT_ID, 999_999L}) {
+        for (long unit : new long[] {OTHER_FACULTY_ID, UNIVERSITY_ID, OTHER_DEPARTMENT_ID, 999_999L}) {
             as(secretary).get(UNITS + "/" + unit).then().statusCode(HttpStatus.NOT_FOUND.value())
                 .body("title", equalTo("Not found")).body("detail", equalTo("Unit " + unit + " is not available"));
         }
         as(secretary).get(UNITS + "/" + DEPARTMENT_ID).then().statusCode(HttpStatus.OK.value());
+        as(secretary).get(UNITS + "/" + FACULTY_ID).then().statusCode(HttpStatus.OK.value())
+            .body("units.unit.id", hasItem((int) DEPARTMENT_ID));
+        as(secretary).get(UNITS + "/" + FACULTY_ID + "/export?format=csv").then()
+            .statusCode(HttpStatus.NOT_FOUND.value());
         as(tokenOf(DEAN)).get(UNITS + "/" + OTHER_FACULTY_ID).then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 

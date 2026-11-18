@@ -35,7 +35,8 @@
     "delegations": "Delegations",
     "compliance": "GDPR compliance",
     "users": "Users",
-    "user": "User"
+    "user": "User",
+    "commandCentre": "Command centre"
   },
   "app": {
     "language": "UK",
@@ -1408,7 +1409,8 @@
         "LEGAL_HOLD_LIFTED": "Legal hold lifted",
         "ERASURE_REQUESTED": "Account erasure requested",
         "ERASURE_CANCELLED": "Account erasure cancelled",
-        "ERASURE_POSTPONED": "Account erasure postponed"
+        "ERASURE_POSTPONED": "Account erasure postponed",
+        "UNIT_REMINDED": "Department reminded"
       }
     },
     "erasure": {
@@ -1549,6 +1551,7 @@
       "ROLE_REVOKED": "Your role “{{role}}” has been revoked: {{organization}}{{lastDay}}",
       "DELEGATION_CREATED": "{{otherParty}} has delegated the role “{{role}}” to you: {{organization}}{{until}}",
       "DELEGATION_REVOKED": "The delegation of the role “{{role}}” with {{otherParty}} has been revoked: {{organization}}",
+      "AWARDS_REMINDER": "Reminder from {{sender}}: {{unit}} has no award in {{year}}",
       "unknown": "New notification"
     },
     "preferences": {
@@ -1568,6 +1571,7 @@
         "AWARD_RETURNED": "Award returned for changes",
         "AWARD_ESCALATED": "Award passed to the next level",
         "AWARD_CORRECTED": "Award corrected by a reviewer",
+        "AWARDS_REMINDER": "Awards reminder",
         "REVIEW_OVERDUE": "Daily list of overdue reviews",
         "REVIEW_TAKEN_OVER": "Review taken over",
         "ROLE_ASSIGNED": "Role assigned",
@@ -1887,6 +1891,55 @@
       "FACT": "Did you know",
       "TOP": "Leaders",
       "LEVEL_MAP": "Award levels"
+    }
+  },
+  "commandCentre": {
+    "title": "Command centre",
+    "failed": "The Command centre could not be loaded.",
+    "retry": "Try again",
+    "topPeople": "Faculty leaders",
+    "topFaculties": "Leading faculties",
+    "widgets": {
+      "TODAY": "Today",
+      "QUEUE": "Review queue",
+      "UNITS": "Units",
+      "TOP": "Leaders"
+    },
+    "today": {
+      "waiting": "waiting for your decision",
+      "decided": "decisions today"
+    },
+    "queue": {
+      "approve": "Approve",
+      "return": "Return",
+      "all": "Whole queue",
+      "empty": "The queue is empty."
+    },
+    "units": {
+      "departments": "Departments that need attention",
+      "faculties": "Faculties that need attention",
+      "none": "No award in {{year}}",
+      "decline": "{{current}} in {{year}} against {{previous}} in {{lastYear}}",
+      "earlier": "{{from}}–{{to}}: {{count}}",
+      "remind": "Remind the head",
+      "reminded": "Reminded {{date}}",
+      "analytics": "Department analytics"
+    },
+    "reminder": {
+      "title": "Remind the head",
+      "text": "{{unit}}: no award in {{year}}. Who should get the reminder?",
+      "recipient": "Colleague of the department",
+      "required": "Choose a colleague",
+      "nobody": "The department has no active colleagues.",
+      "send": "Send",
+      "cancel": "Cancel",
+      "problems": {
+        "has-awards": "The department already has an award this year; no reminder is needed.",
+        "invalid-recipient": "This colleague is not an active member of the department.",
+        "denied": "You may no longer remind this department.",
+        "network": "The server cannot be reached. Try again.",
+        "unknown": "The reminder could not be sent. Try again."
+      }
     }
   },
   "dashboardLayout": {

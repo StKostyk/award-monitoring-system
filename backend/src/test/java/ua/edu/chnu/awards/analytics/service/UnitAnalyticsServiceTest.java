@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import ua.edu.chnu.awards.analytics.config.AnalyticsProperties;
+import ua.edu.chnu.awards.analytics.config.ReminderProperties;
 import ua.edu.chnu.awards.analytics.dto.AnalysableUnit;
 import ua.edu.chnu.awards.analytics.dto.MonthCount;
 import ua.edu.chnu.awards.analytics.dto.TopPerformers;
@@ -72,6 +74,11 @@ class UnitAnalyticsServiceTest {
     @Mock
     private OrganizationLookup lookup;
 
+    @Mock
+    private UnitReminderLog reminders;
+    @Mock
+    private ReminderProperties reminderProperties;
+
     private UnitAnalyticsService service;
 
     @BeforeEach
@@ -80,7 +87,7 @@ class UnitAnalyticsServiceTest {
         AnalyticsProperties properties = new AnalyticsProperties(MIN_GROUP_SIZE, 500, 10, Duration.ofMinutes(5),
             Duration.ofDays(2));
         service = new UnitAnalyticsService(scope, aggregates, new UnitComparison(tree, lookup),
-            new HighlightRules(properties), ranking, CLOCK);
+            new HighlightRules(properties), ranking, CLOCK, reminders, reminderProperties);
     }
 
     @Test
@@ -184,6 +191,23 @@ class UnitAnalyticsServiceTest {
         when(scope.list()).thenReturn(List.of(FACULTY, DEPARTMENT));
 
         assertThat(service.units()).containsExactly(FACULTY, DEPARTMENT);
+    }
+
+    @Test
+    void ac5_4_theOverviewCarriesTheLastReminderOfEachDepartmentWithinTheInterval() {
+        Instant sent = Instant.parse("2026-10-17T08:00:00Z");
+        when(scope.requireOverview(FMI)).thenReturn(FACULTY);
+        when(aggregates.of(anyLong(), any(), any())).thenReturn(figures(List.of(), List.of(), List.of(),
+            List.of(members(DAI, 4), members(DMA, 2), members(FMI, 1))));
+        when(ranking.of(any(), anyLong())).thenReturn(NOBODY);
+        when(reminderProperties.unitInterval()).thenReturn(Duration.ofDays(7));
+        when(reminders.lastSent(List.of(DAI, DMA), Instant.parse("2026-10-12T10:00:00Z")))
+            .thenReturn(Map.of(DAI, sent));
+
+        List<UnitComparisonRow> rows = service.overview(FMI, null, null).units();
+
+        assertThat(rows).extracting(row -> row.unit().id(), UnitComparisonRow::lastReminderAt)
+            .containsExactly(tuple(DAI, sent), tuple(DMA, null), tuple(FMI, null));
     }
 
     private UnitAnalytics read(AnalysableUnit unit, UnitFigures figures) {
