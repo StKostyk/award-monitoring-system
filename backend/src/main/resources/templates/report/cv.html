@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${report.language().code()}">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="${report.title()}">Awards</title>
+  <style th:inline="css">
+    @page {
+      size: A4;
+      margin: 18mm 18mm 18mm 18mm;
+      @bottom-center {
+        content: "[(#{report.page})] " counter(page) " [(#{report.pageOf})] " counter(pages);
+        font-family: 'Noto Sans';
+        font-size: 8pt;
+        color: #555555;
+      }
+    }
+    body { font-family: 'Noto Sans'; font-size: 10pt; color: #111111; }
+    h1 { font-size: 16pt; margin: 0 0 2pt 0; }
+    h2 { font-size: 12pt; margin: 12pt 0 4pt 0; page-break-after: avoid; border-bottom: 0.6pt solid #888888; }
+    .generated { color: #444444; margin: 0 0 8pt 0; }
+    .empty { color: #444444; margin: 12pt 0 0 0; }
+    .award { margin: 0 0 5pt 0; page-break-inside: avoid; }
+    .award .title { font-weight: bold; overflow-wrap: break-word; word-wrap: break-word; }
+    .award .details { color: #333333; }
+  </style>
+</head>
+<body>
+  <h1 th:text="${report.title()}">Awards</h1>
+  <p class="generated" th:text="${report.generated()}">Generated</p>
+  <p class="empty" th:if="${report.years().isEmpty()}" th:text="${report.empty()}">No awards</p>
+  <th:block th:each="year : ${report.years()}">
+    <h2 th:text="${year.year()}">2026</h2>
+    <div class="award" th:each="entry : ${year.entries()}">
+      <div class="title" th:text="${entry.title()}">Title</div>
+      <div class="details" th:text="${entry.details()}">Level · Issuer · Date</div>
+    </div>
+  </th:block>
+</body>
+</html>

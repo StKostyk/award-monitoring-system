@@ -9,7 +9,16 @@ import {
   submitWithoutDocuments,
 } from './helpers';
 
-const DEFAULT_ORDER = ['KPI', 'TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK'];
+const DEFAULT_ORDER = [
+  'KPI',
+  'TREND',
+  'LEVEL_STAIRS',
+  'IN_PROGRESS',
+  'BY_CATEGORY',
+  'RANK',
+  'VISIBILITY',
+];
+const WITHOUT_KPI = DEFAULT_ORDER.slice(1);
 
 /** A fresh employee with one approved award, so that the dashboard shows its widgets. */
 async function employeeWithAward(browser: Browser): Promise<string> {
@@ -93,7 +102,7 @@ test.describe('scheme and dashboard layout on the account', () => {
     await page.getByTestId('layout-down-KPI').focus();
     await page.keyboard.press('Enter');
     await expect(page.getByTestId('layout-down-KPI')).toBeFocused();
-    await expect(page.getByTestId('layout-announcement')).toHaveText('«Підсумок»: позиція 2 з 5');
+    await expect(page.getByTestId('layout-announcement')).toHaveText('«Підсумок»: позиція 2 з 7');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Space');
     await expect(page.getByTestId('layout-hide-KPI')).toHaveAttribute('aria-pressed', 'true');
@@ -102,16 +111,14 @@ test.describe('scheme and dashboard layout on the account', () => {
     const stored = saved(page);
     await page.getByTestId('layout-done').click();
     await stored;
-    await expect.poll(() => shown(page)).toEqual(['TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK']);
+    await expect.poll(() => shown(page)).toEqual(WITHOUT_KPI);
 
     await page.reload();
     await expect(page.getByTestId('widget-RANK')).toBeVisible();
-    await expect.poll(() => shown(page)).toEqual(['TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK']);
+    await expect.poll(() => shown(page)).toEqual(WITHOUT_KPI);
 
     await page.getByTestId('dashboard-customise').click();
-    await expect
-      .poll(() => listed(page))
-      .toEqual(['TREND', 'KPI', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK']);
+    await expect.poll(() => listed(page)).toEqual(['TREND', 'KPI', ...DEFAULT_ORDER.slice(2)]);
     await page.getByTestId('layout-reset').click();
     const reset = saved(page);
     await page.getByTestId('layout-done').click();

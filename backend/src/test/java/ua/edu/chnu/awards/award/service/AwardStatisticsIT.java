@@ -23,6 +23,7 @@ import ua.edu.chnu.awards.award.dto.CountedTotals;
 import ua.edu.chnu.awards.award.dto.DepartmentStanding;
 import ua.edu.chnu.awards.award.dto.OpenAwards;
 import ua.edu.chnu.awards.award.dto.TimelineEntry;
+import ua.edu.chnu.awards.award.dto.VisibilityCounts;
 import ua.edu.chnu.awards.award.dto.YearRange;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
@@ -66,6 +67,8 @@ class AwardStatisticsIT extends AbstractIntegrationTest {
     void tearDown() {
         jdbc.query("select user_id from users where email_address like 'it.stats.%'",
             (RowCallbackHandler) row -> ConsentRows.purge(jdbc, row.getLong(1)));
+        jdbc.update("delete from documents where award_id in (select award_id from awards where user_id in "
+            + "(select user_id from users where email_address like 'it.stats.%'))");
         jdbc.update("delete from awards where user_id in (select user_id from users where email_address like "
             + "'it.stats.%')");
         jdbc.update("delete from users where email_address like 'it.stats.%'");
@@ -185,6 +188,35 @@ class AwardStatisticsIT extends AbstractIntegrationTest {
 
     private long user(String email, String status, long organizationId) {
         return jdbc.queryForObject(INSERT_USER, Long.class, email, status, organizationId);
+    }
+
+    @Test
+    void ac4_2_visibilityCountsTheApprovedPersonalAwardsAndThoseWithADocument() {
+        approved(ownerId, LocalDate.of(2024, 2, 1));
+        AwardRows.award(jdbc, ownerId).status("PENDING").insert();
+        AwardRows.award(jdbc, ownerId).status("APPROVED").unit(DEPARTMENT_ID).insert();
+        approved(otherId, LocalDate.of(2024, 1, 1));
+        jdbc.update("update awards set visibility = 'PUBLIC' where award_id = ?",
+            approved(ownerId, LocalDate.of(2024, 1, 1)));
+        long shared = approved(ownerId, LocalDate.of(2015, 1, 1));
+        jdbc.update("update awards set visibility = 'UNIVERSITY' where award_id = ?", shared);
+        jdbc.update("insert into documents (award_id, file_name, file_type, file_size, storage_bucket, storage_key,"
+            + " uploaded_by) values (?, 'letter.pdf', 'PDF', 1024, 'awards', ?, ?)", shared, "stats/" + shared,
+            ownerId);
+
+        assertThat(statistics.visibility(ownerId)).isEqualTo(new VisibilityCounts(1, 1, 1, 1));
+        assertThat(analytics.of(ownerId, 2024, 2024).visibility()).isEqualTo(new VisibilityCounts(1, 1, 1, 1));
+    }
+
+    @Test
+    void ac4_3_everyApprovedPersonalAwardIsListedNewestFirstWhateverItsDate() {
+        AwardRows.award(jdbc, ownerId).status("REJECTED").insert();
+        AwardRows.award(jdbc, ownerId).status("APPROVED").unit(DEPARTMENT_ID).insert();
+        approved(otherId, LocalDate.of(2024, 1, 1));
+        long oldest = approved(ownerId, LocalDate.of(1999, 5, 1));
+        long newest = approved(ownerId, LocalDate.of(2025, 5, 1));
+
+        assertThat(statistics.approved(ownerId)).extracting(TimelineEntry::awardId).containsExactly(newest, oldest);
     }
 
     private long approved(long userId, LocalDate date) {

@@ -593,6 +593,12 @@ paths:
           schema:
             type: string
             format: date
+        - name: visibility
+          in: query
+          description: Only personal awards with this visibility choice (9.4.4)
+          schema:
+            type: string
+            enum: [PRIVATE, UNIVERSITY, PUBLIC]
       responses:
         '200':
           description: Paginated award list
@@ -601,7 +607,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AwardPage'
         '400':
-          description: "`urn:awards:problem:invalid-parameter`: `q` over 200 characters"
+          description: "`urn:awards:problem:invalid-parameter`: `q` over 200 characters, or an unknown `status` or `visibility`"
           content:
             application/problem+json:
               schema:
@@ -2963,7 +2969,6 @@ paths:
         export window of 9.1 (`app.rate-limit.export-requests-per-minute`) and writes one audit row with the
         format and the count, no award content. Without approved awards: a text with the heading only, or a
         one-page PDF (9.4.4).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: exportMyAwardsCv
@@ -5353,6 +5358,20 @@ components:
             drafts:
               type: integer
             pending:
+              type: integer
+        visibility:
+          type: object
+          description: >
+            Approved personal awards by the owner's visibility choice, whatever the period, and how many of them
+            carry a document (9.4.4)
+          properties:
+            publicAwards:
+              type: integer
+            universityAwards:
+              type: integer
+            privateAwards:
+              type: integer
+            withDocument:
               type: integer
         byYear:
           type: array

@@ -123,13 +123,13 @@ test.describe('Hall of Fame', () => {
     const page = await signedInAs(browser, delegate, FRESH_PASSWORD);
 
     await page.goto('/');
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByTestId('nav-hall-of-fame')).toHaveCount(0);
     await page.goto('/hall-of-fame');
     await expect(page).toHaveURL(/\/forbidden$/);
   });
 
-  test('ac3_3 ac3_4 an employee stays on the home page and is refused the hall of fame', async ({
+  test('ac3_3 ac3_4 an employee is sent to its dashboard and is refused the hall of fame', async ({
     browser,
   }) => {
     const email = await freshEmployee(browser, 'hall-employee');

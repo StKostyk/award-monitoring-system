@@ -44,7 +44,8 @@ public class ApiUserRateLimitFilter extends OncePerRequestFilter {
     private static final RequestMatcher EXPORTS = new OrRequestMatcher(
         PATHS.matcher(HttpMethod.GET, "/api/v1/analytics/university/report"),
         PATHS.matcher(HttpMethod.GET, "/api/v1/analytics/units/*/export"),
-        PATHS.matcher(HttpMethod.GET, "/api/v1/awards/*/audit-trail/export"));
+        PATHS.matcher(HttpMethod.GET, "/api/v1/awards/*/audit-trail/export"),
+        PATHS.matcher(HttpMethod.GET, "/api/v1/users/me/awards/cv"));
     private final FixedWindowCounter counter;
     private final RateLimitMetrics metrics;
     private final RateLimitProperties properties;

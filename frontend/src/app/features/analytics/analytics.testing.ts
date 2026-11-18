@@ -92,6 +92,7 @@ export function sampleAnalytics(): PersonalAnalytics {
     ],
     timelineTruncated: false,
     rank: { status: 'RANKED', position: 2, groupSize: 12, sharedWith: 1, department: algebra },
+    visibility: { publicAwards: 1, universityAwards: 1, privateAwards: 1, withDocument: 2 },
   };
 }
 

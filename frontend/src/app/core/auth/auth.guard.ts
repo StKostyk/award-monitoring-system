@@ -75,11 +75,17 @@ export const hallOfFameGuard: CanActivateFn = () => {
   return canOpenHallOfFame(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };
 
-/** The home of a rector or dean is the Hall of Fame; anybody else stays on the home page. */
+/**
+ * The home of a rector or dean is the Hall of Fame, of anybody with personal analytics the personal dashboard; an
+ * account without either, such as one waiting for its membership, stays on the home page.
+ */
 export const roleHomeGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
+  const permissions = inject(AuthService).permissions();
   const router = inject(Router);
-  return !canOpenHallOfFame(auth.permissions()) || router.createUrlTree(['/hall-of-fame']);
+  if (canOpenHallOfFame(permissions)) {
+    return router.createUrlTree(['/hall-of-fame']);
+  }
+  return !canReadOwnAnalytics(permissions) || router.createUrlTree(['/dashboard']);
 };
 
 /** University analytics need `analytics:read:university`; without it the route ends on the forbidden page. */

@@ -10,6 +10,7 @@
       <app-icon matButtonIcon name="file-text" />
       {{ 'analytics.report.open' | transloco }}
     </a>
+    <app-cv-export [disabled]="!analytics() || analytics()?.totals?.approved === 0" />
   </div>
 </div>
 
@@ -52,6 +53,26 @@
         [pending]="data.inProgress.pending"
         (allYears)="allYears()"
       />
+      @if (data.inProgress.pending > 0) {
+        <mat-card
+          class="dashboard__widget dashboard__timeline"
+          appearance="outlined"
+          data-testid="dashboard-in-progress"
+        >
+          <mat-card-header>
+            <mat-card-title>
+              <h2>{{ 'analytics.widgets.IN_PROGRESS' | transloco }}</h2>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-in-progress
+              [drafts]="data.inProgress.drafts"
+              [pending]="data.inProgress.pending"
+              [canCreate]="canCreate"
+            />
+          </mat-card-content>
+        </mat-card>
+      }
     } @else {
       <app-dashboard-layout dashboard="MY_AWARDS" labels="analytics.widgets.">
         <ng-template appDashboardWidget="KPI" wide>
@@ -61,7 +82,14 @@
                 <h2>{{ 'analytics.widgets.KPI' | transloco }}</h2>
               </mat-card-title>
             </mat-card-header>
-            <mat-card-content><app-summary-tiles [totals]="data.totals" /></mat-card-content>
+            <mat-card-content>
+              <app-kpi-widget
+                [label]="'analytics.thisYear' | transloco"
+                [value]="thisYear()"
+                [years]="yearTotals()"
+              />
+              <app-summary-tiles [totals]="data.totals" />
+            </mat-card-content>
           </mat-card>
         </ng-template>
         <ng-template appDashboardWidget="TREND" wide>
@@ -73,6 +101,11 @@
             </mat-card-header>
             <mat-card-content>
               <app-year-trend-chart [byYear]="data.byYear" [fromChosen]="period().from !== null" />
+              @if (streakSince(); as since) {
+                <p class="dashboard__streak" data-testid="dashboard-streak">
+                  {{ 'analytics.streak' | transloco: { since } }}
+                </p>
+              }
             </mat-card-content>
           </mat-card>
         </ng-template>
@@ -83,7 +116,23 @@
                 <h2>{{ 'analytics.widgets.LEVEL_STAIRS' | transloco }}</h2>
               </mat-card-title>
             </mat-card-header>
-            <mat-card-content><app-level-chart [byLevel]="data.byLevel" /></mat-card-content>
+            <mat-card-content><app-level-stairs-widget [steps]="steps()" /></mat-card-content>
+          </mat-card>
+        </ng-template>
+        <ng-template appDashboardWidget="IN_PROGRESS">
+          <mat-card class="dashboard__widget" appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.IN_PROGRESS' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <app-in-progress
+                [drafts]="data.inProgress.drafts"
+                [pending]="data.inProgress.pending"
+                [canCreate]="canCreate"
+              />
+            </mat-card-content>
           </mat-card>
         </ng-template>
         <ng-template appDashboardWidget="BY_CATEGORY">
@@ -106,6 +155,18 @@
               </mat-card-title>
             </mat-card-header>
             <mat-card-content><app-rank-card [rank]="data.rank" /></mat-card-content>
+          </mat-card>
+        </ng-template>
+        <ng-template appDashboardWidget="VISIBILITY">
+          <mat-card class="dashboard__widget" appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>
+                <h2>{{ 'analytics.widgets.VISIBILITY' | transloco }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <app-visibility-counts [counts]="data.visibility" />
+            </mat-card-content>
           </mat-card>
         </ng-template>
       </app-dashboard-layout>

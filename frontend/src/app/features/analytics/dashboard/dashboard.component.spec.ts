@@ -9,7 +9,7 @@ import {
   provideRouter,
 } from '@angular/router';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -20,6 +20,8 @@ import { preferencesFeature } from '../../../core/preferences/store/preferences.
 import { chartStub } from '../../../shared/charts/chart.testing';
 import { currentKyivYear } from '../../../shared/date-format';
 import { reduceMotion } from '../../../shared/effects/effects.testing';
+import { AwardsService } from '../../awards/awards.service';
+import { AnalyticsService } from '../analytics.service';
 import {
   emptyAnalytics,
   languageStub,
@@ -51,6 +53,11 @@ describe('DashboardComponent', () => {
         provideState(preferencesFeature),
         stub.provider,
         languageStub('en').provider,
+        {
+          provide: AwardsService,
+          useValue: { list: () => of({ content: [], totalElements: 0, totalPages: 0 }) },
+        },
+        { provide: AnalyticsService, useValue: { exportCv: vi.fn() } },
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParams } },
         {
           provide: AuthService,
@@ -165,7 +172,16 @@ describe('DashboardComponent', () => {
   it('ac2_5_shows_the_widgets_in_order_and_keeps_the_choice_in_the_url', () => {
     load();
 
-    expect(widgets()).toEqual(['KPI', 'TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK', 'TIMELINE']);
+    expect(widgets()).toEqual([
+      'KPI',
+      'TREND',
+      'LEVEL_STAIRS',
+      'IN_PROGRESS',
+      'BY_CATEGORY',
+      'RANK',
+      'VISIBILITY',
+      'TIMELINE',
+    ]);
     expect(element('tile-approved')?.textContent).toContain('3');
     expect(element('period-all-years')).toBeNull();
 
@@ -192,9 +208,20 @@ describe('DashboardComponent', () => {
   it('ac1_3_shows_the_stored_order_and_leaves_out_hidden_widgets', () => {
     load({ order: ['RANK', 'KPI'], hidden: ['TREND'] });
 
-    expect(widgets()).toEqual(['RANK', 'KPI', 'LEVEL_STAIRS', 'BY_CATEGORY', 'TIMELINE']);
+    expect(widgets()).toEqual([
+      'RANK',
+      'KPI',
+      'LEVEL_STAIRS',
+      'IN_PROGRESS',
+      'BY_CATEGORY',
+      'VISIBILITY',
+      'TIMELINE',
+    ]);
 
-    load({ order: [], hidden: ['KPI', 'TREND', 'LEVEL_STAIRS', 'BY_CATEGORY', 'RANK'] });
+    load({
+      order: [],
+      hidden: ['KPI', 'TREND', 'LEVEL_STAIRS', 'IN_PROGRESS', 'BY_CATEGORY', 'RANK', 'VISIBILITY'],
+    });
 
     expect(widgets()).toEqual(['TIMELINE']);
     expect(element('dashboard-all-hidden')?.textContent).toContain('All widgets are hidden');
@@ -213,7 +240,18 @@ describe('DashboardComponent', () => {
     expect(dispatch).toHaveBeenCalledWith(
       PreferencesActions.layoutChanged({
         dashboard: 'MY_AWARDS',
-        layout: { order: ['KPI', 'TREND', 'BY_CATEGORY', 'LEVEL_STAIRS', 'RANK'], hidden: [] },
+        layout: {
+          order: [
+            'KPI',
+            'TREND',
+            'LEVEL_STAIRS',
+            'BY_CATEGORY',
+            'IN_PROGRESS',
+            'RANK',
+            'VISIBILITY',
+          ],
+          hidden: [],
+        },
       }),
     );
 
@@ -230,6 +268,7 @@ describe('DashboardComponent', () => {
     expect(element('dashboard-empty-first')).not.toBeNull();
     expect(element('empty-new-award')).not.toBeNull();
     expect(element('empty-in-progress')?.textContent).toContain('Awards in review: 2.');
+    expect(element('dashboard-in-progress')).not.toBeNull();
 
     queryParams.next(convertToParamMap({ from: '2010', to: '2012' }));
     load(undefined, emptyAnalytics());
@@ -252,5 +291,43 @@ describe('DashboardComponent', () => {
     expect(dispatch).toHaveBeenCalledWith(
       AnalyticsActions.periodSelected({ period: { from: null, to: null } }),
     );
+  });
+
+  it('ac4_1_shows_this_year_the_streak_levels_in_progress_and_visibility', () => {
+    const year = currentKyivYear();
+    const analytics = sampleAnalytics();
+    load(undefined, {
+      ...analytics,
+      byYear: [year - 3, year - 2, year - 1, year].map((each) => ({
+        year: each,
+        total: each === year ? 2 : 1,
+        byLevel: {},
+      })),
+    });
+
+    expect(element('widget-KPI')?.querySelector('[data-testid="kpi-value"]')).not.toBeNull();
+    expect(element('dashboard-streak')?.textContent).toContain(`since ${year - 3}`);
+    expect(
+      element('widget-LEVEL_STAIRS')?.querySelector('[data-testid="level-stairs"]'),
+    ).not.toBeNull();
+    expect(element('in-progress-pending')?.textContent).toContain('2');
+    expect(element('visibility-PUBLIC')?.textContent).toContain('1');
+    expect(element('visibility-documents')?.textContent).toContain('2');
+  });
+
+  it('ac4_1_leaves_out_a_streak_shorter_than_three_years', () => {
+    load();
+
+    expect(element('dashboard-streak')).toBeNull();
+  });
+
+  it('ac4_5_disables_the_cv_export_without_approved_awards', () => {
+    load();
+
+    expect((element('cv-export') as HTMLButtonElement).disabled).toBe(false);
+
+    load(undefined, emptyAnalytics());
+
+    expect((element('cv-export') as HTMLButtonElement).disabled).toBe(true);
   });
 });

@@ -204,8 +204,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.3.22 | Held decision after a revoked role ends at sign-in and the request is orphaned | 2 | ✅ Done | SCRUM-149 | [#414](https://github.com/StKostyk/award-monitoring-system/issues/414) |
 | 9.4.1 | Scheme and dashboard layout on the account | 5 | ✅ Done | SCRUM-155 | [#430](https://github.com/StKostyk/award-monitoring-system/issues/430) |
 | 9.4.2 | Widget kit, generated facts and monthly counts | 5 | ✅ Done | SCRUM-156 | [#431](https://github.com/StKostyk/award-monitoring-system/issues/431) |
-| 9.4.3 | Hall of Fame for the rector and the dean, role home | 3 | 👀 In review (11) | SCRUM-157 | [#432](https://github.com/StKostyk/award-monitoring-system/issues/432) |
-| 9.4.4 | My awards with the CV export | 5 | 11 | SCRUM-158 | [#433](https://github.com/StKostyk/award-monitoring-system/issues/433) |
+| 9.4.3 | Hall of Fame for the rector and the dean, role home | 3 | ✅ Done | SCRUM-157 | [#432](https://github.com/StKostyk/award-monitoring-system/issues/432) |
+| 9.4.4 | My awards with the CV export | 5 | 👀 In review (11) | SCRUM-158 | [#433](https://github.com/StKostyk/award-monitoring-system/issues/433) |
 | 9.4.5 | Command centre with the department reminder | 5 | 11 | SCRUM-159 | [#434](https://github.com/StKostyk/award-monitoring-system/issues/434) |
 
 ### Later epics

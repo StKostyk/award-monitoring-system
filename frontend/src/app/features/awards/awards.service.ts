@@ -256,6 +256,8 @@ export interface AwardFilters {
   dateTo: string | null;
   /** Search text of 2 to 200 characters; null lists without a search. */
   q: string | null;
+  /** Whom a personal award is shown to; unit awards drop out once it is set. */
+  visibility: AwardVisibility | null;
 }
 
 export type AwardPage = Page<Award>;
@@ -266,6 +268,7 @@ export const NO_FILTERS: AwardFilters = {
   dateFrom: null,
   dateTo: null,
   q: null,
+  visibility: null,
 };
 
 export type { Page };

@@ -338,10 +338,13 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
 12. «Нагадати завідувачу», pick a colleague, confirm. Expected: 202, card «Нагадано …», Mailpit mail naming the
    department and the sender, the colleague's notification centre shows it. (AC-5.3)
 13. Repeat on the same card through the API. Expected: 409 `recently-reminded`, button disabled. (AC-5.4)
-14. Sign in as `lecturer.fmi`, open `/`. Expected: «Мої нагороди» with totals, years, levels as stairs, the
-   visibility counts and the submissions in progress. (AC-4.1, AC-4.2, AC-3.3)
-15. «Експорт для резюме» → text, then PDF in English. Expected: awards by year, newest first; audit row in psql.
-   (AC-4.3, AC-4.6)
+14. Sign in as `lecturer.fmi`, open `/`. Expected: redirect to `/dashboard` («Мій дашборд») with this year's count
+   and the totals, years (with «З нагородою щороку з …» after three years in a row), levels as stairs, the
+   submissions in progress and «Хто бачить мої нагороди»; a visibility count opens
+   `/awards?status=APPROVED&visibility=…` with both filters set. (AC-4.1, AC-4.2, AC-3.3)
+15. «Експорт для резюме» → «Текст», then switch to English and → PDF. Expected: `awards-cv-<date>.txt|pdf`, awards
+   by year, newest first; psql `select new_values from audit_logs where action = 'ANALYTICS_EXPORTED' order by id
+   desc limit 2` shows `cv-text` and `cv-pdf` with the count. (AC-4.3, AC-4.6)
 16. Sign in as `employee.fmi`. Expected: empty state, export disabled. (AC-4.5)
 17. Every dashboard at 360 px, light and dark, both languages. Expected: one column, no sideways scroll, no console
    error, axe clean. (AC-2.6, AC-3.5, AC-5.7)

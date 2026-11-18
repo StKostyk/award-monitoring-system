@@ -22,6 +22,7 @@ import ua.edu.chnu.awards.award.dto.AwardResponse;
 import ua.edu.chnu.awards.award.dto.AwardStatusView;
 import ua.edu.chnu.awards.award.dto.SubmitRequest;
 import ua.edu.chnu.awards.award.entity.AwardStatus;
+import ua.edu.chnu.awards.award.entity.AwardVisibility;
 import ua.edu.chnu.awards.award.service.AwardService;
 import ua.edu.chnu.awards.award.service.AwardStatusService;
 import ua.edu.chnu.awards.award.service.AwardSubmission;
@@ -45,13 +46,14 @@ public class AwardController {
     /**
      * The caller's own awards, newest first.
      *
-     * @param status   limit to an award status
-     * @param category limit to a category
-     * @param dateFrom earliest award date
-     * @param dateTo   latest award date
-     * @param q        search text; while searching the page is in relevance order
-     * @param page     0-based page
-     * @param size     page size, capped at 100
+     * @param status     limit to an award status
+     * @param category   limit to a category
+     * @param dateFrom   earliest award date
+     * @param dateTo     latest award date
+     * @param q          search text; while searching the page is in relevance order
+     * @param visibility limit to personal awards with this visibility
+     * @param page       0-based page
+     * @param size       page size, capped at 100
      * @return the page
      */
     @GetMapping
@@ -63,10 +65,11 @@ public class AwardController {
                                             @RequestParam(required = false)
                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
                                             @RequestParam(required = false) String q,
+                                            @RequestParam(required = false) AwardVisibility visibility,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "20") int size) {
-        return PageResponse.of(awardService.listOwn(new AwardQuery(status, category, dateFrom, dateTo, q), page,
-            size));
+        return PageResponse.of(awardService.listOwn(new AwardQuery(status, category, dateFrom, dateTo, q,
+            visibility), page, size));
     }
 
     /**

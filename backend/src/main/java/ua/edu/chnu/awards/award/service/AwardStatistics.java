@@ -18,6 +18,7 @@ import ua.edu.chnu.awards.award.dto.CountedTotals;
 import ua.edu.chnu.awards.award.dto.DepartmentStanding;
 import ua.edu.chnu.awards.award.dto.OpenAwards;
 import ua.edu.chnu.awards.award.dto.TimelineEntry;
+import ua.edu.chnu.awards.award.dto.VisibilityCounts;
 import ua.edu.chnu.awards.award.dto.YearRange;
 import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 
@@ -89,6 +90,25 @@ public class AwardStatistics {
          limit :limit
         """;
 
+    private static final String APPROVED = """
+        select a.award_id, a.title, a.title_uk, a.award_date, a.awarding_organization, a.verification_badge,
+               c.category_id, c.name, c.name_uk, c.level
+          from awards a
+          join award_categories c on c.category_id = a.category_id
+         where a.user_id = :userId and a.status = 'APPROVED' and a.recipient_org_id is null
+         order by a.award_date desc, a.award_id desc
+        """;
+
+    private static final String VISIBILITY = """
+        select count(*) filter (where a.visibility = 'PUBLIC') as public_awards,
+               count(*) filter (where a.visibility = 'UNIVERSITY') as university_awards,
+               count(*) filter (where a.visibility = 'PRIVATE') as private_awards,
+               count(*) filter (where exists (select 1 from documents d where d.award_id = a.award_id))
+                   as with_document
+          from awards a
+         where a.user_id = :userId and a.status = 'APPROVED' and a.recipient_org_id is null
+        """;
+
     private static final String OPEN = """
         select count(*) filter (where status = 'DRAFT') as drafts,
                count(*) filter (where status = 'PENDING') as pending
@@ -143,10 +163,29 @@ public class AwardStatistics {
      * @return the entries
      */
     public List<TimelineEntry> timeline(long userId, YearRange period, int limit) {
-        return jdbc.query(TIMELINE, counted(userId, period).addValue("limit", limit), (row, index) ->
-            new TimelineEntry(row.getLong("award_id"), row.getString("title"), row.getString("title_uk"),
-                row.getObject("award_date", LocalDate.class), category(row), row.getString("awarding_organization"),
-                row.getBoolean("verification_badge")));
+        return jdbc.query(TIMELINE, counted(userId, period).addValue("limit", limit), (row, index) -> entry(row));
+    }
+
+    /**
+     * Every approved personal award of a person, whatever its date, newest award date first.
+     *
+     * @param userId the award owner
+     * @return the entries
+     */
+    public List<TimelineEntry> approved(long userId) {
+        return jdbc.query(APPROVED, Map.of(USER_ID, userId), (row, index) -> entry(row));
+    }
+
+    /**
+     * Approved personal awards of a person by visibility, whatever their dates.
+     *
+     * @param userId the award owner
+     * @return the counts
+     */
+    public VisibilityCounts visibility(long userId) {
+        return Objects.requireNonNull(jdbc.queryForObject(VISIBILITY, Map.of(USER_ID, userId), (row, index) ->
+            new VisibilityCounts(row.getLong("public_awards"), row.getLong("university_awards"),
+                row.getLong("private_awards"), row.getLong("with_document"))));
     }
 
     /**
@@ -179,6 +218,12 @@ public class AwardStatistics {
 
     private static MapSqlParameterSource counted(long userId, YearRange period) {
         return new MapSqlParameterSource(USER_ID, userId).addValue(FROM, period.from()).addValue(TO, period.to());
+    }
+
+    private static TimelineEntry entry(ResultSet row) throws SQLException {
+        return new TimelineEntry(row.getLong("award_id"), row.getString("title"), row.getString("title_uk"),
+            row.getObject("award_date", LocalDate.class), category(row), row.getString("awarding_organization"),
+            row.getBoolean("verification_badge"));
     }
 
     private static CategoryRef category(ResultSet row) throws SQLException {
