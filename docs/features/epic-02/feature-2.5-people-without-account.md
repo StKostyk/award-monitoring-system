@@ -2,7 +2,8 @@
 
 > **Epic**: 2 Award lifecycle management (SCRUM-20) · **Tracker**: `docs/epics/EPIC-02-AWARD-LIFECYCLE-STATUS.md`
 > **Sprint**: 10 and 11 (2026-11-16 to 2026-11-29); 2.5.5 after Feature 9.4 · **Points**: 32
-> **Status**: Approved 2026-11-16; 2.5.5 revised 2026-11-18 (column mapping instead of one sample layout)
+> **Status**: Approved 2026-11-16; 2.5.5 revised 2026-11-18 (column mapping instead of one sample layout);
+> validated 2026-11-18, pending the manual run of §10 (steps 1-19 and 21-40)
 > **Governing docs**: US-001 and FR-005 (account creation and profile linking), US-003, Feature 1.2 (registration,
 > verification, membership confirmation, AUTH §9 table), Feature 4.1.0 (unit awards, `RecipientUnits`, submitter
 > never reviews), Feature 6.1 (consent, privacy notice, erasure 6.1.5), Feature 7.1 (mail delivery),
@@ -232,7 +233,8 @@ organisation of rows that leave them empty come from the mapping. Formats read: 
   in the link dialog (AC-4.1) tell them apart; a wrong link is undone only by a reviewer correction or an admin
   (Risk 6).
 - A claim with the link still valid blocks a second registration for 24 h (Feature 1.2 C-13).
-- Bounced invitation: delivery log as in 7.1; the person page shows «Лист не доставлено» when the delivery failed.
+- Bounced invitation: retried and logged as in 7.1; the delivery state is not kept (§7), so the person page shows
+  when the invitation went, not whether it arrived.
 - Unit erasure, legal hold and retention: a placeholder is a `users` row; the legal-hold and former-staff policies
   (6.2) apply unchanged and never pick a placeholder (status `UNCLAIMED` is not a former-staff status).
 - Concurrency: two secretaries change one person (version 409); add and remove at once (row lock on the person).
@@ -476,6 +478,14 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
     the other answers 404 and the dialog reloads the candidates without the person. (AC-4.3)
 36. 2.5.5: a file of 1,001 rows, a `.pdf` renamed `.csv`, a row of a FE department. Expected: 422 naming the limit,
     the type or the rows; nothing stored. (AC-5.4)
+37. Repeating a one-time action: after step 12, reload the verification page and open the link in a second tab.
+    Expected: no second `ACCOUNT_CLAIMED` row, one `EMPLOYEE` role, the page explains the link was used. (AC-3.2)
+38. Mail down: `docker stop award-mailpit`, add a person with an address, start Mailpit again. Expected: the person
+    is stored with `invitedAt` set, the send is retried and logged, and the mail arrives once. (AC-1.4, §5)
+39. Two tabs: preview one file in two tabs as `secretary.fmi@` and press «Імпортувати» in both. Expected today:
+    both may pass the duplicate check (known limit, PR #441); record the counts. (AC-5.2)
+40. Text forms: save the step 20 file with the titles in NFD (decomposed «й», «ї») next to an NFC award of the same
+    title entered through the form. Expected: the preview marks the probable duplicate. (AC-5.1)
 
 ### Run 2026-11-18
 
@@ -509,3 +519,65 @@ Container stack (docker compose build --pull=false, app + frontend) at develop 2
 - Docs updated in the story that changes them: `openapi.yml` (planned → implemented), DATA_DICTIONARY §1.1,
   DATA_GOVERNANCE §1.2 and §4.3, `PRIVACY_IMPACT.md`, AUTH §9 table, `USER_GUIDE.md`, `CHANGELOG.md
   [Unreleased]`, the epic tracker and `BACKLOG.md`.
+
+## Validation (2026-11-18)
+
+Result: **PASSED WITH NOTES**, pending the manual run of §10 (steps 20 and 36 passed 2026-11-18). Stories
+2.5.1-2.5.5 merged (#426-#429, #441).
+
+Suite on `develop` 735af52: unit 1 484, IT/FT 624, JaCoCo 98.3 % lines, Checkstyle/PMD/SpotBugs 0; frontend lint,
+1 342 unit tests, production build 855 kB. Playwright: the full run on the 2.5.5 branch (240 passed, the last 4 specs
+passed on their own after the 45 min timeout); `develop` differs from that branch in docs only. Compose stack built
+and healthy from 2b9741f; migrations apply on the empty database of every IT; `OpenApiContractTest` passes.
+
+| AC | Evidence (all passing) |
+|----|------------------------|
+| 1.1, 1.4 | `PeopleFT` ac1_1_ac1_4, ac1_4 without an address; `InvitationMailsTest` (2); e2e `people.spec` ac1_1 ac1_4 ac1_5 ac1_9 |
+| 1.2 | `PeopleFT` ac1_2 address taken, ac1_2 two concurrent adds |
+| 1.3 | `PeopleFT` ac1_3; `PersonRulesTest` ac1_3 (4) |
+| 1.5 | `PeopleFT` ac1_5 (Mailpit, 429 with `Retry-After`) |
+| 1.6 | `PeopleFT` ac1_6 (audit fields, first address invited, 409 version, 422 `required`); `PersonRulesTest` ac1_6 |
+| 1.7 | `PeopleFT` ac1_7 (2) |
+| 1.8 | `PeopleFT` ac1_8 |
+| 1.9 | `PeopleFT` ac1_9 (2); e2e `people.spec` ac1_9 (2) |
+| 1.10 | `PeopleFT` ac1_10; `PersonRulesTest` ac1_10 (2); e2e `people.spec` ac1_4 ac1_10 |
+| 2.1 | e2e `people.spec` ac2_1 (2) |
+| 2.2 | `PersonAwardsFT` ac2_2 (2); `ManagedOwnersTest` ac2_2 |
+| 2.3 | `PersonAwardsFT` ac2_3 (3); `ManagedOwnersTest` ac2_3 |
+| 2.4, 2.5 | `PersonAwardsFT` ac2_4_ac2_5_ac2_6, ac2_3_ac2_4; `ManagedOwnersTest` ac2_5 |
+| 2.6 | `PersonAwardsFT` ac2_4_ac2_5_ac2_6 (PRIVATE, visibility change refused, not in achievements); `TopPerformersRankingTest` ac2_6 (added by the validation); unit totals: code only (F-2) |
+| 2.7 | e2e `people.spec` ac2_1 ac2_7 |
+| 3.1-3.3 | `ClaimFT` ac3_1_ac3_2_ac3_3; `AccountClaimTest` ac3_1 (2), ac3_2; e2e `claim.spec` |
+| 3.4 | `ClaimFT` ac3_4; `AccountClaimTest` ac3_4 |
+| 3.5 | `AccountClaimTest` ac3_1 the registration brings only the password (D-3) |
+| 4.1 | e2e `person-link.spec` ac4_1 ac4_2 ac4_4 |
+| 4.2, 4.4 | `PersonLinkFT` ac4_2, ac4_4; e2e `person-link.spec` |
+| 4.3 | `PersonLinkFT` ac4_3 |
+| 5.1 | `AwardImportFT` ac5_1; `ImportColumnsTest` (3), `ImportValuesTest` (9), `ImportDuplicatesTest`, `SpreadsheetReaderTest` (3); e2e `award-import.spec` ac5_1 |
+| 5.2 | `AwardImportFT` ac5_2; `ImportDuplicatesTest` ac5_2; e2e `award-import.spec` ac5_2 (2) |
+| 5.3 | `AwardImportFT` ac5_3; e2e `award-import.spec` ac5_3 |
+| 5.4 | `AwardImportFT` ac5_4 (5); `SpreadsheetReaderTest` ac5_4 (3); `XlsxTablesTest` (2); e2e `award-import.spec` ac5_4 |
+
+Edge cases of §5: department move (code: `AwardSubmission` takes the owner's department at submission,
+`ManagedOwners` checks the owner's current department; no test, F-3), role ended or delegation revoked mid-edit
+(manual steps 26-27), claim while the draft is open (`ClaimFT` ac3_3, step 28), registration under another address
+(`PersonLinkFT`), namesakes (ac1_10 tests), claim link still valid (`AccountClaimTest` ac3_1 usable link), bounced
+invitation (§5 corrected to §7), erasure and retention (`UNCLAIMED` is outside the former-staff statuses), concurrency
+(`PeopleFT` 409 tests).
+
+Security: A01 every `/people` and `/award-imports` call checks the role (`PersonRules.requireRole`) and the scope
+(`PeopleLookup.inScope`, `ManagedOwners`), the decision rule checks the current owner (`ReviewerRule`), the import
+blocks rows of the caller or a delegator; A02 a placeholder holds a random password hash (`SecretUtils.randomSecret`)
+and a masked address in lists; A03 parameterised queries (`UserRepository.findWithoutAccount`, `ImportDuplicates`),
+files type-checked by content, scanned, capped in size, rows and xlsx inflation; A07 an unclaimed address answers as a
+wrong password (`LoginFailureHandler`), password reset sends nothing, registration gives no hint of a prepared row.
+
+Findings:
+- F-1 Import text is not NFC-normalised (`ImportDuplicates.plainTitle`, stored names): an NFD file misses the probable
+  duplicate of an NFC award, and people added from it are not found by an NFC search. Manual step 40.
+- F-2 AC-2.6 totals: unit and university figures count awards of unclaimed owners (no owner-status filter); no test.
+- F-3 Department move with a draft: no test (see edge cases).
+- F-4 Two imports of one file at once can both pass the duplicate check (known, PR #441). Manual step 39.
+- F-5 Not confirmed: a notice of an unclaimed owner's award when the submitter's account was erased goes to
+  `request.getSubmitter()` without a guard (`NoticeRecipientHelper`).
+- Refactor sweep: findings in the epic tracker's technical notes, none applied (code freeze).

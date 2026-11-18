@@ -40,6 +40,7 @@ class TopPerformersRankingTest {
     private static final int TOP_PERFORMERS = 3;
     private static final long DAI = 64L;
     private static final long DMA = 66L;
+    private static final long UNCLAIMED_ID = 7L;
 
     @Mock
     private ConsentLookup consents;
@@ -108,6 +109,24 @@ class TopPerformersRankingTest {
         assertThat(top.people()).isEmpty();
     }
 
+    @Test
+    void ac2_6_aPersonWithoutAnAccountIsNeverRanked() {
+        List<OwnerAwardCount> owners = new ArrayList<>(LongStream.rangeClosed(1, MIN_GROUP_SIZE)
+            .mapToObj(id -> owner(id, DAI, true, 1, RecognitionLevel.LOCAL)).toList());
+        owners.add(owner(UNCLAIMED_ID, DAI, true, 9, RecognitionLevel.INTERNATIONAL));
+        when(consents.grantedAmong(any(), any())).thenAnswer(call -> Set.copyOf(call.<Collection<Long>>getArgument(0)));
+        when(users.findAllById(any())).thenAnswer(call -> {
+            List<User> found = new ArrayList<>();
+            call.<Iterable<Long>>getArgument(0).forEach(id -> found.add(user(id)));
+            return found;
+        });
+
+        TopPerformers top = ranking.of(figures(owners), MIN_GROUP_SIZE);
+
+        assertThat(top.status()).isEqualTo(TopPerformers.Status.LISTED);
+        assertThat(top.people()).isNotEmpty().extracting(TopPerformers.Person::userId).doesNotContain(UNCLAIMED_ID);
+    }
+
     private static User user(long id) {
         String lastName = switch ((int) id) {
             case 1 -> "Ковальчук";
@@ -118,7 +137,14 @@ class TopPerformersRankingTest {
         Organization department = Organization.builder().id(DAI).name("Algebra and Informatics")
             .nameUk("Кафедра алгебри та інформатики").code("DAI").orgType(OrganizationType.DEPARTMENT).build();
         return User.builder().id(id).firstName("Ім'я " + id).lastName(lastName).organization(department)
-            .accountStatus(id == 5 ? AccountStatus.INACTIVE : AccountStatus.ACTIVE).build();
+            .accountStatus(status(id)).build();
+    }
+
+    private static AccountStatus status(long id) {
+        if (id == UNCLAIMED_ID) {
+            return AccountStatus.UNCLAIMED;
+        }
+        return id == 5 ? AccountStatus.INACTIVE : AccountStatus.ACTIVE;
     }
 
     private static OwnerAwardCount owner(long userId, long organizationId, boolean current, long count,
