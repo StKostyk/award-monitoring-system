@@ -51,7 +51,7 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 12 | 2.1.6 Fixes from the manual run of Feature 2.1 | 2.1 | 2 | SCRUM-38 | #117 | no | Done |
 | 13 | 2.1.7 Fixes from the manual runs of Features 2.1 and 2.2 | 2.1 | 3 | SCRUM-42 | #127 | no | Done |
 | 14 | 2.1.8 Review decisions: approval levels, working-day review period, role assignment, GDPR and audit fixes | 2.1 | 8 | SCRUM-43 | #130 | no | Done |
-| 14e | 2.5.5 Import people and past awards from a spreadsheet | 2.5 | 8 | SCRUM-154 | #424 | no | In review |
+| 14e | 2.5.5 Import people and past awards from a spreadsheet | 2.5 | 8 | SCRUM-154 | #424 | no | Done |
 | 14d | 2.5.4 Link at membership confirmation | 2.5 | 3 | SCRUM-153 | #423 | no | Done |
 | 14c | 2.5.3 Claim at registration | 2.5 | 5 | SCRUM-152 | #422 | no | Done |
 | 14b | 2.5.2 Awards for a person without an account | 2.5 | 8 | SCRUM-151 | #421 | no | Done |

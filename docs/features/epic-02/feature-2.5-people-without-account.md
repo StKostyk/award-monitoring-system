@@ -477,6 +477,15 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
 36. 2.5.5: a file of 1,001 rows, a `.pdf` renamed `.csv`, a row of a FE department. Expected: 422 naming the limit,
     the type or the rows; nothing stored. (AC-5.4)
 
+### Run 2026-11-18
+
+Container stack (docker compose build --pull=false, app + frontend) at develop 2b9741f, default settings; steps 20 and 36 only. Result: 2 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 20 | PASS | Template award-import-template.xlsx (8 columns + level sheet). Faculty CSV with own headers: 6/7 columns guessed, «Посада» remapped to «Примітки», preview again; rows 2-4 with person, department, category, 1 in-file repeat; imported awards 7 before and after both previews. «Імпортувати»: 2 imported, 1 colleague added, 1 skipped; awards 1869/1870 APPROVED source IMPORT, notes stored, Новачук added UNCLAIMED without an address (users 1402->1403); /awards/1870 shows «Затверджено» + «Імпортовано». Second upload: rows «Уже збережено», submit disabled, count stays 9 |
+| 36 | PASS | 1,001 rows: preview 422 too-many-rows maxRows=1000; PDF renamed .csv: 422 unsupported-type; FE row: preview flags row 2 department-out-of-scope, import 422 rows-blocked rows=[2]; imported awards 7 and users 1402 before and after |
+
 
 ## 11. Risks
 
