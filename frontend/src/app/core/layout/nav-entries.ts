@@ -2,6 +2,7 @@ import { IconName } from '../../shared/icons/icons';
 import {
   TokenPermissions,
   canDelegate,
+  canManagePeople,
   canOpenCommandCentre,
   canOpenHallOfFame,
   canReadCompliance,
@@ -64,6 +65,7 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   entry('achievements', '/achievements', 'achievements.title', 'trophy', ANYONE),
   entry('reviews', '/reviews', 'reviews.title', 'clipboard-check', canReview),
   entry('users', '/admin/users', 'admin.users.title', 'users', canReadDirectory),
+  entry('import', '/admin/import', 'admin.import.title', 'upload', canManagePeople),
   entry('delegations', '/delegations', 'delegations.title', 'arrow-left-right', canDelegate),
   entry('compliance', '/compliance', 'compliance.title', 'shield-check', canReadCompliance),
 ];

@@ -70,7 +70,8 @@ public class AwardMapper {
             UserRef.of(award.getOwner()), recipient(award), organizationRef(award.getOrganization()),
             toSummary(award, request, returnComment), List.copyOf(warnings),
             award.isUnitAward() ? null : award.getVisibility(), award.getCreatedAt(), award.getUpdatedAt(),
-            award.getVersion(), award.getOwner().isWithoutAccount(), managedOwners.manages(award.getOwner()));
+            award.getVersion(), award.getOwner().isWithoutAccount(), managedOwners.manages(award.getOwner()),
+            award.getSource());
     }
 
     static AwardRecipient recipient(Award award) {

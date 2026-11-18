@@ -8,6 +8,7 @@ import {
   complianceGuard,
   delegationGuard,
   hallOfFameGuard,
+  peopleGuard,
   roleHomeGuard,
   unitAnalyticsGuard,
   userDirectoryGuard,
@@ -96,6 +97,15 @@ export const routes: Routes = [
         title: 'titles.forbidden',
         component: ForbiddenComponent,
         canActivate: [authGuard],
+      },
+      {
+        path: 'admin/import',
+        title: 'titles.import',
+        canActivate: [authGuard, peopleGuard],
+        loadComponent: () =>
+          import('./features/admin/award-import/award-import.component').then(
+            (m) => m.AwardImportComponent,
+          ),
       },
       {
         path: 'admin',

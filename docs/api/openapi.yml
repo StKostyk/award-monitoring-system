@@ -3280,9 +3280,11 @@ paths:
       summary: Preview a spreadsheet of people and past awards
       description: >
         Reads an `.xlsx` or `.csv` file (at most `app.award-import.max-size` and `app.award-import.max-rows`
-        rows, scanned like any upload) and answers every row with its matches and problems; stores nothing. The
-        columns follow a faculty's sample spreadsheet (2.5.5, provisional).
-      x-status: planned
+        rows below the header, scanned like any upload, the type checked by the content) and answers every row
+        with its person, department, category and problems; stores nothing. Without a `mapping` part the columns
+        are guessed from the Ukrainian or English headers; the caller then confirms or changes the mapping and
+        previews again. A `.csv` file is UTF-8 or Windows-1251, separated by semicolons, commas or tabs (2.5.5).
+        Only a faculty secretary or dean, own or delegated.
       security:
         - bearerAuth: []
       operationId: previewAwardImport
@@ -3297,6 +3299,11 @@ paths:
                 file:
                   type: string
                   format: binary
+                mapping:
+                  $ref: '#/components/schemas/ImportMapping'
+            encoding:
+              mapping:
+                contentType: application/json
       responses:
         '200':
           description: The preview
@@ -3309,17 +3316,32 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/ValidationFailed'
+          description: >
+            `urn:awards:problem:file-too-large` (`maxBytes`), `unsupported-type`, `file-empty`, `too-many-rows`
+            (`maxRows`), `file-unreadable`, `malware-detected`, or `validation-failed` for a mapping with an
+            unknown or reused column or a department outside the scope
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '503':
+          description: "`urn:awards:problem:scanner-unavailable` — the file could not be scanned"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
 
   /award-imports:
     post:
       tags: [Awards]
       summary: Import a previewed spreadsheet
       description: >
-        Stores the rows of a preview without blocking problems in one transaction: missing people are added
-        without an address, each row becomes an `APPROVED` award with `source` `IMPORT` and no review request;
-        rows already stored are skipped (2.5.5, provisional).
-      x-status: planned
+        Stores the rows of an unchanged preview without blocking problems in one transaction: people no member
+        of the department matches are added without an address (one per department and name), each row becomes
+        an `APPROVED` award with `source` `IMPORT`, no review request and an `AWARD_IMPORTED` audit row naming the
+        file and the row; rows stored already (an approved award of the same person, date and title) or repeated
+        in the file are skipped, so importing a file twice adds nothing; a row of the caller, or of who lent them
+        the role, is blocked (2.5.5).
       security:
         - bearerAuth: []
       operationId: importAwards
@@ -3329,14 +3351,19 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [file, checksum]
+              required: [file, mapping, checksum]
               properties:
                 file:
                   type: string
                   format: binary
+                mapping:
+                  $ref: '#/components/schemas/ImportMapping'
                 checksum:
                   type: string
-                  description: The `checksum` of the preview of this file
+                  description: The `checksum` of the preview of this file and mapping
+            encoding:
+              mapping:
+                contentType: application/json
       responses:
         '201':
           description: The import
@@ -3349,13 +3376,49 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
-          description: "`urn:awards:problem:preview-stale` — the file differs from the previewed one"
+          description: "`urn:awards:problem:preview-stale` — the file or the mapping differs from the previewed one"
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
         '422':
-          $ref: '#/components/responses/ValidationFailed'
+          description: >
+            `urn:awards:problem:rows-blocked` with `rows`, the row numbers that have blocking problems (a
+            department outside the scope among them); the file and mapping problems of the preview
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '503':
+          description: "`urn:awards:problem:scanner-unavailable` — the file could not be scanned"
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+
+  /award-imports/template:
+    get:
+      tags: [Awards]
+      summary: The empty workbook for an import
+      description: >
+        An `.xlsx` file with the columns the import recognises (full name, department, title, date, level,
+        awarding organisation, address, notes) and a sheet of the level names it reads (2.5.5). Only a faculty
+        secretary or dean.
+      security:
+        - bearerAuth: []
+      operationId: awardImportTemplate
+      responses:
+        '200':
+          description: The workbook
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   # ============== Analytics ==============
   /analytics/me:
@@ -4546,33 +4609,109 @@ components:
         movedAwards:
           type: integer
 
+    ImportField:
+      type: string
+      description: A field a spreadsheet column can fill; `EMAIL` only helps to find an account
+      enum: [FULL_NAME, LAST_NAME, FIRST_NAME, EMAIL, DEPARTMENT, TITLE, DATE, LEVEL, AWARDING_ORGANIZATION, NOTES]
+
+    ImportMapping:
+      type: object
+      description: Which 0-based column fills which field, and the values of rows that leave a field empty
+      properties:
+        columns:
+          type: object
+          description: Keys are `ImportField` values; a column fills one field at most
+          additionalProperties:
+            type: integer
+        departmentId:
+          type: [integer, 'null']
+          format: int64
+          description: Department of rows without one; an active department of the caller's scope
+        defaultLevel:
+          oneOf:
+            - $ref: '#/components/schemas/RecognitionLevel'
+            - type: 'null'
+        defaultAwardingOrganization:
+          type: [string, 'null']
+          maxLength: 255
+
     AwardImportPreview:
       type: object
-      description: Provisional until a sample spreadsheet fixes the columns (2.5.5, planned)
       properties:
         checksum:
           type: string
+          description: SHA-256 of the file and the mapping, sent back with the import
+        headers:
+          type: array
+          items:
+            type: string
+        mapping:
+          $ref: '#/components/schemas/ImportMapping'
         rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRow'
+
+    ImportRow:
+      type: object
+      properties:
+        row:
+          type: integer
+          description: Row number in the spreadsheet, the header being row 1
+        person:
+          type: [object, 'null']
+          description: >
+            The matched member of the department (`id` set) or the person without an account the import adds
+            (`id` null); null when the name cannot be read
+          properties:
+            id:
+              type: [integer, 'null']
+              format: int64
+            firstName:
+              type: string
+            lastName:
+              type: string
+            withoutAccount:
+              type: boolean
+        department:
+          oneOf:
+            - $ref: '#/components/schemas/UnitRef'
+            - type: 'null'
+        title:
+          type: [string, 'null']
+        awardDate:
+          type: [string, 'null']
+          format: date
+          description: A month becomes its first day, a year 1 January
+        awardingOrganization:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+        category:
+          $ref: '#/components/schemas/AwardCategoryRef'
+        skipped:
+          type: boolean
+          description: Stored already or repeated in the file; the import leaves the row out
+        problems:
           type: array
           items:
             type: object
             properties:
-              row:
-                type: integer
-              person:
-                type: [object, 'null']
-                description: The matched account or person without an account; null when one will be added
-              category:
-                type: [object, 'null']
-              problems:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    code:
-                      type: string
-                    blocking:
-                      type: boolean
+              code:
+                type: string
+                description: >
+                  Blocking: `name-missing`, `name-invalid`, `person-ambiguous`, `person-initials`,
+                  `department-missing`, `department-unknown`, `department-out-of-scope`, `title-missing`,
+                  `title-too-long`, `date-missing`, `date-invalid`, `date-future`, `date-too-old`,
+                  `level-missing`, `level-unknown`, `awarding-organization-missing`,
+                  `awarding-organization-too-long`, `notes-too-long`, `owner-is-caller` (the caller or who lent
+                  them the role); notices: `person-added`, `duplicate-probable`, `already-stored`, `row-repeated`
+              field:
+                oneOf:
+                  - $ref: '#/components/schemas/ImportField'
+                  - type: 'null'
+              blocking:
+                type: boolean
 
     AwardImportResult:
       type: object
@@ -4902,6 +5041,12 @@ components:
           description: >
             The caller manages the award in place of an owner without an account (2.5.2): edit, delete, upload,
             submit and withdraw work as for the owner; false for the caller's own awards
+        source:
+          type: string
+          enum: [FORM, IMPORT]
+          description: >
+            `FORM` — entered through the award form and the review path; `IMPORT` — an approved past award read
+            from a faculty spreadsheet without a review request (2.5.5), shown as «Імпортовано»
 
     AwardStatus:
       type: string

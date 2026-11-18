@@ -31,7 +31,11 @@ import ua.edu.chnu.awards.auth.dto.EmailChangeConfirmRequest;
 import ua.edu.chnu.awards.auth.dto.EmailChangeRequest;
 import ua.edu.chnu.awards.award.dto.AwardCategoryResponse;
 import ua.edu.chnu.awards.award.dto.AwardForm;
+import ua.edu.chnu.awards.award.dto.AwardImportPreview;
 import ua.edu.chnu.awards.award.dto.AwardResponse;
+import ua.edu.chnu.awards.award.dto.ImportField;
+import ua.edu.chnu.awards.award.dto.ImportMapping;
+import ua.edu.chnu.awards.award.dto.ImportRow;
 import ua.edu.chnu.awards.award.dto.OpenAwards;
 import ua.edu.chnu.awards.award.dto.Person;
 import ua.edu.chnu.awards.award.dto.PersonForm;
@@ -237,6 +241,21 @@ class OpenApiContractTest {
         assertThat(property((Map<String, Object>) schemas.get("MonthCount"), "properties").keySet())
             .containsExactlyInAnyOrderElementsOf(components(MonthCount.class));
         assertThat(schemas.get("MonthCount").toString()).doesNotContain("x-status");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ac5_1_importSchemasMatchThePreviewTheRowAndTheMapping() throws IOException {
+        Map<String, Object> schemas = schemas();
+
+        assertThat(property((Map<String, Object>) schemas.get("AwardImportPreview"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(AwardImportPreview.class));
+        assertThat(property((Map<String, Object>) schemas.get("ImportRow"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(ImportRow.class));
+        assertThat(property((Map<String, Object>) schemas.get("ImportMapping"), "properties").keySet())
+            .containsExactlyInAnyOrderElementsOf(components(ImportMapping.class));
+        assertThat((List<String>) ((Map<String, Object>) schemas.get("ImportField")).get("enum"))
+            .containsExactlyElementsOf(Arrays.stream(ImportField.values()).map(Enum::name).toList());
     }
 
     @Test

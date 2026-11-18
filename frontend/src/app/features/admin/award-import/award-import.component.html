@@ -1,0 +1,256 @@
+<div class="import__heading">
+  <h1 class="import__title" id="award-import-title">{{ 'admin.import.title' | transloco }}</h1>
+  <button
+    mat-stroked-button
+    type="button"
+    (click)="downloadTemplate()"
+    data-testid="import-template"
+  >
+    <app-icon matButtonIcon name="download" />
+    {{ 'admin.import.template' | transloco }}
+  </button>
+</div>
+
+<p class="import__intro">{{ 'admin.import.intro' | transloco }}</p>
+
+@if (busy()) {
+  <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+}
+
+@if (problem(); as problem) {
+  <p class="import__problem" role="alert" data-testid="import-problem">
+    {{ problem | transloco }}
+    @if (blockedRows().length) {
+      {{ 'admin.import.blockedRows' | transloco: { rows: blockedRows().join(', ') } }}
+    }
+  </p>
+}
+
+@if (result(); as result) {
+  <mat-card class="import__result" data-testid="import-result">
+    <mat-card-content>
+      <h2 class="import__subtitle">{{ 'admin.import.done' | transloco }}</h2>
+      <ul class="import__counts">
+        <li data-testid="import-result-imported">
+          {{ 'admin.import.counts.imported' | transloco: { count: result.imported } }}
+        </li>
+        <li data-testid="import-result-people">
+          {{ 'admin.import.counts.peopleAdded' | transloco: { count: result.peopleAdded } }}
+        </li>
+        <li data-testid="import-result-skipped">
+          {{ 'admin.import.counts.skipped' | transloco: { count: result.skipped } }}
+        </li>
+      </ul>
+      <div class="import__actions">
+        <a mat-stroked-button routerLink="/admin/users">{{ 'admin.import.toUsers' | transloco }}</a>
+        <button mat-flat-button type="button" (click)="startOver()" data-testid="import-again">
+          {{ 'admin.import.again' | transloco }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card class="import__step">
+    <mat-card-content>
+      <h2 class="import__subtitle">{{ 'admin.import.steps.file' | transloco }}</h2>
+      <div class="import__file">
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="busy()"
+          aria-describedby="import-file-hint"
+          (click)="picker.click()"
+          data-testid="import-pick"
+        >
+          <app-icon matButtonIcon name="upload" />
+          {{ 'admin.import.pick' | transloco }}
+        </button>
+        @if (file(); as file) {
+          <span class="import__file-name" data-testid="import-file-name">{{ file.name }}</span>
+        }
+        <input
+          #picker
+          type="file"
+          hidden
+          [accept]="accept"
+          (change)="picked(picker)"
+          data-testid="import-input"
+        />
+      </div>
+      <p class="import__hint" id="import-file-hint">{{ 'admin.import.fileHint' | transloco }}</p>
+    </mat-card-content>
+  </mat-card>
+
+  @if (preview(); as preview) {
+    <mat-card class="import__step">
+      <mat-card-content>
+        <h2 class="import__subtitle">{{ 'admin.import.steps.mapping' | transloco }}</h2>
+        <p class="import__hint">{{ 'admin.import.mappingHint' | transloco }}</p>
+        <div class="import__grid">
+          @for (header of preview.headers; track $index; let column = $index) {
+            <mat-form-field appearance="outline" class="import__field">
+              <mat-label>{{
+                header || ('admin.import.column' | transloco: { n: column + 1 })
+              }}</mat-label>
+              <mat-select
+                [value]="assignments()[column]"
+                (selectionChange)="assign(column, $event.value)"
+                [attr.data-testid]="'import-column-' + column"
+              >
+                <mat-option [value]="null">{{ 'admin.import.fields.none' | transloco }}</mat-option>
+                @for (field of fields; track field) {
+                  <mat-option [value]="field">{{
+                    'admin.import.fields.' + field | transloco
+                  }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+        </div>
+
+        <h3 class="import__minor">{{ 'admin.import.defaults' | transloco }}</h3>
+        <div class="import__grid">
+          <mat-form-field appearance="outline" class="import__field">
+            <mat-label>{{ 'admin.import.department' | transloco }}</mat-label>
+            <mat-select
+              [value]="departmentId()"
+              (selectionChange)="setDepartment($event.value)"
+              data-testid="import-department"
+            >
+              <mat-option [value]="null">{{ 'admin.import.fields.none' | transloco }}</mat-option>
+              @for (unit of departments(); track unit.id) {
+                <mat-option [value]="unit.id">{{ unitName(unit) }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>{{ 'admin.import.departmentHint' | transloco }}</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="import__field">
+            <mat-label>{{ 'admin.import.level' | transloco }}</mat-label>
+            <mat-select
+              [value]="defaultLevel()"
+              (selectionChange)="setLevel($event.value)"
+              data-testid="import-level"
+            >
+              <mat-option [value]="null">{{ 'admin.import.fields.none' | transloco }}</mat-option>
+              @for (level of levels; track level) {
+                <mat-option [value]="level">{{
+                  'categories.levels.' + level | transloco
+                }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="import__field import__field--wide">
+            <mat-label>{{ 'admin.import.organization' | transloco }}</mat-label>
+            <input
+              matInput
+              [value]="defaultOrganization()"
+              [attr.maxlength]="organizationLength"
+              (input)="setOrganization($any($event.target).value)"
+              data-testid="import-organization"
+            />
+          </mat-form-field>
+        </div>
+        <div class="import__actions">
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="busy() || !changed()"
+            (click)="refresh()"
+            data-testid="import-refresh"
+          >
+            {{ 'admin.import.refresh' | transloco }}
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <section class="import__step" aria-labelledby="import-preview-title">
+      <h2 class="import__subtitle" id="import-preview-title">
+        {{ 'admin.import.steps.preview' | transloco }}
+      </h2>
+      <p class="import__summary" data-testid="import-summary">
+        <span>{{ 'admin.import.counts.ready' | transloco: { count: ready() } }}</span>
+        <span>{{ 'admin.import.counts.blocked' | transloco: { count: blocked() } }}</span>
+        <span>{{ 'admin.import.counts.skipped' | transloco: { count: skipped() } }}</span>
+        <span>{{ 'admin.import.counts.peopleToAdd' | transloco: { count: peopleAdded() } }}</span>
+      </p>
+      @if (changed()) {
+        <p class="import__hint" role="status" data-testid="import-changed">
+          {{ 'admin.import.changed' | transloco }}
+        </p>
+      }
+      <ol class="import__rows">
+        @for (row of rows(); track row.row) {
+          <li
+            class="import__row"
+            [class.import__row--blocked]="isBlocking(row)"
+            [class.import__row--skipped]="row.skipped"
+            [attr.data-testid]="'import-row-' + row.row"
+          >
+            <div class="import__row-head">
+              <span class="import__row-number">{{
+                'admin.import.row' | transloco: { n: row.row }
+              }}</span>
+              @if (row.person; as person) {
+                <span class="import__person">{{ person.lastName }} {{ person.firstName }}</span>
+                @if (person.id === null) {
+                  <span class="app-chip import__chip">{{
+                    'admin.import.willAdd' | transloco
+                  }}</span>
+                }
+              } @else {
+                <span class="import__person">—</span>
+              }
+            </div>
+            <p class="import__row-title">{{ row.title || '—' }}</p>
+            <p class="import__row-meta">
+              @if (row.department; as department) {
+                <span>{{ unitName(department) }}</span>
+              }
+              @if (row.awardDate) {
+                <span>{{ row.awardDate | kyivDate }}</span>
+              }
+              @if (categoryOf(row); as category) {
+                <span>{{ category }}</span>
+              }
+              @if (row.awardingOrganization) {
+                <span>{{ row.awardingOrganization }}</span>
+              }
+            </p>
+            @if (shownProblems(row); as problems) {
+              <ul class="import__problems">
+                @for (problem of problems; track problem.code) {
+                  <li
+                    class="app-chip import__chip"
+                    [class.import__chip--blocking]="problem.blocking"
+                    data-testid="import-row-problem"
+                  >
+                    @if (problem.blocking) {
+                      <app-icon name="circle-alert" />
+                    }
+                    {{ 'admin.import.codes.' + problem.code | transloco }}
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        } @empty {
+          <li class="import__hint" data-testid="import-no-rows">
+            {{ 'admin.import.noRows' | transloco }}
+          </li>
+        }
+      </ol>
+      <div class="import__actions">
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="!canImport()"
+          (click)="importRows()"
+          data-testid="import-submit"
+        >
+          {{ 'admin.import.submit' | transloco: { count: ready() } }}
+        </button>
+      </div>
+    </section>
+  }
+}

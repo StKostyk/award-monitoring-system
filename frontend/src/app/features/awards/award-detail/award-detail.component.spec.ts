@@ -101,6 +101,7 @@ const translations = {
   uk: {
     awards: {
       notFound: 'Не знайдено',
+      imported: 'Імпортовано',
       status: { PENDING: 'На розгляді', DRAFT: 'Чернетка' },
       requestStatus: { SUBMITTED: 'Подано' },
       levels: { FACULTY_SECRETARY: 'секретар факультету' },
@@ -412,6 +413,22 @@ describe('AwardDetailComponent', () => {
     const fixture = await open(AwardDetailComponent, '5');
 
     expect(fixture.nativeElement.querySelector('[data-testid="award-edit"]')).not.toBeNull();
+  });
+
+  it('ac5_3_marks_an_imported_award', async () => {
+    service.get.mockReturnValue(of({ ...pending, source: 'IMPORT' as const }));
+    const imported = await open(AwardDetailComponent, '5');
+
+    expect(
+      imported.nativeElement.querySelector('[data-testid="award-detail-imported"]').textContent,
+    ).toContain('Імпортовано');
+  });
+
+  it('ac5_3_leaves_an_award_entered_through_the_form_unmarked', async () => {
+    service.get.mockReturnValue(of({ ...pending, source: 'FORM' as const }));
+    const entered = await open(AwardDetailComponent, '6');
+
+    expect(entered.nativeElement.querySelector('[data-testid="award-detail-imported"]')).toBeNull();
   });
 
   it('ac2_7_a_colleagues_draft_shows_the_chip_and_the_owner_actions', async () => {

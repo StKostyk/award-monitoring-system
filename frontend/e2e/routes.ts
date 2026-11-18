@@ -65,6 +65,7 @@ export function deanRoutes(): RoleRoutes {
       '/analytics/units/9',
       '/admin/users',
       `/admin/users/${employee}`,
+      '/admin/import',
     ]),
   };
 }

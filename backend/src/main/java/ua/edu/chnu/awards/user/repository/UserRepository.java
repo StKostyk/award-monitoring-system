@@ -82,4 +82,19 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
               or lower(u.emailAddress) like :pattern)""")
     Page<User> findWithoutAccount(@Param("organizationIds") Collection<Long> organizationIds,
                                   @Param("pattern") String pattern, Pageable pageable);
+
+    /**
+     * The members of one department: accounts and people without an account, leaving out deleted accounts and
+     * registrations not yet verified.
+     *
+     * @param organizationId the department
+     * @return the members
+     */
+    @Query("""
+        select u from User u
+        where u.organization.id = :organizationId
+          and u.accountStatus <> ua.edu.chnu.awards.user.entity.AccountStatus.DELETED
+          and (u.accountStatus <> ua.edu.chnu.awards.user.entity.AccountStatus.PENDING or u.addedById is not null)
+        """)
+    List<User> findMembers(@Param("organizationId") Long organizationId);
 }

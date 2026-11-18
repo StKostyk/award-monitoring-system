@@ -36,7 +36,8 @@
     "compliance": "GDPR compliance",
     "users": "Users",
     "user": "User",
-    "commandCentre": "Command centre"
+    "commandCentre": "Command centre",
+    "import": "Award import"
   },
   "app": {
     "language": "UK",
@@ -520,7 +521,8 @@
         "confirm": "Show publicly",
         "cancel": "Cancel"
       }
-    }
+    },
+    "imported": "Imported"
   },
   "achievements": {
     "title": "Achievements",
@@ -815,6 +817,97 @@
       "title": "Access denied",
       "text": "You do not have the permission for this page. Ask your faculty secretary or the administrator if you need access.",
       "home": "Go to the home page"
+    },
+    "import": {
+      "title": "Award import",
+      "intro": "Bring colleagues and their past awards over from a spreadsheet: pick the file, check the columns, review the rows and import. Colleagues without an account are added, and the awards are stored approved and private.",
+      "template": "Download template",
+      "pick": "Choose file",
+      "fileHint": "An .xlsx or .csv file (UTF-8 or Windows-1251) with headers in the first row.",
+      "steps": {
+        "file": "1. File",
+        "mapping": "2. Columns",
+        "preview": "3. Review"
+      },
+      "mappingHint": "The columns were recognised by their headers. Change a field where a column was read wrongly and review again.",
+      "column": "Column {{n}}",
+      "defaults": "Values for rows that leave a field empty",
+      "department": "Department",
+      "departmentHint": "For rows without a department",
+      "level": "Level",
+      "organization": "Awarded by",
+      "refresh": "Review again",
+      "changed": "The columns changed. Review again before importing.",
+      "row": "Row {{n}}",
+      "willAdd": "Will be added",
+      "noRows": "The file has no rows below the header.",
+      "submit": "Import ({{count}})",
+      "done": "Import finished",
+      "again": "Import another file",
+      "toUsers": "Go to users",
+      "blockedRows": "Rows: {{rows}}.",
+      "counts": {
+        "ready": "To import: {{count}}",
+        "blocked": "With errors: {{count}}",
+        "skipped": "Skipped: {{count}}",
+        "peopleToAdd": "New colleagues: {{count}}",
+        "imported": "Awards imported: {{count}}",
+        "peopleAdded": "Colleagues added without an account: {{count}}"
+      },
+      "fields": {
+        "none": "Do not read",
+        "FULL_NAME": "Full name",
+        "LAST_NAME": "Last name",
+        "FIRST_NAME": "First name",
+        "EMAIL": "Email",
+        "DEPARTMENT": "Department",
+        "TITLE": "Award title",
+        "DATE": "Date",
+        "LEVEL": "Level",
+        "AWARDING_ORGANIZATION": "Awarded by",
+        "NOTES": "Notes"
+      },
+      "codes": {
+        "name-missing": "No name",
+        "name-invalid": "Name not readable",
+        "person-ambiguous": "Several colleagues with this name",
+        "person-initials": "Initials match no colleague",
+        "department-missing": "No department",
+        "department-unknown": "Department not found",
+        "department-out-of-scope": "Department outside your faculty",
+        "title-missing": "No title",
+        "title-too-long": "Title too long",
+        "date-missing": "No date",
+        "date-invalid": "Date not readable",
+        "date-future": "Date in the future",
+        "date-too-old": "Date older than 50 years",
+        "level-missing": "No level",
+        "level-unknown": "Level not recognised",
+        "awarding-organization-missing": "No awarding organisation",
+        "awarding-organization-too-long": "Awarding organisation too long",
+        "notes-too-long": "Notes too long",
+        "person-added": "Colleague will be added",
+        "duplicate-probable": "A similar award exists",
+        "already-stored": "Already stored",
+        "row-repeated": "Row repeated in the file",
+        "owner-is-caller": "Your own award, or one of whoever lent you the role"
+      },
+      "problems": {
+        "file-too-large": "The file is too large.",
+        "unsupported-type": "Only .xlsx and .csv files are accepted.",
+        "file-empty": "The file is empty.",
+        "too-many-rows": "The file has too many rows.",
+        "file-unreadable": "The file could not be read.",
+        "malware-detected": "Malicious content was found in the file.",
+        "scanner-unavailable": "The file cannot be scanned right now. Try again later.",
+        "validation-failed": "The columns or the department are not valid.",
+        "preview-stale": "The file or the columns changed. Review again.",
+        "rows-blocked": "Some rows have errors.",
+        "access-denied": "The import is open to a faculty secretary or dean.",
+        "network": "The server cannot be reached. Try again.",
+        "template": "The template could not be downloaded.",
+        "unknown": "Something went wrong. Try again."
+      }
     }
   },
   "delegations": {

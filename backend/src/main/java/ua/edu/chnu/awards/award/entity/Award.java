@@ -20,14 +20,12 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import ua.edu.chnu.awards.organization.entity.Organization;
-import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -40,7 +38,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString(exclude = {"owner", "category", "organization"})
 @SuppressWarnings("PMD.TooManyFields")
@@ -103,6 +100,11 @@ public class Award {
     @Column(name = "visibility", nullable = false, updatable = false, length = 20)
     private AwardVisibility visibility = AwardVisibility.PRIVATE;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, updatable = false, length = 10)
+    private AwardSource source = AwardSource.FORM;
+
     @Column(name = "search_vector", insertable = false, updatable = false, columnDefinition = "tsvector")
     private String searchVector;
 
@@ -121,6 +123,13 @@ public class Award {
     @Version
     @Column(name = "version", nullable = false)
     private Long version = 1L;
+
+    /**
+     * For the persistence provider.
+     */
+    protected Award() {
+        // fields are set by the persistence provider
+    }
 
     /**
      * Whether the owner may still change or delete the award.
@@ -148,7 +157,7 @@ public class Award {
      */
     public boolean isSharedWithColleagues() {
         return status == AwardStatus.APPROVED && !isUnitAward() && visibility != AwardVisibility.PRIVATE
-            && owner.getAccountStatus() != AccountStatus.DELETED;
+            && !owner.isDeleted();
     }
 
     /**

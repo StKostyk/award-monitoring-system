@@ -141,4 +141,13 @@ public class User {
     public boolean isActive() {
         return accountStatus == AccountStatus.ACTIVE;
     }
+
+    /**
+     * Whether the account is in the {@link AccountStatus#DELETED} state.
+     *
+     * @return true when deleted
+     */
+    public boolean isDeleted() {
+        return accountStatus == AccountStatus.DELETED;
+    }
 }

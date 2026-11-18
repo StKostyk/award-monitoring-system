@@ -5,6 +5,7 @@ import { ConnectivityService } from '../connectivity/connectivity.service';
 import { AuthService } from './auth.service';
 import {
   canDelegate,
+  canManagePeople,
   canOpenCommandCentre,
   canOpenHallOfFame,
   canReadCompliance,
@@ -32,6 +33,13 @@ export const userDirectoryGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return canReadDirectory(auth.permissions()) || router.createUrlTree(['/forbidden']);
+};
+
+/** The spreadsheet import is open to a faculty secretary or dean, own or delegated; anybody else is refused. */
+export const peopleGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return canManagePeople(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };
 
 /** Delegations are open to a caller holding an approval role of their own; anybody else is refused. */
