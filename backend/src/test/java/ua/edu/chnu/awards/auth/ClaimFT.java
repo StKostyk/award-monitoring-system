@@ -143,6 +143,7 @@ class ClaimFT extends AbstractFunctionalTest {
         as(secretary).get(AwardApi.AWARDS + "/" + draftId).then().statusCode(HttpStatus.OK.value())
             .body("ownerWithoutAccount", equalTo(true))
             .body("managedByCaller", equalTo(true));
+        mailpit.latestTextTo(email, VERIFY_SUBJECT);
         mailpit.clear();
         register(email, "Друга", "Спроба", OTHER_DEPARTMENT_ID).then().statusCode(HttpStatus.CREATED.value())
             .body("status", equalTo("PENDING"));

@@ -71,6 +71,7 @@ Out (deferred):
 | 2.5.3 | Claim at registration | 5 | no | 2.5.1 |
 | 2.5.4 | Link at membership confirmation | 3 | no | 2.5.1 |
 | 2.5.5 | Import people and past awards from a spreadsheet | 8 | no | 2.5.2 |
+| 2.5.6 | Normalise imported text to NFC (fix of step 40) | 2 | no | 2.5.5 |
 
 2.5.1, 2.5.2, 2.5.4 and 2.5.5 have a backend and a UI part and split at the backend gate; 2.5.3 is backend with one
 page change. 2.5.2, 2.5.3 and 2.5.4 can run in any order once 2.5.1 is merged. 2.5.5 follows Feature 9.4 and waits
@@ -217,6 +218,16 @@ organisation of rows that leave them empty come from the mapping. Formats read: 
   account follow AC-2.6.
 - **AC-5.4** (Refusals) Given a file over the limits, of another type, or with rows outside the caller's scope, then
   422 names the file or the rows, and nothing is stored.
+
+### 2.5.6 Normalise imported text to NFC (SCRUM-160)
+
+Fix of manual step 40 (finding F-1): some macOS and older Excel exports save decomposed letters («й», «ї» as a base
+letter and a combining mark).
+
+- **AC-6.1** Given an uploaded file, then its headers and cells (names, titles, department, awarding organisation,
+  notes) are read in Unicode normalisation form C before they are matched and stored.
+- **AC-6.2** Given an NFD file whose row repeats an approved NFC award of the same person and date, then the preview
+  skips the row as `already-stored`, and an NFD name matches the NFC person of the department.
 
 ## 5. Edge cases
 
@@ -490,7 +501,8 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`; for step 38 `APP_EVENTS_RETRY
 39. Two tabs: preview one file in two tabs as `secretary.fmi@` and press «Імпортувати» in both. Expected today:
     both may pass the duplicate check (known limit, PR #441); record the counts. (AC-5.2)
 40. Text forms: save the step 20 file with the titles in NFD (decomposed «й», «ї») next to an NFC award of the same
-    title entered through the form. Expected: the preview marks the probable duplicate. (AC-5.1)
+    title, person and date entered through the form. Expected: the preview skips the row as «already-stored», as
+    for the NFC file; a person added from an NFD file is found by a normal search. (AC-5.1, AC-6.2)
 
 ### Run 2026-11-18
 
@@ -625,7 +637,8 @@ wrong password (`LoginFailureHandler`), password reset sends nothing, registrati
 
 Findings:
 - F-1 Import text is not NFC-normalised (`ImportDuplicates.plainTitle`, stored names): an NFD file misses the probable
-  duplicate of an NFC award, and people added from it are not found by an NFC search. Manual step 40.
+  duplicate of an NFC award, and people added from it are not found by an NFC search. Manual step 40. Fixed by
+  2.5.6 (SCRUM-160).
 - F-2 AC-2.6 totals: unit and university figures count awards of unclaimed owners (no owner-status filter); no test.
 - F-3 Department move with a draft: no test (see edge cases).
 - F-4 Two imports of one file at once can both pass the duplicate check (known, PR #441). Manual step 39.
