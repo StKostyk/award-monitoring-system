@@ -1,9 +1,10 @@
 # Feature 2.5: Awards of people without an account
 
 > **Epic**: 2 Award lifecycle management (SCRUM-20) · **Tracker**: `docs/epics/EPIC-02-AWARD-LIFECYCLE-STATUS.md`
-> **Sprint**: 10 and 11 (2026-11-16 to 2026-11-29); 2.5.5 after Feature 9.4 · **Points**: 32
+> **Sprint**: 10 and 11 (2026-11-16 to 2026-11-29); 2.5.5 after Feature 9.4 · **Points**: 32 + 2 (fix 2.5.6)
 > **Status**: Approved 2026-11-16; 2.5.5 revised 2026-11-18 (column mapping instead of one sample layout);
-> validated 2026-11-18, pending the manual run of §10 (steps 1-19 and 21-40)
+> validated 2026-11-18; **Done 2026-11-19** (manual run of §10 passed: step 20 on 2026-11-18, steps 1-19 and
+> 21-39 on 2026-11-19, step 40 after the fix 2.5.6)
 > **Governing docs**: US-001 and FR-005 (account creation and profile linking), US-003, Feature 1.2 (registration,
 > verification, membership confirmation, AUTH §9 table), Feature 4.1.0 (unit awards, `RecipientUnits`, submitter
 > never reviews), Feature 6.1 (consent, privacy notice, erasure 6.1.5), Feature 7.1 (mail delivery),
@@ -593,8 +594,9 @@ Container stack rebuilt at develop 9436bbe (SCRUM-160 merged), default settings;
 
 ## Validation (2026-11-18)
 
-Result: **PASSED WITH NOTES**, pending the manual run of §10 (steps 20 and 36 passed 2026-11-18). Stories
-2.5.1-2.5.5 merged (#426-#429, #441).
+Result: **PASSED WITH NOTES**; the manual run of §10 passed completely (2026-11-18 and 2026-11-19; step 40 failed
+on F-1 and passed again after 2.5.6). Stories 2.5.1-2.5.5 merged (#426-#429, #441), fix 2.5.6 merged (#446).
+Feature Done 2026-11-19.
 
 Suite on `develop` 735af52: unit 1 484, IT/FT 624, JaCoCo 98.3 % lines, Checkstyle/PMD/SpotBugs 0; frontend lint,
 1 342 unit tests, production build 855 kB. Playwright: the full run on the 2.5.5 branch (240 passed, the last 4 specs
