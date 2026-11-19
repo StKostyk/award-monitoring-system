@@ -1,7 +1,7 @@
 # Epic 2: Award Lifecycle Management — Status
 
 > **Started**: 2026-09-28
-> **Done**: 2026-10-01 (Features 2.1 to 2.3); reopened 2026-11-16 for Feature 2.5
+> **Done**: 2026-10-01 (Features 2.1 to 2.3); reopened 2026-11-16 for Feature 2.5, done again 2026-11-19
 > **Author**: Stefan Kostyk
 > **Jira epic**: SCRUM-20
 > **Roadmap**: [DEVELOPMENT_ROADMAP.md § Epic 2](../../DEVELOPMENT_ROADMAP.md#epic-2-award-lifecycle-management)
@@ -14,12 +14,13 @@
 | 2.2 Award Version History & Audit Trail | Done (validated, PRD §12; fixes 2.2.3 merged; manual run of §9 2026-10-05, findings fixed in SCRUM-42, after-merge steps passed 2026-10-11) ([feature-2.2](../features/epic-02/feature-2.2-award-version-history.md)) | 2026-09-30 | 2026-09-30 |
 | 2.3 Award Status Tracking | Done (validated, PRD §12; fixes 2.3.2 merged; manual run of §9 2026-10-05, findings fixed in SCRUM-42) ([feature-2.3](../features/epic-02/feature-2.3-award-status-tracking.md)) | 2026-10-01 | 2026-10-01 |
 | 2.4 Award Modification & Archival | Moved: 2.4.1 to Epic 4, 2.4.2 to Epic 6 (see decisions) | | |
-| 2.5 Awards of people without an account | Validated 2026-11-18 (PRD Validation, passed with notes F-1…F-5), pending the manual run of §10 (steps 20 and 36 passed 2026-11-18) ([feature-2.5](../features/epic-02/feature-2.5-people-without-account.md)) | 2026-11-16 | |
+| 2.5 Awards of people without an account | Done (validated 2026-11-18, passed with notes F-1…F-5; F-1 fixed in 2.5.6; manual run of §10 passed 2026-11-18/19) ([feature-2.5](../features/epic-02/feature-2.5-people-without-account.md)) | 2026-11-16 | 2026-11-19 |
 
 ## Current focus
 
-Feature 2.5 (SCRUM-150 to SCRUM-154) merged and validated 2026-11-18, passed with notes; the manual run of PRD §10
-(steps 1-19 and 21-40) closes it.
+Feature 2.5 done 2026-11-19: SCRUM-150 to SCRUM-154 merged and validated 2026-11-18 (passed with notes); the
+manual run of PRD §10 found one defect (step 40, NFD import text), fixed in 2.5.6 (SCRUM-160, #446); all steps
+passed. Open notes F-2…F-5 stay in the PRD Validation section.
 
 Feature 2.1 done 2026-09-29: 2.1.0–2.1.4 (SCRUM-21–24, 28) merged, validated (PRD §12, passed with notes F-1…F-11, all fixed), refactor sweep merged (#87); the manual run of PRD §9 walked 2026-10-05. Epic 1 stories 1.3.1, 1.3.3 and 1.3.4 done 2026-09-30. Feature 2.2 PRD approved 2026-09-30; 2.2.1 (SCRUM-25) done 2026-09-30 (#95); 2.2.2 (SCRUM-26) done 2026-09-30 (#96); validated 2026-09-30 (PRD §12, passed with notes F-1…F-4), fixes and refactor sweep in 2.2.3 (SCRUM-30), merged 2026-10-01 (#98). Feature 2.3 PRD approved 2026-10-01; 2.3.1 (SCRUM-27) done 2026-10-01 (#100); validated 2026-10-01 (PRD §12, passed with notes F-1…F-6), fixes and refactor sweep in 2.3.2 (SCRUM-31), merged 2026-10-01 (#102). Epic documentation sync 2026-10-01: docs reconciled with the code; three unused database objects disagree with the award model and are fixed in 2.1.5 (SCRUM-32), merged 2026-10-01 (#106). Epic 2 done 2026-10-01; the manual runs of PRD §9 for Features 2.1–2.3 were walked 2026-10-05, their findings fixed in SCRUM-42 (#128); the steps added by SCRUM-42 (2.1 steps 33–43, 2.2 step 15) passed 2026-10-11.
 
@@ -56,7 +57,7 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 14c | 2.5.3 Claim at registration | 2.5 | 5 | SCRUM-152 | #422 | no | Done |
 | 14b | 2.5.2 Awards for a person without an account | 2.5 | 8 | SCRUM-151 | #421 | no | Done |
 | 14a | 2.5.1 People without an account: add, change, invite, remove | 2.5 | 8 | SCRUM-150 | #420 | no | Done |
-| 14f | 2.5.6 Normalise imported text to NFC | 2.5 | 2 | SCRUM-160 | #444 | no | In review |
+| 14f | 2.5.6 Normalise imported text to NFC | 2.5 | 2 | SCRUM-160 | #444 | no | Done |
 
 Total: 57 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 
@@ -82,6 +83,7 @@ Total: 57 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 st
 | 2026-10-01 | Status tracking: `deadline` per level (3 calendar days, configurable), estimate computed over the remaining levels of the path, late requests explained (`REVIEW_OVERDUE`, `NO_REVIEWER`) but not expired; the award page polls every 60 s; WebSocket and push move to Epic 7 | Research targets of under 7 and 14 days; expiry and escalation are workflow-engine scope | Feature 2.3 PRD D-1–D-7 |
 | 2026-11-16 | Feature 2.5: a person without an account is a `users` row in the state `UNCLAIMED` owning the awards entered for them; the address is optional; with an address the person claims the row at registration, without one a secretary or dean links it at the membership confirmation; never a name match of the system; legitimate interest with the invitation as the Art. 14 notice; a spreadsheet import of past awards as approved (2.5.5) | Faculties keep awards of people who never register in spreadsheets with names only; one owner id keeps scopes, statistics and the claim simple | Feature 2.5 PRD §7 D-1–D-9 |
 | 2026-11-18 | Feature 2.5 validation: passed with notes (PRD Validation F-1…F-5); the §5 bounced-invitation line follows §7 (no delivery state kept); detours 37-40 added to §10 | The refactor sweep is recorded under technical notes, not applied during the code freeze | [feature-2.5](../features/epic-02/feature-2.5-people-without-account.md) Validation |
+| 2026-11-19 | Feature 2.5 done: the manual run of §10 passed; its one failure (step 40, NFD text in imports, F-1) became fix 2.5.6 (SCRUM-160), merged and rerun | Notes F-2…F-5 remain open in the PRD Validation section | [feature-2.5](../features/epic-02/feature-2.5-people-without-account.md) §10 |
 
 ## Documentation deviations to resolve
 
