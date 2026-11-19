@@ -56,7 +56,7 @@ Out of scope here, delivered later: certificate photo and upload (Epic 3), metad
 | 14c | 2.5.3 Claim at registration | 2.5 | 5 | SCRUM-152 | #422 | no | Done |
 | 14b | 2.5.2 Awards for a person without an account | 2.5 | 8 | SCRUM-151 | #421 | no | Done |
 | 14a | 2.5.1 People without an account: add, change, invite, remove | 2.5 | 8 | SCRUM-150 | #420 | no | Done |
-| 14f | 2.5.6 Normalise imported text to NFC | 2.5 | 2 | SCRUM-160 | #444 | no | To do |
+| 14f | 2.5.6 Normalise imported text to NFC | 2.5 | 2 | SCRUM-160 | #444 | no | In review |
 
 Total: 57 points, sprints 3–4. Story order approved 2026-09-28. Feature 2.4 stories (2.4.1 correction by reviewers, 2.4.2 GDPR-compliant deletion, 5 points each) are tracked with Epics 4 and 6.
 

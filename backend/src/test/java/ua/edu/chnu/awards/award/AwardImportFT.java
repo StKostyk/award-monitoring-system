@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Map;
 
@@ -148,6 +149,26 @@ class AwardImportFT extends AbstractFunctionalTest {
         run(csv, mapping(again), again.getString("checksum")).then().statusCode(HttpStatus.CREATED.value())
             .body("imported", equalTo(0)).body("peopleAdded", equalTo(0)).body("skipped", equalTo(4));
         assertThat(count(IMPORTED, employeeId)).isEqualTo(1);
+    }
+
+    @Test
+    void ac2_a_decomposed_file_matches_the_stored_person_and_award() throws JsonProcessingException {
+        String csv = HEADER + "Їжаченко Йосип;DDE;Подяка за їжу й воду;05.05.2004;факультетський;ФМІ\n";
+        String decomposed = Normalizer.normalize(csv, Normalizer.Form.NFD);
+        JsonPath first = preview(decomposed, null).then().statusCode(HttpStatus.OK.value()).extract().jsonPath();
+        run(decomposed, mapping(first), first.getString("checksum")).then().statusCode(HttpStatus.CREATED.value())
+            .body("imported", equalTo(1)).body("peopleAdded", equalTo(1));
+        long personId = count("select user_id from users where last_name = 'Їжаченко' and first_name = 'Йосип'");
+        assertThat(count("select count(*) from awards where user_id = ? and title_uk = 'Подяка за їжу й воду'",
+            personId)).isEqualTo(1);
+
+        JsonPath composed = preview(csv, null).then().statusCode(HttpStatus.OK.value()).extract().jsonPath();
+        JsonPath again = preview(decomposed, null).then().statusCode(HttpStatus.OK.value()).extract().jsonPath();
+
+        assertThat(composed.getLong("rows[0].person.id")).isEqualTo(personId);
+        assertThat(codes(composed, 0)).containsExactly("already-stored");
+        assertThat(again.getLong("rows[0].person.id")).isEqualTo(personId);
+        assertThat(codes(again, 0)).containsExactly("already-stored");
     }
 
     @Test

@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
@@ -86,7 +87,8 @@ public class ImportDuplicates {
     }
 
     static String plainTitle(String title) {
-        return NON_WORD.matcher(title.toLowerCase(Locale.ROOT)).replaceAll(" ").strip();
+        String composed = Normalizer.normalize(title, Normalizer.Form.NFC);
+        return NON_WORD.matcher(composed.toLowerCase(Locale.ROOT)).replaceAll(" ").strip();
     }
 
     private static Set<String> trigrams(String title) {

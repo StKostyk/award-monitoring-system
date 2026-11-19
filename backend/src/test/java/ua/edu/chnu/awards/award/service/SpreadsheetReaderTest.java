@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -59,6 +60,18 @@ class SpreadsheetReaderTest {
         assertThat(sheet.rows()).hasSize(1);
         assertThat(sheet.rows().get(0).number()).isEqualTo(3);
         assertThat(sheet.rows().get(0).cells()).containsExactly("Коваль Анна", "2024-05-17", "2023");
+    }
+
+    @Test
+    void ac1_decomposed_headers_and_cells_are_read_as_composed_text() {
+        String composed = "Прізвище й ім'я;Подяка за їжу й воду\nЙосип Їжак;Кафедра історії України\n";
+        byte[] content = Normalizer.normalize(composed, Normalizer.Form.NFD).getBytes(StandardCharsets.UTF_8);
+
+        ImportSheet sheet = reader.read("awards.csv", content);
+
+        assertThat(sheet.headers()).containsExactly("Прізвище й ім'я", "Подяка за їжу й воду");
+        assertThat(sheet.rows().get(0).cells()).containsExactly("Йосип Їжак", "Кафедра історії України");
+        assertThat(sheet.rows().get(0).cell(0)).isEqualTo("Йосип Їжак").hasSize(10);
     }
 
     @Test

@@ -1,9 +1,11 @@
 package ua.edu.chnu.awards.award.service;
 
+import java.text.Normalizer;
 import java.util.List;
 
 /**
- * The cells of an uploaded spreadsheet as text: the header row and the non-empty rows below it.
+ * The cells of an uploaded spreadsheet as text: the header row and the non-empty rows below it, in Unicode
+ * normalisation form C, so that a file saved with decomposed letters matches the stored people and awards.
  *
  * @param headers the header cells
  * @param rows    the rows below the header that have at least one cell
@@ -11,14 +13,18 @@ import java.util.List;
 public record ImportSheet(List<String> headers, List<Line> rows) {
 
     /**
-     * Copies the lists.
+     * Copies the lists, the headers in form C.
      *
      * @param headers the header cells
      * @param rows    the rows
      */
     public ImportSheet {
-        headers = List.copyOf(headers);
+        headers = List.copyOf(composed(headers));
         rows = List.copyOf(rows);
+    }
+
+    private static List<String> composed(List<String> texts) {
+        return texts.stream().map(text -> Normalizer.normalize(text, Normalizer.Form.NFC)).toList();
     }
 
     /**
@@ -30,13 +36,13 @@ public record ImportSheet(List<String> headers, List<Line> rows) {
     public record Line(int number, List<String> cells) {
 
         /**
-         * Copies the cells.
+         * Copies the cells in form C.
          *
          * @param number the row number
          * @param cells  the cells
          */
         public Line {
-            cells = List.copyOf(cells);
+            cells = List.copyOf(composed(cells));
         }
 
         /**
