@@ -559,6 +559,14 @@ docker compose stack, image 2b9741f (develop 0c39df7), APP_PEOPLE_INVITATION_INT
 | 39 | PASS | known limit reproduced (API, two previews then two parallel imports of one file): both 201 imported 1; 2 awards and 2 person rows created for the same row, no duplicate guard at import |
 | 40 | FAIL | NFC control row skipped «already-stored»; same title in NFD (22 vs 20 code points) not marked at all, preview problems []: ImportDuplicates.plainTitle splits at combining marks (known F-1) |
 
+### Run 2026-11-19
+
+Container stack rebuilt at develop 9436bbe (SCRUM-160 merged), default settings; step 40 only. Result: 1 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 40 | PASS | Rerun after SCRUM-160 (9436bbe): nfc.csv and nfd.csv (NFD title) both preview person 1419, skipped already-stored against award 1876; NFD file with «Їжакевич Йосип» imported 201 (1 person, 1 award), stored NFC (user 1428, 8 code points), found by GET /people?q=Їжакевич and ?q=Йосип |
+
 
 ## 11. Risks
 
