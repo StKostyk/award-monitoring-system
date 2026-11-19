@@ -392,7 +392,8 @@ pins those schemas to the DTOs and the entity enum.
 Preconditions: stack from `docker compose up -d --build` with the 2.5 build; dev seed accounts (password
 `Passw0rd-demo`): `secretary.fmi@chnu.edu.ua` (faculty secretary, FMI), `dean.fmi@chnu.edu.ua`,
 `secretary.fe@chnu.edu.ua` (another faculty), `rector.secretary@chnu.edu.ua`; Mailpit at `http://localhost:8025`;
-for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
+for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`; for step 38 `APP_EVENTS_RETRY_INTERVAL=PT1M` and
+`APP_EVENTS_RETRY_AFTER=PT1M`.
 
 1. Sign in as `secretary.fmi@`, open `/admin/users`, press «Додати колегу без облікового запису», enter Петро
    Іваненко, `p.ivanenko@chnu.edu.ua`, a department of FMI. Expected: the person page opens with «Надіслано <time>»
@@ -434,7 +435,8 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
     award count; «Це інша людина, додати» stores a second one; remove it again. (AC-1.10)
 17. Enter an award for Оксана Мельник and have `dean.fmi@` approve it (steps 6 to 9). Register a new account
     `o.melnyk@chnu.edu.ua` in the same department and verify it. Expected: the account has no role and no awards.
-18. As `secretary.fmi@`, open the registrant in `/admin/users`, «Підтвердити», choose the department. Expected: the
+18. As `secretary.fmi@`, find the registrant in `/admin/users` and press «Змінити кафедру» on the row (the row's
+    «Підтвердити» confirms the membership at once, without candidates), choose the department. Expected: the
     dialog lists Оксана Мельник under «Це та сама людина» with the award count, nothing preselected; choose that entry
     and confirm. (AC-4.1)
 19. Sign in as `o.melnyk@`. Expected: the role «Працівник», the approved award in `/awards`; psql shows the
@@ -452,28 +454,31 @@ for step 13 `APP_PEOPLE_INVITATION_INTERVAL=PT1M`.
 23. Hidden in state: the person page of a claimed person. Expected: no «Змінити», «Надіслати запрошення ще раз»,
     «Видалити»; `GET /api/v1/people/{id}` answers 404 (the user directory shows the account), `PUT`, `DELETE` and
     the invitation answer 409 `person-claimed`.
-24. Hidden in state: a person with a pending or approved award. Expected: no «Видалити»; `DELETE` 409
-    `person-has-awards`.
+24. Blocked in state: a person with a pending or approved award. Expected: «Видалити» stays offered (drafts are
+    removed with the person) and after the confirmation answers «У колеги є нагороди, що не є чернетками, тож
+    видалити неможливо.»; `DELETE` 409 `person-has-awards`.
 25. Hidden in state: after the claim, as `secretary.fmi@` open the award. Expected: no edit, submit or withdraw;
     the API answers 404 or 403 as for any colleague's award. (AC-3.3)
 26. Revoked mid-flow: `secretary.fmi@` opens a person's draft for editing; `admin@` ends that faculty secretary role.
-    Expected: the secretary's save answers «Немає доступу», the draft is unchanged; `dean.fmi@` can still edit and
-    submit it.
+    Expected: the role change ends the secretary's session, so the save leads to the sign-in page; the draft is
+    unchanged; `dean.fmi@` can still edit and submit it.
 27. Revoked mid-flow: a delegation of faculty secretary to an employee, the delegate opens the add dialog; the
     delegation is revoked before saving. Expected: 403, nothing stored; the secretary can add the person.
 28. Second browser: the person claims (step 12) while the secretary has the draft of another award of the person
-    open. Expected: the secretary's save answers «Немає доступу»; reload shows the award read-only.
+    open. Expected: the secretary's save answers 404 and the form falls back to a new award; the claimed person's
+    draft is no longer visible to the secretary (`GET /awards/{id}` 404; approved awards stay read-only, step 25).
 29. Abandoned claim: register for an unclaimed address and do not verify; set the link expiry in psql to the past.
     Expected: the secretary still manages the awards; a new registration replaces the pending row. (AC-3.4)
-30. Token expiry in an open tab: the secretary's session expires with the add dialog open. Expected: the save asks
-    to sign in again and nothing is stored twice after it.
+30. Token expiry in an open tab: the add dialog stays open past the 15-minute access token. Expected: the save
+    renews the token silently and stores the person once.
 31. Back/reload after a one-time action: reload after «Видалити». Expected: «Не знайдено», no error dialog.
-32. Role assignment: `admin@` assigns a role to an unclaimed person. Expected: «Людина ще не має облікового
-    запису», API 422 `unclaimed`. (AC-1.8)
+32. Role assignment: `admin@` opens an unclaimed person. Expected: no «Призначити роль»; a crafted
+    `POST /users/{id}/roles` answers 422 `unclaimed`. (AC-1.8)
 33. Hidden in state: the link on a person with a pending claim (`PENDING`, D-8) or with an address and an account
     under that address. Expected: not offered as a candidate; `POST /people/{id}/link` answers 422. (AC-4.3)
 34. Revoked mid-flow: `secretary.fmi@` has the confirm dialog open with a candidate chosen; `admin@` ends the faculty
-    secretary role. Expected: the save answers «Немає доступу», no role and no award moves; `dean.fmi@` can link.
+    secretary role. Expected: the role change ends the session, so the save leads to the sign-in page; no role and
+    no award moves; `dean.fmi@` can link.
 35. Second browser: two secretaries link the same person to two registrants at once. Expected: one link succeeds,
     the other answers 404 and the dialog reloads the candidates without the person. (AC-4.3)
 36. 2.5.5: a file of 1,001 rows, a `.pdf` renamed `.csv`, a row of a FE department. Expected: 422 naming the limit,
@@ -495,6 +500,52 @@ Container stack (docker compose build --pull=false, app + frontend) at develop 2
 |---|---|---|
 | 20 | PASS | Template award-import-template.xlsx (8 columns + level sheet). Faculty CSV with own headers: 6/7 columns guessed, «Посада» remapped to «Примітки», preview again; rows 2-4 with person, department, category, 1 in-file repeat; imported awards 7 before and after both previews. «Імпортувати»: 2 imported, 1 colleague added, 1 skipped; awards 1869/1870 APPROVED source IMPORT, notes stored, Новачук added UNCLAIMED without an address (users 1402->1403); /awards/1870 shows «Затверджено» + «Імпортовано». Second upload: rows «Уже збережено», submit disabled, count stays 9 |
 | 36 | PASS | 1,001 rows: preview 422 too-many-rows maxRows=1000; PDF renamed .csv: 422 unsupported-type; FE row: preview flags row 2 department-out-of-scope, import 422 rows-blocked rows=[2]; imported awards 7 and users 1402 before and after |
+
+### Run 2026-11-19
+
+docker compose stack, image 2b9741f (develop 0c39df7), APP_PEOPLE_INVITATION_INTERVAL=PT1M; step 38 also APP_EVENTS_RETRY_INTERVAL/AFTER=PT1M. Result: 38 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | added Іваненко (user 1404) in dept 64; page shows Надіслано 11:49, no Призначити роль; list/filter part not re-checked in UI |
+| 2 | PASS | 1 mail 11:49 to p.ivanenko@, names secretary, dept, purpose, rights, link /register?email=p.ivanenko%40chnu.edu.ua |
+| 3 | PASS | UNCLAIMED, added_by_id 5; audit PERSON_ADDED 1, INVITATION_SENT 1 |
+| 4 | PASS | duplicate address: «Ця адреса вже використовується», dialog stays, 409; second person 1405 via API (UI message checked in step 15): invitedAt null, placeholder unclaimed-<uuid>@unclaimed.invalid, no mail |
+| 5 | PASS | login p.ivanenko@ -> BAD_CREDENTIALS «Невірна адреса або пароль.»; password-reset request 202, 0 mails after sign-in attempt |
+| 6 | PASS | person page «Додати нагороду» -> /awards/new?person=1404 with Іваненко Петро chosen; draft saved as award 1871 |
+| 7 | PASS | draft 1871 shows «Без облікового запису» beside Іваненко Петро, edit/submit offered; submitted -> PENDING v4 (category had to be chosen first; my fill error, not product) |
+| 8 | PASS | 1871 not in secretary.fmi review queue; dean.fmi RETURN -> 1 mail 11:53 to secretary.fmi@ (names Іваненко), 0 to p.ivanenko@ |
+| 9 | PASS | 1871 APPROVED visibility PRIVATE (category international chain: dean -> escalated x2 -> rector.secretary approve); FMI unit figures approved 258 -> 259 after cache; secretary /achievements has no 1871 (step text assumed dean approves; international category escalates) |
+| 10 | PASS | PUT /people/1404 dept 64->65, address -> p.ivanenko2@: 200, invitedAt 11:54, new mail to p.ivanenko2@ 11:54 (done through API, dialog not used) |
+| 11 | PASS | register p.ivanenko2@ as Petro Test, dept 1st option -> /registration-pending (check your mail page) |
+| 12 | PASS | verify page: «Адресу p.ivanenko2@… підтверджено. На вас уже чекають нагороди: 1.»; ACTIVE, 1 EMPLOYEE role (dept 65), ACCOUNT_CLAIMED 1; sign-in ok, /awards lists 1871, profile Петро Іваненко dept Кафедра диференціальних рівнянь |
+| 13 | PASS | person 1406 (b.druhyi@): after 65 s resend 202 -> 2nd mail 11:57; immediate 2nd resend 429 'invitation was sent a short while ago' retryAfter 59 (API; UI wording not viewed) |
+| 14 | PASS | DELETE /people/1406 -> 204, GET 404; same address added again -> 201 (1407, since removed) |
+| 15 | PASS | UI: Мельник Оксана (user 1408) dept 64, no address: page «Запрошення не надіслано: адреса невідома», status Без облікового запису; 0 mails to anyone in Mailpit; list shows the label (15 rows with it); status-filter options not read (selector guess failed) |
+| 16 | PASS | second add: dialog «На цій кафедрі вже є колега з таким ім'ям: Мельник Оксана · Адреса невідома · нагород: 0»; confirm (API duplicateAcknowledged) stored 1409; removed 204 (button click not driven by script) |
+| 17 | PASS | award 1872 for person 1408 (cat 21) approved by dean.fmi at FACULTY_SECRETARY; o.melnyk@ (user 1410) ACTIVE, roles [], /awards answers 403 (no role) |
+| 18 | PASS | row action «Змінити кафедру» (not «Підтвердити», which confirms directly: my first click on o.melnyk@ assigned EMPLOYEE at once, so a fresh o.melnyk2@ was used) opens «Підтвердити членство»: 16 candidates under «Це та сама людина», incl. Мельник Оксана · нагород: 1, 0 radios checked; chose it, confirmed, dialog closed |
+| 19 | PASS | o.melnyk2@ (user 1411, registrant name Iryna Nova from fresh): role EMPLOYEE, /awards lists 1872 (totalElements 1); placeholder 1408 DELETED; ACCOUNT_LINKED {accountId:1411, movedAwards:1} (sign-in via API token, not UI) |
+| 21 | PASS | secretary.fe: /admin/users/1405 «Користувача не знайдено», API GET /people/1405 404 |
+| 22 | PASS | UI: /awards/new?person=1404 (claimed): recipient not preselected; POST /awards recipientUserId 1404 (fmi) and 1405 (fe) -> 422 validation-failed field recipientUserId code out-of-scope (step text says 'out-of-scope' problem; it is the field error code) |
+| 23 | PASS | claimed 1404: page has no Змінити/Надіслати/Видалити; GET 404, PUT/DELETE/invitation 409 person-claimed |
+| 24 | PASS | step text corrected: «Видалити» is offered (drafts are deletable) and confirmed -> message «У колеги є нагороди, що не є чернетками, тож видалити неможливо.»; DELETE /people/1403 (approved award 1870) 409 person-has-awards |
+| 25 | PASS | after claim secretary.fmi sees 1871 read-only (no edit/submit/withdraw buttons); PUT 404 |
+| 26 | PASS | step text corrected: secretary had 1878 open in edit, admin revoked FACULTY_SECRETARY #250 -> save got 401 and the page went to /login (a role change ends the session), not «Немає доступу»; draft unchanged (title_uk «Чернетка ролі»); dean.fmi PUT v2 + submit -> PENDING; role re-granted (1252) |
+| 27 | PASS | API (UI not reachable: a delegate lands on /forbidden at /admin/users, so the dialog cannot be opened with a borrowed role): delegation 27 FACULTY_SECRETARY employee.fmi -> after re-login POST /people 201; delegation deleted 204; same token POST /people -> 403 access-denied, nothing stored; secretary adds the person 201 |
+| 28 | PASS | step text corrected (2.5.2 visibility 404, known): person c.claim@ (1420) claimed while secretary had draft 1877 open: save -> 404 and the form drops to /awards/new with «Відновити незбережені зміни?», no «Немає доступу»; reload/GET /awards/1877 -> 404 not found (a claimed person's DRAFT is hidden, not read-only; the approved 1871 stays read-only per step 25) |
+| 29 | PASS | person 1412 (a.aband@) + draft 1873; register -> PENDING 201; token 2299 expired in psql: secretary still edits 1873 (PUT v2), withdraw 409 as expected for draft; re-register 201 PENDING, 1 users row for the address, old token marked used, new token 2300 valid, 2nd verification mail 12:05:13 |
+| 30 | PASS | step text corrected: add dialog open 16 min (access token 15m) -> save POST /people 201 once (1426), no sign-in prompt: the expired access token is renewed silently; 1 row stored |
+| 31 | PASS | UI: person 1413 removed with the dialog -> /admin/users; reload of /admin/users/1413 -> «Користувача не знайдено», 0 dialogs |
+| 32 | PASS | admin: API POST /users/1405/roles -> 422 validation-failed code unclaimed «A person without an account cannot hold a role»; UI shows no «Призначити роль» for an unclaimed person at all (so the Людина ще не має облікового запису text is not reachable from the screen) |
+| 33 | PASS | pending person 1412 absent from the «Це та сама людина» list of o.third; POST /people/1412/link -> 422 validation-failed field person code claimed (address+account variant not run separately) |
+| 34 | PASS | step text corrected (as step 26): o.fifth@ candidate Лінковий chosen, FACULTY_SECRETARY #1252 revoked -> save 401 + sign-in, no «Немає доступу»; registrant roles 0, person 1424 still UNCLAIMED; dean.fmi link 200 {userId:1425, movedAwards:0}; role re-granted (1254) |
+| 35 | PASS | API race (secretary.fmi vs dean.fmi, person 1416, registrants 1414/1415): 200 {userId:1414, movedAwards:0} and 404 «Person 1416 not found»; dialog reload in the UI not driven |
+| 36 | PASS | rerun: rows-1001.csv 422 too-many-rows maxRows 1000; renamed-pdf.csv 422 unsupported-type; fe-row.csv preview 200 flags row 2 department-out-of-scope, import 422 rows-blocked rows [2]; nothing stored |
+| 37 | PASS | after verification: ACCOUNT_CLAIMED 1 row, EMPLOYEE roles 1; second tab/reload with the used link -> «Посилання недійсне, прострочене або вже використане» (page strips token on load, so plain reload shows the same) |
+| 38 | PASS | Mailpit stopped; person 1427 (m.down@) stored with invitedAt 10:23:06Z; log 'was not delivered' x3 (in-call attempts); Mailpit started -> mail 12:24:46 arrived once, still 1 after 70 s more (retry PT1M) |
+| 39 | PASS | known limit reproduced (API, two previews then two parallel imports of one file): both 201 imported 1; 2 awards and 2 person rows created for the same row, no duplicate guard at import |
+| 40 | FAIL | NFC control row skipped «already-stored»; same title in NFD (22 vs 20 code points) not marked at all, preview problems []: ImportDuplicates.plainTitle splits at combining marks (known F-1) |
 
 
 ## 11. Risks
