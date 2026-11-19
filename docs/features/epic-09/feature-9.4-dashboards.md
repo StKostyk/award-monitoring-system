@@ -335,10 +335,10 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
 8. Sign in as `dean.fmi`, open `/`. Expected: Hall of Fame of the faculty, no unit picker. (AC-3.2)
 9. Sign in as `secretary.fmi`, open `/`. Expected: Command centre, K3 with the queue count, three requests listed.
    (AC-5.1)
-10. «Затвердити» on the first request, wait 10 s. Expected: count down by one, the request approved on its page.
+10. «Затвердити» on the first request, keep the page open for 15 s (the 10 s undo window runs first). Expected: count down by one, the request approved on its page.
    (AC-5.1)
 11. The units list. Expected: the department without awards first with «жодної нагороди у …» and its earlier count.
-   (AC-5.2)
+   The unit analytics are cached for 5 minutes: wait that long after changing award data. (AC-5.2)
 12. «Нагадати завідувачу», pick a colleague, confirm. Expected: 202, card «Нагадано …», Mailpit mail naming the
    department and the sender, the colleague's notification centre shows it. (AC-5.3)
 13. Repeat on the same card through the API. Expected: 409 `recently-reminded`, button disabled. (AC-5.4)
@@ -368,19 +368,60 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
    (AC-4.5)
 24. Reminder to a member of another department, and to a department of another faculty. Expected: 422
    `invalid-recipient`, 403. (AC-5.5)
-25. Revoked mid-flow (delegated dean): the rector delegates the dean role of another faculty to `secretary.fmi`; open
-   the reminder dialog for a department of that faculty; the rector ends the delegation; confirm. Expected: 403, no
-   mail; the next navigation drops the faculty from the picker. (AC-5.5, AC-3.2)
+25. Revoked mid-flow (delegated dean): the rector delegates the dean role of another faculty to `secretary.fmi`
+   (the Command centre shows the caller's own faculty, so it has no dialog for the delegated one); `POST
+   /analytics/units/{department}/reminders` for a department of that faculty. Expected: the scope passes (422 for a
+   recipient of another department). The rector ends the delegation; the same call. Expected: 403, no mail; the role
+   change ends the sessions, so the next navigation goes to `/login`. (AC-5.5, AC-3.2)
 26. Revoked mid-flow (secretary role): with the Command centre open in one profile, the admin removes
-   `secretary.fmi`'s role in the other; press «Затвердити». Expected: 403 with the review screen's message, the
-   request stays in the queue for the other secretaries of the faculty. (AC-5.1)
+   `secretary.fmi`'s role in the other (a rector's revoke is refused); press «Затвердити». Expected: 401, because a
+   role change ends the sessions, and the app returns to `/login`; no decision is recorded and the request stays in
+   the queue for the other secretaries of the faculty. (AC-5.1)
 27. Two profiles as `secretary.fmi` and `dean.fmi` remind the same department within a second. Expected: one 202, one
    409. (Edge cases)
 28. Eleven CV exports within a minute. Expected: 429 with `Retry-After` from the sixth on. (AC-4.4)
-29. Token expiry: with «Мої нагороди» in edit mode, let the session expire, press «Готово». Expected: sign-in, then the
-   layout as it was before the edit (no partial save). (AC-1.3)
+29. Token expiry: with «Мої нагороди» in edit mode, end the session (a password reset through Mailpit revokes the sessions at
+   once; the refresh token lives 7 days), press «Готово». Expected: `/login`, nothing saved, the layout after signing
+   in as it was before the edit (no partial save). (AC-1.3)
 30. Back after a reminder: browser back and forward. Expected: the card still «Нагадано …», no second mail.
    (AC-5.4)
+
+### Run 2026-11-19
+
+container stack at 9436bbe (develop, image 2026-11-19 14:35), default settings; seed data; awards 496/506/517/522/538/554 set to DRAFT for the reminder steps and restored; lecturer.fmi password reset twice and restored. Result: 30 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | rector / -> /hall-of-fame; K1 227, ↓19 % vs 112 same period 2025 (complete months Jan-Oct: 91 vs 112), T2 both years, university numbers |
+| 2 | PASS | API byMonth 24 rows (2025-01..2026-12), sums 112 / 227 = byYear, Dec 2026 = 0; totals match page |
+| 3 | PASS | same fact on two reloads (all years 2022-2026); records 2026=227, FMI 260, level INTERNATIONAL match /analytics/university |
+| 4 | PASS | T2 moved first with buttons, V6 «Рівні нагород» hidden, after reload order T2,K1,T1,... and no V6 |
+| 5 | PASS | toolbar Тема→Темна; second browser context signed in as rector: dark (body rgb(6,9,20)) |
+| 6 | PASS | dashboard_preferences: DARK, HALL_OF_FAME order [RACE,KPI,TREND,...] hidden [LEVEL_MAP] |
+| 7 | PASS | Скинути+Готово: default order, V6 back, layouts = {} (no key) |
+| 8 | PASS | dean.fmi / -> /hall-of-fame, FMI faculty numbers (166, ↑20 %), no unit picker |
+| 9 | PASS | secretary.fmi / -> /command-centre, K3 19 awaiting, three requests (9.3 крок 22, 23, 30) listed |
+| 10 | PASS | Затвердити + confirm; count 19→18; award 971 APPROVED in DB after the 10 s undo window (first attempt closed the browser before the send: wait >= 12 s) |
+| 11 | PASS | dept 65 Кафедра диференціальних рівнянь first: «Жодної нагороди у 2026 · За 2022–2025 — 8» (precondition: its only 2026 award 496 set back to DRAFT first; analytics cache 5 min delayed the list) |
+| 12 | PASS | Нагадати завідувачу -> colleague Іваненко Петро: card «Нагадано 19.11.2026»; Mailpit 14:56:52 to p.ivanenko2 naming Кафедра диференціальних рівнянь and Аліна Секретаренко (uk+en); notification 883 AWARDS_REMINDER in his centre (202 not read directly; the card shows it) |
+| 13 | PASS | API repeat by secretary.fmi and by dean.fmi: 409 recently-reminded with lastSentAt 12:56:52Z; card button is disabled «Нагадано 19.11.2026» |
+| 14 | PASS | lecturer.fmi / -> /dashboard «Мій дашборд»: 9 this year, 18 total, years, «З нагородою щороку з 2019», level stairs, in progress 3, visibility 2/0/16; link opens /awards?status=APPROVED&visibility=PUBLIC with both filters |
+| 15 | PASS | awards-cv-2026-11-19.txt (uk) and .pdf (en, 2 pages), by year newest first, 18 awards; audit ANALYTICS_EXPORTED cv-text count 18 uk, cv-pdf count 18 en |
+| 16 | PASS | employee.fmi /dashboard: «Затверджених нагород поки немає» empty state with next steps, export button disabled (in progress 121 / drafts 28 shown) |
+| 17 | PASS | 360 px, uk+en, light+dark (profile scheme), 5 dashboards (rector/dean Hall of Fame, Command centre, lecturer and employee /dashboard): no horizontal scroll (scrollWidth 360), 0 console errors, axe only the best-practice rule region on the shell title and a header link, identical on every page and outside 9.4 (WCAG A/AA rules clean) |
+| 18 | PASS | employee.fmi: /hall-of-fame and /command-centre -> /forbidden; API /analytics/university, /analytics/units, /analytics/units/9 and /reviews 403 |
+| 19 | PASS | localStorage light + stored DARK: body light rgb(246,247,245) at 31 ms, dark rgb(6,9,20) from 150 ms when the profile arrives, no change afterwards (6 s sampled); localStorage updated to dark |
+| 20 | PASS | PUT with TODAY in HALL_OF_FAME, duplicate KPI, colorScheme BLUE: three 400 invalid-parameter naming layouts.HALL_OF_FAME.order / colorScheme; GET after: DARK, layouts {} unchanged |
+| 21 | PASS | API reminder for dept 64 (155 awards in 2026): 409 has-awards; dept 68 card (2 in 2026) has no reminder button |
+| 22 | PASS | within 7 days: disabled button «Нагадано 19.11.2026» (disabled=true), API 409 recently-reminded |
+| 23 | PASS | employee (no approved awards): export menu disabled in UI; API cv text 200 (88 B heading only), pdf 200 12.6 kB |
+| 24 | PASS | secretary.fmi: dept 67 (no awards in 2026, set DRAFT for the run) with recipient 886 of dept 64 -> 422 invalid-recipient; dept 20 of another faculty -> 403 access-denied |
+| 25 | PASS | rector delegates DEAN of faculty 5 to secretary.fmi: hall-of-fame shows Географічний факультет; API reminder on dept 44 passes the scope (422 for recipient 886); after the rector ends the delegation the same call 403, no reminder mail (only role mails); the revoke ends the session: next navigation -> /login. UI dialog for the delegated faculty not reachable (command centre scope = own faculty), done through the API |
+| 26 | PASS | step text corrected: admin removes FACULTY_SECRETARY (a rector's revoke is refused); the press gets 401 not 403, because a role change ends the sessions (Feature 1.2 AC: next call 401, back to /login); no decision recorded, request still queued (reviews list shows award 978 first, 30 pending); role re-granted |
+| 27 | PASS | secretary.fmi and dean.fmi API calls in parallel for dept 68 (set DRAFT for the run): 202 and 409 recently-reminded; Mailpit one new reminder mail (two profiles replaced by two simultaneous API calls) |
+| 28 | PASS | 11 CV exports by lecturer.fmi: 200 x5, 429 from the 6th on; header Retry-After: 32, body too-many-requests retryAfter 42 |
+| 29 | PASS | lecturer.fmi /dashboard in edit mode (hid «Підсумок»), session revoked (password reset) before «Готово»: save answered 401, page went to /login, no dashboard_preferences row written, layout after sign-in as before (default). Natural 15-min expiry not waited: sessions revoked instead (refresh token lives 7 d) |
+| 30 | PASS | command-centre -> /awards -> Back (and forward/back again): card still «Нагадано», button disabled, Mailpit still one mail to p.ivanenko2 |
 
 ## 11. Risks
 
