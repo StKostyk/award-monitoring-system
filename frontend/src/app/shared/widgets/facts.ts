@@ -35,6 +35,8 @@ export interface FactSource {
 /** A year-to-date count beside the one of the same months a year earlier. */
 export interface YearToDate {
   year: number;
+  /** How many months from January both counts cover. */
+  months: number;
   current: number;
   previous: number;
   delta: number;
@@ -110,6 +112,7 @@ export function yearToDate(byMonth: MonthCount[], year: number, today: CalendarM
   const delta = current - previous;
   return {
     year,
+    months,
     current,
     previous,
     delta,

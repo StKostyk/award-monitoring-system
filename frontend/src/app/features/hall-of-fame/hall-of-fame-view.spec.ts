@@ -11,10 +11,17 @@ describe('hallOfFameView', () => {
     expect(view.approved).toBe(30);
     expect(view.sparkline).toEqual([20, 25, 30, 35, 30]);
     expect(view.delta).toEqual(
-      expect.objectContaining({ year: 2026, current: 27, previous: 23, delta: 4 }),
+      expect.objectContaining({ year: 2026, months: 8, current: 27, previous: 23, delta: 4 }),
     );
     expect(view.partialYear).toBe(2026);
     expect(view.today).toEqual(SEPTEMBER);
+  });
+
+  it('ac2_leaves_the_delta_out_in_january_before_a_month_is_complete', () => {
+    const view = hallOfFameView(universityAnalytics(), [], null, { year: 2026, month: 1 });
+
+    expect(view.delta).toBeNull();
+    expect(view.approved).toBe(30);
   });
 
   it('leaves the delta out when the period ends before the current year', () => {

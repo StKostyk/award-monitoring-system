@@ -2070,7 +2070,8 @@
       "up": "більше на {{percent}}",
       "down": "менше на {{percent}}",
       "same": "без змін",
-      "samePeriod": "{{count}} за той самий період {{year}}"
+      "monthsSoFar": "{{count}} за {{months}} {{year}}",
+      "samePeriod": "{{count}} за ті самі місяці {{year}}"
     },
     "trend": {
       "title": "Нагороди за роками",

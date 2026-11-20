@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 
+import { LanguageService } from '../../core/i18n/language.service';
 import { DeltaView, deltaView } from '../../features/analytics/units/delta';
+import { monthNames } from '../date-format';
 import { CountUpDirective } from '../effects/count-up.directive';
 import { YearToDate } from './facts';
 
@@ -20,6 +22,12 @@ export function sparkPoints(values: number[]): string {
       return `${Math.round(index * step * 10) / 10},${Math.round(y * 10) / 10}`;
     })
     .join(' ');
+}
+
+/** The months from January to the given one as a range of full names, e.g. "January–October". */
+export function monthSpan(language: string, months: number): string {
+  const names = monthNames(language, 'long');
+  return months > 1 ? `${names[0]}–${names[months - 1]}` : names[0];
 }
 
 /** K1: one number counting up, a sparkline of the years and the change against the same months of last year. */
@@ -51,6 +59,10 @@ export function sparkPoints(values: number[]): string {
             }}</span>
           </span>
         }
+        <span class="kpi__current">{{
+          'widgets.kpi.monthsSoFar'
+            | transloco: { count: ytd.current, months: span(), year: ytd.year }
+        }}</span>
         <span class="kpi__previous">{{
           'widgets.kpi.samePeriod' | transloco: { count: ytd.previous, year: ytd.year - 1 }
         }}</span>
@@ -112,7 +124,13 @@ export class KpiWidgetComponent {
   /** The year to date against the same months of last year, or null to leave the change out. */
   readonly delta = input<YearToDate | null>(null);
 
+  private readonly language = inject(LanguageService);
+
   protected readonly points = computed(() => sparkPoints(this.years()));
+  protected readonly span = computed(() => {
+    const ytd = this.delta();
+    return ytd ? monthSpan(this.language.current(), ytd.months) : '';
+  });
   protected readonly change = computed<DeltaView | null>(() => {
     const ytd = this.delta();
     return ytd && ytd.deltaPercent !== null ? deltaView(ytd) : null;
