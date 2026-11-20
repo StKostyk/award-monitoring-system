@@ -76,7 +76,7 @@ export function hallOfFameView(
     today,
     approved: years.find((row) => row.year === year)?.total ?? 0,
     sparkline: years.map((row) => row.total),
-    delta: year === today.year ? yearToDate(source.byMonth, year, today) : null,
+    delta: year === today.year && today.month > 1 ? yearToDate(source.byMonth, year, today) : null,
     years,
     partialYear: source.partialYear ? year : null,
     byMonth: source.byMonth,

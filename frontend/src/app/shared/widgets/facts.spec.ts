@@ -53,6 +53,7 @@ describe('facts', () => {
   it('ac2_2_compares_the_complete_months_of_the_year_with_the_same_months_of_last_year', () => {
     expect(yearToDate(source().byMonth, 2026, { year: 2026, month: 9 })).toEqual({
       year: 2026,
+      months: 8,
       current: 27,
       previous: 23,
       delta: 4,

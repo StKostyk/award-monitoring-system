@@ -2070,7 +2070,8 @@
       "up": "up {{percent}}",
       "down": "down {{percent}}",
       "same": "no change",
-      "samePeriod": "{{count}} in the same period of {{year}}"
+      "monthsSoFar": "{{count}} in {{months}} {{year}}",
+      "samePeriod": "{{count}} in the same months of {{year}}"
     },
     "trend": {
       "title": "Awards by year",

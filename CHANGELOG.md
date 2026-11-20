@@ -129,6 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- The «Awards this year» card names the compared months and shows this year's count for them («22 за січень–жовтень 2026 · 28 за ті самі місяці 2025»); no comparison in January.
 - Spreadsheet import reads text saved with decomposed letters (NFD) as composed text, so such rows match stored people and awards (2.5.6).
 - A decision held in the review queue when a revoked role or delegation ends the session is named after the next sign-in, instead of disappearing silently
 - Review queue shortcuts (J/K/A/R) keep working after a checklist item is ticked.
