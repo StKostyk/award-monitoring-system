@@ -263,7 +263,7 @@ None.
 
 ### 8.3 Properties
 
-`app.login.award-count-ttl` (default `PT10M`), 9.3.4.
+`app.login.award-count-ttl` (default `PT10M`), 9.3.4; removed with the count in 9.4.6.
 
 ## 9. Test plan
 
@@ -293,7 +293,8 @@ with the seed password; every seed account acknowledges the privacy notice at it
 `http://localhost`; a second browser profile for step 22.
 
 1. `http://localhost/login` in light and dark (DevTools rendering, `prefers-color-scheme`). Expected: burgundy and
-   cream panel with «789 нагород», then the Aurora version; Manrope headings. (AC-4.1, AC-4.2)
+   cream panel with the claim as its headline and no award count (removed in 9.4.6), then the Aurora version;
+   Manrope headings. (AC-4.1)
 2. Same page at 360 px, wrong password. Expected: strip above the form, error shown, no sideways scroll. (AC-4.4)
 3. Sign in as `lecturer.fmi`. Expected: left sidebar, current item marked, no bottom bar. (AC-3.1)
 4. Toolbar scheme menu, «Темна», reload. Expected: Aurora background, dark kept after reload. (AC-3.3)

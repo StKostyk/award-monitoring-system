@@ -2103,7 +2103,8 @@
     },
     "levelShare": "{{percent}} % of the awards in {{period}} are {{level}}.",
     "growth": "{{percent}} % more awards so far this year than in the same months of {{year}}.",
-    "streak": "Awards every year since {{since}} without a break ({{years}} years in a row).",
-    "streakPeriod": "Awards every year of {{period}} without a break."
+    "bestYear": "The best year was {{year}} with {{count}} awards.",
+    "firstAward": "The first award of {{period}} came in {{year}}.",
+    "streak": "Awards for {{years}} consecutive years so far."
   }
 }

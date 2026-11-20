@@ -5,7 +5,7 @@ const SEPTEMBER = { year: 2026, month: 9 };
 
 describe('hallOfFameView', () => {
   it('ac3_1 takes K1 from the last year of the period with the delta of complete months', () => {
-    const view = hallOfFameView(universityAnalytics(), [], null, SEPTEMBER, 17);
+    const view = hallOfFameView(universityAnalytics(), [], null, SEPTEMBER);
 
     expect(view.year).toBe(2026);
     expect(view.approved).toBe(30);
@@ -20,7 +20,7 @@ describe('hallOfFameView', () => {
   it('leaves the delta out when the period ends before the current year', () => {
     const data = { ...universityAnalytics(), period: { from: 2022, to: 2025 }, partialYear: false };
 
-    const view = hallOfFameView(data, [], null, SEPTEMBER, 1);
+    const view = hallOfFameView(data, [], null, SEPTEMBER);
 
     expect(view.approved).toBe(35);
     expect(view.delta).toBeNull();
@@ -33,7 +33,7 @@ describe('hallOfFameView', () => {
       count: 10 - index,
     }));
 
-    const view = hallOfFameView(universityAnalytics(), top, top[0], SEPTEMBER, 1);
+    const view = hallOfFameView(universityAnalytics(), top, top[0], SEPTEMBER);
 
     expect(view.top.length).toBe(TOP_LIMIT);
     expect(view.records.map((fact) => fact.key)).toContain('facts.records.leader');
@@ -43,12 +43,10 @@ describe('hallOfFameView', () => {
     });
   });
 
-  it('picks the same fact for the same seed and draws the levels by count', () => {
-    const first = hallOfFameView(universityAnalytics(), [], null, SEPTEMBER, 17);
-    const again = hallOfFameView(universityAnalytics(), [], null, SEPTEMBER, 17);
+  it('ac3_lists_the_facts_and_draws_the_levels_by_count', () => {
+    const first = hallOfFameView(universityAnalytics(), [], null, SEPTEMBER);
 
-    expect(first.fact).not.toBeNull();
-    expect(again.fact).toEqual(first.fact);
+    expect(first.facts.length).toBeGreaterThan(1);
     expect(first.areas).toEqual([{ key: 'categories.levels.NATIONAL', count: 40 }]);
   });
 
@@ -60,10 +58,11 @@ describe('hallOfFameView', () => {
       byLevel: [],
     };
 
-    const view = hallOfFameView(data, [], null, SEPTEMBER, 3);
+    const view = hallOfFameView(data, [], null, SEPTEMBER);
 
     expect(view.approved).toBe(0);
     expect(view.records).toEqual([]);
+    expect(view.facts).toEqual([]);
     expect(view.areas).toEqual([]);
   });
 });

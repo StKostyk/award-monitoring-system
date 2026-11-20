@@ -9,7 +9,6 @@ import { Store } from '@ngrx/store';
 import { AuthService } from '../../core/auth/auth.service';
 import { readsUniversityHallOfFame } from '../../core/auth/permissions';
 import { LanguageService } from '../../core/i18n/language.service';
-import { kyivToday } from '../../shared/date-format';
 import { IconComponent } from '../../shared/icons/icon.component';
 import { organizationName } from '../../shared/organization-name';
 import { currentKyivMonth } from '../../shared/widgets/facts';
@@ -121,14 +120,13 @@ export class HallOfFameComponent {
   readonly view = computed(() => {
     const language = this.language.current();
     const today = currentKyivMonth();
-    const seed = Number(kyivToday().slice(-2));
     if (this.university) {
       const data = this.universityData();
       if (!data) {
         return null;
       }
       const faculties = topUnits(data.units, language);
-      return hallOfFameView(data, faculties, faculties[0] ?? null, today, seed);
+      return hallOfFameView(data, faculties, faculties[0] ?? null, today);
     }
     const data = this.facultyData();
     if (!data) {
@@ -136,7 +134,7 @@ export class HallOfFameComponent {
     }
     const people = facultyPeople(data);
     const leader = people[0] ?? topUnits(data.units, language)[0] ?? null;
-    return hallOfFameView(data, people, leader, today, seed);
+    return hallOfFameView(data, people, leader, today);
   });
 
   constructor() {

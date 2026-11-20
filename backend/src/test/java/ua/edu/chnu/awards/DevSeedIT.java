@@ -52,6 +52,10 @@ class DevSeedIT {
     private static final String LECTURER = "lecturer.fmi" + DOMAIN;
     private static final String ANALYTICS_SEED = "db/seed/local/R__seed_users_dev_analytics.sql";
     private static final String UNIVERSITY_SEED = "db/seed/local/R__seed_users_dev_university.sql";
+    private static final String PERSONAL_SEED = "db/seed/local/R__seed_users_dev_personal.sql";
+    private static final List<String> PERSONAL_ACCOUNTS = List.of("employee.fmi", "dean.fmi", "secretary.fmi",
+        "secretary2.fmi", "rector", "rector.secretary");
+    private static final String E2E_ACCOUNT = "e2e.employee@chnu.edu.ua";
     private static final String ANALYTICS_PEOPLE = "(u.email_address like 'dai.%' or u.email_address like 'dma.%' "
         + "or u.email_address = 'lecturer.fmi@chnu.edu.ua')";
     private static final int UNIVERSITY_ACCOUNTS = 145;
@@ -79,7 +83,8 @@ class DevSeedIT {
 
         List<String> emails = userRepository.findAll().stream().map(User::getEmailAddress).toList();
         assertThat(emails).containsAll(Stream.concat(EXPECTED_ROLES.keySet().stream(), analytics().stream()).toList());
-        assertThat(emails).hasSize(EXPECTED_ROLES.size() + analytics().size() + UNIVERSITY_ACCOUNTS);
+        assertThat(emails).contains(E2E_ACCOUNT)
+            .hasSize(EXPECTED_ROLES.size() + analytics().size() + UNIVERSITY_ACCOUNTS + 1);
         for (User user : users) {
             AccountStatus expected = "pending@chnu.edu.ua".equals(user.getEmailAddress())
                 ? AccountStatus.PENDING : AccountStatus.ACTIVE;
@@ -92,7 +97,7 @@ class DevSeedIT {
     }
 
     @Test
-    void ac1_9_theAnalyticsSeedFillsTwoDepartmentsOnceAndLeavesEmployeeFmiAlone() {
+    void ac1_9_theAnalyticsSeedFillsTwoDepartmentsOnce() {
         Map<String, Object> before = seedCounts();
 
         jdbc.execute((ConnectionCallback<Void>) connection -> {
@@ -126,8 +131,33 @@ class DevSeedIT {
         assertThat(jdbc.queryForObject("select count(distinct extract(year from a.award_date)) from awards a "
             + "join users u on u.user_id = a.user_id where u.email_address like 'dma.%'", Integer.class))
             .isEqualTo(8);
+    }
+
+    @Test
+    void ac5_thePersonalSeedFillsTheBaseAccountsOnceAndLeavesTheE2eAccountEmpty() {
+        Map<String, Object> before = seedCounts();
+
+        jdbc.execute((ConnectionCallback<Void>) connection -> {
+            ScriptUtils.executeSqlScript(connection, new ClassPathResource(PERSONAL_SEED));
+            return null;
+        });
+
+        assertThat(seedCounts()).isEqualTo(before);
+        for (String account : PERSONAL_ACCOUNTS) {
+            Map<String, Object> awards = jdbc.queryForMap("select count(*) as awards, count(distinct "
+                + "extract(year from a.award_date)) as years, count(*) filter (where r.status = 'APPROVED') "
+                + "as decided from awards a join users u on u.user_id = a.user_id "
+                + "left join award_requests r on r.award_id = a.award_id where u.email_address = ?", account + DOMAIN);
+            assertThat(((Number) awards.get("years")).intValue()).as(account).isGreaterThanOrEqualTo(MIN_YEARS);
+            assertThat(awards.get("decided")).as(account).isEqualTo(awards.get("awards"));
+        }
         assertThat(jdbc.queryForObject("select count(*) from awards a join users u on u.user_id = a.user_id "
-            + "where u.email_address = 'employee.fmi@chnu.edu.ua'", Integer.class)).isZero();
+            + "where u.email_address = ?", Integer.class, E2E_ACCOUNT)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from user_roles r join users u on u.user_id = r.user_id "
+            + "where u.email_address = ? and r.role_type = 'EMPLOYEE' and u.account_status = 'ACTIVE'",
+            Integer.class, E2E_ACCOUNT)).isOne();
+        assertThat(jdbc.queryForObject("select count(*) from awards a join users u on u.user_id = a.user_id "
+            + "where u.email_address in ('admin@chnu.edu.ua', 'gdpr@chnu.edu.ua')", Integer.class)).isZero();
     }
 
     @Test

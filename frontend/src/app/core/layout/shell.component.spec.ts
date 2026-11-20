@@ -221,21 +221,38 @@ describe('ShellComponent', () => {
     expect(link.textContent).toContain('Імпорт нагород');
   });
 
-  it('ac1_9_shows_my_awards_to_a_holder_of_award_read_own', () => {
+  it('ac2_shows_my_awards_only_to_a_holder_of_award_create', () => {
     auth.isAuthenticated.set(true);
-    auth.permissions.set(readPermissions(tokenWith({ permissions: [] })));
-    const unconfirmed = TestBed.createComponent(ShellComponent);
-    unconfirmed.detectChanges();
-
-    expect(unconfirmed.nativeElement.querySelector('[data-testid="nav-awards"]')).toBeNull();
-
     auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+    const oversight = TestBed.createComponent(ShellComponent);
+    oversight.detectChanges();
+
+    expect(oversight.nativeElement.querySelector('[data-testid="nav-awards"]')).toBeNull();
+
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['award:read:own', 'award:create'] })),
+    );
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
 
     expect(
       fixture.nativeElement.querySelector('[data-testid="nav-awards"]').getAttribute('href'),
     ).toBe('/awards');
+  });
+
+  it('ac3_offers_home_only_to_a_visitor_without_a_role_home', () => {
+    auth.isAuthenticated.set(true);
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['analytics:read:own'] })));
+    const employee = TestBed.createComponent(ShellComponent);
+    employee.detectChanges();
+
+    expect(employee.nativeElement.querySelector('[data-testid="nav-home"]')).toBeNull();
+
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+    const pending = TestBed.createComponent(ShellComponent);
+    pending.detectChanges();
+
+    expect(pending.nativeElement.querySelector('[data-testid="nav-home"]')).not.toBeNull();
   });
 
   it('ac2_4_shows_my_dashboard_to_a_holder_of_analytics_read_own', () => {
@@ -533,7 +550,7 @@ describe('ShellComponent', () => {
 
   it('ac3_1_marks_the_current_section_and_shows_no_bottom_bar', async () => {
     auth.isAuthenticated.set(true);
-    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:read:own'] })));
+    auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:create'] })));
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/awards');

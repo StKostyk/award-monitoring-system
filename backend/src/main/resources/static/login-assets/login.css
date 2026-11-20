@@ -103,21 +103,15 @@ body {
     margin-top: auto;
 }
 
-.brand__count {
-    margin: 0;
-    font-family: var(--lp-font-heading);
-    font-size: clamp(2.4rem, 5vw, 3.6rem);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-    color: var(--lp-count);
-    font-variant-numeric: tabular-nums;
-}
-
 .brand__claim {
-    margin: 12px 0 0;
-    max-width: 32ch;
-    font-size: 1.1rem;
+    margin: 0;
+    max-width: 22ch;
+    font-family: var(--lp-font-heading);
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--lp-count);
 }
 
 .page {
@@ -301,10 +295,6 @@ a {
 
     .brand__story {
         margin: 0 0 0 auto;
-    }
-
-    .brand__count {
-        font-size: 1.1rem;
     }
 
     .page {

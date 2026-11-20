@@ -9,9 +9,13 @@ const mailpit = 'http://localhost:8025';
 /** The password of every seed account (`db/seed/local`). */
 export const DEMO_PASSWORD = 'Passw0rd-demo';
 
-/** Seed accounts of the Faculty of Mathematics and Informatics and the university roles. */
+/**
+ * Seed accounts of the Faculty of Mathematics and Informatics and the university roles; `employee` is the account
+ * the specs enter awards with, so the demo accounts stay as seeded.
+ */
 export const SEED = {
-  employee: 'employee.fmi@chnu.edu.ua',
+  employee: 'e2e.employee@chnu.edu.ua',
+  admin: 'admin@chnu.edu.ua',
   secretary: 'secretary.fmi@chnu.edu.ua',
   dean: 'dean.fmi@chnu.edu.ua',
   gdpr: 'gdpr@chnu.edu.ua',
@@ -144,7 +148,7 @@ export async function openNewAward(page: Page): Promise<void> {
 /** Signs a seed account in with the demo password and waits for the navigation. */
 export async function signInAsSeed(page: Page, email: string): Promise<void> {
   await signIn(page, email, DEMO_PASSWORD);
-  await expect(page.getByTestId('nav-awards')).toBeVisible();
+  await expect(page.getByTestId('user-menu')).toBeVisible();
 }
 
 /**
@@ -167,7 +171,7 @@ export async function signedInAs(browser: Browser, email: string, password: stri
   const page = await (await browser.newContext()).newPage();
   page.on('dialog', (dialog) => void dialog.accept());
   await signIn(page, email, password);
-  await expect(page.getByTestId('nav-awards')).toBeVisible();
+  await expect(page.getByTestId('user-menu')).toBeVisible();
   return page;
 }
 

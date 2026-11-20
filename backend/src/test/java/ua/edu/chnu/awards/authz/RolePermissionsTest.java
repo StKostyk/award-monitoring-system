@@ -39,6 +39,18 @@ class RolePermissionsTest {
     }
 
     @Test
+    void ac2_personalAnalyticsBelongToEmployeesAndApproversNotToOversightRoles() {
+        for (RoleType role : List.of(RoleType.EMPLOYEE, RoleType.FACULTY_SECRETARY, RoleType.DEAN,
+            RoleType.RECTOR_SECRETARY, RoleType.RECTOR)) {
+            assertThat(permissions.of(role)).as(role.name()).contains("analytics:read:own", "award:create");
+        }
+        for (RoleType role : List.of(RoleType.SYSTEM_ADMIN, RoleType.GDPR_OFFICER)) {
+            assertThat(permissions.of(role)).as(role.name()).contains("award:read:own")
+                .doesNotContain("analytics:read:own", "award:create");
+        }
+    }
+
+    @Test
     void ac4_theAdministratorReadsTheAuditTrailButNoAwardsAndTheGdprOfficerReadsBoth() {
         assertThat(permissions.of(RoleType.SYSTEM_ADMIN)).contains("audit:read", "award:read:own")
             .doesNotContain("award:read:department", "award:read:faculty", "award:read:all");

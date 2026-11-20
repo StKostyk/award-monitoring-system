@@ -14,6 +14,7 @@ import {
   canReadUnitAnalytics,
   canReadUniversityAnalytics,
   canReview,
+  roleHome,
 } from './permissions';
 
 export const authGuard: CanActivateFn = (_route, state) => {
@@ -91,21 +92,10 @@ export const commandCentreGuard: CanActivateFn = () => {
   return canOpenCommandCentre(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };
 
-/**
- * The home of a rector or dean is the Hall of Fame, of a faculty or rector's secretary the Command centre, of
- * anybody with personal analytics the personal dashboard; an account without any, such as one waiting for its
- * membership, stays on the home page.
- */
+/** Sends a signed-in person from the home page to the start page of their roles, see {@link roleHome}. */
 export const roleHomeGuard: CanActivateFn = () => {
-  const permissions = inject(AuthService).permissions();
-  const router = inject(Router);
-  if (canOpenHallOfFame(permissions)) {
-    return router.createUrlTree(['/hall-of-fame']);
-  }
-  if (canOpenCommandCentre(permissions)) {
-    return router.createUrlTree(['/command-centre']);
-  }
-  return !canReadOwnAnalytics(permissions) || router.createUrlTree(['/dashboard']);
+  const home = roleHome(inject(AuthService).permissions());
+  return home === '/' || inject(Router).createUrlTree([home]);
 };
 
 /** University analytics need `analytics:read:university`; without it the route ends on the forbidden page. */

@@ -16,8 +16,6 @@
         <p class="brand__organization" th:text="${#messages.msg('brand.' + @loginBrand.id + '.organization')}">University</p>
     </div>
     <div class="brand__story">
-        <p class="brand__count" th:if="${awardCount != null}" th:text="#{${awardCountKey}(${awardCount})}"
-           data-testid="login-award-count">886 awards</p>
         <p class="brand__claim" th:text="#{login.claim}">University awards in one place.</p>
     </div>
 </aside>

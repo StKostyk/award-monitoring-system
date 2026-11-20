@@ -112,8 +112,8 @@ describe('CommandPaletteComponent', () => {
   afterEach(() => vi.useRealTimers());
 
   it('ac3_4_lists_the_sections_the_person_may_open', () => {
-    expect(labels()).toEqual(['Головна', 'Мої нагороди', 'Моя аналітика', 'Досягнення']);
-    expect(input().getAttribute('aria-activedescendant')).toBe('palette-section-home');
+    expect(labels()).toEqual(['Мої нагороди', 'Моя аналітика', 'Досягнення']);
+    expect(input().getAttribute('aria-activedescendant')).toBe('palette-section-awards');
   });
 
   it('ac3_6_offers_no_review_or_administration_section_to_an_employee', () => {
@@ -131,7 +131,7 @@ describe('CommandPaletteComponent', () => {
 
   it('ac3_5_filters_sections_by_name_from_two_characters', () => {
     type('н');
-    expect(labels()).toHaveLength(4);
+    expect(labels()).toHaveLength(3);
 
     type('НАГ');
 
@@ -204,7 +204,7 @@ describe('CommandPaletteComponent', () => {
     key('Enter');
 
     expect(dialog.close).toHaveBeenCalled();
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/awards');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
   });
 
   it('ac3_5_wraps_the_selection_and_opens_an_award_on_click', () => {

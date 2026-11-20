@@ -20,6 +20,7 @@ import {
   readSubject,
   readsUniversityHallOfFame,
   reviewableLevels,
+  roleHome,
 } from './permissions';
 
 function token(claims: Record<string, unknown>): string {
@@ -314,5 +315,24 @@ describe('permissions', () => {
       ),
     ).toEqual({ level: 'FACULTY_SECRETARY', facultyId: 9 });
     expect(commandCentreScope(delegate)).toBeNull();
+  });
+
+  it('ac1_role_home_opens_the_first_section_the_roles_carry', () => {
+    const home = (claims: Record<string, unknown>) => roleHome(readPermissions(token(claims)));
+
+    expect(home({ role_scopes: ['RECTOR:1'] })).toBe('/hall-of-fame');
+    expect(
+      home({ role_scopes: ['FACULTY_SECRETARY:9'], permissions: ['analytics:read:own'] }),
+    ).toBe('/command-centre');
+    expect(home({ role_scopes: ['EMPLOYEE:5'], permissions: ['analytics:read:own'] })).toBe(
+      '/dashboard',
+    );
+    expect(
+      home({ role_scopes: ['GDPR_OFFICER:1'], permissions: ['compliance:read', 'user:read:all'] }),
+    ).toBe('/compliance');
+    expect(home({ role_scopes: ['SYSTEM_ADMIN:1'], permissions: ['user:read:all'] })).toBe(
+      '/admin/users',
+    );
+    expect(home({ permissions: ['award:read:own'] })).toBe('/');
   });
 });

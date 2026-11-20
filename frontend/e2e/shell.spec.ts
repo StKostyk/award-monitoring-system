@@ -31,17 +31,39 @@ test.describe('shell', () => {
 
     await expect(page.getByTestId('side-nav')).toBeVisible();
     await expect(page.getByTestId('nav-awards')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByTestId('nav-home')).not.toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('nav-home')).toHaveCount(0);
     await expect(page.getByTestId('nav-reviews')).toHaveCount(0);
     await expect(page.getByTestId('nav-toggle')).toHaveCount(0);
     await expect(page.getByTestId('new-award')).toHaveCount(0);
     await expect(page.getByTestId('palette-open')).toBeVisible();
   });
 
+  for (const [account, home, section] of [
+    [SEED.admin, '/admin/users', 'nav-users'],
+    [SEED.gdpr, '/compliance', 'nav-compliance'],
+  ] as const) {
+    test(`9.4.6 ac1 ac2 ${account} starts on ${home} without personal sections`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(DESKTOP);
+      await signInAsSeed(page, account);
+      await page.goto('/');
+
+      await expect(page).toHaveURL(new RegExp(`${home}$`));
+      await expect(page.getByTestId(section)).toBeVisible();
+      for (const hidden of ['nav-home', 'nav-awards', 'nav-dashboard']) {
+        await expect(page.getByTestId(hidden)).toHaveCount(0);
+      }
+      await page.goto('/dashboard');
+      await expect(page).toHaveURL(/\/forbidden$/);
+    });
+  }
+
   test('ac3_2 a phone shows the menu button, the page title and the new award button', async ({
     page,
   }) => {
     await page.setViewportSize(PHONE);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await signIn(page, SEED.employee, DEMO_PASSWORD);
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
     await page.goto('/awards');

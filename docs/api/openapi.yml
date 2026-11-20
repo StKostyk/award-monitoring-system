@@ -3431,7 +3431,8 @@ paths:
         level, by category and by level, the timeline (newest first, at most `app.analytics.timeline-limit`), own
         drafts and pending awards, and the rank in the caller's department. The rank carries figures only when the
         caller's latest `ANALYTICS` consent is a grant and the department has at least
-        `app.analytics.min-group-size` active accounts. Needs `analytics:read:own` (5.1.1).
+        `app.analytics.min-group-size` active accounts. Needs `analytics:read:own` (5.1.1), held by the employee and
+        approval roles only (9.4.6).
       security:
         - bearerAuth: []
       operationId: getPersonalAnalytics

@@ -84,11 +84,20 @@ class PersonalAnalyticsFT extends AbstractFunctionalTest {
     }
 
     @Test
-    void ac1_1_everyRoleReadsItsOwnAnalytics() {
+    void ac1_1_everyRoleThatEntersAwardsReadsItsOwnAnalytics() {
         for (RoleType role : RoleType.values()) {
+            if (role == RoleType.SYSTEM_ADMIN || role == RoleType.GDPR_OFFICER) {
+                continue;
+            }
             as(tokenOf(email(role))).get(ANALYTICS).then().statusCode(HttpStatus.OK.value())
                 .header(HttpHeaders.CACHE_CONTROL, "no-store");
         }
+    }
+
+    @Test
+    void ac2_theAdministratorAndTheGdprOfficerHaveNoPersonalAnalytics() {
+        as(tokenOf(email(RoleType.SYSTEM_ADMIN))).get(ANALYTICS).then().statusCode(HttpStatus.FORBIDDEN.value());
+        as(tokenOf(email(RoleType.GDPR_OFFICER))).get(ANALYTICS).then().statusCode(HttpStatus.FORBIDDEN.value());
     }
 
     @Test

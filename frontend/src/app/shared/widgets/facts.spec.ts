@@ -1,15 +1,16 @@
 import {
   FactSource,
+  bestYearFact,
   crossing,
   cumulative,
   currentKyivMonth,
   facts,
+  firstAwardFact,
   growthFact,
   levelAreas,
   levelShareFact,
   levelSteps,
   peakYear,
-  pickFact,
   records,
   streak,
   streakFact,
@@ -109,11 +110,7 @@ describe('facts', () => {
       key: 'facts.growth',
       params: { percent: 17, year: 2025 },
     });
-    expect(streakFact(source())).toEqual({
-      key: 'facts.streakPeriod',
-      params: { period: '2022–2026' },
-    });
-    expect(facts(source())).toHaveLength(3);
+    expect(streakFact(source())).toEqual({ key: 'facts.streak', params: { years: 5 } });
 
     const quiet: FactSource = {
       ...source(),
@@ -121,11 +118,14 @@ describe('facts', () => {
       byMonth: months(2026, [1]),
       byLevel: [],
     };
-    expect(facts(quiet)).toEqual([]);
+    expect(facts(quiet)).toEqual([
+      { key: 'facts.firstAward', params: { year: 2026, period: '2022–2026' } },
+    ]);
+    expect(facts({ ...quiet, byYear: [] })).toEqual([]);
     expect(growthFact({ ...source(), today: { year: 2026, month: 2 } })).toBeNull();
     expect(growthFact({ ...source(), today: { year: 2027, month: 3 } })).toBeNull();
     const longer = { ...source(), byYear: [{ year: 2021, total: 0 }, ...source().byYear] };
-    expect(streakFact(longer)).toEqual({ key: 'facts.streak', params: { since: 2022, years: 5 } });
+    expect(streakFact(longer)).toEqual({ key: 'facts.streak', params: { years: 5 } });
   });
 
   it('ac2_4_counts_the_streak_up_to_last_year_while_this_year_has_none', () => {
@@ -143,12 +143,22 @@ describe('facts', () => {
     expect(streak([], { year: 2026, month: 1 }).years).toBe(0);
   });
 
-  it('ac2_4_picks_the_same_fact_for_the_same_seed', () => {
-    const all = facts(source());
-
-    expect(pickFact(all, 4)).toBe(all[1]);
-    expect(pickFact(all, 4)).toBe(pickFact(all, 7));
-    expect(pickFact([], 4)).toBeNull();
+  it('ac3_lists_up_to_four_facts_with_the_best_year_and_the_first_award_first', () => {
+    expect(bestYearFact(source())).toEqual({
+      key: 'facts.bestYear',
+      params: { year: 2024, count: 40 },
+    });
+    expect(firstAwardFact(source())).toEqual({
+      key: 'facts.firstAward',
+      params: { year: 2022, period: '2022–2026' },
+    });
+    expect(facts(source()).map((fact) => fact.key)).toEqual([
+      'facts.bestYear',
+      'facts.firstAward',
+      'facts.streak',
+      'facts.growth',
+    ]);
+    expect(bestYearFact({ ...source(), byYear: [{ year: 2026, total: 4 }] })).toBeNull();
   });
 
   it('ac2_5_sums_levels_into_steps_and_areas', () => {

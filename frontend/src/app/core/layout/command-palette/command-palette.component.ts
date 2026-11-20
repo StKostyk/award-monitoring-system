@@ -15,7 +15,7 @@ import {
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { IconName } from '../../../shared/icons/icons';
 import { AuthService } from '../../auth/auth.service';
-import { canReadOwnAwards } from '../../auth/permissions';
+import { canCreateAwards } from '../../auth/permissions';
 import { LanguageService } from '../../i18n/language.service';
 import { navEntriesFor } from '../nav-entries';
 
@@ -137,7 +137,7 @@ export class CommandPaletteComponent {
   }
 
   private mayReadAwards(): boolean {
-    return canReadOwnAwards(this.auth.permissions());
+    return canCreateAwards(this.auth.permissions());
   }
 
   private option(award: Award): PaletteOption {
