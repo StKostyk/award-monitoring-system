@@ -1,6 +1,7 @@
 import { Page, expect, test } from './fixtures';
 
 import {
+  freshContextPage,
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
@@ -159,7 +160,7 @@ test.describe('shareable achievement summary', () => {
     expect(link).toMatch(/^http:\/\/[^/]+\/public\/achievements\?person=\d+$/);
     const name = (await page.getByTestId('summary-name').textContent())!.trim();
 
-    const visitor = await (await browser.newContext()).newPage();
+    const visitor = await freshContextPage(browser);
     await visitor.goto(new URL(link).pathname + new URL(link).search);
     await expect(visitor.getByTestId('achievements-title')).toContainText(name);
     await expect(visitor.getByTestId('achievement-card').first()).toBeVisible();

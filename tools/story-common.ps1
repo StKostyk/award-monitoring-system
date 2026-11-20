@@ -100,7 +100,6 @@ function Add-StoryRows([string]$key, [string]$summary, [int]$points, [string]$ep
         elseif ($backlog[$after] -match '\(((Sprint )?\d+)\)\s*\|') { $Matches[1] }
         elseif ($backlog[$after] -match '^\|[^|]+\|[^|]+\|[^|]+\|\s*((Sprint )?\d+)\s*\|') { $Matches[1] }
         elseif ($backlog[$after + 1] -match '^\|[^|]+\|[^|]+\|[^|]+\|\s*((Sprint )?\d+)\s*\|') { $Matches[1] }
-    if (-not $sprint) { Write-Warning "BACKLOG row $id has no sprint; pass -Sprint or fill the cell" }
     $repo = gh repo view --json url -q .url
     $backlog.Insert($after + 1, "| $id | $summary | $points | $sprint | $key | [#$issue]($repo/issues/$issue) |")
     Write-Lines $path $backlog.ToArray()

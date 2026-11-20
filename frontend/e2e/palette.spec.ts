@@ -3,6 +3,7 @@ import { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
 import {
+  freshContextPage,
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
@@ -95,7 +96,7 @@ test.describe('command palette', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(`/awards/${id}$`));
 
-    const other = await (await browser.newContext()).newPage();
+    const other = await freshContextPage(browser);
     await signInAsSeed(other, SEED.lecturer);
     await openWithShortcut(other);
     await other.getByTestId('palette-input').fill(token);

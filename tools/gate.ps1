@@ -21,6 +21,11 @@
     when verify fails because a Testcontainers container did not start while the frontend checks ran alongside,
     verify runs once more after them. A second gate, or a
     running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
+    A full run is also refused while the award-backend container runs (docker stop award-backend).
+    -FrontendOnly reruns only the frontend checks and keeps the backend lines of the last summary, provided that
+    run was on this branch, passed the backend and nothing under backend/ or openapi.yml changed since.
+    A failed run during which the machine slept or the Docker engine stopped is reported as INVALID (exit 2):
+    run it again instead of chasing the failures.
     For a full run started from an agent shell, use tools/detach.ps1 so the run survives the shell.
 
 .PARAMETER MinFreeGb
@@ -37,10 +42,21 @@ param(
     [switch]$SkipFrontend,
     [switch]$Full,
     [switch]$Sequential,
+    [switch]$FrontendOnly,
     [double]$MinFreeGb = 8
 )
 
 $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+$gateStart = Get-Date
+
+if (-not $StaticOnly) {
+    $container = @(docker ps --filter 'name=^award-backend$' --format '{{.Names}}' 2>$null)
+    if ($container) {
+        Write-Host 'The award-backend container is running and competes with the test JVMs for memory.'
+        Write-Host 'Stop it first (docker stop award-backend), then run the gate again.'
+        exit 1
+    }
+}
 
 $runningBackend = Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" |
     Where-Object { $_.CommandLine -like '*spring-boot:run*' }
@@ -94,6 +110,25 @@ function Invoke-Maven([string[]]$Goals, [string]$Label) {
     return $ok
 }
 
+function Get-BackendFingerprint {
+    $paths = @('backend', 'docs/api/openapi.yml')
+    $text = (git -C $root diff develop -- $paths) -join "`n"
+    $untracked = @(git -C $root ls-files -o --exclude-standard -- $paths)
+    if ($untracked) { $text += "`n" + ((git -C $root hash-object -- $untracked) -join "`n") }
+    $bytes = [Text.Encoding]::UTF8.GetBytes($text)
+    return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 16)
+}
+
+function Get-InterruptionReason {
+    $sleep = Get-WinEvent -ErrorAction SilentlyContinue -FilterHashtable @{
+        LogName = 'System'; ProviderName = 'Microsoft-Windows-Power-Troubleshooter'; Id = 1; StartTime = $gateStart
+    }
+    if ($sleep) { return 'the machine slept during the run' }
+    docker info --format '{{.ServerVersion}}' *> $null
+    if ($LASTEXITCODE -ne 0) { return 'the Docker engine stopped during the run' }
+    return $null
+}
+
 function Get-FailedClasses([string]$folder, [datetime]$since) {
     Get-ChildItem (Join-Path $backend "target\$folder") -Filter 'TEST-*.xml' -ErrorAction SilentlyContinue |
         Where-Object { $_.LastWriteTime -ge $since } |
@@ -101,7 +136,25 @@ function Get-FailedClasses([string]$folder, [datetime]$since) {
         ForEach-Object { ($_.BaseName -replace '^TEST-', '') -replace '^.*\.', '' }
 }
 
-if (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
+$previous = @{}
+if ($FrontendOnly) {
+    $previousFile = Join-Path $logDir 'gate-summary.txt'
+    if (Test-Path $previousFile) {
+        Get-Content $previousFile | Where-Object { $_ -match '^([\w/ ]+?):\s+(.*)$' } |
+            ForEach-Object { $previous[$Matches[1]] = $Matches[2] }
+    }
+    $branchNow = git -C $root rev-parse --abbrev-ref HEAD
+    if ($previous['Branch'] -ne $branchNow -or $previous['Backend'] -notmatch '^(PASS|SKIPPED)' -or
+            $previous['Fingerprint'] -ne (Get-BackendFingerprint)) {
+        Write-Host ('-FrontendOnly needs a last summary on this branch with a passed backend and no backend ' +
+            'or openapi.yml change since; run the full gate.')
+        Exit-Gate 1
+    }
+}
+
+if ($FrontendOnly) {
+    Write-Host 'Backend: kept from the last summary (-FrontendOnly)'
+} elseif (-not (Invoke-Maven @('-o', '-q', 'test-compile', 'checkstyle:check', 'pmd:check', 'spotbugs:check') 'static')) {
     $seen = @{}
     $compileErrors = @(Select-String -Path $log -Pattern '^\[ERROR\] .*\.java:\[\d+,\d+\]|^\s+(symbol|location):' |
         ForEach-Object { $_.Line -replace '^\[ERROR\] .*[\\/]', '' } |
@@ -215,7 +268,12 @@ $backendChanged = @(git -C $root diff --name-only develop -- $backendPaths) +
 $backendOk = $true
 $unit = $integration = $coverage = '-'
 $backendStatus = 'SKIPPED (no backend or openapi.yml changes since develop; -Full runs it)'
-if ($Full -or ($backendChanged | Where-Object { $_ })) {
+if ($FrontendOnly) {
+    $unit = $previous['Unit']
+    $integration = $previous['IT/FT']
+    $coverage = $previous['Coverage']
+    $backendStatus = "$($previous['Backend']) (kept from $($previous['Gate run']), -FrontendOnly)"
+} elseif ($Full -or ($backendChanged | Where-Object { $_ })) {
     docker info --format '{{.ServerVersion}}' *> $null
     if ($LASTEXITCODE -ne 0) {
         Write-Host 'Docker is not running: the integration and functional tests need it (TestContainers). Start Docker Desktop and run the gate again.'
@@ -330,9 +388,14 @@ if ($backupChanged | Where-Object { $_ }) {
     Write-Host " $(if ($backupOk) { 'PASS' } else { 'FAIL' }) ($(Format-Elapsed $backupStart))"
 }
 
+$passed = $backendOk -and $frontendOk -and $backupOk
+$interruption = if (-not $passed) { Get-InterruptionReason }
+if ($interruption) { $backendStatus = "INVALID ($interruption; run the gate again)" }
+
 $summary = @"
 Gate run: $(Get-Date -Format 'yyyy-MM-dd HH:mm')
 Branch:   $(git -C $root rev-parse --abbrev-ref HEAD)
+Fingerprint: $(Get-BackendFingerprint)
 Unit:     $unit
 IT/FT:    $integration
 Coverage: $coverage
@@ -343,5 +406,6 @@ Backup:   $backup
 "@
 Set-Content -Path (Join-Path $logDir 'gate-summary.txt') -Value $summary
 Write-Host $summary
-if (-not ($backendOk -and $frontendOk -and $backupOk)) { Exit-Gate 1 }
+if ($interruption) { Exit-Gate 2 }
+if (-not $passed) { Exit-Gate 1 }
 Exit-Gate 0
