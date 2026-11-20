@@ -8,13 +8,20 @@ const YEARS = [
   { year: 2025, total: 9 },
   { year: 2026, total: 6 },
 ];
+/** Room above the tallest bar for one and for two label lines. */
+const ONE_LINE_ROOM = 24;
+const TWO_LINE_ROOM = 40;
 
 interface BarOption {
   series: {
     data: {
       value: number;
       itemStyle: { opacity: number };
-      label: { show: boolean; formatter: string };
+      label: {
+        show: boolean;
+        formatter: string;
+        align?: string;
+      };
     }[];
   }[];
 }
@@ -39,7 +46,22 @@ describe('TrendWidgetComponent', () => {
     const { stub } = await renderWidget(TrendWidgetComponent, { years: YEARS, partialYear: 2025 });
 
     const bars = lastOption<BarOption>(stub).series[0].data;
-    expect(bars[1].label.formatter).toBe('Пік · Неповний рік');
+    expect(bars[1].label.formatter).toBe('Пік\nНеповний рік');
+  });
+
+  it('ac1_6_keeps_the_edge_annotations_inside_the_chart', async () => {
+    const { stub } = await renderWidget(TrendWidgetComponent, { years: YEARS, partialYear: 2026 });
+
+    const option = lastOption<BarOption & { grid: { top: number } }>(stub);
+    const labels = option.series[0].data.map((bar) => bar.label);
+    expect(labels.map((label) => label.align)).toEqual(['left', 'center', 'right']);
+    expect(option.grid.top).toBe(ONE_LINE_ROOM);
+  });
+
+  it('ac1_6_leaves_room_for_two_lines_only_when_a_bar_carries_both_marks', async () => {
+    const { stub } = await renderWidget(TrendWidgetComponent, { years: YEARS, partialYear: 2025 });
+
+    expect(lastOption<{ grid: { top: number } }>(stub).grid.top).toBe(TWO_LINE_ROOM);
   });
 
   it('ac2_6_shows_the_years_as_a_table_behind_data', async () => {

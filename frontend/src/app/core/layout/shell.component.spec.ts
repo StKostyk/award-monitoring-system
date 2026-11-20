@@ -460,6 +460,19 @@ describe('ShellComponent', () => {
     expect(nav.querySelector('img')?.getAttribute('src')).toBe('brand/chnu/logo.svg');
   });
 
+  it('ac1_7_puts_the_toolbar_title_and_links_inside_the_banner', () => {
+    auth.isAuthenticated.set(true);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const banner: HTMLElement = fixture.nativeElement.querySelector('[role="banner"]');
+
+    expect(banner?.classList).toContain('shell__toolbar');
+    expect(banner.querySelector('[data-testid="user-menu"]')).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[role="banner"] [role="banner"], main [role="banner"]'),
+    ).toBeNull();
+  });
+
   it('ac5_keeps_the_side_menu_open_on_a_wide_screen', () => {
     auth.isAuthenticated.set(true);
     const fixture = TestBed.createComponent(ShellComponent);

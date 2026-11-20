@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Page layout kit (header, split, list rows, bento) for the redesigned pages; side menu labels wrap instead of being cut off, chart annotations stay inside the chart, and every signed-in page passes the axe landmark check.
 - Faculty secretaries and deans import colleagues and their past awards from an .xlsx or .csv file with a column mapping and a row preview (2.5.5).
 - Command centre for faculty and rector's secretaries: today's queue with one-click decisions, units without awards and a weekly «Нагадати завідувачу» reminder by mail and in the app (9.4.5).
 - «Мій дашборд» as the employee home: work in progress, visibility counts linked to the filtered award list, and «Експорт для резюме» (PDF or text) of approved awards.

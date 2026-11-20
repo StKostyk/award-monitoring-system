@@ -35,9 +35,22 @@
       list-item-focus-state-layer-color: var(--app-nav-on-container),
       list-item-label-text-weight: 700,
       active-indicator-color: var(--app-nav-active),
-      active-indicator-shape: 999px,
+      active-indicator-shape: var(--app-radius-lg),
+      list-item-one-line-container-height: auto,
     )
   );
+
+  .mat-mdc-list-item {
+    min-height: 48px;
+    padding-block: 8px;
+  }
+
+  .mdc-list-item__primary-text {
+    white-space: normal;
+    overflow-wrap: break-word;
+    text-overflow: clip;
+    line-height: 1.3;
+  }
 }
 
 .shell__brand {
