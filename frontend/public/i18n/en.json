@@ -1703,7 +1703,9 @@
       "RANK": "Place in the department",
       "TIMELINE": "Timeline",
       "IN_PROGRESS": "In progress",
-      "VISIBILITY": "Who sees my awards"
+      "VISIBILITY": "Who sees my awards",
+      "FACT": "Did you know",
+      "LATEST": "Latest awards"
     },
     "thisYear": "Awards this year",
     "streak": "Awards every year since {{since}}",
@@ -1802,6 +1804,10 @@
       "publicHint": "Only awards shared publicly appear on the public page; none of yours is shared publicly yet.",
       "invalidPeriod": "The period is not valid.",
       "publicCheckFailed": "It could not be checked whether your awards are public. Reload the page to try again."
+    },
+    "latest": {
+      "all": "All {{count}}",
+      "empty": "No approved awards in this period yet."
     }
   },
   "unitAnalytics": {
@@ -2053,7 +2059,9 @@
     "allHidden": "All widgets are hidden. Press “Customise” to bring back the ones you need.",
     "loadFailed": "The dashboard settings could not be loaded.",
     "saveFailed": "The dashboard settings could not be saved. Please try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "sideList": "Side column widgets",
+    "mainList": "Main column widgets"
   },
   "charts": {
     "showTable": "Show as table"

@@ -5635,11 +5635,12 @@ components:
     DashboardWidget:
       type: string
       description: >
-        A dashboard widget (9.4.1). Sets per dashboard, in default order: `MY_AWARDS` = `KPI`, `TREND`,
-        `LEVEL_STAIRS`, `IN_PROGRESS`, `BY_CATEGORY`, `RANK`, `VISIBILITY`; `HALL_OF_FAME` = `KPI`, `TREND`, `RACE`,
-        `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`; `COMMAND_CENTRE` = `TODAY`, `QUEUE`, `UNITS`, `TOP`
+        A dashboard widget (9.4.1; `FACT` and `LATEST` on `MY_AWARDS` since 9.5.2). Sets per dashboard, in default
+        order: `MY_AWARDS` = `KPI`, `FACT`, `TREND`, `LEVEL_STAIRS`, `IN_PROGRESS`, `LATEST`, `BY_CATEGORY`, `RANK`,
+        `VISIBILITY`; `HALL_OF_FAME` = `KPI`, `TREND`, `RACE`, `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`;
+        `COMMAND_CENTRE` = `TODAY`, `QUEUE`, `UNITS`, `TOP`
       enum: [KPI, TREND, RACE, RECORDS, FACT, TOP, LEVEL_MAP, LEVEL_STAIRS, IN_PROGRESS, BY_CATEGORY, RANK, VISIBILITY,
-             TODAY, QUEUE, UNITS]
+             TODAY, QUEUE, UNITS, LATEST]
 
     DashboardPreferences:
       type: object

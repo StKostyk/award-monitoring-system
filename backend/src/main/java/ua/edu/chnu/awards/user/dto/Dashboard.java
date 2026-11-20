@@ -4,6 +4,7 @@ import static ua.edu.chnu.awards.user.dto.DashboardWidget.BY_CATEGORY;
 import static ua.edu.chnu.awards.user.dto.DashboardWidget.FACT;
 import static ua.edu.chnu.awards.user.dto.DashboardWidget.IN_PROGRESS;
 import static ua.edu.chnu.awards.user.dto.DashboardWidget.KPI;
+import static ua.edu.chnu.awards.user.dto.DashboardWidget.LATEST;
 import static ua.edu.chnu.awards.user.dto.DashboardWidget.LEVEL_MAP;
 import static ua.edu.chnu.awards.user.dto.DashboardWidget.LEVEL_STAIRS;
 import static ua.edu.chnu.awards.user.dto.DashboardWidget.QUEUE;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
  * A dashboard whose widget order and visibility a person can arrange.
  */
 public enum Dashboard {
-    MY_AWARDS(List.of(KPI, TREND, LEVEL_STAIRS, IN_PROGRESS, BY_CATEGORY, RANK, VISIBILITY)),
+    MY_AWARDS(List.of(KPI, FACT, TREND, LEVEL_STAIRS, IN_PROGRESS, LATEST, BY_CATEGORY, RANK, VISIBILITY)),
     HALL_OF_FAME(List.of(KPI, TREND, RACE, RECORDS, FACT, TOP, LEVEL_MAP)),
     COMMAND_CENTRE(List.of(TODAY, QUEUE, UNITS, TOP));
 

@@ -61,4 +61,50 @@ test.describe('page layout and shell (9.5.1)', () => {
     }
     expect(wide).toEqual([]);
   });
+
+  test('ac2_1 ac2_6 the personal dashboard splits at 1280 and stacks at 360 with the side column first', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+    await signInAsSeed(page, SEED.lecturer);
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('widget-RANK')).toBeVisible();
+    const side = page.getByTestId('layout-side');
+    const main = page.getByTestId('layout-main');
+    await expect(side.getByTestId('profile-card')).toBeVisible();
+    await expect(side.getByTestId('widget-KPI')).toBeVisible();
+    const sideBox = (await side.boundingBox())!;
+    const mainBox = (await main.boundingBox())!;
+    expect(mainBox.x).toBeGreaterThan(sideBox.x + sideBox.width);
+    expect(Math.abs(mainBox.y - sideBox.y)).toBeLessThan(2);
+
+    await page.setViewportSize(PHONE);
+    await expect(page.getByTestId('profile-card')).toBeVisible();
+    const order = await page
+      .locator('[data-testid="profile-card"], [data-testid^="widget-"]')
+      .evaluateAll((nodes) =>
+        nodes
+          .map((node) => ({
+            id: node.getAttribute('data-testid'),
+            top: node.getBoundingClientRect().top,
+          }))
+          .sort((a, b) => a.top - b.top)
+          .map((node) => node.id),
+      );
+    expect(order.slice(0, 7)).toEqual([
+      'profile-card',
+      'widget-KPI',
+      'widget-FACT',
+      'widget-TREND',
+      'widget-LEVEL_STAIRS',
+      'widget-IN_PROGRESS',
+      'widget-LATEST',
+    ]);
+    const heading = (await page.getByTestId('page-heading').boundingBox())!;
+    const action = (await page.getByTestId('dashboard-summary').boundingBox())!;
+    expect(action.y).toBeGreaterThan(heading.y + heading.height - 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      PHONE.width,
+    );
+  });
 });

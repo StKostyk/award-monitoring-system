@@ -42,7 +42,16 @@ const REPORT = join(process.cwd(), '..', 'build', 'accessibility-report.json');
  * Findings that cannot be fixed in this application. Each entry excludes its selector from its own rule only and
  * names the reason and the issue that tracks it; a rule is never switched off as a whole.
  */
-const EXCEPTIONS: { rule: string; selector: string; reason: string; issue: string }[] = [];
+const EXCEPTIONS: { rule: string; selector: string; reason: string; issue: string }[] = [
+  {
+    rule: 'region',
+    selector: '.cdk-overlay-container .mat-mdc-menu-panel',
+    reason:
+      'An open menu is a popup of its trigger in the header; Angular CDK renders it at the end of the body, ' +
+      'outside the landmarks, and closes it on any focus change.',
+    issue: 'none, by design: every open Material menu is a CDK overlay popup',
+  },
+];
 
 /** The best-practice rule that content sits in landmarks; it fails a signed-in page whatever its impact. */
 const LANDMARK_RULE = 'region';
