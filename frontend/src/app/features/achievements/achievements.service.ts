@@ -8,6 +8,7 @@ import {
   OrganizationsService,
   OrganizationSummary,
 } from '../../core/organizations/organizations.service';
+import { currentKyivYear } from '../../shared/date-format';
 import { organizationName } from '../../shared/organization-name';
 import { searchTerm } from '../../shared/search-field/search-field.component';
 import { DocumentType } from '../awards/award-documents/documents.service';
@@ -100,6 +101,9 @@ export const NO_ACHIEVEMENT_FILTERS: AchievementFilters = {
 export const RECIPIENT_TYPES: RecipientType[] = ['PERSON', 'UNIT'];
 export const PAGE_SIZES = [20, 50, 100];
 
+/** Awards of the current year the highlight of the month chooses from: the largest page the API serves. */
+export const HIGHLIGHT_CANDIDATES = 100;
+
 const NUMBER = /^\d{1,9}$/;
 
 @Injectable({ providedIn: 'root' })
@@ -131,6 +135,30 @@ export class AchievementsService {
           params,
         })
       : this.http.get<Page<Achievement>>(`${environment.apiUrl}/achievements`, { params });
+  }
+
+  /**
+   * The newest awards of the current year that the highlight of the month chooses from: the first page of the
+   * year with the list's unit, recipient and person, whatever its search, level and year filters.
+   *
+   * @param filters the filters of the list
+   * @param scope the awards shared with colleagues, or the public ones
+   * @returns the awards, newest first
+   */
+  highlightCandidates(
+    filters: AchievementFilters,
+    scope: AchievementScope = 'signed-in',
+  ): Observable<Achievement[]> {
+    const candidates: AchievementFilters = {
+      ...NO_ACHIEVEMENT_FILTERS,
+      unit: filters.unit,
+      recipient: filters.recipient,
+      person: filters.person,
+      year: currentKyivYear(),
+    };
+    return this.list({ filters: candidates, page: 0, size: HIGHLIGHT_CANDIDATES }, scope).pipe(
+      map((page) => page.content),
+    );
   }
 
   /**

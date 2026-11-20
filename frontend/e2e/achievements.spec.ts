@@ -71,11 +71,14 @@ async function openAward(page: Page, id: string): Promise<void> {
 }
 
 function card(page: Page, title: string) {
-  return page.getByTestId('achievement-card').filter({ hasText: title });
+  return page
+    .getByTestId('achievement-list')
+    .getByTestId('achievement-card')
+    .filter({ hasText: title });
 }
 
 test.describe('colleague visibility and the achievements page', () => {
-  test('ac1_1 ac1_2 ac1_3 ac1_7 ac1_8 ac1_9 the owner shares an award and colleagues find it', async ({
+  test('ac1_1 ac1_2 ac1_3 ac1_7 ac1_8 ac1_9 ac3_1 ac3_2 ac3_3 the owner shares an award and colleagues find it', async ({
     browser,
   }) => {
     const owner = await freshEmployee(browser, 'share');
@@ -113,12 +116,23 @@ test.describe('colleague visibility and the achievements page', () => {
     await expect(shared.getByTestId('achievement-recipient')).toContainText('Ірина Нова');
     await expect(shared.getByTestId('achievement-unit')).not.toBeEmpty();
 
-    await colleague.getByTestId('filter-recipient').click();
-    await colleague.getByRole('option', { name: 'Підрозділи' }).click();
+    await expect(colleague.getByTestId('achievements-highlight')).toBeVisible();
+    await expect(
+      colleague.getByTestId('achievements-feed').getByRole('heading', { level: 2 }).first(),
+    ).toHaveText(/^\d+ досягн/);
+    await expect(
+      colleague.getByTestId('achievements-year').first().getByRole('heading', { level: 2 }).first(),
+    ).toHaveText(
+      new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: 'Europe/Kyiv' }).format(
+        new Date(),
+      ),
+    );
+
+    await colleague.getByTestId('recipient-UNIT').click();
     await expect(colleague).toHaveURL(/recipient=UNIT/);
     await expect(card(colleague, title)).toHaveCount(0);
     await colleague.reload();
-    await expect(colleague.getByTestId('filter-recipient')).toContainText('Підрозділи');
+    await expect(colleague.getByTestId('recipient-UNIT')).toHaveAttribute('aria-pressed', 'true');
 
     await colleague.goto('/achievements?recipient=PERSON&year=1976');
     await expect(colleague.getByTestId('achievements-empty')).toHaveText(
@@ -135,6 +149,7 @@ test.describe('colleague visibility and the achievements page', () => {
     await listed;
     await expect(
       colleague
+        .getByTestId('achievement-list')
         .getByTestId('achievement-card')
         .or(colleague.getByTestId('achievements-empty'))
         .first(),
@@ -286,13 +301,17 @@ test.describe('unit achievement pages and public achievements', () => {
     await page.goto('/achievements');
     await page.getByTestId('filter-q').fill(sharedWord);
     await expect(page).toHaveURL(new RegExp(`/achievements\\?q=${sharedWord}$`));
-    await expect(page.getByTestId('achievement-card')).toHaveCount(1);
+    await expect(page.getByTestId('achievement-list').getByTestId('achievement-card')).toHaveCount(
+      1,
+    );
     await expect(card(page, shared)).toBeVisible();
     expect(await seriousViolations(page)).toEqual([]);
 
     await page.reload();
     await expect(page.getByTestId('filter-q')).toHaveValue(sharedWord);
-    await expect(page.getByTestId('achievement-card')).toHaveCount(1);
+    await expect(page.getByTestId('achievement-list').getByTestId('achievement-card')).toHaveCount(
+      1,
+    );
 
     await page.getByTestId('filter-q').fill(uniqueToken());
     await expect(page.getByTestId('achievements-empty')).toHaveText(
@@ -307,10 +326,14 @@ test.describe('unit achievement pages and public achievements', () => {
     await page.getByTestId('achievements-counterpart').click();
     await expect(page).toHaveURL(new RegExp(`/public/achievements\\?q=${publishedWord}$`));
     await expect(page.getByTestId('filter-q')).toHaveValue(publishedWord);
-    await expect(page.getByTestId('achievement-card')).toHaveCount(1);
+    await expect(page.getByTestId('achievement-list').getByTestId('achievement-card')).toHaveCount(
+      1,
+    );
 
     await page.goto(`/public/units/${unit}/achievements?q=${sharedWord}`);
-    await expect(page.getByTestId('achievement-card')).toHaveCount(0);
+    await expect(page.getByTestId('achievement-list').getByTestId('achievement-card')).toHaveCount(
+      0,
+    );
     await page.getByTestId('filter-q').fill(publishedWord);
     await expect(page).toHaveURL(
       new RegExp(`/public/units/${unit}/achievements\\?q=${publishedWord}$`),

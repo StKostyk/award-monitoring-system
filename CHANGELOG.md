@@ -94,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Achievements as a story feed: recipient chips, the highlight of the month and the awards grouped by year under the total count (9.5.3).
 - My dashboard in the split layout: profile, summary and facts beside the charts and the latest awards; widgets move within their column (9.5.2).
 - Role-aware start pages and menu (no Home for roles with a start page, no personal sections for the administrator and the data protection officer), up to four Hall of Fame facts, sign-in page without the award count, personal awards in the local seed (SCRUM-161).
 - Award list starts its status-count and category requests in separate tasks, shortening its longest load task; Lighthouse timeline and profile tools measure at the phone size (9.3.21)
