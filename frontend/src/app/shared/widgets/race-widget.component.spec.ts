@@ -1,7 +1,8 @@
 import { vi } from 'vitest';
 
 import { monthCounts } from '../../features/analytics/units/unit-analytics.testing';
-import { RaceWidgetComponent, monthNames } from './race-widget.component';
+import { monthNames } from '../date-format';
+import { RaceWidgetComponent } from './race-widget.component';
 import { byTestId, lastOption, renderWidget, rowTexts, showData } from './widgets.testing';
 
 const BY_MONTH = [

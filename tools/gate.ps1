@@ -21,7 +21,8 @@
     when verify fails because a Testcontainers container did not start while the frontend checks ran alongside,
     verify runs once more after them. A second gate, or a
     running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
-    A full run is also refused while the award-backend container runs (docker stop award-backend).
+    The backend verify is also refused while the award-backend container runs (docker stop award-backend);
+    a run that skips the verify (frontend-only changes, -FrontendOnly) goes ahead next to it.
     -FrontendOnly reruns only the frontend checks and keeps the backend lines of the last summary, provided that
     run was on this branch, passed the backend and nothing under backend/ or openapi.yml changed since.
     A failed run during which the machine slept or the Docker engine stopped is reported as INVALID (exit 2):
@@ -48,15 +49,6 @@ param(
 
 $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
 $gateStart = Get-Date
-
-if (-not $StaticOnly) {
-    $container = @(docker ps --filter 'name=^award-backend$' --format '{{.Names}}' 2>$null)
-    if ($container) {
-        Write-Host 'The award-backend container is running and competes with the test JVMs for memory.'
-        Write-Host 'Stop it first (docker stop award-backend), then run the gate again.'
-        exit 1
-    }
-}
 
 $runningBackend = Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" |
     Where-Object { $_.CommandLine -like '*spring-boot:run*' }
@@ -274,6 +266,11 @@ if ($FrontendOnly) {
     $coverage = $previous['Coverage']
     $backendStatus = "$($previous['Backend']) (kept from $($previous['Gate run']), -FrontendOnly)"
 } elseif ($Full -or ($backendChanged | Where-Object { $_ })) {
+    if (@(docker ps --filter 'name=^award-backend$' --format '{{.Names}}' 2>$null)) {
+        Write-Host 'The award-backend container is running and competes with the test JVMs for memory.'
+        Write-Host 'Stop it first (docker stop award-backend), then run the gate again.'
+        Exit-Gate 1
+    }
     docker info --format '{{.ServerVersion}}' *> $null
     if ($LASTEXITCODE -ne 0) {
         Write-Host 'Docker is not running: the integration and functional tests need it (TestContainers). Start Docker Desktop and run the gate again.'

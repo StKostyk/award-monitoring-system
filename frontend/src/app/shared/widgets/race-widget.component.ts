@@ -6,19 +6,10 @@ import { LanguageService } from '../../core/i18n/language.service';
 import { ChartComponent } from '../charts/chart.component';
 import { categoryAxis, tooltip, valueAxis } from '../charts/chart-style';
 import { ChartThemeService } from '../charts/chart-theme.service';
+import { monthNames } from '../date-format';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { crossing, cumulative, lastMonthOf } from './facts';
 import { CalendarMonth, MonthCount } from './widget-data';
-
-const MONTHS = 12;
-
-/** The short names of the twelve months in the given language. */
-export function monthNames(language: string): string[] {
-  const format = new Intl.DateTimeFormat(language, { month: 'short', timeZone: 'UTC' });
-  return Array.from({ length: MONTHS }, (_, index) =>
-    format.format(new Date(Date.UTC(2000, index, 1))),
-  );
-}
 
 /** T2: this year and last year as running totals by month, the month the lead changed annotated. */
 @Component({

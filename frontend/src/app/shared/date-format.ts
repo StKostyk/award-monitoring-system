@@ -7,6 +7,8 @@ const DAY: Intl.DateTimeFormatOptions = {
 };
 const DAY_TIME: Intl.DateTimeFormatOptions = { ...DAY, hour: '2-digit', minute: '2-digit' };
 const formats = new Map<string, Intl.DateTimeFormat>();
+const months = new Map<string, string[]>();
+const MONTHS_IN_YEAR = 12;
 
 /** Date and time in Kyiv, day first, in the interface language. */
 export function kyivDateTime(iso: string, language: string): string {
@@ -59,6 +61,23 @@ export function daysBefore(date: string, days: number): string {
 
 function isoDate(time: number): string {
   return new Date(time).toISOString().substring(0, 10);
+}
+
+/** The names of the twelve months in the interface language, January first. */
+export function monthNames(language: string, style: 'short' | 'long' = 'short'): string[] {
+  const key = `${localeOf(language)}|${style}`;
+  let names = months.get(key);
+  if (!names) {
+    const formatter = new Intl.DateTimeFormat(localeOf(language), {
+      month: style,
+      timeZone: 'UTC',
+    });
+    names = Array.from({ length: MONTHS_IN_YEAR }, (_, index) =>
+      formatter.format(new Date(Date.UTC(2000, index, 1))),
+    );
+    months.set(key, names);
+  }
+  return names;
 }
 
 function localeOf(language: string): string {

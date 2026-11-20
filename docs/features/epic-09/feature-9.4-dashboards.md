@@ -100,8 +100,9 @@ demo server waits for it (§11 risk 1).
   last year is Y, then `byMonth` lists Y and Y-1 with 12 counts each, counted with the same rules and date as
   `byYear`; months after the current one in the current year are 0 and `partialYear` is true.
 - **AC-2.2** (K1) Given a series, when K1 renders, then it shows the number counting up, a sparkline of the years and
-  a delta against the same months of the previous year («↓ 29 %», «111 за той самий період 2025»); a previous value
-  of 0 shows no percentage.
+  a delta against the same months of the previous year that names the compared months and both counts («↓ 29 %»,
+  «79 за січень–жовтень 2026», «111 за ті самі місяці 2025»; 9.4.7); a previous value of 0 shows no percentage; in January, before a month is
+  complete, the comparison line is left out.
 - **AC-2.3** (T1 and T2) Given `byYear` and `byMonth`, then T1 marks the peak year and the current partial year, and
   T2 draws both years cumulatively by month with the month this year fell behind or overtook last year annotated
   («обгін»); with no crossing there is no annotation.
@@ -320,7 +321,8 @@ department of the Faculty of Mathematics and Informatics with no award in the cu
 highlight on `/analytics/units/{fmi}`; if none, return its only current-year award first).
 
 1. Sign in as `rector`, open `/`. Expected: redirect to `/hall-of-fame`, university numbers, K1 with delta against the
-   same months of last year, T2 with both years. (AC-3.1, AC-3.3, AC-2.2, AC-2.3)
+   same months of last year, naming the months and this year's count for them («N за січень–<last complete month>
+   <year>»), T2 with both years. (AC-3.1, AC-3.3, AC-2.2, AC-2.3)
 2. Compare K1 and T1 with `/analytics/university` for the same year; `GET /api/v1/analytics/university`. Expected:
    same totals; `byMonth` has 24 rows, Y-1 and Y, whose sums equal `byYear` of those years, 0 after the current
    month. (AC-2.1)
