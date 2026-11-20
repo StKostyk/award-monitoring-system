@@ -308,6 +308,28 @@ describe('authGuard', () => {
     ).toBe(true);
   });
 
+  it('ac1_sends_an_administrator_to_the_directory_and_a_gdpr_officer_to_compliance', () => {
+    const home = (claims: Record<string, unknown>) => {
+      auth.permissions.set(readPermissions(tokenWith(claims)));
+      return TestBed.runInInjectionContext(() =>
+        roleHomeGuard({} as ActivatedRouteSnapshot, state),
+      );
+    };
+    const router = TestBed.inject(Router);
+
+    expect(String(home({ role_scopes: ['SYSTEM_ADMIN:1'], permissions: ['user:read:all'] }))).toBe(
+      router.createUrlTree(['/admin/users']).toString(),
+    );
+    expect(
+      String(
+        home({
+          role_scopes: ['GDPR_OFFICER:1'],
+          permissions: ['compliance:read', 'user:read:all'],
+        }),
+      ),
+    ).toBe(router.createUrlTree(['/compliance']).toString());
+  });
+
   it('ac3_4_opens_the_command_centre_for_a_held_secretary_or_dean_role_only', () => {
     const open = (claims: Record<string, unknown>) => {
       auth.permissions.set(readPermissions(tokenWith(claims)));

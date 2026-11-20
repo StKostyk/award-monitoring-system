@@ -17,6 +17,9 @@ export const MIN_STREAK = 3;
 /** Records H1 lists at most. */
 export const MAX_RECORDS = 3;
 
+/** Facts H4 lists at most. */
+export const MAX_FACTS = 4;
+
 const MONTHS = 12;
 const PERCENT = 100;
 
@@ -239,37 +242,43 @@ export function streak(
   return { since: (rows.at(-1)?.year ?? today.year) - years + 1, years };
 }
 
-/** The streak of years with awards, when it is at least `MIN_STREAK` long; one that reaches the start of the period names the period. */
+/** The streak of years with awards up to now, when it is at least `MIN_STREAK` long. */
 export function streakFact(source: FactSource): Fact | null {
   const found = streak(source.byYear, source.today);
-  if (found.years < MIN_STREAK) {
+  return found.years < MIN_STREAK ? null : { key: 'facts.streak', params: { years: found.years } };
+}
+
+/** The year with most awards, when at least two years have any. */
+export function bestYearFact(source: FactSource): Fact | null {
+  const peak = peakYear(source.byYear);
+  if (!peak || source.byYear.filter((year) => year.total > 0).length < 2) {
     return null;
   }
-  const first = Math.min(...source.byYear.map((year) => year.year));
-  return found.since === first
-    ? {
-        key: 'facts.streakPeriod',
-        params: { period: periodLabel({ from: first, to: found.since + found.years - 1 }) },
-      }
-    : { key: 'facts.streak', params: { since: found.since, years: found.years } };
+  return { key: 'facts.bestYear', params: { year: peak.year, count: peak.total } };
 }
 
-/** Every fact the counts support, in a fixed order. */
+/** The earliest year of the period with an award, when there is one. */
+export function firstAwardFact(source: FactSource): Fact | null {
+  const years = source.byYear.filter((year) => year.total > 0).map((year) => year.year);
+  return years.length === 0
+    ? null
+    : {
+        key: 'facts.firstAward',
+        params: { year: Math.min(...years), period: periodLabel(source.period) },
+      };
+}
+
+/** The facts the counts support, in a fixed order, at most `MAX_FACTS`. */
 export function facts(source: FactSource): Fact[] {
-  return [levelShareFact(source), growthFact(source), streakFact(source)].filter(
-    (fact): fact is Fact => fact !== null,
-  );
-}
-
-/**
- * One fact out of those given, chosen by the seed, so the same day shows the same fact.
- *
- * @param all the facts
- * @param seed any whole number, e.g. the day of the month
- * @returns the fact, or null when there is none
- */
-export function pickFact(all: Fact[], seed: number): Fact | null {
-  return all.length === 0 ? null : all[Math.abs(seed) % all.length];
+  return [
+    bestYearFact(source),
+    firstAwardFact(source),
+    streakFact(source),
+    growthFact(source),
+    levelShareFact(source),
+  ]
+    .filter((fact): fact is Fact => fact !== null)
+    .slice(0, MAX_FACTS);
 }
 
 /**

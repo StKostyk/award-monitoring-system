@@ -5,7 +5,7 @@ import { DEMO_PASSWORD, FRESH_PASSWORD, SEED, register, signIn, uniqueToken } fr
 const employee = {
   email: SEED.employee,
   password: DEMO_PASSWORD,
-  name: 'Анастасія Працівник',
+  name: 'Тест Автоматичний',
 };
 
 test.describe('authentication', () => {

@@ -314,8 +314,8 @@ Written in this PRD's PR, `x-status: planned`:
 ## 10. Manual verification
 
 Preconditions: `docker compose up -d --build` from the branch with the dev seed (`.\tools\reset-db.ps1` first),
-accounts `rector`, `dean.fmi`, `secretary.fmi`, `lecturer.fmi` (approved awards), `employee.fmi` (none) with the
-seed password; Mailpit at `http://localhost:8025`; Chrome at `http://localhost` and a second browser profile; a
+accounts `rector`, `dean.fmi`, `secretary.fmi`, `lecturer.fmi`, `employee.fmi` (approved awards), `e2e.employee`
+(none), `admin`, `gdpr` with the seed password; Mailpit at `http://localhost:8025`; Chrome at `http://localhost` and a second browser profile; a
 department of the Faculty of Mathematics and Informatics with no award in the current year (the seed's `NO_AWARDS`
 highlight on `/analytics/units/{fmi}`; if none, return its only current-year award first).
 
@@ -324,8 +324,8 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
 2. Compare K1 and T1 with `/analytics/university` for the same year; `GET /api/v1/analytics/university`. Expected:
    same totals; `byMonth` has 24 rows, Y-1 and Y, whose sums equal `byYear` of those years, 0 after the current
    month. (AC-2.1)
-3. Reload twice. Expected: the same «did you know» fact (it is picked by the day of the month); every fact and
-   record true against the analytics page. (AC-2.4)
+3. «Чи знаєте ви». Expected: up to four facts as a list (best year, first award, years in a row, growth or level
+   share, those with data); every fact and record true against the analytics page. (AC-2.4, 9.4.6 AC-3)
 4. «Налаштувати», move T2 first with the buttons, hide V6, «Готово», reload. Expected: T2 first, V6 gone. (AC-1.3)
 5. Toolbar scheme «Темна». Open the second profile, sign in as `rector`. Expected: dark scheme there. (AC-1.1)
 6. psql: `select color_scheme, layouts from dashboard_preferences` for the rector. Expected: `DARK`, the
@@ -349,7 +349,7 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
 15. «Експорт для резюме» → «Текст», then switch to English and → PDF. Expected: `awards-cv-<date>.txt|pdf`, awards
    by year, newest first; psql `select new_values from audit_logs where action = 'ANALYTICS_EXPORTED' order by id
    desc limit 2` shows `cv-text` and `cv-pdf` with the count. (AC-4.3, AC-4.6)
-16. Sign in as `employee.fmi`. Expected: empty state, export disabled. (AC-4.5)
+16. Sign in as `e2e.employee`. Expected: empty state, export disabled. (AC-4.5)
 17. Every dashboard at 360 px, light and dark, both languages. Expected: one column, no sideways scroll, no console
    error, axe clean. (AC-2.6, AC-3.5, AC-5.7)
 
@@ -385,6 +385,13 @@ highlight on `/analytics/units/{fmi}`; if none, return its only current-year awa
    in as it was before the edit (no partial save). (AC-1.3)
 30. Back after a reminder: browser back and forward. Expected: the card still «Нагадано …», no second mail.
    (AC-5.4)
+31. Sign in as `employee.fmi`, then `dean.fmi`. Expected: no «Головна» in the menu; the logo opens `/dashboard` and
+   `/hall-of-fame`; `employee.fmi` sees approved awards over several years on `/dashboard`. (9.4.6 AC-1, AC-5)
+32. Sign in as `admin`, open `/`. Expected: `/admin/users`; no «Головна», «Мої нагороди», «Моя аналітика» in the menu
+   or the command palette; `/dashboard` opens the forbidden page, `GET /api/v1/analytics/me` 403. (9.4.6 AC-1, AC-2)
+33. Sign in as `gdpr`, open `/`. Expected: `/compliance`, the same three entries gone, `/dashboard` forbidden.
+   (9.4.6 AC-2)
+34. The sign-in page. Expected: the claim as the headline, no count of approved awards. (9.4.6 AC-4)
 
 ### Run 2026-11-19
 

@@ -4,7 +4,6 @@ import {
   YearToDate,
   facts,
   levelAreas,
-  pickFact,
   records,
   yearToDate,
 } from '../../shared/widgets/facts';
@@ -43,7 +42,7 @@ export interface HallOfFameView {
   partialYear: number | null;
   byMonth: MonthCount[];
   records: Fact[];
-  fact: Fact | null;
+  facts: Fact[];
   top: TopPerson[];
   areas: LabelledCount[];
 }
@@ -55,7 +54,6 @@ export interface HallOfFameView {
  * @param top the people or units P2 lists, most awards first
  * @param leader the person or unit the records name, or null
  * @param today the current Kyiv month
- * @param seed the number that picks the fact of the day, e.g. the day of the month
  * @returns the data of every widget
  */
 export function hallOfFameView(
@@ -63,7 +61,6 @@ export function hallOfFameView(
   top: TopPerson[],
   leader: TopPerson | null,
   today: CalendarMonth,
-  seed: number,
 ): HallOfFameView {
   const year = source.period.to;
   const years = source.byYear.map((row) => ({ year: row.year, total: row.total }));
@@ -84,7 +81,7 @@ export function hallOfFameView(
     partialYear: source.partialYear ? year : null,
     byMonth: source.byMonth,
     records: records(counts, leader),
-    fact: pickFact(facts(counts), seed),
+    facts: facts(counts),
     top: top.slice(0, TOP_LIMIT),
     areas: levelAreas(source.byLevel),
   };

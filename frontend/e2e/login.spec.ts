@@ -27,7 +27,9 @@ async function brandSitsAboveContent(page: Page, brand: string, content: string)
 }
 
 test.describe('sign-in page brand', () => {
-  test('ac4_1 shows the ChNU brand, the count and the claim in the new look', async ({ page }) => {
+  test('ac4_1 shows the ChNU brand and the claim in the new look, without an award count', async ({
+    page,
+  }) => {
     const external: string[] = [];
     page.on('request', (request) => {
       if (!/^http:\/\/localhost(:\d+)?\//.test(request.url())) {
@@ -40,7 +42,6 @@ test.describe('sign-in page brand', () => {
     const brand = page.getByTestId('login-brand');
     await expect(brand).toContainText('Облік нагород ЧНУ');
     await expect(brand).toContainText('Чернівецький національний університет');
-    await expect(page.getByTestId('login-award-count')).toHaveText(/^\d[\d\s]* нагород[аи]?$/);
     await expect(brand).toContainText('Нагороди університету');
     expect(await background(page, '.brand')).toBe('rgb(94, 22, 33)');
     expect(await background(page, 'button[type="submit"]')).toBe('rgb(122, 31, 43)');
@@ -53,7 +54,7 @@ test.describe('sign-in page brand', () => {
 
     await page.getByRole('link', { name: 'English' }).click();
     await expect(brand).toContainText('ChNU Awards');
-    await expect(page.getByTestId('login-award-count')).toHaveText(/^\d[\d,]* awards?$/);
+    await expect(page.getByTestId('login-award-count')).toHaveCount(0);
     expect(external).toEqual([]);
   });
 

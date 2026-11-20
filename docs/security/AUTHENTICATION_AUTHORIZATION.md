@@ -506,7 +506,7 @@ public class TotpService {
 | **Permission** | **EMPLOYEE** | **FAC_SEC** | **DEAN** | **RECT_SEC** | **RECTOR** | **ADMIN** | **GDPR** |
 |----------------|:------------:|:-----------:|:--------:|:------------:|:----------:|:---------:|:--------:|
 | `award:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `analytics:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `analytics:read:own` | ✅ | ✅ | ✅ | ✅ | ✅ | - | - |
 | `analytics:read:department` | - | ✅ | ✅ | ✅ | ✅ | - | - |
 | `analytics:read:faculty` | - | - | ✅ | ✅ | ✅ | - | - |
 | `analytics:read:university` | - | - | - | ✅ | ✅ | - | - |
@@ -535,6 +535,11 @@ Command centre (9.4.5): a faculty secretary whose role is held on a faculty may 
 reads); the faculty stays out of `GET /analytics/units` and of the export. `POST /analytics/units/{id}/reminders`
 takes `analytics:read:department` plus an own or delegated `FACULTY_SECRETARY` or `DEAN` role whose scope covers the
 department (403 otherwise); the rector and the rector's secretary cannot remind.
+
+Personal sections (9.4.6): `analytics:read:own` belongs to the roles that enter awards (`EMPLOYEE` and the approval
+roles), so a `SYSTEM_ADMIN` or `GDPR_OFFICER` holding no other role gets 403 from `GET /analytics/me` and no «My
+dashboard». `award:read:own` stays with every role: the award read endpoints are gated on it and the data protection
+officer's oversight reads go through them; the browser application offers «My awards» only with `award:create`.
 
 ### 3.4 RBAC Implementation
 

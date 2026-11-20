@@ -7,14 +7,18 @@ import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { translateFact } from './facts';
 import { Fact } from './widget-data';
 
-/** H4: one generated fact, typed out letter by letter. */
+/** H4: the generated facts as a list, each typed out letter by letter. */
 @Component({
   selector: 'app-fact-widget',
   imports: [EmptyStateComponent, TranslocoPipe, TypedTextComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (text(); as sentence) {
-      <p class="fact" data-testid="fact"><app-typed-text [text]="sentence" /></p>
+    @if (sentences().length > 0) {
+      <ul class="facts">
+        @for (sentence of sentences(); track $index) {
+          <li class="fact" data-testid="fact"><app-typed-text [text]="sentence" /></li>
+        }
+      </ul>
     } @else {
       <app-empty-state icon="award" [text]="'widgets.empty' | transloco" />
     }
@@ -24,9 +28,16 @@ import { Fact } from './widget-data';
       display: block;
     }
 
-    .fact {
+    .facts {
+      display: grid;
+      gap: 12px;
       margin: 0;
-      font: var(--mat-sys-headline-small);
+      padding: 0;
+      list-style: none;
+    }
+
+    .fact {
+      font: var(--mat-sys-body-large);
     }
   `,
 })
@@ -34,12 +45,13 @@ export class FactWidgetComponent {
   private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
 
-  /** The fact, from `pickFact()` in `facts.ts`, or null when no generator has data. */
-  readonly fact = input.required<Fact | null>();
+  /** The facts, from `facts()` in `facts.ts`; empty when no generator has data. */
+  readonly facts = input.required<Fact[]>();
 
-  protected readonly text = computed(() => {
+  protected readonly sentences = computed(() => {
     this.language.current();
-    const fact = this.fact();
-    return fact ? translateFact(fact, (key, params) => this.transloco.translate(key, params)) : '';
+    return this.facts().map((fact) =>
+      translateFact(fact, (key, params) => this.transloco.translate(key, params)),
+    );
   });
 }

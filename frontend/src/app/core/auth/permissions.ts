@@ -167,6 +167,31 @@ export function canReadDirectory(permissions: TokenPermissions): boolean {
   return DIRECTORY_PERMISSIONS.some((permission) => permissions.hasPermission(permission));
 }
 
+/**
+ * The page a signed-in person starts on: the Hall of Fame of a rector or dean, the Command centre of a faculty or
+ * rector's secretary, the personal dashboard of anybody with personal analytics, the compliance page of a GDPR
+ * officer, the user directory of an administrator; an account without any, such as one waiting for its membership,
+ * stays on the home page.
+ *
+ * @param permissions the permissions of the access token
+ * @return the path of the start page
+ */
+export function roleHome(permissions: TokenPermissions): string {
+  if (canOpenHallOfFame(permissions)) {
+    return '/hall-of-fame';
+  }
+  if (canOpenCommandCentre(permissions)) {
+    return '/command-centre';
+  }
+  if (canReadOwnAnalytics(permissions)) {
+    return '/dashboard';
+  }
+  if (canReadCompliance(permissions)) {
+    return '/compliance';
+  }
+  return canReadDirectory(permissions) ? '/admin/users' : '/';
+}
+
 /** Roles that add and manage people without an account, held or lent. */
 const PEOPLE_ROLES: RoleType[] = ['FACULTY_SECRETARY', 'DEAN'];
 

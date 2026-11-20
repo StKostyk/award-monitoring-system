@@ -1,6 +1,7 @@
 import { IconName } from '../../shared/icons/icons';
 import {
   TokenPermissions,
+  canCreateAwards,
   canDelegate,
   canManagePeople,
   canOpenCommandCentre,
@@ -8,10 +9,10 @@ import {
   canReadCompliance,
   canReadDirectory,
   canReadOwnAnalytics,
-  canReadOwnAwards,
   canReadUnitAnalytics,
   canReadUniversityAnalytics,
   canReview,
+  roleHome,
 } from '../auth/permissions';
 
 /** A section of the app offered in the side menu and in the command palette. */
@@ -33,8 +34,11 @@ export interface NavEntry {
 
 const ANYONE = (): boolean => true;
 
+/** Home stays in the menu only for a person whose roles open no start page of their own. */
+const HOMELESS = (permissions: TokenPermissions): boolean => roleHome(permissions) === '/';
+
 export const NAV_ENTRIES: readonly NavEntry[] = [
-  entry('home', '/', 'app.home', 'house', ANYONE, { exact: true, anonymous: true }),
+  entry('home', '/', 'app.home', 'house', HOMELESS, { exact: true, anonymous: true }),
   entry('hall-of-fame', '/hall-of-fame', 'hallOfFame.title', 'crown', canOpenHallOfFame),
   entry(
     'command-centre',
@@ -43,7 +47,7 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
     'layout-dashboard',
     canOpenCommandCentre,
   ),
-  entry('awards', '/awards', 'awards.title', 'award', canReadOwnAwards),
+  entry('awards', '/awards', 'awards.title', 'award', canCreateAwards),
   entry('dashboard', '/dashboard', 'analytics.title', 'chart-line', canReadOwnAnalytics),
   entry(
     'unit-analytics',
