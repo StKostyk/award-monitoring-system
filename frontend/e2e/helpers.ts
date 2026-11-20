@@ -166,9 +166,17 @@ export async function freshEmployee(browser: Browser, name: string): Promise<str
   return email;
 }
 
+/** A page in a new browser context, with no session or storage shared; closing the page closes the context. */
+export async function freshContextPage(browser: Browser): Promise<Page> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  page.on('close', () => void context.close());
+  return page;
+}
+
 /** A page in a new browser context with the account signed in; native dialogs are accepted. */
 export async function signedInAs(browser: Browser, email: string, password: string): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+  const page = await freshContextPage(browser);
   page.on('dialog', (dialog) => void dialog.accept());
   await signIn(page, email, password);
   await expect(page.getByTestId('user-menu')).toBeVisible();

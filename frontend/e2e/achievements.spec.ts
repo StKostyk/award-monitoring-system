@@ -1,6 +1,7 @@
 import { Browser, Page, expect, test } from './fixtures';
 
 import {
+  freshContextPage,
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
@@ -199,7 +200,7 @@ async function publicAndShared(
 
 /** A page without a session that records every console error. */
 async function anonymous(browser: Browser): Promise<{ page: Page; errors: string[] }> {
-  const page = await (await browser.newContext()).newPage();
+  const page = await freshContextPage(browser);
   const errors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') {

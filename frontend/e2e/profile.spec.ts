@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
-import { linkFor, registerAndVerify, signIn } from './helpers';
+import { freshContextPage, linkFor, registerAndVerify, signIn } from './helpers';
 
 const PASSWORD = 'correct-horse-battery';
 
@@ -88,7 +88,7 @@ test.describe('profile', () => {
     await page.getByTestId('email-change-submit').click();
     await expect(page.getByTestId('profile-link-sent')).toContainText(moved);
 
-    const other = await (await browser.newContext()).newPage();
+    const other = await freshContextPage(browser);
     await registerAndVerify(other, host, PASSWORD);
     await signIn(other, host, PASSWORD);
     await expect(other.getByTestId('user-name')).toBeVisible();

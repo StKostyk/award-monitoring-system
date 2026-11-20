@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { Page, expect, test } from './fixtures';
 
 import {
+  freshContextPage,
   FRESH_PASSWORD,
   SEED,
   freshEmployee,
@@ -175,7 +176,7 @@ test.describe('award documents', () => {
     await expect(row(page, 'диплом.pdf')).toBeVisible();
     const id = /\/awards\/(\d+)\/edit/.exec(page.url())?.[1] ?? '';
 
-    const other = await (await browser.newContext()).newPage();
+    const other = await freshContextPage(browser);
     await signIn(other, employee, FRESH_PASSWORD);
     await expect(other.getByTestId('nav-awards')).toBeVisible();
     await other.goto(`/awards/${id}`);

@@ -29,7 +29,8 @@
 
 .PARAMETER TimeoutMinutes
     Stops the Playwright run after this many minutes (Playwright --global-timeout), so a run interrupted
-    by a sleeping machine fails instead of hanging. Default 45.
+    by a sleeping machine fails instead of hanging. Default 90: the full suite with two workers takes
+    longer than 45 minutes.
 
 .PARAMETER RetryLimit
     When at most this many tests fail, they run once more with one worker (Playwright --last-failed) and the
@@ -53,7 +54,7 @@
 param(
     [string]$Grep,
     [int]$Workers = 2,
-    [int]$TimeoutMinutes = 45,
+    [int]$TimeoutMinutes = 90,
     [int]$RetryLimit = 3,
     [int]$StartMinutes = 3
 )

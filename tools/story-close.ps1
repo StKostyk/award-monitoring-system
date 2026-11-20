@@ -42,3 +42,10 @@ foreach ($story in $closing) {
     if ($DryRun) { Write-Host "Would close: $($story.Key) (PR #$($story.Pr) merged)" }
     else { Close-Story $story -NoTracker:$NoTracker }
 }
+if (-not $DryRun) {
+    $rows = @(git status --porcelain -- docs/epics docs/project-management/BACKLOG.md)
+    if ($rows) {
+        Write-Host "Done rows written, not committed ($($rows.Count) file(s)); they go into the next commit:"
+        $rows | ForEach-Object { Write-Host "  $_" }
+    }
+}

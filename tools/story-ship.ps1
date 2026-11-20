@@ -57,6 +57,9 @@ if ($Key) { $Title = $Title -replace "^\s*$([regex]::Escape($Key))\s*:\s*", '' }
 $prTitle = if ($Key) { "${Key}: $Title" } else { $Title }
 if (-not (Test-Path $BodyFile)) { throw "No pull request body at $BodyFile" }
 
+if ($SkipGate -and @(git diff --name-only --merge-base "origin/$Base" -- docs/api/openapi.yml backend).Count) {
+    throw '-SkipGate is for documentation-only changes; this branch changes openapi.yml or backend/.'
+}
 if (-not $SkipGate) {
     $summary = Join-Path $root 'build/gate-summary.txt'
     if (-not (Test-Path $summary)) { throw 'No gate run found; run .\tools\gate.ps1 first.' }
