@@ -11,6 +11,22 @@ import { peakYear } from './facts';
 import { YearTotal } from './widget-data';
 
 const PARTIAL_OPACITY = 0.5;
+const ONE_LINE_ROOM = 24;
+const TWO_LINE_ROOM = 40;
+
+/**
+ * Anchors a bar annotation so that it grows away from the nearest chart edge.
+ *
+ * @param index the bar's position
+ * @param count the number of bars
+ * @return the label alignment for echarts
+ */
+export function edgeAlign(index: number, count: number): 'left' | 'center' | 'right' {
+  if (count > 1 && index === count - 1) {
+    return 'right';
+  }
+  return count > 1 && index === 0 ? 'left' : 'center';
+}
 
 /** A year of T1 with what marks it. */
 export interface TrendRow extends YearTotal {
@@ -100,7 +116,13 @@ export class TrendWidgetComponent {
     const peakLabel = this.transloco.translate('widgets.trend.peak');
     const partialLabel = this.transloco.translate('widgets.trend.partial');
     return {
-      grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
+      grid: {
+        left: 8,
+        right: 8,
+        top: this.rows().some((row) => row.peak && row.partial) ? TWO_LINE_ROOM : ONE_LINE_ROOM,
+        bottom: 8,
+        containLabel: true,
+      },
       tooltip: tooltip(palette, 'axis'),
       xAxis: categoryAxis(
         palette,
@@ -112,7 +134,7 @@ export class TrendWidgetComponent {
           type: 'bar',
           name: this.transloco.translate('widgets.awards'),
           barMaxWidth: 32,
-          data: this.rows().map((row) => ({
+          data: this.rows().map((row, index, rows) => ({
             value: row.total,
             itemStyle: {
               color: row.peak ? palette.series[1] : palette.bar,
@@ -122,10 +144,12 @@ export class TrendWidgetComponent {
             label: {
               show: row.peak || row.partial,
               position: 'top',
+              align: edgeAlign(index, rows.length),
+              lineHeight: 14,
               color: palette.text,
               formatter: [row.peak ? peakLabel : '', row.partial ? partialLabel : '']
                 .filter(Boolean)
-                .join(' · '),
+                .join('\n'),
             },
           })),
         },

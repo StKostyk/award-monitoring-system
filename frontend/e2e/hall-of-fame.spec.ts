@@ -4,6 +4,7 @@ import {
   SEED,
   freshEmployee,
   seriousViolations,
+  signInAsSeed,
   signedIn,
   signedInAs,
   sql,
@@ -141,6 +142,33 @@ test.describe('Hall of Fame', () => {
 
     await page.goto('/hall-of-fame');
     await expect(page).toHaveURL(/\/forbidden$/);
+  });
+
+  test('9.5 ac1_6 the trend annotations stay inside the chart at 360 px in English', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await signInAsSeed(page, SEED.dean);
+    await page.evaluate(() => localStorage.setItem('lang', 'en'));
+    await page.goto('/hall-of-fame');
+    const chart = page.getByTestId('widget-TREND').locator('[data-testid="chart-canvas"] svg');
+    await expect(chart.locator('text', { hasText: /Peak|Year to date/ }).first()).toBeVisible();
+
+    const outside = await chart.evaluate((svg) => {
+      const frame = svg.getBoundingClientRect();
+      return Array.from(svg.querySelectorAll('text'))
+        .filter((text) => /Peak|Year to date/.test(text.textContent ?? ''))
+        .map((text) => ({ text: text.textContent, box: text.getBoundingClientRect() }))
+        .filter(
+          ({ box }) =>
+            box.left < frame.left - 1 ||
+            box.right > frame.right + 1 ||
+            box.top < frame.top - 1 ||
+            box.bottom > frame.bottom + 1,
+        )
+        .map(({ text }) => text);
+    });
+    expect(outside).toEqual([]);
   });
 
   test('ac3_5 the widgets follow the hall of fame layout and stack at 360 px', async ({

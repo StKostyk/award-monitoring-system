@@ -44,6 +44,9 @@ const REPORT = join(process.cwd(), '..', 'build', 'accessibility-report.json');
  */
 const EXCEPTIONS: { rule: string; selector: string; reason: string; issue: string }[] = [];
 
+/** The best-practice rule that content sits in landmarks; it fails a signed-in page whatever its impact. */
+const LANDMARK_RULE = 'region';
+
 /** Moderate and minor findings per test, rule and page: the most nodes any one scan of the page reported. */
 const minor: Record<string, Record<string, Record<string, number>>> = {};
 
@@ -57,8 +60,17 @@ interface Scan {
 
 async function violations(page: Page): Promise<AxeResults['violations']> {
   const excepted = [...new Set(EXCEPTIONS.map((exception) => exception.rule))];
-  const found = (await new AxeBuilder({ page }).withTags(AXE_TAGS).disableRules(excepted).analyze())
-    .violations;
+  const found = (
+    await new AxeBuilder({ page })
+      .options({
+        runOnly: { type: 'tag', values: AXE_TAGS },
+        rules: {
+          [LANDMARK_RULE]: { enabled: true },
+          ...Object.fromEntries(excepted.map((rule) => [rule, { enabled: false }])),
+        },
+      })
+      .analyze()
+  ).violations;
   for (const rule of excepted) {
     let builder = new AxeBuilder({ page }).withRules([rule]);
     for (const exception of EXCEPTIONS.filter((item) => item.rule === rule)) {
@@ -75,7 +87,7 @@ async function scan({ page, label, where, language, signedIn }: Scan): Promise<s
   const report = (minor[test.info().title] ??= {});
   const problems: string[] = [];
   for (const violation of await violations(page)) {
-    if (isSerious(violation)) {
+    if (isSerious(violation) || (signedIn && violation.id === LANDMARK_RULE)) {
       problems.push(
         `${where}: ${violation.id} ${violation.nodes.map((node) => node.target).join(' | ')}`,
       );

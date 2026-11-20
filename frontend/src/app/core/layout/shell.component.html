@@ -10,14 +10,14 @@
     [disableClose]="wide()"
     data-testid="side-nav"
   >
-    <div class="shell__brand shell__brand--drawer">
-      <img class="shell__logo" [src]="brand().logo" alt="" />
-      <span class="shell__brand-text">
-        <span class="shell__product">{{ brands.text(brand().name) }}</span>
-        <span class="shell__organization">{{ brands.text(brand().organization) }}</span>
-      </span>
-    </div>
     <nav [attr.aria-label]="'app.navigation' | transloco">
+      <div class="shell__brand shell__brand--drawer">
+        <img class="shell__logo" [src]="brand().logo" alt="" />
+        <span class="shell__brand-text">
+          <span class="shell__product">{{ brands.text(brand().name) }}</span>
+          <span class="shell__organization">{{ brands.text(brand().organization) }}</span>
+        </span>
+      </div>
       <mat-nav-list class="shell__nav">
         @for (item of entries(); track item.id) {
           <a
@@ -45,7 +45,7 @@
       <span></span>
       <span></span>
     </div>
-    <mat-toolbar class="shell__toolbar">
+    <mat-toolbar class="shell__toolbar" role="banner">
       @if (auth.isAuthenticated() && !wide()) {
         <button
           mat-icon-button

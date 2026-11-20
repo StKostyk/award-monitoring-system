@@ -77,7 +77,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5x | 9.5.4 Users with the person beside the list | 9.5 | 5 | SCRUM-166 | #459 | no | To do |
 | 5w | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | To do |
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | To do |
-| 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | To do |
+| 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | In review |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 
