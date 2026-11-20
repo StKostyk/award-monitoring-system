@@ -1,13 +1,12 @@
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -16,7 +15,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { PersonDialogComponent } from '../person-dialog/person-dialog.component';
 import { AdminUsersActions } from '../store/admin-users.actions';
 import { adminUsersFeature } from '../store/admin-users.feature';
-import { UserPage, UserSummary } from '../users.service';
+import { UserFilters, UserPage, UserSummary, UsersService } from '../users.service';
 import { UserListComponent } from './user-list.component';
 
 const department = {
@@ -87,28 +86,44 @@ const translations = {
         empty: 'Користувачів не знайдено',
         noRoles: 'Немає ролей',
         unconfirmedBadge: 'Не підтверджено',
-        confirm: 'Підтвердити',
-        correctDepartment: 'Змінити кафедру',
         filters: { q: 'Пошук', qHint: 'Щонайменше 2 символи', role: 'Роль', status: 'Статус' },
-        columns: { name: 'Користувач', email: 'Пошта', organization: 'Підрозділ' },
         paginator: { itemsPerPage: 'Рядків на сторінці', range: '{{from}}–{{to}} з {{total}}' },
+        counts: {
+          total: 'У списку: {{count}}',
+          waiting: 'Чекають перевірки членства: {{count}}',
+          blocked: 'Заблоковано: {{count}}',
+        },
+        pick: 'Оберіть людину в списку',
       },
       status: { ACTIVE: 'Активний', UNCLAIMED: 'Без облікового запису' },
       people: {
         add: 'Додати колегу без облікового запису',
         badge: 'Без облікового запису',
-        unknownAddress: 'Адреса невідома',
       },
-      problems: { 'role-already-assigned': 'Роль уже призначено' },
     },
   },
 };
 
+@Component({ template: '<p data-testid="pane-stub">pane</p>' })
+class PaneStubComponent {}
+
+function counted(total: number): UserPage {
+  return { ...page, content: [], totalElements: total };
+}
+
+function countsBy(query: UserFilters): number {
+  if (query.unconfirmed) {
+    return 3;
+  }
+  return query.status === 'SUSPENDED' ? 1 : 42;
+}
+
 describe('UserListComponent', () => {
   let fixture: ComponentFixture<UserListComponent>;
   let store: Store;
+  let api: { list: ReturnType<typeof vi.fn> };
 
-  beforeEach(async () => {
+  async function setUp(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         UserListComponent,
@@ -119,38 +134,116 @@ describe('UserListComponent', () => {
         }),
       ],
       providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        provideRouter([]),
+        provideRouter([
+          {
+            path: 'admin/users',
+            component: UserListComponent,
+            children: [{ path: ':id', component: PaneStubComponent }],
+          },
+        ]),
         provideStore(),
         provideState(adminUsersFeature),
+        { provide: UsersService, useValue: api },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { permissions } },
       ],
     }).compileComponents();
-    permissions.set(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] })));
     store = TestBed.inject(Store);
+  }
+
+  beforeEach(async () => {
+    api = { list: vi.fn((query: UserFilters) => of(counted(countsBy(query)))) };
+    permissions.set(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] })));
+    await setUp();
     fixture = TestBed.createComponent(UserListComponent);
     fixture.detectChanges();
   });
 
-  it('ac2_10_lists_users_with_their_roles_status_and_the_unconfirmed_badge', () => {
+  function rows(): HTMLElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('[data-testid="user-link"]'));
+  }
+
+  it('ac4_1_lists_people_with_initials_role_unit_and_status_chips', () => {
     store.dispatch(AdminUsersActions.usersLoaded({ page }));
     fixture.detectChanges();
-    const rows: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('tbody tr'));
 
-    expect(rows).toHaveLength(2);
-    expect(rows[0].textContent).toContain('Нова Олена');
-    expect(rows[0].textContent).toContain('Кафедра алгебри');
-    expect(rows[0].textContent).toContain('Активний');
-    expect(rows[0].querySelector('[data-testid="unconfirmed-badge"]')?.textContent).toContain(
+    expect(rows()).toHaveLength(2);
+    expect(rows()[0].textContent).toContain('Нова Олена');
+    expect(rows()[0].textContent).toContain('ОН');
+    expect(rows()[0].textContent).toContain('Немає ролей · Кафедра алгебри');
+    expect(rows()[0].querySelector('[data-testid="user-status"]')?.textContent).toContain(
+      'Активний',
+    );
+    expect(rows()[0].querySelector('[data-testid="unconfirmed-badge"]')?.textContent).toContain(
       'Не підтверджено',
     );
-    expect(rows[1].querySelector('[data-testid="unconfirmed-badge"]')).toBeNull();
-    expect(rows[1].textContent).toContain('Працівник');
-    expect(rows[0].querySelector('[data-testid="user-link"]')?.getAttribute('href')).toBe(
-      '/admin/users/7',
+    expect(rows()[1].querySelector('[data-testid="unconfirmed-badge"]')).toBeNull();
+    expect(rows()[1].textContent).toContain('Працівник · Кафедра алгебри');
+    expect(rows()[0].getAttribute('href')).toBe('/admin/users/7');
+    expect(rows()[0].dataset['email']).toBe('newcomer@chnu.edu.ua');
+    expect(fixture.nativeElement.querySelector('[data-testid="users-pick-hint"]')).not.toBeNull();
+  });
+
+  it('ac4_2_counts_the_accounts_the_waiting_and_the_blocked_in_the_context_line', () => {
+    expect(api.list).toHaveBeenCalledWith(
+      expect.objectContaining({ size: 1, unconfirmed: true, status: 'ACTIVE' }),
     );
+    expect(api.list).toHaveBeenCalledWith(
+      expect.objectContaining({ size: 1, status: 'SUSPENDED' }),
+    );
+    expect(fixture.nativeElement.querySelector('[data-testid="page-context"]')?.textContent).toBe(
+      'У списку: 42 · Чекають перевірки членства: 3 · Заблоковано: 1',
+    );
+  });
+
+  it('ac4_2_ac4_5_counts_again_after_a_change_in_the_pane', () => {
+    vi.useFakeTimers();
+    api.list.mockClear();
+
+    store.dispatch(AdminUsersActions.refreshed());
+    vi.advanceTimersByTime(300);
+    vi.useRealTimers();
+
+    expect(api.list).toHaveBeenCalledWith(
+      expect.objectContaining({ size: 1, status: 'SUSPENDED' }),
+    );
+  });
+
+  it('ac4_2_leaves_out_a_count_that_failed', () => {
+    api.list.mockImplementation((query: UserFilters) =>
+      query.unconfirmed ? throwError(() => new Error('down')) : of(counted(5)),
+    );
+    const other = TestBed.createComponent(UserListComponent);
+    other.detectChanges();
+
+    expect(other.nativeElement.querySelector('[data-testid="page-context"]')?.textContent).toBe(
+      'У списку: 5 · Заблоковано: 5',
+    );
+  });
+
+  it('ac4_1_ac4_3_a_direct_link_selects_the_row_and_opens_the_pane', async () => {
+    const harness = await RouterTestingHarness.create();
+    const list = await harness.navigateByUrl('/admin/users/5', UserListComponent);
+    store.dispatch(AdminUsersActions.usersLoaded({ page }));
+    harness.detectChanges();
+    const element = harness.routeNativeElement as HTMLElement;
+
+    expect(list.selectedId()).toBe(5);
+    expect(
+      element.querySelector('[data-testid="user-link"][aria-current="true"]')?.textContent,
+    ).toContain('Працівник Анастасія');
+    expect(element.querySelector('[data-testid="pane-stub"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="users-pick-hint"]')).toBeNull();
+
+    await harness.navigateByUrl('/admin/users/7');
+
+    expect(list.selectedId()).toBe(7);
+
+    const dispatch = vi.spyOn(store, 'dispatch');
+    await harness.navigateByUrl('/admin/users');
+
+    expect(list.selectedId()).toBeNull();
+    expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.refreshed());
   });
 
   it('ac2_10_ignores_a_free_text_filter_shorter_than_two_characters', () => {
@@ -185,48 +278,6 @@ describe('UserListComponent', () => {
     expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.pageChanged({ page: 2, size: 50 }));
   });
 
-  it('ac2_7_confirms_membership_with_the_users_own_department_in_one_click', () => {
-    store.dispatch(AdminUsersActions.usersLoaded({ page }));
-    fixture.detectChanges();
-    const dispatch = vi.spyOn(store, 'dispatch');
-
-    fixture.nativeElement.querySelector('[data-testid="confirm-membership"]').click();
-
-    expect(dispatch).toHaveBeenCalledWith(
-      AdminUsersActions.membershipConfirmed({ id: 7, organizationId: 64 }),
-    );
-  });
-
-  it('ac4_2_links_the_chosen_colleague_instead_of_a_plain_confirmation', () => {
-    store.dispatch(AdminUsersActions.usersLoaded({ page }));
-    fixture.detectChanges();
-    const dialog = TestBed.inject(MatDialog);
-    vi.spyOn(dialog, 'open').mockReturnValue({
-      afterClosed: () => of({ organizationId: 64, person: { id: 41, version: 3 } }),
-    } as ReturnType<typeof dialog.open>);
-    const dispatch = vi.spyOn(store, 'dispatch');
-
-    fixture.nativeElement.querySelector('[data-testid="correct-department"]').click();
-
-    expect(dispatch).toHaveBeenCalledWith(
-      AdminUsersActions.membershipLinked({ id: 7, personId: 41, version: 3 }),
-    );
-  });
-
-  it('ac2_7_renders_a_refused_confirmation_inline_on_its_row', () => {
-    store.dispatch(AdminUsersActions.usersLoaded({ page }));
-    store.dispatch(
-      AdminUsersActions.membershipConfirmFailed({ id: 7, problem: 'role-already-assigned' }),
-    );
-    fixture.detectChanges();
-    const rows: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('tbody tr'));
-
-    expect(rows[0].querySelector('[data-testid="confirm-error"]')?.textContent).toContain(
-      'Роль уже призначено',
-    );
-    expect(rows[1].querySelector('[data-testid="confirm-error"]')).toBeNull();
-  });
-
   it('ac2_10_shows_the_empty_state_when_nothing_matches', () => {
     store.dispatch(
       AdminUsersActions.usersLoaded({ page: { ...page, content: [], totalElements: 0 } }),
@@ -241,23 +292,23 @@ describe('UserListComponent', () => {
   it('ac1_9_lists_a_person_without_an_account_with_the_chip_and_no_placeholder_address', () => {
     store.dispatch(AdminUsersActions.usersLoaded({ page: { ...page, content: [unclaimed] } }));
     fixture.detectChanges();
-    const row: HTMLElement = fixture.nativeElement.querySelector('tbody tr');
+    const row = rows()[0];
 
     expect(row.querySelector('[data-testid="unclaimed-badge"]')?.textContent).toContain(
       'Без облікового запису',
     );
     expect(row.querySelector('[data-testid="unconfirmed-badge"]')).toBeNull();
-    expect(row.querySelector('[data-testid="confirm-membership"]')).toBeNull();
-    expect(row.textContent).toContain('Адреса невідома');
     expect(row.textContent).not.toContain('unclaimed.invalid');
+    expect(row.dataset['email']).toBeUndefined();
   });
 
-  it('ac1_9_offers_the_add_button_to_a_secretary_and_opens_the_new_person', () => {
+  it('ac1_9_ac4_4_offers_the_add_button_and_selects_the_new_person_in_a_refreshed_list', () => {
     const dialog = TestBed.inject(MatDialog);
     const open = vi
       .spyOn(dialog, 'open')
       .mockReturnValue({ afterClosed: () => of({ id: 41 }) } as ReturnType<typeof dialog.open>);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const dispatch = vi.spyOn(store, 'dispatch');
     const button: HTMLButtonElement = fixture.nativeElement.querySelector(
       '[data-testid="person-add-open"]',
     );
@@ -269,6 +320,7 @@ describe('UserListComponent', () => {
       PersonDialogComponent,
       expect.objectContaining({ data: { person: null } }),
     );
+    expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.refreshed());
     expect(navigate).toHaveBeenCalledWith(['/admin/users', 41]);
   });
 

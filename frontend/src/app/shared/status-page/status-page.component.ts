@@ -13,7 +13,11 @@ import { IconName } from '../icons/icons';
   template: `
     <section class="status-page__card">
       <span class="status-page__icon" aria-hidden="true"><app-icon [name]="icon()" /></span>
-      <h1 class="status-page__title">{{ title() }}</h1>
+      @if (level() === 2) {
+        <h2 class="status-page__title">{{ title() }}</h2>
+      } @else {
+        <h1 class="status-page__title">{{ title() }}</h1>
+      }
       <p class="status-page__text">{{ text() }}</p>
       <div class="status-page__actions"><ng-content /></div>
     </section>
@@ -82,4 +86,6 @@ export class StatusPageComponent {
   readonly title = input.required<string>();
   /** The translated sentence. */
   readonly text = input.required<string>();
+  /** The heading level: 1 for a page of its own, 2 inside a pane of a page that has its heading. */
+  readonly level = input<1 | 2>(1);
 }

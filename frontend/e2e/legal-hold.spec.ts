@@ -8,6 +8,7 @@ import {
   seriousViolations,
   signIn,
   sql,
+  userRow,
 } from './helpers';
 
 const { gdpr, dean } = SEED;
@@ -17,7 +18,7 @@ const LIFT_REASON = 'Inspection closed without findings';
 async function openUser(page: Page, email: string): Promise<void> {
   await page.goto('/admin/users');
   await page.getByTestId('filter-q').fill(email);
-  await page.getByRole('row').filter({ hasText: email }).getByTestId('user-link').click();
+  await userRow(page, email).click();
   await expect(page.getByTestId('detail-email')).toHaveText(email);
 }
 

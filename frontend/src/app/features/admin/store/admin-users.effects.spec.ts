@@ -94,11 +94,27 @@ describe('AdminUsersEffects', () => {
     expect(await result).toEqual(AdminUsersActions.usersLoadFailed({ problem: 'network' }));
   });
 
-  it('ac2_7_confirms_membership_with_the_employee_role_and_reloads_the_list', async () => {
-    const result = firstValueFrom(effects.confirmMembership$);
+  it('ac4_5_reloads_only_the_list_when_another_person_is_open_by_then', async () => {
+    TestBed.inject(Store).dispatch(AdminUsersActions.userLoaded({ user: { ...detail, id: 9 } }));
+    const emitted: Action[] = [];
+    const subscription = effects.confirmMembership$.subscribe((action) => emitted.push(action));
     actions$.next(AdminUsersActions.membershipConfirmed({ id: 7, organizationId: 64 }));
+    subscription.unsubscribe();
 
-    expect(await result).toEqual(AdminUsersActions.reloaded());
+    expect(emitted).toEqual([AdminUsersActions.reloaded()]);
+  });
+
+  it('ac2_7_ac4_5_confirms_membership_and_reloads_the_list_and_the_pane', async () => {
+    TestBed.inject(Store).dispatch(AdminUsersActions.userLoaded({ user: detail }));
+    const emitted: Action[] = [];
+    const subscription = effects.confirmMembership$.subscribe((action) => emitted.push(action));
+    actions$.next(AdminUsersActions.membershipConfirmed({ id: 7, organizationId: 64 }));
+    subscription.unsubscribe();
+
+    expect(emitted).toEqual([
+      AdminUsersActions.reloaded(),
+      AdminUsersActions.userReloaded({ id: 7 }),
+    ]);
     expect(api.assignRole).toHaveBeenCalledWith(7, {
       role: 'EMPLOYEE',
       organizationId: 64,

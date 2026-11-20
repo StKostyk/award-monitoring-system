@@ -6,7 +6,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { NEVER, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -107,8 +107,10 @@ describe('UserDetailComponent', () => {
   let store: Store;
   let dialog: { open: ReturnType<typeof vi.fn> };
   let api: { revokeRole: ReturnType<typeof vi.fn> };
+  let params: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
+    params = new BehaviorSubject(convertToParamMap({ id: '7' }));
     dialog = { open: vi.fn() };
     api = { revokeRole: vi.fn().mockReturnValue(of(undefined)) };
     await TestBed.configureTestingModule({
@@ -134,7 +136,7 @@ describe('UserDetailComponent', () => {
         },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: '7' }) } },
+          useValue: { paramMap: params },
         },
       ],
     }).compileComponents();
@@ -187,7 +189,7 @@ describe('UserDetailComponent', () => {
     const card = fixture.nativeElement.querySelector(
       'app-status-page[data-testid="detail-not-found"]',
     );
-    expect(card?.querySelector('h1')?.textContent).toContain('Користувача не знайдено');
+    expect(card?.querySelector('h2')?.textContent).toContain('Користувача не знайдено');
   });
 
   it('ac2_9_states_that_a_new_role_reaches_the_session_with_the_next_refresh_or_sign_in', () => {
@@ -289,6 +291,91 @@ describe('UserDetailComponent', () => {
 
     expect(fixture.nativeElement.querySelector('app-person-card')).toBeNull();
   });
+
+  it('ac4_1_follows_the_selected_id_and_names_the_person_below_the_page_heading', () => {
+    const dispatch = vi.spyOn(store, 'dispatch');
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('h1')).toBeNull();
+    expect(fixture.nativeElement.querySelector('h2.admin__name')).not.toBeNull();
+
+    params.next(convertToParamMap({ id: '9' }));
+
+    expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.userOpened({ id: 9 }));
+  });
+
+  it('ac2_7_ac4_5_confirms_membership_in_the_pane_with_the_own_department', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user: { ...user, membershipConfirmed: false } }));
+    fixture.detectChanges();
+    const dispatch = vi.spyOn(store, 'dispatch');
+
+    fixture.nativeElement.querySelector('[data-testid="confirm-membership"]').click();
+
+    expect(dispatch).toHaveBeenCalledWith(
+      AdminUsersActions.membershipConfirmed({ id: 7, organizationId: user.organization.id }),
+    );
+  });
+
+  it('ac4_2_links_the_chosen_colleague_instead_of_a_plain_confirmation', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user: { ...user, membershipConfirmed: false } }));
+    fixture.detectChanges();
+    dialog.open.mockReturnValue({
+      afterClosed: () => of({ organizationId: 64, person: { id: 41, version: 3 } }),
+    });
+    const dispatch = vi.spyOn(store, 'dispatch');
+
+    fixture.nativeElement.querySelector('[data-testid="correct-department"]').click();
+
+    expect(dispatch).toHaveBeenCalledWith(
+      AdminUsersActions.membershipLinked({ id: 7, personId: 41, version: 3 }),
+    );
+  });
+
+  it('ac2_7_renders_a_refused_confirmation_and_hides_the_actions_once_confirmed', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user: { ...user, membershipConfirmed: false } }));
+    store.dispatch(
+      AdminUsersActions.membershipConfirmFailed({ id: 7, problem: 'role-already-assigned' }),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="confirm-error"]')).not.toBeNull();
+
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="confirm-membership"]')).toBeNull();
+  });
+
+  it('ac4_5_keeps_an_answer_about_the_previous_person_out_of_the_pane', () => {
+    const answer = new Subject<void>();
+    api.revokeRole.mockReturnValue(answer);
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    fixture.nativeElement.querySelector('[data-testid="revoke-role"]').click();
+    params.next(convertToParamMap({ id: '9' }));
+    const dispatch = vi.spyOn(store, 'dispatch');
+
+    answer.next();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.message()).toBeNull();
+    expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.refreshed());
+    expect(dispatch).not.toHaveBeenCalledWith(AdminUsersActions.userReloaded({ id: 7 }));
+  });
+
+  it('ac4_5_refreshes_the_list_row_after_a_revocation', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    const dispatch = vi.spyOn(store, 'dispatch');
+
+    fixture.nativeElement.querySelector('[data-testid="revoke-role"]').click();
+
+    expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.userReloaded({ id: 7 }));
+    expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.refreshed());
+  });
 });
 
 describe('UserDetailComponent for a GDPR officer', () => {
@@ -323,7 +410,7 @@ describe('UserDetailComponent for a GDPR officer', () => {
         },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: '7' }) } },
+          useValue: { paramMap: of(convertToParamMap({ id: '7' })) },
         },
       ],
     }).compileComponents();

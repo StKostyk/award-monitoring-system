@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 
 import AxeBuilder from '@axe-core/playwright';
-import type { Browser, Page } from '@playwright/test';
+import type { Browser, Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 const mailpit = 'http://localhost:8025';
@@ -329,4 +329,11 @@ export function pastDay(): string {
 export function shownDay(isoDay: string): string {
   const [year, month, day] = isoDay.split('-');
   return `${day}.${month}.${year}`;
+}
+
+/** A row of the users page, by the e-mail address of the account or by a part of the name. */
+export function userRow(page: Page, text: string): Locator {
+  return text.includes('@')
+    ? page.locator(`[data-testid="user-link"][data-email="${text}"]`)
+    : page.getByTestId('user-link').filter({ hasText: text });
 }

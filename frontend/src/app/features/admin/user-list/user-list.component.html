@@ -1,164 +1,134 @@
-<div class="admin__heading">
-  <h1 class="admin__title" id="admin-users-title">{{ 'admin.users.title' | transloco }}</h1>
+<app-page-header [heading]="'admin.users.title' | transloco" [context]="counts()">
   @if (canAddPeople) {
-    <button mat-flat-button type="button" (click)="addPerson()" data-testid="person-add-open">
+    <button
+      pageActions
+      mat-flat-button
+      type="button"
+      (click)="addPerson()"
+      data-testid="person-add-open"
+    >
       <app-icon matButtonIcon name="plus" />
       {{ 'admin.people.add' | transloco }}
     </button>
   }
-</div>
+</app-page-header>
 
-<mat-card class="admin__filters">
-  <mat-card-content>
-    <form [formGroup]="filters" class="admin__filter-row">
-      <mat-form-field appearance="outline" class="admin__filter admin__filter--wide">
+<app-split mode="detail" [detailOpen]="selectedId() !== null">
+  <div splitSide class="users__side">
+    <form [formGroup]="filters" class="users__filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>{{ 'admin.users.filters.q' | transloco }}</mat-label>
         <input matInput type="search" formControlName="q" data-testid="filter-q" />
         <mat-hint>{{ 'admin.users.filters.qHint' | transloco }}</mat-hint>
       </mat-form-field>
-
-      <mat-form-field appearance="outline" class="admin__filter">
-        <mat-label>{{ 'admin.users.filters.role' | transloco }}</mat-label>
-        <mat-select formControlName="role" data-testid="filter-role">
-          <mat-option [value]="null">{{ 'admin.users.filters.anyRole' | transloco }}</mat-option>
-          @for (role of roles; track role) {
-            <mat-option [value]="role">{{ 'roles.' + role | transloco }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="admin__filter">
-        <mat-label>{{ 'admin.users.filters.status' | transloco }}</mat-label>
-        <mat-select formControlName="status" data-testid="filter-status">
-          <mat-option [value]="null">{{ 'admin.users.filters.anyStatus' | transloco }}</mat-option>
-          @for (status of statuses; track status) {
-            <mat-option [value]="status">{{ 'admin.status.' + status | transloco }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
+      <div class="users__filter-row">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'admin.users.filters.role' | transloco }}</mat-label>
+          <mat-select formControlName="role" data-testid="filter-role">
+            <mat-option [value]="null">{{ 'admin.users.filters.anyRole' | transloco }}</mat-option>
+            @for (role of roles; track role) {
+              <mat-option [value]="role">{{ 'roles.' + role | transloco }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'admin.users.filters.status' | transloco }}</mat-label>
+          <mat-select formControlName="status" data-testid="filter-status">
+            <mat-option [value]="null">{{
+              'admin.users.filters.anyStatus' | transloco
+            }}</mat-option>
+            @for (status of statuses; track status) {
+              <mat-option [value]="status">{{ 'admin.status.' + status | transloco }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
       <mat-checkbox formControlName="unconfirmed" data-testid="filter-unconfirmed">
         {{ 'admin.users.filters.unconfirmed' | transloco }}
       </mat-checkbox>
     </form>
-  </mat-card-content>
-</mat-card>
 
-@if (loading()) {
-  <mat-progress-bar
-    [attr.aria-label]="'app.loading' | transloco"
-    mode="indeterminate"
-    data-testid="users-loading"
-  />
-}
+    @if (loading()) {
+      <mat-progress-bar
+        [attr.aria-label]="'app.loading' | transloco"
+        mode="indeterminate"
+        data-testid="users-loading"
+      />
+    }
 
-@if (problem(); as problem) {
-  <p class="admin__problem" role="alert" data-testid="users-error">
-    {{ 'admin.problems.' + problem | transloco }}
-  </p>
-}
+    @if (problem(); as problem) {
+      <p class="users__problem" role="alert" data-testid="users-error">
+        {{ 'admin.problems.' + problem | transloco }}
+      </p>
+    }
 
-<div class="table-card" role="region" tabindex="0" aria-labelledby="admin-users-title">
-  <table mat-table [dataSource]="users()" class="admin__table" data-testid="users-table">
-    <ng-container matColumnDef="name">
-      <th mat-header-cell *matHeaderCellDef>{{ 'admin.users.columns.name' | transloco }}</th>
-      <td mat-cell *matCellDef="let user">
-        <a [routerLink]="['/admin/users', user.id]" data-testid="user-link">
-          {{ user.lastName }} {{ user.firstName }}
-        </a>
-        @if (user.status === 'UNCLAIMED') {
-          <span class="admin__badge" data-testid="unclaimed-badge">
-            {{ 'admin.people.badge' | transloco }}
-          </span>
-        } @else if (!user.membershipConfirmed) {
-          <span class="admin__badge" data-testid="unconfirmed-badge">
-            {{ 'admin.users.unconfirmedBadge' | transloco }}
-          </span>
-        }
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="email">
-      <th mat-header-cell *matHeaderCellDef>{{ 'admin.users.columns.email' | transloco }}</th>
-      <td mat-cell *matCellDef="let user">
-        {{ address(user) ?? ('admin.people.unknownAddress' | transloco) }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="organization">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ 'admin.users.columns.organization' | transloco }}
-      </th>
-      <td mat-cell *matCellDef="let user">{{ name(user.organization) }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef>{{ 'admin.users.columns.status' | transloco }}</th>
-      <td mat-cell *matCellDef="let user">{{ 'admin.status.' + user.status | transloco }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="roles">
-      <th mat-header-cell *matHeaderCellDef>{{ 'admin.users.columns.roles' | transloco }}</th>
-      <td mat-cell *matCellDef="let user">
-        @if (user.roles.length) {
-          <mat-chip-set>
-            @for (assignment of user.roles; track assignment.id) {
-              <mat-chip>{{ 'roles.' + assignment.role | transloco }}</mat-chip>
-            }
-          </mat-chip-set>
-        } @else {
-          {{ 'admin.users.noRoles' | transloco }}
-        }
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>{{ 'admin.users.columns.actions' | transloco }}</th>
-      <td mat-cell *matCellDef="let user">
-        @if (!user.membershipConfirmed && user.status !== 'UNCLAIMED') {
-          <button
-            mat-flat-button
-            type="button"
-            [disabled]="confirmingId() === user.id"
-            (click)="confirm(user)"
-            data-testid="confirm-membership"
+    <app-pane>
+      <nav
+        class="users__rows"
+        appListRows
+        [attr.aria-label]="'admin.users.title' | transloco"
+        data-testid="users-table"
+      >
+        @for (user of users(); track user.id) {
+          <a
+            appListRow
+            [routerLink]="['/admin/users', user.id]"
+            [initials]="initialsOf(user)"
+            [rowTitle]="user.lastName + ' ' + user.firstName"
+            [meta]="
+              (user.roles[0]
+                ? ('roles.' + user.roles[0].role | transloco)
+                : ('admin.users.noRoles' | transloco)) +
+              ' · ' +
+              name(user.organization)
+            "
+            [selected]="user.id === selectedId()"
+            [attr.data-email]="address(user)"
+            data-testid="user-link"
           >
-            {{ 'admin.users.confirm' | transloco }}
-          </button>
-          <button
-            mat-icon-button
-            type="button"
-            [matTooltip]="'admin.users.correctDepartment' | transloco"
-            [attr.aria-label]="'admin.users.correctDepartment' | transloco"
-            (click)="correctDepartment(user)"
-            data-testid="correct-department"
-          >
-            <app-icon name="pencil" />
-          </button>
+            <span rowEnd class="users__chips">
+              <span class="app-chip" data-testid="user-status">{{
+                'admin.status.' + user.status | transloco
+              }}</span>
+              @if (user.status === 'UNCLAIMED') {
+                <span class="app-chip users__badge" data-testid="unclaimed-badge">
+                  {{ 'admin.people.badge' | transloco }}
+                </span>
+              } @else if (!user.membershipConfirmed) {
+                <span class="app-chip users__badge" data-testid="unconfirmed-badge">
+                  {{ 'admin.users.unconfirmedBadge' | transloco }}
+                </span>
+              }
+            </span>
+          </a>
+        } @empty {
+          @if (!loading()) {
+            <p class="users__empty" data-testid="users-empty">
+              {{ 'admin.users.empty' | transloco }}
+            </p>
+          }
         }
-        @if (problemFor(user); as problem) {
-          <span class="admin__problem" role="alert" data-testid="confirm-error">
-            {{ problem | transloco }}
-          </span>
-        }
-      </td>
-    </ng-container>
+      </nav>
+    </app-pane>
 
-    <tr mat-header-row *matHeaderRowDef="columns"></tr>
-    <tr mat-row *matRowDef="let row; columns: columns"></tr>
-    <tr class="mat-row" *matNoDataRow>
-      <td class="mat-cell admin__empty" [attr.colspan]="columns.length" data-testid="users-empty">
-        {{ 'admin.users.empty' | transloco }}
-      </td>
-    </tr>
-  </table>
-</div>
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="page()"
+      [pageSize]="size()"
+      [pageSizeOptions]="pageSizes"
+      (page)="changePage($event)"
+      data-testid="users-paginator"
+    />
+  </div>
 
-<mat-paginator
-  [length]="total()"
-  [pageIndex]="page()"
-  [pageSize]="size()"
-  [pageSizeOptions]="pageSizes"
-  (page)="changePage($event)"
-  data-testid="users-paginator"
-/>
+  <div splitMain>
+    @if (selectedId() === null) {
+      <app-pane>
+        <p class="users__pick" data-testid="users-pick-hint">
+          {{ 'admin.users.pick' | transloco }}
+        </p>
+      </app-pane>
+    }
+    <router-outlet />
+  </div>
+</app-split>

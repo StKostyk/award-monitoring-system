@@ -1,8 +1,8 @@
 import { HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { Store } from '@ngrx/store';
-import { catchError, map, mergeMap, of, switchMap, withLatestFrom } from 'rxjs';
+import { Action, Store } from '@ngrx/store';
+import { Observable, catchError, map, mergeMap, of, switchMap, take, withLatestFrom } from 'rxjs';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { PeopleService } from '../people.service';
@@ -45,7 +45,7 @@ export class AdminUsersEffects {
         this.users
           .assignRole(id, { role: 'EMPLOYEE', organizationId, updateOrganization: true })
           .pipe(
-            map(() => AdminUsersActions.reloaded()),
+            mergeMap(() => this.afterMembership(id)),
             catchError((error: unknown) => {
               const failed = AdminUsersActions.membershipConfirmFailed({
                 id,
@@ -65,7 +65,7 @@ export class AdminUsersEffects {
       ofType(AdminUsersActions.membershipLinked),
       mergeMap(({ id, personId, version }) =>
         this.people.link(personId, id, version).pipe(
-          map(() => AdminUsersActions.reloaded()),
+          mergeMap(() => this.afterMembership(id)),
           catchError((error: unknown) =>
             of(
               AdminUsersActions.membershipConfirmFailed({ id, problem: problemType(error) }),
@@ -97,4 +97,16 @@ export class AdminUsersEffects {
       ),
     ),
   );
+
+  /** The list reloads after a membership change; the pane only when it still shows that person. */
+  private afterMembership(id: number): Observable<Action> {
+    return this.store.select(adminUsersFeature.selectSelected).pipe(
+      take(1),
+      mergeMap((selected) =>
+        selected?.id === id
+          ? of(AdminUsersActions.reloaded(), AdminUsersActions.userReloaded({ id }))
+          : of(AdminUsersActions.reloaded()),
+      ),
+    );
+  }
 }
