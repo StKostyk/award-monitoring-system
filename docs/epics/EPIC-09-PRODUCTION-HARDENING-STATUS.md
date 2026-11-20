@@ -14,11 +14,12 @@
 | 9.2 Demo deployment and operations (Lighthouse 90 on the signed-in pages, nightly backups, deploy job, AWS EC2 server, award form in steps on phones) | PRD approved 2026-11-10 ([PRD](../features/epic-09/feature-9.2-demo-deployment.md)) | 2026-10-29 | - |
 | 9.3 New look (burgundy and cream light, Aurora dark, Manrope and Onest, Lucide icons, shell with command palette, review queue with undo, every screen restyled) | Done 2026-11-16: 7 planned stories and 5 fixes, 41 points; manual run of §10 34 steps, the three failed steps fixed in 9.3.14, 9.3.21 and 9.3.22 ([PRD](../features/epic-09/feature-9.3-new-look.md)) | 2026-11-15 | 2026-11-16 |
 | 9.4 Dashboards and widget layout (scheme and layout on the account, widget kit, Hall of Fame, «Мої нагороди» with the CV export, Command centre with the department reminder) | PRD approved 2026-11-17, 23 points ([PRD](../features/epic-09/feature-9.4-dashboards.md)) | - | - |
+| 9.5 Page layouts (page kit, My dashboard and unit analytics split, Achievements story feed, Users and Reviews with the item beside the list, university bento, Compliance and delegations split) | PRD approved 2026-11-20, 31 points ([PRD](../features/epic-09/feature-9.5-page-layouts.md)) | - | - |
 
 ## Current focus
 
-Feature 9.4 planned 2026-11-17 (SCRUM-155 to SCRUM-159), 9.4.1 first. Then 2.5.5 (Epic 2) and the demo server
-9.2.4 (SCRUM-134) last; 9.4.5 may follow 2.5.5 if the freeze of 2026-11-22 comes first.
+Feature 9.5 planned 2026-11-20 (SCRUM-163 to SCRUM-169), 9.5.1 first; the page redesign goes before the demo
+server 9.2.4 (SCRUM-134), which follows it. If time runs short, 9.5.7 and then 9.5.6 move after the deploy.
 
 ## Scope
 
@@ -69,6 +70,13 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5o | 9.4.2 Widget kit, generated facts and monthly counts | 9.4 | 5 | SCRUM-156 | #431 | no | Done |
 | 5n | 9.4.1 Scheme and dashboard layout on the account | 9.4 | 5 | SCRUM-155 | #430 | no | Done |
 | 5s | 9.4.6 Role-aware navigation, personal tabs and dashboard facts | 9.4 | 3 | SCRUM-161 | #450 | no | In review |
+| 5z | 9.5.7 Compliance and delegations in the split layout | 9.5 | 5 | SCRUM-169 | #462 | no | To do |
+| 5y | 9.5.6 Unit analytics split and university bento | 9.5 | 5 | SCRUM-168 | #461 | no | To do |
+| 5x | 9.5.5 Reviews with the request beside the queue | 9.5 | 5 | SCRUM-167 | #460 | no | To do |
+| 5w | 9.5.4 Users with the person beside the list | 9.5 | 5 | SCRUM-166 | #459 | no | To do |
+| 5v | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | To do |
+| 5u | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | To do |
+| 5t | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | To do |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 

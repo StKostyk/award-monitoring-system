@@ -179,7 +179,7 @@ Tracker: [EPIC-08-MOBILE-ACCESSIBILITY-STATUS.md](../epics/EPIC-08-MOBILE-ACCESS
 | 8.2.4 | Show a not-found page for unknown paths | 1 | ✅ Done | SCRUM-125 | [#361](https://github.com/StKostyk/award-monitoring-system/issues/361) |
 
 ### Epic 9 — Production Hardening (Jira epic SCRUM-128)
-Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md). Feature 9.2 PRD approved 2026-11-10: [feature-9.2-demo-deployment.md](../features/epic-09/feature-9.2-demo-deployment.md). Feature 9.3 PRD approved 2026-11-14, Done 2026-11-16 (41 points with five fixes): [feature-9.3-new-look.md](../features/epic-09/feature-9.3-new-look.md). Feature 9.4 PRD approved 2026-11-17 (23 points): [feature-9.4-dashboards.md](../features/epic-09/feature-9.4-dashboards.md).
+Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md). Kickoff 2026-10-29; token values hashed at rest, rate limits by account and address, Lighthouse 90 on the signed-in pages, nightly backups with a restore drill, a CI deploy job and the demo server on AWS EC2 (mid-November). Backend-for-frontend with an HttpOnly cookie as a stretch; Spring Session on Redis and ShedLock out (one backend instance). Feature 9.1 PRD approved 2026-10-29: [feature-9.1-security-hardening.md](../features/epic-09/feature-9.1-security-hardening.md). Feature 9.2 PRD approved 2026-11-10: [feature-9.2-demo-deployment.md](../features/epic-09/feature-9.2-demo-deployment.md). Feature 9.3 PRD approved 2026-11-14, Done 2026-11-16 (41 points with five fixes): [feature-9.3-new-look.md](../features/epic-09/feature-9.3-new-look.md). Feature 9.4 PRD approved 2026-11-17 (23 points): [feature-9.4-dashboards.md](../features/epic-09/feature-9.4-dashboards.md). Feature 9.5 PRD approved 2026-11-20 (31 points), before the demo server: [feature-9.5-page-layouts.md](../features/epic-09/feature-9.5-page-layouts.md).
 
 | ID | Story | Points | Sprint | Jira | Issue |
 |----|-------|--------|--------|------|-------|
@@ -209,6 +209,13 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.4.4 | My awards with the CV export | 5 | ✅ Done | SCRUM-158 | [#433](https://github.com/StKostyk/award-monitoring-system/issues/433) |
 | 9.4.5 | Command centre with the department reminder | 5 | ✅ Done | SCRUM-159 | [#434](https://github.com/StKostyk/award-monitoring-system/issues/434) |
 | 9.4.6 | Role-aware navigation, personal tabs and dashboard facts | 3 | 👀 In review | SCRUM-161 | [#450](https://github.com/StKostyk/award-monitoring-system/issues/450) |
+| 9.5.1 | Page kit and shell fixes | 3 | 11 | SCRUM-163 | [#456](https://github.com/StKostyk/award-monitoring-system/issues/456) |
+| 9.5.2 | My dashboard in the split layout | 5 | 11 | SCRUM-164 | [#457](https://github.com/StKostyk/award-monitoring-system/issues/457) |
+| 9.5.3 | Achievements as a story feed | 3 | 11 | SCRUM-165 | [#458](https://github.com/StKostyk/award-monitoring-system/issues/458) |
+| 9.5.4 | Users with the person beside the list | 5 | 11 | SCRUM-166 | [#459](https://github.com/StKostyk/award-monitoring-system/issues/459) |
+| 9.5.5 | Reviews with the request beside the queue | 5 | 11 | SCRUM-167 | [#460](https://github.com/StKostyk/award-monitoring-system/issues/460) |
+| 9.5.6 | Unit analytics split and university bento | 5 | 11 | SCRUM-168 | [#461](https://github.com/StKostyk/award-monitoring-system/issues/461) |
+| 9.5.7 | Compliance and delegations in the split layout | 5 | 11 | SCRUM-169 | [#462](https://github.com/StKostyk/award-monitoring-system/issues/462) |
 
 ### Later epics
 | ID | Story | Points | Epic |
