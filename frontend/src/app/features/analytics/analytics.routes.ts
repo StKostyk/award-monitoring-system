@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideState } from '@ngrx/store';
-import { provideEchartsCore } from 'ngx-echarts';
 
+import { provideAppCharts } from '../../shared/charts/chart-providers';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { AnalyticsEffects } from './store/analytics.effects';
 import { analyticsFeature } from './store/analytics.feature';
@@ -14,9 +14,7 @@ export const ANALYTICS_ROUTES: Routes = [
     providers: [
       provideState(analyticsFeature),
       provideEffects(AnalyticsEffects),
-      provideEchartsCore({
-        echarts: () => import('../../shared/charts/echarts-setup').then((m) => m.echarts),
-      }),
+      provideAppCharts(),
     ],
     children: [
       { path: '', title: 'titles.dashboard', component: DashboardComponent },

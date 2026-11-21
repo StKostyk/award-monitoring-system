@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideState } from '@ngrx/store';
-import { provideEchartsCore } from 'ngx-echarts';
 
+import { provideAppCharts } from '../../shared/charts/chart-providers';
 import { UnitAnalyticsEffects } from '../analytics/units/store/unit-analytics.effects';
 import { unitAnalyticsFeature } from '../analytics/units/store/unit-analytics.feature';
 import { UniversityAnalyticsEffects } from '../analytics/university/store/university-analytics.effects';
@@ -17,9 +17,7 @@ export const HALL_OF_FAME_ROUTES: Routes = [
       provideState(universityAnalyticsFeature),
       provideState(unitAnalyticsFeature),
       provideEffects(UniversityAnalyticsEffects, UnitAnalyticsEffects),
-      provideEchartsCore({
-        echarts: () => import('../../shared/charts/echarts-widgets-setup').then((m) => m.echarts),
-      }),
+      provideAppCharts('widgets'),
     ],
     component: HallOfFameComponent,
   },

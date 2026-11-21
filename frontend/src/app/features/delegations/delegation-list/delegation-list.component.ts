@@ -7,15 +7,13 @@ import {
   effect,
   inject,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
-import { map } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canDelegate } from '../../../core/auth/permissions';
@@ -27,6 +25,7 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
 import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
 import { PaneComponent } from '../../../shared/layout/pane.component';
+import { querySelection } from '../../../shared/layout/query-selection';
 import { SplitComponent } from '../../../shared/layout/split.component';
 import { organizationName } from '../../../shared/organization-name';
 import { pluralForm } from '../../../shared/plural';
@@ -44,17 +43,6 @@ import { delegationsFeature } from '../store/delegations.feature';
 interface Shown {
   delegation: Delegation;
   given: boolean;
-}
-
-/**
- * Reads the delegation id of the URL.
- *
- * @param value the `delegation` query parameter
- * @returns the id, or null when absent or not a positive whole number
- */
-export function delegationOf(value: string | null): number | null {
-  const id = Number(value);
-  return value && Number.isInteger(id) && id > 0 ? id : null;
 }
 
 @Component({
@@ -83,8 +71,7 @@ export class DelegationListComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly transloco = inject(TranslocoService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  private readonly shownDelegation = querySelection('delegation');
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
   private lastShownId: number | null = null;
@@ -104,10 +91,7 @@ export class DelegationListComponent implements OnInit {
   readonly message = this.store.selectSignal(delegationsFeature.selectMessage);
 
   /** The delegation chosen with `?delegation=`, null when none is. */
-  readonly selectedId = toSignal(
-    this.route.queryParamMap.pipe(map((params) => delegationOf(params.get('delegation')))),
-    { initialValue: delegationOf(this.route.snapshot.queryParamMap.get('delegation')) },
-  );
+  readonly selectedId = this.shownDelegation.id;
   readonly shown = computed<Shown | null>(() => {
     const id = this.selectedId();
     const given = this.given().find((delegation) => delegation.id === id);
@@ -161,11 +145,7 @@ export class DelegationListComponent implements OnInit {
    * @param id the delegation id
    */
   select(id: number | null): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { delegation: id },
-      queryParamsHandling: 'merge',
-    });
+    this.shownDelegation.select(id);
   }
 
   delegate(): void {

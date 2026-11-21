@@ -16,7 +16,7 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import { filter as present, forkJoin, map, tap } from 'rxjs';
@@ -34,6 +34,7 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
 import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
 import { PaneComponent } from '../../../shared/layout/pane.component';
+import { querySelection } from '../../../shared/layout/query-selection';
 import { SplitComponent } from '../../../shared/layout/split.component';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
@@ -116,8 +117,7 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
 })
 export class ReviewListComponent implements OnInit {
   private readonly store = inject(Store);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
+  private readonly shownRequest = querySelection('request');
   private readonly auth = inject(AuthService);
   private readonly organizationList = inject(OrganizationsService);
   private readonly language = inject(LanguageService);
@@ -138,10 +138,7 @@ export class ReviewListComponent implements OnInit {
     { initialValue: true },
   );
   /** The award chosen with `?request=`, null when none is. */
-  readonly selectedId = toSignal(
-    this.route.queryParamMap.pipe(map((params) => requestOf(params.get('request')))),
-    { initialValue: null },
-  );
+  readonly selectedId = this.shownRequest.id;
 
   readonly items = this.store.selectSignal(reviewsFeature.selectItems);
   /** The requests of the page without those whose decision is held. */
@@ -165,14 +162,14 @@ export class ReviewListComponent implements OnInit {
   readonly notice = signal<string | null>(null);
 
   /** Award ids the reviewer ticked; only those on the current page count. */
-  readonly selected = signal<ReadonlySet<number>>(new Set());
+  readonly ticked = signal<ReadonlySet<number>>(new Set());
   readonly selection = computed(() =>
-    this.visible().filter((item) => this.selected().has(item.awardId)),
+    this.visible().filter((item) => this.ticked().has(item.awardId)),
   );
-  readonly allSelected = computed(
+  readonly allTicked = computed(
     () => this.visible().length > 0 && this.selection().length === this.visible().length,
   );
-  /** «Передати декану» when every selected request waits at the faculty secretary. */
+  /** «Передати декану» when every ticked request waits at the faculty secretary. */
   readonly escalateTarget = computed<ApprovalLevel | null>(() =>
     this.selection().every((item) => item.level === 'FACULTY_SECRETARY') ? 'DEAN' : null,
   );
@@ -196,14 +193,14 @@ export class ReviewListComponent implements OnInit {
   }
 
   filter(change: Partial<ReviewFilters>): void {
-    this.selected.set(new Set());
+    this.ticked.set(new Set());
     this.store.dispatch(
       ReviewsActions.filtersChanged({ filters: { ...this.filters(), ...change } }),
     );
   }
 
   page(event: PageEvent): void {
-    this.selected.set(new Set());
+    this.ticked.set(new Set());
     this.store.dispatch(
       ReviewsActions.pageChanged({ pageIndex: event.pageIndex, pageSize: event.pageSize }),
     );
@@ -215,11 +212,7 @@ export class ReviewListComponent implements OnInit {
    * @param awardId the award of the request
    */
   select(awardId: number | null): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { request: awardId },
-      queryParamsHandling: 'merge',
-    });
+    this.shownRequest.select(awardId);
   }
 
   isShown(item: ReviewItem): boolean {
@@ -230,25 +223,25 @@ export class ReviewListComponent implements OnInit {
     return initials(this.recipient(item));
   }
 
-  isSelected(item: ReviewItem): boolean {
-    return this.selected().has(item.awardId);
+  isTicked(item: ReviewItem): boolean {
+    return this.ticked().has(item.awardId);
   }
 
   toggle(item: ReviewItem): void {
-    const next = new Set(this.selected());
+    const next = new Set(this.ticked());
     if (!next.delete(item.awardId)) {
       next.add(item.awardId);
     }
-    this.selected.set(next);
+    this.ticked.set(next);
   }
 
   toggleAll(): void {
-    this.selected.set(
-      this.allSelected() ? new Set() : new Set(this.visible().map((item) => item.awardId)),
+    this.ticked.set(
+      this.allTicked() ? new Set() : new Set(this.visible().map((item) => item.awardId)),
     );
   }
 
-  /** Confirms a decision for the selected awards and applies it to each of them. */
+  /** Confirms a decision for the ticked awards and applies it to each of them. */
   decide(decision: DecisionType): void {
     const chosen = this.selection();
     if (chosen.length === 0 || this.busy()) {
@@ -286,7 +279,7 @@ export class ReviewListComponent implements OnInit {
   }
 
   clear(): void {
-    this.selected.set(new Set());
+    this.ticked.set(new Set());
   }
 
   dismiss(): void {
@@ -312,7 +305,7 @@ export class ReviewListComponent implements OnInit {
    * @param awardId the award decided
    */
   queueDecided(awardId: number): void {
-    this.selected.update((selected) => new Set([...selected].filter((id) => id !== awardId)));
+    this.ticked.update((ticked) => new Set([...ticked].filter((id) => id !== awardId)));
     this.store.dispatch(ReviewsActions.itemsDecided({ awardIds: [awardId] }));
   }
 
@@ -336,7 +329,7 @@ export class ReviewListComponent implements OnInit {
         reason: reasonOf(result),
       })),
     });
-    this.selected.set(new Set(failed.map((result) => result.awardId)));
+    this.ticked.set(new Set(failed.map((result) => result.awardId)));
     this.store.dispatch(
       ReviewsActions.itemsDecided({
         awardIds: results
@@ -367,11 +360,6 @@ export class ReviewListComponent implements OnInit {
       )
       .sort((a, b) => organizationName(a, language).localeCompare(organizationName(b, language)));
   }
-}
-
-function requestOf(value: string | null): number | null {
-  const id = value && /^\d{1,15}$/.test(value) ? Number(value) : 0;
-  return id > 0 ? id : null;
 }
 
 function reasonOf(result: BatchItemResult): string {

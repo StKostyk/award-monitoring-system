@@ -185,8 +185,8 @@
       <div class="reviews__rows-head">
         @if (visible().length > 0) {
           <mat-checkbox
-            [checked]="allSelected()"
-            [indeterminate]="selection().length > 0 && !allSelected()"
+            [checked]="allTicked()"
+            [indeterminate]="selection().length > 0 && !allTicked()"
             (change)="toggleAll()"
             data-testid="batch-select-all"
             >{{ 'reviews.batch.selectAll' | transloco }}</mat-checkbox
@@ -206,7 +206,7 @@
           <div class="reviews__row" [attr.data-award]="item.awardId" data-testid="review-item">
             <mat-checkbox
               class="reviews__row-select"
-              [checked]="isSelected(item)"
+              [checked]="isTicked(item)"
               (change)="toggle(item)"
               [aria-label]="'reviews.batch.selectRow' | transloco: { title: title(item) }"
               data-testid="batch-select"
