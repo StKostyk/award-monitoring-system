@@ -2,7 +2,7 @@
 
 > **Epic**: 9 Production hardening (SCRUM-128) · **Tracker**: `docs/epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md`
 > **Sprint**: 11 (2026-11-23 to 2026-11-29) and 12 (2026-11-30 to 2026-12-06) · **Points**: 31
-> **Status**: Approved 2026-11-20
+> **Status**: Validated 2026-11-21, pending the manual run of §10
 > **Governing docs**: ADR-014 and ADR-016 (9.3 addenda: tokens, effect components, chart theme), ADR-015 (NgRx per
 > feature), `docs/frontend/UI_GUIDELINES.md` §1-8, Feature 9.3 (the look), Feature 9.4 (widget kit, dashboard
 > layouts in `dashboard_preferences`, role home), Features 5.1-5.3, 6.x (compliance), 2.3-2.5 (reviews,
@@ -376,3 +376,79 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
 - UI check of the changed pages at 360 and 1280, light and dark, uk and en; axe without serious findings.
 - `UI_GUIDELINES.md` §4 (Layout) describes the page kit; CHANGELOG lines; tracker and BACKLOG rows.
 - The manual run of §10 recorded in this PRD.
+
+## Validation
+
+2026-11-21 on `develop` at c222fb0 (stories 9.5.1-9.5.7, PRs #464-#470). Full gate: backend 1470 unit and 624
+IT/FT, coverage 98.3 % lines, Checkstyle/PMD/SpotBugs 0; frontend lint, 1460 unit tests and the production build
+pass. Full e2e 261 passed (keyboard `ac1_7` passed on retry, on the known flaky list). `openapi.yml` matches the
+96 live `/api/v1` operations; the 7 documented-only entries are the authorization server and actuator.
+
+### AC evidence
+
+| AC | Tests (unit · e2e) | Result |
+|---|---|---|
+| 1.1 Page header | `layout.spec.ts` ac1_1_page_header_*, ac1_1_year_group_* · `layout.spec.ts` ac1_1 ac1_4 | pass |
+| 1.2 Split | `layout.spec.ts` ac1_2_split_*, ac1_2_a_narrow_detail_*, ac1_2_pane_* | pass |
+| 1.3 List row | `layout.spec.ts` ac1_3_list_row_*, ac1_3_arrow_keys_* · `dashboard-layout.spec.ts` ac1_3 | pass |
+| 1.4 Bento | `layout.spec.ts` ac1_4_bento_* · ac1_1 ac1_4 (no sideways scroll) | pass |
+| 1.5 Sidebar labels | `layout.spec.ts` ac1_5 every Ukrainian sidebar label | pass |
+| 1.6 Chart annotations | `trend-widget` ac1_6_* · `hall-of-fame.spec.ts` 9.5 ac1_6 | pass |
+| 1.7 Landmarks | `shell` ac1_7_puts_the_toolbar_* · `achievements.spec.ts`, `accessibility.spec.ts` | pass |
+| 2.1 Layout | `dashboard`, `profile-card`, `dashboard-layout` ac2_1_* · `layout.spec.ts` ac2_1 ac2_6 | pass |
+| 2.2 Latest awards | `latest-awards` ac2_2_* (5) | pass |
+| 2.3 Layout stored | `dashboard-layout` ac2_3_* · `dashboard-layout.spec.ts` ac2_3 | pass |
+| 2.4 Widgets accepted | `DashboardTest` ac2_4_*, `DashboardPreferenceFT` ac2_4_*, `dashboard-layout` ac2_4_* | pass |
+| 2.5 Personal facts | `dashboard` ac2_5_leaves_the_facts_out_* | pass |
+| 2.6 Phone | `layout.spec.ts` ac2_1 ac2_6 | pass |
+| 3.1 Chips | `achievement-list` ac3_1_* · `achievements.spec.ts` | pass |
+| 3.2 Highlight | `highlight` ac3_2_*, `achievement-list` ac3_2_* · `achievements.spec.ts` | pass |
+| 3.3 Year groups | `highlight` ac3_3_*, `achievement-list` ac3_3_* · `achievements.spec.ts` | pass |
+| 3.4 Same data | `achievements.spec.ts` 9.5 ac3_4 on the public and staff unit pages (added in the validation) | pass |
+| 4.1 List and pane | `user-list` ac4_1_*, `user-detail` ac4_1_* | pass |
+| 4.2 Header counts | `user-list` ac4_2_* (3), `user-detail` ac4_2_* | pass |
+| 4.3 Direct link | `user-list` ac4_1_ac4_3_a_direct_link_* | pass |
+| 4.4 Add a person | `user-list` ac1_9_ac4_4_* | pass |
+| 4.5 Actions refresh | `admin-users.effects` ac4_5_*, `user-detail` ac4_5_* (3) | pass |
+| 5.1 Queue and pane | `review-list` ac5_1_* (4), `review-queue` ac5_1_* · `review-queue.spec.ts` ac5_1 ac5_2 | pass |
+| 5.2 Decisions | `review-queue` ac5_2_* (4) · `review-queue.spec.ts` ac5_1 ac5_2 | pass |
+| 5.3 Tabs as chips | `review-list` ac5_3_*, `review-queue` ac5_3_* (2) | pass |
+| 5.4 Keyboard | `review-queue` ac5_4_*, `held-decision.service` ac5_4_* | pass |
+| 6.1 Unit split | `unit-analytics` ac6_1_* (11) · `unit-analytics.spec.ts` ac6_1 ac6_4 | pass |
+| 6.2 Period chips | `period-chips` ac6_2_* (3), `unit-analytics` ac6_2_* · `unit-analytics.spec.ts` ac6_2 | pass |
+| 6.3 University bento | `faculty-bars` ac6_3_* (4), `university-analytics` ac6_3_* · `university-analytics.spec.ts` | pass |
+| 6.4 Same numbers | `unit-analytics.spec.ts` ac6_1 ac6_4, `university-analytics.spec.ts` ac6_3 ac6_4 | pass |
+| 7.1 Compliance sections | `compliance.component` ac7_1_* (3), `compliance.effects` ac7_1_* · `compliance.spec.ts` | pass |
+| 7.2 Retention runs | `run-durations` ac7_2_* (3), `compliance.effects` ac7_2_* · `compliance.spec.ts` ac72 | pass |
+| 7.3 Delegations split | `delegation-list` ac7_3_* (7), `delegation-capabilities` ac7_3_* · `delegation.spec.ts` | pass |
+| 7.4 Can and cannot | `delegation-capabilities` ac7_4_* (3), `delegation-list` ac7_4_* · `delegation.spec.ts` | pass |
+
+### Edge cases
+
+| Edge case (§5) | Coverage |
+|---|---|
+| Empty lists | `delegation-list` ac3_6_shows_both_empty_states, `user-list` ac2_10 empty state, review queue empty state |
+| Selected row disappears | delegations: `ac7_3_clears_a_shown_delegation_that_left_the_list_and_says_so`; reviews and users keep the state (9.5.5 and 9.5.4 defaults, open) |
+| Deep link not visible | `review-queue` ac5_3_an_unknown_request_*, `delegation-list` ac7_3_says_so_*, users ac9_1 not-found card |
+| Narrow screens | `layout.spec.ts` ac1_2 focus and return; back keeping the scroll position has no test (open) |
+| Long labels | ac1_5 sidebar labels; ellipsis on titles only in screen checks (open) |
+| Analytics cache | unchanged, no new invalidation |
+| Keyboard vs shortcuts | ac1_3_arrow_keys_in_a_text_field_stay, `review-queue` edge_k_without_a_selection |
+
+### Security
+
+UI feature apart from the dashboard layout: `/api/v1/users/me/dashboard-preferences` is `isAuthenticated()` and
+acts on the caller only (A01); widget ids are checked against the dashboard's own list (`DashboardTest`, A03).
+Delegation can/cannot lines are display only; the backend permission matrix still decides.
+
+### Findings
+
+1. Reviews and users keep a selection that left the list instead of clearing it with a snack bar (§5); recorded
+   defaults of 9.5.5 and 9.5.4, open for review.
+2. The dashboard layout announces «Збережено» before the save answers; a failed save then shows the save problem
+   (9.4.1 behaviour, not new in 9.5).
+3. The review pane treats a failed `GET /reviews/{id}` (other than 404) as a request without a route.
+4. No test for back keeping the list scroll position below 960 px, for invalid `?request=` / `?delegation=` values
+   in e2e, or for a double click on «Підтвердити членство» (`mergeMap`).
+5. Refactor: selection-in-URL written twice (reviews, delegations) and the chart provider copied in four route
+   files: a small refactor PR; naming of `selected` (ticked) against `selectedId` (shown) in reviews.
