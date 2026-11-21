@@ -601,6 +601,7 @@
     "users": {
       "title": "Users",
       "empty": "No users found",
+      "selectionGone": "This person is no longer in the list.",
       "noRoles": "No roles",
       "unconfirmedBadge": "Not confirmed",
       "confirm": "Confirm",
@@ -1141,6 +1142,7 @@
     "queue": {
       "title": "Queue",
       "left": "{{count}} left",
+      "selectionGone": "This request is no longer in the queue.",
       "date": "Award date",
       "awardingOrganization": "Awarded by",
       "heldBy": "Reviewed by {{name}}",

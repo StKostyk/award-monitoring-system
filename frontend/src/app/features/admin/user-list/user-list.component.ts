@@ -20,6 +20,7 @@ import { MatInput } from '@angular/material/input';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ofType } from '@ngrx/effects';
@@ -41,6 +42,7 @@ import { canManagePeople } from '../../../core/auth/permissions';
 import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { IconComponent } from '../../../shared/icons/icon.component';
+import { watchLeftSelection } from '../../../shared/layout/left-selection';
 import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
 import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
 import { PaneComponent } from '../../../shared/layout/pane.component';
@@ -111,6 +113,7 @@ export class UserListComponent implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly actions = inject(ScannedActionsSubject);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly translation = toSignal(this.transloco.selectTranslation(), {
     initialValue: null,
   });
@@ -165,13 +168,30 @@ export class UserListComponent implements OnInit {
       .subscribe((filters) => this.store.dispatch(AdminUsersActions.filtersChanged({ filters })));
     effect(() => this.scrollToSelected(this.selectedId(), this.users()));
     let previous: number | null = null;
+    let reloaded = false;
     effect(() => {
       const id = this.selectedId();
-      if (previous !== null && id === null) {
+      if (previous !== null && id === null && !reloaded) {
         this.store.dispatch(AdminUsersActions.refreshed());
       }
+      reloaded = false;
       previous = id;
     });
+    watchLeftSelection(
+      {
+        selectedId: this.selectedId,
+        ids: computed(() => this.users().map((user) => user.id)),
+        settled: computed(() => !this.loading() && !this.problem()),
+        check: (id) => this.api.get(id),
+      },
+      () => {
+        reloaded = true;
+        void this.router.navigate(['/admin/users']);
+        this.snackBar.open(this.transloco.translate('admin.users.selectionGone'), undefined, {
+          duration: 5000,
+        });
+      },
+    );
   }
 
   ngOnInit(): void {

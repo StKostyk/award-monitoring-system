@@ -1,7 +1,9 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -94,6 +96,7 @@ const translations = {
           blocked: 'Заблоковано: {{count}}',
         },
         pick: 'Оберіть людину в списку',
+        selectionGone: 'Цієї особи більше немає в списку.',
       },
       status: { ACTIVE: 'Активний', UNCLAIMED: 'Без облікового запису' },
       people: {
@@ -121,7 +124,7 @@ function countsBy(query: UserFilters): number {
 describe('UserListComponent', () => {
   let fixture: ComponentFixture<UserListComponent>;
   let store: Store;
-  let api: { list: ReturnType<typeof vi.fn> };
+  let api: { list: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn> };
 
   async function setUp(): Promise<void> {
     await TestBed.configureTestingModule({
@@ -152,7 +155,7 @@ describe('UserListComponent', () => {
   }
 
   beforeEach(async () => {
-    api = { list: vi.fn((query: UserFilters) => of(counted(countsBy(query)))) };
+    api = { list: vi.fn((query: UserFilters) => of(counted(countsBy(query)))), get: vi.fn() };
     permissions.set(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] })));
     await setUp();
     fixture = TestBed.createComponent(UserListComponent);
@@ -244,6 +247,58 @@ describe('UserListComponent', () => {
 
     expect(list.selectedId()).toBeNull();
     expect(dispatch).toHaveBeenCalledWith(AdminUsersActions.refreshed());
+  });
+
+  async function reloadedWithout(id: number): Promise<RouterTestingHarness> {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl(`/admin/users/${id}`, UserListComponent);
+    store.dispatch(AdminUsersActions.usersLoaded({ page }));
+    harness.detectChanges();
+    store.dispatch(AdminUsersActions.reloaded());
+    harness.detectChanges();
+    store.dispatch(
+      AdminUsersActions.usersLoaded({
+        page: { ...page, content: page.content.filter((user) => user.id !== id) },
+      }),
+    );
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    return harness;
+  }
+
+  it('edge_a_person_that_left_the_list_on_a_refresh_closes_the_pane_with_a_snack_bar', async () => {
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    api.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    const dispatch = vi.spyOn(store, 'dispatch');
+
+    const harness = await reloadedWithout(5);
+
+    expect(api.get).toHaveBeenCalledWith(5);
+    expect(harness.routeNativeElement?.querySelector('[data-testid="pane-stub"]')).toBeNull();
+    expect(snack).toHaveBeenCalledWith('Цієї особи більше немає в списку.', undefined, {
+      duration: 5000,
+    });
+    expect(dispatch).not.toHaveBeenCalledWith(AdminUsersActions.refreshed());
+  });
+
+  it('edge_a_person_still_readable_after_a_refresh_stays_open', async () => {
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    api.get.mockReturnValue(of({ id: 5 }));
+
+    const harness = await reloadedWithout(5);
+
+    expect(harness.routeNativeElement?.querySelector('[data-testid="pane-stub"]')).not.toBeNull();
+    expect(snack).not.toHaveBeenCalled();
+  });
+
+  it('edge_a_person_on_another_page_stays_selected_after_a_refresh', async () => {
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+
+    const harness = await reloadedWithout(99);
+
+    expect(api.get).not.toHaveBeenCalled();
+    expect(harness.routeNativeElement?.querySelector('[data-testid="pane-stub"]')).not.toBeNull();
+    expect(snack).not.toHaveBeenCalled();
   });
 
   it('ac2_10_ignores_a_free_text_filter_shorter_than_two_characters', () => {

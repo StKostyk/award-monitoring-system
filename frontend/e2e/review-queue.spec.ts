@@ -185,6 +185,32 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     await page.context().close();
   });
 
+  test('edge a request closed elsewhere leaves the selection on the next refresh with a snack bar', async ({
+    browser,
+  }) => {
+    const title = `Відзнака з черги ${uniqueToken()}`;
+    const id = await submittedBy(browser, owner, title);
+    const page = await signedInAs(browser, reviewer, FRESH_PASSWORD);
+
+    await selectInQueue(page, title);
+    await page
+      .getByTestId('review-item')
+      .filter({ hasText: title })
+      .getByTestId('review-title')
+      .click();
+    await expect(page).toHaveURL(new RegExp(`request=${id}`));
+    expireOpenRequests(`a.award_id = ${id}`);
+
+    await page.getByTestId('review-tab-me').click();
+
+    await expect(page.locator('mat-snack-bar-container')).toContainText(
+      'Цього запиту більше немає в черзі.',
+    );
+    await expect(page).not.toHaveURL(/request=/);
+    await expect(page.getByTestId('review-item').filter({ hasText: title })).toHaveCount(0);
+    await page.context().close();
+  });
+
   test('ac6_5 moving to another page sends the held decision at once', async ({ browser }) => {
     const title = `Подяка з черги ${uniqueToken()}`;
     const id = await submittedBy(browser, owner, title);
