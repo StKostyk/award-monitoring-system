@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideState } from '@ngrx/store';
-import { provideEchartsCore } from 'ngx-echarts';
 
 import { universityAnalyticsGuard } from '../../../core/auth/auth.guard';
+import { provideAppCharts } from '../../../shared/charts/chart-providers';
 import { UniversityAnalyticsEffects } from '../university/store/university-analytics.effects';
 import { universityAnalyticsFeature } from '../university/store/university-analytics.feature';
 import { UniversityAnalyticsComponent } from '../university/university-analytics/university-analytics.component';
@@ -18,9 +18,7 @@ export const UNIT_ANALYTICS_ROUTES: Routes = [
     providers: [
       provideState(unitAnalyticsFeature),
       provideEffects(UnitAnalyticsEffects),
-      provideEchartsCore({
-        echarts: () => import('../../../shared/charts/echarts-setup').then((m) => m.echarts),
-      }),
+      provideAppCharts(),
     ],
     children: [
       {

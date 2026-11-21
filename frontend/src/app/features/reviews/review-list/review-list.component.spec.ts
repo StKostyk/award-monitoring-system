@@ -148,7 +148,15 @@ describe('ReviewListComponent', () => {
         provideStore(),
         provideState(reviewsFeature),
         { provide: OrganizationsService, useValue: organizations },
-        { provide: ActivatedRoute, useValue: { queryParamMap: query } },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParamMap: query,
+            get snapshot() {
+              return { queryParamMap: query.value };
+            },
+          },
+        },
         { provide: BreakpointObserver, useValue: { observe: () => wide } },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { permissions, userId: signal('21') } },
