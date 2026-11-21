@@ -292,6 +292,32 @@ describe('DashboardComponent', () => {
     );
   });
 
+  it('ac1_1_shows_the_approved_and_pending_counts_as_the_context_line', () => {
+    expect(element('page-context')).toBeNull();
+
+    load();
+
+    expect(element('page-context')?.textContent).toBe('Approved: 3 · Under review now: 2');
+  });
+
+  it('ac1_1_hides_the_context_line_while_the_period_is_not_valid', () => {
+    load();
+
+    queryParams.next(convertToParamMap({ from: '2024', to: '2020' }));
+    fixture.detectChanges();
+
+    expect(element('dashboard-invalid')).not.toBeNull();
+    expect(element('page-context')).toBeNull();
+  });
+
+  it('ac1_1_keeps_the_names_of_the_summary_and_cv_actions_shown_as_icons', () => {
+    load();
+
+    expect(element('dashboard-summary')?.getAttribute('aria-label')).toBe('Summary');
+    expect(element('dashboard-summary')?.textContent?.trim()).toBe('');
+    expect(element('cv-export')?.getAttribute('aria-label')).toBe('Export for a CV');
+  });
+
   it('ac2_5_leaves_the_facts_out_with_fewer_than_two_approved_awards', () => {
     const analytics = sampleAnalytics();
     load(undefined, {

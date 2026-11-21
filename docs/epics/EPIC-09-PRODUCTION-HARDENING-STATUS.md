@@ -79,8 +79,8 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | Done |
 | 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | Done |
 | 5za | 9.5.10 Back from a pane at 360 px loses the list scroll | 9.5 | 2 | SCRUM-173 | #479 | no | To do |
-| 5za | 9.5.9 Selection that left the list stays in Reviews and Users | 9.5 | 2 | SCRUM-172 | #478 | no | In review |
-| 5za | 9.5.8 Dashboard header without context line, actions wrap | 9.5 | 1 | SCRUM-171 | #477 | no | To do |
+| 5za | 9.5.9 Selection that left the list stays in Reviews and Users | 9.5 | 2 | SCRUM-172 | #478 | no | Done |
+| 5za | 9.5.8 Dashboard header without context line, actions wrap | 9.5 | 1 | SCRUM-171 | #477 | no | In review |
 | 5za | 9.4.8 Logo opens the home of a signed-in person | 9.4 | 1 | SCRUM-170 | #471 | no | Done |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |

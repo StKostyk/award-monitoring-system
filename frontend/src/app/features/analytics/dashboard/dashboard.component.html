@@ -1,4 +1,4 @@
-<app-page-header [heading]="'analytics.title' | transloco">
+<app-page-header [heading]="'analytics.title' | transloco" [context]="context()">
   @if (!invalid()) {
     <app-period-select
       pageChips
@@ -9,13 +9,14 @@
   }
   <div pageActions class="dashboard__actions">
     <a
-      mat-stroked-button
+      mat-icon-button
       routerLink="/dashboard/summary"
       [queryParams]="{ from: period().from, to: period().to }"
+      [attr.aria-label]="'analytics.report.open' | transloco"
+      [matTooltip]="'analytics.report.open' | transloco"
       data-testid="dashboard-summary"
     >
-      <app-icon matButtonIcon name="file-text" />
-      {{ 'analytics.report.open' | transloco }}
+      <app-icon name="file-text" />
     </a>
     <app-cv-export [disabled]="!analytics() || analytics()?.totals?.approved === 0" />
     @if (canCreate) {

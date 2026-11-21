@@ -51,7 +51,7 @@ describe('CvExportComponent', () => {
     const responses = new Subject<HttpResponse<Blob>>();
     exportCv.mockReturnValue(responses);
 
-    expect(trigger().textContent).toContain('Експорт для резюме');
+    expect(trigger().getAttribute('aria-label')).toBe('Експорт для резюме');
     choose('text');
 
     expect(exportCv).toHaveBeenCalledWith('text', 'uk');

@@ -187,6 +187,15 @@ feature; if the time before the defense runs short, 9.5.7 and then 9.5.6 move af
 - **AC-7.4** (Can and cannot) Given a delegated role, then the «can» and «cannot» lines come from the 2.4 rules of
   that role (no free text), in both languages.
 
+### 9.5.8 Dashboard header without context line, actions wrap (SCRUM-171)
+
+Fix from the run of 2026-11-21, step 1; AC-1.1 and AC-2.1 stay the governing text.
+
+- **AC-8.1** (Dashboard header) Given `/dashboard` at 1280 in Ukrainian, then the context line reads «Затверджено: N ·
+  На розгляді: M» (approved awards of the period, requests under review), and the period, «Підсумок», «Експорт для
+  резюме» and «Додати нагороду» sit on the title's row; «Підсумок» and «Експорт для резюме» are icon buttons whose
+  accessible name and tooltip carry the label. At 360 the actions still wrap below the title.
+
 ## 5. Edge cases
 
 - Empty lists in a split page: the list pane shows its empty state and the main column a short hint, no blank pane.
@@ -288,8 +297,9 @@ data with the personal seed awards of 9.4.6, accounts `employee.fmi`, `secretary
 in the secretary's faculty; one submitted request waiting at the faculty level; one active delegation from the dean
 to the secretary. Widths 360 and 1280, both schemes, both languages for the steps marked so.
 
-1. Sign in as `rector`, open `/dashboard` at 1280 in Ukrainian. Expected: header with the page title, the context
-   line and the actions on one row; every sidebar label in full, two lines where needed. (AC-1.1, AC-1.5)
+1. Sign in as `rector`, open `/dashboard` at 1280 in Ukrainian. Expected: header with the context line «Затверджено:
+   N · На розгляді: M», the page title and the period and actions on one row, «Підсумок» and «Експорт для резюме» as
+   icon buttons with a tooltip; every sidebar label in full, two lines where needed. (AC-1.1, AC-1.5, AC-8.1)
 2. Same page at 360. Expected: no horizontal scroll; actions below the title; one column. (AC-1.1, AC-2.6)
 3. Sign in as `employee.fmi`, open `/dashboard` at 1280. Expected: profile, «Підсумок» and up to four facts on the
    left; years, levels beside «У роботі», latest awards (five, newest first, «Усі N»), then categories, «Місце на

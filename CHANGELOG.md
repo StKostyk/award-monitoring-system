@@ -136,6 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten as a plain project description: scope, delivered epics, technology, local start and a map of the main documents; the phase-by-phase lists of the planning stage are left to the documents themselves
 
 ### Fixed
+- Dashboard header shows approved and under-review counts and keeps the period and actions beside the title at 1280 px
 - Reviews and users close a selected request or person that left the list after a refresh, with a snack bar that says why.
 - The side-menu logo opens the signed-in person's home (9.4.8).
 - The «Awards this year» card names the compared months and shows this year's count for them («22 за січень–жовтень 2026 · 28 за ті самі місяці 2025»); no comparison in January.
