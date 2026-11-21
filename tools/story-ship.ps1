@@ -5,7 +5,8 @@
 
 .DESCRIPTION
     Refuses to ship when build/gate-summary.txt is missing, belongs to another branch or does not report PASS
-    for the backend and the frontend (-SkipGate for documentation-only changes). A skipped backend counts as
+    for the backend and the frontend (-SkipGate for documentation-only changes: nothing under backend/, and
+    openapi.yml only gains operations marked "x-status: planned" with their schemas). A skipped backend counts as
     passed while the branch changes nothing under backend/ or docs/api/openapi.yml compared with -Base. The tracker row of the story
     under docs/epics becomes "In review" and its BACKLOG row "👀 In review (<sprint>)"; -Changelog adds one
     bullet at the top of the -ChangelogSection (default Added) under CHANGELOG.md [Unreleased]. All of these are
@@ -57,8 +58,21 @@ if ($Key) { $Title = $Title -replace "^\s*$([regex]::Escape($Key))\s*:\s*", '' }
 $prTitle = if ($Key) { "${Key}: $Title" } else { $Title }
 if (-not (Test-Path $BodyFile)) { throw "No pull request body at $BodyFile" }
 
-if ($SkipGate -and @(git diff --name-only --merge-base "origin/$Base" -- docs/api/openapi.yml backend).Count) {
-    throw '-SkipGate is for documentation-only changes; this branch changes openapi.yml or backend/.'
+if ($SkipGate) {
+    if (@(git diff --name-only --merge-base "origin/$Base" -- backend).Count) {
+        throw '-SkipGate is for documentation-only changes; this branch changes backend/.'
+    }
+    $apiDiff = @(git diff --unified=0 --merge-base "origin/$Base" -- docs/api/openapi.yml |
+        Where-Object { $_ -match '^[+-](?![+-]{2} )' })
+    $removed = @($apiDiff | Where-Object { $_ -match '^-\s*\S' })
+    $added = @($apiDiff | Where-Object { $_ -match '^\+' })
+    $operations = @($added | Where-Object { $_ -match '^\+ {4}(get|put|post|patch|delete|head|options):\s*$' })
+    $planned = @($added | Where-Object { $_ -match '^\+\s+x-status:\s*planned\s*$' })
+    $otherStatus = @($added | Where-Object { $_ -match '^\+\s+x-status:' -and $_ -notmatch 'planned' })
+    if ($removed.Count -or $otherStatus.Count -or $operations.Count -ne $planned.Count) {
+        throw ('-SkipGate is for documentation-only changes; openapi.yml may only gain operations marked ' +
+            '"x-status: planned" (and their schemas).')
+    }
 }
 if (-not $SkipGate) {
     $summary = Join-Path $root 'build/gate-summary.txt'

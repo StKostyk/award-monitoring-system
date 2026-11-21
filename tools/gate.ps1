@@ -22,9 +22,12 @@
     verify runs once more after them. A second gate, or a
     running Playwright suite, is refused: two such runs together exhaust the memory of the development machine.
     The backend verify is also refused while the award-backend container runs (docker stop award-backend);
-    a run that skips the verify (frontend-only changes, -FrontendOnly) goes ahead next to it.
+    with -StopBackend the gate stops the container itself and starts it again when the run ends, also on a
+    failure (a killed PowerShell process skips the restart). A run that skips the verify (frontend-only changes,
+    -FrontendOnly) goes ahead next to it.
     -FrontendOnly reruns only the frontend checks and keeps the backend lines of the last summary, provided that
-    run was on this branch, passed the backend and nothing under backend/ or openapi.yml changed since.
+    run was on this branch, passed the backend and nothing under backend/ or openapi.yml changed since. The
+    fingerprint hashes the content of every changed file, so committing files after the run keeps it valid.
     A failed run during which the machine slept or the Docker engine stopped is reported as INVALID (exit 2):
     run it again instead of chasing the failures.
     For a full run started from an agent shell, use tools/detach.ps1 so the run survives the shell.
@@ -44,6 +47,7 @@ param(
     [switch]$Full,
     [switch]$Sequential,
     [switch]$FrontendOnly,
+    [switch]$StopBackend,
     [double]$MinFreeGb = 8
 )
 
@@ -83,9 +87,21 @@ Set-Content -Path $lock -Value $PID
 $log = Join-Path $logDir 'gate.log'
 $mvnw = Join-Path $backend 'mvnw.cmd'
 
+$script:restartBackend = $false
+
 function Exit-Gate([int]$code) {
+    if ($script:restartBackend) {
+        Write-Host 'Starting the award-backend container again.'
+        docker start award-backend | Out-Null
+        $script:restartBackend = $false
+    }
     Remove-Item $lock -ErrorAction SilentlyContinue
     exit $code
+}
+
+trap {
+    Write-Host "The gate stopped on an error: $_"
+    Exit-Gate 1
 }
 
 function Format-Elapsed([datetime]$start) {
@@ -104,9 +120,13 @@ function Invoke-Maven([string[]]$Goals, [string]$Label) {
 
 function Get-BackendFingerprint {
     $paths = @('backend', 'docs/api/openapi.yml')
-    $text = (git -C $root diff develop -- $paths) -join "`n"
-    $untracked = @(git -C $root ls-files -o --exclude-standard -- $paths)
-    if ($untracked) { $text += "`n" + ((git -C $root hash-object -- $untracked) -join "`n") }
+    $changed = @(git -C $root diff --name-only develop -- $paths) +
+        @(git -C $root ls-files -o --exclude-standard -- $paths) |
+        Where-Object { $_ } | Sort-Object -Unique
+    $text = ($changed | ForEach-Object {
+            if (Test-Path -LiteralPath (Join-Path $root $_)) { "$_ $(git -C $root hash-object -- $_)" }
+            else { "$_ deleted" }
+        }) -join "`n"
     $bytes = [Text.Encoding]::UTF8.GetBytes($text)
     return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 16)
 }
@@ -267,9 +287,14 @@ if ($FrontendOnly) {
     $backendStatus = "$($previous['Backend']) (kept from $($previous['Gate run']), -FrontendOnly)"
 } elseif ($Full -or ($backendChanged | Where-Object { $_ })) {
     if (@(docker ps --filter 'name=^award-backend$' --format '{{.Names}}' 2>$null)) {
-        Write-Host 'The award-backend container is running and competes with the test JVMs for memory.'
-        Write-Host 'Stop it first (docker stop award-backend), then run the gate again.'
-        Exit-Gate 1
+        if (-not $StopBackend) {
+            Write-Host 'The award-backend container is running and competes with the test JVMs for memory.'
+            Write-Host 'Stop it first (docker stop award-backend) or pass -StopBackend, then run the gate again.'
+            Exit-Gate 1
+        }
+        Write-Host 'Stopping the award-backend container for the run; it is started again afterwards.'
+        docker stop award-backend | Out-Null
+        $script:restartBackend = $true
     }
     docker info --format '{{.ServerVersion}}' *> $null
     if ($LASTEXITCODE -ne 0) {
