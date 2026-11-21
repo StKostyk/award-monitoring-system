@@ -218,8 +218,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.5.5 | Reviews with the request beside the queue | 5 | ✅ Done | SCRUM-167 | [#460](https://github.com/StKostyk/award-monitoring-system/issues/460) |
 | 9.5.6 | Unit analytics split and university bento | 5 | ✅ Done | SCRUM-168 | [#461](https://github.com/StKostyk/award-monitoring-system/issues/461) |
 | 9.5.7 | Compliance and delegations in the split layout | 5 | ✅ Done | SCRUM-169 | [#462](https://github.com/StKostyk/award-monitoring-system/issues/462) |
-| 9.5.8 | Dashboard header without context line, actions wrap | 1 |  | SCRUM-171 | [#477](https://github.com/StKostyk/award-monitoring-system/issues/477) |
-| 9.5.9 | Selection that left the list stays in Reviews and Users | 2 | 👀 In review | SCRUM-172 | [#478](https://github.com/StKostyk/award-monitoring-system/issues/478) |
+| 9.5.8 | Dashboard header without context line, actions wrap | 1 | 👀 In review | SCRUM-171 | [#477](https://github.com/StKostyk/award-monitoring-system/issues/477) |
+| 9.5.9 | Selection that left the list stays in Reviews and Users | 2 | ✅ Done | SCRUM-172 | [#478](https://github.com/StKostyk/award-monitoring-system/issues/478) |
 | 9.5.10 | Back from a pane at 360 px loses the list scroll | 2 |  | SCRUM-173 | [#479](https://github.com/StKostyk/award-monitoring-system/issues/479) |
 
 ### Later epics

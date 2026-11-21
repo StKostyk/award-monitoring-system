@@ -1,13 +1,15 @@
-<button
-  mat-stroked-button
-  type="button"
-  [matMenuTriggerFor]="menu"
-  [disabled]="disabled() || busy()"
-  data-testid="cv-export"
->
-  <app-icon matButtonIcon name="download" />
-  {{ 'analytics.cv.menu' | transloco }}
-</button>
+<span class="cv-export__tip" [matTooltip]="'analytics.cv.menu' | transloco">
+  <button
+    mat-icon-button
+    type="button"
+    [matMenuTriggerFor]="menu"
+    [disabled]="disabled() || busy()"
+    [attr.aria-label]="'analytics.cv.menu' | transloco"
+    data-testid="cv-export"
+  >
+    <app-icon name="download" />
+  </button>
+</span>
 <mat-menu #menu="matMenu" xPosition="before">
   @for (format of formats; track format) {
     <button

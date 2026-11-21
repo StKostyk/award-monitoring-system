@@ -4,6 +4,7 @@ import { deanRoutes, openRoute } from './routes';
 
 const DESKTOP = { width: 1280, height: 900 };
 const PHONE = { width: 360, height: 780 };
+const DESKTOP_BESIDE_SCROLLBAR = { width: 1264, height: 900 };
 /** The height of a one-line side menu item. */
 const ONE_LINE_ITEM = 48;
 
@@ -106,5 +107,28 @@ test.describe('page layout and shell (9.5.1)', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       PHONE.width,
     );
+  });
+
+  test('ac1_1 ac8_1 the dashboard header keeps the context line, the title, the period and the actions on one row beside a scrollbar', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP_BESIDE_SCROLLBAR);
+    await signInAsSeed(page, SEED.rector);
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('page-context')).toContainText('Затверджено');
+    const heading = (await page.getByTestId('page-heading').boundingBox())!;
+    for (const testId of [
+      'period-from',
+      'period-to',
+      'dashboard-summary',
+      'cv-export',
+      'dashboard-new-award',
+    ]) {
+      const control = (await page.getByTestId(testId).boundingBox())!;
+      expect(control.x).toBeGreaterThan(heading.x + heading.width);
+      expect(control.y).toBeLessThan(heading.y + heading.height);
+    }
+    await expect(page.getByTestId('dashboard-summary')).toHaveAccessibleName('Підсумок');
+    await expect(page.getByTestId('cv-export')).toHaveAccessibleName('Експорт для резюме');
   });
 });

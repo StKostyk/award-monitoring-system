@@ -34,7 +34,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       display: grid;
       gap: 4px;
       min-width: 0;
-      flex: 1 1 320px;
+      flex: 1 1 auto;
     }
 
     .page-header__context {

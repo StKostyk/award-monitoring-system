@@ -1787,6 +1787,10 @@
       "PRIVATE": "Only me and the reviewers",
       "withDocument": "With a document: {{count}}"
     },
+    "context": {
+      "approved": "Approved: {{count}}",
+      "pending": "Under review now: {{count}}"
+    },
     "cv": {
       "menu": "Export for a CV",
       "pdf": "PDF",

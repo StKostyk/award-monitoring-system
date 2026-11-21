@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButton } from '@angular/material/button';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatTooltip } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -68,7 +69,9 @@ export const MIN_FACT_AWARDS = 2;
     LatestAwardsComponent,
     LevelStairsWidgetComponent,
     MatButton,
+    MatIconButton,
     MatProgressBar,
+    MatTooltip,
     PageHeaderComponent,
     PaneComponent,
     PeriodSelectComponent,
@@ -89,6 +92,10 @@ export class DashboardComponent {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly transloco = inject(TranslocoService);
+  private readonly translation = toSignal(this.transloco.selectTranslation(), {
+    initialValue: null,
+  });
 
   protected readonly canCreate = canCreateAwards(inject(AuthService).permissions());
   protected readonly side = MY_AWARDS_SIDE;
@@ -103,6 +110,18 @@ export class DashboardComponent {
   protected readonly chosen = computed(
     () => this.period().from !== null || this.period().to !== null,
   );
+  /** The context line: approved awards of the period and requests under review, once the analytics are in. */
+  protected readonly context = computed(() => {
+    this.translation();
+    const data = this.analytics();
+    if (!data || this.invalid()) {
+      return null;
+    }
+    return [
+      this.transloco.translate('analytics.context.approved', { count: data.totals.approved }),
+      this.transloco.translate('analytics.context.pending', { count: data.inProgress.pending }),
+    ].join(' · ');
+  });
   protected readonly empty = computed(() => this.analytics()?.totals.approved === 0);
   private readonly today = currentKyivMonth();
   protected readonly thisYear = computed(

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
-import { MatButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { MatTooltip } from '@angular/material/tooltip';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../core/i18n/language.service';
@@ -11,7 +12,15 @@ import { AnalyticsService, CV_FORMATS, CvFormat } from '../analytics.service';
 /** Downloads the caller's approved awards as a CV list, PDF or text, in the language of the page. */
 @Component({
   selector: 'app-cv-export',
-  imports: [IconComponent, MatButton, MatMenu, MatMenuItem, MatMenuTrigger, TranslocoPipe],
+  imports: [
+    IconComponent,
+    MatIconButton,
+    MatMenu,
+    MatMenuItem,
+    MatMenuTrigger,
+    MatTooltip,
+    TranslocoPipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cv-export.component.html',
   styleUrl: './cv-export.component.scss',
