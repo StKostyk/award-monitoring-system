@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { Page, expect, test } from './fixtures';
 
-import { SEED, seriousViolations, signedIn } from './helpers';
+import { SEED, kyivDay, seriousViolations, signedIn } from './helpers';
 
 /** US-009 DoD: the unit analytics page is usable within this time on the seed. */
 const USABLE_WITHIN_MS = 5000;
@@ -21,13 +21,14 @@ const FILE_SIGNATURE_BYTES = 4;
 
 const FACULTY_SECTIONS = [
   'totals',
+  'units',
   'trend',
+  'top-performers',
+  'highlights',
   'comparison',
   'by-category',
   'by-level',
   'by-source',
-  'top-performers',
-  'highlights',
 ];
 
 async function sections(page: Page): Promise<string[]> {
@@ -106,10 +107,8 @@ test.describe('unit analytics', () => {
     await expect(page.getByTestId('section-totals')).toBeVisible();
     await expect(page.getByTestId('section-comparison')).toHaveCount(0);
 
-    await page.getByTestId('unit-picker').click();
     await expect(page.getByTestId(`unit-option-${DAI}`)).toBeVisible();
     await expect(page.getByTestId(`unit-option-${FMI}`)).toHaveCount(0);
-    await page.keyboard.press('Escape');
 
     await page.goto(`/analytics/units/${FMI}`);
     await expect(page.getByTestId('section-totals')).toBeVisible();
@@ -204,4 +203,72 @@ test.describe('unit analytics', () => {
     await expect(page.getByTestId('section-highlights')).toBeVisible();
     await expect(page.getByTestId('unit-export')).toBeEnabled();
   });
+
+  test('ac6_1 ac6_4 puts the tiles and the departments with the counts of the api beside the main column', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.dean);
+    const response = page.waitForResponse(
+      (candidate) =>
+        candidate.url().includes(`/api/v1/analytics/units/${FMI}?`) &&
+        candidate.request().method() === 'GET',
+    );
+    await page.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
+    const report = (await (await response).json()) as UnitReport;
+    const side = page.locator('.split__side');
+    const main = page.locator('.split__main');
+
+    await expect(side.getByTestId('tile-approved').locator('.tile__value')).toHaveText(
+      String(report.totals.approved.current),
+    );
+    await expect(side.getByTestId(`unit-option-${FMI}`)).toContainText('Увесь факультет');
+    await expect(side.getByTestId(`unit-option-${FMI}`)).toContainText(
+      String(report.totals.approved.current),
+    );
+    const department = report.units.find((row) => row.unit.id === DAI)!;
+    await expect(side.getByTestId(`unit-option-${DAI}`)).toContainText(
+      String(department.approved.current),
+    );
+    for (const section of ['trend', 'top-performers', 'highlights']) {
+      await expect(main.getByTestId(`section-${section}`)).toBeVisible();
+    }
+
+    await side.getByTestId(`unit-option-${DAI}`).click();
+    await expect(page).toHaveURL(new RegExp(`/analytics/units/${DAI}\\?from=2021&to=2025$`));
+    await expect(side.getByTestId(`unit-option-${DAI}`)).toHaveAttribute('aria-current', 'true');
+    await expect(side.getByTestId(`unit-option-${DAI}`)).toContainText(
+      String(department.approved.current),
+    );
+    await expect(side.getByTestId('tile-approved').locator('.tile__value')).toHaveText(
+      String(department.approved.current),
+    );
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
+  test('ac6_2 period chips switch to the current year and back to the whole period', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.dean);
+    const year = kyivDay().slice(0, 4);
+    await page.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
+    await expect(page.getByTestId('period-chip-all')).toHaveAttribute('aria-pressed', 'false');
+
+    await page.getByTestId('period-chip-year').click();
+    await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}\\?from=${year}&to=${year}$`));
+    await expect(page.getByTestId('period-chip-year')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('unit-analytics-compared')).toContainText(
+      `${year}, у порівнянні`,
+    );
+
+    await page.getByTestId('period-chip-all').click();
+    await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}$`));
+    await expect(page.getByTestId('period-chip-all')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('section-highlights')).toBeVisible();
+    await expect(page.getByTestId('unit-export')).toBeEnabled();
+  });
 });
+
+interface UnitReport {
+  totals: { approved: { current: number } };
+  units: { unit: { id: number }; approved: { current: number } }[];
+}

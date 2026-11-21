@@ -94,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- Unit analytics in the split layout with the department list and its approved counts; university analytics as a bento grid with faculty bars; period chips on both pages (9.5.6).
 - Reviews show the selected request beside the queue, with its route and all decisions in the pane and the selection in the URL (9.5.5).
 - Users page with the selected person in a pane beside the list, the account counts in the header and membership confirmation in the pane (9.5.4).
 - Achievements as a story feed: recipient chips, the highlight of the month and the awards grouped by year under the total count (9.5.3).

@@ -15,15 +15,16 @@ const UNIVERSITY = 1;
 const PDF_SIGNATURE_BYTES = 4;
 
 const UNIVERSITY_SECTIONS = [
-  'compliance',
   'totals',
+  'faculties',
+  'highlights',
   'trend',
-  'comparison',
+  'trends',
   'by-category',
   'by-level',
   'by-source',
-  'trends',
-  'highlights',
+  'comparison',
+  'compliance',
 ];
 
 async function sections(page: Page): Promise<string[]> {
@@ -225,7 +226,61 @@ test.describe('university analytics', () => {
         .evaluate((node) => getComputedStyle(node).fontFamily),
     ).toContain('Onest');
   });
+
+  test('ac6_3 ac6_4 lays the bento out in four, two and one columns with the numbers of the api', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.rector);
+    const response = page.waitForResponse(
+      (candidate) =>
+        candidate.url().includes('/api/v1/analytics/university?') &&
+        candidate.request().method() === 'GET',
+    );
+    await page.goto('/analytics/university?from=2021&to=2025');
+    const report = (await (await response).json()) as UniversityReport;
+
+    await expect(page.getByTestId('tile-approved').locator('.tile__value')).toHaveText(
+      String(report.totals.approved.current),
+    );
+    for (const row of report.units.filter((candidate) => !candidate.facultyLevel)) {
+      await expect(page.getByTestId(`faculty-bar-${row.unit.id}`)).toContainText(
+        String(row.approved.current),
+      );
+    }
+    await expect(page.getByTestId('period-chip-all')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByTestId('board-report')).toBeEnabled();
+
+    expect(await bentoColumns(page)).toBe(4);
+    expect(await tileSpan(page, 'faculties')).toEqual(['span 3', 'span 2']);
+    expect(await tileSpan(page, 'trend')).toEqual(['span 4', 'auto']);
+    await page.setViewportSize({ width: 900, height: 900 });
+    await expect.poll(() => bentoColumns(page)).toBe(2);
+    await page.setViewportSize({ width: 360, height: 800 });
+    await expect.poll(() => bentoColumns(page)).toBe(1);
+    expect(await noHorizontalScroll(page)).toBe(true);
+
+    await page.getByTestId(`faculty-bar-${FMI}`).getByRole('link').click();
+    await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}\\?from=2021&to=2025$`));
+  });
 });
+
+interface UniversityReport {
+  totals: { approved: { current: number } };
+  units: { unit: { id: number }; facultyLevel: boolean; approved: { current: number } }[];
+}
+
+function bentoColumns(page: Page): Promise<number> {
+  return page
+    .locator('app-bento')
+    .evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length);
+}
+
+function tileSpan(page: Page, section: string): Promise<string[]> {
+  return page.getByTestId(`section-${section}`).evaluate((node) => {
+    const tile = getComputedStyle(node.closest('app-bento-tile')!);
+    return [tile.gridColumnStart, tile.gridRowStart];
+  });
+}
 
 async function chartColours(page: Page): Promise<string[]> {
   return page

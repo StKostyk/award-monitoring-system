@@ -1,29 +1,14 @@
-<div class="university__header">
-  <h1 class="university__title">{{ 'universityAnalytics.title' | transloco }}</h1>
-  <app-board-report-button [period]="shownPeriod()" [disabled]="reportDisabled()" />
-</div>
-
-<mat-card class="university__compliance" appearance="outlined" data-testid="section-compliance">
-  <mat-card-header>
-    <mat-card-title>
-      <h2>{{ 'universityAnalytics.sections.compliance' | transloco }}</h2>
-    </mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <app-compliance-panel
-      [compliance]="compliance()"
-      [loading]="complianceLoading()"
-      [problem]="complianceProblem()"
-      (refresh)="refreshCompliance()"
-    />
-  </mat-card-content>
-</mat-card>
-
-<div class="university__controls">
+<app-page-header [heading]="'universityAnalytics.title' | transloco">
   @if (!invalid()) {
-    <app-period-select [period]="period()" (choose)="choose($event)" (allYears)="allYears()" />
+    <app-period-chips
+      pageChips
+      [period]="period()"
+      (choose)="choose($event)"
+      (allYears)="allYears()"
+    />
   }
-</div>
+  <app-board-report-button pageActions [period]="shownPeriod()" [disabled]="reportDisabled()" />
+</app-page-header>
 
 @if (invalid()) {
   <section class="university__problem" role="alert" data-testid="university-analytics-invalid">
@@ -33,6 +18,10 @@
     </button>
   </section>
 } @else {
+  <div class="university__period">
+    <app-period-select [period]="period()" (choose)="choose($event)" (allYears)="allYears()" />
+  </div>
+
   @if (loading()) {
     <mat-progress-bar
       mode="indeterminate"
@@ -56,48 +45,60 @@
       }
     </p>
 
-    <div class="university__grid">
-      <mat-card class="university__wide" appearance="outlined" data-testid="section-totals">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'unitAnalytics.sections.totals' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content><app-delta-tiles [totals]="data.totals" /></mat-card-content>
-      </mat-card>
+    <app-bento>
+      <app-bento-tile [span]="4">
+        <app-pane
+          [heading]="'unitAnalytics.sections.totals' | transloco"
+          data-testid="section-totals"
+        >
+          <app-delta-tiles [totals]="data.totals" />
+        </app-pane>
+      </app-bento-tile>
 
-      <mat-card class="university__wide" appearance="outlined" data-testid="section-trend">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'universityAnalytics.sections.trend' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content><app-projection-trend-chart [analytics]="data" /></mat-card-content>
-      </mat-card>
+      <app-bento-tile [span]="3" [rows]="2">
+        <app-pane
+          [heading]="'universityAnalytics.sections.faculties' | transloco"
+          data-testid="section-faculties"
+        >
+          <app-faculty-bars [rows]="data.units" [period]="shownPeriod()" />
+        </app-pane>
+      </app-bento-tile>
 
-      <mat-card class="university__wide" appearance="outlined" data-testid="section-comparison">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'universityAnalytics.sections.comparison' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <app-unit-comparison
-            [rows]="data.units"
-            [period]="shownPeriod()"
-            [labels]="labels"
-            [linkable]="linkable"
+      <app-bento-tile [rows]="2">
+        <app-pane
+          [heading]="'unitAnalytics.sections.highlights' | transloco"
+          data-testid="section-highlights"
+        >
+          <app-highlights
+            [highlights]="data.highlights"
+            sentenceKeys="universityAnalytics.highlights"
           />
-        </mat-card-content>
-      </mat-card>
+        </app-pane>
+      </app-bento-tile>
 
-      <mat-card appearance="outlined" data-testid="section-by-category">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'unitAnalytics.sections.byCategory' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+      <app-bento-tile [span]="4">
+        <app-pane
+          [heading]="'universityAnalytics.sections.trend' | transloco"
+          data-testid="section-trend"
+        >
+          <app-projection-trend-chart [analytics]="data" />
+        </app-pane>
+      </app-bento-tile>
+
+      <app-bento-tile [span]="4">
+        <app-pane
+          [heading]="'universityAnalytics.sections.trends' | transloco"
+          data-testid="section-trends"
+        >
+          <app-trend-lists [trends]="data.trends" />
+        </app-pane>
+      </app-bento-tile>
+
+      <app-bento-tile [span]="2">
+        <app-pane
+          [heading]="'unitAnalytics.sections.byCategory' | transloco"
+          data-testid="section-by-category"
+        >
           @if (byCategory().length > 0) {
             <app-comparison-bars
               [rows]="byCategory()"
@@ -108,16 +109,14 @@
           } @else {
             <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
           }
-        </mat-card-content>
-      </mat-card>
+        </app-pane>
+      </app-bento-tile>
 
-      <mat-card appearance="outlined" data-testid="section-by-level">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'unitAnalytics.sections.byLevel' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+      <app-bento-tile [span]="2">
+        <app-pane
+          [heading]="'unitAnalytics.sections.byLevel' | transloco"
+          data-testid="section-by-level"
+        >
           @if (byLevel().length > 0) {
             <app-comparison-bars
               [rows]="byLevel()"
@@ -128,46 +127,48 @@
           } @else {
             <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
           }
-        </mat-card-content>
-      </mat-card>
+        </app-pane>
+      </app-bento-tile>
 
-      <mat-card class="university__wide" appearance="outlined" data-testid="section-by-source">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'unitAnalytics.sections.bySource' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+      <app-bento-tile [span]="4">
+        <app-pane
+          [heading]="'unitAnalytics.sections.bySource' | transloco"
+          data-testid="section-by-source"
+        >
           @if (data.bySource.sources.length > 0) {
             <app-source-chart [bySource]="data.bySource" />
           } @else {
             <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
           }
-        </mat-card-content>
-      </mat-card>
+        </app-pane>
+      </app-bento-tile>
 
-      <mat-card class="university__wide" appearance="outlined" data-testid="section-trends">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'universityAnalytics.sections.trends' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content><app-trend-lists [trends]="data.trends" /></mat-card-content>
-      </mat-card>
-
-      <mat-card class="university__wide" appearance="outlined" data-testid="section-highlights">
-        <mat-card-header>
-          <mat-card-title>
-            <h2>{{ 'unitAnalytics.sections.highlights' | transloco }}</h2>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <app-highlights
-            [highlights]="data.highlights"
-            sentenceKeys="universityAnalytics.highlights"
+      <app-bento-tile [span]="4">
+        <app-pane
+          [heading]="'universityAnalytics.sections.comparison' | transloco"
+          data-testid="section-comparison"
+        >
+          <app-unit-comparison
+            [rows]="data.units"
+            [period]="shownPeriod()"
+            [labels]="labels"
+            [linkable]="linkable"
           />
-        </mat-card-content>
-      </mat-card>
-    </div>
+        </app-pane>
+      </app-bento-tile>
+    </app-bento>
   }
 }
+
+<app-pane
+  class="university__compliance"
+  [heading]="'universityAnalytics.sections.compliance' | transloco"
+  data-testid="section-compliance"
+>
+  <app-compliance-panel
+    [compliance]="compliance()"
+    [loading]="complianceLoading()"
+    [problem]="complianceProblem()"
+    (refresh)="refreshCompliance()"
+  />
+</app-pane>

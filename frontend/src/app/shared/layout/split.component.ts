@@ -40,6 +40,7 @@ export type SplitMode = 'stack' | 'detail';
     .split__side,
     .split__main {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
       min-width: 0;
     }

@@ -318,9 +318,12 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
     chips switch the queue; the approved request shows its state and no decision actions. (AC-5.3)
 15. Sign in as `dean.fmi`, open the faculty's unit analytics. Expected: delta tiles and the department picker on the
     left, years, most awarded and facts on the right; picking a department opens its page in the same layout; the
-    numbers match `GET /api/v1/analytics/units/<id>` for the period. (AC-6.1, AC-6.2, AC-6.4)
+    numbers match `GET /api/v1/analytics/units/<id>` for the period, the department counts included (on a department
+    page they come from the faculty's report); «Цей рік» sets `?from=<year>&to=<year>`, «Увесь період» clears the
+    period and «Експорт» exports the shown years. (AC-6.1, AC-6.2, AC-6.4)
 16. Sign in as `rector`, open `/analytics/university` at 1280, 900 and 360. Expected: four, two and one bento columns;
-    the faculties tile spans three columns and two rows at 1280. (AC-6.3, AC-1.4)
+    the faculties tile spans three columns and two rows at 1280, its bars match `units[].approved.current` of
+    `GET /api/v1/analytics/university` and a faculty name opens its unit page for the period. (AC-6.3, AC-6.4, AC-1.4)
 17. Sign in as `gdpr`, open `/compliance`. Expected: the three sections with their counts on the left; retention
     selected with the policies and the last seven runs as bars; a failed run in the error colour. (AC-7.1, AC-7.2)
 18. Sign in as `dean.fmi`, open `/delegations`, select the delegation to the secretary. Expected: period with days

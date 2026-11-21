@@ -1,18 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
-import { combineLatest } from 'rxjs';
+import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
+import { PageHeaderComponent } from '../../../../shared/layout/page-header.component';
+import { PaneComponent } from '../../../../shared/layout/pane.component';
+import { SplitComponent } from '../../../../shared/layout/split.component';
+import { organizationName } from '../../../../shared/organization-name';
 import { StatusPageComponent } from '../../../../shared/status-page/status-page.component';
 import { RECOGNITION_LEVELS, categoryName } from '../../../awards/awards.service';
 import { readPeriod } from '../../analytics-period';
 import { AnalyticsPeriod } from '../../analytics.service';
+import { PeriodChipsComponent } from '../../period-chips/period-chips.component';
 import { PeriodSelectComponent } from '../../period-select/period-select.component';
 import {
   ComparisonBarsComponent,
@@ -26,8 +30,9 @@ import { UnitAnalyticsActions } from '../store/unit-analytics.actions';
 import { UNIT_NOT_FOUND } from '../store/unit-analytics.effects';
 import { unitAnalyticsFeature } from '../store/unit-analytics.feature';
 import { TopPerformersComponent } from '../top-performers/top-performers.component';
+import { UnitAnalytics, UnitAnalyticsService } from '../unit-analytics.service';
 import { UnitComparisonComponent } from '../unit-comparison/unit-comparison.component';
-import { UnitPickerComponent } from '../unit-picker/unit-picker.component';
+import { UnitListComponent } from '../unit-list/unit-list.component';
 import { UnitTrendChartComponent } from '../unit-trend-chart/unit-trend-chart.component';
 
 /** Analytics of one faculty or department for a period, compared with the period before it. */
@@ -39,19 +44,19 @@ import { UnitTrendChartComponent } from '../unit-trend-chart/unit-trend-chart.co
     ExportMenuComponent,
     HighlightsComponent,
     MatButton,
-    MatCard,
-    MatCardContent,
-    MatCardHeader,
-    MatCardTitle,
     MatProgressBar,
+    PageHeaderComponent,
+    PaneComponent,
+    PeriodChipsComponent,
     PeriodSelectComponent,
     RouterLink,
     SourceChartComponent,
     StatusPageComponent,
     TopPerformersComponent,
     TranslocoPipe,
+    SplitComponent,
     UnitComparisonComponent,
-    UnitPickerComponent,
+    UnitListComponent,
     UnitTrendChartComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,6 +69,7 @@ export class UnitAnalyticsComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
+  private readonly service = inject(UnitAnalyticsService);
 
   readonly units = this.store.selectSignal(unitAnalyticsFeature.selectUnits);
   readonly unitId = this.store.selectSignal(unitAnalyticsFeature.selectUnitId);
@@ -75,6 +81,63 @@ export class UnitAnalyticsComponent {
   readonly invalid = signal(false);
   readonly unknownId = signal(false);
 
+  private readonly shownUnit = computed(
+    () => this.units().find((unit) => unit.id === this.unitId()) ?? this.analytics()?.unit ?? null,
+  );
+  protected readonly context = computed(() => {
+    const unit = this.shownUnit();
+    return unit ? organizationName(unit, this.language.current()) : null;
+  });
+  private readonly facultySource = computed(
+    () => {
+      const unit = this.shownUnit();
+      const parentId = unit?.parentId ?? null;
+      if (
+        !unit ||
+        unit.type === 'FACULTY' ||
+        parentId === null ||
+        this.invalid() ||
+        !this.units().some((candidate) => candidate.id === parentId)
+      ) {
+        return null;
+      }
+      return { unitId: parentId, period: this.period() };
+    },
+    {
+      equal: (a, b) =>
+        a?.unitId === b?.unitId &&
+        a?.period.from === b?.period.from &&
+        a?.period.to === b?.period.to,
+    },
+  );
+  private readonly facultyReport = toSignal(
+    toObservable(this.facultySource).pipe(
+      switchMap((source) =>
+        source
+          ? this.service.read(source.unitId, source.period).pipe(
+              map((report): UnitAnalytics | null => report),
+              catchError(() => of(null)),
+              startWith(null),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+  protected readonly counts = computed(() => {
+    const data = this.analytics();
+    const report = data?.unit.type === 'FACULTY' ? data : this.facultyReport();
+    if (!report) {
+      return data ? new Map([[data.unit.id, data.totals.approved.current]]) : null;
+    }
+    const counts = new Map(
+      report.units
+        .filter((row) => !row.facultyLevel)
+        .map((row) => [row.unit.id, row.approved.current] as const),
+    );
+    counts.set(report.unit.id, report.totals.approved.current);
+    return counts;
+  });
   protected readonly notFound = computed(
     () => this.unknownId() || this.problem() === UNIT_NOT_FOUND,
   );
@@ -134,12 +197,6 @@ export class UnitAnalyticsComponent {
           this.store.dispatch(UnitAnalyticsActions.unitSelected({ unitId, period }));
         }
       });
-  }
-
-  protected chooseUnit(unitId: number): void {
-    void this.router.navigate(['/analytics/units', unitId], {
-      queryParamsHandling: 'preserve',
-    });
   }
 
   protected choose(change: Partial<AnalyticsPeriod>): void {

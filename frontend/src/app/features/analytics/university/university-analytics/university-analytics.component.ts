@@ -1,16 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
+import { BentoComponent, BentoTileComponent } from '../../../../shared/layout/bento.component';
+import { PageHeaderComponent } from '../../../../shared/layout/page-header.component';
+import { PaneComponent } from '../../../../shared/layout/pane.component';
 import { RECOGNITION_LEVELS, categoryName } from '../../../awards/awards.service';
 import { readPeriod } from '../../analytics-period';
 import { AnalyticsPeriod } from '../../analytics.service';
+import { PeriodChipsComponent } from '../../period-chips/period-chips.component';
 import { PeriodSelectComponent } from '../../period-select/period-select.component';
 import {
   ComparisonBarsComponent,
@@ -26,6 +29,7 @@ import {
 } from '../../units/unit-comparison/unit-comparison.component';
 import { BoardReportButtonComponent } from '../board-report-button/board-report-button.component';
 import { CompliancePanelComponent } from '../compliance-panel/compliance-panel.component';
+import { FacultyBarsComponent } from '../faculty-bars/faculty-bars.component';
 import { ProjectionTrendChartComponent } from '../projection-trend-chart/projection-trend-chart.component';
 import { UniversityAnalyticsActions } from '../store/university-analytics.actions';
 import { universityAnalyticsFeature } from '../store/university-analytics.feature';
@@ -37,21 +41,23 @@ const UNIVERSITY_LABELS: ComparisonLabels = {
   chartDescription: 'universityAnalytics.comparison.chartDescription',
 };
 
-/** Analytics of the whole university for a period, with the compliance summary on top. */
+/** Analytics of the whole university for a period as a bento page, with the compliance summary below it. */
 @Component({
   selector: 'app-university-analytics',
   imports: [
+    BentoComponent,
+    BentoTileComponent,
     BoardReportButtonComponent,
     ComparisonBarsComponent,
     CompliancePanelComponent,
     DeltaTilesComponent,
+    FacultyBarsComponent,
     HighlightsComponent,
     MatButton,
-    MatCard,
-    MatCardContent,
-    MatCardHeader,
-    MatCardTitle,
     MatProgressBar,
+    PageHeaderComponent,
+    PaneComponent,
+    PeriodChipsComponent,
     PeriodSelectComponent,
     ProjectionTrendChartComponent,
     SourceChartComponent,
