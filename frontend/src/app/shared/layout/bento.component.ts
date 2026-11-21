@@ -30,10 +30,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class BentoComponent {}
 
-/** One tile of a bento page, spanning one to four columns; the span shrinks to the columns a narrow screen has. */
+/**
+ * One tile of a bento page, spanning one to four columns and one or two rows; the span shrinks to the columns a narrow
+ * screen has, and a tile spans two rows only on the four-column grid.
+ */
 @Component({
   selector: 'app-bento-tile',
-  host: { '[attr.data-span]': 'span()' },
+  host: { '[attr.data-span]': 'span()', '[attr.data-rows]': 'rows()' },
   template: `<ng-content />`,
   styles: `
     :host {
@@ -54,7 +57,15 @@ export class BentoComponent {}
       grid-column: span 4;
     }
 
+    :host([data-rows='2']) {
+      grid-row: span 2;
+    }
+
     @media (max-width: 959.98px) {
+      :host([data-rows='2']) {
+        grid-row: auto;
+      }
+
       :host([data-span='3']),
       :host([data-span='4']) {
         grid-column: span 2;
@@ -72,4 +83,6 @@ export class BentoComponent {}
 export class BentoTileComponent {
   /** The number of columns the tile spans on a wide screen, 1 to 4. */
   readonly span = input<1 | 2 | 3 | 4>(1);
+  /** The number of rows the tile spans on the four-column grid, 1 or 2. */
+  readonly rows = input<1 | 2>(1);
 }

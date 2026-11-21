@@ -47,7 +47,7 @@ import { YearGroupComponent } from './year-group.component';
     <app-bento>
       <app-bento-tile [span]="4" data-testid="wide">a</app-bento-tile>
       <app-bento-tile data-testid="narrow">b</app-bento-tile>
-      <app-bento-tile [span]="2">c</app-bento-tile>
+      <app-bento-tile [span]="2" [rows]="2">c</app-bento-tile>
     </app-bento>
     <app-year-group heading="2025">
       <p>award</p>
@@ -230,6 +230,13 @@ describe('page layout kit', () => {
 
     expect(tiles.map((tile) => tile.textContent?.trim())).toEqual(['a', 'b', 'c']);
     expect(tiles.map((tile) => tile.getAttribute('data-span'))).toEqual(['4', '1', '2']);
+  });
+
+  it('ac6_3_a_bento_tile_spans_two_rows_on_request', () => {
+    const { element } = render();
+    const tiles = [...element.querySelectorAll<HTMLElement>('app-bento app-bento-tile')];
+
+    expect(tiles.map((tile) => tile.getAttribute('data-rows'))).toEqual(['1', '1', '2']);
   });
 
   it('ac1_1_year_group_heads_its_list_with_the_year', () => {

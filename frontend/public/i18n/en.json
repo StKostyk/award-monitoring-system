@@ -1701,7 +1701,9 @@
       "to": "To",
       "any": "First award",
       "now": "This year",
-      "allYears": "All years"
+      "allYears": "All years",
+      "thisYear": "This year",
+      "wholePeriod": "Whole period"
     },
     "widgets": {
       "KPI": "Summary",
@@ -1858,7 +1860,8 @@
       "byLevel": "By level",
       "bySource": "By awarding organisation",
       "topPerformers": "Top performers",
-      "highlights": "Highlights"
+      "highlights": "Highlights",
+      "units": "Departments"
     },
     "trend": {
       "description": "Approved awards per year from {{from}} to {{to}}, {{total}} in all, personal and unit awards stacked.",
@@ -1905,7 +1908,9 @@
       "NO_AWARDS": "{{unit}}: no awards in this period, {{previous}} in the previous one",
       "NO_AWARDS_EVER": "{{unit}}: no awards in this period or the previous one",
       "BELOW_AVERAGE": "{{unit}}: {{current}} awards, under half of the faculty's average per member"
-    }
+    },
+    "wholeFaculty": "Whole faculty",
+    "approved": "approved awards"
   },
   "universityAnalytics": {
     "title": "University analytics",
@@ -1916,7 +1921,8 @@
       "compliance": "Compliance",
       "trend": "Awards by year and projection",
       "comparison": "Faculty and college comparison",
-      "trends": "Trends"
+      "trends": "Trends",
+      "faculties": "Faculties by approved awards"
     },
     "comparison": {
       "universityLevel": "University level",
@@ -1978,7 +1984,8 @@
         "reviewsOpen": "Open reviews",
         "reviewsOverdue": "Overdue reviews"
       }
-    }
+    },
+    "noFaculties": "No faculty has approved awards in this period."
   },
   "hallOfFame": {
     "title": "Hall of Fame",

@@ -20,7 +20,13 @@ import { languageStub, translations } from '../../analytics.testing';
 import { UnitAnalyticsActions } from '../store/unit-analytics.actions';
 import { UNIT_NOT_FOUND } from '../store/unit-analytics.effects';
 import { unitAnalyticsFeature } from '../store/unit-analytics.feature';
-import { ALGEBRA, FACULTY, departmentAnalytics, facultyAnalytics } from '../unit-analytics.testing';
+import {
+  ALGEBRA,
+  ANALYSIS,
+  FACULTY,
+  departmentAnalytics,
+  facultyAnalytics,
+} from '../unit-analytics.testing';
 import { UnitAnalyticsComponent } from './unit-analytics.component';
 
 describe('UnitAnalyticsComponent', () => {
@@ -90,16 +96,96 @@ describe('UnitAnalyticsComponent', () => {
     );
   });
 
-  it('ac2_2_opens_the_chosen_unit_with_the_same_period', async () => {
+  it('ac6_1_links_the_whole_faculty_and_each_department_in_the_side_column', async () => {
     await setUp();
     load();
 
-    expect(element('unit-picker')).not.toBeNull();
-    (fixture.componentInstance as unknown as { chooseUnit(id: number): void }).chooseUnit(64);
+    const list = element('unit-picker')!;
+    expect(list.closest('.split__side')).not.toBeNull();
+    expect(element('unit-option-9')!.getAttribute('href')).toBe('/analytics/units/9');
+    expect(element('unit-option-64')!.getAttribute('href')).toBe('/analytics/units/64');
+    expect(element('unit-option-9')!.textContent).toContain('Whole faculty');
+  });
 
-    expect(navigate).toHaveBeenCalledWith(['/analytics/units', 64], {
-      queryParamsHandling: 'preserve',
+  it('ac6_1_counts_the_approved_awards_of_the_faculty_and_its_departments', async () => {
+    await setUp();
+    load();
+
+    expect(element('unit-option-9')!.textContent).toContain('15');
+    expect(element('unit-option-64')!.textContent).toContain('11');
+    TestBed.inject(HttpTestingController).expectNone((req) =>
+      req.url.endsWith('/analytics/units/9'),
+    );
+  });
+
+  it('ac6_1_reads_the_department_counts_from_the_faculty_report_on_a_department_page', async () => {
+    await setUp();
+    params.next(convertToParamMap({ id: '64' }));
+    load(departmentAnalytics());
+
+    const request = TestBed.inject(HttpTestingController).expectOne((req) =>
+      req.url.endsWith('/analytics/units/9'),
+    );
+    expect(request.request.params.has('from')).toBe(false);
+    expect(request.request.params.has('to')).toBe(false);
+    request.flush(facultyAnalytics());
+    fixture.detectChanges();
+
+    expect(element('unit-option-9')!.textContent).toContain('15');
+    expect(element('unit-option-64')!.textContent).toContain('11');
+    expect(element('unit-option-64')!.getAttribute('aria-current')).toBe('true');
+  });
+
+  it('ac6_1_keeps_the_list_and_the_faculty_counts_while_a_sibling_department_loads', async () => {
+    await setUp();
+    const http = TestBed.inject(HttpTestingController);
+    params.next(convertToParamMap({ id: '64' }));
+    load(departmentAnalytics());
+    http.expectOne((req) => req.url.endsWith('/analytics/units/9')).flush(facultyAnalytics());
+
+    store.dispatch(UnitAnalyticsActions.unitsLoaded({ units: [FACULTY, ALGEBRA, ANALYSIS] }));
+    params.next(convertToParamMap({ id: '66' }));
+    fixture.detectChanges();
+
+    expect(element('section-totals')).toBeNull();
+    expect(element('unit-option-66')!.getAttribute('aria-current')).toBe('true');
+    expect(element('unit-option-64')!.textContent).toContain('11');
+    expect(element('page-context')!.textContent).toContain('Analysis');
+    http.expectNone((req) => req.url.endsWith('/analytics/units/9'));
+  });
+
+  it('ac6_1_shows_the_own_count_when_the_faculty_report_fails', async () => {
+    await setUp();
+    params.next(convertToParamMap({ id: '64' }));
+    load(departmentAnalytics());
+
+    TestBed.inject(HttpTestingController)
+      .expectOne((req) => req.url.endsWith('/analytics/units/9'))
+      .flush(null, { status: 403, statusText: 'Forbidden' });
+    fixture.detectChanges();
+
+    expect(element('unit-option-64')!.textContent).toContain('15');
+    expect(element('unit-option-9')!.querySelector('.picker__count')).toBeNull();
+    expect(element('unit-analytics-error')).toBeNull();
+  });
+
+  it('ac6_2_period_chips_set_the_current_year_or_the_whole_period', async () => {
+    await setUp();
+    load();
+    const year = currentKyivYear();
+
+    element('period-chip-year')!.click();
+    expect(navigate).toHaveBeenCalledWith([], {
+      relativeTo: TestBed.inject(ActivatedRoute),
+      queryParams: { from: year, to: year },
     });
+
+    element('period-chip-all')!.click();
+    expect(navigate).toHaveBeenCalledWith([], {
+      relativeTo: TestBed.inject(ActivatedRoute),
+      queryParams: {},
+    });
+    expect(element('unit-export')).not.toBeNull();
   });
 
   it('ac2_2_states_the_previous_period_and_that_the_year_is_not_over', async () => {
@@ -116,20 +202,29 @@ describe('UnitAnalyticsComponent', () => {
     expect(element('unit-analytics-compared')!.textContent).not.toContain('not over');
   });
 
-  it('ac2_3_shows_the_faculty_sections_in_order_with_the_comparison', async () => {
+  it('ac2_3_ac6_1_shows_the_faculty_sections_in_order_with_the_comparison', async () => {
     await setUp();
     load();
 
     expect(sections()).toEqual([
       'totals',
+      'units',
       'trend',
+      'top-performers',
+      'highlights',
       'comparison',
       'by-category',
       'by-level',
       'by-source',
-      'top-performers',
-      'highlights',
     ]);
+    const side = fixture.nativeElement.querySelector('.split__side') as HTMLElement;
+    const main = fixture.nativeElement.querySelector('.split__main') as HTMLElement;
+    expect(side.querySelector('[data-testid="section-totals"]')).not.toBeNull();
+    for (const section of ['trend', 'top-performers', 'highlights']) {
+      expect(main.querySelector(`[data-testid="section-${section}"]`)).not.toBeNull();
+    }
+    expect(fixture.nativeElement.querySelectorAll('h1')).toHaveLength(1);
+    expect(element('page-context')!.textContent).toContain('Faculty of Mathematics');
     expect(element('tile-approved')!.textContent).toContain('15');
     expect(element('tile-approved')!.textContent).toContain('+5 (+50 %)');
     expect(element('tile-awarded-people')!.textContent).toContain('new');

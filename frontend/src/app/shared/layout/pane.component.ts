@@ -23,6 +23,7 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 
     .pane {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 12px;
       padding: 20px;
       border-radius: var(--app-card-radius);

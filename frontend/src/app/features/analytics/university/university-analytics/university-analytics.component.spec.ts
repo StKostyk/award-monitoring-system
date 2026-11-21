@@ -14,6 +14,7 @@ import { BehaviorSubject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { chartStub } from '../../../../shared/charts/chart.testing';
+import { currentKyivYear } from '../../../../shared/date-format';
 import { languageStub, translations } from '../../analytics.testing';
 import { UniversityAnalyticsActions } from '../store/university-analytics.actions';
 import { universityAnalyticsFeature } from '../store/university-analytics.feature';
@@ -107,25 +108,61 @@ describe('UniversityAnalyticsComponent', () => {
     );
   });
 
-  it('ac2_3_shows_the_sections_in_order_with_the_previous_period_and_the_partial_year', async () => {
+  it('ac2_3_ac6_3_shows_the_sections_in_order_with_the_previous_period_and_the_partial_year', async () => {
     await setUp();
     load();
 
     expect(sections()).toEqual([
-      'compliance',
       'totals',
+      'faculties',
+      'highlights',
       'trend',
-      'comparison',
+      'trends',
       'by-category',
       'by-level',
       'by-source',
-      'trends',
-      'highlights',
+      'comparison',
+      'compliance',
     ]);
+    expect(fixture.nativeElement.querySelectorAll('h1')).toHaveLength(1);
     expect(element('university-analytics-compared')!.textContent).toContain(
       '2022–2026, compared with 2017–2021.',
     );
     expect(element('university-analytics-compared')!.textContent).toContain('2026 is not over yet');
+  });
+
+  it('ac6_3_lays_the_kpi_faculties_facts_and_years_out_as_bento_tiles', async () => {
+    await setUp();
+    load();
+
+    const tile = (section: string) =>
+      element(`section-${section}`)!.closest('app-bento-tile') as HTMLElement;
+    const spans = (section: string) => [
+      tile(section).getAttribute('data-span'),
+      tile(section).getAttribute('data-rows'),
+    ];
+    expect(spans('totals')).toEqual(['4', '1']);
+    expect(spans('faculties')).toEqual(['3', '2']);
+    expect(spans('highlights')).toEqual(['1', '2']);
+    expect(spans('trend')).toEqual(['4', '1']);
+    expect(element('faculty-bar-9')!.textContent).toContain('80');
+    expect(element('tile-approved')).not.toBeNull();
+  });
+
+  it('ac6_3_period_chips_and_board_report_stay_in_the_header', async () => {
+    await setUp();
+    load();
+    const year = currentKyivYear();
+
+    element('period-chip-year')!.click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { from: year, to: year } }),
+    );
+    const header = fixture.nativeElement.querySelector('app-page-header') as HTMLElement;
+    expect(header.querySelector('app-board-report-button')).not.toBeNull();
+    expect(header.querySelector('[data-testid="period-chip-all"]')).not.toBeNull();
   });
 
   it('ac2_4_links_the_faculty_and_not_the_college', async () => {
