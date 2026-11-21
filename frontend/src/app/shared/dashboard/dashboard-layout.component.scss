@@ -35,6 +35,23 @@
   }
 }
 
+.layout__column {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  container-type: inline-size;
+
+  .layout__grid {
+    @media (min-width: 960px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    @container (min-width: 520px) {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+  }
+}
+
 .layout__cell {
   display: grid;
   min-width: 0;

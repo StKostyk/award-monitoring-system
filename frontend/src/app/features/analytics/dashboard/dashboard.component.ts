@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -9,10 +8,25 @@ import { Store } from '@ngrx/store';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canCreateAwards } from '../../../core/auth/permissions';
+import { MY_AWARDS_SIDE } from '../../../core/preferences/dashboard-preferences';
 import { DashboardLayoutComponent } from '../../../shared/dashboard/dashboard-layout.component';
 import { DashboardWidgetDirective } from '../../../shared/dashboard/dashboard-widget.directive';
 import { IconComponent } from '../../../shared/icons/icon.component';
-import { MIN_STREAK, currentKyivMonth, levelSteps, streak } from '../../../shared/widgets/facts';
+import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
+import { PaneComponent } from '../../../shared/layout/pane.component';
+import { FactWidgetComponent } from '../../../shared/widgets/fact-widget.component';
+import {
+  MAX_FACTS,
+  MIN_STREAK,
+  bestYearFact,
+  currentKyivMonth,
+  firstAwardFact,
+  levelShareFact,
+  levelSteps,
+  streak,
+  streakFact,
+} from '../../../shared/widgets/facts';
+import { Fact } from '../../../shared/widgets/widget-data';
 import { KpiWidgetComponent } from '../../../shared/widgets/kpi-widget.component';
 import { LevelStairsWidgetComponent } from '../../../shared/widgets/level-stairs-widget.component';
 import { readPeriod } from '../analytics-period';
@@ -21,7 +35,9 @@ import { CategoryChartComponent } from '../category-chart/category-chart.compone
 import { CvExportComponent } from '../cv-export/cv-export.component';
 import { DashboardEmptyComponent } from '../dashboard-empty/dashboard-empty.component';
 import { InProgressComponent } from '../in-progress/in-progress.component';
+import { LatestAwardsComponent } from '../latest-awards/latest-awards.component';
 import { PeriodSelectComponent } from '../period-select/period-select.component';
+import { ProfileCardComponent } from '../profile-card/profile-card.component';
 import { RankCardComponent } from '../rank-card/rank-card.component';
 import { AnalyticsActions } from '../store/analytics.actions';
 import { analyticsFeature } from '../store/analytics.feature';
@@ -30,7 +46,13 @@ import { TimelineChartComponent } from '../timeline-chart/timeline-chart.compone
 import { VisibilityCountsComponent } from '../visibility-counts/visibility-counts.component';
 import { YearTrendChartComponent } from '../year-trend-chart/year-trend-chart.component';
 
-/** The personal dashboard: period choice, the widgets in the account's layout, the CV export, guidance when nothing counts. */
+/** Approved awards the personal facts need: one award tells nothing a fact would add. */
+export const MIN_FACT_AWARDS = 2;
+
+/**
+ * The personal dashboard: period choice, the profile and the widgets in the account's layout on a split page, the CV
+ * export, guidance when nothing counts.
+ */
 @Component({
   selector: 'app-dashboard',
   imports: [
@@ -39,17 +61,18 @@ import { YearTrendChartComponent } from '../year-trend-chart/year-trend-chart.co
     DashboardEmptyComponent,
     DashboardLayoutComponent,
     DashboardWidgetDirective,
+    FactWidgetComponent,
+    IconComponent,
     InProgressComponent,
     KpiWidgetComponent,
+    LatestAwardsComponent,
     LevelStairsWidgetComponent,
     MatButton,
-    MatCard,
-    MatCardContent,
-    MatCardHeader,
-    MatCardTitle,
-    IconComponent,
     MatProgressBar,
+    PageHeaderComponent,
+    PaneComponent,
     PeriodSelectComponent,
+    ProfileCardComponent,
     RankCardComponent,
     RouterLink,
     SummaryTilesComponent,
@@ -68,6 +91,8 @@ export class DashboardComponent {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly canCreate = canCreateAwards(inject(AuthService).permissions());
+  protected readonly side = MY_AWARDS_SIDE;
+  protected readonly minFactAwards = MIN_FACT_AWARDS;
 
   readonly period = this.store.selectSignal(analyticsFeature.selectPeriod);
   readonly analytics = this.store.selectSignal(analyticsFeature.selectAnalytics);
@@ -92,6 +117,24 @@ export class DashboardComponent {
     return found.years >= MIN_STREAK ? found.since : null;
   });
   protected readonly steps = computed(() => levelSteps(this.analytics()?.byLevel ?? []));
+  /** The 9.4.6 facts that apply to one person; growth needs monthly counts the personal analytics do not carry. */
+  protected readonly personalFacts = computed(() => {
+    const data = this.analytics();
+    if (!data) {
+      return [];
+    }
+    const source = {
+      period: data.period,
+      byYear: data.byYear,
+      byMonth: [],
+      byLevel: data.byLevel,
+      today: this.today,
+    };
+    return [bestYearFact, firstAwardFact, streakFact, levelShareFact]
+      .map((fact) => fact(source))
+      .filter((fact): fact is Fact => fact !== null)
+      .slice(0, MAX_FACTS);
+  });
 
   constructor() {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {

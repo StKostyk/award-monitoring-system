@@ -1,38 +1,14 @@
-.dashboard__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-
 .dashboard__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.dashboard__title {
-  font: var(--mat-sys-headline-small);
+.dashboard__streak {
   margin: 0;
 }
 
-.dashboard__period {
-  display: block;
-  margin-bottom: 16px;
-}
-
-.dashboard__widget {
-  min-width: 0;
-
-  h2 {
-    font: var(--mat-sys-title-medium);
-    margin: 0 0 8px;
-  }
-}
-
-.dashboard__timeline {
+.dashboard__after {
   margin-top: 16px;
 }
 

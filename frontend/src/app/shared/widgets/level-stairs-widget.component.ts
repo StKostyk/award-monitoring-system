@@ -73,6 +73,7 @@ const MIN_STEP_PERCENT = 20;
 
     .stairs__label {
       overflow-wrap: anywhere;
+      hyphens: auto;
       font: var(--mat-sys-label-small);
       color: var(--mat-sys-on-surface-variant);
     }

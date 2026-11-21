@@ -17,9 +17,11 @@ const USABLE_WITHIN_MS = 3000;
 
 const WIDGETS = [
   'KPI',
+  'FACT',
   'TREND',
   'LEVEL_STAIRS',
   'IN_PROGRESS',
+  'LATEST',
   'BY_CATEGORY',
   'RANK',
   'VISIBILITY',

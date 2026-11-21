@@ -134,6 +134,8 @@ class DashboardPreferenceServiceTest {
             assertThat(dashboard.widgets()).allSatisfy(widget -> assertThat(dashboard.holds(widget.name())).isTrue());
         }
         assertThat(Dashboard.MY_AWARDS.holds(DashboardWidget.QUEUE.name())).isFalse();
+        assertThat(Dashboard.MY_AWARDS.holds(DashboardWidget.FACT.name())).isTrue();
+        assertThat(Dashboard.MY_AWARDS.holds(DashboardWidget.LATEST.name())).isTrue();
         assertThat(Dashboard.MY_AWARDS.holds(null)).isFalse();
     }
 

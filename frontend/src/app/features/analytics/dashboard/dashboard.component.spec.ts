@@ -63,6 +63,8 @@ describe('DashboardComponent', () => {
           provide: AuthService,
           useValue: {
             permissions: signal(readPermissions(tokenWith({ permissions: ['award:create'] }))),
+            profile: signal(null),
+            fullName: signal(''),
           },
         },
       ],
@@ -174,9 +176,11 @@ describe('DashboardComponent', () => {
 
     expect(widgets()).toEqual([
       'KPI',
+      'FACT',
       'TREND',
       'LEVEL_STAIRS',
       'IN_PROGRESS',
+      'LATEST',
       'BY_CATEGORY',
       'RANK',
       'VISIBILITY',
@@ -209,10 +213,12 @@ describe('DashboardComponent', () => {
     load({ order: ['RANK', 'KPI'], hidden: ['TREND'] });
 
     expect(widgets()).toEqual([
-      'RANK',
       'KPI',
+      'FACT',
+      'RANK',
       'LEVEL_STAIRS',
       'IN_PROGRESS',
+      'LATEST',
       'BY_CATEGORY',
       'VISIBILITY',
       'TIMELINE',
@@ -220,7 +226,17 @@ describe('DashboardComponent', () => {
 
     load({
       order: [],
-      hidden: ['KPI', 'TREND', 'LEVEL_STAIRS', 'IN_PROGRESS', 'BY_CATEGORY', 'RANK', 'VISIBILITY'],
+      hidden: [
+        'KPI',
+        'FACT',
+        'TREND',
+        'LEVEL_STAIRS',
+        'IN_PROGRESS',
+        'LATEST',
+        'BY_CATEGORY',
+        'RANK',
+        'VISIBILITY',
+      ],
     });
 
     expect(widgets()).toEqual(['TIMELINE']);
@@ -243,10 +259,12 @@ describe('DashboardComponent', () => {
         layout: {
           order: [
             'KPI',
+            'FACT',
             'TREND',
             'LEVEL_STAIRS',
-            'BY_CATEGORY',
             'IN_PROGRESS',
+            'BY_CATEGORY',
+            'LATEST',
             'RANK',
             'VISIBILITY',
           ],
@@ -259,6 +277,33 @@ describe('DashboardComponent', () => {
     fixture.detectChanges();
 
     expect(element('dashboard-save-error')).not.toBeNull();
+  });
+
+  it('ac2_1_puts_the_profile_kpi_and_facts_beside_the_main_widgets_with_the_header_actions', () => {
+    load();
+
+    const side = fixture.nativeElement.querySelector('[data-testid="layout-side"]') as HTMLElement;
+    expect(side.querySelector('app-profile-card')).not.toBeNull();
+    expect(side.querySelector('[data-testid="widget-FACT"] [data-testid="fact"]')).not.toBeNull();
+    expect(element('page-heading')?.textContent).toContain('My dashboard');
+    expect(element('dashboard-new-award')?.getAttribute('href')).toBe('/awards/new');
+    expect(element('widget-LATEST')?.querySelectorAll('[data-testid="latest-award"]').length).toBe(
+      3,
+    );
+  });
+
+  it('ac2_5_leaves_the_facts_out_with_fewer_than_two_approved_awards', () => {
+    const analytics = sampleAnalytics();
+    load(undefined, {
+      ...analytics,
+      totals: { ...analytics.totals, approved: 1 },
+      byYear: [{ year: 2026, total: 1, byLevel: { NATIONAL: 1 } }],
+      byLevel: [{ level: 'NATIONAL', count: 1 }],
+      timeline: analytics.timeline.slice(0, 1),
+    });
+
+    expect(widgets()).not.toContain('FACT');
+    expect(widgets()).toContain('LATEST');
   });
 
   it('ac2_8_gives_guidance_instead_of_charts_without_counted_awards', () => {

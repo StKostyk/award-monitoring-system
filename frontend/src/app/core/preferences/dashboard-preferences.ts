@@ -19,10 +19,23 @@ export interface DashboardPreferences {
 
 /** The widgets of each dashboard in their default order. */
 export const DASHBOARD_WIDGETS: Readonly<Record<DashboardId, readonly string[]>> = {
-  MY_AWARDS: ['KPI', 'TREND', 'LEVEL_STAIRS', 'IN_PROGRESS', 'BY_CATEGORY', 'RANK', 'VISIBILITY'],
+  MY_AWARDS: [
+    'KPI',
+    'FACT',
+    'TREND',
+    'LEVEL_STAIRS',
+    'IN_PROGRESS',
+    'LATEST',
+    'BY_CATEGORY',
+    'RANK',
+    'VISIBILITY',
+  ],
   HALL_OF_FAME: ['KPI', 'TREND', 'RACE', 'RECORDS', 'FACT', 'TOP', 'LEVEL_MAP'],
   COMMAND_CENTRE: ['TODAY', 'QUEUE', 'UNITS', 'TOP'],
 };
+
+/** The widgets of the personal dashboard's side column; the others fill its main column. */
+export const MY_AWARDS_SIDE: readonly string[] = ['KPI', 'FACT'];
 
 /**
  * The widgets in display order: the stored order first, then the widgets it misses in their default order.

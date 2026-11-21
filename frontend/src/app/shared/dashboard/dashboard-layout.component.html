@@ -41,15 +41,82 @@
   </p>
 }
 
-@if (editing()) {
+@if (side()) {
+  <app-split>
+    <div splitSide class="layout__column" data-testid="layout-side">
+      <ng-content select="[layoutSide]" />
+      @if (editing()) {
+        <ng-container
+          [ngTemplateOutlet]="list"
+          [ngTemplateOutletContext]="{ ids: draftSide(), column: 'side' }"
+        />
+      } @else {
+        @for (widget of shownSide(); track widget.id()) {
+          <div class="layout__cell" [attr.data-testid]="'widget-' + widget.id()">
+            <ng-container [ngTemplateOutlet]="widget.template" />
+          </div>
+        }
+      }
+    </div>
+    <div splitMain class="layout__column" data-testid="layout-main">
+      @if (editing()) {
+        <ng-container
+          [ngTemplateOutlet]="list"
+          [ngTemplateOutletContext]="{ ids: draftMain(), column: 'main' }"
+        />
+      } @else if (shownMain().length === 0) {
+        <ng-container [ngTemplateOutlet]="allHidden" />
+      } @else {
+        <ng-container
+          [ngTemplateOutlet]="grid"
+          [ngTemplateOutletContext]="{ widgets: shownMain() }"
+        />
+      }
+      <ng-content select="[layoutMain]" />
+    </div>
+  </app-split>
+} @else if (editing()) {
+  <ng-container
+    [ngTemplateOutlet]="list"
+    [ngTemplateOutletContext]="{ ids: draftOrder(), column: 'main' }"
+  />
+} @else if (shown().length === 0) {
+  <ng-container [ngTemplateOutlet]="allHidden" />
+} @else {
+  <ng-container [ngTemplateOutlet]="grid" [ngTemplateOutletContext]="{ widgets: shown() }" />
+}
+
+<ng-template #allHidden>
+  <p class="layout__empty" data-testid="dashboard-all-hidden">
+    {{ 'dashboardLayout.allHidden' | transloco }}
+  </p>
+</ng-template>
+
+<ng-template #grid let-widgets="widgets">
+  <div class="layout__grid">
+    @for (widget of widgets; track widget.id()) {
+      <div
+        class="layout__cell"
+        [class.layout__cell--wide]="widget.wide()"
+        [attr.data-testid]="'widget-' + widget.id()"
+      >
+        <ng-container [ngTemplateOutlet]="widget.template" />
+      </div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #list let-ids="ids" let-column="column">
   <ol
     class="layout__list"
     cdkDropList
-    (cdkDropListDropped)="drop($event)"
-    [attr.aria-label]="'dashboardLayout.listLabel' | transloco"
-    data-testid="layout-list"
+    (cdkDropListDropped)="drop($event, column)"
+    [attr.aria-label]="
+      (side() ? 'dashboardLayout.' + column + 'List' : 'dashboardLayout.listLabel') | transloco
+    "
+    [attr.data-testid]="side() ? 'layout-list-' + column : 'layout-list'"
   >
-    @for (id of draftOrder(); track id; let first = $first; let last = $last) {
+    @for (id of ids; track id; let first = $first; let last = $last) {
       <li
         class="layout__item"
         cdkDrag
@@ -100,20 +167,4 @@
       </li>
     }
   </ol>
-} @else if (shown().length === 0) {
-  <p class="layout__empty" data-testid="dashboard-all-hidden">
-    {{ 'dashboardLayout.allHidden' | transloco }}
-  </p>
-} @else {
-  <div class="layout__grid">
-    @for (widget of shown(); track widget.id()) {
-      <div
-        class="layout__cell"
-        [class.layout__cell--wide]="widget.wide()"
-        [attr.data-testid]="'widget-' + widget.id()"
-      >
-        <ng-container [ngTemplateOutlet]="widget.template" />
-      </div>
-    }
-  </div>
-}
+</ng-template>

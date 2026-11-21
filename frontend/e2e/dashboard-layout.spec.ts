@@ -9,16 +9,28 @@ import {
   submitWithoutDocuments,
 } from './helpers';
 
+/** The default order of a dashboard with one approved award: no facts, KPI alone in the side column. */
 const DEFAULT_ORDER = [
   'KPI',
   'TREND',
   'LEVEL_STAIRS',
   'IN_PROGRESS',
+  'LATEST',
   'BY_CATEGORY',
   'RANK',
   'VISIBILITY',
 ];
-const WITHOUT_KPI = DEFAULT_ORDER.slice(1);
+const WITHOUT_LATEST = DEFAULT_ORDER.filter((widget) => widget !== 'LATEST');
+const LATEST_UP = [
+  'KPI',
+  'TREND',
+  'LEVEL_STAIRS',
+  'LATEST',
+  'IN_PROGRESS',
+  'BY_CATEGORY',
+  'RANK',
+  'VISIBILITY',
+];
 
 /** A fresh employee with one approved award, so that the dashboard shows its widgets. */
 async function employeeWithAward(browser: Browser): Promise<string> {
@@ -56,7 +68,7 @@ function saved(page: Page): Promise<unknown> {
 
 async function shown(page: Page): Promise<string[]> {
   return page
-    .locator('app-dashboard-layout [data-testid^="widget-"]')
+    .locator('app-dashboard-layout [data-testid^="widget-"]:not([data-testid="widget-TIMELINE"])')
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-testid')!.slice(7)));
 }
 
@@ -89,7 +101,7 @@ test.describe('scheme and dashboard layout on the account', () => {
     await expect(other.locator('html')).toHaveAttribute('data-color-scheme', 'dark');
   });
 
-  test('ac1_3 ac1_8 moves and hides widgets by keyboard, keeps them and resets them', async ({
+  test('ac1_3 ac1_8 ac2_3 moves and hides widgets by keyboard within their column, keeps them and resets them', async ({
     browser,
   }) => {
     const email = await employeeWithAward(browser);
@@ -97,28 +109,35 @@ test.describe('scheme and dashboard layout on the account', () => {
     await page.goto('/dashboard');
     await expect(page.getByTestId('widget-RANK')).toBeVisible();
     await expect.poll(() => shown(page)).toEqual(DEFAULT_ORDER);
+    await expect(page.getByTestId('layout-side').getByTestId('widget-KPI')).toBeVisible();
+    await expect(page.getByTestId('widget-FACT')).toHaveCount(0);
 
     await page.getByTestId('dashboard-customise').click();
-    await page.getByTestId('layout-down-KPI').focus();
+    await expect(page.getByTestId('layout-down-KPI')).toBeDisabled();
+    await expect(page.getByTestId('layout-up-TREND')).toBeDisabled();
+    await page.getByTestId('layout-up-LATEST').focus();
     await page.keyboard.press('Enter');
-    await expect(page.getByTestId('layout-down-KPI')).toBeFocused();
-    await expect(page.getByTestId('layout-announcement')).toHaveText('«Підсумок»: позиція 2 з 7');
+    await expect(page.getByTestId('layout-up-LATEST')).toBeFocused();
+    await expect(page.getByTestId('layout-announcement')).toHaveText(
+      '«Останні нагороди»: позиція 3 з 7',
+    );
+    await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Space');
-    await expect(page.getByTestId('layout-hide-KPI')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('layout-hide-LATEST')).toHaveAttribute('aria-pressed', 'true');
     expect(await seriousViolations(page)).toEqual([]);
 
     const stored = saved(page);
     await page.getByTestId('layout-done').click();
     await stored;
-    await expect.poll(() => shown(page)).toEqual(WITHOUT_KPI);
+    await expect.poll(() => shown(page)).toEqual(WITHOUT_LATEST);
 
     await page.reload();
     await expect(page.getByTestId('widget-RANK')).toBeVisible();
-    await expect.poll(() => shown(page)).toEqual(WITHOUT_KPI);
+    await expect.poll(() => shown(page)).toEqual(WITHOUT_LATEST);
 
     await page.getByTestId('dashboard-customise').click();
-    await expect.poll(() => listed(page)).toEqual(['TREND', 'KPI', ...DEFAULT_ORDER.slice(2)]);
+    await expect.poll(() => listed(page)).toEqual(LATEST_UP);
     await page.getByTestId('layout-reset').click();
     const reset = saved(page);
     await page.getByTestId('layout-done').click();

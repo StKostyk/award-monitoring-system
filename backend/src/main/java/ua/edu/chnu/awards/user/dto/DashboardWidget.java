@@ -18,5 +18,6 @@ public enum DashboardWidget {
     VISIBILITY,
     TODAY,
     QUEUE,
-    UNITS
+    UNITS,
+    LATEST
 }

@@ -90,6 +90,18 @@ class DashboardPreferenceFT extends AbstractFunctionalTest {
     }
 
     @Test
+    void ac2_4_theFactsAndTheLatestAwardsAreStoredInTheOneOrderAndHiddenList() {
+        Map<String, Object> body = Map.of("colorScheme", "SYSTEM", "layouts",
+            Map.of("MY_AWARDS", Map.of("order", List.of("FACT", "KPI", "LATEST"), "hidden", List.of("LATEST"))));
+
+        put(body).statusCode(HttpStatus.OK.value());
+
+        as(token).get(PREFERENCES).then().statusCode(HttpStatus.OK.value())
+            .body("layouts.MY_AWARDS.order", contains("FACT", "KPI", "LATEST"))
+            .body("layouts.MY_AWARDS.hidden", contains("LATEST"));
+    }
+
+    @Test
     void ac1_3_anEmptyBodyRestoresTheSystemSchemeAndTheDefaults() {
         put(Map.of("colorScheme", "LIGHT", "layouts", Map.of("HALL_OF_FAME",
             Map.of("order", List.of("TOP"), "hidden", List.of())))).statusCode(HttpStatus.OK.value());
