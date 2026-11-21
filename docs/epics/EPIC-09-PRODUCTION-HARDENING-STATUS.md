@@ -14,12 +14,12 @@
 | 9.2 Demo deployment and operations (Lighthouse 90 on the signed-in pages, nightly backups, deploy job, AWS EC2 server, award form in steps on phones) | PRD approved 2026-11-10 ([PRD](../features/epic-09/feature-9.2-demo-deployment.md)) | 2026-10-29 | - |
 | 9.3 New look (burgundy and cream light, Aurora dark, Manrope and Onest, Lucide icons, shell with command palette, review queue with undo, every screen restyled) | Done 2026-11-16: 7 planned stories and 5 fixes, 41 points; manual run of §10 34 steps, the three failed steps fixed in 9.3.14, 9.3.21 and 9.3.22 ([PRD](../features/epic-09/feature-9.3-new-look.md)) | 2026-11-15 | 2026-11-16 |
 | 9.4 Dashboards and widget layout (scheme and layout on the account, widget kit, Hall of Fame, «Мої нагороди» with the CV export, Command centre with the department reminder) | PRD approved 2026-11-17, 23 points ([PRD](../features/epic-09/feature-9.4-dashboards.md)) | - | - |
-| 9.5 Page layouts (page kit, My dashboard and unit analytics split, Achievements story feed, Users and Reviews with the item beside the list, university bento, Compliance and delegations split) | PRD approved 2026-11-20, 31 points ([PRD](../features/epic-09/feature-9.5-page-layouts.md)) | - | - |
+| 9.5 Page layouts (page kit, My dashboard and unit analytics split, Achievements story feed, Users and Reviews with the item beside the list, university bento, Compliance and delegations split) | Validated 2026-11-21, pending the manual run of §10: 7 stories, 31 points ([PRD](../features/epic-09/feature-9.5-page-layouts.md)) | 2026-11-20 | - |
 
 ## Current focus
 
-Feature 9.5 planned 2026-11-20 (SCRUM-163 to SCRUM-169), 9.5.1 first; the page redesign goes before the demo
-server 9.2.4 (SCRUM-134), which follows it. If time runs short, 9.5.7 and then 9.5.6 move after the deploy.
+Feature 9.5 merged and validated 2026-11-21 (SCRUM-163 to SCRUM-169); its manual run of §10 is next, then the
+9.4 close-out (9.4.8 SCRUM-170 merged) and the demo server 9.2.4 (SCRUM-134).
 
 ## Scope
 
@@ -71,14 +71,14 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5n | 9.4.1 Scheme and dashboard layout on the account | 9.4 | 5 | SCRUM-155 | #430 | no | Done |
 | 5s | 9.4.6 Role-aware navigation, personal tabs and dashboard facts | 9.4 | 3 | SCRUM-161 | #450 | no | Done |
 | 5t | 9.4.7 KPI card names the compared months | 9.4 | 1 | SCRUM-162 | #453 | no | Done |
-| 5aa | 9.5.7 Compliance and delegations in the split layout | 9.5 | 5 | SCRUM-169 | #462 | no | In review |
+| 5aa | 9.5.7 Compliance and delegations in the split layout | 9.5 | 5 | SCRUM-169 | #462 | no | Done |
 | 5z | 9.5.6 Unit analytics split and university bento | 9.5 | 5 | SCRUM-168 | #461 | no | Done |
 | 5y | 9.5.5 Reviews with the request beside the queue | 9.5 | 5 | SCRUM-167 | #460 | no | Done |
 | 5x | 9.5.4 Users with the person beside the list | 9.5 | 5 | SCRUM-166 | #459 | no | Done |
 | 5w | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | Done |
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | Done |
 | 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | Done |
-| 5za | 9.4.8 Logo opens the home of a signed-in person | 9.4 | 1 | SCRUM-170 | #471 | no | In review |
+| 5za | 9.4.8 Logo opens the home of a signed-in person | 9.4 | 1 | SCRUM-170 | #471 | no | Done |
 | 6 | 9.2.4 Demo server on AWS EC2 with a smoke test | 9.2 | 3 | SCRUM-134 | #375 | no | Planned |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 
@@ -101,6 +101,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-11-15 | Chart colours follow the theme: `--app-chart-1..8` categorical, bands one hue per scheme (burgundy light, cyan dark) | The blue single hue clashed with both schemes; the contrast checks of the 2026-10 addendum still hold | ADR-014 addendum 2026-11-15 (9.3.2) |
 | 2026-11-16 | 9.3.21 keeps the 2026-11-15 decision: only the request deferral on `/awards` ships (medians 84 / 77 after, 80 / 77 before); 90 at 4x CPU needs fewer start-up requests and a lighter phone shell, not trimming | The long tasks are spread over bootstrap, the sign-in chain and Material rendering; an empty award list left `/awards` at 77 | 9.3 PRD §10 Run 2026-11-16, SCRUM-148 |
 | 2026-11-16 | Feature 9.3 closed: steps 14 and 22 of the manual run, failed in the run, are accepted on the tests of their fix stories instead of a second walk (`review-queue.component.spec` ac14, e2e `review-queue.spec` ac6_1 to ac6_4 and «the decision lost with the session is named after the next sign-in»); step 21 stays under the 2026-11-15 decision | The fixes are frontend-only and their e2e cases replay the failed steps on the Compose stack | 9.3 PRD §10 Run 2026-11-16, PRs #416, #417, #418 |
+| 2026-11-21 | Feature 9.5 validated: every AC has a named test (AC-3.4 assertions added to `achievements.spec.ts`); full gate and e2e green; five findings recorded, a selection that leaves the list keeps its state in Reviews and Users | All 9.5 code merged; the findings do not block the manual run | [PRD 9.5 Validation](../features/epic-09/feature-9.5-page-layouts.md#validation) |
 | 2026-11-17 | Feature 9.4 PRD approved: widget order and visibility only (no free grid); the scheme and layouts in `dashboard_preferences` (V052 drops `hidden_widgets`, export format 1.8); facts generated in the browser; the reminder goes to a colleague the sender picks, once a week per department; CV export as PDF and text; `/` opens the dashboard of the highest role | The cut named on 2026-11-14; no head-of-department data exists; no stored text to translate | 9.4 PRD §7 |
 | 2026-11-14 | The "remind head of department" mail and the CV export move to 9.4; the demo server 9.2.4 moves after 9.3, the Epic 2 feature for people without an account and 9.4 | Both sit on 9.4 screens; the demo should show the finished look | 9.3 PRD §7 deviation 1 |
 | 2026-10-29 | Lighthouse 90 sits in Feature 9.2: it is measured against the production build that the deployment ships | Same build, same measurement setup as 8.1 | 8.1 PRD F-2 |
@@ -131,6 +132,11 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
   2026-12-01 it moves to the icebox with no partial merge.
 
 ## Technical notes
+
+- 9.5 refactor candidates (validation sweep 2026-11-21): `compliance.component.html` (~500 lines) as one child
+  component per section; batch selection bookkeeping in `review-list.component.ts` as a helper; one count-line
+  helper for the Users context line and the delegation days-left phrase (`pluralForm` against Transloco plurals);
+  a shared list test fixture for the three split pages; `initialsOf` wrappers against a `name` input on `appListRow`.
 
 - `oauth2_authorization` is written by `JdbcOAuth2AuthorizationService`; lookups by token value go through
   `findByToken`. Hashing needs the stored value and the lookup parameter to be hashed in one place.

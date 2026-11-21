@@ -226,7 +226,7 @@ async function anonymous(browser: Browser): Promise<{ page: Page; errors: string
 }
 
 test.describe('unit achievement pages and public achievements', () => {
-  test('ac2_1 ac2_4 ac2_5 ac2_8 a visitor without an account browses the public pages', async ({
+  test('ac2_1 ac2_4 ac2_5 ac2_8 9.5 ac3_4 a visitor without an account browses the public pages', async ({
     browser,
   }) => {
     const { published, shared, unit } = await publicAndShared(browser, 'public');
@@ -248,6 +248,7 @@ test.describe('unit achievement pages and public achievements', () => {
     await expect(page).toHaveURL(new RegExp(`/public/units/${unit}/achievements$`));
     await expect(page.getByTestId('unit-name')).not.toBeEmpty();
     await expect(card(page, published)).toBeVisible();
+    await expect(page.getByTestId('achievements-year').first()).toBeVisible();
     await expect(page.getByTestId('filter-unit')).toHaveCount(0);
 
     await page.getByTestId('unit-faculty').click();
@@ -262,7 +263,7 @@ test.describe('unit achievement pages and public achievements', () => {
     await expect(page).toHaveURL(/\/public\/units\/1\/achievements$/);
   });
 
-  test('ac2_6 staff and public pages lead to each other with the same filters', async ({
+  test('ac2_6 9.5 ac3_4 staff and public pages lead to each other with the same filters', async ({
     browser,
   }) => {
     const { published, shared, unit } = await publicAndShared(browser, 'links');
@@ -274,6 +275,8 @@ test.describe('unit achievement pages and public achievements', () => {
     await expect(page).toHaveURL(new RegExp(`/units/${unit}/achievements`));
     await expect(card(page, shared)).toBeVisible();
     await expect(card(page, published)).toBeVisible();
+    await expect(page.getByTestId('unit-name')).not.toBeEmpty();
+    await expect(page.getByTestId('achievements-year').first()).toBeVisible();
 
     await page.goto(`/achievements?year=${year}`);
     await page.getByTestId('achievements-counterpart').click();
