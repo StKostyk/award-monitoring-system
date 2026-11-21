@@ -65,4 +65,21 @@ describe('complianceFeature', () => {
         .policiesProblem,
     ).toBe('denied');
   });
+
+  it('ac7_1_keeps_each_count_and_clears_them_when_the_page_opens_again', () => {
+    const counted = [
+      ComplianceActions.countLoaded({ section: 'retention', count: 9 }),
+      ComplianceActions.countLoaded({ section: 'erasures', count: 2 }),
+      ComplianceActions.countLoadFailed({ section: 'holds' }),
+      ComplianceActions.recentRunsLoaded({ runs: [run] }),
+    ].reduce(reducer, initialState);
+
+    expect(counted.counts).toEqual({ retention: 9, erasures: 2, holds: null });
+    expect(counted.recentRuns).toEqual([run]);
+
+    const reopened = reducer(counted, ComplianceActions.overviewOpened());
+    expect(reopened.counts).toEqual({ retention: null, erasures: null, holds: null });
+    expect(reopened.recentRuns).toEqual([]);
+    expect(reducer(counted, ComplianceActions.recentRunsLoadFailed()).recentRuns).toEqual([]);
+  });
 });

@@ -325,9 +325,11 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
     the faculties tile spans three columns and two rows at 1280, its bars match `units[].approved.current` of
     `GET /api/v1/analytics/university` and a faculty name opens its unit page for the period. (AC-6.3, AC-6.4, AC-1.4)
 17. Sign in as `gdpr`, open `/compliance`. Expected: the three sections with their counts on the left; retention
-    selected with the policies and the last seven runs as bars; a failed run in the error colour. (AC-7.1, AC-7.2)
+    selected with the policies and the last seven runs as bars; a failed run in the error colour. Select «Юридичні
+    утримання» and reload: the URL holds `?tab=holds` and the section stays selected. (AC-7.1, AC-7.2)
 18. Sign in as `dean.fmi`, open `/delegations`, select the delegation to the secretary. Expected: period with days
-    left, reason, the can and cannot lines in Ukrainian and in English, «Відкликати». (AC-7.3, AC-7.4)
+    left, reason, the can and cannot lines in Ukrainian and in English, «Відкликати»; the URL holds
+    `?delegation=<id>`. At 360 px the pane shows alone with «До списку». (AC-7.3, AC-7.4)
 19. Run the axe scan on every page above at 1280 in both schemes. Expected: no serious finding and no `region`.
     (AC-1.7)
 20. Open the trend widget of the Hall of Fame as `dean.fmi` at 360 in English. Expected: the last bar's annotation
@@ -341,8 +343,8 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
     `POST /users/<id>/roles` with `updateOrganization` answers 409 `membership-already-confirmed`.
 23. Hidden in state: open `/reviews?request=<id>` of a request returned to its submitter. Expected: no decision
     buttons; `POST /awards/<id>/decisions` answers 409.
-24. Hidden in state: select a revoked or expired delegation. Expected: no «Відкликати»; `DELETE
-    /delegations/<id>` answers 409.
+24. Hidden in state: select a revoked or expired delegation, or one received. Expected: no «Відкликати»; `DELETE
+    /delegations/<id>` of the revoked one answers 409. A planned (upcoming) given delegation keeps «Відкликати».
 25. Two browsers as `secretary.fmi` and `dean.fmi` with the same request selected; the dean decides it first.
     Expected: the secretary's next refresh clears the selection with a snack bar; deciding from the stale pane
     answers 409 and the queue reloads.

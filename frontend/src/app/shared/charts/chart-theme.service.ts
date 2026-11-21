@@ -11,6 +11,7 @@ export interface ChartPalette {
   grid: string;
   surface: string;
   bar: string;
+  error: string;
   bands: string[];
   series: string[];
   fontFamily: string;
@@ -22,6 +23,7 @@ const TOKENS = {
   grid: '--mat-sys-outline-variant',
   surface: '--mat-sys-surface-container',
   bar: '--app-chart-bar',
+  error: '--mat-sys-error',
 };
 
 const BAND_TOKENS = [1, 2, 3, 4, 5].map((step) => `--app-chart-band-${step}`);
@@ -56,6 +58,7 @@ export class ChartThemeService {
       grid: resolve(TOKENS.grid),
       surface: resolve(TOKENS.surface),
       bar: resolve(TOKENS.bar),
+      error: resolve(TOKENS.error),
       bands: BAND_TOKENS.map(resolve),
       series: SERIES_TOKENS.map(resolve),
       fontFamily: this.document.defaultView?.getComputedStyle(this.document.body).fontFamily ?? '',

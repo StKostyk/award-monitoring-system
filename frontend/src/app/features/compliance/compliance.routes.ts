@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideState } from '@ngrx/store';
+import { provideEchartsCore } from 'ngx-echarts';
 
 import { ComplianceComponent } from './compliance.component';
 import { ComplianceEffects } from './store/compliance.effects';
@@ -9,7 +10,13 @@ import { complianceFeature } from './store/compliance.feature';
 export const COMPLIANCE_ROUTES: Routes = [
   {
     path: '',
-    providers: [provideState(complianceFeature), provideEffects(ComplianceEffects)],
+    providers: [
+      provideState(complianceFeature),
+      provideEffects(ComplianceEffects),
+      provideEchartsCore({
+        echarts: () => import('../../shared/charts/echarts-setup').then((m) => m.echarts),
+      }),
+    ],
     children: [{ path: '', title: 'titles.compliance', component: ComplianceComponent }],
   },
 ];
