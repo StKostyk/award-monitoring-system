@@ -11,6 +11,7 @@ import {
   signIn,
   signedInAs,
   uniqueToken,
+  userRow,
 } from './helpers';
 
 const DEPARTMENT = 'Кафедра алгебри';
@@ -49,8 +50,9 @@ test.describe('link at membership confirmation', () => {
 
     await page.goto('/admin/users');
     await page.getByTestId('filter-q').fill(email);
-    const row = page.getByRole('row').filter({ hasText: email });
-    await row.getByTestId('correct-department').click();
+    const row = userRow(page, email);
+    await row.click();
+    await page.getByTestId('correct-department').click();
 
     await expect(page.getByTestId('confirm-candidates')).toBeVisible();
     await expect(page.getByTestId(`confirm-candidate-${first}`)).toContainText('нагород: 1');
@@ -61,7 +63,7 @@ test.describe('link at membership confirmation', () => {
 
     await expect(row).toContainText('Працівник');
 
-    await row.getByTestId('user-link').click();
+    await row.click();
     await page.getByTestId('person-link-open').click();
     await expect(page.getByTestId(`confirm-candidate-${first}`)).toHaveCount(0);
     await page.getByTestId(`confirm-candidate-${second}`).click();

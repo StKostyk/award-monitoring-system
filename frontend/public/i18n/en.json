@@ -614,16 +614,14 @@
         "anyStatus": "Any status",
         "unconfirmed": "Unconfirmed only"
       },
-      "columns": {
-        "name": "User",
-        "email": "Email",
-        "organization": "Organisation",
-        "status": "Status",
-        "roles": "Roles",
-        "actions": "Actions"
-      },
       "linkPerson": "Join the awards of a colleague without an account",
-      "linked": "Awards joined: {{count}}."
+      "linked": "Awards joined: {{count}}.",
+      "counts": {
+        "total": "Listed: {{count}}",
+        "waiting": "Waiting for a membership check: {{count}}",
+        "blocked": "Blocked: {{count}}"
+      },
+      "pick": "Choose a person in the list to see the account, the roles and the actions."
     },
     "people": {
       "add": "Add a colleague without an account",

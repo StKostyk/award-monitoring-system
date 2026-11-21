@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, SEED, seriousViolations, signIn, uniqueToken } from './helpers';
+import { DEMO_PASSWORD, SEED, seriousViolations, signIn, uniqueToken, userRow } from './helpers';
 
 const DEPARTMENT = 'Кафедра алгебри';
 const LEVEL = 'Університетський';
@@ -58,7 +58,7 @@ test.describe('award import', () => {
 
     await page.goto('/admin/users');
     await page.getByTestId('filter-q').fill(lastName);
-    await page.getByRole('row').filter({ hasText: lastName }).getByTestId('user-link').click();
+    await userRow(page, lastName).click();
     await page.getByTestId('person-award-link').click();
 
     await expect(page.getByTestId('award-detail-title')).toHaveText(title);

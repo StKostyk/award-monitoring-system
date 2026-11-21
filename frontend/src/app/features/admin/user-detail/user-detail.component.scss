@@ -85,3 +85,16 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.admin__membership {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  .admin__hint {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+}

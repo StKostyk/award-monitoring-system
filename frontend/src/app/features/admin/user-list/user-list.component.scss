@@ -1,52 +1,43 @@
-.admin__heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-  margin: 0 0 16px;
-}
-
-.admin__title {
-  font: var(--mat-sys-headline-small);
-  margin: 0;
-}
-
-.admin__filters {
-  margin-bottom: 16px;
-}
-
-.admin__filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-}
-
-.admin__filter {
-  flex: 1 1 200px;
+.users__side {
+  display: grid;
+  gap: 12px;
   min-width: 0;
 }
 
-.admin__filter--wide {
-  flex: 1 1 280px;
+.users__filters {
+  display: grid;
+  gap: 12px;
 }
 
-.admin__badge {
-  display: inline-block;
-  margin-inline-start: 8px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+.users__filter-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.users__rows {
+  display: grid;
+  gap: 2px;
+}
+
+.users__chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.users__badge {
   background: var(--mat-sys-tertiary-container);
   color: var(--mat-sys-on-tertiary-container);
 }
 
-.admin__problem {
+.users__problem {
   color: var(--mat-sys-error);
 }
 
-.admin__empty {
-  padding: 24px;
-  text-align: center;
+.users__empty,
+.users__pick {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
 }

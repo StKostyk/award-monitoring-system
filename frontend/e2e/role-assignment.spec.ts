@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, SEED, registerAndVerify, signIn } from './helpers';
+import { DEMO_PASSWORD, SEED, registerAndVerify, signIn, userRow } from './helpers';
 
 const { employee, secretary, dean } = SEED;
 const password = 'correct-horse-battery';
@@ -35,11 +35,12 @@ test.describe('role assignment', () => {
 
     await expect(page).toHaveURL(/\/admin\/users$/);
     await page.getByTestId('filter-q').fill(email);
-    const row = page.getByRole('row').filter({ hasText: email });
+    const row = userRow(page, email);
 
     await expect(row.getByTestId('unconfirmed-badge')).toContainText('Не підтверджено');
 
-    await row.getByTestId('confirm-membership').click();
+    await row.click();
+    await page.getByTestId('confirm-membership').click();
 
     await expect(row).toContainText('Працівник');
     await expect(row.getByTestId('unconfirmed-badge')).toHaveCount(0);
@@ -52,7 +53,7 @@ test.describe('role assignment', () => {
     await expect(page.getByTestId('nav-awards')).toBeVisible();
     await page.goto('/admin/users');
     await page.getByTestId('filter-q').fill(email);
-    await page.getByRole('row').filter({ hasText: email }).getByTestId('user-link').click();
+    await userRow(page, email).click();
 
     await expect(page.getByTestId('detail-email')).toHaveText(email);
 

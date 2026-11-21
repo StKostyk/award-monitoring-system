@@ -13,6 +13,7 @@ import {
   sql,
   submitWithoutDocuments,
   uniqueToken,
+  userRow,
 } from './helpers';
 
 /** The faculty of the reviewer queue specs, without seed reviewers. */
@@ -209,7 +210,7 @@ test.describe('held decision when the role is revoked during the hold', () => {
     const dean = await signedIn(browser, SEED.dean);
     await dean.goto('/admin/users');
     await dean.getByTestId('filter-q').fill(reviewer);
-    await dean.getByRole('row').filter({ hasText: reviewer }).getByTestId('user-link').click();
+    await userRow(dean, reviewer).click();
     await dean
       .getByRole('listitem')
       .filter({ hasText: 'Секретар факультету' })

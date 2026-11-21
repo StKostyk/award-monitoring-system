@@ -10,6 +10,7 @@ import {
   seriousViolations,
   signIn,
   uniqueToken,
+  userRow,
 } from './helpers';
 
 const { secretary, rectorSecretary } = SEED;
@@ -64,11 +65,11 @@ test.describe('people without an account', () => {
 
     await page.goto('/admin/users');
     await page.getByTestId('filter-q').fill(lastName);
-    const row = page.getByRole('row').filter({ hasText: lastName });
+    const row = userRow(page, lastName);
 
     await expect(row.getByTestId('unclaimed-badge')).toHaveText('Без облікового запису');
 
-    await row.getByTestId('user-link').click();
+    await row.click();
     await removeOpenPerson(page);
     await page.getByTestId('filter-q').fill(lastName);
 
