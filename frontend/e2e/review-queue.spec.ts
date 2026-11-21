@@ -146,6 +146,42 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     expect(decisions(id)).toBe(0);
     await expect.poll(() => decisions(id), { timeout: 8000 }).toBe(1);
     expect(sql(`select status from awards where award_id = ${id}`)).toBe('APPROVED');
+
+    await page.goto(`/reviews?request=${id}`);
+    await expect(page.getByTestId('queue-not-waiting')).toBeVisible();
+    await expect(page.getByTestId('queue-state')).toHaveText('Затверджено');
+    await expect(page.getByTestId('queue-approve')).toHaveCount(0);
+    await page.context().close();
+  });
+
+  test('ac5_1 ac5_2 the pane keeps the selection in the url and hands the request over', async ({
+    browser,
+  }) => {
+    const title = `Лист з черги ${uniqueToken()}`;
+    const id = await submittedBy(browser, owner, title);
+    const page = await signedInAs(browser, reviewer, FRESH_PASSWORD);
+
+    await page.goto(`/reviews?request=${id}`);
+    await expect(page.getByTestId('queue-open')).toHaveText(title);
+    await expect(page.getByTestId('queue-level')).toHaveText('Секретар факультету');
+    await expect(page.getByTestId('award-status-panel')).toBeVisible();
+    await expect(page.getByTestId('queue-escalate')).toBeVisible();
+    const rows = await page.getByTestId('review-rows').boundingBox();
+    const pane = await page.getByTestId('review-queue').boundingBox();
+    expect(pane?.x ?? 0).toBeGreaterThan((rows?.x ?? 0) + (rows?.width ?? 0));
+    await page.reload();
+    await expect(page.getByTestId('queue-open')).toHaveText(title);
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.getByTestId('queue-hand-over').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(
+      sql(
+        `select count(*) from award_requests where award_id = ${id} and current_reviewer_id is not null`,
+      ),
+    ).toBe('0');
     await page.context().close();
   });
 

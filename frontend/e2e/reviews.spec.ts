@@ -100,9 +100,12 @@ test.describe('reviewer queue', () => {
     await one.getByTestId('review-tab-unassigned').click();
     const row = one.getByTestId('review-item').filter({ hasText: title });
     await expect(row).toContainText('Ірина Нова');
-    await expect(row.getByTestId('review-reviewer')).toHaveText('—');
+    await expect(row.getByTestId('review-reviewer')).toHaveCount(0);
     expect(await seriousViolations(one)).toEqual([]);
-    await row.click();
+    await row.getByTestId('review-title').click();
+    await expect(one).toHaveURL(new RegExp(`/reviews\\?.*request=${id}`));
+    await expect(one.getByTestId('queue-open')).toHaveText(title);
+    await one.getByTestId('queue-open').click();
     await expect(one).toHaveURL(new RegExp(`/awards/${id}$`));
     await expect(one.getByTestId('review-panel-reviewer')).toHaveText('Ще ніхто не взяв у роботу');
 
@@ -180,18 +183,18 @@ test.describe('reviewer queue', () => {
 
     await page.goto('/reviews');
     await expect(page.getByTestId('review-tab-unassigned')).toHaveText('Unassigned');
-    await expect(page.getByTestId('review-table')).toHaveCount(0);
-    const card = page
-      .getByTestId('review-cards')
-      .getByTestId('review-item')
-      .filter({ hasText: title });
-    await expect(card).toContainText('Faculty or department');
+    await expect(page.getByTestId('review-queue')).toBeHidden();
+    const card = page.getByTestId('review-item').filter({ hasText: title });
+    await expect(card.getByTestId('review-level')).toHaveText('Faculty secretary');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       360,
     );
     expect(await seriousViolations(page)).toEqual([]);
 
     await card.getByTestId('review-title').click();
+    await expect(page.getByTestId('review-rows')).toBeHidden();
+    await expect(page.getByTestId('queue-open')).toHaveText(title);
+    await page.getByTestId('queue-open').click();
     await expect(page.getByTestId('review-panel')).toContainText('Nobody has claimed it yet');
     await page.getByTestId('review-claim').click();
     await expect(page.getByTestId('review-panel-notice')).toHaveText(

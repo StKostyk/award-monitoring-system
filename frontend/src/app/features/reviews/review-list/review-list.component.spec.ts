@@ -4,7 +4,13 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { Router, provideRouter } from '@angular/router';
+import {
+  ActivatedRoute,
+  ParamMap,
+  Router,
+  convertToParamMap,
+  provideRouter,
+} from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
 import { BehaviorSubject, EMPTY, Subject, catchError, of, throwError } from 'rxjs';
@@ -102,11 +108,16 @@ const translations = {
 describe('ReviewListComponent', () => {
   let fixture: ComponentFixture<ReviewListComponent>;
   let store: Store;
+  const query = new BehaviorSubject<ParamMap>(convertToParamMap({}));
   const wide = new BehaviorSubject({ matches: true, breakpoints: {} });
   const permissions = signal(
     readPermissions(token({ role_scopes: ['EMPLOYEE:64', 'FACULTY_SECRETARY:9'] })),
   );
-  const reviews = { decideBatch: vi.fn(), reviewPeriod: vi.fn(() => EMPTY) };
+  const reviews = {
+    decideBatch: vi.fn(),
+    reviewPeriod: vi.fn(() => EMPTY),
+    item: vi.fn(() => EMPTY),
+  };
   const dialog = { open: vi.fn() };
   const held = {
     heldIds: signal<ReadonlySet<number>>(new Set()),
@@ -137,12 +148,13 @@ describe('ReviewListComponent', () => {
         provideStore(),
         provideState(reviewsFeature),
         { provide: OrganizationsService, useValue: organizations },
+        { provide: ActivatedRoute, useValue: { queryParamMap: query } },
         { provide: BreakpointObserver, useValue: { observe: () => wide } },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { permissions, userId: signal('21') } },
         { provide: ReviewsService, useValue: reviews },
         { provide: HeldDecisionService, useValue: held },
-        { provide: AwardsService, useValue: { get: () => EMPTY } },
+        { provide: AwardsService, useValue: { get: () => EMPTY, status: () => EMPTY } },
         { provide: DocumentsService, useValue: { list: () => of([]) } },
         { provide: MatDialog, useValue: dialog },
       ],
@@ -163,6 +175,7 @@ describe('ReviewListComponent', () => {
   }
 
   beforeEach(() => {
+    query.next(convertToParamMap({}));
     wide.next({ matches: true, breakpoints: {} });
     reviews.decideBatch.mockReset();
     dialog.open.mockReset();
@@ -191,7 +204,7 @@ describe('ReviewListComponent', () => {
     }));
   }
 
-  it('ac1_10_shows_a_row_per_request_with_deadline_overdue_chip_and_reviewer', async () => {
+  it('ac5_1_shows_a_row_per_request_with_initials_level_due_or_overdue_chip_and_reviewer', async () => {
     await create();
     load([
       reviewItem(),
@@ -208,9 +221,9 @@ describe('ReviewListComponent', () => {
     expect(store.dispatch).toHaveBeenCalledWith(ReviewsActions.opened());
     expect(rows.length).toBe(2);
     expect(rows[0].textContent).toContain('Анастасія Коваль');
-    expect(rows[0].textContent).toContain('Кафедра алгебри');
-    expect(rows[0].textContent).toContain('Національний');
-    expect(rows[0].textContent).toContain('06.10.2026');
+    expect(rows[0].querySelector('.list-row__avatar')?.textContent).toBe('АК');
+    expect(rows[0].querySelector('[data-testid="review-level"]')).not.toBeNull();
+    expect(rows[0].querySelector('[data-testid="review-due"]')).not.toBeNull();
     expect(rows[0].querySelector('[data-testid="review-overdue"]')).toBeNull();
     expect(rows[1].querySelector('[data-testid="review-overdue"]')?.textContent).toContain(
       'Прострочено',
@@ -270,30 +283,88 @@ describe('ReviewListComponent', () => {
     permissions.set(own);
   });
 
-  it('ac1_10_opens_the_award_on_a_row_click', async () => {
+  it('ac5_1_a_row_click_keeps_the_selection_in_the_url', async () => {
     await create();
     load([reviewItem()]);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
-    (fixture.nativeElement as HTMLElement)
-      .querySelector<HTMLElement>('[data-testid="review-item"]')
-      ?.click();
+    element().querySelector<HTMLElement>('[data-testid="review-title"]')?.click();
 
-    expect(navigate).toHaveBeenCalledWith(['/awards', 5]);
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: 5 }, queryParamsHandling: 'merge' }),
+    );
   });
 
-  it('ac1_10_tabs_set_the_assignment_filter', async () => {
+  it('ac5_1_the_request_in_the_url_is_marked_and_opens_the_pane', async () => {
+    await create();
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    const rows = (): NodeListOf<HTMLElement> =>
+      element().querySelectorAll('[data-testid="review-title"]');
+
+    expect(rows()[0].getAttribute('aria-current')).toBe('true');
+    expect(element().querySelector('app-split')?.classList).not.toContain('split--detail-open');
+
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedId()).toBe(6);
+    expect(rows()[0].getAttribute('aria-current')).toBeNull();
+    expect(rows()[1].getAttribute('aria-current')).toBe('true');
+    expect(element().querySelector('app-split')?.classList).toContain('split--detail-open');
+  });
+
+  it.each(['abc', '0', '-3', '1.5', '1e3', '0x10', ' 5'])(
+    'edge_an_invalid_request_%s_selects_nothing',
+    async (value) => {
+      await create();
+      query.next(convertToParamMap({ request: value }));
+
+      expect(fixture.componentInstance.selectedId()).toBeNull();
+    },
+  );
+
+  it('edge_below_960_px_nothing_is_shown_until_a_request_is_opened', async () => {
+    wide.next({ matches: false, breakpoints: {} });
+    await create();
+    load([reviewItem()]);
+
+    expect(fixture.componentInstance.shownId()).toBeNull();
+    query.next(convertToParamMap({ request: '5' }));
+    expect(fixture.componentInstance.shownId()).toBe(5);
+  });
+
+  it('ac5_1_back_clears_the_selection', async () => {
+    await create();
+    query.next(convertToParamMap({ request: '5' }));
+    fixture.detectChanges();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    element().querySelector<HTMLElement>('[data-testid="reviews-back"]')?.click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: null } }),
+    );
+  });
+
+  it('ac5_3_chips_set_the_assignment_filter', async () => {
     await create();
     const element: HTMLElement = fixture.nativeElement;
+    const pressed = (id: string): string | null | undefined =>
+      element.querySelector(`[data-testid="review-tab-${id}"]`)?.getAttribute('aria-pressed');
+
+    expect(pressed('all')).toBe('true');
+    expect(pressed('me')).toBe('false');
 
     element.querySelector<HTMLElement>('[data-testid="review-tab-me"]')?.click();
+    fixture.detectChanges();
 
     expect(store.dispatch).toHaveBeenCalledWith(
       ReviewsActions.filtersChanged({ filters: { ...NO_REVIEW_FILTERS, assigned: 'me' } }),
     );
-    expect(element.querySelector('[data-testid="review-tab-all"]')?.classList).toContain(
-      'mdc-tab--active',
-    );
+    expect(pressed('me')).toBe('true');
+    expect(pressed('all')).toBe('false');
   });
 
   it('ac1_2_offers_the_units_and_levels_inside_the_callers_scopes', async () => {
@@ -305,18 +376,6 @@ describe('ReviewListComponent', () => {
 
     expect(component.units().map((organization) => organization.id)).toEqual([64, 9]);
     expect(component.levels).toEqual(['FACULTY_SECRETARY']);
-  });
-
-  it('ac1_13_shows_cards_instead_of_the_table_on_a_narrow_screen', async () => {
-    wide.next({ matches: false, breakpoints: {} });
-    await create();
-    load([reviewItem()]);
-    const element: HTMLElement = fixture.nativeElement;
-
-    expect(element.querySelector('[data-testid="review-table"]')).toBeNull();
-    expect(
-      element.querySelectorAll('[data-testid="review-cards"] [data-testid="review-item"]').length,
-    ).toBe(1);
   });
 
   it('ac6_4_a_held_decision_takes_the_request_out_of_the_list_and_the_count', async () => {
@@ -495,8 +554,7 @@ describe('ReviewListComponent', () => {
     },
   );
 
-  it('ac4_8_cards_offer_the_same_selection_on_a_narrow_screen', async () => {
-    wide.next({ matches: false, breakpoints: {} });
+  it('ac4_8_rows_select_one_by_one_and_all_together', async () => {
     await create();
     load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
 

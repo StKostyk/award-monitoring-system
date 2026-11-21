@@ -11,26 +11,12 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
-import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
-import {
-  MatCell,
-  MatCellDef,
-  MatColumnDef,
-  MatHeaderCell,
-  MatHeaderCellDef,
-  MatHeaderRow,
-  MatHeaderRowDef,
-  MatRow,
-  MatRowDef,
-  MatTable,
-} from '@angular/material/table';
-import { MatTabLink, MatTabNav, MatTabNavPanel } from '@angular/material/tabs';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import { filter as present, forkJoin, map, tap } from 'rxjs';
@@ -45,8 +31,13 @@ import {
   OrganizationsService,
 } from '../../../core/organizations/organizations.service';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
+import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
+import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
+import { PaneComponent } from '../../../shared/layout/pane.component';
+import { SplitComponent } from '../../../shared/layout/split.component';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
+import { initials } from '../../../shared/widgets/top-widget.component';
 import { ApprovalLevel, awardTitle } from '../../awards/awards.service';
 import {
   DecisionDialogComponent,
@@ -102,26 +93,17 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
     RouterLink,
     MatButton,
     MatCheckbox,
-    MatChip,
     MatFormField,
     MatLabel,
     MatSelect,
     MatOption,
     MatProgressBar,
     MatPaginator,
-    MatTabNav,
-    MatTabLink,
-    MatTabNavPanel,
-    MatTable,
-    MatColumnDef,
-    MatHeaderCell,
-    MatHeaderCellDef,
-    MatCell,
-    MatCellDef,
-    MatHeaderRow,
-    MatHeaderRowDef,
-    MatRow,
-    MatRowDef,
+    ListRowComponent,
+    ListRowsDirective,
+    PageHeaderComponent,
+    PaneComponent,
+    SplitComponent,
     TranslocoPipe,
     KyivDatePipe,
     ReviewPeriodComponent,
@@ -135,6 +117,7 @@ const TABS: { assigned: ReviewAssignment | null; label: string }[] = [
 export class ReviewListComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly organizationList = inject(OrganizationsService);
   private readonly language = inject(LanguageService);
@@ -147,29 +130,30 @@ export class ReviewListComponent implements OnInit {
   protected readonly lowerLevel: ApprovalLevel | null =
     this.levels.at(-1) === 'DEAN' ? 'FACULTY_SECRETARY' : null;
   protected readonly pageSizes = PAGE_SIZES;
-  protected readonly columns = [
-    'select',
-    'title',
-    'recipient',
-    'organization',
-    'category',
-    'level',
-    'submitted',
-    'deadline',
-    'reviewer',
-  ];
   protected readonly units = signal<OrganizationSummary[]>([]);
-  protected readonly wide = toSignal(
+  private readonly wide = toSignal(
     inject(BreakpointObserver)
       .observe(WIDE_LAYOUT)
       .pipe(map((state) => state.matches)),
     { initialValue: true },
+  );
+  /** The award chosen with `?request=`, null when none is. */
+  readonly selectedId = toSignal(
+    this.route.queryParamMap.pipe(map((params) => requestOf(params.get('request')))),
+    { initialValue: null },
   );
 
   readonly items = this.store.selectSignal(reviewsFeature.selectItems);
   /** The requests of the page without those whose decision is held. */
   readonly visible = computed(() =>
     this.items().filter((item) => !this.heldDecisions.heldIds().has(item.awardId)),
+  );
+  /**
+   * The request in the pane: the one in the URL, else the first of the page beside the list at 960 px and wider;
+   * below that the pane shows only a request the reviewer opened, so the shortcuts never act on a hidden one.
+   */
+  readonly shownId = computed(
+    () => this.selectedId() ?? (this.wide() ? (this.visible()[0]?.awardId ?? null) : null),
   );
   readonly filters = this.store.selectSignal(reviewsFeature.selectFilters);
   readonly loading = this.store.selectSignal(reviewsFeature.selectLoading);
@@ -196,7 +180,7 @@ export class ReviewListComponent implements OnInit {
   readonly summary = signal<BatchSummary | null>(null);
 
   constructor() {
-    this.heldDecisions.returned.pipe(takeUntilDestroyed()).subscribe(() => this.reload());
+    this.heldDecisions.returned.pipe(takeUntilDestroyed()).subscribe(() => this.refresh());
   }
 
   ngOnInit(): void {
@@ -225,8 +209,25 @@ export class ReviewListComponent implements OnInit {
     );
   }
 
-  open(item: ReviewItem): void {
-    void this.router.navigate(['/awards', item.awardId]);
+  /**
+   * Shows a request in the pane and keeps it in the URL; null goes back to the queue.
+   *
+   * @param awardId the award of the request
+   */
+  select(awardId: number | null): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { request: awardId },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  isShown(item: ReviewItem): boolean {
+    return item.awardId === this.shownId();
+  }
+
+  initialsOf(item: ReviewItem): string {
+    return initials(this.recipient(item));
   }
 
   isSelected(item: ReviewItem): boolean {
@@ -301,10 +302,6 @@ export class ReviewListComponent implements OnInit {
     return unit ? organizationName(unit, this.language.current()) : item.owner.name;
   }
 
-  organization(item: ReviewItem): string {
-    return item.organization ? organizationName(item.organization, this.language.current()) : '—';
-  }
-
   unitName(unit: OrganizationSummary): string {
     return organizationName(unit, this.language.current());
   }
@@ -319,7 +316,8 @@ export class ReviewListComponent implements OnInit {
     this.store.dispatch(ReviewsActions.itemsDecided({ awardIds: [awardId] }));
   }
 
-  private reload(): void {
+  /** Reads the page of the queue again. */
+  refresh(): void {
     this.store.dispatch(
       ReviewsActions.pageChanged({ pageIndex: this.pageIndex(), pageSize: this.pageSize() }),
     );
@@ -347,7 +345,7 @@ export class ReviewListComponent implements OnInit {
       }),
     );
     if (failed.length > 0) {
-      this.reload();
+      this.refresh();
     }
   }
 
@@ -369,6 +367,11 @@ export class ReviewListComponent implements OnInit {
       )
       .sort((a, b) => organizationName(a, language).localeCompare(organizationName(b, language)));
   }
+}
+
+function requestOf(value: string | null): number | null {
+  const id = value && /^\d{1,15}$/.test(value) ? Number(value) : 0;
+  return id > 0 ? id : null;
 }
 
 function reasonOf(result: BatchItemResult): string {

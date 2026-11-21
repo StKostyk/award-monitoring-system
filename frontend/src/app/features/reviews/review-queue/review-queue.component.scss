@@ -1,28 +1,16 @@
 :host {
   display: block;
-  margin-bottom: 24px;
 }
 
-.queue__head {
+.queue__chips {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  margin-bottom: 12px;
+  gap: 8px;
 }
 
-.queue__title {
-  margin: 0;
-  font: var(--mat-sys-title-large);
-}
-
-.queue__left {
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-label-large);
-}
-
-.queue__moves {
-  margin-left: auto;
+.queue__overdue {
+  border-color: var(--mat-sys-error);
+  color: var(--mat-sys-error);
 }
 
 .queue__card {
@@ -37,7 +25,7 @@
 
 .queue__name {
   margin: 0;
-  font: var(--mat-sys-title-medium);
+  font: var(--mat-sys-title-large);
   overflow-wrap: anywhere;
 
   a {
@@ -83,6 +71,7 @@
 }
 
 .queue__held-by,
+.queue__settled,
 .queue__shortcuts {
   margin: 0;
   color: var(--mat-sys-on-surface-variant);
