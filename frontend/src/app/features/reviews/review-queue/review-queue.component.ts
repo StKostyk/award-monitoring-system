@@ -1,3 +1,4 @@
+import { HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,24 +14,40 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
-import { catchError, filter, of, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { Observable, catchError, filter, forkJoin, map, of, switchMap } from 'rxjs';
 
+import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { EmptyStateComponent } from '../../../shared/empty-state/empty-state.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
+import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
 import { AwardDocumentsComponent } from '../../awards/award-documents/award-documents.component';
-import { AwardsService, awardTitle, categoryName } from '../../awards/awards.service';
+import { AwardStatusComponent } from '../../awards/award-status/award-status.component';
+import {
+  APPROVAL_LEVELS,
+  ApprovalLevel,
+  Award,
+  AwardsService,
+  awardTitle,
+  categoryName,
+} from '../../awards/awards.service';
 import {
   DecisionDialogComponent,
   DecisionDialogData,
   DecisionInput,
 } from '../decision-dialog/decision-dialog.component';
+import {
+  HandOverDialogComponent,
+  HandOverDialogData,
+} from '../hand-over-dialog/hand-over-dialog.component';
 import { HeldDecisionService } from '../held-decision.service';
-import { DecisionType, ReviewItem } from '../reviews.service';
+import { reviewProblemKey } from '../review-problems';
+import { DecisionType, ReviewItem, ReviewerCandidate, ReviewsService } from '../reviews.service';
 
 /** The checklist of the queue; ticks are an aid and are neither sent nor kept. */
 export const QUEUE_CHECKS = ['readable', 'match', 'level'] as const;
@@ -42,18 +59,30 @@ const KEYS: Record<string, 'next' | 'previous' | 'APPROVE' | 'RETURN'> = {
   KeyR: 'RETURN',
 };
 
+/** The award of the shown request and its open request at the caller's level, null when there is none. */
+interface Detail {
+  awardId: number;
+  award: Award | null;
+  item: ReviewItem | null;
+  /** The award could not be read for another reason than not existing (offline, a server error). */
+  failed: boolean;
+}
+
 /**
- * The review queue: one open request at a time with its document, fields and checklist, moved through with J and
- * K, decided with A and R. A confirmed decision is held for ten seconds by {@link HeldDecisionService}.
+ * The pane of the review queue: the selected request with its fields, documents, checklist and route, decided with
+ * the buttons or with A and R, and moved through with J and K. A confirmed decision is held for ten seconds by
+ * {@link HeldDecisionService}; a request no longer waiting at the caller's level shows its state without actions.
  */
 @Component({
   selector: 'app-review-queue',
   imports: [
     AwardDocumentsComponent,
+    AwardStatusComponent,
     EmptyStateComponent,
     MatButton,
     MatCheckbox,
     RouterLink,
+    StatusPageComponent,
     TranslocoPipe,
     KyivDatePipe,
   ],
@@ -64,51 +93,108 @@ const KEYS: Record<string, 'next' | 'previous' | 'APPROVE' | 'RETURN'> = {
 export class ReviewQueueComponent {
   private readonly auth = inject(AuthService);
   private readonly awards = inject(AwardsService);
+  private readonly reviews = inject(ReviewsService);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
-  private readonly held = inject(HeldDecisionService);
+  private readonly heldDecisions = inject(HeldDecisionService);
 
   /** The open requests of the page, without those whose decision is held. */
   readonly items = input.required<ReviewItem[]>();
-  /** How many open requests are left in the queue. */
-  readonly left = input.required<number>();
+  /** The award shown in the pane; none shows nothing. */
+  readonly selectedId = input<number | null>(null);
   readonly loading = input(false);
+  /** Emits the request to show next, or null when the queue has none left. */
+  readonly selectedChange = output<number | null>();
   /** Emits the award whose decision was confirmed and is now held. */
   readonly decided = output<number>();
+  /** Emits after the request changed hands, so the queue is read again. */
+  readonly changed = output<void>();
 
   protected readonly checks = QUEUE_CHECKS;
-  private readonly chosen = signal<number | null>(null);
+  readonly busy = signal(false);
+  private readonly shownId = this.selectedId;
+  private readonly reloads = signal(0);
+  /** The award and request of the shown id, read again whenever the queue page changes. */
+  readonly detail = toSignal(
+    toObservable(
+      computed(() => ({ id: this.shownId(), reload: this.reloads(), page: this.items() })),
+    ).pipe(switchMap(({ id }) => (id === null ? of(null) : this.load(id)))),
+    { initialValue: null },
+  );
+  /** The shown request while it waits at the caller's level; null when it does not. */
   readonly selected = computed(() => {
-    const items = this.items();
-    return items.find((item) => item.awardId === this.chosen()) ?? items[0] ?? null;
+    const id = this.shownId();
+    const detail = this.detail();
+    const fresh = detail?.awardId === id ? detail.item : null;
+    const listed = this.items().find((item) => item.awardId === id);
+    if (!listed) {
+      return fresh;
+    }
+    return fresh?.requestId === listed.requestId
+      ? { ...listed, canEscalate: fresh.canEscalate, canTakeOver: fresh.canTakeOver }
+      : listed;
+  });
+  /** The shown request's decision is held and may still be undone; it is not decided twice. */
+  readonly held = computed(() => {
+    const id = this.shownId();
+    return id !== null && this.heldDecisions.heldIds().has(id);
+  });
+  readonly failed = computed(() => {
+    const detail = this.detail();
+    return this.selected() === null && detail?.awardId === this.shownId() && detail.failed;
+  });
+  readonly award = computed(() => {
+    const detail = this.detail();
+    return detail && detail.awardId === this.shownId() ? detail.award : null;
+  });
+  /** The award is known but its request no longer waits for the caller. */
+  readonly settled = computed(() => this.selected() === null && this.award() !== null);
+  /** The award in the URL is neither waiting nor readable. */
+  readonly missing = computed(() => {
+    const detail = this.detail();
+    return (
+      this.selected() === null &&
+      detail !== null &&
+      detail.awardId === this.shownId() &&
+      detail.award === null &&
+      !detail.failed
+    );
   });
   /** The ticked checks of the selected request, cleared when another one is selected. */
   readonly ticked = linkedSignal<number | null, ReadonlySet<string>>({
     source: () => this.selected()?.awardId ?? null,
     computation: () => new Set<string>(),
   });
-  readonly award = toSignal(
-    toObservable(computed(() => this.selected()?.awardId ?? null)).pipe(
-      switchMap((id) =>
-        id === null ? of(null) : this.awards.get(id).pipe(catchError(() => of(null))),
-      ),
-    ),
-    { initialValue: null },
-  );
+  readonly mine = computed(() => {
+    const reviewer = this.selected()?.reviewer ?? null;
+    return reviewer !== null && String(reviewer.id) === this.auth.userId();
+  });
   readonly canDecide = computed(() => {
     const item = this.selected();
-    return (
-      item !== null && (item.reviewer === null || String(item.reviewer.id) === this.auth.userId())
-    );
+    return item !== null && !this.held() && (item.reviewer === null || this.mine());
+  });
+  /** The level an escalation goes to; null at the top or when the caller's role already covers it. */
+  readonly nextLevel = computed<ApprovalLevel | null>(() => {
+    const item = this.selected();
+    if (item === null || item.canEscalate === false) {
+      return null;
+    }
+    const index = APPROVAL_LEVELS.indexOf(item.level);
+    return index >= 0 && index < APPROVAL_LEVELS.length - 1 ? APPROVAL_LEVELS[index + 1] : null;
   });
 
   /** Moves to the next request, or the previous one with a negative step. */
   move(step: number): void {
     const items = this.items();
-    const index = items.findIndex((item) => item.awardId === this.selected()?.awardId);
-    const next = items[index + step];
+    const index = items.findIndex((item) => item.awardId === this.shownId());
+    if (index < 0 && step < 0) {
+      return;
+    }
+    const next = index < 0 ? items[0] : items[index + step];
     if (next) {
-      this.chosen.set(next.awardId);
+      this.selectedChange.emit(next.awardId);
     }
   }
 
@@ -131,12 +217,12 @@ export class ReviewQueueComponent {
    */
   decide(decision: DecisionType): void {
     const item = this.selected();
-    if (item === null || !this.canDecide()) {
+    if (item === null || !this.canDecide() || (decision === 'ESCALATE' && !this.nextLevel())) {
       return;
     }
     const data: DecisionDialogData<DecisionInput> = {
       decision,
-      target: null,
+      target: decision === 'ESCALATE' ? this.nextLevel() : null,
       documents: item.documentCount,
       draft: String(item.awardId),
       submit: (entered: DecisionInput) => of(entered),
@@ -151,9 +237,47 @@ export class ReviewQueueComponent {
       .subscribe((entered) => {
         const items = this.items();
         const index = items.findIndex((each) => each.awardId === item.awardId);
-        this.chosen.set((items[index + 1] ?? items[index - 1])?.awardId ?? null);
-        this.held.hold(item.awardId, { decision, requestVersion: item.requestVersion, ...entered });
+        const next = index < 0 ? items[0] : (items[index + 1] ?? items[index - 1]);
+        this.selectedChange.emit(next?.awardId ?? null);
+        this.heldDecisions.hold(item.awardId, {
+          decision,
+          requestVersion: item.requestVersion,
+          ...entered,
+        });
         this.decided.emit(item.awardId);
+      });
+  }
+
+  /** Hands the request to a colleague, claiming it first when nobody holds it. */
+  handOver(): void {
+    const item = this.selected();
+    if (item === null || !this.canDecide()) {
+      return;
+    }
+    const data: HandOverDialogData = { awardId: item.awardId };
+    this.dialog
+      .open<HandOverDialogComponent, HandOverDialogData, ReviewerCandidate>(
+        HandOverDialogComponent,
+        { data, width: '420px' },
+      )
+      .afterClosed()
+      .pipe(
+        filter((candidate): candidate is ReviewerCandidate => !!candidate),
+        switchMap((candidate) => {
+          this.busy.set(true);
+          const held: Observable<ReviewItem> = this.mine()
+            ? of(item)
+            : this.reviews.claim(item.awardId, item.requestVersion);
+          return held.pipe(
+            switchMap((claimed) =>
+              this.reviews.handOver(item.awardId, claimed.requestVersion, candidate.id),
+            ),
+          );
+        }),
+      )
+      .subscribe({
+        next: () => this.after('reviews.messages.handedOver'),
+        error: (error: unknown) => this.after(reviewProblemKey(problemType(error))),
       });
   }
 
@@ -171,7 +295,7 @@ export class ReviewQueueComponent {
     }
   }
 
-  title(item: ReviewItem): string {
+  title(item: Pick<Award, 'title' | 'titleUk'>): string {
     return awardTitle(item, this.language.current());
   }
 
@@ -180,8 +304,32 @@ export class ReviewQueueComponent {
     return unit ? organizationName(unit, this.language.current()) : item.owner.name;
   }
 
+  unit(item: ReviewItem): string {
+    return item.organization ? organizationName(item.organization, this.language.current()) : '—';
+  }
+
   category(item: ReviewItem): string {
     return item.category ? categoryName(item.category, this.language.current()) : '—';
+  }
+
+  private load(awardId: number): Observable<Detail> {
+    let failed = false;
+    return forkJoin({
+      award: this.awards.get(awardId).pipe(
+        catchError((error: unknown) => {
+          failed = problemStatus(error) !== HttpStatusCode.NotFound;
+          return of(null);
+        }),
+      ),
+      item: this.reviews.item(awardId).pipe(catchError(() => of(null))),
+    }).pipe(map((loaded) => ({ awardId, ...loaded, failed })));
+  }
+
+  private after(message: string): void {
+    this.busy.set(false);
+    this.snackBar.open(this.transloco.translate(message), undefined, { duration: 5000 });
+    this.reloads.update((count) => count + 1);
+    this.changed.emit();
   }
 }
 

@@ -37,7 +37,7 @@ interface Held {
 
 /**
  * Holds a decision confirmed in the review queue for ten seconds so that «Скасувати» can take it back, then sends
- * it. Held decisions go out at once when the person moves within the app or signs out, and with a keepalive request
+ * it. Held decisions go out at once when the person moves to another page or signs out, and with a keepalive request
  * when the tab closes; nothing is reverted on the server, because nothing reaches it before the hold ends.
  */
 @Injectable({ providedIn: 'root' })
@@ -63,9 +63,11 @@ export class HeldDecisionService {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
-    inject(Router)
-      .events.pipe(
+    const router = inject(Router);
+    router.events
+      .pipe(
         filter((event) => event instanceof NavigationStart),
+        filter((event) => pathOf(event.url) !== pathOf(router.url)),
         takeUntilDestroyed(destroyRef),
       )
       .subscribe(() => void this.flush());
@@ -212,4 +214,8 @@ export class HeldDecisionService {
   private publish(): void {
     this.heldIds.set(new Set(this.held.keys()));
   }
+}
+
+function pathOf(url: string): string {
+  return url.split(/[?#]/)[0];
 }

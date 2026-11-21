@@ -1088,9 +1088,6 @@
     "queue": {
       "title": "Queue",
       "left": "{{count}} left",
-      "previous": "Previous",
-      "next": "Next",
-      "open": "Open the award",
       "date": "Award date",
       "awardingOrganization": "Awarded by",
       "heldBy": "Reviewed by {{name}}",
@@ -1108,13 +1105,22 @@
       "waiting": "The decision goes out once the connection is back",
       "signedOut": "Your access changed while the decision was held. Not saved, awards: #{{id}}",
       "gotIt": "Got it",
-      "empty": "The queue is empty"
+      "empty": "The queue is empty",
+      "submitted": "Sent {{date}}",
+      "due": "Due {{date}}",
+      "handOver": "Hand over to a colleague…",
+      "notWaiting": "This request no longer waits at your level; no decision can be made on it.",
+      "notFound": "Request not found",
+      "notFoundHint": "It may have been removed or is not available to you. Choose another request in the queue.",
+      "loadFailed": "The request could not be loaded",
+      "loadFailedHint": "Check the connection and choose the request again."
     },
     "title": "Reviews",
     "tabs": {
       "mine": "Mine",
       "unassigned": "Unassigned",
-      "all": "All"
+      "all": "All",
+      "label": "Which requests to show"
     },
     "filters": {
       "level": "Review level",
@@ -1124,12 +1130,9 @@
       "lowerOverdue": "Overdue at the level below"
     },
     "columns": {
-      "title": "Award",
       "recipient": "Recipient",
       "organization": "Faculty or department",
       "category": "Category level",
-      "level": "Review level",
-      "submitted": "Submitted",
       "deadline": "Deadline",
       "reviewer": "Reviewer"
     },

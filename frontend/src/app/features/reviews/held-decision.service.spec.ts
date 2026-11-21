@@ -61,7 +61,7 @@ describe('HeldDecisionService', () => {
         { provide: SignInNoticeService, useValue: notice },
         { provide: ConnectivityService, useValue: { online, reconnected$: reconnected } },
         { provide: MatSnackBar, useValue: snackBar },
-        { provide: Router, useValue: { events } },
+        { provide: Router, useValue: { events, url: '/reviews?request=5' } },
         {
           provide: TranslocoService,
           useValue: {
@@ -122,6 +122,15 @@ describe('HeldDecisionService', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(reviews.decide).toHaveBeenCalledWith(5, approve);
+  });
+
+  it('ac5_4_selecting_another_request_in_the_queue_keeps_the_hold', async () => {
+    service.hold(5, approve);
+
+    events.next(new NavigationStart(1, '/reviews?request=8'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(reviews.decide).not.toHaveBeenCalled();
   });
 
   it('ac6_5_sign_out_waits_for_the_held_decisions', async () => {

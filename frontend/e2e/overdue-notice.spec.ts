@@ -89,7 +89,7 @@ test.describe('overdue notice', () => {
       );
     });
     expect(clipped).toBe(false);
-    const box = await deanPage.getByTestId('review-table').boundingBox();
+    const box = await deanPage.getByTestId('review-rows').boundingBox();
     expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(1280);
   });
 });

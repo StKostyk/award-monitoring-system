@@ -1,29 +1,31 @@
-<section class="queue" aria-labelledby="queue-title" data-testid="review-queue">
-  <div class="queue__head">
-    <h2 id="queue-title" class="queue__title">{{ 'reviews.queue.title' | transloco }}</h2>
-    <span class="queue__left" data-testid="queue-left">{{
-      'reviews.queue.left' | transloco: { count: left() }
-    }}</span>
-    @if (items().length > 1) {
-      <span class="queue__moves">
-        <button mat-button type="button" (click)="move(-1)" data-testid="queue-previous">
-          {{ 'reviews.queue.previous' | transloco }}
-        </button>
-        <button mat-button type="button" (click)="move(1)" data-testid="queue-next">
-          {{ 'reviews.queue.next' | transloco }}
-        </button>
-      </span>
-    }
-  </div>
-
+<section
+  class="queue"
+  [attr.aria-label]="'reviews.queue.title' | transloco"
+  data-testid="review-queue"
+>
   @if (selected(); as item) {
     <article class="queue__card" [attr.data-award]="item.awardId" data-testid="queue-selected">
-      <h3 class="queue__name">
+      <div class="queue__chips">
+        <span class="app-chip app-chip--filled" data-testid="queue-level">{{
+          'roles.' + item.level | transloco
+        }}</span>
+        <span class="app-chip">{{
+          'reviews.queue.submitted' | transloco: { date: (item.submittedAt | kyivDate) }
+        }}</span>
+        @if (item.overdue) {
+          <span class="app-chip queue__overdue" data-testid="queue-overdue">{{
+            'reviews.overdue' | transloco
+          }}</span>
+        }
+      </div>
+      <h2 class="queue__name">
         <a [routerLink]="['/awards', item.awardId]" data-testid="queue-open">{{ title(item) }}</a>
-      </h3>
+      </h2>
       <dl class="queue__fields">
         <dt>{{ 'reviews.columns.recipient' | transloco }}</dt>
         <dd data-testid="queue-recipient">{{ recipient(item) }}</dd>
+        <dt>{{ 'reviews.columns.organization' | transloco }}</dt>
+        <dd data-testid="queue-unit">{{ unit(item) }}</dd>
         <dt>{{ 'reviews.columns.category' | transloco }}</dt>
         <dd>
           {{ category(item) }}
@@ -39,11 +41,70 @@
             {{ award.awardDate ? (award.awardDate | kyivDate) : '—' }}
           </dd>
         }
-        <dt>{{ 'reviews.columns.level' | transloco }}</dt>
-        <dd>{{ 'roles.' + item.level | transloco }}</dd>
-        <dt>{{ 'reviews.columns.submitted' | transloco }}</dt>
-        <dd>{{ item.submittedAt | kyivDate }}</dd>
+        <dt>{{ 'reviews.columns.deadline' | transloco }}</dt>
+        <dd>{{ item.deadline | kyivDate }}</dd>
       </dl>
+
+      @if (!canDecide() && item.reviewer; as reviewer) {
+        <p class="queue__held-by" data-testid="queue-held-by">
+          {{ 'reviews.queue.heldBy' | transloco: { name: reviewer.name } }}
+        </p>
+      }
+      <div class="queue__actions">
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="!canDecide() || busy()"
+          (click)="decide('APPROVE')"
+          data-testid="queue-approve"
+        >
+          {{ 'reviews.panel.approve' | transloco }}
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!canDecide() || busy()"
+          (click)="decide('RETURN')"
+          data-testid="queue-return"
+        >
+          {{ 'reviews.panel.return' | transloco }}
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!canDecide() || busy()"
+          (click)="handOver()"
+          data-testid="queue-hand-over"
+        >
+          {{ 'reviews.queue.handOver' | transloco }}
+        </button>
+        @if (nextLevel(); as next) {
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="!canDecide() || busy()"
+            (click)="decide('ESCALATE')"
+            data-testid="queue-escalate"
+          >
+            {{
+              'reviews.panel.escalate'
+                | transloco: { level: ('reviews.decide.to.' + next | transloco) }
+            }}
+          </button>
+        }
+        <button
+          mat-button
+          type="button"
+          [disabled]="!canDecide() || busy()"
+          (click)="decide('REJECT')"
+          data-testid="queue-reject"
+        >
+          {{ 'reviews.panel.reject' | transloco }}
+        </button>
+      </div>
+      <p class="queue__shortcuts" data-testid="queue-shortcuts">
+        {{ 'reviews.queue.shortcuts' | transloco }}
+      </p>
 
       <app-award-documents class="queue__documents" [awardId]="item.awardId" />
 
@@ -59,45 +120,46 @@
         }
       </fieldset>
 
-      @if (!canDecide() && item.reviewer; as reviewer) {
-        <p class="queue__held-by" data-testid="queue-held-by">
-          {{ 'reviews.queue.heldBy' | transloco: { name: reviewer.name } }}
-        </p>
+      @for (id of [item.awardId]; track id) {
+        <app-award-status [awardId]="id" />
       }
-      <div class="queue__actions">
-        <button
-          mat-flat-button
-          type="button"
-          [disabled]="!canDecide()"
-          (click)="decide('APPROVE')"
-          data-testid="queue-approve"
-        >
-          {{ 'reviews.panel.approve' | transloco }}
-        </button>
-        <button
-          mat-stroked-button
-          type="button"
-          [disabled]="!canDecide()"
-          (click)="decide('RETURN')"
-          data-testid="queue-return"
-        >
-          {{ 'reviews.panel.return' | transloco }}
-        </button>
-        <button
-          mat-button
-          type="button"
-          [disabled]="!canDecide()"
-          (click)="decide('REJECT')"
-          data-testid="queue-reject"
-        >
-          {{ 'reviews.panel.reject' | transloco }}
-        </button>
-      </div>
-      <p class="queue__shortcuts" data-testid="queue-shortcuts">
-        {{ 'reviews.queue.shortcuts' | transloco }}
-      </p>
     </article>
-  } @else if (!loading()) {
+  } @else if (settled() && award(); as award) {
+    <article class="queue__card" [attr.data-award]="award.id" data-testid="queue-settled">
+      <div class="queue__chips">
+        <span class="app-chip app-chip--filled" data-testid="queue-state">{{
+          'awards.status.' + award.status | transloco
+        }}</span>
+      </div>
+      <h2 class="queue__name">
+        <a [routerLink]="['/awards', award.id]" data-testid="queue-open">{{ title(award) }}</a>
+      </h2>
+      <p class="queue__settled" role="status" data-testid="queue-not-waiting">
+        {{ 'reviews.queue.notWaiting' | transloco }}
+      </p>
+      @if (award.status !== 'DRAFT') {
+        @for (id of [award.id]; track id) {
+          <app-award-status [awardId]="id" />
+        }
+      }
+    </article>
+  } @else if (failed()) {
+    <app-status-page
+      [level]="2"
+      icon="cloud-off"
+      [title]="'reviews.queue.loadFailed' | transloco"
+      [text]="'reviews.queue.loadFailedHint' | transloco"
+      data-testid="queue-load-failed"
+    />
+  } @else if (missing()) {
+    <app-status-page
+      [level]="2"
+      icon="search-x"
+      [title]="'reviews.queue.notFound' | transloco"
+      [text]="'reviews.queue.notFoundHint' | transloco"
+      data-testid="queue-not-found"
+    />
+  } @else if (!loading() && items().length === 0) {
     <app-empty-state
       icon="circle-check"
       [text]="'reviews.queue.empty' | transloco"
