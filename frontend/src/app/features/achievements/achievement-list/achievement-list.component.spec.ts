@@ -15,6 +15,7 @@ import { MockInstance, vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { OrganizationsService } from '../../../core/organizations/organizations.service';
+import { kyivToday } from '../../../shared/date-format';
 import { Page } from '../../awards/awards.service';
 import { Achievement, AchievementsService, NO_ACHIEVEMENT_FILTERS } from '../achievements.service';
 import { AchievementListComponent } from './achievement-list.component';
@@ -52,12 +53,13 @@ const translations = {
       personTitle: 'Досягнення: {{name}}',
       publicPage: 'Публічна сторінка',
       viewAsStaff: 'Переглянути як співробітник',
+      count: { one: '{{count}} досягнення', many: '{{count}} досягнень' },
     },
   },
 };
 
 describe('AchievementListComponent', () => {
-  const service = { list: vi.fn(), units: vi.fn() };
+  const service = { list: vi.fn(), units: vi.fn(), highlightCandidates: vi.fn() };
   const signedIn = signal(true);
   let params: BehaviorSubject<ParamMap>;
   let unitId: BehaviorSubject<ParamMap>;
@@ -101,6 +103,7 @@ describe('AchievementListComponent', () => {
     signedIn.set(true);
     service.list.mockReset().mockReturnValue(of(page([achievement])));
     service.units.mockReset().mockReturnValue(of([]));
+    service.highlightCandidates.mockReset().mockReturnValue(of([]));
   });
 
   it('ac1_8_shows_the_shared_awards_as_cards', async () => {
@@ -370,6 +373,106 @@ describe('AchievementListComponent', () => {
     expect(service.list).toHaveBeenCalledWith(
       { filters: NO_ACHIEVEMENT_FILTERS, page: 0, size: 20 },
       'signed-in',
+    );
+  });
+
+  it('ac3_1_the_recipient_chips_set_the_filter_in_the_address_bar', async () => {
+    params.next(convertToParamMap({ recipient: 'UNIT' }));
+    const fixture = await open();
+
+    expect(element(fixture, 'recipient-UNIT')?.getAttribute('aria-pressed')).toBe('true');
+    expect(element(fixture, 'recipient-all')?.getAttribute('aria-pressed')).toBe('false');
+
+    (element(fixture, 'recipient-PERSON') as HTMLButtonElement).click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { recipient: 'PERSON' } }),
+    );
+
+    (element(fixture, 'recipient-all') as HTMLButtonElement).click();
+
+    expect(navigate).toHaveBeenLastCalledWith([], expect.objectContaining({ queryParams: {} }));
+  });
+
+  it('ac3_2_highlights_the_highest_level_of_this_month_from_the_list_filters', async () => {
+    const today = kyivToday();
+    service.highlightCandidates.mockReturnValue(
+      of([
+        { ...achievement, awardId: 9, awardDate: today, title: 'Faculty prize' },
+        {
+          ...achievement,
+          awardId: 8,
+          awardDate: `${today.slice(0, 7)}-01`,
+          title: 'International grant',
+          titleUk: 'Міжнародний грант',
+          category: { ...achievement.category, level: 'INTERNATIONAL' },
+        },
+      ]),
+    );
+    params.next(convertToParamMap({ recipient: 'PERSON' }));
+    const fixture = await open();
+
+    expect(service.highlightCandidates).toHaveBeenCalledWith(
+      expect.objectContaining({ recipient: 'PERSON', unit: null }),
+      'signed-in',
+    );
+    expect(element(fixture, 'achievements-highlight')?.textContent).toContain('Міжнародний грант');
+  });
+
+  it('ac3_2_leaves_the_highlight_out_on_a_narrowed_list_and_brings_it_back_on_retry', async () => {
+    const today = kyivToday();
+    service.highlightCandidates
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })))
+      .mockReturnValue(of([{ ...achievement, awardDate: today }]));
+    service.list.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-highlight')).toBeNull();
+
+    (element(fixture, 'achievements-retry') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(element(fixture, 'achievements-highlight')).not.toBeNull();
+
+    params.next(convertToParamMap({ year: '1976' }));
+    fixture.detectChanges();
+
+    expect(element(fixture, 'achievements-highlight')).toBeNull();
+  });
+
+  it('ac3_2_leaves_the_highlight_out_without_awards_this_month', async () => {
+    service.highlightCandidates.mockReturnValue(of([{ ...achievement, awardDate: '2020-01-01' }]));
+    const fixture = await open();
+
+    expect(element(fixture, 'achievements-highlight')).toBeNull();
+  });
+
+  it('ac3_3_groups_the_page_by_year_newest_first_with_the_count_in_the_title', async () => {
+    service.list.mockReturnValue(
+      of({
+        ...page([
+          { ...achievement, awardId: 3, awardDate: '2026-02-01' },
+          { ...achievement, awardId: 2, awardDate: '2025-06-01' },
+          { ...achievement, awardId: 1, awardDate: '2025-01-01' },
+        ]),
+        totalElements: 906,
+      }),
+    );
+    const fixture = await open();
+
+    const groups = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[data-testid="achievements-year"]',
+      ),
+    ];
+    expect(groups.map((group) => group.querySelector('h2')?.textContent?.trim())).toEqual([
+      '2026',
+      '2025',
+    ]);
+    expect(groups[1].querySelectorAll('[data-testid="achievement-card"]')).toHaveLength(2);
+    expect(element(fixture, 'achievements-feed')?.querySelector('h2')?.textContent).toContain(
+      '906',
     );
   });
 });

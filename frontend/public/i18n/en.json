@@ -559,7 +559,14 @@
       "back": "Back to achievements",
       "gone": "This achievement is not available. It may no longer be shared."
     },
-    "personTitle": "Achievements of {{name}}"
+    "personTitle": "Achievements of {{name}}",
+    "highlight": "Highlight of the month",
+    "count": {
+      "one": "{{count}} achievement",
+      "few": "{{count}} achievements",
+      "many": "{{count}} achievements",
+      "other": "{{count}} achievements"
+    }
   },
   "notFound": {
     "title": "Page not found",

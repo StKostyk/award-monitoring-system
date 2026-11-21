@@ -1,25 +1,65 @@
 @let filters = query().filters;
 @if (fixedUnit(); as unit) {
   <app-unit-header [unitId]="unit" [scope]="scope" [fallback]="unitFallback()" />
+  @if (counterpart(); as link) {
+    <a
+      class="achievements__counterpart"
+      [routerLink]="link.path"
+      [queryParams]="link.queryParams"
+      data-testid="achievements-counterpart"
+    >
+      {{ 'achievements.' + link.label | transloco }}
+    </a>
+  }
 } @else {
-  <h1 class="achievements__title" data-testid="achievements-title">
-    @if (personName(); as name) {
-      {{ 'achievements.personTitle' | transloco: { name } }}
-    } @else {
-      {{ (scope === 'public' ? 'achievements.publicTitle' : 'achievements.title') | transloco }}
-    }
-  </h1>
-}
-@if (counterpart(); as link) {
-  <a
-    class="achievements__counterpart"
-    [routerLink]="link.path"
-    [queryParams]="link.queryParams"
-    data-testid="achievements-counterpart"
+  <app-page-header
+    data-testid="achievements-title"
+    [heading]="
+      personName()
+        ? ('achievements.personTitle' | transloco: { name: personName() })
+        : ((scope === 'public' ? 'achievements.publicTitle' : 'achievements.title') | transloco)
+    "
   >
-    {{ 'achievements.' + link.label | transloco }}
-  </a>
+    @if (counterpart(); as link) {
+      <a
+        pageActions
+        mat-stroked-button
+        [routerLink]="link.path"
+        [queryParams]="link.queryParams"
+        data-testid="achievements-counterpart"
+      >
+        {{ 'achievements.' + link.label | transloco }}
+      </a>
+    }
+  </app-page-header>
 }
+
+<div
+  class="achievements__chips"
+  role="group"
+  [attr.aria-label]="'achievements.filters.recipient' | transloco"
+>
+  <button
+    type="button"
+    class="achievements__chip"
+    [attr.aria-pressed]="filters.recipient === null"
+    (click)="filter({ recipient: null })"
+    data-testid="recipient-all"
+  >
+    {{ 'achievements.filters.all' | transloco }}
+  </button>
+  @for (recipient of recipients; track recipient) {
+    <button
+      type="button"
+      class="achievements__chip"
+      [attr.aria-pressed]="filters.recipient === recipient"
+      (click)="filter({ recipient })"
+      [attr.data-testid]="'recipient-' + recipient"
+    >
+      {{ 'achievements.recipients.' + recipient | transloco }}
+    </button>
+  }
+</div>
 
 <div class="achievements__filters">
   <app-search-field
@@ -74,24 +114,6 @@
       }
     </mat-select>
   </mat-form-field>
-  <mat-form-field class="achievements__filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'achievements.filters.recipient' | transloco }}</mat-label>
-    <mat-select
-      [value]="filters.recipient"
-      (selectionChange)="filter({ recipient: $event.value })"
-      data-testid="filter-recipient"
-    >
-      <mat-select-trigger>{{
-        'achievements.recipients.' + filters.recipient | transloco
-      }}</mat-select-trigger>
-      <mat-option [value]="null">{{ 'achievements.filters.all' | transloco }}</mat-option>
-      @for (recipient of recipients; track recipient) {
-        <mat-option [value]="recipient">{{
-          'achievements.recipients.' + recipient | transloco
-        }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
 </div>
 
 @if (loading()) {
@@ -113,23 +135,48 @@
   </div>
 }
 
-<ul class="achievements__list" data-testid="achievement-list">
-  @for (achievement of achievements(); track achievement.awardId) {
-    <li>
-      <app-achievement-card
-        [achievement]="achievement"
-        [unitPages]="unitPages"
-        [linked]="scope === 'signed-in'"
-      />
-    </li>
-  } @empty {
-    @if (!loading() && !problem()) {
-      <li class="achievements__empty" data-testid="achievements-empty">
-        <app-empty-state icon="trophy" [text]="'achievements.empty' | transloco" />
-      </li>
+@if (highlight(); as top) {
+  <app-pane
+    class="achievements__highlight"
+    [heading]="'achievements.highlight' | transloco"
+    data-testid="achievements-highlight"
+  >
+    <app-achievement-card
+      [achievement]="top"
+      [unitPages]="unitPages"
+      [linked]="scope === 'signed-in'"
+    />
+  </app-pane>
+}
+
+<app-pane
+  [heading]="'achievements.count.' + plural(total()) | transloco: { count: total() }"
+  data-testid="achievements-feed"
+>
+  <div data-testid="achievement-list">
+    @for (group of groups(); track group.year) {
+      <app-year-group [heading]="'' + group.year" data-testid="achievements-year">
+        <ul class="achievements__list">
+          @for (achievement of group.items; track achievement.awardId) {
+            <li>
+              <app-achievement-card
+                [achievement]="achievement"
+                [unitPages]="unitPages"
+                [linked]="scope === 'signed-in'"
+              />
+            </li>
+          }
+        </ul>
+      </app-year-group>
+    } @empty {
+      @if (!loading() && !problem()) {
+        <div class="achievements__empty" data-testid="achievements-empty">
+          <app-empty-state icon="trophy" [text]="'achievements.empty' | transloco" />
+        </div>
+      }
     }
-  }
-</ul>
+  </div>
+</app-pane>
 
 @if (total() > 0) {
   <mat-paginator

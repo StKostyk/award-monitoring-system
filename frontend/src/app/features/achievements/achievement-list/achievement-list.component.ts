@@ -2,12 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
@@ -20,6 +21,7 @@ import {
   Subject,
   catchError,
   combineLatest,
+  distinctUntilChanged,
   filter,
   map,
   of,
@@ -31,9 +33,13 @@ import {
 import { ReadProblem, readProblem } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { currentKyivYear } from '../../../shared/date-format';
+import { currentKyivYear, kyivToday } from '../../../shared/date-format';
 import { EmptyStateComponent } from '../../../shared/empty-state/empty-state.component';
+import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
+import { PaneComponent } from '../../../shared/layout/pane.component';
+import { YearGroupComponent } from '../../../shared/layout/year-group.component';
 import { organizationName } from '../../../shared/organization-name';
+import { pluralForm } from '../../../shared/plural';
 import { SearchFieldComponent } from '../../../shared/search-field/search-field.component';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import { MAX_AGE_YEARS, Page, RECOGNITION_LEVELS } from '../../awards/awards.service';
@@ -51,6 +57,7 @@ import {
   readQuery,
   writeQuery,
 } from '../achievements.service';
+import { groupByYear, pickHighlight } from '../highlight';
 import { UnitHeaderComponent } from '../unit-header/unit-header.component';
 
 /** A link to the same list on the other side: the public page, or the page for staff. */
@@ -75,10 +82,13 @@ const UNIT_ID = /^\d{1,9}$/;
     MatOption,
     MatProgressBar,
     MatPaginator,
+    PageHeaderComponent,
+    PaneComponent,
     RouterLink,
     SearchFieldComponent,
     TranslocoPipe,
     UnitHeaderComponent,
+    YearGroupComponent,
   ],
   providers: [{ provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }],
   templateUrl: './achievement-list.component.html',
@@ -92,6 +102,7 @@ export class AchievementListComponent implements OnInit {
   private readonly language = inject(LanguageService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly retries = new Subject<void>();
 
   protected readonly levels = [...RECOGNITION_LEVELS].reverse();
@@ -111,6 +122,18 @@ export class AchievementListComponent implements OnInit {
   readonly units = signal<UnitOption[]>([]);
   /** The unit of a unit page, which the unit filter cannot change. */
   readonly fixedUnit = signal<number | null>(null);
+  private readonly candidates = signal<Achievement[]>([]);
+  /**
+   * The achievement of the current Kyiv month with the highest level, for the list's unit and recipients; only on
+   * the unfiltered feed, so that it never contradicts a search, level or year the list is narrowed to.
+   */
+  readonly highlight = computed(() => {
+    const { q, level, year } = this.query().filters;
+    return q !== null || level !== null || year !== null || this.problem() !== null
+      ? null
+      : pickHighlight(this.candidates(), kyivToday().slice(0, 7));
+  });
+  protected readonly groups = computed(() => groupByYear(this.achievements()));
 
   /** The name the listed awards carry for the unit of the page. */
   protected readonly unitFallback = computed(() => {
@@ -164,6 +187,7 @@ export class AchievementListComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((page) => this.show(page));
+    this.watchHighlight();
     this.service.units(this.language.current()).subscribe({
       next: (units) => this.units.set(units),
       error: () => this.units.set([]),
@@ -185,8 +209,30 @@ export class AchievementListComponent implements OnInit {
     this.retries.next();
   }
 
+  /** The plural form of a count, for the count keys. */
+  plural(count: number): Intl.LDMLPluralRule {
+    return pluralForm(count, this.language.current());
+  }
+
   unitName(option: UnitOption): string {
     return organizationName(option.unit, this.language.current());
+  }
+
+  private watchHighlight(): void {
+    const filters$ = toObservable(this.query, { injector: this.injector }).pipe(
+      map(({ filters }) => filters),
+      distinctUntilChanged(
+        (a, b) => a.unit === b.unit && a.recipient === b.recipient && a.person === b.person,
+      ),
+    );
+    combineLatest([filters$, this.retries.pipe(startWith(undefined))])
+      .pipe(
+        switchMap(([filters]) =>
+          this.service.highlightCandidates(filters, this.scope).pipe(catchError(() => of([]))),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.candidates.set(items));
   }
 
   private fetch(query: AchievementQuery): Observable<Page<Achievement> | null> {
