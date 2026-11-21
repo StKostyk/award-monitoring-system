@@ -59,6 +59,30 @@ test.describe('shell', () => {
     });
   }
 
+  for (const [account, home, size] of [
+    [SEED.employee, '/dashboard', DESKTOP],
+    [SEED.dean, '/hall-of-fame', PHONE],
+    [SEED.admin, '/admin/users', DESKTOP],
+    [SEED.gdpr, '/compliance', PHONE],
+  ] as const) {
+    test(`9.4.8 ac8_1 ac8_2 the logo takes ${account} home to ${home}`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await signInAsSeed(page, account);
+      await page.goto('/achievements');
+      if (size === PHONE) {
+        await page.getByTestId('nav-toggle').click();
+      }
+
+      await page.getByTestId('home-logo').click();
+
+      await expect(page).toHaveURL(new RegExp(`${home}$`));
+      if (size === PHONE) {
+        await expect(page.getByTestId('side-nav')).toBeHidden();
+        await expect(page.locator('.mat-drawer-backdrop.mat-drawer-shown')).toHaveCount(0);
+      }
+    });
+  }
+
   test('ac3_2 a phone shows the menu button, the page title and the new award button', async ({
     page,
   }) => {

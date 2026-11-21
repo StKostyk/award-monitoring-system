@@ -173,6 +173,16 @@ demo server waits for it (§11 risk 1).
 - **AC-5.7** (Layout) Given the Command centre, then its widgets follow `layouts.COMMAND_CENTRE`; at 360 px the queue
   items keep both buttons at least 44 px high.
 
+### 9.4.8 Logo opens the home of a signed-in person (SCRUM-170)
+
+Follow-up of 9.4.6 AC-1, found in manual step 31 (#471).
+
+- **AC-8.1** (Home link) Given a signed-in person, then the logo in the side menu is a link to `/` named by its
+  visible text, and it lands on the role's home: `/dashboard` (employee), `/hall-of-fame` (dean,
+  rector), `/admin/users` (administrator), `/compliance` (data protection officer).
+- **AC-8.2** (Phone) Given a width below 960 px, then choosing the logo closes the side menu; axe shows no new
+  finding.
+
 ## 5. Edge cases
 
 - **Validation**: preferences `PUT` replaces the whole document; missing `layouts` keys mean the default; an empty

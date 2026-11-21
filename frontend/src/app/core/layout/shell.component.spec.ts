@@ -460,6 +460,44 @@ describe('ShellComponent', () => {
     expect(nav.querySelector('img')?.getAttribute('src')).toBe('brand/chnu/logo.svg');
   });
 
+  it('ac8_1_links_the_side_menu_logo_to_the_home_of_a_signed_in_person', () => {
+    auth.isAuthenticated.set(true);
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    const logo: HTMLAnchorElement | null = fixture.nativeElement.querySelector(
+      '[data-testid="side-nav"] [data-testid="home-logo"]',
+    );
+
+    expect(logo?.tagName).toBe('A');
+    expect(logo?.getAttribute('href')).toBe('/');
+    expect(logo?.hasAttribute('aria-label')).toBe(false);
+    expect(logo?.textContent).toContain('Облік нагород ЧНУ');
+  });
+
+  it('ac8_2_closes_the_drawer_when_the_logo_is_chosen_on_a_phone', async () => {
+    auth.isAuthenticated.set(true);
+    layout.next({ matches: false, breakpoints: {} });
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+    const drawer = () => element.querySelector('mat-sidenav') as HTMLElement;
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/awards');
+
+    (element.querySelector('[data-testid="nav-toggle"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(drawer().classList).toContain('mat-drawer-opened');
+
+    (element.querySelector('[data-testid="home-logo"]') as HTMLElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(router.url).toBe('/');
+    expect(drawer().classList).not.toContain('mat-drawer-opened');
+  });
+
   it('ac1_7_puts_the_toolbar_title_and_links_inside_the_banner', () => {
     auth.isAuthenticated.set(true);
     const fixture = TestBed.createComponent(ShellComponent);
