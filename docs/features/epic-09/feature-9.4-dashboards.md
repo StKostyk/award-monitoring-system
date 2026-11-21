@@ -432,6 +432,17 @@ container stack at 9436bbe (develop, image 2026-11-19 14:35), default settings; 
 | 29 | PASS | lecturer.fmi /dashboard in edit mode (hid «Підсумок»), session revoked (password reset) before «Готово»: save answered 401, page went to /login, no dashboard_preferences row written, layout after sign-in as before (default). Natural 15-min expiry not waited: sessions revoked instead (refresh token lives 7 d) |
 | 30 | PASS | command-centre -> /awards -> Back (and forward/back again): card still «Нагадано», button disabled, Mailpit still one mail to p.ivanenko2 |
 
+### Run 2026-11-21
+
+Compose stack (app from develop, frontend from feature/SCRUM-169 at 3306bb3), dev seed, steps 31-34 only. Result: 3 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 31 | FAIL | no nav-home for employee.fmi and dean.fmi; / lands on /dashboard and /hall-of-fame; employee.fmi /dashboard shows awards 2020-2026; the signed-in logo (drawer brand) is not a link, only the signed-out bar logo links to / |
+| 32 | PASS | admin / -> /admin/users; nav-home/awards/dashboard absent; palette finds Користувачі but not Мої нагороди, Моя аналітика, Головна; /dashboard -> /forbidden; GET /analytics/me 403 access-denied |
+| 33 | PASS | gdpr / -> /compliance; nav-home/awards/dashboard absent, palette empty for нагор/аналіт; /dashboard -> /forbidden; GET /analytics/me 403 |
+| 34 | PASS | /login: claim «Нагороди університету: подання, перевірка та звіти в одному місці.» as the large headline, no award count on the page |
+
 ## 11. Risks
 
 | Risk | Likelihood | Impact | Mitigation |
