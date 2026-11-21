@@ -210,6 +210,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.4.5 | Command centre with the department reminder | 5 | ✅ Done | SCRUM-159 | [#434](https://github.com/StKostyk/award-monitoring-system/issues/434) |
 | 9.4.6 | Role-aware navigation, personal tabs and dashboard facts | 3 | ✅ Done | SCRUM-161 | [#450](https://github.com/StKostyk/award-monitoring-system/issues/450) |
 | 9.4.7 | KPI card names the compared months | 1 | ✅ Done | SCRUM-162 | [#453](https://github.com/StKostyk/award-monitoring-system/issues/453) |
+| 9.4.8 | Logo opens the home of a signed-in person | 1 |  | SCRUM-170 | [#471](https://github.com/StKostyk/award-monitoring-system/issues/471) |
 | 9.5.1 | Page kit and shell fixes | 3 | ✅ Done | SCRUM-163 | [#456](https://github.com/StKostyk/award-monitoring-system/issues/456) |
 | 9.5.2 | My dashboard in the split layout | 5 | ✅ Done | SCRUM-164 | [#457](https://github.com/StKostyk/award-monitoring-system/issues/457) |
 | 9.5.3 | Achievements as a story feed | 3 | ✅ Done | SCRUM-165 | [#458](https://github.com/StKostyk/award-monitoring-system/issues/458) |
