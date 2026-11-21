@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Action, provideStore } from '@ngrx/store';
-import { Subject, firstValueFrom, of, throwError } from 'rxjs';
+import { Subject, firstValueFrom, of, take, throwError, toArray } from 'rxjs';
 import { vi } from 'vitest';
 
 import { ComplianceService } from '../compliance.service';
@@ -78,5 +78,47 @@ describe('ComplianceEffects', () => {
     );
     expect(await erasures).toEqual(ComplianceActions.erasuresLoadFailed({ problem: 'denied' }));
     expect(await holds).toEqual(ComplianceActions.holdsLoadFailed({ problem: 'failed' }));
+  });
+
+  function overview(): Promise<Action[]> {
+    const actions = firstValueFrom(effects.overview$.pipe(take(4), toArray()));
+    actions$.next(ComplianceActions.overviewOpened());
+    return actions;
+  }
+
+  it('ac7_1_counts_the_policies_the_open_erasures_and_the_holds_in_force', async () => {
+    api.erasureRequests.mockReturnValue(of({ ...empty, totalElements: 3 }));
+    api.legalHolds.mockReturnValue(of({ ...empty, totalElements: 1 }));
+
+    expect(await overview()).toEqual(
+      expect.arrayContaining([
+        ComplianceActions.countLoaded({ section: 'retention', count: 1 }),
+        ComplianceActions.countLoaded({ section: 'erasures', count: 3 }),
+        ComplianceActions.countLoaded({ section: 'holds', count: 1 }),
+      ]),
+    );
+    expect(api.erasureRequests).toHaveBeenCalledWith({ page: 0, size: 1 }, 'PENDING');
+    expect(api.legalHolds).toHaveBeenCalledWith({ page: 0, size: 1 }, true);
+  });
+
+  it('ac7_1_leaves_a_count_out_when_its_request_fails', async () => {
+    api.legalHolds.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    const actions = await overview();
+    expect(actions).toContainEqual(ComplianceActions.countLoadFailed({ section: 'holds' }));
+    expect(actions).toContainEqual(
+      ComplianceActions.countLoaded({ section: 'retention', count: 1 }),
+    );
+  });
+
+  it('ac7_2_loads_the_seven_newest_runs_for_the_duration_chart', async () => {
+    expect(await overview()).toContainEqual(ComplianceActions.recentRunsLoaded({ runs: [] }));
+    expect(api.runs).toHaveBeenCalledWith({ page: 0, size: 7 });
+  });
+
+  it('ac7_2_shows_no_chart_when_the_runs_cannot_be_read', async () => {
+    api.runs.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    expect(await overview()).toContainEqual(ComplianceActions.recentRunsLoadFailed());
   });
 });

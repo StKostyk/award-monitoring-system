@@ -3,7 +3,7 @@ import { createFeature, createReducer, on } from '@ngrx/store';
 import { ReadProblem } from '../../../core/api/problem';
 import { Page } from '../../../shared/page';
 import { ErasureEntry, HoldEntry, RetentionPolicy, RetentionRun } from '../compliance.service';
-import { ComplianceActions } from './compliance.actions';
+import { ComplianceActions, ComplianceSection } from './compliance.actions';
 
 /** One paged list of the compliance page. */
 export interface ListState<T> {
@@ -20,9 +20,14 @@ export interface ComplianceState {
   runs: ListState<RetentionRun>;
   erasures: ListState<ErasureEntry>;
   holds: ListState<HoldEntry>;
+  /** Side-column counts by section; null while unknown or when the count could not be read. */
+  counts: Record<ComplianceSection, number | null>;
+  /** The newest retention runs for the duration chart, newest first. */
+  recentRuns: RetentionRun[];
 }
 
 const EMPTY_LIST = { items: [], total: 0, loading: false, problem: null };
+const NO_COUNTS = { retention: null, erasures: null, holds: null };
 
 export const initialState: ComplianceState = {
   policies: [],
@@ -31,6 +36,8 @@ export const initialState: ComplianceState = {
   runs: EMPTY_LIST,
   erasures: EMPTY_LIST,
   holds: EMPTY_LIST,
+  counts: NO_COUNTS,
+  recentRuns: [],
 };
 
 function loading<T>(list: ListState<T>): ListState<T> {
@@ -49,6 +56,21 @@ export const complianceFeature = createFeature({
   name: 'compliance',
   reducer: createReducer(
     initialState,
+    on(ComplianceActions.overviewOpened, (state) => ({
+      ...state,
+      counts: NO_COUNTS,
+      recentRuns: [],
+    })),
+    on(ComplianceActions.countLoaded, (state, { section, count }) => ({
+      ...state,
+      counts: { ...state.counts, [section]: count },
+    })),
+    on(ComplianceActions.countLoadFailed, (state, { section }) => ({
+      ...state,
+      counts: { ...state.counts, [section]: null },
+    })),
+    on(ComplianceActions.recentRunsLoaded, (state, { runs }) => ({ ...state, recentRuns: runs })),
+    on(ComplianceActions.recentRunsLoadFailed, (state) => ({ ...state, recentRuns: [] })),
     on(ComplianceActions.retentionOpened, (state) => ({
       ...state,
       policiesLoading: true,

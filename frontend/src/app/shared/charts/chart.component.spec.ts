@@ -17,6 +17,7 @@ function paletteOf(seriesColour: string): ChartPalette {
     grid: 'rgb(2, 2, 2)',
     surface: 'rgb(3, 3, 3)',
     bar: 'rgb(4, 4, 4)',
+    error: 'rgb(5, 5, 5)',
     bands: [],
     series: Array.from(
       { length: SERIES_COLOURS },

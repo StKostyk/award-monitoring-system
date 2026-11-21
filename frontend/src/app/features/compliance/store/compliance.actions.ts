@@ -1,4 +1,4 @@
-import { createActionGroup, props } from '@ngrx/store';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
 import { ReadProblem } from '../../../core/api/problem';
 import { Page } from '../../../shared/page';
@@ -11,9 +11,17 @@ import {
   RetentionRun,
 } from '../compliance.service';
 
+/** A section of the compliance page with a count in the side column. */
+export type ComplianceSection = 'retention' | 'erasures' | 'holds';
+
 export const ComplianceActions = createActionGroup({
   source: 'Compliance',
   events: {
+    'Overview Opened': emptyProps(),
+    'Count Loaded': props<{ section: ComplianceSection; count: number }>(),
+    'Count Load Failed': props<{ section: ComplianceSection }>(),
+    'Recent Runs Loaded': props<{ runs: RetentionRun[] }>(),
+    'Recent Runs Load Failed': emptyProps(),
     'Retention Opened': props<{ request: PageRequest }>(),
     'Policies Loaded': props<{ policies: RetentionPolicy[] }>(),
     'Policies Load Failed': props<{ problem: ReadProblem }>(),

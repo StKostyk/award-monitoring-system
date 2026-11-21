@@ -1,18 +1,28 @@
-.compliance__title {
-  font: var(--mat-sys-headline-small);
-  margin: 0 0 8px;
+.compliance__sections {
+  display: grid;
+  gap: 4px;
+}
+
+.compliance__count {
+  font: var(--mat-sys-title-small);
+  font-variant-numeric: tabular-nums;
+  max-width: 120px;
 }
 
 .compliance__panel {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-top: 16px;
+  min-width: 0;
 }
 
 .compliance__section {
   font: var(--mat-sys-title-medium);
   margin: 16px 0 0;
+}
+
+.compliance__section:first-child {
+  margin-top: 0;
 }
 
 .compliance__table {
