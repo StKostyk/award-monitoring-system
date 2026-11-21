@@ -304,7 +304,7 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
 7. Open `/units/<department id>/achievements` and `/public/achievements` signed out. Expected: the same feed with the
    unit header; the public page shows only public achievements. (AC-3.4)
 8. Sign in as `secretary.fmi`, open `/admin/users`. Expected: the context line with accounts, waiting and blocked
-   counts; selecting the fresh account shows its status, claimed unit, roles and «Підтвердити членство» beside the
+   counts; selecting the fresh account shows its status, claimed unit, roles and «Підтвердити» beside the
    list; the URL is `/admin/users/<id>`. (AC-4.1, AC-4.2)
 9. Confirm the membership in the pane. Expected: the status chip and the roles update in the pane and in the row
    without a reload. (AC-4.5)
@@ -339,26 +339,64 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
 
 21. Open `/admin/users/<id of a person in another faculty>` as `secretary.fmi`. Expected: not-found in the pane, the
     list usable.
-22. Hidden in state: select an already confirmed person in Users. Expected: no «Підтвердити членство» in the pane;
+22. Hidden in state: select an already confirmed person in Users. Expected: no «Підтвердити» in the pane;
     `POST /users/<id>/roles` with `updateOrganization` answers 409 `membership-already-confirmed`.
 23. Hidden in state: open `/reviews?request=<id>` of a request returned to its submitter. Expected: no decision
-    buttons; `POST /awards/<id>/decisions` answers 409.
+    buttons; `POST /awards/<id>/decisions` answers 404 (a returned request is no longer pending for the reviewer).
 24. Hidden in state: select a revoked or expired delegation, or one received. Expected: no «Відкликати»; `DELETE
     /delegations/<id>` of the revoked one answers 409. A planned (upcoming) given delegation keeps «Відкликати».
 25. Two browsers as `secretary.fmi` and `dean.fmi` with the same request selected; the dean decides it first.
     Expected: the secretary's next refresh clears the selection with a snack bar; deciding from the stale pane
     answers 409 and the queue reloads.
 26. Revoked mid-flow: the dean revokes the delegation while the secretary has a delegated request selected in Reviews.
-    Expected: the secretary's next action answers 403, the queue reloads without the faculty-level requests;
-    colleagues at the same level keep their queue.
+    Expected: the secretary's next action answers 401 (the revocation ends her refresh tokens) and the page returns
+    to the sign-in; after signing in again the queue holds no faculty-level requests and keeps the requests of her
+    own level.
 27. Revoked mid-flow: the administrator revokes the secretary's role while `/admin/users` is open with a person
-    selected. Expected: the next action answers 403 and the page shows the forbidden state; the administrator's own
-    page is unchanged.
+    selected. Expected: the next action answers 401 (the revocation ends her refresh tokens) and the page returns to
+    the sign-in; the administrator's own page is unchanged.
 28. Reload `/reviews?request=<id>` after the token expired. Expected: sign-in, then the same selection.
 29. Back after selecting three people in Users. Expected: the browser goes back through the selections, then to the
     previous page; at 360 Back from a pane returns to the list at the same scroll position.
 30. Restart the backend while a split page is open, then select another row. Expected: the pane loads after the
     restart; no blank page.
+
+### Run 2026-11-21
+
+container stack (app and frontend built 2026-11-21 19:54, develop at 9b00f4b, app code = c222fb0), default settings; preparation data: delegation, fresh accounts, review requests. Result: 27 pass, 3 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | FAIL | rector /dashboard 1280 uk: sidebar labels full (10, none truncated), but no context line and the 5 header controls wrap below the h1 (title y 72, actions y 180) instead of one row |
+| 2 | PASS | 360: no horizontal scroll, actions below title, one column |
+| 3 | PASS | employee.fmi 1280: profile, Підсумок, facts left (x 313); years, levels + У роботі, latest (5 rows newest first 12.08.2026.., «Усі 10»), categories, Місце, Хто бачить right |
+| 4 | PASS | FACT moved above KPI, RANK hidden, kept after reload, no widget changed column; prefs order starts FACT,KPI, hidden [RANK]; reset after |
+| 5 | PASS | Підрозділи: ?recipient=UNIT kept after reload, 97 досягнень, groups from 2026 down |
+| 6 | PASS | approved awards dated 2026-11 exist (Ministry Recognition = national, highest of the month); highlight «Досягнення місяця» shows national «Грамота для колег» 21.11.2026; with ?year=2025 the highlight is absent |
+| 7 | PASS | /units/64/achievements: unit header (faculty, department, tabs) + same feed with «Досягнення місяця»; signed out /public/achievements h1 «Досягнення університету», 21 cards from the public endpoint |
+| 8 | PASS | secretary.fmi (acting for the dean by delegation 26): context «У списку: 829 · Чекають перевірки членства: 156 · Заблоковано: 0»; selecting mr95.new2 (user 1099) shows status, unit, roles section and the confirm button beside the list; URL /admin/users/1099; label is «Підтвердити» — step text corrected |
+| 9 | PASS | confirm: pane roles show Працівник · Кафедра алгебри та інформатики, the confirm button gone, row text shows the role, no reload |
+| 10 | PASS | reload /admin/users/1099: same person in the pane, one row marked as selected |
+| 11 | PASS | new person Мануалтестовий Колега saved: URL /admin/users/1100, pane shows «Без облікового запису», dialog closed (first attempt with digits in the surname refused by the form validation, my input) |
+| 12 | PASS | queue oldest first (14.11, 16.11, then my 3 requests); selecting MR95 review one: URL ?request=1626, details, «Документи», «Перевірка» checklist beside the queue, «Шлях нагороди» in the pane |
+| 13 | PASS | «Затвердити» opens the 2.3 dialog «Затвердити нагороду»; after confirm the URL moved to ?request=1627; award 1626 APPROVED in DB |
+| 14 | PASS | «Нерозподілені» 5 rows, «Мої» 0, «Усі» 5; ?request=1626 shows «Затверджено», «Цей запит уже не чекає на вашому рівні», no decision buttons; note: GET /awards/1626/reviewer answers 404 twice (console), page unaffected |
+| 15 | PASS | dean.fmi /analytics/units/9: totals 263/75, 118/40, unit awards 5, verified 34, members 808, 32.5/100 = API; totals+picker left (x 292), trend+highlights right (x 696); «Цей рік» ?from=2026&to=2026, «Увесь період» clears; export PDF analytics-FMI-2024-2025 for the shown years; department 64 page 25/25, 785 = API (units list keeps faculty counts) |
+| 16 | PASS | rector /analytics/university: bento 4/2/1 columns at 1280/900/360, no horizontal scroll; faculties tile spans 3 of 4 columns and the highlights beside it; bars = API units[].approved.current (FMI 264, FUR 63, FG 58, IPTCS 54...); faculty link /analytics/units/9?from=2022&to=2026 |
+| 17 | PASS | gdpr /compliance: three sections with counts 9/0/7 left (x 313), retention selected with policies table and run bars right (3 prepared runs 900001-3, deleted after; the PARTIAL one 75 s drawn in the error colour); holds link: ?tab=holds, kept after reload with the holds table shown (step text: the e2e table switch not exercised) |
+| 18 | PASS | dean.fmi ?delegation=26: period 21.11–05.12.2026, «Залишилося 15 днів», reason, Може/Не може lines in uk and (after language switch) en, «Відкликати» present; 360 px: pane alone with «До списку», no horizontal scroll |
+| 19 | PASS | axe (serious, critical and region) on 12 pages x light/dark at 1280 (rector, employee, secretary, dean, gdpr, public): 0 findings |
+| 20 | PASS | dean.fmi /hall-of-fame at 360 en: annotations «Peak» and «Year to date» inside the chart svg (0 outside) |
+| 21 | PASS | secretary.fmi /admin/users/28 (other faculty): «Користувача не знайдено» in the pane, list of 20 rows usable (filter «Nova» 2 rows, selecting opens /admin/users/1098) |
+| 22 | PASS | confirmed mr95.new2 (1099): no confirm button and no membership actions in the pane; POST /users/1099/roles EMPLOYEE 64 with updateOrganization answers 409 membership-already-confirmed (label «Підтвердити», step text corrected) |
+| 23 | PASS | ?request=1627 after RETURN: «Запит не знайдено», no decision buttons; POST /awards/1627/decisions answers 404 (openapi: no pending request the caller may review: draft, returned), not 409 — step text corrected |
+| 24 | PASS | dean pane: revoked 24 «Відкликано» no «Відкликати», DELETE /delegations/24 409 delegation-not-active; planned 27 «Заплановане» keeps «Відкликати»; secretary pane of received 26 «Активне» without «Відкликати» |
+| 25 | FAIL | stale pane OK: secretary approves 1631 after the dean did (hold 10 s), POST /decisions 409, queue reloads, snack «Розгляд цієї нагороди вже завершено», next request selected; but the secretary's next queue refresh (chips Мої → Усі) after the dean approved 1629 kept ?request=1629 selected, no snack bar (known polish item: a selection that left the list is kept) |
+| 26 | PASS | dean revoked delegation 28 while secretary.fmi had ?request=1632 (faculty level) selected: next action → 401, refresh 400, back to /login (revocation ends refresh tokens, feature 1.2 A02) — not 403, step text corrected; after signing in again her queue is 522, 496, 543 (secretary level, kept) without 1632; the dean's queue holds 1632 |
+| 27 | PASS | mr95.sec (faculty secretary via role 1017) on /admin/users/1099; admin revoked the role; next click → GET /users/1098 401, refresh POST /oauth2/token 400, page at /login (revocation ends refresh tokens) — not 403/forbidden state, step text corrected; admin's /admin/users unchanged (20 rows) |
+| 28 | PASS | signed-out context opens /reviews?request=1632 → /login; after signing in as dean.fmi the URL is /reviews?request=1632 with that request in the queue and the pane (token expiry emulated by a context without session) |
+| 29 | FAIL | Back through three selections OK (/admin/users/1101 → 1099 → 1098 → /admin/users); at 360 Back from the pane returns to the list but the scroll position is lost (mat-sidenav-content scrollTop 797 before the click, 0 after Back) — the known untested back-scroll polish item |
+| 30 | PASS | docker restart award-backend (healthy), then selecting another row at /admin/users/1098: first call 401 (new signing key), silent refresh, retry → /admin/users/1101 pane loaded, no blank page |
 
 ## 11. Risks
 
