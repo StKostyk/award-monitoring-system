@@ -16,8 +16,9 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatOption, MatSelect } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 import { filter as present, forkJoin, map, tap } from 'rxjs';
 
@@ -33,6 +34,7 @@ import {
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
 import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
+import { watchLeftSelection } from '../../../shared/layout/left-selection';
 import { PaneComponent } from '../../../shared/layout/pane.component';
 import { querySelection } from '../../../shared/layout/query-selection';
 import { SplitComponent } from '../../../shared/layout/split.component';
@@ -124,6 +126,8 @@ export class ReviewListComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly reviews = inject(ReviewsService);
   private readonly heldDecisions = inject(HeldDecisionService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly transloco = inject(TranslocoService);
 
   protected readonly tabs = TABS;
   protected readonly levels = reviewableLevels(this.auth.permissions()) as ApprovalLevel[];
@@ -178,6 +182,20 @@ export class ReviewListComponent implements OnInit {
 
   constructor() {
     this.heldDecisions.returned.pipe(takeUntilDestroyed()).subscribe(() => this.refresh());
+    watchLeftSelection(
+      {
+        selectedId: this.selectedId,
+        ids: computed(() => this.items().map((item) => item.awardId)),
+        settled: computed(() => !this.loading() && !this.problem()),
+        check: (awardId) => this.reviews.item(awardId),
+      },
+      () => {
+        this.select(null);
+        this.snackBar.open(this.transloco.translate('reviews.queue.selectionGone'), undefined, {
+          duration: 5000,
+        });
+      },
+    );
   }
 
   ngOnInit(): void {
@@ -330,13 +348,14 @@ export class ReviewListComponent implements OnInit {
       })),
     });
     this.ticked.set(new Set(failed.map((result) => result.awardId)));
-    this.store.dispatch(
-      ReviewsActions.itemsDecided({
-        awardIds: results
-          .filter((result) => result.outcome === 'DONE')
-          .map((result) => result.awardId),
-      }),
-    );
+    const done = results
+      .filter((result) => result.outcome === 'DONE')
+      .map((result) => result.awardId);
+    const selected = this.selectedId();
+    if (selected !== null && done.includes(selected)) {
+      this.select(null);
+    }
+    this.store.dispatch(ReviewsActions.itemsDecided({ awardIds: done }));
     if (failed.length > 0) {
       this.refresh();
     }

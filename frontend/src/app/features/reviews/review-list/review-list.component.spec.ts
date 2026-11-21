@@ -1,8 +1,9 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import {
   ActivatedRoute,
@@ -13,7 +14,7 @@ import {
 } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { BehaviorSubject, EMPTY, Subject, catchError, of, throwError } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, Subject, catchError, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -99,6 +100,7 @@ const translations = {
         reasons: { 'request-claimed': 'Взято в роботу іншим рецензентом', unknown: 'Не вдалося' },
       },
       decide: { to: { DEAN: 'декану' } },
+      queue: { selectionGone: 'Цього запиту більше немає в черзі.' },
     },
     awards: { levels: { FACULTY_SECRETARY: 'секретар факультету', DEAN: 'декан' } },
     categories: { levels: { NATIONAL: 'Національний' } },
@@ -116,7 +118,7 @@ describe('ReviewListComponent', () => {
   const reviews = {
     decideBatch: vi.fn(),
     reviewPeriod: vi.fn(() => EMPTY),
-    item: vi.fn(() => EMPTY),
+    item: vi.fn((): Observable<unknown> => EMPTY),
   };
   const dialog = { open: vi.fn() };
   const held = {
@@ -186,6 +188,7 @@ describe('ReviewListComponent', () => {
     query.next(convertToParamMap({}));
     wide.next({ matches: true, breakpoints: {} });
     reviews.decideBatch.mockReset();
+    reviews.item.mockImplementation(() => EMPTY);
     dialog.open.mockReset();
   });
 
@@ -320,6 +323,75 @@ describe('ReviewListComponent', () => {
     expect(rows()[0].getAttribute('aria-current')).toBeNull();
     expect(rows()[1].getAttribute('aria-current')).toBe('true');
     expect(element().querySelector('app-split')?.classList).toContain('split--detail-open');
+  });
+
+  it('edge_a_request_that_left_the_queue_on_a_refresh_clears_the_selection_with_a_snack_bar', async () => {
+    await create();
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+    reviews.item.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.NotFound })),
+    );
+
+    fixture.componentInstance.refresh();
+    fixture.detectChanges();
+    load([reviewItem()]);
+
+    expect(reviews.item).toHaveBeenCalledWith(6);
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: null } }),
+    );
+    expect(snack).toHaveBeenCalledWith('Цього запиту більше немає в черзі.', undefined, {
+      duration: 5000,
+    });
+  });
+
+  it('edge_a_request_hidden_by_a_filter_stays_selected', async () => {
+    await create();
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+    reviews.item.mockReturnValue(of(reviewItem({ awardId: 6, requestId: 9 })));
+
+    fixture.componentInstance.filter({ assigned: 'me' });
+    fixture.detectChanges();
+    load([reviewItem()]);
+
+    expect(reviews.item).toHaveBeenCalledWith(6);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(snack).not.toHaveBeenCalled();
+  });
+
+  it('edge_a_request_decided_in_a_batch_leaves_without_a_snack_bar', async () => {
+    await create();
+    const snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    load([reviewItem(), reviewItem({ awardId: 6, requestId: 9 })]);
+    query.next(convertToParamMap({ request: '6' }));
+    fixture.detectChanges();
+    const results: BatchItemResult[] = [
+      { awardId: 5, outcome: 'DONE', status: 'APPROVED', level: 'FACULTY_SECRETARY' },
+      { awardId: 6, outcome: 'DONE', status: 'APPROVED', level: 'FACULTY_SECRETARY' },
+    ];
+    reviews.decideBatch.mockReturnValue(of(results));
+    confirmWith();
+    tick('batch-select-all');
+
+    element().querySelector<HTMLElement>('[data-testid="batch-approve"]')?.click();
+    fixture.detectChanges();
+
+    expect(store.dispatch).toHaveBeenCalledWith(ReviewsActions.itemsDecided({ awardIds: [5, 6] }));
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { request: null } }),
+    );
+    expect(snack).not.toHaveBeenCalled();
   });
 
   it.each(['abc', '0', '-3', '1.5', '1e3', '0x10', ' 5'])(
