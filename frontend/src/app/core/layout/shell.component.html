@@ -11,13 +11,18 @@
     data-testid="side-nav"
   >
     <nav [attr.aria-label]="'app.navigation' | transloco">
-      <div class="shell__brand shell__brand--drawer">
+      <a
+        class="shell__brand shell__brand--drawer"
+        routerLink="/"
+        (click)="closeDrawer()"
+        data-testid="home-logo"
+      >
         <img class="shell__logo" [src]="brand().logo" alt="" />
         <span class="shell__brand-text">
           <span class="shell__product">{{ brands.text(brand().name) }}</span>
           <span class="shell__organization">{{ brands.text(brand().organization) }}</span>
         </span>
-      </div>
+      </a>
       <mat-nav-list class="shell__nav">
         @for (item of entries(); track item.id) {
           <a

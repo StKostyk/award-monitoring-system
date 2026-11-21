@@ -173,6 +173,16 @@ demo server waits for it (§11 risk 1).
 - **AC-5.7** (Layout) Given the Command centre, then its widgets follow `layouts.COMMAND_CENTRE`; at 360 px the queue
   items keep both buttons at least 44 px high.
 
+### 9.4.8 Logo opens the home of a signed-in person (SCRUM-170)
+
+Follow-up of 9.4.6 AC-1, found in manual step 31 (#471).
+
+- **AC-8.1** (Home link) Given a signed-in person, then the logo in the side menu is a link to `/` named by its
+  visible text, and it lands on the role's home: `/dashboard` (employee), `/hall-of-fame` (dean,
+  rector), `/admin/users` (administrator), `/compliance` (data protection officer).
+- **AC-8.2** (Phone) Given a width below 960 px, then choosing the logo closes the side menu; axe shows no new
+  finding.
+
 ## 5. Edge cases
 
 - **Validation**: preferences `PUT` replaces the whole document; missing `layouts` keys mean the default; an empty
@@ -431,6 +441,17 @@ container stack at 9436bbe (develop, image 2026-11-19 14:35), default settings; 
 | 28 | PASS | 11 CV exports by lecturer.fmi: 200 x5, 429 from the 6th on; header Retry-After: 32, body too-many-requests retryAfter 42 |
 | 29 | PASS | lecturer.fmi /dashboard in edit mode (hid «Підсумок»), session revoked (password reset) before «Готово»: save answered 401, page went to /login, no dashboard_preferences row written, layout after sign-in as before (default). Natural 15-min expiry not waited: sessions revoked instead (refresh token lives 7 d) |
 | 30 | PASS | command-centre -> /awards -> Back (and forward/back again): card still «Нагадано», button disabled, Mailpit still one mail to p.ivanenko2 |
+
+### Run 2026-11-21
+
+Compose stack (app from develop, frontend from feature/SCRUM-169 at 3306bb3), dev seed, steps 31-34 only. Result: 3 pass, 1 fail.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 31 | FAIL | no nav-home for employee.fmi and dean.fmi; / lands on /dashboard and /hall-of-fame; employee.fmi /dashboard shows awards 2020-2026; the signed-in logo (drawer brand) is not a link, only the signed-out bar logo links to / |
+| 32 | PASS | admin / -> /admin/users; nav-home/awards/dashboard absent; palette finds Користувачі but not Мої нагороди, Моя аналітика, Головна; /dashboard -> /forbidden; GET /analytics/me 403 access-denied |
+| 33 | PASS | gdpr / -> /compliance; nav-home/awards/dashboard absent, palette empty for нагор/аналіт; /dashboard -> /forbidden; GET /analytics/me 403 |
+| 34 | PASS | /login: claim «Нагороди університету: подання, перевірка та звіти в одному місці.» as the large headline, no award count on the page |
 
 ## 11. Risks
 
