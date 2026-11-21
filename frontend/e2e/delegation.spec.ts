@@ -27,11 +27,17 @@ async function listDelegations(page: Page): Promise<void> {
 
 function activeGiven(page: Page) {
   return page
-    .getByTestId('given-table')
-    .getByRole('row')
+    .getByTestId('given-row')
     .filter({ hasText: 'Секретар' })
     .filter({ hasText: 'Активне' })
     .first();
+}
+
+/** Opens the delegation of the row in the pane and revokes it there. */
+async function revokeFromPane(page: Page, row: ReturnType<typeof activeGiven>): Promise<void> {
+  await row.click();
+  await expect(page.getByTestId('delegation-detail')).toBeVisible();
+  await page.getByTestId('revoke-delegation').click();
 }
 
 test.describe('approval delegation', () => {
@@ -46,7 +52,7 @@ test.describe('approval delegation', () => {
       if (!(await standing.count())) {
         break;
       }
-      await standing.getByTestId('revoke-delegation').click();
+      await revokeFromPane(page, standing);
       await page.getByTestId('revoke-delegation-confirm').click();
       await expect(page.getByTestId('delegations-message')).toBeVisible();
     }
@@ -80,13 +86,24 @@ test.describe('approval delegation', () => {
 
     await page.getByTestId('nav-delegations').click();
     const row = page
-      .getByTestId('received-table')
-      .getByRole('row')
+      .getByTestId('received-row')
       .filter({ hasText: 'Декан' })
       .filter({ hasText: 'Активне' })
       .first();
 
     await expect(row.getByTestId('received-state')).toContainText('Активне');
+
+    await row.click();
+
+    await expect(page).toHaveURL(/delegation=\d+/);
+    await expect(page.getByTestId('detail-days-left')).toContainText(/\d+/);
+    await expect(page.getByTestId('detail-can')).toContainText(
+      'Розглядати подання на рівні факультету',
+    );
+    await expect(page.getByTestId('detail-cannot')).toContainText(
+      'Передавати ці повноваження далі',
+    );
+    await expect(page.getByTestId('revoke-delegation')).toHaveCount(0);
 
     await page.getByTestId('delegate-open').click();
     await page.getByTestId('delegate-role').click();
@@ -100,22 +117,23 @@ test.describe('approval delegation', () => {
     await listDelegations(page);
     const row = activeGiven(page);
 
-    await row.getByTestId('revoke-delegation').click();
+    await revokeFromPane(page, row);
 
     await expect(page.getByTestId('revoke-delegation-text')).toContainText('Декан');
     await page.getByTestId('revoke-delegation-cancel').click();
 
-    await expect(row.getByTestId('given-state')).toContainText('Активне');
+    await expect(page.getByTestId('detail-state')).toContainText('Активне');
 
-    await row.getByTestId('revoke-delegation').click();
+    await page.getByTestId('revoke-delegation').click();
     await page.getByTestId('revoke-delegation-confirm').click();
 
     await expect(page.getByTestId('delegations-message')).toContainText('Делегування відкликано');
     await expect(activeGiven(page)).toHaveCount(0);
+    await expect(page.getByTestId('detail-state')).toContainText('Відкликано');
+    await expect(page.getByTestId('revoke-delegation')).toHaveCount(0);
     await expect(
       page
-        .getByTestId('given-table')
-        .getByRole('row')
+        .getByTestId('given-row')
         .filter({ hasText: 'Секретар' })
         .filter({ hasText: 'Відкликано' })
         .first(),

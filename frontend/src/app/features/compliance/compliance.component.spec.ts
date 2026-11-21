@@ -252,4 +252,47 @@ describe('ComplianceComponent', () => {
     expect(text(query('[data-testid="runs-empty"]'))).toBe('Запусків ще не було.');
     expect(query('[data-testid="runs-paginator"]')).toBeNull();
   });
+
+  it('ac7_1_lists_the_three_sections_with_their_counts_and_marks_the_one_in_the_url', async () => {
+    await harness.navigateByUrl('/compliance?tab=erasures');
+    store.dispatch(ComplianceActions.countLoaded({ section: 'retention', count: 9 }));
+    store.dispatch(ComplianceActions.countLoaded({ section: 'erasures', count: 2 }));
+    store.dispatch(ComplianceActions.countLoaded({ section: 'holds', count: 0 }));
+    harness.detectChanges();
+
+    expect(dispatch).toHaveBeenCalledWith(ComplianceActions.overviewOpened());
+    expect(
+      queryAll('[data-testid="compliance-sections"] a').map((row) => row.dataset['testid']),
+    ).toEqual(['section-retention', 'section-erasures', 'section-holds']);
+    expect(text(query('[data-testid="section-erasures"]'))).toContain('Запити на видалення');
+    expect(text(query('[data-testid="count-retention"]'))).toBe('9');
+    expect(text(query('[data-testid="count-erasures"]'))).toBe('2');
+    expect(text(query('[data-testid="count-holds"]'))).toBe('0');
+    expect(query('[data-testid="section-erasures"]')?.getAttribute('aria-current')).toBe('true');
+    expect(query('[data-testid="section-retention"]')?.getAttribute('aria-current')).toBeNull();
+    expect(query('[data-testid="erasures-tab"]')).not.toBeNull();
+    expect(query('[data-testid="retention-tab"]')).toBeNull();
+  });
+
+  it('ac7_1_opens_a_section_from_the_side_list_and_keeps_it_in_the_url', async () => {
+    await harness.navigateByUrl('/compliance?tab=erasures&status=COMPLETED&page=2&size=50');
+
+    query('[data-testid="section-holds"]')?.click();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    expect(TestBed.inject(Router).url).toBe('/compliance?tab=holds&status=COMPLETED&size=50');
+    expect(query('[data-testid="holds-tab"]')).not.toBeNull();
+  });
+
+  it('ac7_1_leaves_out_a_count_that_could_not_be_read', async () => {
+    await harness.navigateByUrl('/compliance');
+    store.dispatch(ComplianceActions.countLoaded({ section: 'retention', count: 9 }));
+    store.dispatch(ComplianceActions.countLoadFailed({ section: 'erasures' }));
+    harness.detectChanges();
+
+    expect(query('[data-testid="count-erasures"]')).toBeNull();
+    expect(query('[data-testid="count-holds"]')).toBeNull();
+    expect(text(query('[data-testid="section-erasures"]'))).toContain('Запити на видалення');
+  });
 });

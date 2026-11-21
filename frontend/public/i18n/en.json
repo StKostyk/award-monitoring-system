@@ -917,6 +917,48 @@
   },
   "delegations": {
     "title": "My delegations",
+    "context": "Powers you handed over or received for a period",
+    "detail": {
+      "back": "Back to the list",
+      "givenTo": "Given to: {{name}}",
+      "receivedFrom": "From: {{name}}",
+      "reason": "Reason",
+      "noReason": "Not given",
+      "can": "Can",
+      "cannot": "Cannot",
+      "hint": "Choose a delegation to see its period, reason and limits.",
+      "emptyHint": "No delegations yet.",
+      "notFound": "This delegation is not one of yours.",
+      "gone": "The delegation is no longer in the list.",
+      "endsIn": {
+        "one": "{{count}} day left",
+        "few": "{{count}} days left",
+        "many": "{{count}} days left",
+        "other": "{{count}} days left"
+      },
+      "startsIn": {
+        "one": "Starts in {{count}} day",
+        "few": "Starts in {{count}} days",
+        "many": "Starts in {{count}} days",
+        "other": "Starts in {{count}} days"
+      }
+    },
+    "capabilities": {
+      "can": {
+        "readDepartment": "View the department's awards",
+        "readFaculty": "View the faculty's awards",
+        "readAll": "View the awards of the whole university",
+        "approveLevel1": "Review requests at department level",
+        "approveLevel2": "Review requests at faculty level",
+        "approveLevel3": "Review requests at university level",
+        "approveFinal": "Give final approval to awards"
+      },
+      "cannot": {
+        "manageUsers": "Add users or change their roles",
+        "analytics": "View the unit's analytics",
+        "delegate": "Pass these powers on"
+      }
+    },
     "given": "Given",
     "received": "Received",
     "emptyGiven": "You have not handed your authority to anybody yet",
@@ -987,6 +1029,13 @@
   },
   "compliance": {
     "title": "Compliance",
+    "context": "Data retention, erasure requests and legal holds",
+    "sections": "Sections",
+    "sectionMeta": {
+      "retention": "Retention policies",
+      "erasures": "Open requests",
+      "holds": "Holds in force"
+    },
     "tabs": {
       "retention": "Retention",
       "erasures": "Erasure requests",
@@ -1016,7 +1065,11 @@
       "empty": "No retention run yet.",
       "failures": "Failed policies: {{count}}",
       "failed": "Failed",
-      "ok": "Done"
+      "ok": "Done",
+      "durations": "Duration of the latest runs",
+      "started": "Started",
+      "seconds": "Seconds",
+      "durationsDescription": "Runs: {{count}}, longest {{longest}} s, failed: {{failed}}."
     },
     "policies": {
       "notifications": "Notifications",

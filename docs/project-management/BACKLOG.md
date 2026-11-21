@@ -215,8 +215,8 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.5.3 | Achievements as a story feed | 3 | ✅ Done | SCRUM-165 | [#458](https://github.com/StKostyk/award-monitoring-system/issues/458) |
 | 9.5.4 | Users with the person beside the list | 5 | ✅ Done | SCRUM-166 | [#459](https://github.com/StKostyk/award-monitoring-system/issues/459) |
 | 9.5.5 | Reviews with the request beside the queue | 5 | ✅ Done | SCRUM-167 | [#460](https://github.com/StKostyk/award-monitoring-system/issues/460) |
-| 9.5.6 | Unit analytics split and university bento | 5 | 👀 In review (11) | SCRUM-168 | [#461](https://github.com/StKostyk/award-monitoring-system/issues/461) |
-| 9.5.7 | Compliance and delegations in the split layout | 5 | 11 | SCRUM-169 | [#462](https://github.com/StKostyk/award-monitoring-system/issues/462) |
+| 9.5.6 | Unit analytics split and university bento | 5 | ✅ Done | SCRUM-168 | [#461](https://github.com/StKostyk/award-monitoring-system/issues/461) |
+| 9.5.7 | Compliance and delegations in the split layout | 5 | 👀 In review (11) | SCRUM-169 | [#462](https://github.com/StKostyk/award-monitoring-system/issues/462) |
 
 ### Later epics
 | ID | Story | Points | Epic |

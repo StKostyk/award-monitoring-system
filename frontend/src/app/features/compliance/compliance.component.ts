@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
@@ -8,7 +8,6 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatPaginator, MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
-import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { ActivatedRoute, ParamMap, Params, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
@@ -17,14 +16,19 @@ import { distinctUntilChanged, map } from 'rxjs';
 import { LanguageService } from '../../core/i18n/language.service';
 import { kyivDateTime } from '../../shared/date-format';
 import { IconComponent } from '../../shared/icons/icon.component';
+import { ListRowComponent, ListRowsDirective } from '../../shared/layout/list-row.component';
+import { PageHeaderComponent } from '../../shared/layout/page-header.component';
+import { PaneComponent } from '../../shared/layout/pane.component';
+import { SplitComponent } from '../../shared/layout/split.component';
 import { TranslatedPaginatorIntl } from '../../shared/translated-paginator-intl';
 import { UserRef } from '../reviews/reviews.service';
 import { Phrase, durationPhrase, isErasedEmail, periodPhrases } from './compliance-format';
 import { ErasureEntry, ErasureStatus, RetentionRun } from './compliance.service';
-import { ComplianceActions } from './store/compliance.actions';
+import { ComplianceActions, ComplianceSection } from './store/compliance.actions';
+import { RunDurationsComponent } from './run-durations/run-durations.component';
 import { complianceFeature } from './store/compliance.feature';
 
-export type ComplianceTab = 'retention' | 'erasures' | 'holds';
+export type ComplianceTab = ComplianceSection;
 
 /** What the URL asks the page to show. */
 export interface ComplianceView {
@@ -74,7 +78,12 @@ export function readView(params: ParamMap): ComplianceView {
   selector: 'app-compliance',
   imports: [
     NgTemplateOutlet,
-    MatTabsModule,
+    PageHeaderComponent,
+    SplitComponent,
+    PaneComponent,
+    ListRowComponent,
+    ListRowsDirective,
+    RunDurationsComponent,
     MatTableModule,
     MatExpansionModule,
     MatButtonToggleGroup,
@@ -98,6 +107,7 @@ export class ComplianceComponent {
   private readonly router = inject(Router);
   private readonly language = inject(LanguageService);
 
+  protected readonly sections = TABS;
   protected readonly statuses = STATUSES;
   protected readonly pageSizes = PAGE_SIZES;
   protected readonly policyColumns = ['policy', 'period', 'action'];
@@ -115,7 +125,6 @@ export class ComplianceComponent {
   readonly view = toSignal(this.route.queryParamMap.pipe(map(readView)), {
     initialValue: readView(this.route.snapshot.queryParamMap),
   });
-  readonly tabIndex = computed(() => TABS.indexOf(this.view().tab));
 
   readonly policies = this.store.selectSignal(complianceFeature.selectPolicies);
   readonly policiesLoading = this.store.selectSignal(complianceFeature.selectPoliciesLoading);
@@ -123,8 +132,11 @@ export class ComplianceComponent {
   readonly runs = this.store.selectSignal(complianceFeature.selectRuns);
   readonly erasures = this.store.selectSignal(complianceFeature.selectErasures);
   readonly holds = this.store.selectSignal(complianceFeature.selectHolds);
+  readonly counts = this.store.selectSignal(complianceFeature.selectCounts);
+  readonly recentRuns = this.store.selectSignal(complianceFeature.selectRecentRuns);
 
   constructor() {
+    this.store.dispatch(ComplianceActions.overviewOpened());
     this.route.queryParamMap
       .pipe(
         map(readView),
@@ -138,11 +150,8 @@ export class ComplianceComponent {
     this.load(this.view());
   }
 
-  selectTab(event: MatTabChangeEvent): void {
-    const tab = TABS[event.index];
-    if (tab !== this.view().tab) {
-      this.navigate({ tab, page: null });
-    }
+  sectionParams(section: ComplianceTab): Params {
+    return { tab: section, page: null };
   }
 
   filterStatus(status: ErasureStatus | ''): void {
