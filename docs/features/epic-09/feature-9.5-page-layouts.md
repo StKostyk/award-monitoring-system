@@ -2,7 +2,7 @@
 
 > **Epic**: 9 Production hardening (SCRUM-128) · **Tracker**: `docs/epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md`
 > **Sprint**: 11 (2026-11-23 to 2026-11-29) and 12 (2026-11-30 to 2026-12-06) · **Points**: 31
-> **Status**: Validated 2026-11-21, pending the manual run of §10
+> **Status**: Done 2026-11-22
 > **Governing docs**: ADR-014 and ADR-016 (9.3 addenda: tokens, effect components, chart theme), ADR-015 (NgRx per
 > feature), `docs/frontend/UI_GUIDELINES.md` §1-8, Feature 9.3 (the look), Feature 9.4 (widget kit, dashboard
 > layouts in `dashboard_preferences`, role home), Features 5.1-5.3, 6.x (compliance), 2.3-2.5 (reviews,
@@ -192,8 +192,8 @@ feature; if the time before the defense runs short, 9.5.7 and then 9.5.6 move af
 Fix from the run of 2026-11-21, step 1; AC-1.1 and AC-2.1 stay the governing text.
 
 - **AC-8.1** (Dashboard header) Given `/dashboard` at 1280 in Ukrainian, then the context line reads «Затверджено: N ·
-  На розгляді: M» (approved awards of the period, requests under review), and the period, «Підсумок», «Експорт для
-  резюме» and «Додати нагороду» sit on the title's row; «Підсумок» and «Експорт для резюме» are icon buttons whose
+  Зараз на розгляді: M» (approved awards of the period, requests under review), and the period, «Підсумок», «Експорт
+  для резюме» and «Додати нагороду» sit on the title's row; «Підсумок» and «Експорт для резюме» are icon buttons whose
   accessible name and tooltip carry the label. At 360 the actions still wrap below the title.
 
 ### 9.5.10 Back from a pane at 360 px loses the list scroll (SCRUM-173)
@@ -306,8 +306,8 @@ in the secretary's faculty; one submitted request waiting at the faculty level; 
 to the secretary. Widths 360 and 1280, both schemes, both languages for the steps marked so.
 
 1. Sign in as `rector`, open `/dashboard` at 1280 in Ukrainian. Expected: header with the context line «Затверджено:
-   N · На розгляді: M», the page title and the period and actions on one row, «Підсумок» and «Експорт для резюме» as
-   icon buttons with a tooltip; every sidebar label in full, two lines where needed. (AC-1.1, AC-1.5, AC-8.1)
+   N · Зараз на розгляді: M», the page title and the period and actions on one row, «Підсумок» and «Експорт для
+   резюме» as icon buttons with a tooltip; every sidebar label in full, two lines where needed. (AC-1.1, AC-1.5, AC-8.1)
 2. Same page at 360. Expected: no horizontal scroll; actions below the title; one column. (AC-1.1, AC-2.6)
 3. Sign in as `employee.fmi`, open `/dashboard` at 1280. Expected: profile, «Підсумок» and up to four facts on the
    left; years, levels beside «У роботі», latest awards (five, newest first, «Усі N»), then categories, «Місце на
@@ -417,6 +417,16 @@ container stack (app and frontend built 2026-11-21 19:54, develop at 9b00f4b, ap
 | 29 | FAIL | Back through three selections OK (/admin/users/1101 → 1099 → 1098 → /admin/users); at 360 Back from the pane returns to the list but the scroll position is lost (mat-sidenav-content scrollTop 797 before the click, 0 after Back) — the known untested back-scroll polish item |
 | 30 | PASS | docker restart award-backend (healthy), then selecting another row at /admin/users/1098: first call 401 (new signing key), silent refresh, retry → /admin/users/1101 pane loaded, no blank page |
 
+### Run 2026-11-22 (failed steps)
+
+container stack with the fix stories 9.5.8 (SCRUM-171), 9.5.9 (SCRUM-172) and 9.5.10 (SCRUM-173), develop at fabb23e, default settings, browser without the service worker. Result: 3 pass.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | rector /dashboard 1280 uk: context «Затверджено: 9 · Зараз на розгляді: 0» (step text aligned to the shipped label); period fields, «Підсумок» and «Експорт для резюме» (icon buttons, aria-label set) and «Додати нагороду» all at y 104 on the title's row; 0 sidebar labels truncated |
+| 25 | PASS | secretary.fmi on ?request=1858, dean approved it through the API; next queue refresh (Мої → Усі): URL /reviews, snack «Цього запиту більше немає в черзі.»; stale pane on 1860 after the dean approved it: held decision sent after 10 s, POST /decisions 409, snack «Розгляд цієї нагороди вже завершено», next request ?request=543 selected |
+| 29 | PASS | secretary.fmi 1280: selections 1101 → 1128 → 786, Back three times → 1128, 1101, /admin/users; 360: browser Back and «До списку» each return to /admin/users with scrollTop 700 → 700, focus on the chosen row (/admin/users/199), no horizontal scroll |
+
 ## 11. Risks
 
 | # | Risk | Mitigation |
@@ -500,8 +510,8 @@ Delegation can/cannot lines are display only; the backend permission matrix stil
 
 ### Findings
 
-1. Reviews and users keep a selection that left the list instead of clearing it with a snack bar (§5); recorded
-   defaults of 9.5.5 and 9.5.4, open for review.
+1. Reviews and users keep a selection that left the list instead of clearing it with a snack bar (§5): fixed in
+   9.5.9 (SCRUM-172), step 25 passes in the run of 2026-11-22.
 2. The dashboard layout announces «Збережено» before the save answers; a failed save then shows the save problem
    (9.4.1 behaviour, not new in 9.5).
 3. The review pane treats a failed `GET /reviews/{id}` (other than 404) as a request without a route.
