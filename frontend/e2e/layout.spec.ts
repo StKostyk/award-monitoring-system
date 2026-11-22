@@ -132,3 +132,51 @@ test.describe('page layout and shell (9.5.1)', () => {
     await expect(page.getByTestId('cv-export')).toHaveAccessibleName('Експорт для резюме');
   });
 });
+
+test.describe('back from a narrow pane (9.5.10)', () => {
+  for (const back of ['browser', 'pane'] as const) {
+    test(`ac10_1 ${back} back at 360 returns to the users list at its scroll position`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(PHONE);
+      await signInAsSeed(page, SEED.admin);
+      await page.goto('/admin/users');
+      const links = page.getByTestId('user-link');
+      await expect(links.nth(8)).toBeAttached();
+      await settled(page);
+      const scroller = page.locator('mat-sidenav-content');
+      await scroller.evaluate(
+        (element) => (element.scrollTop = Math.min(600, element.scrollHeight - 900)),
+      );
+      const before = await scroller.evaluate((element) => element.scrollTop);
+      expect(before).toBeGreaterThan(200);
+      const shown = await links.evaluateAll((rows) =>
+        rows.findIndex((link) => {
+          const box = link.getBoundingClientRect();
+          return box.top > 250 && box.bottom < window.innerHeight;
+        }),
+      );
+      expect(shown).toBeGreaterThanOrEqual(0);
+      const row = links.nth(shown);
+      const href = await row.getAttribute('href');
+      await row.click();
+      await expect(page).toHaveURL(href!);
+      await expect(page.getByTestId('back-to-users')).toBeVisible();
+
+      if (back === 'browser') {
+        await page.goBack();
+      } else {
+        await page.getByTestId('back-to-users').click();
+      }
+
+      const chosen = page.locator(`[data-testid="user-link"][href="${href}"]`);
+      await expect(chosen).toBeFocused();
+      await expect(chosen).toBeInViewport();
+      await expect
+        .poll(() =>
+          scroller.evaluate((element, start) => Math.abs(element.scrollTop - start), before),
+        )
+        .toBeLessThan(40);
+    });
+  }
+});
