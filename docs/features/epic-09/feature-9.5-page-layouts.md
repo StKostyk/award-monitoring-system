@@ -196,6 +196,14 @@ Fix from the run of 2026-11-21, step 1; AC-1.1 and AC-2.1 stay the governing tex
   резюме» and «Додати нагороду» sit on the title's row; «Підсумок» and «Експорт для резюме» are icon buttons whose
   accessible name and tooltip carry the label. At 360 the actions still wrap below the title.
 
+### 9.5.10 Back from a pane at 360 px loses the list scroll (SCRUM-173)
+
+Fix from the run of 2026-11-21, step 29; the narrow-screen edge case in §5 stays the governing text.
+
+- **AC-10.1** (Scroll kept) Given a split page (Users, Reviews, Delegations) at 360, the list scrolled down and a row
+  selected so that the pane shows alone, when the browser's Back (or the pane's back action) returns to the list,
+  then the list shows at the scroll position it had before the selection, and the selected row is in view.
+
 ## 5. Edge cases
 
 - Empty lists in a split page: the list pane shows its empty state and the main column a short hint, no blank pane.
@@ -367,7 +375,8 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
     the sign-in; the administrator's own page is unchanged.
 28. Reload `/reviews?request=<id>` after the token expired. Expected: sign-in, then the same selection.
 29. Back after selecting three people in Users. Expected: the browser goes back through the selections, then to the
-    previous page; at 360 Back from a pane returns to the list at the same scroll position.
+    previous page; at 360 Back from a pane (browser Back or «До списку») returns to the list at the same scroll
+    position, with the focus on the chosen row (AC-10.1).
 30. Restart the backend while a split page is open, then select another row. Expected: the pane loads after the
     restart; no blank page.
 
@@ -478,7 +487,7 @@ pass. Full e2e 261 passed (keyboard `ac1_7` passed on retry, on the known flaky 
 | Empty lists | `delegation-list` ac3_6_shows_both_empty_states, `user-list` ac2_10 empty state, review queue empty state |
 | Selected row disappears | delegations: `ac7_3_clears_a_shown_delegation_that_left_the_list_and_says_so`; reviews and users keep the state (9.5.5 and 9.5.4 defaults, open) |
 | Deep link not visible | `review-queue` ac5_3_an_unknown_request_*, `delegation-list` ac7_3_says_so_*, users ac9_1 not-found card |
-| Narrow screens | `layout.spec.ts` ac1_2 focus and return; back keeping the scroll position has no test (open) |
+| Narrow screens | `layout.spec.ts` ac1_2 focus and return; ac10_1 back keeping the scroll position (unit and e2e, SCRUM-173) |
 | Long labels | ac1_5 sidebar labels; ellipsis on titles only in screen checks (open) |
 | Analytics cache | unchanged, no new invalidation |
 | Keyboard vs shortcuts | ac1_3_arrow_keys_in_a_text_field_stay, `review-queue` edge_k_without_a_selection |
@@ -496,7 +505,7 @@ Delegation can/cannot lines are display only; the backend permission matrix stil
 2. The dashboard layout announces «Збережено» before the save answers; a failed save then shows the save problem
    (9.4.1 behaviour, not new in 9.5).
 3. The review pane treats a failed `GET /reviews/{id}` (other than 404) as a request without a route.
-4. No test for back keeping the list scroll position below 960 px, for invalid `?request=` / `?delegation=` values
-   in e2e, or for a double click on «Підтвердити членство» (`mergeMap`).
+4. No test for invalid `?request=` / `?delegation=` values in e2e, or for a double click on «Підтвердити
+   членство» (`mergeMap`). Back keeping the list scroll position is fixed and tested since SCRUM-173.
 5. Refactor: selection-in-URL written twice (reviews, delegations) and the chart provider copied in four route
    files: a small refactor PR; naming of `selected` (ticked) against `selectedId` (shown) in reviews.

@@ -66,6 +66,8 @@ class HostComponent {
 const KEY_CODES: Record<string, number> = { End: 35, Home: 36, ArrowUp: 38, ArrowDown: 40 };
 
 describe('page layout kit', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   function render(): { element: HTMLElement; host: HostComponent; detect: () => void } {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
@@ -78,6 +80,21 @@ describe('page layout kit', () => {
 
   function rows(element: HTMLElement): HTMLButtonElement[] {
     return [...element.querySelectorAll<HTMLButtonElement>('[appListRow]')];
+  }
+
+  function narrow(split: HTMLElement): void {
+    const real = window.getComputedStyle.bind(window);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((target, pseudo) => {
+      const hidden =
+        (target as Element).matches('.split__side') &&
+        split.classList.contains('split--detail-open');
+      const hiddenMain =
+        (target as Element).matches('.split__main') &&
+        !split.classList.contains('split--detail-open');
+      return hidden || hiddenMain
+        ? ({ display: 'none' } as CSSStyleDeclaration)
+        : real(target, pseudo);
+    });
   }
 
   function press(target: Element, key: string): KeyboardEvent {
@@ -124,18 +141,7 @@ describe('page layout kit', () => {
   it('ac1_2_a_narrow_detail_takes_the_focus_and_gives_it_back_to_the_selected_row', async () => {
     const { element, host, detect } = render();
     const split = element.querySelector('app-split') as HTMLElement;
-    const real = window.getComputedStyle.bind(window);
-    vi.spyOn(window, 'getComputedStyle').mockImplementation((target, pseudo) => {
-      const hidden =
-        (target as Element).matches('.split__side') &&
-        split.classList.contains('split--detail-open');
-      const hiddenMain =
-        (target as Element).matches('.split__main') &&
-        !split.classList.contains('split--detail-open');
-      return hidden || hiddenMain
-        ? ({ display: 'none' } as CSSStyleDeclaration)
-        : real(target, pseudo);
-    });
+    narrow(split);
     const second = rows(element)[1];
     second.focus();
 
@@ -148,6 +154,64 @@ describe('page layout kit', () => {
     detect();
     await TestBed.inject(ApplicationRef).whenStable();
     expect(document.activeElement).toBe(second);
+    vi.restoreAllMocks();
+  });
+
+  it('ac10_1_back_from_a_narrow_detail_restores_the_list_scroll_and_the_row_focus', async () => {
+    const { element, host, detect } = render();
+    const split = element.querySelector('app-split') as HTMLElement;
+    narrow(split);
+    let scrollTop = 0;
+    element.style.overflowY = 'auto';
+    Object.defineProperty(element, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (value: number) => (scrollTop = value),
+    });
+    scrollTop = 500;
+    const second = rows(element)[1];
+    second.focus();
+    second.addEventListener('click', () => (scrollTop = 0));
+
+    second.click();
+    detect();
+    await TestBed.inject(ApplicationRef).whenStable();
+    const heading = element.querySelector('h1') as HTMLElement;
+    heading.setAttribute('tabindex', '-1');
+    heading.focus();
+
+    host.selected.set(null);
+    detect();
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(scrollTop).toBe(500);
+    expect(document.activeElement).toBe(second);
+    vi.restoreAllMocks();
+  });
+
+  it('ac10_1_a_detail_opened_long_after_a_side_click_leaves_the_scroll_alone', async () => {
+    const { element, host, detect } = render();
+    const split = element.querySelector('app-split') as HTMLElement;
+    narrow(split);
+    let scrollTop = 0;
+    element.style.overflowY = 'auto';
+    Object.defineProperty(element, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: (value: number) => (scrollTop = value),
+    });
+
+    scrollTop = 500;
+    (element.querySelector('[data-testid="filter"]') as HTMLElement).click();
+    const now = Date.now();
+    vi.spyOn(Date, 'now').mockReturnValue(now + 3000);
+    host.selected.set(3);
+    detect();
+    await TestBed.inject(ApplicationRef).whenStable();
+    scrollTop = 120;
+    host.selected.set(null);
+    detect();
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(scrollTop).toBe(120);
     vi.restoreAllMocks();
   });
 

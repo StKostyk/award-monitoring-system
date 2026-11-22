@@ -1,12 +1,19 @@
 import {
+  afterNextRender,
   afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   ElementRef,
+  inject,
   input,
   viewChild,
 } from '@angular/core';
+
+const RESTORE_WAIT_MS = 5000;
+const CLICK_TO_OPEN_MS = 2000;
+const USER_SCROLL_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
 
 /** How a split page behaves below 960 px. */
 export type SplitMode = 'stack' | 'detail';
@@ -68,11 +75,15 @@ export class SplitComponent {
   readonly mode = input<SplitMode>('stack');
   /** Whether a detail is open in the main column (the detail mode only). */
   readonly detailOpen = input(false);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly side = viewChild.required<ElementRef<HTMLElement>>('side');
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly open = computed(() => this.mode() === 'detail' && this.detailOpen());
   private lastFocusInSide: HTMLElement | null = null;
   private opener: HTMLElement | null = null;
+  private lastClick: { scrollTop: number; at: number } | null = null;
+  private listScroll: number | null = null;
+  private stopRestoring: () => void = () => undefined;
 
   constructor() {
     let previous = false;
@@ -83,20 +94,89 @@ export class SplitComponent {
         this.moveFocus(open);
       }
     });
+    afterNextRender(() =>
+      this.side().nativeElement.addEventListener(
+        'click',
+        () => {
+          this.lastClick = {
+            scrollTop: scroller(this.host.nativeElement).scrollTop,
+            at: Date.now(),
+          };
+        },
+        { capture: true },
+      ),
+    );
+    inject(DestroyRef).onDestroy(() => this.stopRestoring());
   }
 
   private moveFocus(open: boolean): void {
     const side = this.side().nativeElement;
     const main = this.main().nativeElement;
+    this.stopRestoring();
+    if (open) {
+      const click = this.lastClick;
+      this.listScroll = click && Date.now() - click.at < CLICK_TO_OPEN_MS ? click.scrollTop : null;
+      this.lastClick = null;
+    }
     if (open && hidden(side)) {
       main.focus();
-    } else if (!open && hidden(main) && (main.contains(document.activeElement) || isLost())) {
-      const back = this.opener?.isConnected
-        ? this.opener
-        : side.querySelector<HTMLElement>('a, button');
-      back?.focus();
+    } else if (!open && hidden(main)) {
+      const opener = this.opener;
+      const href = opener?.getAttribute('href') ?? null;
+      const row = (): HTMLElement | null => (opener?.isConnected ? opener : linkTo(side, href));
+      const giveBack = (): boolean =>
+        main.contains(document.activeElement) || isLost() || this.onOwnHeading();
+      const placeholder = giveBack()
+        ? (row() ?? side.querySelector<HTMLElement>('a, button'))
+        : null;
+      placeholder?.focus({ preventScroll: true });
+      const target = this.listScroll;
+      this.listScroll = null;
+      if (target === null) {
+        placeholder?.scrollIntoView?.({ block: 'nearest' });
+      } else {
+        this.restoreListScroll(target, () => {
+          const again = row();
+          if (
+            again &&
+            placeholder &&
+            again !== placeholder &&
+            (isLost() || document.activeElement === placeholder)
+          ) {
+            again.focus({ preventScroll: true });
+          }
+        });
+      }
     }
     this.opener = open ? this.lastFocusInSide : null;
+  }
+
+  private restoreListScroll(target: number, settle: () => void): void {
+    const element = scroller(this.host.nativeElement);
+    const apply = (): void => {
+      element.scrollTop = target;
+      settle();
+    };
+    apply();
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver(apply);
+    const timer = setTimeout(() => this.stopRestoring(), RESTORE_WAIT_MS);
+    const stop = (): void => {
+      observer.disconnect();
+      clearTimeout(timer);
+      USER_SCROLL_EVENTS.forEach((type) => element.removeEventListener(type, stop));
+      this.stopRestoring = () => undefined;
+    };
+    observer.observe(this.side().nativeElement);
+    USER_SCROLL_EVENTS.forEach((type) => element.addEventListener(type, stop, { passive: true }));
+    this.stopRestoring = stop;
+  }
+
+  private onOwnHeading(): boolean {
+    const active = document.activeElement;
+    return !!active?.matches('h1') && !!this.host.nativeElement.parentElement?.contains(active);
   }
 
   /**
@@ -116,4 +196,22 @@ function hidden(element: HTMLElement): boolean {
 
 function isLost(): boolean {
   return document.activeElement === null || document.activeElement === document.body;
+}
+
+function linkTo(side: HTMLElement, href: string | null): HTMLElement | null {
+  if (href === null) {
+    return null;
+  }
+  const links = side.querySelectorAll<HTMLElement>('a[href]');
+  return [...links].find((link) => link.getAttribute('href') === href) ?? null;
+}
+
+function scroller(from: HTMLElement): HTMLElement {
+  for (let element = from.parentElement; element; element = element.parentElement) {
+    const overflow = getComputedStyle(element).overflowY;
+    if (overflow === 'auto' || overflow === 'scroll') {
+      return element;
+    }
+  }
+  return (document.scrollingElement as HTMLElement | null) ?? document.documentElement;
 }
