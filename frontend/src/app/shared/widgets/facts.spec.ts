@@ -106,12 +106,18 @@ describe('facts', () => {
       key: 'facts.levelShare',
       params: { percent: 20, period: '2022–2026' },
       keyParams: { level: 'categories.levels.INTERNATIONAL' },
+      lead: { key: 'facts.leads.percent', params: { percent: 20 } },
     });
     expect(growthFact(source())).toEqual({
       key: 'facts.growth',
       params: { percent: 17, year: 2025 },
+      lead: { key: 'facts.leads.percent', params: { percent: '+17' } },
     });
-    expect(streakFact(source())).toEqual({ key: 'facts.streak', params: { years: 5 } });
+    expect(streakFact(source())).toEqual({
+      key: 'facts.streak',
+      params: { years: 5 },
+      lead: { key: 'facts.leads.value', params: { value: 5 } },
+    });
 
     const quiet: FactSource = {
       ...source(),
@@ -120,13 +126,17 @@ describe('facts', () => {
       byLevel: [],
     };
     expect(facts(quiet)).toEqual([
-      { key: 'facts.firstAward', params: { year: 2026, period: '2022–2026' } },
+      {
+        key: 'facts.firstAward',
+        params: { year: 2026, period: '2022–2026' },
+        lead: { key: 'facts.leads.value', params: { value: 2026 } },
+      },
     ]);
     expect(facts({ ...quiet, byYear: [] })).toEqual([]);
     expect(growthFact({ ...source(), today: { year: 2026, month: 2 } })).toBeNull();
     expect(growthFact({ ...source(), today: { year: 2027, month: 3 } })).toBeNull();
     const longer = { ...source(), byYear: [{ year: 2021, total: 0 }, ...source().byYear] };
-    expect(streakFact(longer)).toEqual({ key: 'facts.streak', params: { years: 5 } });
+    expect(streakFact(longer)?.params).toEqual({ years: 5 });
   });
 
   it('ac2_4_counts_the_streak_up_to_last_year_while_this_year_has_none', () => {
@@ -148,10 +158,12 @@ describe('facts', () => {
     expect(bestYearFact(source())).toEqual({
       key: 'facts.bestYear',
       params: { year: 2024, count: 40 },
+      lead: { key: 'facts.leads.value', params: { value: 2024 } },
     });
     expect(firstAwardFact(source())).toEqual({
       key: 'facts.firstAward',
       params: { year: 2022, period: '2022–2026' },
+      lead: { key: 'facts.leads.value', params: { value: 2022 } },
     });
     expect(facts(source()).map((fact) => fact.key)).toEqual([
       'facts.bestYear',

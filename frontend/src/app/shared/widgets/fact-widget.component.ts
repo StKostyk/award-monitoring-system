@@ -15,8 +15,13 @@ import { Fact } from './widget-data';
   template: `
     @if (sentences().length > 0) {
       <ul class="facts">
-        @for (sentence of sentences(); track $index) {
-          <li class="fact" data-testid="fact"><app-typed-text [text]="sentence" /></li>
+        @for (item of sentences(); track $index) {
+          <li class="fact" data-testid="fact">
+            @if (item.lead) {
+              <b class="fact__lead" data-testid="fact-lead">{{ item.lead }}</b>
+            }
+            <span class="fact__text"><app-typed-text [text]="item.text" /></span>
+          </li>
         }
       </ul>
     } @else {
@@ -50,6 +55,25 @@ import { Fact } from './widget-data';
       border-bottom: 0;
     }
 
+    .fact__lead {
+      display: block;
+      margin-bottom: 2px;
+      font: 800 1rem / 1.3 var(--app-font-heading);
+      color: var(--app-gold-text, var(--app-bar));
+    }
+
+    .fact:has(.fact__lead) .fact__text {
+      font: 400 0.8125rem / 1.45 var(--app-font-body);
+    }
+
+    :host-context(.pane--ink) .fact__lead {
+      color: var(--app-gold-soft);
+    }
+
+    :host-context(.pane--ink) .fact__text {
+      color: var(--app-on-ink);
+    }
+
     :host-context(.pane--ink) .fact {
       padding-inline: 18px;
       border-color: var(--app-ink-divider);
@@ -73,8 +97,9 @@ export class FactWidgetComponent {
 
   protected readonly sentences = computed(() => {
     this.language.current();
-    return this.facts().map((fact) =>
-      translateFact(fact, (key, params) => this.transloco.translate(key, params)),
-    );
+    return this.facts().map((fact) => ({
+      lead: fact.lead ? this.transloco.translate(fact.lead.key, fact.lead.params) : null,
+      text: translateFact(fact, (key, params) => this.transloco.translate(key, params)),
+    }));
   });
 }

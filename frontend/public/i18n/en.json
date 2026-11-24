@@ -2037,6 +2037,10 @@
       "FACT": "Did you know",
       "TOP": "Leaders",
       "LEVEL_MAP": "Award levels"
+    },
+    "hero": {
+      "ring": "{{months}} of {{total}} months passed",
+      "months": "months"
     }
   },
   "commandCentre": {
@@ -2137,13 +2141,16 @@
       "title": "Awards by year",
       "peak": "Peak",
       "partial": "Year to date",
-      "description": "Bars of approved awards by year from {{from}} to {{to}}; the most, {{peak}}, in {{peakYear}}."
+      "running": "year in progress",
+      "peakYear": "{{year}} is the record year: {{count}}.",
+      "peakRunning": "{{year}} is the record: {{count}}, and the year is not over."
     },
     "race": {
       "title": "Running total {{year}} against {{previous}}",
-      "description": "Two lines of the running total of awards by month: {{year}} at {{current}}, {{previous}} at {{previousCount}} by the same month.",
-      "OVERTOOK": "overtook",
-      "FELL_BEHIND": "fell behind"
+      "overtookIn": "{{year}} overtook {{previous}} in {{month}}",
+      "ahead": "{{year}} is {{gap}} ahead of {{previous}}",
+      "behind": "{{year}} is {{gap}} behind {{previous}}",
+      "level": "{{year}} and {{previous}} are level"
     },
     "focus": {
       "empty": "Nothing needs your attention."
@@ -2154,6 +2161,13 @@
     "map": {
       "title": "Awards by level",
       "description": "Level map: each area is as large as its number of awards; the largest is “{{level}}” ({{count}})."
+    },
+    "records": {
+      "peakYear": "Record year",
+      "leader": "Most awards",
+      "highestLevel": "Highest level",
+      "count": "{{count}} awards",
+      "period": "in {{period}}"
     }
   },
   "facts": {
@@ -2166,6 +2180,10 @@
     "growth": "{{percent}} % more awards so far this year than in the same months of {{year}}.",
     "bestYear": "The best year was {{year}} with {{count}} awards.",
     "firstAward": "The first award of {{period}} came in {{year}}.",
-    "streak": "Awards for {{years}} consecutive years so far."
+    "streak": "Awards for {{years}} consecutive years so far.",
+    "leads": {
+      "value": "{{value}}",
+      "percent": "{{percent}} %"
+    }
   }
 }

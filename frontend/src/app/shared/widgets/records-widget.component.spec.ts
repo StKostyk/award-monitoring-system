@@ -7,7 +7,7 @@ import { byTestId, renderWidget } from './widgets.testing';
 describe('RecordsWidgetComponent', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('ac2_4_lists_the_records_as_translated_sentences', async () => {
+  it('ac5_4_shows_each_record_as_a_card_with_label_value_and_holder', async () => {
     const found = records(
       {
         period: { from: 2022, to: 2026 },
@@ -23,14 +23,21 @@ describe('RecordsWidgetComponent', () => {
     );
     const { fixture } = await renderWidget(RecordsWidgetComponent, { records: found });
 
-    const items = Array.from(byTestId(fixture, 'records')!.querySelectorAll('li'), (item) =>
-      item.textContent!.trim(),
+    const cards = Array.from(
+      byTestId(fixture, 'records')!.querySelectorAll('[data-testid="record-card"]'),
+      (card) =>
+        ['label', 'value', 'holder']
+          .map((part) => card.querySelector(`.record__${part}`)!.textContent!.trim())
+          .join(' | '),
     );
-    expect(items).toEqual([
-      'Рекордний рік — 2024 (нагород: 40)',
-      'Найбільше нагород — Факультет математики та інформатики (80)',
-      'Найвищий рівень за 2022–2026 — «Національний»',
+    expect(cards).toEqual([
+      'Рекордний рік | 2024 | нагород: 40',
+      'Найбільше нагород | Факультет математики та інформатики | нагород: 80',
+      'Найвищий рівень | Національний | за 2022–2026',
     ]);
+    const values = fixture.nativeElement.querySelectorAll('.record__value');
+    expect(values[0].classList).not.toContain('record__value--long');
+    expect(values[1].classList).toContain('record__value--long');
   });
 
   it('ac2_4_shows_an_empty_state_without_records', async () => {

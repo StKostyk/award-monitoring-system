@@ -23,6 +23,8 @@ export interface Fact {
   key: string;
   params: Record<string, string | number>;
   keyParams?: Record<string, string>;
+  /** The short value shown large above the sentence (a year, a share), as a key with its values. */
+  lead?: { key: string; params: Record<string, string | number> };
 }
 
 /** A person of a top list, by name only. */

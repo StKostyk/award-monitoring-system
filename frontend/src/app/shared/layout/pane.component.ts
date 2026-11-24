@@ -82,11 +82,13 @@ export type PaneView = 'chart' | 'table';
   `,
   styles: `
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       min-width: 0;
     }
 
     .pane {
+      flex: 1 1 auto;
       overflow: hidden;
       border-radius: var(--app-card-radius);
       background: var(--app-pane);

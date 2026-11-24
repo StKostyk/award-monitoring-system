@@ -5,16 +5,19 @@ import { provideRouter } from '@angular/router';
 
 import { languageStub, translations } from '../../features/analytics/analytics.testing';
 import { ChartStub, chartStub, chartsDrawn } from '../charts/chart.testing';
+import { PaneComponent, PaneView } from '../layout/pane.component';
+import { paneStub } from '../layout/pane.testing';
 
-/** A widget rendered in Ukrainian with the given inputs, charts recorded by a stub. */
+/** A widget rendered in Ukrainian with the given inputs inside a stub pane, charts recorded by a stub. */
 export async function renderWidget<T>(
   component: Type<T>,
   inputs: Record<string, unknown>,
 ): Promise<{ fixture: ComponentFixture<T>; stub: ChartStub; text: () => string }> {
   const stub = chartStub();
+  const pane = paneStub();
   TestBed.configureTestingModule({
     imports: [component, NoopAnimationsModule, translations('uk')],
-    providers: [stub.provider, languageStub('uk').provider, provideRouter([])],
+    providers: [stub.provider, pane.provider, languageStub('uk').provider, provideRouter([])],
   });
   const fixture = TestBed.createComponent(component);
   for (const [name, value] of Object.entries(inputs)) {
@@ -37,6 +40,17 @@ export function showData(fixture: ComponentFixture<unknown>): HTMLElement | null
   byTestId(fixture, 'chart-table-switch')!.querySelector('button')!.click();
   fixture.detectChanges();
   return byTestId(fixture, 'chart-table');
+}
+
+/**
+ * Switches the stub pane around the widget to the given view.
+ *
+ * @param fixture the rendered widget
+ * @param view the view to show
+ */
+export function showView(fixture: ComponentFixture<unknown>, view: PaneView = 'table'): void {
+  (TestBed.inject(PaneComponent).view as unknown as { set(next: PaneView): void }).set(view);
+  fixture.detectChanges();
 }
 
 /** The last options the chart stub received, read as the given shape. */

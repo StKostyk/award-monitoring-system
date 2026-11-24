@@ -202,6 +202,10 @@ export function levelShareFact(source: FactSource): Fact | null {
     key: 'facts.levelShare',
     params: { percent: Math.round((count * PERCENT) / total), period: periodLabel(source.period) },
     keyParams: { level: `categories.levels.${level}` },
+    lead: {
+      key: 'facts.leads.percent',
+      params: { percent: Math.round((count * PERCENT) / total) },
+    },
   };
 }
 
@@ -217,6 +221,7 @@ export function growthFact(source: FactSource): Fact | null {
   return {
     key: 'facts.growth',
     params: { percent: Math.round(ytd.deltaPercent), year: ytd.year - 1 },
+    lead: { key: 'facts.leads.percent', params: { percent: `+${Math.round(ytd.deltaPercent)}` } },
   };
 }
 
@@ -248,7 +253,13 @@ export function streak(
 /** The streak of years with awards up to now, when it is at least `MIN_STREAK` long. */
 export function streakFact(source: FactSource): Fact | null {
   const found = streak(source.byYear, source.today);
-  return found.years < MIN_STREAK ? null : { key: 'facts.streak', params: { years: found.years } };
+  return found.years < MIN_STREAK
+    ? null
+    : {
+        key: 'facts.streak',
+        params: { years: found.years },
+        lead: { key: 'facts.leads.value', params: { value: found.years } },
+      };
 }
 
 /** The year with most awards, when at least two years have any. */
@@ -257,7 +268,11 @@ export function bestYearFact(source: FactSource): Fact | null {
   if (!peak || source.byYear.filter((year) => year.total > 0).length < 2) {
     return null;
   }
-  return { key: 'facts.bestYear', params: { year: peak.year, count: peak.total } };
+  return {
+    key: 'facts.bestYear',
+    params: { year: peak.year, count: peak.total },
+    lead: { key: 'facts.leads.value', params: { value: peak.year } },
+  };
 }
 
 /** The earliest year of the period with an award, when there is one. */
@@ -268,6 +283,7 @@ export function firstAwardFact(source: FactSource): Fact | null {
     : {
         key: 'facts.firstAward',
         params: { year: Math.min(...years), period: periodLabel(source.period) },
+        lead: { key: 'facts.leads.value', params: { value: Math.min(...years) } },
       };
 }
 

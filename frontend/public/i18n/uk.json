@@ -2037,6 +2037,10 @@
       "FACT": "Чи знаєте ви",
       "TOP": "Лідери",
       "LEVEL_MAP": "Рівні нагород"
+    },
+    "hero": {
+      "ring": "Минуло місяців: {{months}} з {{total}}",
+      "months": "місяців"
     }
   },
   "commandCentre": {
@@ -2137,13 +2141,16 @@
       "title": "Нагороди за роками",
       "peak": "Пік",
       "partial": "Неповний рік",
-      "description": "Стовпчики затверджених нагород за роками з {{from}} по {{to}}; найбільше — {{peak}} у {{peakYear}} році."
+      "running": "рік триває",
+      "peakYear": "{{year}} — рекордний рік: {{count}}.",
+      "peakRunning": "{{year}} — рекорд: {{count}}, і рік ще триває."
     },
     "race": {
       "title": "Наростаючий підсумок {{year}} проти {{previous}}",
-      "description": "Дві лінії наростаючого підсумку нагород за місяцями: {{year}} — {{current}}, {{previous}} за ті самі місяці — {{previousCount}}.",
-      "OVERTOOK": "обгін",
-      "FELL_BEHIND": "відставання"
+      "overtookIn": "{{year}} обігнав {{previous}} у місяці «{{month}}»",
+      "ahead": "{{year}} попереду {{previous}} на {{gap}}",
+      "behind": "{{year}} відстає від {{previous}} на {{gap}}",
+      "level": "{{year}} і {{previous}} нарівні"
     },
     "focus": {
       "empty": "Нічого не чекає на вашу увагу."
@@ -2154,6 +2161,13 @@
     "map": {
       "title": "Нагороди за рівнями",
       "description": "Карта рівнів: площа кожного прямокутника відповідає кількості нагород; найбільше — «{{level}}» ({{count}})."
+    },
+    "records": {
+      "peakYear": "Рекордний рік",
+      "leader": "Найбільше нагород",
+      "highestLevel": "Найвищий рівень",
+      "count": "нагород: {{count}}",
+      "period": "за {{period}}"
     }
   },
   "facts": {
@@ -2166,6 +2180,10 @@
     "growth": "З початку року нагород на {{percent}} % більше, ніж за ті самі місяці {{year}} року.",
     "bestYear": "Найкращий рік — {{year}} (нагород: {{count}}).",
     "firstAward": "Перша нагорода за {{period}} — у {{year}} році.",
-    "streak": "Років поспіль із нагородами: {{years}}."
+    "streak": "Років поспіль із нагородами: {{years}}.",
+    "leads": {
+      "value": "{{value}}",
+      "percent": "{{percent}} %"
+    }
   }
 }
