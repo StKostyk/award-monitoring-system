@@ -55,7 +55,7 @@
           <h2 id="university-totals" class="cdk-visually-hidden">
             {{ 'unitAnalytics.sections.totals' | transloco }}
           </h2>
-          <app-delta-tiles layout="bento" [totals]="data.totals" />
+          <app-delta-tiles layout="bento" [totals]="data.totals" [years]="yearCounts()" />
         </section>
       </app-bento-tile>
 
@@ -65,7 +65,12 @@
           [heading]="'universityAnalytics.sections.faculties' | transloco"
           data-testid="section-faculties"
         >
-          <app-faculty-bars [rows]="data.units" [period]="shownPeriod()" />
+          <app-faculty-bars
+            [rows]="data.units"
+            [period]="shownPeriod()"
+            [shown]="data.period"
+            [previous]="data.previousPeriod"
+          />
         </app-pane>
       </app-bento-tile>
 
@@ -79,6 +84,7 @@
           <app-highlights
             [highlights]="data.highlights"
             sentenceKeys="universityAnalytics.highlights"
+            [limit]="highlightLimit"
           />
         </app-pane>
       </app-bento-tile>
@@ -87,19 +93,10 @@
         <app-pane
           icon="chart-line"
           [heading]="'universityAnalytics.sections.trend' | transloco"
+          tableable
           data-testid="section-trend"
         >
           <app-projection-trend-chart [analytics]="data" />
-        </app-pane>
-      </app-bento-tile>
-
-      <app-bento-tile [span]="4">
-        <app-pane
-          icon="chart-line"
-          [heading]="'universityAnalytics.sections.trends' | transloco"
-          data-testid="section-trends"
-        >
-          <app-trend-lists [trends]="data.trends" />
         </app-pane>
       </app-bento-tile>
 
@@ -173,17 +170,3 @@
     </app-bento>
   }
 }
-
-<app-pane
-  icon="shield-check"
-  class="university__compliance"
-  [heading]="'universityAnalytics.sections.compliance' | transloco"
-  data-testid="section-compliance"
->
-  <app-compliance-panel
-    [compliance]="compliance()"
-    [loading]="complianceLoading()"
-    [problem]="complianceProblem()"
-    (refresh)="refreshCompliance()"
-  />
-</app-pane>

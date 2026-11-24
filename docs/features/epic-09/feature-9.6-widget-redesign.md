@@ -131,10 +131,11 @@ burgundy surfaces in the light scheme, text contrast at least 4.5:1 in both sche
 
 - **AC-4.1** (Faculties tile) Given `rector` on university analytics, then one «Факультети» tile shows a thick bar
   per faculty for the current period, a dark tick at the previous period's value and «+N» or «−N» at the end, sorted
-  by the current count; there is no separate «Динаміка факультетів» tile (W3, A++ S1).
+  by the current count; there is no separate «Динаміка факультетів» tile (W3, A++ S1): the «Тенденції» tile (rising
+  and falling categories and sources) is the one the canvas drew under that name and leaves the page.
 - **AC-4.2** (Previous count in the API) Given `GET /analytics/university` and `GET /analytics/units/{id}`, then each
-  row of `units` carries `previousApproved`, the approved awards of that unit in `previousPeriod`, 0 when there were
-  none; a unit that did not exist then has 0.
+  row of `units` carries the approved awards of that unit in `previousPeriod` as `approved.previous` (the `Figure`
+  of 5.2.1), 0 when there were none; a unit that did not exist then has 0. No new field: the tick reads it.
 - **AC-4.3** (Highlights capped) Given more than four highlights, then the ink panel shows four and a «Усі N» button
   that expands the panel in place and turns into «Згорнути».
 - **AC-4.4** (Years and forecast) Given the years with the projection, then the tile spans the full width: thick
@@ -205,11 +206,11 @@ burgundy surfaces in the light scheme, text contrast at least 4.5:1 in both sche
 ## 6. Dependencies
 
 ### Tables
-None changed. `previousApproved` is computed from `awards` like `approved` (5.2.1, 5.3.1).
+None changed.
 
 ### Endpoints
-- Changed: `GET /analytics/units/{id}`, `GET /analytics/university` (`UnitComparisonRow.previousApproved`, 9.6.4).
-- Used unchanged: `GET /analytics/me`, `GET|PUT /users/me/notification-preferences`, `GET /users/me`.
+- Used unchanged: `GET /analytics/units/{id}`, `GET /analytics/university` (`UnitComparisonRow.approved.previous`),
+  `GET /analytics/me`, `GET|PUT /users/me/notification-preferences`, `GET /users/me`.
 
 ### Services
 - Backend: the unit comparison query of 5.2.1 counts the previous period in the same pass; the analytics cache
@@ -254,9 +255,8 @@ one.
 ## 8. Contract
 
 ### 8.1 OpenAPI changes
-- `components.schemas.UnitComparisonRow.properties.previousApproved`: integer, minimum 0, required,
-  `x-status: planned`, description «Approved awards of the unit in `previousPeriod` (9.6.4)». Written in the 9.6.4
-  PR, so this PRD's PR stays documentation only.
+- None. 9.6.4 first planned `UnitComparisonRow.previousApproved`, but `approved.previous` already carries that count
+  on both endpoints, so the contract stays as it is.
 
 ### 8.2 Migration outlines
 None.
@@ -274,7 +274,7 @@ None.
 | AC-2.1 to AC-2.4 | year cards and bars, average, category cards and list | `dashboard.spec.ts` updated: numbers match `GET /analytics/me` |
 | AC-3.1 to AC-3.5 | small multiples scales, podium split, comparison rows, paired bars | `analytics.spec.ts` updated: same numbers as the API for a fixed period |
 | AC-4.1, AC-4.3 to AC-4.5 | faculty bars and ticks, highlight cap, bento spans | `analytics.spec.ts`: one faculty tile, «Усі N» |
-| AC-4.2 | `UnitAnalyticsServiceTest` (previous count); `UniversityAnalyticsIT`/FT: `previousApproved` per row, 0 for a new unit | - |
+| AC-4.2 | existing `UniversityAnalyticsServiceTest`, `UnitAnalyticsServiceTest`, `UniversityAnalyticsIT`, `UnitAnalyticsIT` (`approved.previous` per row) | - |
 | AC-5.1 to AC-5.5 | hero ring share, scoreboard and overtake month, record cards | `hall-of-fame.spec.ts` updated |
 | AC-6.1 to AC-6.4 | section from the URL, switches save and refuse the last channel | `profile.spec.ts` updated: section deep link, switch saved after reload |
 | AC-7.1 to AC-7.6 | two-column breakpoints, users toolbar | `award-detail.spec.ts`, `admin-users.spec.ts`, `not-found` check; login page logo in `auth.spec.ts` |
@@ -305,7 +305,8 @@ the screen with the named artboard of the canvas.
    numbers with «було N»; levels and categories as paired bars. (AC-3.1 to AC-3.5)
 7. Sign in as `rector`, open `/analytics/university`. Expected: one «Факультети» tile with ticks and «+N», no
    «Динаміка факультетів», no Compliance tile; years and forecast across the full width with «рік триває»;
-   `GET /api/v1/analytics/university` rows carry `previousApproved`. (AC-4.1, AC-4.2, AC-4.4, AC-4.5)
+   `GET /api/v1/analytics/university` rows carry `approved.previous`, and each tick sits at that value.
+   (AC-4.1, AC-4.2, AC-4.4, AC-4.5)
 8. In the highlights panel press «Усі N». Expected: all highlights shown, the button reads «Згорнути». (AC-4.3)
 9. Open `/hall-of-fame` at 1280. Expected: burgundy hero with the year's count and the ring; year bars and the
    scoreboard side by side; facts on the ink panel; records as cards. At 360 they stack. (AC-5.1 to AC-5.5)
@@ -362,6 +363,6 @@ the screen with the named artboard of the canvas.
   full e2e green on the 9.6.7 branch.
 - UI check of the changed pages at 360 and 1280, light and dark, uk and en, compared with the artboards; axe
   without serious findings.
-- `UI_GUIDELINES.md` (widget header, chart rules, shell), `openapi.yml` (`previousApproved`), CHANGELOG lines,
+- `UI_GUIDELINES.md` (widget header, chart rules, shell), CHANGELOG lines,
   tracker and BACKLOG rows.
 - The manual run of §10 recorded in this PRD.

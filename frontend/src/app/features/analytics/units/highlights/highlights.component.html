@@ -24,6 +24,21 @@
         </ul>
       </section>
     }
+    @if (capped()) {
+      <button
+        type="button"
+        class="highlights__more"
+        [attr.aria-expanded]="expanded()"
+        (click)="toggle()"
+        data-testid="highlights-toggle"
+      >
+        @if (expanded()) {
+          {{ 'unitAnalytics.highlights.showLess' | transloco }}
+        } @else {
+          {{ 'unitAnalytics.highlights.showAll' | transloco: { count: sentences().length } }}
+        }
+      </button>
+    }
   </div>
 }
 

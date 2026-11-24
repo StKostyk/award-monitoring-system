@@ -18,7 +18,7 @@ import { currentKyivYear } from '../../../../shared/date-format';
 import { languageStub, translations } from '../../analytics.testing';
 import { UniversityAnalyticsActions } from '../store/university-analytics.actions';
 import { universityAnalyticsFeature } from '../store/university-analytics.feature';
-import { complianceSummary, universityAnalytics } from '../university-analytics.testing';
+import { universityAnalytics } from '../university-analytics.testing';
 import { UniversityAnalyticsComponent } from './university-analytics.component';
 
 describe('UniversityAnalyticsComponent', () => {
@@ -70,16 +70,12 @@ describe('UniversityAnalyticsComponent', () => {
     store.dispatch(
       UniversityAnalyticsActions.analyticsLoaded({ analytics: universityAnalytics() }),
     );
-    store.dispatch(
-      UniversityAnalyticsActions.complianceLoaded({ compliance: complianceSummary() }),
-    );
     fixture.detectChanges();
   }
 
-  it('ac2_2_loads_the_compliance_once_and_the_analytics_for_each_period', async () => {
+  it('ac2_2_loads_the_analytics_for_each_period', async () => {
     await setUp();
 
-    expect(dispatch).toHaveBeenCalledWith(UniversityAnalyticsActions.complianceRequested());
     expect(dispatch).toHaveBeenCalledWith(
       UniversityAnalyticsActions.periodSelected({ period: { from: null, to: null } }),
     );
@@ -90,7 +86,6 @@ describe('UniversityAnalyticsComponent', () => {
     expect(dispatch).toHaveBeenCalledWith(
       UniversityAnalyticsActions.periodSelected({ period: { from: 2023, to: 2025 } }),
     );
-    expect(dispatch).not.toHaveBeenCalledWith(UniversityAnalyticsActions.complianceRequested());
   });
 
   it('ac2_2_keeps_the_chosen_period_in_the_address', async () => {
@@ -117,13 +112,12 @@ describe('UniversityAnalyticsComponent', () => {
       'faculties',
       'highlights',
       'trend',
-      'trends',
       'by-category',
       'by-level',
       'by-source',
       'comparison',
-      'compliance',
     ]);
+    expect(element('compliance-status')).toBeNull();
     expect(fixture.nativeElement.querySelectorAll('h1')).toHaveLength(1);
     expect(element('university-analytics-compared')!.textContent).toContain(
       '2022–2026, compared with 2017–2021.',
@@ -176,34 +170,8 @@ describe('UniversityAnalyticsComponent', () => {
     expect(element('comparison-row-1')!.textContent).toContain('University level');
   });
 
-  it('ac2_7_refresh_reloads_the_compliance_panel_only', async () => {
-    await setUp();
-    load();
-    dispatch.mockClear();
-
-    element('compliance-refresh')!.click();
-
-    expect(dispatch).toHaveBeenCalledTimes(1);
-    expect(dispatch).toHaveBeenCalledWith(UniversityAnalyticsActions.complianceRequested());
-  });
-
-  it('ac2_7_a_failed_compliance_load_leaves_the_rest_of_the_page', async () => {
-    await setUp();
-    store.dispatch(
-      UniversityAnalyticsActions.analyticsLoaded({ analytics: universityAnalytics() }),
-    );
-    store.dispatch(UniversityAnalyticsActions.complianceLoadFailed({ problem: 'unknown' }));
-    fixture.detectChanges();
-
-    expect(element('compliance-error')).not.toBeNull();
-    expect(element('section-totals')).not.toBeNull();
-  });
-
-  it('ac2_8_a_failed_load_shows_the_error_with_retry_and_keeps_the_compliance_panel', async () => {
+  it('ac2_8_a_failed_load_shows_the_error_with_retry', async () => {
     await setUp('en', { from: '2023', to: '2025' });
-    store.dispatch(
-      UniversityAnalyticsActions.complianceLoaded({ compliance: complianceSummary() }),
-    );
     store.dispatch(UniversityAnalyticsActions.analyticsLoadFailed({ problem: 'unknown' }));
     fixture.detectChanges();
     dispatch.mockClear();
@@ -211,7 +179,6 @@ describe('UniversityAnalyticsComponent', () => {
     expect(element('university-analytics-error')!.textContent).toContain(
       'The university analytics could not be loaded.',
     );
-    expect(element('compliance-status')).not.toBeNull();
     (element('university-analytics-error')!.querySelector('button') as HTMLButtonElement).click();
 
     expect(dispatch).toHaveBeenCalledWith(
@@ -228,7 +195,6 @@ describe('UniversityAnalyticsComponent', () => {
     expect(dispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: UniversityAnalyticsActions.periodSelected.type }),
     );
-    expect(dispatch).toHaveBeenCalledWith(UniversityAnalyticsActions.complianceRequested());
   });
 
   it('ac3_5_offers_the_board_report_once_the_figures_are_shown', async () => {

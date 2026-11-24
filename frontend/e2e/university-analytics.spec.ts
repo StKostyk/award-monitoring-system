@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { Page, expect, test } from './fixtures';
 
-import { SEED, keepPreferencesLocal, seriousViolations, signedIn } from './helpers';
+import { keepPreferencesLocal, SEED, seriousViolations, signedIn, toggleLanguage } from './helpers';
 
 /** US-010 DoD: the university analytics page is usable within this time on the seed. */
 const USABLE_WITHIN_MS = 10000;
@@ -19,12 +19,10 @@ const UNIVERSITY_SECTIONS = [
   'faculties',
   'highlights',
   'trend',
-  'trends',
   'by-category',
   'by-level',
   'by-source',
   'comparison',
-  'compliance',
 ];
 
 async function sections(page: Page): Promise<string[]> {
@@ -50,8 +48,8 @@ test.describe('university analytics', () => {
     await expect(page.getByTestId('nav-unit-analytics')).toBeVisible();
     const started = Date.now();
     await page.getByTestId('nav-university-analytics').click();
-    await expect(page.getByTestId('compliance-status')).toBeVisible();
     await expect(page.getByTestId('section-highlights')).toBeVisible();
+    await expect(page.getByTestId('compliance-status')).toHaveCount(0);
     expect(Date.now() - started).toBeLessThan(USABLE_WITHIN_MS);
 
     await expect(page).toHaveURL(/\/analytics\/university$/);
@@ -96,36 +94,7 @@ test.describe('university analytics', () => {
 
     await page.goBack();
     await expect(page).toHaveURL(/\/analytics\/university\?from=2021&to=2025$/);
-    await expect(page.getByTestId('section-trends')).toBeVisible();
-  });
-
-  test('ac2_7 refreshes only the compliance panel and shows its own failure', async ({
-    browser,
-  }) => {
-    const page = await signedIn(browser, SEED.rector);
-    await page.goto('/analytics/university');
-    await expect(page.getByTestId('compliance-as-of')).toBeVisible();
-    await expect(page.getByTestId('section-highlights')).toBeVisible();
-
-    const requests: string[] = [];
-    page.on('request', (request) => {
-      if (request.url().includes('/analytics/university')) {
-        requests.push(new URL(request.url()).pathname);
-      }
-    });
-    const reloaded = page.waitForResponse('**/analytics/university/compliance');
-    await page.getByTestId('compliance-refresh').click();
-    await reloaded;
-    await expect(page.getByTestId('compliance-refresh')).toBeEnabled();
-    expect(requests.every((path) => path.endsWith('/compliance'))).toBe(true);
-    expect(requests).toHaveLength(1);
-
-    await page.route('**/analytics/university/compliance', (route) => route.abort());
-    await page.getByTestId('compliance-refresh').click();
-    await expect(page.getByTestId('compliance-error')).toContainText(
-      'Не вдалося завантажити зведення відповідності.',
-    );
-    await expect(page.getByTestId('section-highlights')).toBeVisible();
+    await expect(page.getByTestId('section-trend')).toBeVisible();
   });
 
   test('ac2_1 refuses every account without university analytics', async ({ browser }) => {
@@ -139,15 +108,12 @@ test.describe('university analytics', () => {
     }
   });
 
-  test('ac2_8 refuses a period that is not valid and keeps the compliance panel', async ({
-    browser,
-  }) => {
+  test('ac2_8 refuses a period that is not valid', async ({ browser }) => {
     const page = await signedIn(browser, SEED.rector);
     await page.goto('/analytics/university?from=2026&to=2021');
     await expect(page.getByTestId('university-analytics-invalid')).toContainText(
       'Період некоректний.',
     );
-    await expect(page.getByTestId('compliance-status')).toBeVisible();
     await expect(page.getByTestId('section-totals')).toHaveCount(0);
   });
 
@@ -163,9 +129,11 @@ test.describe('university analytics', () => {
     expect(await noHorizontalScroll(page)).toBe(true);
     expect(await seriousViolations(page)).toEqual([]);
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('University analytics');
-    await expect(page.getByTestId('section-trends')).toContainText('Rising');
+    await expect(page.getByTestId('university-projection')).toContainText(
+      /Projected for|Too few complete years/,
+    );
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 

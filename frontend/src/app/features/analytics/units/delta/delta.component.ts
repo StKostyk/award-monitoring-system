@@ -23,6 +23,8 @@ const ICONS = { up: 'arrow-up', down: 'arrow-down', same: 'arrow-right' } as con
       <span class="delta-chip" data-testid="delta">
         @if (view().fresh) {
           {{ 'unitAnalytics.delta.new' | transloco }}
+        } @else if (detailed() && view().percent) {
+          {{ view().count }} · {{ view().percent }}
         } @else {
           {{ view().percent ?? view().count }}
         }
@@ -51,8 +53,8 @@ const ICONS = { up: 'arrow-up', down: 'arrow-down', same: 'arrow-right' } as con
       display: inline-block;
       padding: 3px 8px;
       border-radius: 999px;
-      background: var(--app-pane-head);
-      color: var(--app-bar);
+      background: var(--app-chip-bg, var(--app-pane-head));
+      color: var(--app-chip-color, var(--app-bar));
       font: 700 0.6875rem / 1.3 var(--app-font-heading);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
@@ -76,6 +78,8 @@ export class DeltaComponent {
   readonly figure = input.required<Figure>();
   /** True for the neutral chip of a table cell: the signed percentage (or count), "new" without a previous count. */
   readonly chip = input(false, { transform: booleanAttribute });
+  /** True for a chip that shows the signed count before the percentage, as on a headline tile. */
+  readonly detailed = input(false, { transform: booleanAttribute });
 
   protected readonly view = computed(() => deltaView(this.figure()));
   protected readonly icon = computed(() => ICONS[this.view().direction]);
