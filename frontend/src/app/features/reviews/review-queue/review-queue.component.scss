@@ -17,30 +17,37 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 20px;
-  border: 1px solid var(--mat-sys-outline-variant);
+  padding: 18px;
+  border: 1px solid var(--app-pane-border);
   border-radius: var(--app-card-radius);
-  background: var(--mat-sys-surface-container-low);
+  background: var(--app-pane);
 }
 
 .queue__name {
   margin: 0;
-  font: var(--mat-sys-title-large);
+  font: 800 1.375rem / 1.25 var(--app-font-heading);
   overflow-wrap: anywhere;
 
   a {
     color: inherit;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
   }
 }
 
 .queue__fields {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 6px 16px;
+  gap: 10px 16px;
   margin: 0;
+  font: 400 0.875rem / 1.4 var(--app-font-body);
 
   dt {
-    color: var(--mat-sys-on-surface-variant);
+    width: 140px;
+    color: var(--app-muted);
   }
 
   dd {

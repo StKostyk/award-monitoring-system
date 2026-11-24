@@ -14,7 +14,10 @@ import { UnitTotals } from '../unit-analytics.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './delta-tiles.component.html',
   styleUrl: '../../summary-tiles/summary-tiles.component.scss',
+  host: { '[class.tiles-bento]': "layout() === 'bento'" },
 })
 export class DeltaTilesComponent {
   readonly totals = input.required<UnitTotals>();
+  /** A 2-column grid inside a pane, or separate bento tiles with the first one in the brand colour. */
+  readonly layout = input<'grid' | 'bento'>('grid');
 }

@@ -37,6 +37,10 @@ body {
   height: 100%;
 }
 
+.mat-mdc-form-field.mat-form-field-appearance-outline:has(.mdc-floating-label) {
+  margin-top: 8px;
+}
+
 @include charts.tables();
 @include chips.rules();
 @include touch.rules();

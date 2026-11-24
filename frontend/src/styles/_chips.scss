@@ -18,4 +18,30 @@
     border-color: transparent;
     font-weight: 700;
   }
+
+  button.app-chip {
+    min-height: 40px;
+    padding: 8px 14px;
+    border-color: var(--app-pane-border);
+    border-radius: 999px;
+    background: var(--app-pane);
+    color: var(--mat-sys-on-surface);
+    font: 500 0.8125rem / 1.2 var(--app-font-body);
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--mat-sys-outline);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  button.app-chip.app-chip--filled {
+    border-color: var(--app-chip-on);
+    background: var(--app-chip-on);
+    color: var(--app-on-chip-on);
+  }
 }

@@ -2,12 +2,13 @@ import { expect, test } from './fixtures';
 
 import {
   FRESH_PASSWORD,
-  SEED,
   freshEmployee,
   openNewAward,
   pastDay,
+  SEED,
   signIn,
   signInAsSeed,
+  toggleLanguage,
   uniqueToken,
 } from './helpers';
 
@@ -45,11 +46,11 @@ test.describe('keyboard and page structure', () => {
     await expect(page).toHaveTitle(/^Мої нагороди — /);
     expect(await page.evaluate(() => document.documentElement.lang)).toBe('uk');
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
 
     await expect(page).toHaveTitle(/^My awards — /);
     expect(await page.evaluate(() => document.documentElement.lang)).toBe('en');
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page).toHaveTitle(/^Мої нагороди — /);
   });
 
@@ -184,9 +185,9 @@ test.describe('keyboard and page structure', () => {
     await page.goto('/awards/1/unknown');
     await expect(page.getByTestId('not-found-card')).toBeVisible();
     await expect(page).toHaveTitle(/^Сторінку не знайдено — /);
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page).toHaveTitle(/^Page not found — /);
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
   });
 });
 
@@ -207,7 +208,9 @@ async function enterAndSubmit(page: Page, email: string): Promise<void> {
   await page.keyboard.type(`Грамота з клавіатури ${uniqueToken()}`);
   await tabTo(page, 'award-category');
   await page.keyboard.press('Enter');
-  for (let step = 0; step < 30; step++) {
+  await expect(page.getByTestId('category-option-13')).toBeAttached();
+  const options = await page.locator('mat-option').count();
+  for (let step = 0; step < options; step++) {
     const active = await page.evaluate(() =>
       document.querySelector('mat-option.mat-mdc-option-active')?.getAttribute('data-testid'),
     );

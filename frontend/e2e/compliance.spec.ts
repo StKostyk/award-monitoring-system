@@ -83,7 +83,10 @@ test.describe('Compliance page', () => {
       await page.goto('/compliance');
 
       await expect(page.getByTestId('run-durations')).toBeVisible();
-      await page.getByTestId('chart-table-switch').locator('button').click();
+      await page
+        .locator('app-pane', { has: page.getByTestId('run-durations') })
+        .getByTestId('pane-view-table')
+        .click();
 
       const rows = page.getByTestId('run-duration-row');
       await expect(rows.filter({ hasText: '75' })).toHaveAttribute('data-failed', 'true');

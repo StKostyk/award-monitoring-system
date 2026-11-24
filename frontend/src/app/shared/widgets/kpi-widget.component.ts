@@ -75,26 +75,29 @@ export function monthSpan(language: string, months: number): string {
     }
 
     .kpi__label {
-      margin: 0;
-      font: var(--mat-sys-title-small);
-      color: var(--mat-sys-on-surface-variant);
+      margin: 0 0 10px;
+      font: 700 0.75rem / 1.3 var(--app-font-heading);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--app-muted);
     }
 
     .kpi__value {
-      margin: 4px 0;
-      font: var(--mat-sys-display-small);
+      margin: 0;
+      font: 800 2rem / 1 var(--app-font-heading);
       font-variant-numeric: tabular-nums;
     }
 
     .kpi__spark {
       display: block;
       width: 100%;
-      height: 32px;
+      height: 30px;
+      margin-top: 10px;
 
       polyline {
         fill: none;
-        stroke: var(--app-chart-bar);
-        stroke-width: 2;
+        stroke: var(--app-bar-gold);
+        stroke-width: 2.2;
         vector-effect: non-scaling-stroke;
       }
     }
@@ -103,9 +106,9 @@ export function monthSpan(language: string, months: number): string {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin: 8px 0 0;
-      font: var(--mat-sys-body-medium);
-      color: var(--mat-sys-on-surface-variant);
+      margin: 6px 0 0;
+      font: 600 0.75rem / 1.4 var(--app-font-body);
+      color: var(--mat-sys-primary);
     }
 
     .kpi__change {

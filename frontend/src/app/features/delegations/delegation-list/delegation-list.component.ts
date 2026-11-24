@@ -8,7 +8,6 @@ import {
   inject,
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
-import { MatChip } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
@@ -49,7 +48,6 @@ interface Shown {
   selector: 'app-delegation-list',
   imports: [
     NgTemplateOutlet,
-    MatChip,
     MatButton,
     IconComponent,
     SkeletonRowsComponent,

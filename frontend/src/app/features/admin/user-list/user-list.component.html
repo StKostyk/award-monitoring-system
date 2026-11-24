@@ -62,7 +62,8 @@
       </p>
     }
 
-    <app-pane>
+    <app-pane icon="users" [heading]="'admin.users.people' | transloco" flush>
+      <span paneMeta>{{ users().length }}</span>
       <nav
         class="users__rows"
         appListRows
@@ -87,15 +88,19 @@
             data-testid="user-link"
           >
             <span rowEnd class="users__chips">
-              <span class="app-chip" data-testid="user-status">{{
-                'admin.status.' + user.status | transloco
-              }}</span>
+              <span
+                class="app-st"
+                [class.app-st--ok]="user.status === 'ACTIVE'"
+                [class.app-st--bad]="user.status === 'SUSPENDED'"
+                data-testid="user-status"
+                >{{ 'admin.status.' + user.status | transloco }}</span
+              >
               @if (user.status === 'UNCLAIMED') {
-                <span class="app-chip users__badge" data-testid="unclaimed-badge">
+                <span class="app-st app-st--wait" data-testid="unclaimed-badge">
                   {{ 'admin.people.badge' | transloco }}
                 </span>
               } @else if (!user.membershipConfirmed) {
-                <span class="app-chip users__badge" data-testid="unconfirmed-badge">
+                <span class="app-st app-st--wait" data-testid="unconfirmed-badge">
                   {{ 'admin.users.unconfirmedBadge' | transloco }}
                 </span>
               }

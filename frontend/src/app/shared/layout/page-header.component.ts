@@ -39,15 +39,15 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
     .page-header__context {
       margin: 0;
-      font: var(--mat-sys-label-large);
-      color: var(--mat-sys-on-surface-variant);
+      font: 400 0.8125rem / 1.4 var(--app-font-body);
+      color: var(--app-muted);
       overflow-wrap: anywhere;
     }
 
     .page-header__title {
       margin: 0;
-      font: var(--mat-sys-headline-medium);
-      font-family: var(--app-font-heading);
+      font: 800 1.75rem / 1.2 var(--app-font-heading);
+      letter-spacing: -0.01em;
       overflow-wrap: anywhere;
     }
 
@@ -62,8 +62,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
     @media (max-width: 599.98px) {
       .page-header__title {
-        font: var(--mat-sys-headline-small);
-        font-family: var(--app-font-heading);
+        font: 800 1.5rem / 1.2 var(--app-font-heading);
       }
 
       .page-header__side {

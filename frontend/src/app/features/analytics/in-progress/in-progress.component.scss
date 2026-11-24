@@ -6,7 +6,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px 16px;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
+  font: 700 0.8125rem / 1.4 var(--app-font-heading);
 }
 
 .submissions__list {
@@ -20,13 +21,26 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-row-divider);
+  font: 400 0.75rem / 1.4 var(--app-font-body);
+  color: var(--app-muted);
+}
+
+.submissions__item:last-child {
+  border-bottom: 0;
 }
 
 .submissions__link {
-  font-weight: 500;
+  flex-basis: 100%;
+  font: 700 0.875rem / 1.35 var(--app-font-heading);
+  color: var(--mat-sys-on-surface);
+  text-decoration: none;
   overflow-wrap: anywhere;
+}
+
+.submissions__link:hover {
+  text-decoration: underline;
 }
 
 .submissions__empty {

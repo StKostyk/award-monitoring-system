@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 
-import { countMessages, linkFor, registerAndVerify, signIn } from './helpers';
+import { countMessages, linkFor, registerAndVerify, signIn, toggleLanguage } from './helpers';
 
 const firefoxOnMac =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:130.0) Gecko/20100101 Firefox/130.0';
@@ -34,7 +34,7 @@ test.describe('new device notification', () => {
 
     await page.goto(link);
     await expect(page.locator('mat-card-title')).toHaveText('Це були ви?');
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page.locator('mat-card-title')).toHaveText('Was this you?');
     await page.getByTestId('not-me-confirm').click();
     await expect(page.getByTestId('not-me-done')).toContainText('1 hour');

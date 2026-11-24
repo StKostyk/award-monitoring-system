@@ -41,12 +41,17 @@ import { AnalyticsPeriod } from '../analytics.service';
     }
 
     .app-chip {
-      min-height: 44px;
-      background: transparent;
+      min-height: 40px;
+      padding: 8px 14px;
+      border-color: var(--app-pane-border);
+      border-radius: 999px;
+      background: var(--app-pane);
+      color: var(--mat-sys-on-surface);
+      font: 500 0.8125rem / 1.2 var(--app-font-body);
       cursor: pointer;
 
       &:hover {
-        background: var(--mat-sys-surface-container-high);
+        border-color: var(--mat-sys-outline);
       }
 
       &:focus-visible {
@@ -55,8 +60,9 @@ import { AnalyticsPeriod } from '../analytics.service';
       }
 
       &.app-chip--filled {
-        background: var(--mat-sys-secondary-container);
-        color: var(--mat-sys-on-secondary-container);
+        border-color: var(--app-chip-on);
+        background: var(--app-chip-on);
+        color: var(--app-on-chip-on);
       }
     }
   `,

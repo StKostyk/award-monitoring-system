@@ -2,18 +2,19 @@ import AxeBuilder from '@axe-core/playwright';
 import { Page, expect, test } from './fixtures';
 
 import {
-  freshContextPage,
   FRESH_PASSWORD,
-  SEED,
+  freshContextPage,
   freshEmployee,
   kyivDay,
   openNewAward,
   pastDay,
+  SEED,
   settled,
   shownDay,
   signedIn,
   signedInAs,
   signIn,
+  toggleLanguage,
   uniqueToken,
 } from './helpers';
 
@@ -194,7 +195,7 @@ test.describe('award documents', () => {
   }) => {
     const employee = await freshEmployee(browser, 'documents');
     const page = await signedInAs(browser, employee, FRESH_PASSWORD);
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await newAward(page, `Certificate ${uniqueToken()}`);
     const section = page.getByTestId('award-documents');
     await expect(section).toContainText('Documents');

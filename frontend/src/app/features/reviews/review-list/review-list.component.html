@@ -181,7 +181,8 @@
       </div>
     }
 
-    <app-pane>
+    <app-pane icon="inbox" [heading]="'reviews.queue.title' | transloco" flush>
+      <span paneMeta>{{ 'reviews.queue.oldestFirst' | transloco }}</span>
       <div class="reviews__rows-head">
         @if (visible().length > 0) {
           <mat-checkbox
@@ -213,6 +214,7 @@
             />
             <button
               appListRow
+              class="list-row--wrap"
               type="button"
               [initials]="initialsOf(item)"
               [rowTitle]="title(item)"
@@ -222,25 +224,25 @@
               data-testid="review-title"
             >
               <span rowEnd class="reviews__row-chips">
-                <span class="app-chip" data-testid="review-level">{{
+                <span class="app-st" data-testid="review-level">{{
                   'roles.' + item.level | transloco
                 }}</span>
                 @if (item.overdue) {
-                  <span class="app-chip reviews__overdue" data-testid="review-overdue">{{
+                  <span class="app-st app-st--bad" data-testid="review-overdue">{{
                     'reviews.overdue' | transloco
                   }}</span>
                 } @else {
-                  <span class="app-chip" data-testid="review-due">{{
+                  <span class="app-st app-st--wait" data-testid="review-due">{{
                     'reviews.queue.due' | transloco: { date: (item.deadline | kyivDate) }
                   }}</span>
                 }
                 @if (item.overdueNoticedAt) {
-                  <span class="app-chip reviews__noticed" data-testid="review-noticed">{{
+                  <span class="app-st" data-testid="review-noticed">{{
                     'reviews.noticed' | transloco: { date: (item.overdueNoticedAt | kyivDate) }
                   }}</span>
                 }
                 @if (item.reviewer; as reviewer) {
-                  <span class="app-chip" data-testid="review-reviewer">{{ reviewer.name }}</span>
+                  <span class="app-st" data-testid="review-reviewer">{{ reviewer.name }}</span>
                 }
               </span>
             </button>

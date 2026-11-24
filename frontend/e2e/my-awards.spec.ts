@@ -2,7 +2,14 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test } from './fixtures';
 
-import { FRESH_PASSWORD, SEED, freshEmployee, signedIn, signedInAs } from './helpers';
+import {
+  FRESH_PASSWORD,
+  freshEmployee,
+  SEED,
+  signedIn,
+  signedInAs,
+  toggleLanguage,
+} from './helpers';
 
 test.describe('my awards dashboard', () => {
   test('ac3_3 ac4_1 ac4_2 the home of an employee is its dashboard with progress and visibility', async ({
@@ -36,7 +43,7 @@ test.describe('my awards dashboard', () => {
     expect(textFile.suggestedFilename()).toMatch(/^awards-cv-\d{4}-\d{2}-\d{2}\.txt$/);
     expect(await readFile(await textFile.path(), 'utf8')).toMatch(/\d{4}/);
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await page.getByTestId('cv-export').click();
     const pdf = page.waitForEvent('download');
     await page.getByTestId('cv-export-pdf').click();

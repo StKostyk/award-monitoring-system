@@ -37,7 +37,9 @@
       <div splitSide>
         @if (analytics(); as data) {
           <app-pane
+            icon="layout-dashboard"
             [heading]="'unitAnalytics.sections.totals' | transloco"
+            flush
             data-testid="section-totals"
           >
             <app-delta-tiles [totals]="data.totals" />
@@ -45,7 +47,9 @@
         }
         @if (units().length > 0) {
           <app-pane
+            icon="building"
             [heading]="'unitAnalytics.sections.units' | transloco"
+            flush
             data-testid="section-units"
           >
             <app-unit-list [units]="units()" [selected]="unitId()" [counts]="counts()" />
@@ -85,6 +89,7 @@
           </p>
 
           <app-pane
+            icon="chart-line"
             [heading]="'unitAnalytics.sections.trend' | transloco"
             data-testid="section-trend"
           >
@@ -92,6 +97,7 @@
           </app-pane>
 
           <app-pane
+            icon="trophy"
             [heading]="'unitAnalytics.sections.topPerformers' | transloco"
             data-testid="section-top-performers"
           >
@@ -99,7 +105,9 @@
           </app-pane>
 
           <app-pane
+            icon="sparkles"
             [heading]="'unitAnalytics.sections.highlights' | transloco"
+            tone="ink"
             data-testid="section-highlights"
           >
             <app-highlights [highlights]="data.highlights" />
@@ -107,6 +115,7 @@
 
           @if (data.unit.type === 'FACULTY') {
             <app-pane
+              icon="chart-bar"
               [heading]="'unitAnalytics.sections.comparison' | transloco"
               data-testid="section-comparison"
             >
@@ -116,6 +125,7 @@
 
           <div class="units__pair">
             <app-pane
+              icon="layout-grid"
               [heading]="'unitAnalytics.sections.byCategory' | transloco"
               data-testid="section-by-category"
             >
@@ -132,6 +142,7 @@
             </app-pane>
 
             <app-pane
+              icon="chart-bar"
               [heading]="'unitAnalytics.sections.byLevel' | transloco"
               data-testid="section-by-level"
             >
@@ -149,6 +160,7 @@
           </div>
 
           <app-pane
+            icon="chart-column"
             [heading]="'unitAnalytics.sections.bySource' | transloco"
             data-testid="section-by-source"
           >

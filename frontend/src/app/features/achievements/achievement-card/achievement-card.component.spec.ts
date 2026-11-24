@@ -90,7 +90,7 @@ describe('AchievementCardComponent', () => {
     expect(text(element, 'achievement-recipient')).toContain('Анастасія Коваль');
     expect(text(element, 'achievement-unit')).toBe('Кафедра алгебри');
     expect(text(element, 'achievement-category')).toContain('Відзнака міністерства');
-    expect(text(element, 'achievement-category')).toContain('Національний');
+    expect(text(element, 'achievement-level')).toBe('Національний');
     expect(text(element, 'achievement-date')).not.toBe('');
     expect(text(element, 'achievement-verified')).toContain('Документи перевірено');
   });

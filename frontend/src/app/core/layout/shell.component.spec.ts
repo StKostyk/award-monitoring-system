@@ -60,6 +60,11 @@ describe('ShellComponent', () => {
     isAuthenticated: signal(true),
     fullName: computed(() => 'Martyn Martyniuk'),
     permissions: signal(NO_PERMISSIONS),
+    profile: signal<{ firstName: string; lastName: string; roles: { role: string }[] } | null>({
+      firstName: 'Martyn',
+      lastName: 'Martyniuk',
+      roles: [{ role: 'LECTURER' }],
+    }),
     logout: vi.fn().mockResolvedValue(undefined),
     login: vi.fn(),
   };
@@ -165,16 +170,21 @@ describe('ShellComponent', () => {
     expect(auth.logout).toHaveBeenCalled();
   });
 
-  it('ac2_1_shows_the_bell_with_the_unread_count_before_the_account_menu', () => {
+  it('ac1_1_puts_the_tools_and_the_bell_after_the_user_at_the_foot_of_the_sidebar', () => {
     auth.isAuthenticated.set(true);
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
-    const bell = element.querySelector('[data-testid="notification-bell"]') as HTMLElement;
-    const account = element.querySelector('[data-testid="user-menu"]') as HTMLElement;
+    const side = element.querySelector('[data-testid="side-nav"]') as HTMLElement;
+    const bell = side.querySelector('[data-testid="notification-bell"]') as HTMLElement;
+    const account = side.querySelector('[data-testid="user-menu"]') as HTMLElement;
 
-    expect(bell.compareDocumentPosition(account) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(account.compareDocumentPosition(bell) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(bell.getAttribute('aria-label')).toBe('Сповіщення, непрочитаних: 3');
+    for (const tool of ['palette-open', 'language-toggle', 'color-scheme-menu', 'logout']) {
+      expect(side.querySelector(`[data-testid="${tool}"]`)).not.toBeNull();
+    }
+    expect(account.querySelector('.shell__avatar')!.textContent).toBe('MM');
   });
 
   it('ac17 toggles the language from the toolbar', () => {
@@ -498,17 +508,31 @@ describe('ShellComponent', () => {
     expect(drawer().classList).not.toContain('mat-drawer-opened');
   });
 
-  it('ac1_7_puts_the_toolbar_title_and_links_inside_the_banner', () => {
+  it('ac1_1_ac1_2_makes_the_sidebar_the_banner_and_a_phone_the_slim_bar', () => {
     auth.isAuthenticated.set(true);
+    const wide = TestBed.createComponent(ShellComponent);
+    wide.detectChanges();
+    const banners = wide.nativeElement.querySelectorAll('[role="banner"]');
+
+    expect(banners).toHaveLength(1);
+    expect(banners[0].dataset['testid']).toBe('side');
+    expect(banners[0].querySelector('[data-testid="home-logo"]')).not.toBeNull();
+
+    layout.next({ matches: false, breakpoints: { [NARROW_SCREEN]: true } });
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
     const banner: HTMLElement = fixture.nativeElement.querySelector('[role="banner"]');
 
-    expect(banner?.classList).toContain('shell__toolbar');
-    expect(banner.querySelector('[data-testid="user-menu"]')).not.toBeNull();
-    expect(
-      fixture.nativeElement.querySelector('[role="banner"] [role="banner"], main [role="banner"]'),
-    ).toBeNull();
+    expect(banner.classList).toContain('shell__toolbar');
+    expect(banner.querySelector('[data-testid="nav-toggle"]')).not.toBeNull();
+    expect(banner.querySelector('[data-testid="page-title"]')!.textContent).toContain(
+      'Облік нагород ЧНУ',
+    );
+    expect(banner.querySelector('[data-testid="user-menu"]')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('[role="banner"]')).toHaveLength(1);
+    const side = fixture.nativeElement.querySelector('[data-testid="side"]') as HTMLElement;
+    expect(side.getAttribute('role')).toBe('region');
+    expect(side.getAttribute('aria-label')).toBe('Меню');
   });
 
   it('ac5_keeps_the_side_menu_open_on_a_wide_screen', () => {
@@ -580,22 +604,18 @@ describe('ShellComponent', () => {
     expect(dispatch).toHaveBeenCalledWith(PreferencesActions.schemePicked({ scheme: 'dark' }));
   });
 
-  it('ac3_3_keeps_the_scheme_and_sign_out_in_the_account_menu_on_a_phone', async () => {
+  it('ac1_2_keeps_the_scheme_and_sign_out_in_the_drawer_on_a_phone', () => {
     auth.isAuthenticated.set(true);
     layout.next({ matches: false, breakpoints: { [NARROW_SCREEN]: true } });
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
+    const side = element.querySelector('[data-testid="side-nav"]') as HTMLElement;
 
-    expect(element.querySelector('[data-testid="color-scheme-menu"]')).toBeNull();
-    expect(element.querySelector('[data-testid="logout"]')).toBeNull();
+    expect(element.querySelector('[role="banner"] [data-testid="color-scheme-menu"]')).toBeNull();
+    expect(side.querySelector('[data-testid="color-scheme-menu"]')).not.toBeNull();
+    (side.querySelector('[data-testid="logout"]') as HTMLButtonElement).click();
 
-    (element.querySelector('[data-testid="user-menu"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    await fixture.whenStable();
-    (document.querySelector('[data-testid="logout"]') as HTMLButtonElement).click();
-
-    expect(document.querySelector('[data-testid="color-scheme-menu"]')).not.toBeNull();
     expect(auth.logout).toHaveBeenCalled();
   });
 
@@ -617,21 +637,14 @@ describe('ShellComponent', () => {
     expect(element.querySelector('mat-tab-nav-bar, .bottom-bar')).toBeNull();
   });
 
-  it('ac3_2_offers_a_new_award_button_on_a_phone_to_people_who_may_create_awards', () => {
+  it('ac1_2_shows_no_new_award_button_on_a_phone', () => {
     auth.isAuthenticated.set(true);
     layout.next({ matches: false, breakpoints: {} });
-    const without = TestBed.createComponent(ShellComponent);
-    without.detectChanges();
-
-    expect(without.nativeElement.querySelector('[data-testid="new-award"]')).toBeNull();
-
     auth.permissions.set(readPermissions(tokenWith({ permissions: ['award:create'] })));
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
-    const plus = fixture.nativeElement.querySelector('[data-testid="new-award"]');
 
-    expect(plus.getAttribute('href')).toBe('/awards/new');
-    expect(plus.getAttribute('aria-label')).toBe('Нова нагорода');
+    expect(fixture.nativeElement.querySelector('[data-testid="new-award"]')).toBeNull();
   });
 
   it('ac3_2_shows_no_new_award_button_on_a_wide_screen', () => {

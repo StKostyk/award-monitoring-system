@@ -26,12 +26,14 @@
 }
 
 @if (user(); as user) {
-  <mat-card class="admin__card" data-testid="detail-profile">
-    <mat-card-header>
-      <mat-card-title>
+  <mat-card class="admin__card admin__card--profile" data-testid="detail-profile">
+    <div class="admin__banner">
+      <span class="admin__initials" aria-hidden="true">{{ initialsOf(user) }}</span>
+      <span class="admin__banner-text">
         <h2 class="admin__name">{{ user.lastName }} {{ user.firstName }}</h2>
-      </mat-card-title>
-    </mat-card-header>
+        <span class="admin__banner-meta">{{ name(user.organization) }}</span>
+      </span>
+    </div>
     <mat-card-content>
       <dl class="admin__facts">
         <dt>{{ 'admin.detail.email' | transloco }}</dt>

@@ -145,10 +145,62 @@ export async function openNewAward(page: Page): Promise<void> {
   await expect(page.getByTestId('award-title-uk')).toBeVisible();
 }
 
+/** The width from which the sidebar stays open beside the page. */
+const WIDE_LAYOUT_PX = 960;
+
+/** The part of the shell a signed-in page always shows: the user in the sidebar, or the menu button on a phone. */
+export function signedInShell(page: Page): Locator {
+  return page
+    .locator('[data-testid="user-menu"]:visible, [data-testid="nav-toggle"]:visible')
+    .first();
+}
+
+/** Closes the drawer opened on a phone, from inside it as a keyboard user would. */
+export async function closeDrawer(page: Page): Promise<void> {
+  await page.getByTestId('side-nav').press('Escape');
+  await expect(page.locator('.mat-drawer-backdrop.mat-drawer-shown')).toHaveCount(0);
+}
+
+/**
+ * A tool at the foot of the sidebar (search, language, theme, bell, user, sign-out); on a phone the drawer that
+ * holds it is opened first.
+ */
+export async function shellTool(page: Page, testId: string): Promise<Locator> {
+  const tool = page.getByTestId(testId);
+  if ((page.viewportSize()?.width ?? WIDE_LAYOUT_PX) < WIDE_LAYOUT_PX) {
+    await expect(page.locator('mat-sidenav.mat-drawer-over')).toBeAttached();
+    const bar = page
+      .locator('[data-testid="nav-toggle"]:visible, [data-testid="login"]:visible')
+      .first();
+    await expect(bar).toBeVisible();
+    const menu = page.getByTestId('nav-toggle');
+    const open = page.locator('.mat-drawer-backdrop.mat-drawer-shown');
+    if ((await menu.isVisible()) && (await open.count()) === 0) {
+      await menu.click();
+      await expect(open).toHaveCount(1);
+    }
+    await expect(tool).toBeVisible();
+  }
+  return tool;
+}
+
+/** Switches the language from the sidebar or the signed-out bar; a drawer opened for it is closed again. */
+export async function toggleLanguage(page: Page): Promise<void> {
+  await (await shellTool(page, 'language-toggle')).click();
+  if ((await page.locator('.mat-drawer-backdrop.mat-drawer-shown').count()) > 0) {
+    await closeDrawer(page);
+  }
+}
+
+/** Signs out from the foot of the sidebar, opening the drawer first on a phone. */
+export async function signOut(page: Page): Promise<void> {
+  await (await shellTool(page, 'logout')).click();
+}
+
 /** Signs a seed account in with the demo password and waits for the navigation. */
 export async function signInAsSeed(page: Page, email: string): Promise<void> {
   await signIn(page, email, DEMO_PASSWORD);
-  await expect(page.getByTestId('user-menu')).toBeVisible();
+  await expect(signedInShell(page)).toBeVisible();
 }
 
 /**
@@ -179,7 +231,7 @@ export async function signedInAs(browser: Browser, email: string, password: stri
   const page = await freshContextPage(browser);
   page.on('dialog', (dialog) => void dialog.accept());
   await signIn(page, email, password);
-  await expect(page.getByTestId('user-menu')).toBeVisible();
+  await expect(signedInShell(page)).toBeVisible();
   return page;
 }
 
@@ -226,8 +278,19 @@ export async function seriousViolations(page: Page): Promise<string[]> {
   return result.violations
     .filter(isSerious)
     .map(
-      (violation) => `${violation.id}: ${violation.nodes.map((node) => node.target).join(' | ')}`,
+      (violation) =>
+        `${violation.id}: ${violation.nodes.map((node) => `${node.target}${contrastOf(node)}`).join(' | ')}`,
     );
+}
+
+/** The colours and ratio of a contrast finding, so a failed scan names what to change. */
+function contrastOf(node: { any: { id: string; data?: unknown }[] }): string {
+  const data = node.any.find((check) => check.id === 'color-contrast')?.data as
+    | { fgColor: string; bgColor: string; contrastRatio: number; expectedContrastRatio: string }
+    | undefined;
+  return data
+    ? ` (${data.fgColor} on ${data.bgColor}: ${data.contrastRatio}, needs ${data.expectedContrastRatio})`
+    : '';
 }
 
 /**

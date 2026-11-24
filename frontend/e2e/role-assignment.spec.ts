@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, SEED, registerAndVerify, signIn, userRow } from './helpers';
+import { DEMO_PASSWORD, registerAndVerify, SEED, signIn, toggleLanguage, userRow } from './helpers';
 
 const { employee, secretary, dean } = SEED;
 const password = 'correct-horse-battery';
@@ -138,7 +138,7 @@ test.describe('role assignment', () => {
 
     await expect(page).toHaveURL(/\/forbidden$/);
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
 
     await expect(page.getByTestId('forbidden-card')).toContainText('Access denied');
   });

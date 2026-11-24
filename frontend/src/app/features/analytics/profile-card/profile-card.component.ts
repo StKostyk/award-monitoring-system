@@ -26,7 +26,7 @@ const ROLE_PRECEDENCE: readonly RoleType[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (card(); as card) {
-      <app-pane>
+      <app-pane flush>
         <div class="profile" data-testid="profile-card">
           <span class="profile__initials" aria-hidden="true" data-testid="profile-initials">{{
             card.initials
@@ -50,21 +50,23 @@ const ROLE_PRECEDENCE: readonly RoleType[] = [
     .profile {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       min-width: 0;
+      padding: 20px 18px;
+      background: var(--app-brand-panel);
+      color: var(--app-on-brand-panel);
     }
 
     .profile__initials {
-      display: inline-flex;
+      display: inline-grid;
       flex: none;
-      align-items: center;
-      justify-content: center;
+      place-items: center;
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background: var(--mat-sys-primary-container);
-      color: var(--mat-sys-on-primary-container);
-      font: var(--mat-sys-title-large);
+      background: var(--app-gold);
+      color: var(--app-on-gold);
+      font: 700 1.125rem / 1 var(--app-font-heading);
     }
 
     .profile__text {
@@ -75,15 +77,14 @@ const ROLE_PRECEDENCE: readonly RoleType[] = [
 
     .profile__name {
       margin: 0;
-      font: var(--mat-sys-title-medium);
-      font-family: var(--app-font-heading);
+      font: 800 1.125rem / 1.3 var(--app-font-heading);
       overflow-wrap: anywhere;
     }
 
     .profile__meta {
       margin: 0;
-      font: var(--mat-sys-body-medium);
-      color: var(--mat-sys-on-surface-variant);
+      font: 400 0.75rem / 1.4 var(--app-font-body);
+      opacity: 0.9;
       overflow-wrap: anywhere;
     }
   `,

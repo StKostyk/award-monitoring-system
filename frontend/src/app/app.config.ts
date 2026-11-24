@@ -24,6 +24,7 @@ import { ColorSchemeService } from './core/brand/color-scheme.service';
 import { connectivityInterceptor } from './core/connectivity/connectivity.interceptor';
 import { provideIsoDateAdapter } from './core/i18n/iso-date-adapter';
 import { LanguageService } from './core/i18n/language.service';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { PageTitleStrategy } from './core/i18n/page-title.strategy';
 import { PreferencesEffects } from './core/preferences/store/preferences.effects';
 import { preferencesFeature } from './core/preferences/store/preferences.feature';
@@ -34,6 +35,7 @@ import { reducedMotion } from './shared/touch';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     { provide: TitleStrategy, useExisting: PageTitleStrategy },

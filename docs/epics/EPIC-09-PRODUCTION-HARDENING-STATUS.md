@@ -15,11 +15,12 @@
 | 9.3 New look (burgundy and cream light, Aurora dark, Manrope and Onest, Lucide icons, shell with command palette, review queue with undo, every screen restyled) | Done 2026-11-16: 7 planned stories and 5 fixes, 41 points; manual run of §10 34 steps, the three failed steps fixed in 9.3.14, 9.3.21 and 9.3.22 ([PRD](../features/epic-09/feature-9.3-new-look.md)) | 2026-11-15 | 2026-11-16 |
 | 9.4 Dashboards and widget layout (scheme and layout on the account, widget kit, Hall of Fame, «Мої нагороди» with the CV export, Command centre with the department reminder) | PRD approved 2026-11-17, 23 points ([PRD](../features/epic-09/feature-9.4-dashboards.md)) | - | - |
 | 9.5 Page layouts (page kit, My dashboard and unit analytics split, Achievements story feed, Users and Reviews with the item beside the list, university bento, Compliance and delegations split) | Done 2026-11-22: 7 planned stories and 3 fixes, 36 points; manual run of §10 30 steps, the three failed steps fixed in 9.5.8, 9.5.9 and 9.5.10 and passed in the rerun of 2026-11-22 ([PRD](../features/epic-09/feature-9.5-page-layouts.md)) | 2026-11-20 | 2026-11-22 |
+| 9.6 Widget and shell redesign (sidebar tools instead of the top bar, widget header with the chart or table switch, redrawn widgets of My dashboard, unit and university analytics and Hall of Fame, Profile in sections, remaining pages of the all-pages canvas) | PRD approved 2026-11-23: 7 stories, 29 points ([PRD](../features/epic-09/feature-9.6-widget-redesign.md)) | 2026-11-23 | - |
 
 ## Current focus
 
-Feature 9.5 done 2026-11-22 (SCRUM-163 to SCRUM-169, fixes SCRUM-171 to SCRUM-173). Next: the 9.4 close-out
-(9.4.8 SCRUM-170 merged) and the demo server 9.2.4 (SCRUM-134).
+Feature 9.5 done 2026-11-22 (SCRUM-163 to SCRUM-169, fixes SCRUM-171 to SCRUM-173). Feature 9.6 (SCRUM-174 to SCRUM-180) is in progress: stories stacked one branch on the
+next, the full gate and e2e once on the last branch; then the 9.4 close-out and the demo server 9.2.4 (SCRUM-134).
 
 ## Scope
 
@@ -78,6 +79,13 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5w | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | Done |
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | Done |
 | 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | Done |
+| 5za | 9.6.7 Remaining pages of the all-pages canvas | 9.6 | 3 | SCRUM-180 | #491 | no | To do |
+| 5za | 9.6.6 Profile with sections | 9.6 | 3 | SCRUM-179 | #490 | no | To do |
+| 5za | 9.6.5 Hall of Fame widgets | 9.6 | 5 | SCRUM-178 | #489 | no | To do |
+| 5za | 9.6.4 University bento with the faculty comparison | 9.6 | 5 | SCRUM-177 | #488 | no | To do |
+| 5za | 9.6.3 Unit analytics widgets | 9.6 | 5 | SCRUM-176 | #487 | no | To do |
+| 5za | 9.6.2 My dashboard widgets | 9.6 | 3 | SCRUM-175 | #486 | no | To do |
+| 5za | 9.6.1 Canvas look, sidebar tools and widget header | 9.6 | 5 | SCRUM-174 | #485 | no | In review |
 | 5za | 9.5.10 Back from a pane at 360 px loses the list scroll | 9.5 | 2 | SCRUM-173 | #479 | no | Done |
 | 5za | 9.5.9 Selection that left the list stays in Reviews and Users | 9.5 | 2 | SCRUM-172 | #478 | no | Done |
 | 5za | 9.5.8 Dashboard header without context line, actions wrap | 9.5 | 1 | SCRUM-171 | #477 | no | Done |

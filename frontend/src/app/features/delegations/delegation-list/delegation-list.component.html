@@ -37,7 +37,12 @@
         data-testid="delegations-loading"
       />
     } @else {
-      <app-pane [heading]="'delegations.given' | transloco" data-testid="given-list">
+      <app-pane
+        icon="arrow-right"
+        [heading]="'delegations.given' | transloco"
+        flush
+        data-testid="given-list"
+      >
         <nav
           class="delegations__list"
           appListRows
@@ -60,7 +65,12 @@
         </nav>
       </app-pane>
 
-      <app-pane [heading]="'delegations.received' | transloco" data-testid="received-list">
+      <app-pane
+        icon="arrow-left"
+        [heading]="'delegations.received' | transloco"
+        flush
+        data-testid="received-list"
+      >
         <nav
           class="delegations__list"
           appListRows
@@ -98,22 +108,16 @@
       </button>
     }
     @if (shown(); as shown) {
-      <app-pane
-        [heading]="
-          ('roles.' + shown.delegation.role | transloco) +
-          ' · ' +
-          name(shown.delegation.organization)
-        "
-        data-testid="delegation-detail"
-      >
-        <div class="delegations__detail">
-          <p class="delegations__line">
-            <mat-chip
-              class="delegations__chip"
-              [class.delegations__chip--active]="shown.delegation.state === 'active'"
-              data-testid="detail-state"
-              >{{ 'delegations.states.' + shown.delegation.state | transloco }}</mat-chip
-            >
+      <app-pane flush data-testid="delegation-detail">
+        <div class="delegations__banner">
+          <span class="delegations__initials" aria-hidden="true">{{
+            initialsOf(shown.given ? shown.delegation.delegate : shown.delegation.delegator)
+          }}</span>
+          <span class="delegations__banner-text">
+            <h2 class="delegations__banner-title">
+              {{ 'roles.' + shown.delegation.role | transloco }} ·
+              {{ name(shown.delegation.organization) }}
+            </h2>
             <span data-testid="detail-person">
               {{
                 (shown.given ? 'delegations.detail.givenTo' : 'delegations.detail.receivedFrom')
@@ -125,8 +129,16 @@
                       }
               }}
             </span>
-          </p>
-
+          </span>
+          <span
+            class="app-st"
+            [class.app-st--ok]="shown.delegation.state === 'active'"
+            [class.app-st--wait]="shown.delegation.state === 'upcoming'"
+            data-testid="detail-state"
+            >{{ 'delegations.states.' + shown.delegation.state | transloco }}</span
+          >
+        </div>
+        <div class="delegations__detail">
           <dl class="delegations__facts">
             <dt>{{ 'delegations.columns.period' | transloco }}</dt>
             <dd data-testid="detail-period">
@@ -242,12 +254,13 @@
     queryParamsHandling="merge"
     [attr.data-testid]="side + '-row'"
   >
-    <mat-chip
+    <span
       rowEnd
-      class="delegations__chip"
-      [class.delegations__chip--active]="delegation.state === 'active'"
+      class="app-st"
+      [class.app-st--ok]="delegation.state === 'active'"
+      [class.app-st--wait]="delegation.state === 'upcoming'"
       [attr.data-testid]="side + '-state'"
-      >{{ 'delegations.states.' + delegation.state | transloco }}</mat-chip
+      >{{ 'delegations.states.' + delegation.state | transloco }}</span
     >
   </a>
 </ng-template>

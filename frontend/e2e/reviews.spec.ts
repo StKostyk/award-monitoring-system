@@ -1,8 +1,8 @@
 import { Browser, Page, expect, test } from './fixtures';
 
 import {
-  FRESH_PASSWORD,
   expireOpenRequests,
+  FRESH_PASSWORD,
   freshEmployee,
   openNewAward,
   pastDay,
@@ -10,6 +10,7 @@ import {
   signedInAs,
   sql,
   submitWithoutDocuments,
+  toggleLanguage,
   uniqueToken,
 } from './helpers';
 
@@ -179,7 +180,7 @@ test.describe('reviewer queue', () => {
     const id = await submittedBy(browser, owner, title);
     const page = await signedInAs(browser, first, FRESH_PASSWORD);
     await page.setViewportSize({ width: 360, height: 780 });
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
 
     await page.goto('/reviews');
     await expect(page.getByTestId('review-tab-unassigned')).toHaveText('Unassigned');
@@ -400,7 +401,7 @@ test.describe('reviewer queue', () => {
       `update award_requests set status = 'IN_REVIEW', current_reviewer_id = ${user(second)} where award_id = ${ids[1]}`,
     );
     const page = await signedInAs(browser, first, FRESH_PASSWORD);
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await page.goto('/reviews');
     await page.getByTestId('review-tab-all').click();
     const rows = titles.map((title) => page.getByTestId('review-item').filter({ hasText: title }));

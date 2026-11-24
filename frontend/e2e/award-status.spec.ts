@@ -2,12 +2,13 @@ import { Page, expect, test } from './fixtures';
 
 import {
   DEMO_PASSWORD,
-  SEED,
   pastDay,
+  SEED,
   shownDay,
   signIn,
   sql,
   submitWithoutDocuments,
+  toggleLanguage,
   uniqueToken,
   workingDaysAhead,
 } from './helpers';
@@ -72,11 +73,11 @@ test.describe('award status tracking', () => {
     await card.getByRole('link').click();
     await expect(page).toHaveURL(new RegExp(`/awards/${id}$`));
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page.getByTestId('award-status-panel')).toContainText('Award journey');
     await expect(page.getByTestId('award-status-step').first()).toContainText('Faculty secretary');
     await expect(page.getByTestId('award-status-estimate')).toContainText('Expected completion');
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
   });
 
   test('ac1_13 ac1_18 an overdue review is explained on the page, the list and the card', async ({

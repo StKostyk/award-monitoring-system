@@ -31,9 +31,10 @@ describe('LevelStairsWidgetComponent', () => {
       '1 Національний',
       '0 Міжнародний',
     ]);
-    const heights = items.map((item) =>
-      parseFloat((item.querySelector('.stairs__block') as HTMLElement).style.height),
-    );
+    const heights = items.map((item) => {
+      const block = item.querySelector('.stairs__block') as HTMLElement;
+      return parseFloat(block.style.getPropertyValue('--w'));
+    });
     expect(heights).toEqual([...heights].sort((a, b) => a - b));
     expect(heights.at(-1)).toBe(100);
   });

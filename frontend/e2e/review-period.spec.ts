@@ -1,6 +1,13 @@
 import { expect, test } from './fixtures';
 
-import { FRESH_PASSWORD, freshEmployee, seriousViolations, signedInAs, sql } from './helpers';
+import {
+  FRESH_PASSWORD,
+  freshEmployee,
+  seriousViolations,
+  signedInAs,
+  sql,
+  toggleLanguage,
+} from './helpers';
 
 /** A faculty without seed reviewers or awards, so changing its period touches no other spec. */
 const FACULTY = 12;
@@ -80,7 +87,7 @@ test.describe('faculty review period', () => {
   test('ac1_9 the header and dialog work in English at 360 px by keyboard', async ({ browser }) => {
     const page = await signedInAs(browser, dean, FRESH_PASSWORD);
     await page.setViewportSize({ width: 360, height: 780 });
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await page.goto('/reviews');
 
     const text = page.getByTestId('review-period-text');

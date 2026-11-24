@@ -208,6 +208,16 @@ export class UserDetailComponent implements OnInit {
     return kyivDateTime(value, this.language.current());
   }
 
+  /**
+   * The initials of a person for the profile banner.
+   *
+   * @param user the person
+   * @return up to two letters
+   */
+  initialsOf(user: { firstName: string; lastName: string }): string {
+    return `${user.lastName.charAt(0)}${user.firstName.charAt(0)}`.toUpperCase();
+  }
+
   name(organization: OrganizationRef): string {
     return organizationName(organization, this.language.current());
   }

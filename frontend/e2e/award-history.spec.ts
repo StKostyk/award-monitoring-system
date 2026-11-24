@@ -1,6 +1,13 @@
 import { Page, expect, test } from './fixtures';
 
-import { SEED, pastDay, signedIn, submitWithoutDocuments, uniqueToken } from './helpers';
+import {
+  pastDay,
+  SEED,
+  signedIn,
+  submitWithoutDocuments,
+  toggleLanguage,
+  uniqueToken,
+} from './helpers';
 
 const { employee, dean } = SEED;
 const officer = SEED.gdpr;
@@ -61,7 +68,7 @@ test.describe('award history and audit log', () => {
     await expect(owner.getByTestId('version-field-titleUk')).toContainText(first);
     await expect(owner.getByTestId('version-field-categoryId')).toHaveText('—');
     await owner.getByTestId('version-dialog-close').click();
-    await owner.getByTestId('language-toggle').click();
+    await toggleLanguage(owner);
     await expect(owner.getByRole('heading', { name: 'Change history' })).toBeVisible();
     expect(await actions(owner)).toEqual(['Submitted', 'Changed', 'Changed', 'Created']);
 
