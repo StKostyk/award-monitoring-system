@@ -1,0 +1,65 @@
+:host {
+  display: block;
+}
+
+.years {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 14px;
+  overflow: hidden;
+  border: 1px solid var(--app-pane-border);
+  border-radius: var(--app-card-radius);
+  background: var(--app-pane-divider);
+}
+
+.years__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px;
+  background: var(--app-pane);
+
+  dt {
+    font: 700 0.6875rem / 1.2 var(--app-font-heading);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--app-muted);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.years__card--now {
+  background: var(--app-brand-panel);
+  color: var(--app-on-brand-panel);
+
+  dt,
+  .years__hint {
+    color: var(--app-on-brand-panel);
+  }
+}
+
+.years__count {
+  font: 800 2.125rem / 1 var(--app-font-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.years__hint {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--app-muted);
+}
+
+@media (max-width: 480px) {
+  .years__card {
+    padding: 12px 10px;
+  }
+
+  .years__count {
+    font-size: 1.625rem;
+  }
+}

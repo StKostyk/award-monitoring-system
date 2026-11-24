@@ -130,7 +130,11 @@
           </app-pane>
         </ng-template>
         <ng-template appDashboardWidget="BY_CATEGORY" wide>
-          <app-pane icon="layout-grid" [heading]="'analytics.widgets.BY_CATEGORY' | transloco">
+          <app-pane
+            icon="layout-grid"
+            chartLabel="charts.cards"
+            [heading]="'analytics.widgets.BY_CATEGORY' | transloco"
+          >
             <app-category-chart [byCategory]="data.byCategory" />
           </app-pane>
         </ng-template>
