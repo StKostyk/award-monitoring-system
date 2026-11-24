@@ -22,6 +22,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { canEditOwnAwards, canReview } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
+import { PaneComponent } from '../../../shared/layout/pane.component';
 import { organizationName } from '../../../shared/organization-name';
 import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
 import { ReviewPanelComponent } from '../../reviews/review-panel/review-panel.component';
@@ -65,6 +66,7 @@ import { VisibilitySectionComponent } from './visibility-section.component';
     ReviewPanelComponent,
     VisibilitySectionComponent,
     StatusPageComponent,
+    PaneComponent,
     TranslocoPipe,
     KyivDatePipe,
   ],

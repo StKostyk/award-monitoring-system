@@ -12,7 +12,13 @@ import { IconName } from '../icons/icons';
   imports: [IconComponent],
   template: `
     <section class="status-page__card">
-      <span class="status-page__icon" aria-hidden="true"><app-icon [name]="icon()" /></span>
+      @if (code(); as code) {
+        <span class="status-page__code" aria-hidden="true" data-testid="status-page-code">{{
+          code
+        }}</span>
+      } @else {
+        <span class="status-page__icon" aria-hidden="true"><app-icon [name]="icon()" /></span>
+      }
       @if (level() === 2) {
         <h2 class="status-page__title">{{ title() }}</h2>
       } @else {
@@ -55,6 +61,17 @@ import { IconName } from '../icons/icons';
       color: var(--mat-sys-primary);
     }
 
+    .status-page__code {
+      display: grid;
+      place-items: center;
+      width: 96px;
+      height: 96px;
+      border-radius: 28px;
+      background: var(--app-brand-panel);
+      color: var(--app-gold-soft);
+      font: 800 2rem/1 var(--app-font-heading);
+    }
+
     .status-page__title {
       margin: 0;
       font: var(--mat-sys-headline-small);
@@ -68,6 +85,10 @@ import { IconName } from '../icons/icons';
     }
 
     .status-page__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
       margin-top: 8px;
     }
 
@@ -86,6 +107,8 @@ export class StatusPageComponent {
   readonly title = input.required<string>();
   /** The translated sentence. */
   readonly text = input.required<string>();
+  /** A status code shown in a brand tile in place of the icon (404). */
+  readonly code = input<string>();
   /** The heading level: 1 for a page of its own, 2 inside a pane of a page that has its heading. */
   readonly level = input<1 | 2>(1);
 }

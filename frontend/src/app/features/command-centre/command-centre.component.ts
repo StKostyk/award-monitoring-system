@@ -21,8 +21,8 @@ import { LanguageService } from '../../core/i18n/language.service';
 import { DashboardLayoutComponent } from '../../shared/dashboard/dashboard-layout.component';
 import { DashboardWidgetDirective } from '../../shared/dashboard/dashboard-widget.directive';
 import { kyivDate } from '../../shared/date-format';
-import { BorderBeamComponent } from '../../shared/effects/border-beam.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
+import { PaneComponent } from '../../shared/layout/pane.component';
 import { organizationName } from '../../shared/organization-name';
 import { FocusCardsWidgetComponent } from '../../shared/widgets/focus-cards-widget.component';
 import { TopWidgetComponent } from '../../shared/widgets/top-widget.component';
@@ -64,13 +64,13 @@ const DEFAULT_PERIOD: AnalyticsPeriod = { from: null, to: null };
 @Component({
   selector: 'app-command-centre',
   imports: [
-    BorderBeamComponent,
     DashboardLayoutComponent,
     DashboardWidgetDirective,
     EmptyStateComponent,
     FocusCardsWidgetComponent,
     MatButton,
     MatProgressBar,
+    PaneComponent,
     RouterLink,
     TopWidgetComponent,
     TranslocoPipe,

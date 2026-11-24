@@ -277,7 +277,7 @@ None.
 | AC-4.2 | existing `UniversityAnalyticsServiceTest`, `UnitAnalyticsServiceTest`, `UniversityAnalyticsIT`, `UnitAnalyticsIT` (`approved.previous` per row) | - |
 | AC-5.1 to AC-5.5 | hero ring share, scoreboard and overtake month, record cards | `hall-of-fame.spec.ts` updated |
 | AC-6.1 to AC-6.4 | section from the URL, switches save and refuse the last channel | `profile.spec.ts` updated: section deep link, switch saved after reload |
-| AC-7.1 to AC-7.6 | two-column breakpoints, users toolbar | `award-detail.spec.ts`, `admin-users.spec.ts`, `not-found` check; login page logo in `auth.spec.ts` |
+| AC-7.1 to AC-7.6 | two-column breakpoints, users toolbar, 404 code tile | `award-look.spec.ts`, `award-mobile.spec.ts`, `people.spec.ts`, `privacy-centre.spec.ts`, `command-centre.spec.ts`, `not-found` check in `achievements.spec.ts`; login page logo in `login.spec.ts` and `LoginPageFT` |
 
 Backend: only 9.6.4 changes it (one field and its query).
 

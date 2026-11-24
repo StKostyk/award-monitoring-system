@@ -1,8 +1,8 @@
 .review-panel {
-  margin-top: 24px;
-  padding: 16px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
+  padding: 14px 18px 18px;
+  border: 1px solid var(--app-pane-border);
+  border-radius: var(--app-card-radius);
+  background: var(--app-pane);
 }
 
 .review-panel__title {
