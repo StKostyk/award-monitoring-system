@@ -158,6 +158,9 @@ export class UnitAnalyticsComponent {
       previous: years(data.previousPeriod),
     });
   });
+  protected readonly hasYears = computed(
+    () => this.analytics()?.byYear.some((entry) => entry.total > 0) ?? false,
+  );
   protected readonly byCategory = computed<ComparisonRow[]>(() => {
     const language = this.language.current();
     return [...(this.analytics()?.byCategory ?? [])]

@@ -38,7 +38,6 @@ import { TrendListsComponent } from '../trend-lists/trend-lists.component';
 const UNIVERSITY_LABELS: ComparisonLabels = {
   caption: 'universityAnalytics.sections.comparison',
   levelRow: 'universityAnalytics.comparison.universityLevel',
-  chartDescription: 'universityAnalytics.comparison.chartDescription',
 };
 
 /** Analytics of the whole university for a period as a bento page, with the compliance summary below it. */

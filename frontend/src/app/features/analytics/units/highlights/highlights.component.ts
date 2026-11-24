@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
@@ -7,10 +8,10 @@ import { HighlightType, UnitHighlight } from '../unit-analytics.service';
 
 const STRENGTHS: readonly HighlightType[] = ['GROWTH', 'ABOVE_AVERAGE'];
 
-/** Units that stand out, as sentences: growth and above average among the strengths, the other kinds among the gaps. */
+/** W2 A: units that stand out as a big count, the previous count beside it and one line; strengths and gaps apart. */
 @Component({
   selector: 'app-highlights',
-  imports: [TranslocoPipe],
+  imports: [NgTemplateOutlet, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './highlights.component.html',
   styleUrl: './highlights.component.scss',
@@ -28,6 +29,8 @@ export class HighlightsComponent {
     return this.highlights().map((highlight) => ({
       strength: STRENGTHS.includes(highlight.type),
       key: `${highlight.type}-${highlight.unit.id}`,
+      current: highlight.current,
+      previous: highlight.previous,
       text: this.transloco.translate(`${prefix}.${sentenceKey(highlight)}`, {
         unit: organizationName(highlight.unit, language),
         current: highlight.current,

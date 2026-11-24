@@ -3,6 +3,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { vi } from 'vitest';
 
 import { chartStub, chartsDrawn } from '../../../shared/charts/chart.testing';
+import { paneStub } from '../../../shared/layout/pane.testing';
 import { languageStub, translations } from '../analytics.testing';
 import {
   ComparisonBarsComponent,
@@ -22,13 +23,32 @@ interface DrawnOption {
 describe('Unit analytics charts', () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  let pane: ReturnType<typeof paneStub>;
+
   function setUp(language: 'en' | 'uk' = 'en') {
     const stub = chartStub();
+    pane = paneStub();
     TestBed.configureTestingModule({
       imports: [NoopAnimationsModule, translations(language)],
-      providers: [stub.provider, languageStub(language).provider],
+      providers: [stub.provider, pane.provider, languageStub(language).provider],
     });
     return stub;
+  }
+
+  function comparison(count: number) {
+    const fixture = TestBed.createComponent(ComparisonBarsComponent);
+    fixture.componentRef.setInput('rows', rows(count));
+    fixture.componentRef.setInput('caption', 'By category');
+    fixture.componentRef.setInput('labelHeader', 'Category');
+    fixture.componentRef.setInput('tableId', 'unit-category-table');
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function texts(root: HTMLElement, selector: string): string[] {
+    return [...root.querySelectorAll(selector)].map((node) =>
+      node.textContent!.replace(/\s+/g, ' ').trim(),
+    );
   }
 
   function rows(count: number): ComparisonRow[] {
@@ -40,51 +60,58 @@ describe('Unit analytics charts', () => {
     }));
   }
 
-  it('ac2_3_draws_this_period_beside_the_previous_one_with_a_table', async () => {
-    const stub = setUp();
-    const fixture = TestBed.createComponent(ComparisonBarsComponent);
-    fixture.componentRef.setInput('rows', rows(2));
-    fixture.componentRef.setInput('caption', 'By category');
-    fixture.componentRef.setInput('labelHeader', 'Category');
-    fixture.componentRef.setInput('tableId', 'unit-category-table');
-    fixture.detectChanges();
-    await chartsDrawn();
-    const option = stub.options.at(-1) as unknown as DrawnOption;
+  it('ac2_3_draws_this_period_beside_the_previous_one_with_a_table', () => {
+    setUp();
+    const fixture = comparison(2);
+    const element: HTMLElement = fixture.nativeElement;
+    const pairs = element.querySelectorAll('[data-testid="pair-row"]');
 
-    expect(option.series.map((series) => series.name)).toEqual(['Previous period', 'This period']);
-    expect(option.series[1].data).toEqual([1, 2]);
-    expect(option.aria.label.description).toContain('«Category 1» with 2 (previously 1)');
-
-    fixture.nativeElement.querySelector('[data-testid="chart-table-switch"] button').click();
-    fixture.detectChanges();
-
+    expect(element.querySelector('[data-testid="pair-bars"]')!.getAttribute('aria-label')).toBe(
+      'By category',
+    );
+    expect(texts(element, '[data-testid="pair-row"] .pairs__label')).toEqual([
+      'Category 1',
+      'Category 2',
+    ]);
     expect(
-      fixture.nativeElement.querySelector('[data-testid="unit-category-table"]').textContent,
-    ).toContain('Category 2');
+      texts(element, '[data-testid="pair-row"] .pairs__count:not(.pairs__count--previous)'),
+    ).toEqual(['This period: 2', 'This period: 1']);
+    expect(
+      (pairs[0].querySelector('.pairs__track:not(.pairs__track--previous) i') as HTMLElement).style
+        .width,
+    ).toBe('100%');
+    expect((pairs[0].querySelector('.pairs__track--previous i') as HTMLElement).style.width).toBe(
+      '50%',
+    );
+
+    pane.pane.view.set('table');
+    fixture.detectChanges();
+
+    expect(element.querySelector('[data-testid="pair-bars"]')).toBeNull();
+    expect(element.querySelector('[data-testid="unit-category-table"]')!.textContent).toContain(
+      'Category 2',
+    );
   });
 
-  it('ac2_7_rolls_categories_beyond_twelve_into_other_in_the_chart_only', async () => {
-    const stub = setUp();
-    const fixture = TestBed.createComponent(ComparisonBarsComponent);
-    fixture.componentRef.setInput('rows', rows(15));
-    fixture.componentRef.setInput('caption', 'By category');
-    fixture.componentRef.setInput('labelHeader', 'Category');
-    fixture.componentRef.setInput('tableId', 'unit-category-table');
-    fixture.detectChanges();
-    await chartsDrawn();
-    const option = stub.options.at(-1) as unknown as DrawnOption;
+  it('ac2_7_rolls_categories_beyond_twelve_into_other_in_the_chart_only', () => {
+    setUp();
+    const fixture = comparison(15);
+    const element: HTMLElement = fixture.nativeElement;
+    const labels = texts(element, '[data-testid="pair-row"] .pairs__label');
 
-    expect(option.yAxis.data).toHaveLength(13);
-    expect(option.yAxis.data[0]).toBe('Other');
-    expect(option.series[1].data[0]).toBe(3 + 2 + 1);
-    expect(option.series[0].data[0]).toBe(3);
+    expect(labels).toHaveLength(13);
+    expect(labels.at(-1)).toBe('Other');
+    expect(texts(element, '[data-testid="pair-row"] .pairs__count').slice(-2)).toEqual([
+      'Previous period: 3',
+      'This period: 6',
+    ]);
 
-    fixture.nativeElement.querySelector('[data-testid="chart-table-switch"] button').click();
+    pane.pane.view.set('table');
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelectorAll('[data-testid="unit-category-table"] tbody tr'),
-    ).toHaveLength(15);
+    expect(element.querySelectorAll('[data-testid="unit-category-table"] tbody tr')).toHaveLength(
+      15,
+    );
   });
 
   it('ac2_7_adds_the_sources_beyond_twelve_and_the_rest_to_one_other_bar', async () => {
@@ -111,37 +138,52 @@ describe('Unit analytics charts', () => {
     expect(table.textContent).toContain('All other organisations');
   });
 
-  it('ac2_3_draws_one_line_per_department_for_a_faculty', async () => {
-    const stub = setUp('uk');
+  it('ac2_3_draws_one_small_chart_per_department_for_a_faculty', () => {
+    setUp('uk');
     const fixture = TestBed.createComponent(UnitTrendChartComponent);
     fixture.componentRef.setInput('analytics', facultyAnalytics());
     fixture.detectChanges();
-    await chartsDrawn();
-    const option = stub.options.at(-1) as unknown as DrawnOption;
+    const element: HTMLElement = fixture.nativeElement;
+    const multiples = element.querySelectorAll('[data-testid="unit-trend-multiple"]');
 
-    expect(option.xAxis.data).toEqual(['2024', '2025', '2026']);
-    expect(option.series.map((series) => series.type)).toEqual(['line', 'line', 'line']);
-    expect(option.series.map((series) => series.name)).toEqual([
+    expect(texts(element, '.multiple__name')).toEqual([
       'Рівень факультету',
       'Кафедра алгебри та інформатики',
       'Кафедра математичного аналізу',
     ]);
-    expect(option.series[1].data).toEqual([3, 3, 5]);
+    expect(texts(multiples[1] as HTMLElement, '.columns__count')).toEqual([
+      '2024: 3',
+      '2025: 3',
+      '2026: 5',
+    ]);
+    expect(multiples[1].querySelector('.multiple__total')!.textContent).toContain('11');
+    expect(multiples[1].querySelectorAll('.columns__item--current')).toHaveLength(1);
+    expect((multiples[0].querySelector('.columns__bar') as HTMLElement).style.height).toBe('0%');
+    expect(element.querySelector('.multiples__key')).not.toBeNull();
+
+    pane.pane.view.set('table');
+    fixture.detectChanges();
+
+    expect(element.querySelectorAll('[data-testid="unit-trend-table"] tbody tr')).toHaveLength(3);
   });
 
-  it('ac2_3_draws_personal_and_unit_awards_as_bars_for_a_department', async () => {
-    const stub = setUp();
+  it('ac2_3_draws_one_small_chart_of_the_totals_for_a_department', () => {
+    setUp();
     const fixture = TestBed.createComponent(UnitTrendChartComponent);
     fixture.componentRef.setInput('analytics', departmentAnalytics());
     fixture.detectChanges();
-    await chartsDrawn();
-    const option = stub.options.at(-1) as unknown as DrawnOption;
+    const element: HTMLElement = fixture.nativeElement;
 
-    expect(option.series.map((series) => [series.type, series.name])).toEqual([
-      ['bar', 'Personal awards'],
-      ['bar', 'Unit awards'],
-    ]);
-    expect(option.series[0].data).toEqual([3, 4, 5]);
-    expect(option.aria.enabled).toBe(true);
+    expect(element.querySelectorAll('[data-testid="unit-trend-multiple"]')).toHaveLength(1);
+    expect(texts(element, '.columns__count')).toEqual(['2024: 4', '2025: 5', '2026: 6']);
+    expect(element.querySelector('.multiples__key')).toBeNull();
+
+    pane.pane.view.set('table');
+    fixture.detectChanges();
+    const rows = [...element.querySelectorAll('[data-testid="unit-trend-table"] tbody tr')].map(
+      (row) => [...row.children].map((cell) => cell.textContent!.trim()).join(' '),
+    );
+
+    expect(rows).toEqual(['2024 3 1 4', '2025 4 1 5', '2026 5 1 6']);
   });
 });

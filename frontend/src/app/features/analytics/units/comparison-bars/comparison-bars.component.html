@@ -1,4 +1,4 @@
-<app-chart [option]="option()" [description]="description()" [height]="height()">
+@if (table()) {
   <table class="analytics-table" [attr.data-testid]="tableId()">
     <caption>
       {{
@@ -22,4 +22,27 @@
       }
     </tbody>
   </table>
-</app-chart>
+} @else {
+  <p class="pairs__key">{{ 'unitAnalytics.bars.key' | transloco }}</p>
+  <ul class="pairs" [attr.aria-label]="caption()" data-testid="pair-bars">
+    @for (row of bars(); track row.key) {
+      <li class="pairs__row" data-testid="pair-row">
+        <span class="pairs__label">{{ row.label }}</span>
+        <span class="pairs__track pairs__track--previous" aria-hidden="true">
+          <i [style.width.%]="row.previousWidth"></i>
+        </span>
+        <b class="pairs__count pairs__count--previous">
+          <span class="cdk-visually-hidden">{{ 'unitAnalytics.bars.previous' | transloco }}:</span>
+          {{ row.previous }}
+        </b>
+        <span class="pairs__track" aria-hidden="true">
+          <i [style.width.%]="row.currentWidth"></i>
+        </span>
+        <b class="pairs__count">
+          <span class="cdk-visually-hidden">{{ 'unitAnalytics.bars.current' | transloco }}:</span>
+          {{ row.current }}
+        </b>
+      </li>
+    }
+  </ul>
+}

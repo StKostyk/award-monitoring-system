@@ -7,9 +7,9 @@
     @if (strengths().length > 0) {
       <section data-testid="highlights-strengths">
         <h3>{{ 'unitAnalytics.highlights.strengths' | transloco }}</h3>
-        <ul>
+        <ul class="highlights__grid">
           @for (entry of strengths(); track entry.key) {
-            <li>{{ entry.text }}</li>
+            <ng-container *ngTemplateOutlet="item; context: { $implicit: entry }" />
           }
         </ul>
       </section>
@@ -17,12 +17,24 @@
     @if (gaps().length > 0) {
       <section data-testid="highlights-gaps">
         <h3>{{ 'unitAnalytics.highlights.gaps' | transloco }}</h3>
-        <ul>
+        <ul class="highlights__grid">
           @for (entry of gaps(); track entry.key) {
-            <li>{{ entry.text }}</li>
+            <ng-container *ngTemplateOutlet="item; context: { $implicit: entry }" />
           }
         </ul>
       </section>
     }
   </div>
 }
+
+<ng-template #item let-entry>
+  <li class="highlight" data-testid="highlight">
+    <span class="highlight__numbers">
+      <b class="highlight__count">{{ entry.current }}</b>
+      <span class="highlight__previous">
+        {{ 'unitAnalytics.highlights.was' | transloco: { count: entry.previous } }}
+      </span>
+    </span>
+    <span class="highlight__text">{{ entry.text }}</span>
+  </li>
+</ng-template>

@@ -1,115 +1,110 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import type { EChartsCoreOption } from 'echarts/core';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
-import { ChartComponent } from '../../../../shared/charts/chart.component';
-import { categoryAxis, tooltip, valueAxis } from '../../../../shared/charts/chart-style';
-import { ChartThemeService } from '../../../../shared/charts/chart-theme.service';
+import { PaneComponent } from '../../../../shared/layout/pane.component';
 import { organizationName } from '../../../../shared/organization-name';
 import { UnitAnalytics } from '../unit-analytics.service';
 
-const LINE_TYPES = ['solid', 'dashed', 'dotted'] as const;
-const SYMBOLS = ['circle', 'rect', 'triangle', 'diamond'] as const;
-const PERSONAL_BAND = 3;
-const UNIT_BAND = 0;
+const PERCENT = 100;
+const MIN_COLUMN_PERCENT = 6;
 
-/** A line of the faculty trend: one department, or the faculty level. */
+/** One column of a small chart: a year and its count. */
+export interface YearColumn {
+  year: number;
+  count: number;
+  height: number;
+  current: boolean;
+}
+
+/** A small chart of the faculty trend: one department, the faculty level, or the department itself. */
 export interface TrendLine {
   id: number;
   label: string;
   counts: number[];
+  total: number;
+  columns: YearColumn[];
 }
 
-/** Approved awards by year: one line per department for a faculty, personal and unit awards as bars for a department. */
+/** W2 A: approved awards by year as one small column chart per department, each on its own scale. */
 @Component({
   selector: 'app-unit-trend-chart',
-  imports: [ChartComponent, TranslocoPipe],
+  imports: [TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './unit-trend-chart.component.html',
+  styleUrl: './unit-trend-chart.component.scss',
 })
 export class UnitTrendChartComponent {
-  private readonly theme = inject(ChartThemeService);
   private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
+  private readonly pane = inject(PaneComponent, { optional: true });
 
   readonly analytics = input.required<UnitAnalytics>();
 
+  protected readonly table = computed(() => this.pane?.view() === 'table');
   protected readonly faculty = computed(() => this.analytics().unit.type === 'FACULTY');
   protected readonly years = computed(() => this.analytics().byYear.map((entry) => entry.year));
   protected readonly lines = computed<TrendLine[]>(() => {
     const language = this.language.current();
-    return this.analytics().units.map((row) => ({
-      id: row.unit.id,
-      label: row.facultyLevel
-        ? this.transloco.translate('unitAnalytics.comparison.facultyLevel')
-        : organizationName(row.unit, language),
-      counts: row.byYear,
-    }));
-  });
-  protected readonly description = computed(() => {
-    this.language.current();
-    const byYear = this.analytics().byYear;
-    return this.transloco.translate(
-      this.faculty() ? 'unitAnalytics.trend.facultyDescription' : 'unitAnalytics.trend.description',
-      {
-        from: byYear[0]?.year ?? '',
-        to: byYear.at(-1)?.year ?? '',
-        total: byYear.reduce((sum, entry) => sum + entry.total, 0),
-        count: this.lines().length,
-      },
+    const years = this.years();
+    if (!this.faculty()) {
+      const counts = this.analytics().byYear.map((entry) => entry.total);
+      return [
+        line(
+          this.analytics().unit.id,
+          organizationName(this.analytics().unit, language),
+          years,
+          counts,
+        ),
+      ];
+    }
+    return this.analytics().units.map((row) =>
+      line(
+        row.unit.id,
+        row.facultyLevel
+          ? this.transloco.translate('unitAnalytics.comparison.facultyLevel')
+          : organizationName(row.unit, language),
+        years,
+        row.byYear,
+      ),
     );
   });
-  protected readonly option = computed<EChartsCoreOption>(() => {
-    this.language.current();
-    const palette = this.theme.palette();
-    const colors = palette.series;
-    const base = {
-      grid: { left: 8, right: 8, top: 48, bottom: 8, containLabel: true },
-      legend: { type: 'scroll', top: 0, textStyle: { color: palette.text } },
-      tooltip: tooltip(palette, 'axis'),
-      xAxis: categoryAxis(palette, this.years().map(String)),
-      yAxis: valueAxis(palette),
-    };
-    if (this.faculty()) {
-      return {
-        ...base,
-        series: this.lines().map((line, index) => ({
-          type: 'line',
-          name: line.label,
-          symbol: SYMBOLS[index % SYMBOLS.length],
-          symbolSize: 7,
-          itemStyle: { color: colors[index % colors.length] },
-          lineStyle: {
-            color: colors[index % colors.length],
-            width: 2,
-            type: LINE_TYPES[Math.floor(index / colors.length) % LINE_TYPES.length],
-          },
-          data: line.counts,
-        })),
-      };
-    }
-    const byYear = this.analytics().byYear;
-    return {
-      ...base,
-      series: [
-        {
-          type: 'bar',
-          stack: 'kinds',
-          name: this.transloco.translate('unitAnalytics.trend.personal'),
-          barMaxWidth: 32,
-          itemStyle: { color: palette.bands[PERSONAL_BAND] },
-          data: byYear.map((entry) => entry.personal),
-        },
-        {
-          type: 'bar',
-          stack: 'kinds',
-          name: this.transloco.translate('unitAnalytics.trend.unitAwards'),
-          barMaxWidth: 32,
-          itemStyle: { color: palette.bands[UNIT_BAND] },
-          data: byYear.map((entry) => entry.unitAwards),
-        },
-      ],
-    };
+  protected readonly range = computed(() => {
+    const years = this.years();
+    return years.length > 1 ? `${years[0]}–${years.at(-1)}` : String(years[0] ?? '');
   });
+
+  constructor() {
+    const release = this.pane?.holdChart();
+    if (release) {
+      inject(DestroyRef).onDestroy(release);
+    }
+  }
+}
+
+function line(id: number, label: string, years: number[], counts: number[]): TrendLine {
+  const max = Math.max(0, ...counts);
+  const last = years.length - 1;
+  return {
+    id,
+    label,
+    counts,
+    total: counts.reduce((sum, count) => sum + count, 0),
+    columns: years.map((year, index) => {
+      const count = counts[index] ?? 0;
+      return {
+        year,
+        count,
+        height: count > 0 && max > 0 ? Math.max(MIN_COLUMN_PERCENT, (count * PERCENT) / max) : 0,
+        current: index === last,
+      };
+    }),
+  };
 }

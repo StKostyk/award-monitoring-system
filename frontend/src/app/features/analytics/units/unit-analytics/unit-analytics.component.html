@@ -93,7 +93,11 @@
             [heading]="'unitAnalytics.sections.trend' | transloco"
             data-testid="section-trend"
           >
-            <app-unit-trend-chart [analytics]="data" />
+            @if (hasYears()) {
+              <app-unit-trend-chart [analytics]="data" />
+            } @else {
+              <p class="analytics-note">{{ 'unitAnalytics.noAwards' | transloco }}</p>
+            }
           </app-pane>
 
           <app-pane
@@ -117,6 +121,7 @@
             <app-pane
               icon="chart-bar"
               [heading]="'unitAnalytics.sections.comparison' | transloco"
+              chartLabel="charts.ranking"
               data-testid="section-comparison"
             >
               <app-unit-comparison [rows]="data.units" [period]="shownPeriod()" />
