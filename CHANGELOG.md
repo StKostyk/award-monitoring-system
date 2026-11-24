@@ -94,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- My dashboard: awards by year as three number cards over thick year bars, categories as the top three cards and a ranked list.
 - Shell and panes take the canvas look: no top bar, search, language, theme, notifications and the account at the bottom of the sidebar; every pane header has an icon, a tinted strip and the «Графік / Таблиця» switch.
 - Compliance sections with counts and a retention run-duration chart, and delegations with a detail pane (period, days left, can and cannot), in the split layout (9.5.7).
 - Unit analytics in the split layout with the department list and its approved counts; university analytics as a bento grid with faculty bars; period chips on both pages (9.5.6).

@@ -1,17 +1,34 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import type { EChartsCoreOption } from 'echarts/core';
 
 import { LanguageService } from '../../../core/i18n/language.service';
-import { ChartComponent } from '../../../shared/charts/chart.component';
-import { categoryAxis, tooltip, valueAxis } from '../../../shared/charts/chart-style';
-import { ChartThemeService } from '../../../shared/charts/chart-theme.service';
+import { PaneComponent } from '../../../shared/layout/pane.component';
+import { BarListComponent, BarRow } from '../../../shared/widgets/bar-list.component';
+import { currentKyivMonth } from '../../../shared/widgets/facts';
 import { LEVEL_BANDS, LevelBand, YearCount, levelBand } from '../analytics.service';
 
 export interface YearRow {
   year: number;
   total: number;
   bands: Record<LevelBand, number>;
+}
+
+/** The three number cards over the year bars. */
+export interface YearSummary {
+  year: number;
+  count: number;
+  previousYear: number;
+  previousCount: number;
+  /** The mean per year of the years before `year`, or null when the period has none. */
+  average: number | null;
+  averageFrom: number | null;
 }
 
 /** Years to show: every year of the period, starting at the first non-zero one unless the start was chosen. */
@@ -29,55 +46,76 @@ export function yearRows(byYear: YearCount[], fromChosen: boolean): YearRow[] {
   });
 }
 
-/** Approved awards per year, stacked by level band. */
+/**
+ * The cards of the last year of the period, the year before it and the average of the earlier years.
+ *
+ * @param rows the years shown, oldest first
+ * @return the summary, or null when there are no years
+ */
+export function yearSummary(rows: YearRow[]): YearSummary | null {
+  const last = rows.at(-1);
+  if (!last) {
+    return null;
+  }
+  const earlier = rows.slice(0, -1);
+  return {
+    year: last.year,
+    count: last.total,
+    previousYear: last.year - 1,
+    previousCount: rows.find((row) => row.year === last.year - 1)?.total ?? 0,
+    average: earlier.length
+      ? earlier.reduce((sum, row) => sum + row.total, 0) / earlier.length
+      : null,
+    averageFrom: earlier[0]?.year ?? null,
+  };
+}
+
+/** W1: approved awards per year as three comparison cards over thick bars, newest year on top. */
 @Component({
   selector: 'app-year-trend-chart',
-  imports: [ChartComponent, TranslocoPipe],
+  imports: [BarListComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './year-trend-chart.component.html',
+  styleUrl: './year-trend-chart.component.scss',
 })
 export class YearTrendChartComponent {
-  private readonly theme = inject(ChartThemeService);
   private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
+  private readonly pane = inject(PaneComponent, { optional: true });
 
   readonly byYear = input.required<YearCount[]>();
   readonly fromChosen = input(false);
 
   protected readonly rows = computed(() => yearRows(this.byYear(), this.fromChosen()));
-  protected readonly bands = computed(() =>
-    LEVEL_BANDS.filter((band) => this.rows().some((row) => row.bands[band] > 0)),
-  );
-  protected readonly description = computed(() => {
-    this.language.current();
-    const rows = this.rows();
-    return this.transloco.translate('analytics.trend.description', {
-      from: rows[0]?.year ?? '',
-      to: rows.at(-1)?.year ?? '',
-      total: rows.reduce((sum, row) => sum + row.total, 0),
-    });
+  protected readonly table = computed(() => this.pane?.view() === 'table');
+  protected readonly summary = computed(() => yearSummary(this.rows()));
+  protected readonly isNow = computed(() => this.summary()?.year === currentKyivMonth().year);
+  protected readonly average = computed(() => {
+    const average = this.summary()?.average;
+    if (average === null || average === undefined) {
+      return '—';
+    }
+    const locale = this.language.current() === 'en' ? 'en-GB' : 'uk-UA';
+    return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(average);
   });
-  protected readonly option = computed<EChartsCoreOption>(() => {
-    this.language.current();
-    const palette = this.theme.palette();
-    const rows = this.rows();
-    return {
-      grid: { left: 8, right: 8, top: 40, bottom: 8, containLabel: true },
-      legend: { top: 0, textStyle: { color: palette.text } },
-      tooltip: tooltip(palette, 'axis'),
-      xAxis: categoryAxis(
-        palette,
-        rows.map((row) => String(row.year)),
-      ),
-      yAxis: valueAxis(palette),
-      series: this.bands().map((band) => ({
-        type: 'bar',
-        stack: 'levels',
-        name: this.transloco.translate(`analytics.bands.${band}`),
-        barMaxWidth: 32,
-        itemStyle: { color: palette.bands[LEVEL_BANDS.indexOf(band)] },
-        data: rows.map((row) => row.bands[band]),
-      })),
-    };
+  protected readonly bars = computed<BarRow[]>(() => {
+    const last = this.summary()?.year;
+    return [...this.rows()].reverse().map((row) => ({
+      key: row.year,
+      label: String(row.year),
+      value: row.total,
+      current: row.year === last,
+    }));
   });
+  protected readonly barsLabel = computed(() => {
+    this.language.current();
+    return this.transloco.translate('analytics.trend.bars');
+  });
+
+  constructor() {
+    const release = this.pane?.holdChart();
+    if (release) {
+      inject(DestroyRef).onDestroy(release);
+    }
+  }
 }

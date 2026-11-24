@@ -1816,13 +1816,23 @@
       "INTERNATIONAL": "International"
     },
     "trend": {
-      "title": "Approved awards by year and level",
-      "description": "Bar chart of approved awards by year from {{from}} to {{to}}, stacked by level; {{total}} in total."
+      "title": "Approved awards by year",
+      "cards": "Years compared",
+      "now": "this year",
+      "end": "last year of the period",
+      "previousNow": "last year",
+      "previous": "the year before",
+      "average": "Average",
+      "averageHint": "{{from}}–{{to}}, per year",
+      "noEarlier": "no earlier years yet",
+      "bars": "Awards by year, newest first"
     },
     "categories": {
       "title": "Approved awards by category",
-      "description": "Bar chart of approved awards in {{count}} categories; most in «{{top}}»: {{topCount}}.",
-      "other": "Other"
+      "cards": "Three most frequent categories",
+      "rank": "No. {{rank}} · {{level}}",
+      "share": "{{share}}% of all awards",
+      "list": "Other categories, most frequent first"
     },
     "levels": {
       "title": "Approved awards by level",
@@ -1837,6 +1847,8 @@
       "year": "Year",
       "total": "Total",
       "count": "Awards",
+      "rank": "Rank",
+      "share": "Share",
       "category": "Category",
       "level": "Level",
       "date": "Date",
