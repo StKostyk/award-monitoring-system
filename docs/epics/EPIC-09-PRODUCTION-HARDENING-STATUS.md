@@ -82,7 +82,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5za | 9.6.7 Remaining pages of the all-pages canvas | 9.6 | 3 | SCRUM-180 | #491 | no | To do |
 | 5za | 9.6.6 Profile with sections | 9.6 | 3 | SCRUM-179 | #490 | no | To do |
 | 5za | 9.6.5 Hall of Fame widgets | 9.6 | 5 | SCRUM-178 | #489 | no | To do |
-| 5za | 9.6.4 University bento with the faculty comparison | 9.6 | 5 | SCRUM-177 | #488 | no | To do |
+| 5za | 9.6.4 University bento with the faculty comparison | 9.6 | 5 | SCRUM-177 | #488 | no | In review |
 | 5za | 9.6.3 Unit analytics widgets | 9.6 | 5 | SCRUM-176 | #487 | no | In review |
 | 5za | 9.6.2 My dashboard widgets | 9.6 | 3 | SCRUM-175 | #486 | no | In review |
 | 5za | 9.6.1 Canvas look, sidebar tools and widget header | 9.6 | 5 | SCRUM-174 | #485 | no | In review |

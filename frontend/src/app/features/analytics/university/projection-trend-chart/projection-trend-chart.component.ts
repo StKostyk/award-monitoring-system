@@ -1,14 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import type { EChartsCoreOption } from 'echarts/core';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
-import { ChartComponent } from '../../../../shared/charts/chart.component';
-import { categoryAxis, tooltip, valueAxis } from '../../../../shared/charts/chart-style';
-import { ChartThemeService } from '../../../../shared/charts/chart-theme.service';
+import { PaneComponent } from '../../../../shared/layout/pane.component';
 import { TrendProjection, UniversityAnalytics } from '../university-analytics.service';
-
-const PROJECTION_BAND = 4;
 
 /** A year of the trend table: an approved count, or the estimate of the projected year. */
 export interface TrendYear {
@@ -17,21 +12,32 @@ export interface TrendYear {
   projected: number | null;
 }
 
-/** Approved awards of the university by year, with the projected year as a dashed segment and a sentence. */
+/** A column of the chart: the approved part and the hatched rest of a year still running, as shares of the tallest. */
+export interface TrendColumn extends TrendYear {
+  approvedShare: number;
+  restShare: number;
+  running: boolean;
+}
+
+/**
+ * W3 A: approved awards of the university by year as thick columns with their numbers; the projected rest of the
+ * running year hatched on top of its column, and a sentence on the projection. The pane's table view shows the table.
+ */
 @Component({
   selector: 'app-projection-trend-chart',
-  imports: [ChartComponent, TranslocoPipe],
+  imports: [TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './projection-trend-chart.component.html',
   styleUrl: './projection-trend-chart.component.scss',
 })
 export class ProjectionTrendChartComponent {
-  private readonly theme = inject(ChartThemeService);
   private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
+  private readonly pane = inject(PaneComponent, { optional: true });
 
   readonly analytics = input.required<UniversityAnalytics>();
 
+  protected readonly table = computed(() => this.pane?.view() === 'table');
   protected readonly projection = computed<TrendProjection>(() => this.analytics().projection);
   protected readonly rows = computed<TrendYear[]>(() => {
     const projection = this.projection();
@@ -46,6 +52,23 @@ export class ProjectionTrendChartComponent {
     }
     return rows;
   });
+  protected readonly columns = computed<TrendColumn[]>(() => {
+    const rows = this.rows();
+    const tallest = Math.max(1, ...rows.map((row) => Math.max(row.total ?? 0, row.projected ?? 0)));
+    return rows.map((row) => {
+      const approved = row.total ?? 0;
+      const rest = row.projected === null ? 0 : Math.max(0, row.projected - approved);
+      return {
+        ...row,
+        approvedShare: (approved / tallest) * 100,
+        restShare: (rest / tallest) * 100,
+        running: row.projected !== null,
+      };
+    });
+  });
+  protected readonly hatched = computed(() =>
+    this.columns().some((column) => column.restShare > 0),
+  );
   protected readonly sentence = computed(() => {
     this.language.current();
     const projection = this.projection();
@@ -58,62 +81,5 @@ export class ProjectionTrendChartComponent {
       from: projection.basis.from,
       to: projection.basis.to,
     });
-  });
-  protected readonly description = computed(() => {
-    this.language.current();
-    const byYear = this.analytics().byYear;
-    return this.transloco.translate('universityAnalytics.projection.description', {
-      from: byYear[0]?.year ?? '',
-      to: byYear.at(-1)?.year ?? '',
-      total: byYear.reduce((sum, entry) => sum + entry.total, 0),
-      projection: this.sentence(),
-    });
-  });
-  protected readonly option = computed<EChartsCoreOption>(() => {
-    this.language.current();
-    const palette = this.theme.palette();
-    const rows = this.rows();
-    const projection = this.projection();
-    const projectionColor = palette.bands[PROJECTION_BAND] ?? palette.bar;
-    const series: Record<string, unknown>[] = [
-      {
-        type: 'line',
-        name: this.transloco.translate('universityAnalytics.projection.approved'),
-        symbol: 'circle',
-        symbolSize: 7,
-        itemStyle: { color: palette.bar },
-        lineStyle: { color: palette.bar, width: 2 },
-        data: rows.map((row) => row.total),
-      },
-    ];
-    if (projection.status === 'PROJECTED' && projection.basis) {
-      const start = projection.basis.to;
-      series.push({
-        type: 'line',
-        name: this.transloco.translate('universityAnalytics.projection.projected'),
-        symbol: 'diamond',
-        symbolSize: 9,
-        connectNulls: true,
-        itemStyle: { color: projectionColor },
-        lineStyle: { color: projectionColor, width: 2, type: 'dashed' },
-        data: rows.map((row) => {
-          if (row.projected !== null) {
-            return row.projected;
-          }
-          return row.year === start ? row.total : null;
-        }),
-      });
-    }
-    return {
-      grid: { left: 8, right: 8, top: 48, bottom: 8, containLabel: true },
-      legend: { top: 0, textStyle: { color: palette.text } },
-      tooltip: tooltip(palette, 'axis'),
-      xAxis: categoryAxis(
-        palette,
-        rows.map((row) => String(row.year)),
-      ),
-      yAxis: valueAxis(palette),
-      series,
-    };
   });
 }

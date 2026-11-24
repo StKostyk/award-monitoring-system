@@ -1,30 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { vi } from 'vitest';
 
-import { ChartStub, chartStub, chartsDrawn } from '../../../../shared/charts/chart.testing';
+import { paneStub } from '../../../../shared/layout/pane.testing';
 import { languageStub, translations } from '../../analytics.testing';
 import { UniversityAnalytics } from '../university-analytics.service';
 import { universityAnalytics } from '../university-analytics.testing';
 import { ProjectionTrendChartComponent } from './projection-trend-chart.component';
 
-interface LineSeries {
-  name: string;
-  data: (number | null)[];
-  lineStyle: { type?: string };
-}
-
 describe('ProjectionTrendChartComponent', () => {
-  let stub: ChartStub;
   let fixture: ComponentFixture<ProjectionTrendChartComponent>;
+  let pane: ReturnType<typeof paneStub>;
 
-  afterEach(() => vi.unstubAllGlobals());
-
-  function render(analytics: UniversityAnalytics): HTMLElement {
-    stub = chartStub();
+  function render(analytics: UniversityAnalytics, language: 'en' | 'uk' = 'en'): HTMLElement {
+    pane = paneStub();
     TestBed.configureTestingModule({
-      imports: [NoopAnimationsModule, translations('en')],
-      providers: [stub.provider, languageStub('en').provider],
+      imports: [NoopAnimationsModule, translations(language)],
+      providers: [pane.provider, languageStub(language).provider],
     });
     fixture = TestBed.createComponent(ProjectionTrendChartComponent);
     fixture.componentRef.setInput('analytics', analytics);
@@ -32,48 +23,90 @@ describe('ProjectionTrendChartComponent', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function showTable(element: HTMLElement): void {
-    (element.querySelector('[data-testid="chart-table-switch"] button') as HTMLElement).click();
+  function showTable(): void {
+    pane.pane.view.set('table');
     fixture.detectChanges();
   }
 
-  it('ac2_3_draws_the_projection_as_a_dashed_segment_to_the_projected_year', async () => {
-    const element = render(universityAnalytics());
-    await chartsDrawn();
-    const option = stub.options.at(-1) as { series: LineSeries[]; xAxis: { data: string[] } };
+  function columns(element: HTMLElement): HTMLElement[] {
+    return [
+      ...element.querySelectorAll(
+        '[data-testid="projection-column"], [data-testid="projection-column-running"]',
+      ),
+    ] as HTMLElement[];
+  }
 
-    expect(option.xAxis.data).toEqual(['2022', '2023', '2024', '2025', '2026']);
-    expect(option.series[0].data).toEqual([20, 25, 30, 35, 30]);
-    expect(option.series[1].lineStyle.type).toBe('dashed');
-    expect(option.series[1].data).toEqual([null, null, null, 35, 40]);
+  function height(column: HTMLElement, part: string): string | null {
+    return (column.querySelector(`.years__${part}`) as HTMLElement | null)?.style.height ?? null;
+  }
+
+  it('ac4_3_draws_a_column_per_year_with_its_number_and_hatches_the_projected_rest', () => {
+    const element = render(universityAnalytics(), 'uk');
+    const drawn = columns(element);
+
+    expect(drawn.map((column) => column.querySelector('.years__year')!.textContent)).toEqual([
+      '2022',
+      '2023',
+      '2024',
+      '2025',
+      '2026',
+    ]);
+    expect(drawn.map((column) => column.querySelector('.years__count')!.textContent)).toEqual([
+      '20',
+      '25',
+      '30',
+      '35',
+      '30',
+    ]);
+    expect(element.querySelectorAll('[data-testid="projection-column-running"]')).toHaveLength(1);
+    const running = drawn[4];
+    expect(running.dataset['testid']).toBe('projection-column-running');
+    expect(height(running, 'bar')).toBe('75%');
+    expect(height(running, 'rest')).toBe('25%');
+    expect(running.querySelector('.years__running')!.textContent!.trim()).toBe('рік триває');
+    expect(height(drawn[0], 'rest')).toBeNull();
+    expect(element.querySelector('.years__key')).not.toBeNull();
+    expect(element.querySelector('[data-testid="projection-table"]')).toBeNull();
     expect(element.querySelector('[data-testid="university-projection"]')!.textContent).toContain(
-      'Projected for 2026: about 40 awards, based on 2022–2025.',
+      'Прогноз на 2026: близько 40 нагород, за даними 2022–2025.',
     );
   });
 
   it('ac2_8_marks_the_projected_point_in_the_table', () => {
     const element = render(universityAnalytics());
-    showTable(element);
+    showTable();
     const marked = element.querySelectorAll('[data-testid="projection-row"]');
 
+    expect(element.querySelector('[data-testid="projection-columns"]')).toBeNull();
     expect(marked).toHaveLength(1);
     expect(marked[0].textContent).toContain('about 40 (projected)');
   });
 
-  it('ac2_3_adds_a_projected_year_after_the_period', async () => {
+  it('ac2_3_adds_a_projected_year_after_the_period', () => {
     const analytics = universityAnalytics();
     analytics.byYear = analytics.byYear.slice(0, 4);
     analytics.projection = { ...analytics.projection, basis: { from: 2022, to: 2025 }, year: 2026 };
     analytics.partialYear = false;
-    render(analytics);
-    await chartsDrawn();
-    const option = stub.options.at(-1) as { series: LineSeries[]; xAxis: { data: string[] } };
+    const element = render(analytics);
+    const last = columns(element).at(-1)!;
 
-    expect(option.xAxis.data.at(-1)).toBe('2026');
-    expect(option.series[0].data.at(-1)).toBeNull();
+    expect(last.querySelector('.years__year')!.textContent).toBe('2026');
+    expect(last.querySelector('.years__count')!.textContent).toBe('—');
+    expect(height(last, 'bar')).toBe('0%');
+    expect(height(last, 'rest')).toBe('100%');
   });
 
-  it('ac2_3_says_when_there_are_too_few_complete_years', async () => {
+  it('ac4_3_shows_no_key_when_nothing_is_hatched', () => {
+    const analytics = universityAnalytics();
+    analytics.projection = { ...analytics.projection, estimate: 30 };
+    const element = render(analytics);
+
+    expect(height(columns(element)[4], 'rest')).toBeNull();
+    expect(element.querySelector('.years__key')).toBeNull();
+    expect(columns(element)[4].querySelector('.years__running')).not.toBeNull();
+  });
+
+  it('ac2_3_says_when_there_are_too_few_complete_years', () => {
     const analytics = universityAnalytics();
     analytics.projection = {
       status: 'TOO_FEW_YEARS',
@@ -83,14 +116,12 @@ describe('ProjectionTrendChartComponent', () => {
       estimate: null,
     };
     const element = render(analytics);
-    await chartsDrawn();
-    const option = stub.options.at(-1) as { series: LineSeries[] };
 
-    expect(option.series).toHaveLength(1);
+    expect(element.querySelector('[data-testid="projection-column-running"]')).toBeNull();
     expect(element.querySelector('[data-testid="university-projection"]')!.textContent).toContain(
       'Too few complete years for a projection.',
     );
-    showTable(element);
+    showTable();
 
     expect(element.querySelector('[data-testid="projection-table"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="projection-row"]')).toBeNull();

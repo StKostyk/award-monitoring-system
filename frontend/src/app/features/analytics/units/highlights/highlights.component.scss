@@ -53,6 +53,23 @@
   font: 500 0.8125rem / 1.4 var(--app-font-body);
 }
 
+.highlights__more {
+  justify-self: start;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-bar);
+  font: 700 0.8125rem / 1.2 var(--app-font-heading);
+  cursor: pointer;
+}
+
+.highlights__more:focus-visible {
+  outline: 2px solid currentcolor;
+  outline-offset: 2px;
+}
+
 :host-context(.pane--ink) {
   .highlights h3 {
     color: var(--app-gold-soft);
@@ -76,5 +93,9 @@
 
   .highlight__text {
     color: var(--app-on-ink);
+  }
+
+  .highlights__more {
+    color: var(--app-gold-soft);
   }
 }

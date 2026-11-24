@@ -1,7 +1,7 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 
 import { AnalyticsPeriod } from '../../analytics.service';
-import { ComplianceSummary, UniversityAnalytics } from '../university-analytics.service';
+import { UniversityAnalytics } from '../university-analytics.service';
 import { UniversityAnalyticsActions } from './university-analytics.actions';
 
 export interface UniversityAnalyticsState {
@@ -9,9 +9,6 @@ export interface UniversityAnalyticsState {
   analytics: UniversityAnalytics | null;
   loading: boolean;
   problem: string | null;
-  compliance: ComplianceSummary | null;
-  complianceLoading: boolean;
-  complianceProblem: string | null;
 }
 
 export const initialState: UniversityAnalyticsState = {
@@ -19,9 +16,6 @@ export const initialState: UniversityAnalyticsState = {
   analytics: null,
   loading: false,
   problem: null,
-  compliance: null,
-  complianceLoading: false,
-  complianceProblem: null,
 };
 
 export const universityAnalyticsFeature = createFeature({
@@ -45,23 +39,6 @@ export const universityAnalyticsFeature = createFeature({
       analytics: null,
       loading: false,
       problem,
-    })),
-    on(UniversityAnalyticsActions.complianceRequested, (state) => ({
-      ...state,
-      complianceLoading: true,
-      complianceProblem: null,
-    })),
-    on(UniversityAnalyticsActions.complianceLoaded, (state, { compliance }) => ({
-      ...state,
-      compliance,
-      complianceLoading: false,
-      complianceProblem: null,
-    })),
-    on(UniversityAnalyticsActions.complianceLoadFailed, (state, { problem }) => ({
-      ...state,
-      compliance: null,
-      complianceLoading: false,
-      complianceProblem: problem,
     })),
   ),
 });

@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
@@ -8,7 +8,10 @@ import { HighlightType, UnitHighlight } from '../unit-analytics.service';
 
 const STRENGTHS: readonly HighlightType[] = ['GROWTH', 'ABOVE_AVERAGE'];
 
-/** W2 A: units that stand out as a big count, the previous count beside it and one line; strengths and gaps apart. */
+/**
+ * W2 A: units that stand out as a big count, the previous count beside it and one line; strengths and gaps apart,
+ * optionally capped with a button that expands the panel in place.
+ */
 @Component({
   selector: 'app-highlights',
   imports: [NgTemplateOutlet, TranslocoPipe],
@@ -22,6 +25,10 @@ export class HighlightsComponent {
 
   readonly highlights = input.required<UnitHighlight[]>();
   readonly sentenceKeys = input('unitAnalytics.highlights');
+  /** The number shown before the panel is expanded; none shows every highlight. */
+  readonly limit = input<number | null>(null);
+
+  protected readonly expanded = signal(false);
 
   protected readonly sentences = computed(() => {
     const language = this.language.current();
@@ -38,8 +45,22 @@ export class HighlightsComponent {
       }),
     }));
   });
-  protected readonly strengths = computed(() => this.sentences().filter((entry) => entry.strength));
-  protected readonly gaps = computed(() => this.sentences().filter((entry) => !entry.strength));
+  protected readonly capped = computed(() => {
+    const limit = this.limit();
+    return limit !== null && this.sentences().length > limit;
+  });
+  protected readonly shown = computed(() => {
+    const limit = this.limit();
+    return this.capped() && !this.expanded() && limit !== null
+      ? this.sentences().slice(0, limit)
+      : this.sentences();
+  });
+  protected readonly strengths = computed(() => this.shown().filter((entry) => entry.strength));
+  protected readonly gaps = computed(() => this.shown().filter((entry) => !entry.strength));
+
+  protected toggle(): void {
+    this.expanded.update((expanded) => !expanded);
+  }
 }
 
 function sentenceKey(highlight: UnitHighlight): string {

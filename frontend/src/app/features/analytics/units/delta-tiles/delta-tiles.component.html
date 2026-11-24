@@ -2,12 +2,23 @@
   <div class="tile" data-testid="tile-approved">
     <dt>{{ 'unitAnalytics.tiles.approved' | transloco }}</dt>
     <dd class="tile__value" [appCountUp]="totals().approved.current"></dd>
-    <dd><app-delta [figure]="totals().approved" /></dd>
+    <dd>
+      <app-delta [figure]="totals().approved" [chip]="bento()" [detailed]="bento()" />
+    </dd>
+    @if (points(); as line) {
+      <dd class="tile__spark" aria-hidden="true">
+        <svg viewBox="0 0 100 32" preserveAspectRatio="none" data-testid="tile-spark">
+          <polyline [attr.points]="line" />
+        </svg>
+      </dd>
+    }
   </div>
   <div class="tile" data-testid="tile-awarded-people">
     <dt>{{ 'unitAnalytics.tiles.awardedPeople' | transloco }}</dt>
     <dd class="tile__value" [appCountUp]="totals().awardedPeople.current"></dd>
-    <dd><app-delta [figure]="totals().awardedPeople" /></dd>
+    <dd>
+      <app-delta [figure]="totals().awardedPeople" [chip]="bento()" [detailed]="bento()" />
+    </dd>
   </div>
   <div class="tile" data-testid="tile-unit-awards">
     <dt>{{ 'unitAnalytics.tiles.unitAwards' | transloco }}</dt>

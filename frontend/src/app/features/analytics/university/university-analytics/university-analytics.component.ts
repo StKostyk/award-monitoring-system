@@ -28,19 +28,19 @@ import {
   UnitComparisonComponent,
 } from '../../units/unit-comparison/unit-comparison.component';
 import { BoardReportButtonComponent } from '../board-report-button/board-report-button.component';
-import { CompliancePanelComponent } from '../compliance-panel/compliance-panel.component';
 import { FacultyBarsComponent } from '../faculty-bars/faculty-bars.component';
 import { ProjectionTrendChartComponent } from '../projection-trend-chart/projection-trend-chart.component';
 import { UniversityAnalyticsActions } from '../store/university-analytics.actions';
 import { universityAnalyticsFeature } from '../store/university-analytics.feature';
-import { TrendListsComponent } from '../trend-lists/trend-lists.component';
+
+const HIGHLIGHT_LIMIT = 4;
 
 const UNIVERSITY_LABELS: ComparisonLabels = {
   caption: 'universityAnalytics.sections.comparison',
   levelRow: 'universityAnalytics.comparison.universityLevel',
 };
 
-/** Analytics of the whole university for a period as a bento page, with the compliance summary below it. */
+/** Analytics of the whole university for a period as a bento page (W3 A). */
 @Component({
   selector: 'app-university-analytics',
   imports: [
@@ -48,7 +48,6 @@ const UNIVERSITY_LABELS: ComparisonLabels = {
     BentoTileComponent,
     BoardReportButtonComponent,
     ComparisonBarsComponent,
-    CompliancePanelComponent,
     DeltaTilesComponent,
     FacultyBarsComponent,
     HighlightsComponent,
@@ -61,7 +60,6 @@ const UNIVERSITY_LABELS: ComparisonLabels = {
     ProjectionTrendChartComponent,
     SourceChartComponent,
     TranslocoPipe,
-    TrendListsComponent,
     UnitComparisonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,17 +77,14 @@ export class UniversityAnalyticsComponent {
   readonly analytics = this.store.selectSignal(universityAnalyticsFeature.selectAnalytics);
   readonly loading = this.store.selectSignal(universityAnalyticsFeature.selectLoading);
   readonly problem = this.store.selectSignal(universityAnalyticsFeature.selectProblem);
-  readonly compliance = this.store.selectSignal(universityAnalyticsFeature.selectCompliance);
-  readonly complianceLoading = this.store.selectSignal(
-    universityAnalyticsFeature.selectComplianceLoading,
-  );
-  readonly complianceProblem = this.store.selectSignal(
-    universityAnalyticsFeature.selectComplianceProblem,
-  );
   readonly invalid = signal(false);
 
   protected readonly labels = UNIVERSITY_LABELS;
   protected readonly linkable = isFaculty;
+  protected readonly highlightLimit = HIGHLIGHT_LIMIT;
+  protected readonly yearCounts = computed(
+    () => this.analytics()?.byYear.map((entry) => entry.total) ?? [],
+  );
   protected readonly reportDisabled = computed(
     () => this.invalid() || this.loading() || this.problem() !== null || !this.analytics(),
   );
@@ -134,7 +129,6 @@ export class UniversityAnalyticsComponent {
   });
 
   constructor() {
-    this.store.dispatch(UniversityAnalyticsActions.complianceRequested());
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
       const period = readPeriod(query);
       this.invalid.set(period === null);
@@ -158,10 +152,6 @@ export class UniversityAnalyticsComponent {
 
   protected retry(): void {
     this.store.dispatch(UniversityAnalyticsActions.periodSelected({ period: this.period() }));
-  }
-
-  protected refreshCompliance(): void {
-    this.store.dispatch(UniversityAnalyticsActions.complianceRequested());
   }
 }
 

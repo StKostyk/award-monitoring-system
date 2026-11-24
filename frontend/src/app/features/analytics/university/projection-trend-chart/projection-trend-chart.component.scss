@@ -1,3 +1,120 @@
+.years {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  height: 220px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.years__item {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  flex: 1 1 0;
+  min-width: 18px;
+  justify-items: center;
+  text-align: center;
+}
+
+.years__count {
+  margin-bottom: 6px;
+  font: 800 0.9375rem / 1.2 var(--app-font-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.years__stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 64px;
+  min-height: 0;
+}
+
+.years__bar {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 6px;
+  box-sizing: border-box;
+  min-height: 2px;
+  border-radius: var(--app-radius-sm) var(--app-radius-sm) 4px 4px;
+  background: color-mix(in srgb, var(--app-bar) 45%, var(--app-track));
+}
+
+.years__item--last .years__bar {
+  background: var(--app-bar);
+}
+
+.years__rest {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 2px dashed var(--app-bar);
+  border-bottom: 0;
+  border-radius: var(--app-radius-sm) var(--app-radius-sm) 0 0;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--app-bar) 30%, transparent) 0 4px,
+    transparent 4px 9px
+  );
+
+  & + .years__bar {
+    padding-top: 0;
+    border-radius: 0 0 4px 4px;
+  }
+}
+
+.years__running {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--app-pane);
+  color: var(--app-bar);
+  font: 700 0.6875rem / 1.2 var(--app-font-heading);
+  white-space: nowrap;
+}
+
+.years__year {
+  margin-top: 6px;
+  font: 600 0.75rem / 1.2 var(--app-font-body);
+  color: var(--app-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.years__item--last .years__year {
+  color: var(--app-bar);
+}
+
+.years__key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  font: 400 0.75rem / 1.4 var(--app-font-body);
+  color: var(--app-muted);
+}
+
+.years__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--app-bar);
+
+  &--rest {
+    margin-left: 10px;
+    border: 2px dashed var(--app-bar);
+    background: repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--app-bar) 30%, transparent) 0 3px,
+      transparent 3px 6px
+    );
+  }
+}
+
 .projection__sentence {
   font: var(--mat-sys-body-medium);
   margin: 8px 0 0;
@@ -5,4 +122,15 @@
 
 .projection__row {
   font-style: italic;
+}
+
+@media (max-width: 599.98px) {
+  .years {
+    gap: 8px;
+  }
+
+  .years__running {
+    font-size: 0.625rem;
+    white-space: normal;
+  }
 }
