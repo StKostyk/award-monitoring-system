@@ -28,7 +28,7 @@ export const LATEST_AWARDS = 5;
             [meta]="row.meta"
             data-testid="latest-award"
           >
-            <span rowEnd class="app-chip" data-testid="latest-level">{{
+            <span rowEnd [class]="'app-lv app-lv--' + row.level" data-testid="latest-level">{{
               'categories.levels.' + row.level | transloco
             }}</span>
           </a>
@@ -53,19 +53,18 @@ export const LATEST_AWARDS = 5;
   styles: `
     :host {
       display: grid;
-      gap: 8px;
     }
 
     .latest__rows {
       display: grid;
-      gap: 2px;
+      border-bottom: 1px solid var(--app-row-divider);
     }
 
     .latest__all {
       justify-self: start;
-      padding: 12px 0 4px;
+      padding: 12px 18px;
       color: var(--mat-sys-primary);
-      font: var(--mat-sys-label-large);
+      font: 700 0.8125rem / 1.4 var(--app-font-heading);
     }
   `,
 })

@@ -17,7 +17,6 @@
 
 .users__rows {
   display: grid;
-  gap: 2px;
 }
 
 .users__chips {
@@ -27,13 +26,12 @@
   gap: 4px;
 }
 
-.users__badge {
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-}
-
 .users__problem {
   color: var(--mat-sys-error);
+}
+
+.users__empty {
+  padding: 14px 18px;
 }
 
 .users__empty,

@@ -43,9 +43,10 @@ import {
       width: 100%;
       min-height: 44px;
       box-sizing: border-box;
-      padding: 10px 12px;
+      padding: 12px 18px;
       border: 0;
-      border-radius: var(--app-radius-sm);
+      border-bottom: 1px solid var(--app-row-divider);
+      border-radius: 0;
       background: transparent;
       color: var(--mat-sys-on-surface);
       font: inherit;
@@ -54,31 +55,34 @@ import {
       cursor: pointer;
     }
 
+    :host(:last-child) {
+      border-bottom: 0;
+    }
+
     :host(:hover) {
-      background: var(--mat-sys-surface-container-high);
+      background: color-mix(in srgb, var(--app-selected) 55%, transparent);
     }
 
     :host(:focus-visible) {
       outline: 2px solid var(--mat-sys-primary);
-      outline-offset: 2px;
+      outline-offset: -2px;
     }
 
     :host(.list-row--selected) {
-      background: var(--mat-sys-secondary-container);
-      color: var(--mat-sys-on-secondary-container);
+      background: var(--app-selected);
+      box-shadow: inset 3px 0 0 var(--app-selected-edge);
     }
 
     .list-row__avatar {
-      display: inline-flex;
+      display: inline-grid;
       flex: none;
-      align-items: center;
-      justify-content: center;
+      place-items: center;
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: var(--mat-sys-primary-container);
-      color: var(--mat-sys-on-primary-container);
-      font: var(--mat-sys-label-large);
+      background: var(--app-avatar);
+      color: var(--app-on-avatar);
+      font: 700 0.75rem / 1 var(--app-font-heading);
     }
 
     .list-row__text {
@@ -89,18 +93,18 @@ import {
     }
 
     .list-row__title {
-      font: var(--mat-sys-title-small);
-      overflow-wrap: anywhere;
+      font: 700 0.875rem / 1.35 var(--app-font-heading);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .list-row__meta {
-      font: var(--mat-sys-body-small);
-      color: var(--mat-sys-on-surface-variant);
-      overflow-wrap: anywhere;
-    }
-
-    :host(.list-row--selected) .list-row__meta {
-      color: inherit;
+      font: 400 0.75rem / 1.4 var(--app-font-body);
+      color: var(--app-muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .list-row__end {
@@ -112,6 +116,19 @@ import {
 
     .list-row__end:empty {
       display: none;
+    }
+
+    :host(.list-row--wrap) .list-row__title {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 599.98px) {
+      .list-row__title,
+      .list-row__meta {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

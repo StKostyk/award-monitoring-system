@@ -59,7 +59,7 @@ async function submittedBy(browser: Browser, owner: string, title: string): Prom
  */
 async function selectInQueue(page: Page, title: string, department = DEPARTMENT): Promise<void> {
   await page.goto('/reviews');
-  await page.getByTestId('review-filter-unit').click();
+  await page.getByTestId('review-filter-unit').press('Enter');
   const unit = sql(`select name_uk from organizations where org_id = ${department}`);
   const filtered = page.waitForResponse((response) =>
     response.url().includes(`organizationId=${department}`),

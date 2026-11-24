@@ -1,17 +1,18 @@
 import { Browser, expect, test } from './fixtures';
 
 import {
-  FRESH_PASSWORD,
-  SEED,
   countMessages,
+  FRESH_PASSWORD,
   freshEmployee,
   kyivDay,
   pastDay,
+  SEED,
   seriousViolations,
   shownDay,
   signedIn,
   signedInAs,
   submitWithoutDocuments,
+  toggleLanguage,
   uniqueToken,
 } from './helpers';
 
@@ -88,7 +89,7 @@ test.describe('award correction by a reviewer', () => {
     const id = await submittedBy(browser, owner, `Грамота англійською ${uniqueToken()}`);
     const page = await signedIn(browser, SEED.secretary);
     await page.setViewportSize({ width: 360, height: 780 });
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
 
     await page.goto(`/awards/${id}/correct`);
     await expect(page.getByRole('heading', { name: 'Correct the award' })).toBeVisible();

@@ -1,70 +1,95 @@
 @let item = achievement();
-<article class="achievement" data-testid="achievement-card">
-  <h2 class="achievement__title" data-testid="achievement-title">
-    @if (linked()) {
-      <a
-        class="achievement__open"
-        [routerLink]="['/achievements', item.awardId]"
-        data-testid="achievement-open"
-        >{{ title() }}</a
-      >
-    } @else {
-      {{ title() }}
-    }
-  </h2>
-  <p class="achievement__recipient" data-testid="achievement-recipient">
-    @if (item.recipient.type === 'PERSON') {
-      <span class="achievement__person">{{ item.recipient.personName }}</span>
-      <a
-        class="achievement__unit"
-        [routerLink]="[unitPages(), item.recipient.unit.id, 'achievements']"
-        data-testid="achievement-unit"
-        >{{ unit() }}</a
-      >
-    } @else {
-      <a
-        class="achievement__person achievement__unit"
-        [routerLink]="[unitPages(), item.recipient.unit.id, 'achievements']"
-        data-testid="achievement-unit"
-        >{{ unit() }}</a
-      >
-      <span>{{ 'achievements.unitAward' | transloco }}</span>
-    }
-  </p>
-  <dl class="achievement__fields">
-    <dt>{{ 'awards.fields.category' | transloco }}</dt>
-    <dd data-testid="achievement-category">
-      {{ category() }} · {{ 'categories.levels.' + item.category.level | transloco }}
-    </dd>
-    <dt>{{ 'awards.fields.awardingOrganization' | transloco }}</dt>
-    <dd>{{ item.awardingOrganization }}</dd>
-    <dt>{{ 'awards.fields.awardDate' | transloco }}</dt>
-    <dd data-testid="achievement-date">{{ item.awardDate | kyivDate }}</dd>
-  </dl>
-  @if (description(); as description) {
-    <p class="achievement__description">{{ description }}</p>
-  }
-  @if (item.verified || item.externalUrl) {
-    <div class="achievement__footer">
-      @if (item.verified) {
-        <span class="achievement__verified" data-testid="achievement-verified">
-          <app-icon name="badge-check" />
-          {{ 'achievements.verified' | transloco }}
-        </span>
-      }
-      @if (item.externalUrl) {
+@if (variant() === 'hero') {
+  <article class="hero" data-testid="achievement-card">
+    <h3 class="hero__title" data-testid="achievement-title">
+      «
+      @if (linked()) {
         <a
-          class="achievement__link"
-          [href]="item.externalUrl"
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          data-testid="achievement-link"
+          class="hero__open"
+          [routerLink]="['/achievements', item.awardId]"
+          data-testid="achievement-open"
+          >{{ title() }}</a
         >
-          {{ 'achievements.link' | transloco }}
-          <app-icon name="external-link" />
-          <span class="cdk-visually-hidden">{{ 'achievements.newTab' | transloco }}</span>
-        </a>
+      } @else {
+        {{ title() }}
       }
+      »
+      @if (item.recipient.type === 'PERSON') {
+        {{ ' ' + ('achievements.for' | transloco) + ' '
+        }}<em data-testid="achievement-recipient">{{ item.recipient.personName }}</em>
+      }
+    </h3>
+    <p class="hero__meta">
+      <a
+        class="hero__unit"
+        [routerLink]="[unitPages(), item.recipient.unit.id, 'achievements']"
+        data-testid="achievement-unit"
+        >{{ unit() }}</a
+      >
+      ·
+      <span data-testid="achievement-category">{{
+        'categories.levels.' + item.category.level | transloco
+      }}</span>
+      · <span data-testid="achievement-date">{{ item.awardDate | kyivDate }}</span>
+    </p>
+  </article>
+} @else {
+  <article class="achievement" data-testid="achievement-card">
+    <span class="achievement__avatar" aria-hidden="true">{{ initials() }}</span>
+    <div class="achievement__text">
+      <h3 class="achievement__title" data-testid="achievement-title">
+        @if (linked()) {
+          <a
+            class="achievement__open"
+            [routerLink]="['/achievements', item.awardId]"
+            data-testid="achievement-open"
+            >{{ title() }}</a
+          >
+        } @else {
+          {{ title() }}
+        }
+      </h3>
+      <p class="achievement__meta" data-testid="achievement-recipient">
+        @if (item.recipient.type === 'PERSON') {
+          <span>{{ item.recipient.personName }}</span> ·
+        }
+        <a
+          class="achievement__unit"
+          [routerLink]="[unitPages(), item.recipient.unit.id, 'achievements']"
+          data-testid="achievement-unit"
+          >{{ unit() }}</a
+        >
+        @if (item.recipient.type !== 'PERSON') {
+          · <span>{{ 'achievements.unitAward' | transloco }}</span>
+        }
+        · <span data-testid="achievement-date">{{ item.awardDate | kyivDate }}</span>
+      </p>
+      <p class="achievement__meta achievement__meta--second">
+        <span data-testid="achievement-category">{{ category() }}</span> ·
+        {{ item.awardingOrganization }}
+        @if (item.verified) {
+          <span class="achievement__verified" data-testid="achievement-verified">
+            <app-icon name="badge-check" />
+            {{ 'achievements.verified' | transloco }}
+          </span>
+        }
+        @if (item.externalUrl) {
+          <a
+            class="achievement__link"
+            [href]="item.externalUrl"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            data-testid="achievement-link"
+          >
+            {{ 'achievements.link' | transloco }}
+            <app-icon name="external-link" />
+            <span class="cdk-visually-hidden">{{ 'achievements.newTab' | transloco }}</span>
+          </a>
+        }
+      </p>
     </div>
-  }
-</article>
+    <span [class]="'app-lv app-lv--' + item.category.level" data-testid="achievement-level">{{
+      'categories.levels.' + item.category.level | transloco
+    }}</span>
+  </article>
+}

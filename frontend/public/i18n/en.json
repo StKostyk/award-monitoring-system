@@ -566,7 +566,9 @@
       "few": "{{count}} achievements",
       "many": "{{count}} achievements",
       "other": "{{count}} achievements"
-    }
+    },
+    "for": "for",
+    "newestFirst": "newest first"
   },
   "notFound": {
     "title": "Page not found",
@@ -600,6 +602,7 @@
   "admin": {
     "users": {
       "title": "Users",
+      "people": "People",
       "empty": "No users found",
       "selectionGone": "This person is no longer in the list.",
       "noRoles": "No roles",
@@ -1168,7 +1171,8 @@
       "notFound": "Request not found",
       "notFoundHint": "It may have been removed or is not available to you. Choose another request in the queue.",
       "loadFailed": "The request could not be loaded",
-      "loadFailedHint": "Check the connection and choose the request again."
+      "loadFailedHint": "Check the connection and choose the request again.",
+      "oldestFirst": "oldest first"
     },
     "title": "Reviews",
     "tabs": {
@@ -2138,7 +2142,11 @@
     "mainList": "Main column widgets"
   },
   "charts": {
-    "showTable": "Show as table"
+    "showTable": "Show as table",
+    "view": "View",
+    "chart": "Chart",
+    "cards": "Cards",
+    "table": "Table"
   },
   "widgets": {
     "data": "Data",

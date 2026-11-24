@@ -28,7 +28,7 @@
   );
   @include mat.theme-overrides(
     (
-      primary: light-dark(#7a1f2b, #7ddcff),
+      primary: light-dark(#7a1f2e, #7ddcff),
       on-primary: light-dark(#ffffff, #00243a),
       primary-container: light-dark(#f6d9dc, #0e3a52),
       on-primary-container: light-dark(#3e0a12, #cff1ff),
@@ -58,35 +58,38 @@
       on-error: light-dark(#ffffff, #5c1308),
       error-container: light-dark(#f9dedc, #7a2717),
       on-error-container: light-dark(#410e0b, #ffdad3),
-      background: light-dark(#f6efe4, #060914),
-      on-background: light-dark(#2a1215, #e8eefa),
-      surface: light-dark(#f6efe4, #060914),
-      on-surface: light-dark(#2a1215, #e8eefa),
+      background: light-dark(#f7f1e9, #060914),
+      on-background: light-dark(#2b1b1e, #e8eefa),
+      surface: light-dark(#f7f1e9, #060914),
+      on-surface: light-dark(#2b1b1e, #e8eefa),
       surface-variant: light-dark(#ede1d6, #151c33),
-      on-surface-variant: light-dark(#6e5458, #97a3be),
+      on-surface-variant: light-dark(#5c4a4d, #97a3be),
       surface-dim: light-dark(#e2d6c6, #060914),
       surface-bright: light-dark(#fffcf6, #242e4a),
       surface-container-lowest: light-dark(#ffffff, #04060e),
-      surface-container-low: light-dark(#fffcf6, #0b1124),
+      surface-container-low: light-dark(#fffdf9, #0b1124),
       surface-container: light-dark(#f1e8db, #10172c),
       surface-container-high: light-dark(#ebe0d2, #161e36),
       surface-container-highest: light-dark(#e4d8c9, #1d2640),
       inverse-surface: light-dark(#3a2a2b, #e8eefa),
       inverse-on-surface: light-dark(#f6efe4, #10172c),
       outline: light-dark(#8f7a7c, #6a7591),
-      outline-variant: light-dark(#dccbbe, #1f2842),
+      outline-variant: light-dark(#e6d8c7, #1f2842),
       shadow: light-dark(#000000, #000000),
       scrim: light-dark(#000000, #000000),
     )
   );
 
-  --app-nav-container: light-dark(#5e1621, #0b1124);
+  --app-nav-container: light-dark(#5a1622, #0b1124);
   --app-nav-on-container: light-dark(#f6efe4, #e8eefa);
-  --app-nav-active: light-dark(rgb(201 149 43 / 28%), rgb(125 220 255 / 16%));
+  --app-nav-active: light-dark(#f7f1e9, rgb(125 220 255 / 16%));
+  --app-nav-on-active: light-dark(#5a1622, #e8eefa);
+  --app-nav-hover: light-dark(#6e1e2c, rgb(125 220 255 / 8%));
+  --app-nav-divider: light-dark(#7b2d3a, #1f2842);
   --app-accent-from: light-dark(#7a1f2b, #7ddcff);
   --app-accent-to: light-dark(#a23b47, #3fa9e0);
-  --app-gold: light-dark(#c9952b, #f5c451);
-  --app-on-gold: light-dark(#2a1215, #1a1300);
+  --app-gold: light-dark(#d9a441, #f5c451);
+  --app-on-gold: light-dark(#3a0e16, #1a1300);
   --app-gold-text: light-dark(#8a5a00, #f5c451);
   --app-cyan: light-dark(#00bbff, #7ddcff);
   --app-on-cyan: #00243a;
@@ -95,5 +98,29 @@
   --app-aurora-1: light-dark(rgb(122 31 43 / 10%), rgb(0 71 171 / 55%));
   --app-aurora-2: light-dark(rgb(201 149 43 / 12%), rgb(0 187 255 / 28%));
   --app-aurora-3: light-dark(rgb(94 22 33 / 6%), rgb(245 196 81 / 14%));
-  --app-card-radius: 22px;
+  --app-card-radius: 18px;
+  --app-pane: light-dark(#fffdf9, #0b1124);
+  --app-pane-border: light-dark(#e6d8c7, #1f2842);
+  --app-pane-divider: light-dark(#efe4d6, #1a2238);
+  --app-pane-head: light-dark(#fbf4ea, #0f1730);
+  --app-row-divider: light-dark(#f1e8dc, #161e36);
+  --app-muted: light-dark(#5c4a4d, #97a3be);
+  --app-ink: light-dark(#2b1b1e, #151c33);
+  --app-on-ink: light-dark(#f6efe6, #e8eefa);
+  --app-on-ink-muted: light-dark(#d8c9bb, #b4bfd6);
+  --app-ink-divider: light-dark(#45333a, #242e4a);
+  --app-brand-panel: light-dark(#5a1622, #0e3a52);
+  --app-on-brand-panel: light-dark(#f6e8da, #cff1ff);
+  --app-brand-divider: light-dark(#7b2d3a, #1d5470);
+  --app-gold-soft: light-dark(#f5d58a, #f5c451);
+  --app-bar: light-dark(#7a1f2e, #7ddcff);
+  --app-bar-gold: light-dark(#b8862e, #f5c451);
+  --app-track: light-dark(#f1e8dc, #161e36);
+  --app-selected: light-dark(#f6e7d5, rgb(125 220 255 / 12%));
+  --app-selected-edge: light-dark(#7a1f2e, #7ddcff);
+  --app-field: light-dark(#fffdf9, #0b1124);
+  --app-avatar: light-dark(#ead8c3, #1d2640);
+  --app-on-avatar: light-dark(#5a1622, #cff1ff);
+  --app-chip-on: light-dark(#2b1b1e, #e8eefa);
+  --app-on-chip-on: light-dark(#fffdf9, #060914);
 }

@@ -1,16 +1,17 @@
 import { Browser, Page, expect, test } from './fixtures';
 
 import {
-  freshContextPage,
   FRESH_PASSWORD,
-  SEED,
+  freshContextPage,
   freshEmployee,
   pastDay,
+  SEED,
   seriousViolations,
   signedIn,
   signedInAs,
   sql,
   submitWithoutDocuments,
+  toggleLanguage,
   uniqueToken,
 } from './helpers';
 
@@ -180,7 +181,7 @@ test.describe('colleague visibility and the achievements page', () => {
     sql(`update awards set visibility = 'UNIVERSITY' where award_id = ${id}`);
     const page = await signedIn(browser, SEED.employee);
     await page.setViewportSize({ width: 360, height: 780 });
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
 
     await page.goto('/achievements');
     await expect(page.getByRole('heading', { name: 'Achievements', level: 1 })).toBeVisible();
@@ -350,7 +351,7 @@ test.describe('unit achievement pages and public achievements', () => {
     const { page, errors } = await anonymous(browser);
     await page.setViewportSize({ width: 360, height: 780 });
     await page.goto('/public/achievements');
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
 
     await page.goto('/public/units/9/achievements');
     await expect(page.getByTestId('login')).toHaveText(/Sign in/);

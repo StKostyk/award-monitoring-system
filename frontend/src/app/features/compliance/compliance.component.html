@@ -5,7 +5,7 @@
 
 <app-split mode="stack">
   <div splitSide>
-    <app-pane [heading]="'compliance.sections' | transloco">
+    <app-pane icon="shield-check" [heading]="'compliance.sections' | transloco" flush>
       <nav
         class="compliance__sections"
         appListRows
@@ -38,7 +38,7 @@
     @if (view().tab === 'retention') {
       <div class="compliance__panel" data-testid="retention-tab">
         @if (recentRuns().length > 0) {
-          <app-pane [heading]="'compliance.retention.durations' | transloco">
+          <app-pane icon="clock" [heading]="'compliance.retention.durations' | transloco">
             <app-run-durations [runs]="recentRuns()" />
           </app-pane>
         }

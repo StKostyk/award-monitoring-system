@@ -30,14 +30,37 @@ import { Fact } from './widget-data';
 
     .facts {
       display: grid;
-      gap: 12px;
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
     .fact {
-      font: var(--mat-sys-body-large);
+      padding: 13px 0;
+      border-bottom: 1px solid var(--app-fact-divider, var(--app-row-divider));
+      font: 700 0.9375rem / 1.45 var(--app-font-heading);
+    }
+
+    .fact:first-child {
+      padding-top: 0;
+    }
+
+    .fact:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    :host-context(.pane--ink) .fact {
+      padding-inline: 18px;
+      border-color: var(--app-ink-divider);
+    }
+
+    :host-context(.pane--ink) .fact:first-child {
+      padding-top: 13px;
+    }
+
+    :host-context(.pane--ink) .fact:last-child {
+      padding-bottom: 13px;
     }
   `,
 })

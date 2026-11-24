@@ -8,6 +8,7 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { organizationName } from '../../../shared/organization-name';
 import { awardTitle, categoryName } from '../../awards/awards.service';
 import { Achievement } from '../achievements.service';
+import { initials } from '../../../shared/widgets/top-widget.component';
 
 @Component({
   selector: 'app-achievement-card',
@@ -24,6 +25,8 @@ export class AchievementCardComponent {
   readonly unitPages = input('/units');
   /** Whether the title opens the colleague view of the award. */
   readonly linked = input(false);
+  /** A feed row, or the burgundy banner of the highlight of the month. */
+  readonly variant = input<'row' | 'hero'>('row');
 
   protected readonly title = computed(() =>
     awardTitle(this.achievement(), this.language.current()),
@@ -37,6 +40,10 @@ export class AchievementCardComponent {
   protected readonly unit = computed(() =>
     organizationName(this.achievement().recipient.unit, this.language.current()),
   );
+  protected readonly initials = computed(() => {
+    const recipient = this.achievement().recipient;
+    return initials(recipient.type === 'PERSON' ? (recipient.personName ?? '') : this.unit());
+  });
   protected readonly category = computed(() =>
     categoryName(this.achievement().category, this.language.current()),
   );

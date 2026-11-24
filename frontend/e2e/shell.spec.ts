@@ -83,7 +83,7 @@ test.describe('shell', () => {
     });
   }
 
-  test('ac3_2 a phone shows the menu button, the page title and the new award button', async ({
+  test('ac1_2 a phone shows the menu button, the app name and the tools in the drawer', async ({
     page,
   }) => {
     await page.setViewportSize(PHONE);
@@ -92,7 +92,8 @@ test.describe('shell', () => {
     await expect(page.getByTestId('nav-toggle')).toBeVisible();
     await page.goto('/awards');
 
-    await expect(page.getByTestId('page-title')).toHaveText('Мої нагороди');
+    await expect(page.getByTestId('page-title')).toHaveText('Облік нагород ЧНУ');
+    await expect(page.getByTestId('new-award')).toHaveCount(0);
     await expect(page.getByTestId('nav-awards')).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       PHONE.width,
@@ -102,11 +103,12 @@ test.describe('shell', () => {
     await page.getByTestId('nav-toggle').click();
     await expect(page.getByTestId('nav-awards')).toBeVisible();
     await expect(page.getByTestId('nav-achievements')).toBeVisible();
-    await page.getByTestId('nav-awards').click();
-    await expect(page.getByTestId('nav-awards')).toBeHidden();
-
-    await page.getByTestId('new-award').click();
-    await expect(page).toHaveURL(/\/awards\/new$/);
+    for (const tool of ['language-toggle', 'color-scheme-menu', 'notification-bell', 'logout']) {
+      await expect(page.getByTestId(tool)).toBeVisible();
+    }
+    await page.getByTestId('nav-achievements').click();
+    await expect(page.getByTestId('nav-achievements')).toBeHidden();
+    await expect(page).toHaveURL(/\/achievements$/);
   });
 
   test('ac3_3 the scheme switch keeps the choice and shows the aurora only in the dark', async ({

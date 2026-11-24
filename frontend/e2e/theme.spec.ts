@@ -3,16 +3,18 @@ import { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
 import {
+  background,
+  closeDrawer,
   DEMO_PASSWORD,
   FRESH_PASSWORD,
-  SEED,
-  background,
   freshEmployee,
+  SEED,
   seriousViolations,
   settled,
+  signedInAs,
   signIn,
   signInAsSeed,
-  signedInAs,
+  toggleLanguage,
 } from './helpers';
 import { GDPR_ROUTES, RECTOR_ROUTES, RoleRoutes, deanRoutes, openRoute } from './routes';
 
@@ -166,9 +168,9 @@ test.describe('brand theme', () => {
     await expect(page.getByTestId('side-nav')).toContainText(
       'Чернівецький національний університет',
     );
-    expect(await background(page, 'mat-sidenav')).toBe('rgb(94, 22, 33)');
-    expect(await background(page, 'body')).toBe('rgb(246, 239, 228)');
-    expect(await token(page, '--mat-sys-primary')).toBe('rgb(122, 31, 43)');
+    expect(await background(page, 'mat-sidenav')).toBe('rgb(90, 22, 34)');
+    expect(await background(page, 'body')).toBe('rgb(247, 241, 233)');
+    expect(await token(page, '--mat-sys-primary')).toBe('rgb(122, 31, 46)');
     expect(
       await page.locator('body').evaluate((body) => getComputedStyle(body).fontFamily),
     ).toContain('Onest Variable');
@@ -191,9 +193,9 @@ test.describe('brand theme', () => {
       )
       .toEqual(expect.arrayContaining(['Onest Variable', 'Manrope Variable']));
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page).toHaveTitle('My dashboard — ChNU Awards');
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     expect(external).toEqual([]);
   });
 
@@ -266,11 +268,11 @@ test.describe('brand theme', () => {
     await page.getByTestId('color-scheme-menu').click();
     await page.getByTestId('color-scheme-light').click();
     await expect(page.locator('html')).toHaveAttribute('data-color-scheme', 'light');
-    expect(await background(page, 'body')).toBe('rgb(246, 239, 228)');
+    expect(await background(page, 'body')).toBe('rgb(247, 241, 233)');
 
     await page.reload();
     await expect(page.getByTestId('nav-awards')).toBeVisible();
-    expect(await background(page, 'body')).toBe('rgb(246, 239, 228)');
+    expect(await background(page, 'body')).toBe('rgb(247, 241, 233)');
 
     await page.getByTestId('color-scheme-menu').click();
     await page.getByTestId('color-scheme-system').click();
@@ -299,8 +301,12 @@ test.describe('brand theme', () => {
     await page.mouse.wheel(0, phoneHeight * 3);
     await expect(page.getByTestId('award-item').first()).not.toBeInViewport();
     await expect(page.getByTestId('nav-toggle')).toBeInViewport();
+    await expect(page.getByTestId('user-menu')).toBeHidden();
+    await page.getByTestId('nav-toggle').click();
     await expect(page.getByTestId('user-menu')).toBeVisible();
     await expect(page.getByTestId('palette-open')).toBeVisible();
+    await closeDrawer(page);
+    await expect(page.getByTestId('user-menu')).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       phoneWidth,
     );

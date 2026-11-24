@@ -47,11 +47,10 @@ import { AnalysableUnit } from '../unit-analytics.service';
   styles: `
     .picker {
       display: grid;
-      gap: 4px;
     }
 
     .picker__count {
-      font: var(--mat-sys-title-small);
+      font: 800 1rem / 1 var(--app-font-heading);
       font-variant-numeric: tabular-nums;
       max-width: 120px;
     }

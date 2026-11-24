@@ -1,15 +1,16 @@
 import { Page, expect, test } from './fixtures';
 
 import {
-  freshContextPage,
   FRESH_PASSWORD,
-  SEED,
+  freshContextPage,
   freshEmployee,
   registerAndVerify,
+  SEED,
   seriousViolations,
-  signIn,
   signedIn,
   signedInAs,
+  signIn,
+  toggleLanguage,
 } from './helpers';
 
 /** US-008 DoD: the dashboard is usable within this time. */
@@ -84,7 +85,7 @@ test.describe('personal dashboard', () => {
     const page = await signedIn(browser, SEED.lecturer);
     await page.goto('/dashboard');
     const timeline = page.getByTestId('widget-TIMELINE');
-    await timeline.getByTestId('chart-table-switch').locator('button').focus();
+    await timeline.getByTestId('pane-view-table').focus();
     await page.keyboard.press('Space');
     const link = timeline.getByTestId('timeline-link').first();
     await expect(link).toHaveAttribute('href', /^\/awards\/\d+$/);
@@ -103,7 +104,7 @@ test.describe('personal dashboard', () => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/dashboard');
     await expect(page.getByTestId('widget-LEVEL_STAIRS')).toBeVisible();
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('My dashboard');
 
     expect(await noHorizontalScroll(page)).toBe(true);

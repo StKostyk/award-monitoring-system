@@ -40,7 +40,7 @@ import { UnitComparisonRow } from '../../units/unit-analytics.service';
   styles: `
     .bars {
       display: grid;
-      gap: 14px;
+      gap: 0;
       margin: 0;
       padding: 0;
       list-style: none;
@@ -48,26 +48,40 @@ import { UnitComparisonRow } from '../../units/unit-analytics.service';
 
     .bars__row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 4px 12px;
-      align-items: baseline;
+      grid-template-columns: minmax(0, 260px) minmax(0, 1fr) 40px;
+      grid-template-areas: 'label track value';
+      gap: 10px;
+      align-items: center;
+      padding: 7px 0;
+      font: 400 0.8125rem / 1.35 var(--app-font-body);
     }
 
     .bars__label {
-      font: var(--mat-sys-body-medium);
+      grid-area: label;
       overflow-wrap: anywhere;
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
     }
 
     .bars__value {
-      font: var(--mat-sys-title-small);
+      grid-area: value;
+      text-align: end;
+      font: 700 0.8125rem / 1 var(--app-font-heading);
       font-variant-numeric: tabular-nums;
     }
 
     .bars__track {
-      grid-column: 1 / -1;
+      grid-area: track;
       height: 10px;
       border-radius: 5px;
-      background: var(--mat-sys-surface-container-highest);
+      background: var(--app-track);
       overflow: hidden;
     }
 
@@ -75,7 +89,15 @@ import { UnitComparisonRow } from '../../units/unit-analytics.service';
       display: block;
       height: 100%;
       border-radius: 5px;
-      background: var(--mat-sys-primary);
+      background: var(--app-bar-gold);
+    }
+
+    @media (max-width: 599.98px) {
+      .bars__row {
+        grid-template-columns: minmax(0, 1fr) 40px;
+        grid-template-areas: 'label value' 'track track';
+        gap: 4px 10px;
+      }
     }
   `,
 })

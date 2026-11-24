@@ -1,6 +1,13 @@
 import { expect, test } from './fixtures';
 
-import { FRESH_PASSWORD, registerAndVerify, seriousViolations, sql, uniqueToken } from './helpers';
+import {
+  FRESH_PASSWORD,
+  registerAndVerify,
+  seriousViolations,
+  sql,
+  toggleLanguage,
+  uniqueToken,
+} from './helpers';
 
 test.describe('privacy notice', () => {
   test('ac1_2 ac1_9 shows the current notice in the interface language with its versions', async ({
@@ -17,7 +24,7 @@ test.describe('privacy notice', () => {
     await expect(page.getByRole('option')).toContainText('1.0 · 15.10.2026');
     await page.keyboard.press('Escape');
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page.getByTestId('notice-text')).toContainText('Who is responsible');
   });
 

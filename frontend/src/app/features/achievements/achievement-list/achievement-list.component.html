@@ -137,11 +137,15 @@
 
 @if (highlight(); as top) {
   <app-pane
+    icon="sparkles"
     class="achievements__highlight"
     [heading]="'achievements.highlight' | transloco"
+    tone="brand"
+    flush
     data-testid="achievements-highlight"
   >
     <app-achievement-card
+      variant="hero"
       [achievement]="top"
       [unitPages]="unitPages"
       [linked]="scope === 'signed-in'"
@@ -150,9 +154,12 @@
 }
 
 <app-pane
+  icon="medal"
   [heading]="'achievements.count.' + plural(total()) | transloco: { count: total() }"
+  flush
   data-testid="achievements-feed"
 >
+  <span paneMeta>{{ 'achievements.newestFirst' | transloco }}</span>
   <div data-testid="achievement-list">
     @for (group of groups(); track group.year) {
       <app-year-group [heading]="'' + group.year" data-testid="achievements-year">

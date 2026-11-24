@@ -1,4 +1,5 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -25,14 +26,12 @@ import { PrivacyCentreService } from '../../features/privacy/privacy-centre.serv
 import { kyivDate } from '../../shared/date-format';
 import { IconComponent } from '../../shared/icons/icon.component';
 import { IconName } from '../../shared/icons/icons';
-import { NARROW_SCREEN } from '../../shared/touch';
 import { AuthService } from '../auth/auth.service';
-import { canCreateAwards } from '../auth/permissions';
+import { RoleType } from '../auth/user-profile';
 import { BrandService } from '../brand/brand.service';
 import { COLOR_SCHEMES, ColorScheme, ColorSchemeService } from '../brand/color-scheme.service';
 import { OfflineNoticeComponent } from '../connectivity/offline-notice.component';
 import { LanguageService } from '../i18n/language.service';
-import { PageTitleStrategy } from '../i18n/page-title.strategy';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
 import { PreferencesActions } from '../preferences/store/preferences.actions';
 import { APPLE, CommandPaletteService } from './command-palette.service';
@@ -40,6 +39,17 @@ import { NavigationFocusService } from './navigation-focus.service';
 import { NavEntry, navEntriesFor } from './nav-entries';
 
 export const WIDE_LAYOUT = '(min-width: 960px)';
+
+/** The roles in the order the sidebar picks the one it shows under the user's name. */
+export const ROLE_RANK: readonly RoleType[] = [
+  'RECTOR',
+  'RECTOR_SECRETARY',
+  'DEAN',
+  'FACULTY_SECRETARY',
+  'GDPR_OFFICER',
+  'SYSTEM_ADMIN',
+  'EMPLOYEE',
+];
 
 @Component({
   selector: 'app-shell',
@@ -55,6 +65,7 @@ export const WIDE_LAYOUT = '(min-width: 960px)';
     MatMenuItem,
     MatMenuTrigger,
     MatNavList,
+    NgTemplateOutlet,
     NotificationBellComponent,
     OfflineNoticeComponent,
     MatSidenav,
@@ -94,19 +105,17 @@ export class ShellComponent {
       .pipe(map((state) => state.matches)),
     { initialValue: true },
   );
-  protected readonly compact = toSignal(
-    inject(BreakpointObserver)
-      .observe(NARROW_SCREEN)
-      .pipe(map((state) => state.breakpoints[NARROW_SCREEN] === true)),
-    { initialValue: false },
-  );
   protected readonly entries = computed(() =>
     navEntriesFor(this.auth.isAuthenticated(), this.auth.permissions()),
   );
-  protected readonly canCreate = computed(
-    () => this.auth.isAuthenticated() && canCreateAwards(this.auth.permissions()),
-  );
-  protected readonly pageTitle = inject(PageTitleStrategy).page;
+  protected readonly initials = computed(() => {
+    const profile = this.auth.profile();
+    return profile ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}` : '';
+  });
+  protected readonly role = computed(() => {
+    const held = new Set(this.auth.profile()?.roles.map((assignment) => assignment.role));
+    return ROLE_RANK.find((role) => held.has(role)) ?? null;
+  });
   protected readonly shortcut = APPLE.test(globalThis.navigator?.userAgent ?? '') ? '⌘K' : 'Ctrl K';
   private readonly url = toSignal(
     this.router.events.pipe(

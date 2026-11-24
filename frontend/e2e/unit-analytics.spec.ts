@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { Page, expect, test } from './fixtures';
 
-import { SEED, kyivDay, seriousViolations, signedIn } from './helpers';
+import { kyivDay, SEED, seriousViolations, signedIn, toggleLanguage } from './helpers';
 
 /** US-009 DoD: the unit analytics page is usable within this time on the seed. */
 const USABLE_WITHIN_MS = 5000;
@@ -159,7 +159,7 @@ test.describe('unit analytics', () => {
     ).toBe(true);
     expect(await seriousViolations(page)).toEqual([]);
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Unit analytics');
     await expect(page.getByTestId('section-highlights')).toContainText('Highlights');
   });

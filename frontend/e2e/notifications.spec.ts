@@ -6,9 +6,11 @@ import {
   openNewAward,
   pastDay,
   seriousViolations,
+  shellTool,
   signedInAs,
   sql,
   submitWithoutDocuments,
+  toggleLanguage,
   uniqueToken,
 } from './helpers';
 
@@ -94,7 +96,7 @@ test.describe('notification centre', () => {
     );
     expect(await seriousViolations(page)).toEqual([]);
     await page.keyboard.press('Escape');
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await bell.click();
     await expect(item).toContainText(
       `«${title}» approved by Олена Деканова at the faculty secretary level`,
@@ -181,7 +183,7 @@ test.describe('notification centre', () => {
         360,
       );
 
-      await page.getByTestId('notification-bell').click();
+      await (await shellTool(page, 'notification-bell')).click();
       await expect(page.getByTestId('notification-item')).toHaveCount(1);
       expect(await seriousViolations(page)).toEqual([]);
     });

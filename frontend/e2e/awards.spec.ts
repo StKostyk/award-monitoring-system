@@ -3,16 +3,18 @@ import { expect, test } from './fixtures';
 import {
   DEMO_PASSWORD,
   FRESH_PASSWORD,
-  SEED,
   freshEmployee,
   kyivDay,
   openNewAward,
   pastDay,
+  SEED,
   seriousViolations,
   signedInAs,
   signIn,
+  signOut,
   storedCopies,
   submitWithoutDocuments,
+  toggleLanguage,
   uniqueToken,
 } from './helpers';
 
@@ -138,8 +140,7 @@ test.describe('award drafts and submission on a phone', () => {
     await page.getByTestId('award-title-uk').fill(`Подяка декана ${uniqueToken()}`);
     await expect.poll(() => storedCopies(page)).toBeGreaterThan(0);
 
-    await page.getByTestId('user-menu').click();
-    await page.getByTestId('logout').click();
+    await signOut(page);
     await page.getByTestId('confirm-accept').click();
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
     await signIn(page, employee, DEMO_PASSWORD);
@@ -325,7 +326,7 @@ test.describe('award drafts and submission on a phone', () => {
     await page.goto('/awards/999999999');
     await expect(page.getByTestId('award-not-found')).toBeVisible();
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await openAwards(page);
     await expect(page.getByRole('heading', { name: 'My awards' })).toBeVisible();
     await expect(page.getByTestId('award-add')).toContainText('Add award');

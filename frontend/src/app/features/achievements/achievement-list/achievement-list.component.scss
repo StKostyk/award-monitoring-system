@@ -16,19 +16,19 @@
 }
 
 .achievements__chip {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--mat-sys-outline);
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px solid var(--app-pane-border);
   border-radius: 999px;
-  background: transparent;
+  background: var(--app-pane);
   color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-label-large);
+  font: 500 0.8125rem / 1.2 var(--app-font-body);
   cursor: pointer;
 
   &[aria-pressed='true'] {
-    border-color: var(--mat-sys-secondary-container);
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
+    border-color: var(--app-chip-on);
+    background: var(--app-chip-on);
+    color: var(--app-on-chip-on);
   }
 
   &:focus-visible {
@@ -55,7 +55,7 @@
 }
 
 .achievements__filter--search {
-  flex-basis: 100%;
+  flex: 2 1 320px;
 }
 
 ::ng-deep .achievements__child {
@@ -64,8 +64,6 @@
 
 .achievements__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-  gap: 16px;
   margin: 0;
   padding: 0;
   list-style: none;

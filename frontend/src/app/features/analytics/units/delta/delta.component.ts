@@ -32,8 +32,8 @@ const ICONS = { up: 'arrow-up', down: 'arrow-down', same: 'arrow-right' } as con
       display: inline-flex;
       align-items: center;
       gap: 2px;
-      font: var(--mat-sys-label-large);
-      color: var(--mat-sys-on-surface-variant);
+      font: 600 0.75rem / 1.4 var(--app-font-body);
+      color: var(--app-delta-color, var(--mat-sys-primary));
       white-space: nowrap;
     }
 

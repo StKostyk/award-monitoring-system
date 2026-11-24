@@ -17,14 +17,13 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 
     .year-group {
       display: grid;
-      gap: 8px;
     }
 
     .year-group__heading {
-      margin: 8px 0 0;
-      font: var(--mat-sys-title-small);
-      font-family: var(--app-font-heading);
-      color: var(--mat-sys-on-surface-variant);
+      margin: 0;
+      padding: 14px 18px 4px;
+      font: 800 0.875rem / 1.3 var(--app-font-heading);
+      color: var(--mat-sys-primary);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

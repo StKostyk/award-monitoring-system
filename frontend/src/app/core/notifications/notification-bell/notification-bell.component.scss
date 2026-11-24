@@ -5,15 +5,15 @@
 
 .bell__badge {
   position: absolute;
-  top: 4px;
-  right: 2px;
+  top: var(--app-badge-top, 4px);
+  right: var(--app-badge-right, 2px);
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
   box-sizing: border-box;
   border-radius: 9px;
-  background: var(--mat-sys-error);
-  color: var(--mat-sys-on-error);
+  background: var(--app-badge, var(--mat-sys-error));
+  color: var(--app-on-badge, var(--mat-sys-on-error));
   font: var(--mat-sys-label-small);
   line-height: 18px;
   text-align: center;

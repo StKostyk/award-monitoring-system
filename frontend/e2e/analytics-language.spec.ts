@@ -1,6 +1,6 @@
 import { Page, expect, test } from './fixtures';
 
-import { SEED, signedIn } from './helpers';
+import { SEED, signedIn, toggleLanguage } from './helpers';
 
 /** Faculty of Mathematics and Informatics (seed). */
 const FMI = 9;
@@ -24,11 +24,11 @@ async function switchAndCheck(page: Page, title: string, englishTitle: string): 
   await expect(heading).toHaveText(title);
   await expect(page.getByTestId('section-highlights')).toBeVisible();
 
-  await page.getByTestId('language-toggle').click();
+  await toggleLanguage(page);
   await expect(heading).toHaveText(englishTitle);
   await expect.poll(() => visibleKeys(page)).toEqual([]);
 
-  await page.getByTestId('language-toggle').click();
+  await toggleLanguage(page);
   await expect(heading).toHaveText(title);
   await expect.poll(() => visibleKeys(page)).toEqual([]);
 }

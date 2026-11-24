@@ -47,16 +47,21 @@
 
     <app-bento>
       <app-bento-tile [span]="4">
-        <app-pane
-          [heading]="'unitAnalytics.sections.totals' | transloco"
+        <section
+          class="university__totals"
+          aria-labelledby="university-totals"
           data-testid="section-totals"
         >
-          <app-delta-tiles [totals]="data.totals" />
-        </app-pane>
+          <h2 id="university-totals" class="cdk-visually-hidden">
+            {{ 'unitAnalytics.sections.totals' | transloco }}
+          </h2>
+          <app-delta-tiles layout="bento" [totals]="data.totals" />
+        </section>
       </app-bento-tile>
 
       <app-bento-tile [span]="3" [rows]="2">
         <app-pane
+          icon="landmark"
           [heading]="'universityAnalytics.sections.faculties' | transloco"
           data-testid="section-faculties"
         >
@@ -66,7 +71,9 @@
 
       <app-bento-tile [rows]="2">
         <app-pane
+          icon="sparkles"
           [heading]="'unitAnalytics.sections.highlights' | transloco"
+          tone="ink"
           data-testid="section-highlights"
         >
           <app-highlights
@@ -78,6 +85,7 @@
 
       <app-bento-tile [span]="4">
         <app-pane
+          icon="chart-line"
           [heading]="'universityAnalytics.sections.trend' | transloco"
           data-testid="section-trend"
         >
@@ -87,6 +95,7 @@
 
       <app-bento-tile [span]="4">
         <app-pane
+          icon="chart-line"
           [heading]="'universityAnalytics.sections.trends' | transloco"
           data-testid="section-trends"
         >
@@ -96,6 +105,7 @@
 
       <app-bento-tile [span]="2">
         <app-pane
+          icon="layout-grid"
           [heading]="'unitAnalytics.sections.byCategory' | transloco"
           data-testid="section-by-category"
         >
@@ -114,6 +124,7 @@
 
       <app-bento-tile [span]="2">
         <app-pane
+          icon="chart-bar"
           [heading]="'unitAnalytics.sections.byLevel' | transloco"
           data-testid="section-by-level"
         >
@@ -132,6 +143,7 @@
 
       <app-bento-tile [span]="4">
         <app-pane
+          icon="chart-column"
           [heading]="'unitAnalytics.sections.bySource' | transloco"
           data-testid="section-by-source"
         >
@@ -145,6 +157,7 @@
 
       <app-bento-tile [span]="4">
         <app-pane
+          icon="arrow-left-right"
           [heading]="'universityAnalytics.sections.comparison' | transloco"
           data-testid="section-comparison"
         >
@@ -161,6 +174,7 @@
 }
 
 <app-pane
+  icon="shield-check"
   class="university__compliance"
   [heading]="'universityAnalytics.sections.compliance' | transloco"
   data-testid="section-compliance"

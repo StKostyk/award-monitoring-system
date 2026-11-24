@@ -221,6 +221,13 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.5.8 | Dashboard header without context line, actions wrap | 1 | ✅ Done | SCRUM-171 | [#477](https://github.com/StKostyk/award-monitoring-system/issues/477) |
 | 9.5.9 | Selection that left the list stays in Reviews and Users | 2 | ✅ Done | SCRUM-172 | [#478](https://github.com/StKostyk/award-monitoring-system/issues/478) |
 | 9.5.10 | Back from a pane at 360 px loses the list scroll | 2 | ✅ Done | SCRUM-173 | [#479](https://github.com/StKostyk/award-monitoring-system/issues/479) |
+| 9.6.1 | Canvas look, sidebar tools and widget header | 5 | 👀 In review (11) | SCRUM-174 | [#485](https://github.com/StKostyk/award-monitoring-system/issues/485) |
+| 9.6.2 | My dashboard widgets | 3 | 11 | SCRUM-175 | [#486](https://github.com/StKostyk/award-monitoring-system/issues/486) |
+| 9.6.3 | Unit analytics widgets | 5 | 11 | SCRUM-176 | [#487](https://github.com/StKostyk/award-monitoring-system/issues/487) |
+| 9.6.4 | University bento with the faculty comparison | 5 | 11 | SCRUM-177 | [#488](https://github.com/StKostyk/award-monitoring-system/issues/488) |
+| 9.6.5 | Hall of Fame widgets | 5 | 11 | SCRUM-178 | [#489](https://github.com/StKostyk/award-monitoring-system/issues/489) |
+| 9.6.6 | Profile with sections | 3 | 11 | SCRUM-179 | [#490](https://github.com/StKostyk/award-monitoring-system/issues/490) |
+| 9.6.7 | Remaining pages of the all-pages canvas | 3 | 11 | SCRUM-180 | [#491](https://github.com/StKostyk/award-monitoring-system/issues/491) |
 
 ### Later epics
 | ID | Story | Points | Epic |
