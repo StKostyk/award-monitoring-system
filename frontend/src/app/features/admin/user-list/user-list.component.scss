@@ -4,15 +4,27 @@
   min-width: 0;
 }
 
-.users__filters {
-  display: grid;
-  gap: 12px;
+.users__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin: 0 0 18px;
+
+  mat-form-field {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+
+  .users__search {
+    flex: 2 1 320px;
+  }
 }
 
-.users__filter-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+@media (max-width: 959.98px) {
+  .users__toolbar--detail {
+    display: none;
+  }
 }
 
 .users__rows {

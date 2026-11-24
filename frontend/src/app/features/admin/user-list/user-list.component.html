@@ -13,41 +13,42 @@
   }
 </app-page-header>
 
+<form
+  [formGroup]="filters"
+  class="users__toolbar"
+  [class.users__toolbar--detail]="selectedId() !== null"
+  data-testid="users-toolbar"
+>
+  <mat-form-field class="users__search" appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'admin.users.filters.q' | transloco }}</mat-label>
+    <input matInput type="search" formControlName="q" data-testid="filter-q" />
+    <mat-hint>{{ 'admin.users.filters.qHint' | transloco }}</mat-hint>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'admin.users.filters.role' | transloco }}</mat-label>
+    <mat-select formControlName="role" data-testid="filter-role">
+      <mat-option [value]="null">{{ 'admin.users.filters.anyRole' | transloco }}</mat-option>
+      @for (role of roles; track role) {
+        <mat-option [value]="role">{{ 'roles.' + role | transloco }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'admin.users.filters.status' | transloco }}</mat-label>
+    <mat-select formControlName="status" data-testid="filter-status">
+      <mat-option [value]="null">{{ 'admin.users.filters.anyStatus' | transloco }}</mat-option>
+      @for (status of statuses; track status) {
+        <mat-option [value]="status">{{ 'admin.status.' + status | transloco }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-checkbox formControlName="unconfirmed" data-testid="filter-unconfirmed">
+    {{ 'admin.users.filters.unconfirmed' | transloco }}
+  </mat-checkbox>
+</form>
+
 <app-split mode="detail" [detailOpen]="selectedId() !== null">
   <div splitSide class="users__side">
-    <form [formGroup]="filters" class="users__filters">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>{{ 'admin.users.filters.q' | transloco }}</mat-label>
-        <input matInput type="search" formControlName="q" data-testid="filter-q" />
-        <mat-hint>{{ 'admin.users.filters.qHint' | transloco }}</mat-hint>
-      </mat-form-field>
-      <div class="users__filter-row">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>{{ 'admin.users.filters.role' | transloco }}</mat-label>
-          <mat-select formControlName="role" data-testid="filter-role">
-            <mat-option [value]="null">{{ 'admin.users.filters.anyRole' | transloco }}</mat-option>
-            @for (role of roles; track role) {
-              <mat-option [value]="role">{{ 'roles.' + role | transloco }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>{{ 'admin.users.filters.status' | transloco }}</mat-label>
-          <mat-select formControlName="status" data-testid="filter-status">
-            <mat-option [value]="null">{{
-              'admin.users.filters.anyStatus' | transloco
-            }}</mat-option>
-            @for (status of statuses; track status) {
-              <mat-option [value]="status">{{ 'admin.status.' + status | transloco }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      </div>
-      <mat-checkbox formControlName="unconfirmed" data-testid="filter-unconfirmed">
-        {{ 'admin.users.filters.unconfirmed' | transloco }}
-      </mat-checkbox>
-    </form>
-
     @if (loading()) {
       <mat-progress-bar
         [attr.aria-label]="'app.loading' | transloco"

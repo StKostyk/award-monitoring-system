@@ -135,10 +135,10 @@ describe('PrivacyCentreComponent', () => {
     expect(cards).toEqual([
       'privacy-notice-card',
       'privacy-consents-card',
-      'privacy-choices-card',
       'privacy-data-card',
-      'privacy-activity-card',
       'privacy-erasure-card',
+      'privacy-choices-card',
+      'privacy-activity-card',
     ]);
     expect(query(fixture, 'privacy-notice-acknowledged')?.textContent).toContain('15.10.2026');
     expect(query(fixture, 'privacy-awards-PRIVATE')?.textContent?.trim()).toBe('2');

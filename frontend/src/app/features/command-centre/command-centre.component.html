@@ -1,8 +1,8 @@
 <div class="centre__header">
-  <h1 class="centre__title">{{ 'commandCentre.title' | transloco }}</h1>
   @if (unitName()) {
     <p class="centre__unit" data-testid="centre-unit">{{ unitName() }}</p>
   }
+  <h1 class="centre__title">{{ 'commandCentre.title' | transloco }}</h1>
 </div>
 
 @if (loading()) {
@@ -24,12 +24,7 @@
 
 <app-dashboard-layout dashboard="COMMAND_CENTRE" labels="commandCentre.widgets.">
   <ng-template appDashboardWidget="TODAY" wide>
-    <section
-      class="centre__widget today"
-      [attr.aria-label]="'commandCentre.widgets.TODAY' | transloco"
-    >
-      <app-border-beam />
-      <h2 class="centre__heading">{{ 'commandCentre.widgets.TODAY' | transloco }}</h2>
+    <app-pane icon="clock" [heading]="'commandCentre.widgets.TODAY' | transloco">
       <div class="today__figures">
         <p class="today__figure" data-testid="today-waiting">
           <span class="today__value">{{ waiting() ?? '—' }}</span>
@@ -40,17 +35,14 @@
           <span class="today__label">{{ 'commandCentre.today.decided' | transloco }}</span>
         </p>
       </div>
-    </section>
+    </app-pane>
   </ng-template>
 
   <ng-template appDashboardWidget="QUEUE" wide>
-    <section class="centre__widget">
-      <div class="queue__header">
-        <h2 class="centre__heading">{{ 'commandCentre.widgets.QUEUE' | transloco }}</h2>
-        <a mat-button routerLink="/reviews" data-testid="queue-all">
-          {{ 'commandCentre.queue.all' | transloco }}
-        </a>
-      </div>
+    <app-pane icon="clipboard-check" [heading]="'commandCentre.widgets.QUEUE' | transloco">
+      <a paneMeta class="queue__all" routerLink="/reviews" data-testid="queue-all">
+        {{ 'commandCentre.queue.all' | transloco }}
+      </a>
       @if (items().length > 0) {
         <ul class="queue" data-testid="queue-items">
           @for (item of items(); track item.awardId) {
@@ -87,27 +79,30 @@
       } @else {
         <app-empty-state icon="check-check" [text]="'commandCentre.queue.empty' | transloco" />
       }
-    </section>
+    </app-pane>
   </ng-template>
 
   <ng-template appDashboardWidget="UNITS" wide>
-    <section class="centre__widget" data-testid="centre-units">
-      <h2 class="centre__heading">
-        {{
-          (university ? 'commandCentre.units.faculties' : 'commandCentre.units.departments')
-            | transloco
-        }}
-      </h2>
+    <app-pane
+      icon="triangle-alert"
+      [heading]="
+        (university ? 'commandCentre.units.faculties' : 'commandCentre.units.departments')
+          | transloco
+      "
+      data-testid="centre-units"
+    >
       <app-focus-cards-widget [cards]="cards()" (command)="remind($event)" />
-    </section>
+    </app-pane>
   </ng-template>
 
   <ng-template appDashboardWidget="TOP">
-    <section class="centre__widget">
-      <h2 class="centre__heading">
-        {{ (university ? 'commandCentre.topFaculties' : 'commandCentre.topPeople') | transloco }}
-      </h2>
+    <app-pane
+      icon="trophy"
+      [heading]="
+        (university ? 'commandCentre.topFaculties' : 'commandCentre.topPeople') | transloco
+      "
+    >
       <app-top-widget [people]="top()" />
-    </section>
+    </app-pane>
   </ng-template>
 </app-dashboard-layout>

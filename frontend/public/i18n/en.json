@@ -118,6 +118,7 @@
     "GDPR_OFFICER": "Data protection officer"
   },
   "awards": {
+    "facts": "Details",
     "title": "My awards",
     "add": "Add award",
     "empty": "No awards yet. Add your first one — you can save it as a draft and finish it later.",
@@ -571,6 +572,7 @@
     "newestFirst": "newest first"
   },
   "notFound": {
+    "home": "Home",
     "title": "Page not found",
     "text": "There is no such page, or the address is mistyped.",
     "publicAchievements": "University achievements"
