@@ -4,7 +4,8 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { NEVER, of } from 'rxjs';
 import { vi } from 'vitest';
@@ -14,7 +15,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { UserProfile } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { NotificationApi } from '../../../core/notifications/notification.api';
-import { ProfileComponent } from './profile.component';
+import { ProfileComponent, sectionOf } from './profile.component';
 
 const PROFILE: UserProfile = {
   id: 5,
@@ -64,7 +65,7 @@ describe('ProfileComponent', () => {
     loadProfile: vi.fn(() => Promise.resolve(PROFILE)),
   };
 
-  async function setup() {
+  async function setup(url = '/profile') {
     await TestBed.configureTestingModule({
       imports: [
         ProfileComponent,
@@ -79,7 +80,7 @@ describe('ProfileComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([]),
+        provideRouter([{ path: 'profile', component: ProfileComponent }]),
         { provide: AuthService, useValue: auth },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: MatDialog, useValue: dialog },
@@ -87,17 +88,27 @@ describe('ProfileComponent', () => {
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
-    const fixture = TestBed.createComponent(ProfileComponent);
+    const harness = await RouterTestingHarness.create();
+    const componentInstance = await harness.navigateByUrl(url, ProfileComponent);
     http
       .expectOne(`${environment.apiUrl}/delegations?state=active`)
       .flush({ given: [], received: [] });
-    await fixture.whenStable();
-    fixture.detectChanges();
-    return fixture;
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    return {
+      harness,
+      componentInstance,
+      nativeElement: harness.routeNativeElement!,
+      detectChanges: () => harness.detectChanges(),
+    };
   }
 
   function text(fixture: { nativeElement: HTMLElement }, id: string): string {
     return fixture.nativeElement.querySelector(`[data-testid="${id}"]`)?.textContent?.trim() ?? '';
+  }
+
+  function query(fixture: { nativeElement: HTMLElement }, id: string): HTMLElement | null {
+    return fixture.nativeElement.querySelector(`[data-testid="${id}"]`);
   }
 
   afterEach(() => {
@@ -105,26 +116,75 @@ describe('ProfileComponent', () => {
     vi.clearAllMocks();
   });
 
-  it('ac11 shows the address, department with its faculty, roles and membership', async () => {
+  it('ac6_1 shows the person, address, membership and dates in the banner', async () => {
     const fixture = await setup();
 
+    expect(text(fixture, 'profile-name')).toContain('Петренко');
+    expect(text(fixture, 'profile-role-line')).not.toBe('');
     expect(text(fixture, 'profile-email')).toBe('employee.fmi@chnu.edu.ua');
-    expect(text(fixture, 'profile-department')).toBe('Кафедра алгебри та інформатики');
-    expect(text(fixture, 'profile-faculty')).toBe('Факультет математики та інформатики');
     expect(text(fixture, 'profile-membership')).toBe('Членство підтверджено');
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="profile-role"]').length).toBe(1);
+    expect(text(fixture, 'profile-created')).toBe('01.09.2026');
+    expect(text(fixture, 'profile-last-login')).not.toBe('');
   });
 
-  it('ac3_6 loads the notifications card under its anchor', async () => {
+  it('ac11 shows the department with its faculty and the roles in the roles section', async () => {
+    const fixture = await setup('/profile?section=roles');
+
+    expect(text(fixture, 'profile-department')).toBe('Кафедра алгебри та інформатики');
+    expect(text(fixture, 'profile-faculty')).toBe('Факультет математики та інформатики');
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="profile-role"]').length).toBe(1);
+    expect(query(fixture, 'profile-names')).toBeNull();
+  });
+
+  it('ac6_2 shows the names first and marks the first section without a choice', async () => {
     const fixture = await setup();
+
+    expect(query(fixture, 'profile-names')).not.toBeNull();
+    expect(query(fixture, 'profile-section-names')!.getAttribute('aria-current')).toBe('true');
+    expect(query(fixture, 'profile-section-roles')!.getAttribute('aria-current')).toBeNull();
+    expect(query(fixture, 'profile-back')).toBeNull();
+    expect(query(fixture, 'profile-section-address')!.getAttribute('href')).toBe(
+      '/profile?section=address',
+    );
+  });
+
+  it('ac6_2 opens the section named in the address and goes back to the list', async () => {
+    const fixture = await setup('/profile?section=address');
+
+    expect(query(fixture, 'profile-address')).not.toBeNull();
+    expect(query(fixture, 'profile-section-address')!.getAttribute('aria-current')).toBe('true');
+
+    query(fixture, 'profile-back')!.click();
+    await fixture.harness.fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(TestBed.inject(Router).url).toBe('/profile');
+    expect(query(fixture, 'profile-back')).toBeNull();
+  });
+
+  it('ac6_2 reads the section from the query or the old anchor', () => {
+    expect(sectionOf('roles', null)).toBe('roles');
+    expect(sectionOf(null, 'notifications')).toBe('notifications');
+    expect(sectionOf('elsewhere', null)).toBeNull();
+    expect(sectionOf(null, 'top')).toBeNull();
+  });
+
+  it('ac3_6 loads the notification switches in their section', async () => {
+    const fixture = await setup('/profile?section=notifications');
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect(
         fixture.nativeElement.querySelector(
-          '#notifications [data-testid="notification-preferences"]',
+          '[data-testid="profile-notifications"] [data-testid="notification-preferences"]',
         ),
       ).not.toBeNull();
     });
+  });
+
+  it('ac3_6 opens the notifications from the old anchor', async () => {
+    const fixture = await setup('/profile#notifications');
+
+    expect(query(fixture, 'profile-notifications')).not.toBeNull();
   });
 
   it('ac17 keeps save disabled while the names are pristine or invalid', async () => {
@@ -200,13 +260,12 @@ describe('ProfileComponent', () => {
     expect(fixture.componentInstance.sentTo()).toBe('mover.new@chnu.edu.ua');
   });
 
-  it('ac2_5 replaces the data card with a link to the privacy centre', async () => {
-    const fixture = await setup();
-    const link = fixture.nativeElement.querySelector(
-      '[data-testid="profile-privacy-link"]',
-    ) as HTMLAnchorElement;
+  it('ac2_5 links the privacy section to the privacy centre', async () => {
+    const fixture = await setup('/profile?section=privacy');
 
-    expect(link.getAttribute('href')).toBe('/privacy');
-    expect(fixture.nativeElement.querySelector('[data-testid="profile-download"]')).toBeNull();
+    for (const link of ['consents', 'export', 'erasure']) {
+      expect(query(fixture, `profile-privacy-${link}`)!.getAttribute('href')).toBe('/privacy');
+    }
+    expect(query(fixture, 'profile-download')).toBeNull();
   });
 });

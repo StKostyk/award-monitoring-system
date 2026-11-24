@@ -56,15 +56,29 @@ describe('NotificationPreferencesComponent', () => {
     });
   }
 
-  function box(fixture: { nativeElement: HTMLElement }, testId: string): HTMLInputElement {
+  function toggle(fixture: { nativeElement: HTMLElement }, testId: string): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      `[data-testid="${testId}"] input`,
-    ) as HTMLInputElement;
+      `[data-testid="${testId}"] button[role="switch"]`,
+    ) as HTMLButtonElement;
+  }
+
+  function on(fixture: { nativeElement: HTMLElement }, testId: string): boolean {
+    return toggle(fixture, testId).getAttribute('aria-checked') === 'true';
+  }
+
+  function text(fixture: { nativeElement: HTMLElement }, testId: string): string | undefined {
+    return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`)?.textContent?.trim();
+  }
+
+  function stored(type: string, change: Partial<NotificationPreference>) {
+    return allOn().map((preference) =>
+      preference.type === type ? { ...preference, ...change } : preference,
+    );
   }
 
   afterEach(() => http.verify());
 
-  it('ac3_6_lists_every_type_once_in_three_groups', async () => {
+  it('ac3_6_lists_every_type_once_in_three_groups_as_switches', async () => {
     const fixture = await loaded();
     const element = fixture.nativeElement as HTMLElement;
 
@@ -73,99 +87,76 @@ describe('NotificationPreferencesComponent', () => {
       [...NOTIFICATION_TYPES].sort(),
     );
     NOTIFICATION_TYPES.forEach((type) => {
-      expect(box(fixture, `preference-${type}-email`).checked).toBe(true);
-      expect(box(fixture, `preference-${type}-inApp`).checked).toBe(true);
+      expect(on(fixture, `preference-${type}-email`)).toBe(true);
+      expect(on(fixture, `preference-${type}-inApp`)).toBe(true);
     });
-    expect(element.querySelector('[data-testid="preferences-security"]')?.textContent).toContain(
-      'надсилаються завжди',
+    expect(toggle(fixture, 'preference-AWARD_APPROVED-email').getAttribute('aria-label')).toBe(
+      'Е-пошта: Нагороду погоджено',
     );
+    expect(element.querySelector('[data-testid="preferences-save"]')).toBeNull();
+    expect(text(fixture, 'preferences-security')).toContain('надсилаються завжди');
   });
 
-  it('ac3_6_disables_the_last_ticked_box_of_a_type', async () => {
+  it('ac6_3_saves_one_switch_with_one_put_and_confirms', async () => {
     const fixture = await loaded();
 
-    box(fixture, 'preference-AWARD_APPROVED-email').click();
+    toggle(fixture, 'preference-REVIEW_OVERDUE-email').click();
     fixture.detectChanges();
-
-    const inApp = box(fixture, 'preference-AWARD_APPROVED-inApp');
-    expect(inApp.checked).toBe(true);
-    expect(inApp.disabled).toBe(true);
-    expect(inApp.getAttribute('aria-describedby')).toContain('preferences-last-hint');
-    expect(box(fixture, 'preference-AWARD_APPROVED-email').disabled).toBe(false);
-    expect(box(fixture, 'preference-AWARD_REJECTED-inApp').disabled).toBe(false);
-  });
-
-  it('ac3_6_saves_with_one_put_and_confirms', async () => {
-    const fixture = await loaded();
-    const save = fixture.nativeElement.querySelector(
-      '[data-testid="preferences-save"]',
-    ) as HTMLButtonElement;
-    expect(save.disabled).toBe(true);
-
-    box(fixture, 'preference-REVIEW_OVERDUE-email').click();
-    fixture.detectChanges();
-    save.click();
 
     const request = http.expectOne(URL);
     expect(request.request.method).toBe('PUT');
     expect(request.request.body.preferences).toEqual([
       { type: 'REVIEW_OVERDUE', email: false, inApp: true },
     ]);
-    const stored = allOn().map((preference) =>
-      preference.type === 'REVIEW_OVERDUE' ? { ...preference, email: false } : preference,
-    );
-    request.flush({ preferences: stored });
+    expect(toggle(fixture, 'preference-REVIEW_OVERDUE-inApp').disabled).toBe(true);
+    expect(toggle(fixture, 'preference-AWARD_APPROVED-inApp').disabled).toBe(false);
+    request.flush({ preferences: stored('REVIEW_OVERDUE', { email: false }) });
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelector('[data-testid="preferences-saved"]').textContent,
-    ).toContain(uk.notifications.preferences.saved);
-    expect(save.disabled).toBe(true);
+    expect(text(fixture, 'preferences-saved')).toContain(uk.notifications.preferences.saved);
+    expect(on(fixture, 'preference-REVIEW_OVERDUE-email')).toBe(false);
+    expect(toggle(fixture, 'preference-REVIEW_OVERDUE-inApp').disabled).toBe(false);
   });
 
-  it('ac1_sends_only_the_types_changed_since_the_last_load_or_save', async () => {
+  it('ac6_3_refuses_to_switch_off_the_last_channel_and_turns_it_back_on', async () => {
+    const fixture = await loaded(stored('AWARD_APPROVED', { email: false }));
+
+    toggle(fixture, 'preference-AWARD_APPROVED-inApp').click();
+    fixture.detectChanges();
+
+    http.expectNone(URL);
+    expect(on(fixture, 'preference-AWARD_APPROVED-inApp')).toBe(true);
+    expect(text(fixture, 'preferences-error')).toBe(uk.notifications.preferences.lastChannel);
+    expect(
+      toggle(fixture, 'preference-AWARD_APPROVED-inApp').getAttribute('aria-describedby'),
+    ).toContain('preferences-last-hint');
+  });
+
+  it('ac6_3_takes_the_stored_choices_from_each_answer', async () => {
     const fixture = await loaded();
-    const save = fixture.nativeElement.querySelector(
-      '[data-testid="preferences-save"]',
-    ) as HTMLButtonElement;
 
-    box(fixture, 'preference-AWARD_APPROVED-inApp').click();
-    box(fixture, 'preference-AWARD_RETURNED-email').click();
-    box(fixture, 'preference-AWARD_RETURNED-email').click();
+    toggle(fixture, 'preference-AWARD_APPROVED-inApp').click();
     fixture.detectChanges();
-    save.click();
-
-    const first = http.expectOne(URL);
-    const sent = first.request.body.preferences as NotificationPreference[];
-    expect(sent.map((preference) => preference.type)).toEqual(['AWARD_APPROVED']);
-    const fromOtherTab = allOn().map((preference) => {
-      if (preference.type === 'AWARD_APPROVED') {
-        return { ...preference, inApp: false };
-      }
-      return preference.type === 'AWARD_RETURNED' ? { ...preference, email: false } : preference;
-    });
-    first.flush({ preferences: fromOtherTab });
+    const fromOtherTab = stored('AWARD_APPROVED', { inApp: false }).map((preference) =>
+      preference.type === 'AWARD_RETURNED' ? { ...preference, email: false } : preference,
+    );
+    http.expectOne(URL).flush({ preferences: fromOtherTab });
     fixture.detectChanges();
 
-    expect(box(fixture, 'preference-AWARD_RETURNED-email').checked).toBe(false);
-    expect(box(fixture, 'preference-AWARD_APPROVED-inApp').checked).toBe(false);
-    expect(box(fixture, 'preference-AWARD_APPROVED-email').checked).toBe(true);
-    box(fixture, 'preference-ROLE_ASSIGNED-email').click();
+    expect(on(fixture, 'preference-AWARD_RETURNED-email')).toBe(false);
+    expect(on(fixture, 'preference-AWARD_APPROVED-inApp')).toBe(false);
+    toggle(fixture, 'preference-ROLE_ASSIGNED-email').click();
     fixture.detectChanges();
-    save.click();
 
     expect(http.expectOne(URL).request.body.preferences).toEqual([
       { type: 'ROLE_ASSIGNED', email: false, inApp: true },
     ]);
   });
 
-  it('ac3_6_shows_a_failed_save_and_keeps_the_choice', async () => {
+  it('ac6_3_shows_a_failed_save_and_turns_the_switch_back', async () => {
     const fixture = await loaded();
-    box(fixture, 'preference-ROLE_ASSIGNED-inApp').click();
+    toggle(fixture, 'preference-ROLE_ASSIGNED-inApp').click();
     fixture.detectChanges();
-    (
-      fixture.nativeElement.querySelector('[data-testid="preferences-save"]') as HTMLElement
-    ).click();
 
     http
       .expectOne(URL)
@@ -175,10 +166,11 @@ describe('NotificationPreferencesComponent', () => {
       );
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelector('[data-testid="preferences-error"]').textContent,
-    ).toContain(uk.notifications.preferences.errors.failed);
-    expect(box(fixture, 'preference-ROLE_ASSIGNED-inApp').checked).toBe(false);
+    expect(text(fixture, 'preferences-error')).toContain(
+      uk.notifications.preferences.errors.failed,
+    );
+    expect(on(fixture, 'preference-ROLE_ASSIGNED-inApp')).toBe(true);
+    expect(toggle(fixture, 'preference-ROLE_ASSIGNED-inApp').disabled).toBe(false);
   });
 
   it('shows a load failure with a retry', async () => {

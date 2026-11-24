@@ -2,65 +2,66 @@
   display: block;
 }
 
-.preferences {
-  max-width: 820px;
-  margin-bottom: 16px;
+.preferences__group + .preferences__group {
+  margin-top: 18px;
 }
 
-.preferences__table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-  margin-bottom: 16px;
+.preferences__heading {
+  margin: 0 0 6px;
+  font: 700 0.75rem / 1.4 var(--app-font-heading);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+}
 
-  th,
-  td {
-    padding: 0 4px;
+.preferences__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 96px;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--app-row-divider);
+  font: 400 0.875rem / 1.4 var(--app-font-body);
+}
+
+.preferences__row--head {
+  min-height: 0;
+  padding: 0 0 6px;
+  font: 700 0.6875rem / 1.4 var(--app-font-heading);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+
+  span {
     text-align: center;
-    font-weight: normal;
-  }
-
-  .preferences__channel {
-    width: 96px;
-  }
-
-  thead th {
-    color: var(--mat-sys-on-surface-variant);
-    font-size: 0.85rem;
-  }
-
-  .preferences__type {
-    text-align: left;
-  }
-
-  @media (max-width: 599px) {
-    .preferences__channel {
-      width: 76px;
-    }
   }
 }
 
-.preferences__group {
-  padding: 8px 0;
-  font-size: 1rem;
-  font-weight: 500;
-  text-align: left;
+.preferences__switch {
+  justify-self: center;
 }
 
 .preferences__hint {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.85rem;
+  margin: 14px 0 0;
+  color: var(--app-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.preferences__saved {
+  margin: 14px 0 0;
+  font-size: 0.875rem;
 }
 
 .preferences__problem {
+  margin: 14px 0 0;
   color: var(--mat-sys-error);
 }
 
-.preferences__visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+@media (max-width: 599.98px) {
+  .preferences__row {
+    grid-template-columns: minmax(0, 1fr) 64px 64px;
+    gap: 6px;
+  }
 }

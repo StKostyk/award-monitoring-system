@@ -105,7 +105,7 @@
           <a
             mat-stroked-button
             routerLink="/profile"
-            fragment="notifications"
+            [queryParams]="{ section: 'notifications' }"
             data-testid="privacy-notifications-link"
           >
             {{ 'privacy.centre.choices.notificationsLink' | transloco }}

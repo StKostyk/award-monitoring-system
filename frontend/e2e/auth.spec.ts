@@ -1,6 +1,14 @@
 import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, FRESH_PASSWORD, SEED, register, signIn, uniqueToken } from './helpers';
+import {
+  DEMO_PASSWORD,
+  FRESH_PASSWORD,
+  register,
+  SEED,
+  signIn,
+  toggleLanguage,
+  uniqueToken,
+} from './helpers';
 
 const employee = {
   email: SEED.employee,
@@ -22,7 +30,7 @@ test.describe('authentication', () => {
 
     await expect(page).toHaveURL('http://localhost:4200/dashboard');
     await expect(page.getByTestId('user-name')).toHaveText(employee.name);
-    await page.goto('/profile');
+    await page.goto('/profile?section=roles');
     await expect(page.getByTestId('profile-email')).toHaveText(employee.email);
     await expect(page.getByTestId('profile-role').first()).toContainText('Працівник');
 
@@ -105,7 +113,7 @@ test.describe('authentication', () => {
     await page.click('button[type="submit"]');
     await expect(page.getByTestId('user-name')).toHaveText(employee.name);
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(page.getByTestId('nav-dashboard')).toContainText('My dashboard');
   });
 });

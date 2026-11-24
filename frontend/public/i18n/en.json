@@ -1639,7 +1639,6 @@
     "addressTitle": "Sign-in address",
     "addressHint": "A new address has to be confirmed from its mailbox. Confirming ends every session.",
     "changeAddress": "Change address",
-    "privacyLink": "Privacy and my data",
     "validation": {
       "required": "The field cannot be empty",
       "too-long": "At most 100 characters",
@@ -1650,6 +1649,26 @@
       "load": "The profile could not be loaded. Try again later.",
       "network": "The server is unavailable. Try again later.",
       "failed": "The changes could not be saved. Try again later."
+    },
+    "sections": {
+      "label": "Profile sections",
+      "names": "First and last name",
+      "address": "Sign-in address",
+      "notifications": "Notifications",
+      "privacy": "Privacy and my data",
+      "roles": "Roles",
+      "notificationsSummary": "{{count}} events · e-mail and in app",
+      "privacySummary": "consents, export, deletion",
+      "savedAtOnce": "changes are saved at once",
+      "back": "Back to sections"
+    },
+    "privacy": {
+      "consents": "Consents",
+      "consentsHint": "analytics, consent history",
+      "export": "Export my data",
+      "exportHint": "an archive of your data",
+      "erasure": "Delete my account",
+      "erasureHint": "erasure request"
     }
   },
   "emailChange": {
@@ -1739,9 +1758,8 @@
         "DELEGATION_CREATED": "Role delegated to me",
         "DELEGATION_REVOKED": "Delegation revoked"
       },
-      "lastChannel": "Each event keeps at least one channel, so the last ticked box cannot be cleared.",
+      "lastChannel": "Each event keeps at least one channel, so the last switch that is on cannot be turned off.",
       "security": "Security e-mails (account verification, password reset, address change, new device, account lock, data export) are always sent.",
-      "save": "Save",
       "saved": "Notification settings saved",
       "errors": {
         "load": "The notification settings could not be loaded.",

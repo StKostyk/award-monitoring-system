@@ -18,9 +18,7 @@ test.describe('profile', () => {
     await page.getByTestId('nav-profile').click();
     await expect(page).toHaveURL('http://localhost:4200/profile');
     await expect(page.getByTestId('profile-email')).toHaveText(email);
-    await expect(page.getByTestId('profile-department')).toContainText('Кафедра');
-    await expect(page.getByTestId('profile-faculty')).toBeVisible();
-    await expect(page.getByTestId('profile-no-roles')).toBeVisible();
+    await expect(page.getByTestId('profile-section-names')).toHaveAttribute('aria-current', 'true');
     await expect(page.getByTestId('profile-save')).toBeDisabled();
 
     await page.getByTestId('profile-last-name').fill('Нова1');
@@ -33,6 +31,13 @@ test.describe('profile', () => {
     await expect(page.getByTestId('profile-saved')).toHaveText('Збережено');
     await expect(page.getByTestId('user-name')).toHaveText('Ірина Петренко-Коваль');
     await expect(page.getByTestId('profile-save')).toBeDisabled();
+
+    await page.getByTestId('profile-section-roles').click();
+    await expect(page).toHaveURL('http://localhost:4200/profile?section=roles');
+    await expect(page.getByTestId('profile-department')).toContainText('Кафедра');
+    await expect(page.getByTestId('profile-faculty')).toBeVisible();
+    await expect(page.getByTestId('profile-no-roles')).toBeVisible();
+    await expect(page.getByTestId('profile-names')).toHaveCount(0);
   });
 
   test('ac14 ac15 ac16 ac17 moves the account to a confirmed address and signs it out', async ({
@@ -44,7 +49,7 @@ test.describe('profile', () => {
     await registerAndVerify(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
     await expect(page.getByTestId('user-name')).toBeVisible();
-    await page.goto('/profile');
+    await page.goto('/profile?section=address');
 
     await page.getByTestId('profile-change-address').click();
     await page.getByTestId('email-change-new').fill(moved);
@@ -81,7 +86,7 @@ test.describe('profile', () => {
     await registerAndVerify(page, mover, PASSWORD);
     await signIn(page, mover, PASSWORD);
     await expect(page.getByTestId('user-name')).toBeVisible();
-    await page.goto('/profile');
+    await page.goto('/profile?section=address');
     await page.getByTestId('profile-change-address').click();
     await page.getByTestId('email-change-new').fill(moved);
     await page.getByTestId('email-change-password').fill(PASSWORD);
@@ -112,7 +117,7 @@ test.describe('profile', () => {
     await expect(page.getByTestId('profile-email')).toHaveText(email);
   });
 
-  test('ac3_6 keeps one channel per type and stores the choice', async ({ page }) => {
+  test('ac3_6 ac6_3 keeps one channel per type and stores each switch', async ({ page }) => {
     const email = `e2e.prefs.${Date.now()}@chnu.edu.ua`;
     await registerAndVerify(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
@@ -120,33 +125,51 @@ test.describe('profile', () => {
     await page.goto('/profile#notifications');
     const card = page.getByTestId('notification-preferences');
     await expect(card).toBeInViewport();
+    await expect(page.getByTestId('profile-section-notifications')).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
     await expect(card.getByTestId('preferences-group')).toHaveCount(3);
     await expect(card.getByTestId('preferences-security')).toContainText('надсилаються завжди');
-    await expect(card.getByTestId('preferences-save')).toBeDisabled();
+    await expect(card.getByTestId('preferences-save')).toHaveCount(0);
     const scan = await new AxeBuilder({ page })
       .include('[data-testid="notification-preferences"]')
       .analyze();
     expect(scan.violations.map((violation) => violation.id)).toEqual([]);
 
-    const awardEmail = page.getByRole('checkbox', { name: 'Е-пошта: Нагороду погоджено' });
-    const awardInApp = page.getByRole('checkbox', { name: 'У системі: Нагороду погоджено' });
-    await awardEmail.uncheck();
-    await expect(awardInApp).toBeChecked();
-    await expect(awardInApp).toBeDisabled();
-    await page
-      .getByRole('checkbox', { name: 'У системі: Щоденний перелік прострочених розглядів' })
-      .uncheck();
-
-    await card.getByTestId('preferences-save').click();
+    const awardEmail = page.getByRole('switch', { name: 'Е-пошта: Нагороду погоджено' });
+    const awardInApp = page.getByRole('switch', { name: 'У системі: Нагороду погоджено' });
+    const overdueInApp = page.getByRole('switch', {
+      name: 'У системі: Щоденний перелік прострочених розглядів',
+    });
+    const saved = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/users/me/notification-preferences') &&
+        response.request().method() === 'PUT',
+    );
+    await awardEmail.click();
+    await saved;
     await expect(card.getByTestId('preferences-saved')).toHaveText(
       'Налаштування сповіщень збережено',
     );
+    await expect(awardEmail).not.toBeChecked();
 
+    await awardInApp.click();
+    await expect(awardInApp).toBeChecked();
+    await expect(card.getByTestId('preferences-error')).toContainText('останній увімкнений');
+
+    const second = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/users/me/notification-preferences') &&
+        response.request().method() === 'PUT',
+    );
+    await overdueInApp.click();
+    await second;
+
+    await page.goto('/profile?section=notifications');
     await page.reload();
     await expect(awardEmail).not.toBeChecked();
-    await expect(awardInApp).toBeDisabled();
-    await expect(
-      page.getByRole('checkbox', { name: 'Е-пошта: Щоденний перелік прострочених розглядів' }),
-    ).toBeDisabled();
+    await expect(awardInApp).toBeChecked();
+    await expect(overdueInApp).not.toBeChecked();
   });
 });

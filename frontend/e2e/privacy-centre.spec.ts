@@ -3,12 +3,14 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
 
 import {
-  FRESH_PASSWORD,
   countMessages,
+  FRESH_PASSWORD,
   registerAndVerify,
   seriousViolations,
+  shellTool,
   signIn,
   sql,
+  toggleLanguage,
 } from './helpers';
 
 test.describe('privacy centre', () => {
@@ -20,7 +22,7 @@ test.describe('privacy centre', () => {
     await signIn(page, email, FRESH_PASSWORD);
     await expect(page.getByTestId('user-name')).toBeVisible();
 
-    await page.getByTestId('user-menu').click();
+    await (await shellTool(page, 'user-menu')).click();
     await page.getByTestId('nav-privacy').click();
     await expect(page).toHaveURL('http://localhost:4200/privacy');
     await expect(page.getByTestId('privacy-notice-acknowledged')).toContainText('1.0');
@@ -53,8 +55,8 @@ test.describe('privacy centre', () => {
     await registerAndVerify(page, email, FRESH_PASSWORD);
     await signIn(page, email, FRESH_PASSWORD);
     await expect(page.getByTestId('user-name')).toBeVisible();
-    await page.goto('/profile');
-    await page.getByTestId('profile-privacy-link').click();
+    await page.goto('/profile?section=privacy');
+    await page.getByTestId('profile-privacy-export').click();
     await expect(page).toHaveURL('http://localhost:4200/privacy');
 
     const downloading = page.waitForEvent('download');
@@ -99,7 +101,7 @@ test.describe('privacy centre', () => {
       expect(await seriousViolations(page)).toEqual([]);
     }
 
-    await page.getByTestId('language-toggle').click();
+    await toggleLanguage(page);
     await expect(
       page.getByRole('heading', { name: 'Privacy and my data', level: 1 }),
     ).toBeVisible();
