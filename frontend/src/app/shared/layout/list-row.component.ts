@@ -11,6 +11,9 @@ import {
   input,
 } from '@angular/core';
 
+import { IconComponent } from '../icons/icon.component';
+import { IconName } from '../icons/icons';
+
 /**
  * One row of a split page's list, on a native link or button so that Enter and a click select it: initials, a title,
  * a meta line and the chips the caller projects with the rowEnd attribute. At least 44 px tall with a visible focus
@@ -18,6 +21,7 @@ import {
  */
 @Component({
   selector: 'a[appListRow], button[appListRow]',
+  imports: [IconComponent],
   host: {
     class: 'list-row',
     '[class.list-row--selected]': 'selected()',
@@ -26,6 +30,8 @@ import {
   template: `
     @if (initials()) {
       <span class="list-row__avatar" aria-hidden="true">{{ initials() }}</span>
+    } @else if (icon(); as icon) {
+      <span class="list-row__icon"><app-icon [name]="icon" /></span>
     }
     <span class="list-row__text">
       <span class="list-row__title">{{ rowTitle() }}</span>
@@ -85,6 +91,19 @@ import {
       font: 700 0.75rem / 1 var(--app-font-heading);
     }
 
+    .list-row__icon {
+      display: inline-grid;
+      flex: none;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      box-sizing: border-box;
+      border: 1px solid var(--app-pane-border);
+      border-radius: 10px;
+      background: var(--app-pane-head);
+      color: var(--mat-sys-primary);
+    }
+
     .list-row__text {
       display: grid;
       flex: 1;
@@ -136,6 +155,8 @@ import {
 export class ListRowComponent implements FocusableOption {
   /** The initials in the round badge; none hides the badge. */
   readonly initials = input<string | null>(null);
+  /** The icon in a square badge, shown when there are no initials. */
+  readonly icon = input<IconName | null>(null);
   /** The row's title. */
   readonly rowTitle = input.required<string>();
   /** The line under the title. */

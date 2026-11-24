@@ -145,7 +145,7 @@ describe('PrivacyCentreComponent', () => {
     expect(query(fixture, 'privacy-documents')?.textContent?.trim()).toBe('3');
     expect(query(fixture, 'privacy-email-off')?.textContent?.trim()).toBe('2');
     expect(query(fixture, 'privacy-notifications-link')?.getAttribute('href')).toBe(
-      '/profile#notifications',
+      '/profile?section=notifications',
     );
     expect(query(fixture, 'privacy-awards-link')?.getAttribute('href')).toBe('/awards');
   });
