@@ -225,7 +225,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.6.2 | My dashboard widgets | 3 | 👀 In review (11) | SCRUM-175 | [#486](https://github.com/StKostyk/award-monitoring-system/issues/486) |
 | 9.6.3 | Unit analytics widgets | 5 | 👀 In review (11) | SCRUM-176 | [#487](https://github.com/StKostyk/award-monitoring-system/issues/487) |
 | 9.6.4 | University bento with the faculty comparison | 5 | 👀 In review (11) | SCRUM-177 | [#488](https://github.com/StKostyk/award-monitoring-system/issues/488) |
-| 9.6.5 | Hall of Fame widgets | 5 | 11 | SCRUM-178 | [#489](https://github.com/StKostyk/award-monitoring-system/issues/489) |
+| 9.6.5 | Hall of Fame widgets | 5 | 👀 In review (11) | SCRUM-178 | [#489](https://github.com/StKostyk/award-monitoring-system/issues/489) |
 | 9.6.6 | Profile with sections | 3 | 11 | SCRUM-179 | [#490](https://github.com/StKostyk/award-monitoring-system/issues/490) |
 | 9.6.7 | Remaining pages of the all-pages canvas | 3 | 11 | SCRUM-180 | [#491](https://github.com/StKostyk/award-monitoring-system/issues/491) |
 

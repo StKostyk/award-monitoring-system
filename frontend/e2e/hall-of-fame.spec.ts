@@ -144,28 +144,22 @@ test.describe('Hall of Fame', () => {
     await expect(page).toHaveURL(/\/forbidden$/);
   });
 
-  test('9.5 ac1_6 the trend annotations stay inside the chart at 360 px in English', async ({
+  test('ac5_2 the year bars and the running year label stay inside the pane at 360 px in English', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 360, height: 780 });
     await signInAsSeed(page, SEED.dean);
     await page.evaluate(() => localStorage.setItem('lang', 'en'));
     await page.goto('/hall-of-fame');
-    const chart = page.getByTestId('widget-TREND').locator('[data-testid="chart-canvas"] svg');
-    await expect(chart.locator('text', { hasText: /Peak|Year to date/ }).first()).toBeVisible();
+    const trend = page.getByTestId('widget-TREND');
+    await expect(trend.getByTestId('bar-row').first()).toBeVisible();
+    await expect(trend.getByTestId('bar-running')).toHaveText('year in progress');
 
-    const outside = await chart.evaluate((svg) => {
-      const frame = svg.getBoundingClientRect();
-      return Array.from(svg.querySelectorAll('text'))
-        .filter((text) => /Peak|Year to date/.test(text.textContent ?? ''))
-        .map((text) => ({ text: text.textContent, box: text.getBoundingClientRect() }))
-        .filter(
-          ({ box }) =>
-            box.left < frame.left - 1 ||
-            box.right > frame.right + 1 ||
-            box.top < frame.top - 1 ||
-            box.bottom > frame.bottom + 1,
-        )
+    const outside = await trend.evaluate((widget) => {
+      const frame = widget.getBoundingClientRect();
+      return Array.from(widget.querySelectorAll('[data-testid="bar-row"] > *'))
+        .map((part) => ({ text: part.textContent?.trim(), box: part.getBoundingClientRect() }))
+        .filter(({ box }) => box.left < frame.left - 1 || box.right > frame.right + 1)
         .map(({ text }) => text);
     });
     expect(outside).toEqual([]);

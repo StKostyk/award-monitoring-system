@@ -1,32 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import type { EChartsCoreOption } from 'echarts/core';
 
 import { LanguageService } from '../../core/i18n/language.service';
-import { ChartComponent } from '../charts/chart.component';
-import { BAR_RADIUS, categoryAxis, tooltip, valueAxis } from '../charts/chart-style';
-import { ChartThemeService } from '../charts/chart-theme.service';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
+import { PaneComponent } from '../layout/pane.component';
+import { BarListComponent, BarRow } from './bar-list.component';
 import { peakYear } from './facts';
 import { YearTotal } from './widget-data';
-
-const PARTIAL_OPACITY = 0.5;
-const ONE_LINE_ROOM = 24;
-const TWO_LINE_ROOM = 40;
-
-/**
- * Anchors a bar annotation so that it grows away from the nearest chart edge.
- *
- * @param index the bar's position
- * @param count the number of bars
- * @return the label alignment for echarts
- */
-export function edgeAlign(index: number, count: number): 'left' | 'center' | 'right' {
-  if (count > 1 && index === count - 1) {
-    return 'right';
-  }
-  return count > 1 && index === 0 ? 'left' : 'center';
-}
 
 /** A year of T1 with what marks it. */
 export interface TrendRow extends YearTotal {
@@ -44,116 +24,102 @@ export function trendRows(years: YearTotal[], partialYear: number | null): Trend
   }));
 }
 
-/** T1: awards per year as bars, the peak year and the current partial year marked. */
+/** T1: awards per year as thick horizontal bars, the running year hatched; a table in the pane's table view. */
 @Component({
   selector: 'app-trend-widget',
-  imports: [ChartComponent, EmptyStateComponent, TranslocoPipe],
+  imports: [BarListComponent, EmptyStateComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (peak()) {
-      <app-chart [option]="option()" [description]="description()" label="widgets.data">
-        <table class="analytics-table" data-testid="trend-widget-table">
-          <caption>
-            {{
-              'widgets.trend.title' | transloco
-            }}
-          </caption>
-          <thead>
+    @if (!peak()) {
+      <app-empty-state icon="chart-bar" [text]="'widgets.empty' | transloco" />
+    } @else if (table()) {
+      <table class="analytics-table" data-testid="trend-widget-table">
+        <caption>
+          {{
+            'widgets.trend.title' | transloco
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ 'widgets.year' | transloco }}</th>
+            <th scope="col">{{ 'widgets.awards' | transloco }}</th>
+            <th scope="col">{{ 'widgets.note' | transloco }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.year) {
             <tr>
-              <th scope="col">{{ 'widgets.year' | transloco }}</th>
-              <th scope="col">{{ 'widgets.awards' | transloco }}</th>
-              <th scope="col">{{ 'widgets.note' | transloco }}</th>
+              <th scope="row">{{ row.year }}</th>
+              <td>{{ row.total }}</td>
+              <td>
+                @if (row.peak) {
+                  {{ 'widgets.trend.peak' | transloco }}
+                }
+                @if (row.partial) {
+                  {{ 'widgets.trend.partial' | transloco }}
+                }
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @for (row of rows(); track row.year) {
-              <tr>
-                <th scope="row">{{ row.year }}</th>
-                <td>{{ row.total }}</td>
-                <td>
-                  @if (row.peak) {
-                    {{ 'widgets.trend.peak' | transloco }}
-                  }
-                  @if (row.partial) {
-                    {{ 'widgets.trend.partial' | transloco }}
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </app-chart>
+          }
+        </tbody>
+      </table>
     } @else {
-      <app-empty-state icon="chart-column" [text]="'widgets.empty' | transloco" />
+      <app-bar-list
+        data-testid="trend-widget-bars"
+        [rows]="bars()"
+        [label]="'widgets.trend.title' | transloco"
+        shortLabels
+        thick
+      />
+      @if (caption(); as text) {
+        <p class="trend__caption">{{ text }}</p>
+      }
+    }
+  `,
+  styles: `
+    :host {
+      display: block;
+    }
+
+    .trend__caption {
+      margin: 10px 0 0;
+      font: 400 0.8125rem / 1.45 var(--app-font-body);
+      color: var(--app-muted);
     }
   `,
 })
 export class TrendWidgetComponent {
-  private readonly theme = inject(ChartThemeService);
   private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
+  private readonly pane = inject(PaneComponent, { optional: true });
 
   /** The yearly counts, oldest first. */
   readonly years = input.required<YearTotal[]>();
   /** The year that is not over yet, or null. */
   readonly partialYear = input<number | null>(null);
 
+  protected readonly table = computed(() => this.pane?.view() === 'table');
   protected readonly rows = computed(() => trendRows(this.years(), this.partialYear()));
   protected readonly peak = computed(() => peakYear(this.years()));
-  protected readonly description = computed(() => {
+  protected readonly bars = computed<BarRow[]>(() => {
     this.language.current();
-    const rows = this.rows();
-    return this.transloco.translate('widgets.trend.description', {
-      from: rows[0]?.year ?? '',
-      to: rows.at(-1)?.year ?? '',
-      peakYear: this.peak()?.year ?? '',
-      peak: this.peak()?.total ?? 0,
-    });
+    const running = this.transloco.translate('widgets.trend.running');
+    const last = this.rows().at(-1)?.year;
+    return this.rows().map((row) => ({
+      key: row.year,
+      label: String(row.year),
+      value: row.total,
+      current: row.year === last,
+      running: row.partial ? running : undefined,
+    }));
   });
-  protected readonly option = computed<EChartsCoreOption>(() => {
+  protected readonly caption = computed(() => {
     this.language.current();
-    const palette = this.theme.palette();
-    const peakLabel = this.transloco.translate('widgets.trend.peak');
-    const partialLabel = this.transloco.translate('widgets.trend.partial');
-    return {
-      grid: {
-        left: 8,
-        right: 8,
-        top: this.rows().some((row) => row.peak && row.partial) ? TWO_LINE_ROOM : ONE_LINE_ROOM,
-        bottom: 8,
-        containLabel: true,
-      },
-      tooltip: tooltip(palette, 'axis'),
-      xAxis: categoryAxis(
-        palette,
-        this.rows().map((row) => String(row.year)),
-      ),
-      yAxis: valueAxis(palette),
-      series: [
-        {
-          type: 'bar',
-          name: this.transloco.translate('widgets.awards'),
-          barMaxWidth: 32,
-          data: this.rows().map((row, index, rows) => ({
-            value: row.total,
-            itemStyle: {
-              color: row.peak ? palette.series[1] : palette.bar,
-              opacity: row.partial ? PARTIAL_OPACITY : 1,
-              borderRadius: [BAR_RADIUS, BAR_RADIUS, 0, 0],
-            },
-            label: {
-              show: row.peak || row.partial,
-              position: 'top',
-              align: edgeAlign(index, rows.length),
-              lineHeight: 14,
-              color: palette.text,
-              formatter: [row.peak ? peakLabel : '', row.partial ? partialLabel : '']
-                .filter(Boolean)
-                .join('\n'),
-            },
-          })),
-        },
-      ],
-    };
+    const peak = this.rows().find((row) => row.peak);
+    if (!peak || this.rows().length < 2) {
+      return '';
+    }
+    const key = peak.partial ? 'widgets.trend.peakRunning' : 'widgets.trend.peakYear';
+    return this.transloco.translate(key, { year: peak.year, count: peak.total });
   });
 }
