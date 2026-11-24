@@ -1,4 +1,4 @@
-<app-chart [option]="option()" [description]="description()">
+@if (table()) {
   @if (faculty()) {
     <table class="analytics-table" data-testid="unit-trend-table">
       <caption>
@@ -15,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (line of lines(); track line.id) {
+        @for (line of lines(); track line.id + '-' + $index) {
           <tr>
             <th scope="row">{{ line.label }}</th>
             @for (count of line.counts; track $index) {
@@ -52,4 +52,33 @@
       </tbody>
     </table>
   }
-</app-chart>
+} @else {
+  @if (faculty()) {
+    <p class="multiples__key">{{ 'unitAnalytics.trend.ownScale' | transloco }}</p>
+  }
+  <ul class="multiples" [class.multiples--single]="!faculty()" data-testid="unit-trend-multiples">
+    @for (line of lines(); track line.id + '-' + $index) {
+      <li class="multiple" data-testid="unit-trend-multiple">
+        <header class="multiple__head">
+          <span class="multiple__name">{{ line.label }}</span>
+          <b class="multiple__total">
+            <span class="cdk-visually-hidden">{{ range() }}:</span>
+            {{ line.total }}
+          </b>
+        </header>
+        <ol class="columns" [attr.aria-label]="line.label">
+          @for (column of line.columns; track column.year) {
+            <li class="columns__item" [class.columns__item--current]="column.current">
+              <b class="columns__count">
+                <span class="cdk-visually-hidden">{{ column.year }}:</span>
+                {{ column.count }}
+              </b>
+              <span class="columns__bar" [style.height.%]="column.height" aria-hidden="true"></span>
+              <span class="columns__year" aria-hidden="true">{{ column.year }}</span>
+            </li>
+          }
+        </ol>
+      </li>
+    }
+  </ul>
+}

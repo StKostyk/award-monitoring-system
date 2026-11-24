@@ -7,20 +7,53 @@
     {{ 'unitAnalytics.top.empty' | transloco }}
   </p>
 } @else {
-  <ul class="people" data-testid="top-performers">
-    @for (person of people(); track person.userId) {
-      <li class="person">
-        <span class="person__name">{{ person.lastName }} {{ person.firstName }}</span>
-        @if (person.departmentName) {
-          <span class="person__detail">{{ person.departmentName }}</span>
+  <div data-testid="top-performers">
+    <ol class="podium" [class.podium--single]="!ranked()" data-testid="top-podium">
+      @for (person of podium(); track person.userId) {
+        <li
+          class="podium__card"
+          [class]="'podium__card--' + person.rank"
+          data-testid="top-podium-card"
+        >
+          @if (ranked()) {
+            <span class="podium__rank">{{ person.rank }}</span>
+          }
+          <span class="avatar" aria-hidden="true">{{ person.initials }}</span>
+          <strong class="podium__name">{{ person.lastName }} {{ person.firstName }}</strong>
+          @if (person.departmentName) {
+            <span class="podium__detail">{{ person.departmentName }}</span>
+          }
+          <b class="podium__count">
+            <span class="cdk-visually-hidden">{{ 'unitAnalytics.top.awards' | transloco }}:</span>
+            {{ person.count }}
+          </b>
+          <span class="podium__detail">
+            {{ 'unitAnalytics.top.highest' | transloco }}:
+            {{ 'categories.levels.' + person.highestLevel | transloco }}
+          </span>
+        </li>
+      }
+    </ol>
+    @if (rest().length > 0) {
+      <ol class="ranks" [start]="rest()[0].rank" data-testid="top-list">
+        @for (person of rest(); track person.userId) {
+          <li class="ranks__row" data-testid="top-list-row">
+            <em class="ranks__rank" aria-hidden="true">{{ person.rank }}</em>
+            <span class="avatar avatar--small" aria-hidden="true">{{ person.initials }}</span>
+            <span class="ranks__who">
+              <strong>{{ person.lastName }} {{ person.firstName }}</strong>
+              @if (person.departmentName) {
+                <span>{{ person.departmentName }}</span>
+              }
+            </span>
+            <b class="ranks__count">
+              <span class="cdk-visually-hidden">{{ 'unitAnalytics.top.awards' | transloco }}:</span>
+              {{ person.count }}
+            </b>
+          </li>
         }
-        <span class="person__detail">
-          {{ 'unitAnalytics.top.count' | transloco: { count: person.count } }} ·
-          {{ 'unitAnalytics.top.highest' | transloco }}:
-          {{ 'categories.levels.' + person.highestLevel | transloco }}
-        </span>
-      </li>
+      </ol>
     }
-  </ul>
+  </div>
   <p class="analytics-note">{{ 'unitAnalytics.top.note' | transloco }}</p>
 }

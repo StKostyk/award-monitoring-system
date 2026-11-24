@@ -17,11 +17,39 @@ describe('TopPerformersComponent', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('ac2_5_lists_name_department_count_and_highest_level_without_positions', () => {
+  it('ac3_5_puts_the_first_three_on_a_podium_and_ranks_the_rest', () => {
+    const template = facultyAnalytics().topPerformers.people[0];
+    const people = Array.from({ length: 5 }, (_, index) => ({
+      ...template,
+      userId: index + 1,
+      firstName: `Name${index + 1}`,
+      count: 10 - index,
+    }));
+    const element = render({ status: 'LISTED', people }, 'uk');
+    const cards = [...element.querySelectorAll('[data-testid="top-podium-card"]')];
+    const rows = [...element.querySelectorAll('[data-testid="top-list-row"]')];
+
+    expect(cards).toHaveLength(3);
+    expect(cards.map((card) => card.querySelector('.podium__rank')!.textContent)).toEqual([
+      '1',
+      '2',
+      '3',
+    ]);
+    expect(cards[0].classList).toContain('podium__card--1');
+    expect(cards[0].querySelector('.avatar')!.textContent).toBe('KN');
+    expect(rows).toHaveLength(2);
+    expect(element.querySelector('[data-testid="top-list"]')!.getAttribute('start')).toBe('4');
+    expect(rows[1].textContent).toContain('Koval Name5');
+    expect(rows[1].querySelector('.ranks__count')!.textContent).toContain('6');
+  });
+
+  it('ac2_5_shows_one_person_without_a_position', () => {
     const element = render(facultyAnalytics().topPerformers, 'uk');
     const list = element.querySelector('[data-testid="top-performers"]')!;
 
-    expect(list.tagName).toBe('UL');
+    expect(list.querySelectorAll('[data-testid="top-podium-card"]')).toHaveLength(1);
+    expect(list.querySelector('.podium__rank')).toBeNull();
+    expect(list.querySelector('[data-testid="top-list"]')).toBeNull();
     expect(list.textContent).toContain('Koval Olena');
     expect(list.textContent).toContain('Кафедра алгебри та інформатики');
     expect(list.textContent).toContain('Нагород: 6');

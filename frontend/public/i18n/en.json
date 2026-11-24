@@ -1939,10 +1939,9 @@
       "units": "Departments"
     },
     "trend": {
-      "description": "Approved awards per year from {{from}} to {{to}}, {{total}} in all, personal and unit awards stacked.",
-      "facultyDescription": "Approved awards per year from {{from}} to {{to}}, one line for each of {{count}} rows, {{total}} in all.",
       "personal": "Personal awards",
-      "unitAwards": "Unit awards"
+      "unitAwards": "Unit awards",
+      "ownScale": "Each department on its own scale; the last year of the period is highlighted."
     },
     "comparison": {
       "unit": "Unit",
@@ -1954,13 +1953,12 @@
       "verified": "Verified",
       "facultyLevel": "Faculty level",
       "inactive": "inactive",
-      "chartTitle": "Approved awards per 100 members",
-      "chartDescription": "Approved awards per 100 members for {{count}} departments; the highest is {{top}} with {{value}}."
+      "perHundredShort": "Per 100"
     },
     "bars": {
       "current": "This period",
       "previous": "Previous period",
-      "description": "{{caption}}: {{count}} rows, this period beside the previous one; the largest is «{{top}}» with {{current}} (previously {{previous}})."
+      "key": "Top bar: the previous period; bottom bar: this one."
     },
     "sources": {
       "organisation": "Awarding organisation",
@@ -1968,21 +1966,22 @@
       "description": "Approved awards by awarding organisation: {{count}} shown, the most from «{{top}}» with {{topCount}}."
     },
     "top": {
-      "count": "Awards: {{count}}",
       "highest": "highest level",
       "note": "Only people who agreed to be named in analytics appear here.",
       "empty": "Nobody in this unit has agreed to be named yet.",
-      "groupTooSmall": "The unit has fewer members than the minimum group for naming people, so nobody is listed."
+      "groupTooSmall": "The unit has fewer members than the minimum group for naming people, so nobody is listed.",
+      "awards": "Awards"
     },
     "highlights": {
       "strengths": "Strengths",
       "gaps": "Gaps",
       "none": "Nothing stands out in this period.",
-      "GROWTH": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
-      "DECLINE": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
-      "NO_AWARDS": "{{unit}}: no awards in this period, {{previous}} in the previous one",
+      "GROWTH": "{{unit}}: more awards than in the previous period",
+      "DECLINE": "{{unit}}: fewer awards than in the previous period",
+      "NO_AWARDS": "{{unit}}: no awards in this period",
       "NO_AWARDS_EVER": "{{unit}}: no awards in this period or the previous one",
-      "BELOW_AVERAGE": "{{unit}}: {{current}} awards, under half of the faculty's average per member"
+      "BELOW_AVERAGE": "{{unit}}: under half of the faculty's average per member",
+      "was": "was {{count}}"
     },
     "wholeFaculty": "Whole faculty",
     "approved": "approved awards"
@@ -2000,8 +1999,7 @@
       "faculties": "Faculties by approved awards"
     },
     "comparison": {
-      "universityLevel": "University level",
-      "chartDescription": "Approved awards per 100 members for {{count}} faculties and colleges; the highest is {{top}} with {{value}}."
+      "universityLevel": "University level"
     },
     "projection": {
       "approved": "Approved awards",
@@ -2021,12 +2019,12 @@
       "noSource": "No awarding organisation changed noticeably."
     },
     "highlights": {
-      "GROWTH": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
-      "DECLINE": "{{unit}}: {{current}} awards, {{previous}} in the previous period",
-      "NO_AWARDS": "{{unit}}: no awards in this period, {{previous}} in the previous one",
+      "GROWTH": "{{unit}}: more awards than in the previous period",
+      "DECLINE": "{{unit}}: fewer awards than in the previous period",
+      "NO_AWARDS": "{{unit}}: no awards in this period",
       "NO_AWARDS_EVER": "{{unit}}: no awards in this period or the previous one",
-      "BELOW_AVERAGE": "{{unit}}: {{current}} awards, under half of the university's average per member",
-      "ABOVE_AVERAGE": "{{unit}}: {{current}} awards, at least one and a half times the university's average per member"
+      "BELOW_AVERAGE": "{{unit}}: under half of the university's average per member",
+      "ABOVE_AVERAGE": "{{unit}}: at least one and a half times the university's average per member"
     },
     "compliance": {
       "ok": "Everything is in order",
@@ -2158,7 +2156,8 @@
     "view": "View",
     "chart": "Chart",
     "cards": "Cards",
-    "table": "Table"
+    "table": "Table",
+    "ranking": "Ranking"
   },
   "widgets": {
     "data": "Data",

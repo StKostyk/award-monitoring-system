@@ -1,22 +1,54 @@
 .comparison__scroll {
+  container-type: inline-size;
   overflow-x: auto;
   max-width: 100%;
 }
 
 .comparison__table {
-  min-width: 640px;
-
   th[scope='row'] {
-    white-space: normal;
+    min-width: 150px;
+    font: 600 0.8125rem / 1.35 var(--app-font-heading);
+  }
+}
+
+@container (min-width: 720px) {
+  .comparison__table th[scope='row'] {
+    white-space: nowrap;
+  }
+}
+
+.comparison__table--full {
+  min-width: 640px;
+}
+
+.comparison__barcell {
+  width: 20%;
+  min-width: 72px;
+}
+
+.comparison__value {
+  display: block;
+  font: 800 0.875rem / 1.2 var(--app-font-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.comparison__track {
+  display: block;
+  height: 14px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-track);
+
+  i {
+    display: block;
+    height: 100%;
+    border-radius: var(--app-radius-sm);
+    background: var(--app-bar);
   }
 }
 
 .comparison__inactive {
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--app-muted);
   font: var(--mat-sys-body-small);
-}
-
-.comparison__chart-title {
-  font: var(--mat-sys-title-small);
-  margin: 16px 0 8px;
 }
