@@ -77,8 +77,9 @@ burgundy surfaces in the light scheme, text contrast at least 4.5:1 in both sche
 ### 9.6.1 Canvas look, sidebar tools and widget header (SCRUM-174)
 
 - **AC-1.1** (No top bar) Given any signed-in page at 960 px or wider, when it renders, then there is no top bar;
-  the bottom of the sidebar holds search (opens the Ctrl K palette), the language switch, the theme switch, the
-  notifications bell with its unread count, and the user's initials with name, role and sign-out; every one is a
+  search (opens the Ctrl K palette) sits at the top of the sidebar under the logo, and its bottom holds the language
+  switch, the theme switch, the notifications bell with its unread count, and the user's initials with name, role
+  and sign-out; every one is a
   button or link with an accessible name and a visible focus ring (P «Мій дашборд»).
 - **AC-1.2** (Phone shell) Given a signed-in page below 960 px, then a slim bar shows the menu button and the app
   name, the drawer holds the navigation and, at its bottom, the same tools as AC-1.1; there is no bottom bar and no
@@ -290,7 +291,8 @@ self-registration for step 24. Widths 360 and 1280, both schemes, both languages
 the screen with the named artboard of the canvas.
 
 1. Sign in as `employee.fmi`, open `http://localhost/dashboard` at 1280 in Ukrainian, light. Expected: no top bar;
-   search, «EN», theme, bell and the user with «Вийти» at the bottom of the burgundy sidebar. (AC-1.1, AC-1.6)
+   search «Пошук і переходи» at the top of the burgundy sidebar under the logo; «EN», theme, bell and the user with
+   «Вийти» at its bottom. (AC-1.1, AC-1.6)
 2. Same page at 360. Expected: slim bar with the menu button; the drawer shows the tools at its bottom; no bottom
    bar, no horizontal scroll. (AC-1.2)
 3. Look at «Нагороди за роками». Expected: header strip with icon, primary line under it, «Графік / Таблиця» on the
@@ -304,7 +306,8 @@ the screen with the named artboard of the canvas.
    numbers; podium with three cards and a list; comparison table with bars and neutral chips; highlights as big
    numbers with «було N»; levels and categories as paired bars. (AC-3.1 to AC-3.5)
 7. Sign in as `rector`, open `/analytics/university`. Expected: one «Факультети» tile with ticks and «+N», no
-   «Динаміка факультетів», no Compliance tile; years and forecast across the full width with «рік триває»;
+   «Динаміка факультетів», no Compliance tile; years and forecast in the main column with «рік триває» (the
+   one-column layout of 9.7.12, AC-12.7);
    `GET /api/v1/analytics/university` rows carry `approved.previous`, and each tick sits at that value.
    (AC-4.1, AC-4.2, AC-4.4, AC-4.5)
 8. In the highlights panel press «Усі N». Expected: all highlights shown, the button reads «Згорнути». (AC-4.3)
@@ -317,15 +320,17 @@ the screen with the named artboard of the canvas.
 12. Turn off the other channel of the same event. Expected: refused with the existing message, the switch back on.
     (AC-6.3)
 13. Choose «Ім'я та прізвище». Expected: the field labels sit clear of the border in both schemes. (AC-1.7)
-14. Choose «Конфіденційність і мої дані». Expected: links to consents, export and deletion lead to `/privacy`, which
-    shows two columns at 1280. (AC-6.4, AC-7.2)
+14. Choose «Конфіденційність і мої дані». Expected: links to consents, export and deletion lead to `/privacy`, the
+    privacy control panel of 9.7.8: a status line, four tiles in a row and then two columns at 1280. (AC-6.4, AC-7.2)
 15. Open an approved award of `employee.fmi`. Expected: facts and journey in two columns at 1280, stacked at 360.
     (AC-7.1)
-16. As `admin` open `/admin/users`. Expected: «Додати людину» in the title row, search and filters in a toolbar
-    under it, wrapping at 360. (AC-7.4)
+16. As `secretary.fmi` open `/admin/users` (the administrator holds no role that adds people). Expected: «Додати
+    колегу без облікового запису» in the title row, search and filters in a toolbar under it, wrapping at 360.
+    (AC-7.4)
 17. As `secretary.fmi` open the Command centre. Expected: header 8 on every pane. (AC-7.5)
-18. Sign out, open `http://localhost/login` and the backend sign-in page. Expected: slim top bar with logo,
-    language and theme; the sign-in page shows the gold logo. (AC-1.3, AC-7.6)
+18. Sign out, open `http://localhost/register`, `/privacy-notice` and `/no-such-page`. Expected: slim top bar with
+    logo, language and theme. Open `http://localhost/login` (the backend sign-in page, themed since 9.7.1). Expected:
+    its own language switch and the gold logo mark on burgundy, not the cyan one. (AC-1.3, AC-7.6)
 19. Open `http://localhost/no-such-page`. Expected: one centred 404 tile with a link home. (AC-7.3)
 
 ### Detours
@@ -338,15 +343,53 @@ the screen with the named artboard of the canvas.
     page opens.
 23. Second browser: change a notification switch in browser A, reload `/profile?section=notifications` in browser
     B. Expected: B shows the change.
-24. Hidden in state: a widget with no data (fresh account from self-registration, My dashboard). Expected: empty
-    states in the panes and no «Графік / Таблиця» switch.
+24. Hidden in state: a widget with no data (fresh account from self-registration with a confirmed employee role, My
+    dashboard). Expected: one page-level empty state «Затверджених нагород поки немає» with «Внести нагороду», no
+    panes and no «Графік / Таблиця» switch.
 25. Hidden in state: university highlights with four or fewer entries (period with few awards). Expected: no
     «Усі N» button.
-26. Revoked mid-flow: while `rector` is on `/analytics/university`, `admin` removes the rector role. Expected: the
-    next data request answers 403 and the page shows the forbidden state; the sidebar no longer lists the analytics
-    after a reload; `dean.fmi` keeps unit analytics unchanged.
+26. Revoked mid-flow: a fresh account with `RECTOR_SECRETARY` on the university (the seed `rector` keeps its role
+    history) is on `/analytics/university`; `admin` removes that role. Expected: the next data request answers 401
+    and the sign-in page opens (a revoked role signs the holder out); after signing in, the sidebar has no analytics
+    and `/analytics/university` opens the forbidden page; `dean.fmi` keeps unit analytics unchanged.
 27. Revoked mid-flow: while `secretary.fmi` holds a delegation from `dean.fmi` and has unit analytics open, the dean
-    revokes it. Expected: the faculty-level data request answers 403 or the department scope only, as in 2.4.
+    revokes it. Expected: the next data request answers 401 and the sign-in page opens (a revoke signs the delegate
+    out); after signing in again, the department scope only (`GET /analytics/units` lists the departments, the
+    faculty export answers 404). Unit analytics reads own roles only, so the delegation never widened it.
+
+### Run 2026-11-26
+
+Compose stack rebuilt from develop 2b7bf38 (app + frontend), default settings; Playwright MCP at 1280/360; fresh accounts mr96.empty2, mr96.rsec; delegation 61 created and revoked. Result: 26 pass, 1 blocked.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | step text corrected: no top bar at 1280; burgundy sidebar rgb(90,22,34); «EN», theme, bell (9 unread), Анастасія Працівник + «Вийти» at its bottom (y 788-845); search «Пошук і переходи Ctrl K» sits at the top under the logo since 9.6.1 (ac35d6e), AC-1.1 text aligned |
+| 2 | PASS | 360: slim bar 56 px «Облік нагород ЧНУ» with menu button; drawer: nav, then user + EN/theme/bell/«Вийти» at its bottom (y 668-725); no bottom bar, no horizontal scroll |
+| 3 | PASS | «Нагороди за роками»: header strip with icon, primary line, «Графік / Таблиця» right; cards 2026 10 / 2025 2 / average 1,5; thick bars with numbers; «Таблиця» rows 2026 10 … 2020 1 = bars = /analytics/me byYear; «Показати таблицею» count 0 |
+| 4 | PASS | «За категоріями»: cards №1 10 (53 %), №2 2, №3 2 (11 %) + ranked list of five with bars, 1 each; equals /analytics/me byCategory (10,2,2,1×5) |
+| 5 | PASS | sidebar theme menu (Як на пристрої / Світла / Темна) → Темна + «EN»: Aurora (body rgb(6,9,20), sidebar rgb(11,17,36), aurora glow), gold only on bars, avatar and sparkline; «My dashboard», «Awards by year», «By level» in English; in-page marker kept (no reload) |
+| 6 | PASS | dean.fmi /analytics/units/9?from=2021&to=2025: small multiple per department with yearly numbers (algebra 61 … faculty level 22); podium 3 cards (7/6/4) + list 4-10; comparison table with bars and neutral chips (+177 % …); highlights big numbers «61 було 22»; levels and categories as paired bars (previous/current) |
+| 7 | PASS | step text corrected (9.7.12 AC-12.7: years and forecast sit in the main column, 541 px, not full width): rector /analytics/university (2022-2026, partialYear true): one «Факультети» tile with ticks and «+N» (FMI 413 +336, tick at 77 = 18.6 %; FG 62, tick at previous 43); no «Динаміка факультетів», no Compliance tile; «рік триває» on 2026; API units carry approved.previous |
+| 8 | PASS | «Усі 15» (API highlights 15): 4 → 15 entries shown, button reads «Згорнути» |
+| 9 | PASS | rector /hall-of-fame 1280: burgundy hero rgb(90,22,34) with 356 and ring 11/12; «Нагороди за роками» and scoreboard «Цей рік проти минулого» side by side (x 292 / 773); «Чи знаєте ви» on ink rgb(43,27,30); «Рекорди» as cards; 360: all tiles x 16 stacked, no horizontal scroll |
+| 10 | PASS | rector /profile: burgundy banner with initials РР, «Ректор · ЧНУ», chip «Членство підтверджено», facts address / created 20.11.2026 / last sign-in; five sections on the left |
+| 11 | PASS | «Сповіщення» + reload keeps /profile?section=notifications; groups МОЇ НАГОРОДИ / РОЗГЛЯД / РОЛІ ТА ДОРУЧЕННЯ, 24 switches = 12 events × e-mail + in-app; «Е-пошта: Нагороду погоджено» off, after reload aria-checked=false |
+| 12 | PASS | «У системі: Нагороду погоджено» off refused: «Кожна подія зберігає принаймні один канал, тому останній увімкнений перемикач вимкнути не можна.»; switch stays on |
+| 13 | PASS | «Ім’я та прізвище» light and dark: labels «Ім’я»/«Прізвище» inside the outline notch (notch 29/60 px > label 20/51 px), label bottom 392 above input 397; same geometry in both schemes |
+| 14 | PASS | step text corrected (9.7.8 privacy control panel): «Конфіденційність і мої дані» links «Згоди», «Вивантажити мої дані», «Видалити обліковий запис» → /privacy; at 1280 status line, four tiles in a row (x 292/532/773/1013), then two columns «Ваші дані» / «Ваша активність» |
+| 15 | PASS | employee.fmi /awards/2366 (approved): 1280 details x292 w565 beside «Award journey» x896; 360 all x16-35 stacked, no horizontal scroll |
+| 16 | PASS | step text corrected (account secretary.fmi, label «Додати колегу без облікового запису»; admin holds no people role, canManagePeople): 1280 button in the title row (y 40-84, right 1237) beside «Користувачі», search + Роль/Статус/«Лише непідтверджені» toolbar under it (y 128); 360 button wraps under the title, filters stack at x16, no horizontal scroll |
+| 17 | PASS | secretary.fmi /command-centre: «Сьогодні», «Черга розгляду», «Кафедри, що потребують уваги», «Лідери факультету» each with icon, tinted strip rgb(251,244,234) and 2 px burgundy bottom line rgb(122,31,46) (header 8) |
+| 18 | PASS | step text corrected (9.7.1 sign-in themes): «Вийти» → /login; /register, /privacy-notice and /no-such-page signed out: 56 px bar with logo «Облік нагород ЧНУ», «EN», «Тема», «Увійти»; backend sign-in page (form action /login) has its own language switch УКР · EN and the gold-bar logo mark on burgundy in the panel footer, no cyan logo |
+| 19 | PASS | /no-such-page: one centred tile «404 · Сторінку не знайдено» with «На головну» → / and «Досягнення університету» |
+| 20 | PASS | employee.fmi /profile?section=unknown: first section «First and last name» chosen, no console error |
+| 21 | PASS | dean.fmi /hall-of-fame: «Нагороди за роками» → «Таблиця» (table 1), reload → chart again («Графік» pressed, table 0), no console error |
+| 22 | PASS | rector tab on /profile?section=notifications since 22:02:45 UTC (access token 15 min); at 22:19:26 «Е-пошта: Нагороду погоджено» on → PUT /users/me/notification-preferences 200, on after reload; the token had been refreshed in the background before the click (no 401, no sign-in page) |
+| 23 | PASS | employee.fmi browser A: «E-mail: Award rejected» off; browser B (new context) reload /profile?section=notifications: «Е-пошта: Нагороду відхилено» off; switched back on in A |
+| 24 | PASS | step text corrected (no-data dashboard is one page-level empty state): fresh employee mr96.empty2 /dashboard: «Затверджених нагород поки немає» with three steps and «Внести нагороду», no panes, «Графік / Таблиця» switches 0; getting-started card 1/5 |
+| 25 | BLOCKED | seed data cannot produce ≤ 4 university highlights: every active faculty without awards adds a NO_AWARDS entry (1995: 0 awards, 9 highlights; 2000, 2005, 2011: 9); covered by highlights.component.spec ac4_5_offers_no_toggle_when_the_list_fits |
+| 26 | PASS | step text corrected (fresh holder instead of the seed rector; revoke signs out): mr96.rsec RECTOR_SECRETARY on ChNU (role 2079) on /analytics/university; admin DELETE /users/2225/roles/2079 → 204; next request 401, sign-in page; after sign-in no «Аналітика» in the sidebar, /analytics/university → /forbidden; dean.fmi /analytics/units/9 still 200 (147) |
+| 27 | PASS | step text corrected (delegated roles do not widen unit analytics, own roles only; revoke signs the delegate out): delegation 61 dean.fmi → secretary.fmi (DEAN, FMI) active, secretary on /analytics/units/9; dean DELETE /delegations/61 → 204; next request 401, sign-in page; after sign-in GET /analytics/units = 5 departments, faculty export 404 |
 
 ## 11. Risks
 
