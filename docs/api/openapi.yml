@@ -2508,6 +2508,18 @@ paths:
             type: boolean
             default: false
           description: True for unread notifications only
+        - name: type
+          in: query
+          required: false
+          style: form
+          explode: true
+          description: >
+            Only notifications of these types, combinable with `unread`; an unknown value answers 400 (planned,
+            9.7.7)
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/NotificationType'
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -2560,6 +2572,34 @@ paths:
       responses:
         '204':
           description: Read
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: '`urn:awards:problem:notification-not-found`'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+    delete:
+      tags: [Notifications]
+      summary: Mark one notification unread
+      description: >
+        Idempotent: an unread notification stays unchanged. Another person's notification, an e-mail delivery row
+        or an unknown id answers 404 (9.7.7).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: markNotificationUnread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Unread
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -2974,6 +3014,60 @@ paths:
           description: >-
             `urn:awards:problem:invalid-parameter`; `parameter` is `colorScheme`, `layouts` (unknown dashboard) or
             `layouts.<DASHBOARD>.order` / `layouts.<DASHBOARD>.hidden`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/onboarding:
+    get:
+      tags: [Users]
+      summary: The caller's getting-started steps
+      description: >
+        The steps of the caller's roles in order, each done when the data proves it (`NOTICE`, `FIRST_AWARD`,
+        `DELEGATE`) or when the caller stored it; plus whether the checklist was dismissed and the tour seen
+        (9.7.9).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: getOnboarding
+      responses:
+        '200':
+          description: The steps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingState'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags: [Users]
+      summary: Save the caller's getting-started progress
+      description: >
+        Replaces the stored progress (last write wins); not audited; part of the export and the erasure (9.7.9).
+      x-status: planned
+      security:
+        - bearerAuth: []
+      operationId: saveOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingUpdate'
+      responses:
+        '200':
+          description: The steps after the save
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingState'
+        '400':
+          description: >-
+            `urn:awards:problem:invalid-parameter`; `parameter` is `done` for an unknown step, a duplicate or a step
+            outside the caller's roles
           content:
             application/problem+json:
               schema:
@@ -4466,6 +4560,10 @@ components:
         membershipConfirmed:
           type: boolean
           description: Whether somebody has ever granted the user a role
+        lastLoginAt:
+          type: [string, 'null']
+          format: date-time
+          description: Last successful sign-in; null before the first one and for erased accounts (planned, 9.7.5)
 
     UserDetail:
       allOf:
@@ -5608,6 +5706,9 @@ components:
           type: string
         verified:
           type: boolean
+        level:
+          $ref: '#/components/schemas/RecognitionLevel'
+          description: Recognition level of the award's category (planned, 9.7.3)
 
     PersonalRank:
       type: object
@@ -5641,6 +5742,52 @@ components:
         `COMMAND_CENTRE` = `TODAY`, `QUEUE`, `UNITS`, `TOP`
       enum: [KPI, TREND, RACE, RECORDS, FACT, TOP, LEVEL_MAP, LEVEL_STAIRS, IN_PROGRESS, BY_CATEGORY, RANK, VISIBILITY,
              TODAY, QUEUE, UNITS, LATEST]
+
+    OnboardingStepKey:
+      type: string
+      description: A getting-started step (planned, 9.7.9)
+      enum: [NOTICE, PROFILE, FIRST_AWARD, VISIBILITY, NOTIFICATIONS, REVIEW_QUEUE, DELEGATE, IMPORT]
+
+    OnboardingStep:
+      type: object
+      required: [key, done, derived]
+      properties:
+        key:
+          $ref: '#/components/schemas/OnboardingStepKey'
+        done:
+          type: boolean
+        derived:
+          type: boolean
+          description: True when the data decides the step (`NOTICE`, `FIRST_AWARD`, `DELEGATE`); not stored
+
+    OnboardingState:
+      type: object
+      description: The caller's getting-started steps (planned, 9.7.9)
+      required: [steps, dismissed, tourSeen]
+      properties:
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnboardingStep'
+        dismissed:
+          type: boolean
+        tourSeen:
+          type: boolean
+
+    OnboardingUpdate:
+      type: object
+      description: The stored progress, replaced as a whole (planned, 9.7.9)
+      required: [done, dismissed, tourSeen]
+      properties:
+        done:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/OnboardingStepKey'
+        dismissed:
+          type: boolean
+        tourSeen:
+          type: boolean
 
     DashboardPreferences:
       type: object
