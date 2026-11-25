@@ -25,7 +25,7 @@ test.describe('privacy centre', () => {
     await (await shellTool(page, 'user-menu')).click();
     await page.getByTestId('nav-privacy').click();
     await expect(page).toHaveURL('http://localhost:4200/privacy');
-    await expect(page.getByTestId('privacy-notice-acknowledged')).toContainText('1.0');
+    await expect(page.getByTestId('privacy-notice-acknowledged')).toContainText('1.1');
     await expect(page.getByTestId('privacy-awards-PRIVATE')).toHaveText('0');
     await expect(page.getByTestId('privacy-activity-action').first()).toHaveText('Вхід');
     await expect(page.getByTestId('privacy-status')).toContainText('Усе гаразд');

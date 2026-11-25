@@ -34,7 +34,7 @@ test.describe('registration', () => {
       sql(
         `select consent_type || ' ' || consent_version || ' ' || is_granted::text from consent_records c join users u using (user_id) where u.email_address = '${email}'`,
       ),
-    ).toBe('DATA_PROCESSING 1.0 true');
+    ).toBe('DATA_PROCESSING 1.1 true');
 
     await page.getByTestId('pending-sign-in').click();
     await expect(page).toHaveURL(/localhost:8080\/login/);

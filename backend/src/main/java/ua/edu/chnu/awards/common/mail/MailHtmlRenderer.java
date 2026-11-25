@@ -79,11 +79,21 @@ public class MailHtmlRenderer {
         context.setVariable("senderEn", sender(Locale.ENGLISH));
         context.setVariable("blocks", blocks(content.text()));
         if (content.preferencesLink()) {
-            context.setVariable("preferencesUrl", frontendUrl + "/profile#notifications");
+            context.setVariable("preferencesUrl", preferencesUrl());
             context.setVariable("preferencesLabel", message("mail.preferences", UK) + " / "
                 + message("mail.preferences", Locale.ENGLISH));
         }
         return templates.process(TEMPLATE, context);
+    }
+
+    /**
+     * The page where a recipient switches notification types off: the link in the footer and the unsubscribe
+     * address of a notification mail.
+     *
+     * @return the address of the notification preferences
+     */
+    public String preferencesUrl() {
+        return frontendUrl + "/profile#notifications";
     }
 
     List<Block> blocks(String text) {

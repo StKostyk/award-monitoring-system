@@ -180,6 +180,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'terms',
+        title: 'titles.terms',
+        loadComponent: () =>
+          import('./features/privacy/terms/terms.component').then((m) => m.TermsComponent),
+      },
+      {
         path: 'privacy',
         title: 'titles.privacy',
         canActivate: [authGuard],

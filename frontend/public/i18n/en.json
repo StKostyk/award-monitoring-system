@@ -15,6 +15,7 @@
     "notFound": "Page not found",
     "offline": "No connection",
     "privacyNotice": "Privacy notice",
+    "terms": "Terms of use",
     "privacy": "Privacy",
     "notifications": "Notifications",
     "awards": "My awards",
@@ -1445,6 +1446,8 @@
     "signIn": "Sign in",
     "privacyNotice": "I have read the",
     "privacyNoticeLink": "privacy notice",
+    "terms": "By using the system you accept the",
+    "termsLink": "terms of use",
     "validation": {
       "required": "Required",
       "institutionalEmail": "An address in the chnu.edu.ua domain is required",
@@ -1709,6 +1712,10 @@
         "cancelFailed": "The erasure could not be cancelled. Try again later."
       }
     }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "loadFailed": "The terms of use could not be loaded. Try again later."
   },
   "profile": {
     "menu": "My profile",

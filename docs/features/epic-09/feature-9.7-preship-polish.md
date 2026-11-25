@@ -465,6 +465,17 @@ draft wording and get the merged i18n text at the validation.
 40. Token expiry with the person pane or the reading pane open, then an action. Expected: the silent refresh keeps the
     session, or the sign-in page returns to the same URL.
 
+### Legal pages and mail headers (9.7.10, SCRUM-190)
+
+41. Sign in as `employee.fmi` (acknowledged 1.0). Expected: `/privacy-notice?acknowledge=true` with version 1.1 and the
+    section «Файли cookie та сховище браузера»; after «Я ознайомився» the app opens; the selector lists 1.0 and 1.1.
+42. Signed out, open `/login`. Expected: footer links «Конфіденційність» → `/privacy-notice` (no sign-in loop) and
+    «Умови користування» → `/terms`, which opens without an account in uk and en and links back to the notice; the
+    register form shows the terms line with its link.
+43. Trigger a notification mail (submit an award as `employee.fmi`, decide it as `dean.fmi`) and a password reset
+    mail; open both in Mailpit → «Headers». Expected: the decision mail has `List-Unsubscribe:
+    <http://localhost/profile#notifications>`; the reset mail has none.
+
 ## 11. Risks
 
 | # | Risk | Mitigation |

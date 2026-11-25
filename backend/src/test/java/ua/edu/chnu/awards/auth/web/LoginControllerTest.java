@@ -19,7 +19,7 @@ class LoginControllerTest {
 
         assertThat(controller.login(null, null, null, model)).isEqualTo("login");
         assertThat(model).doesNotContainKeys("awardCount", "awardCountKey")
-            .containsKeys("registerUrl", "forgotPasswordUrl");
+            .containsKeys("registerUrl", "forgotPasswordUrl", "privacyUrl", "termsUrl");
     }
 
     @Test
