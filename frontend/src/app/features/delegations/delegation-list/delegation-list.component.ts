@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,12 +5,13 @@ import {
   computed,
   effect,
   inject,
+  signal,
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
+import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { ActivatedRoute } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -21,16 +21,12 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { kyivToday } from '../../../shared/date-format';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
-import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
 import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
-import { PaneComponent } from '../../../shared/layout/pane.component';
-import { querySelection } from '../../../shared/layout/query-selection';
-import { SplitComponent } from '../../../shared/layout/split.component';
 import { organizationName } from '../../../shared/organization-name';
 import { pluralForm } from '../../../shared/plural';
 import { SkeletonRowsComponent } from '../../../shared/skeleton/skeleton-rows.component';
 import { initials } from '../../../shared/widgets/top-widget.component';
-import { capabilitiesOf } from '../delegation-capabilities';
+import { Capabilities, capabilitiesOf } from '../delegation-capabilities';
 import { daysLeft } from '../delegation-days';
 import { Delegation, UserBrief } from '../delegations.service';
 import { DelegateDialogComponent } from '../delegate-dialog/delegate-dialog.component';
@@ -38,25 +34,28 @@ import { RevokeDelegationDialogComponent } from '../revoke-delegation-dialog/rev
 import { DelegationsActions } from '../store/delegations.actions';
 import { delegationsFeature } from '../store/delegations.feature';
 
-/** The delegation in the pane and the side it was found on. */
-interface Shown {
-  delegation: Delegation;
-  given: boolean;
+/** Which delegations the board shows: given by the person or received by them. */
+export type BoardSide = 'given' | 'received';
+
+/** One board column: its key, the delegations it shows and how many it holds. */
+export interface BoardColumn {
+  key: 'active' | 'upcoming' | 'ended';
+  delegations: readonly Delegation[];
+  total: number;
 }
+
+/** Ended delegations shown before «Показати всі». */
+export const ENDED_SHOWN = 5;
 
 @Component({
   selector: 'app-delegation-list',
   imports: [
-    NgTemplateOutlet,
     MatButton,
+    MatButtonToggle,
+    MatButtonToggleGroup,
     IconComponent,
     SkeletonRowsComponent,
     PageHeaderComponent,
-    SplitComponent,
-    PaneComponent,
-    ListRowComponent,
-    ListRowsDirective,
-    RouterLink,
     TranslocoPipe,
     KyivDatePipe,
   ],
@@ -67,12 +66,11 @@ interface Shown {
 export class DelegationListComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly transloco = inject(TranslocoService);
-  private readonly shownDelegation = querySelection('delegation');
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
-  private lastShownId: number | null = null;
+  private readonly chosenSide = signal<BoardSide | null>(null);
+  /** Whether every ended delegation shows, not only the latest few. */
+  readonly allEnded = signal(false);
 
   /** The person whose page an administrator reads (`?delegatorId=`); null for the caller's own page. */
   protected readonly delegatorId = idOf(
@@ -85,7 +83,7 @@ export class DelegationListComponent implements OnInit {
   readonly given = this.store.selectSignal(delegationsFeature.selectGiven);
   readonly received = this.store.selectSignal(delegationsFeature.selectReceived);
   readonly loading = this.store.selectSignal(delegationsFeature.selectLoading);
-  /** True while the lists load and nothing is shown yet: skeleton rows stand in for both lists. */
+  /** True while the lists load and nothing is shown yet: skeleton rows stand in for the board. */
   readonly firstLoad = computed(
     () => this.loading() && this.given().length === 0 && this.received().length === 0,
   );
@@ -94,47 +92,32 @@ export class DelegationListComponent implements OnInit {
   readonly revokeProblem = this.store.selectSignal(delegationsFeature.selectRevokeProblem);
   readonly message = this.store.selectSignal(delegationsFeature.selectMessage);
 
-  /** The delegation chosen with `?delegation=`, null when none is. */
-  readonly selectedId = this.shownDelegation.id;
-  readonly shown = computed<Shown | null>(() => {
-    const id = this.selectedId();
-    const given = this.given().find((delegation) => delegation.id === id);
-    if (given) {
-      return { delegation: given, given: true };
-    }
-    const received = this.received().find((delegation) => delegation.id === id);
-    return received ? { delegation: received, given: false } : null;
-  });
-  /** A chosen delegation that the loaded lists do not hold. */
-  readonly notFound = computed(
-    () => this.selectedId() !== null && !this.loading() && !this.problem() && !this.shown(),
-  );
-  readonly capabilities = computed(() => {
-    const shown = this.shown();
-    return shown ? capabilitiesOf(shown.delegation.role) : null;
-  });
-  readonly remaining = computed(() => {
-    const shown = this.shown();
-    const left = shown ? daysLeft(shown.delegation, kyivToday()) : null;
-    return left
-      ? {
-          key: `delegations.detail.${left.key}.${pluralForm(left.count, this.language.current())}`,
-          count: left.count,
-        }
-      : null;
+  /** The chosen side, «Від мене» until the first lists settle it. */
+  readonly side = computed<BoardSide>(() => this.chosenSide() ?? 'given');
+  readonly columns = computed<BoardColumn[]>(() => {
+    const shown = this.side() === 'given' ? this.given() : this.received();
+    const active = shown.filter((delegation) => delegation.state === 'active');
+    const upcoming = shown.filter((delegation) => delegation.state === 'upcoming');
+    const ended = shown
+      .filter((delegation) => delegation.state === 'expired' || delegation.state === 'revoked')
+      .sort((left, right) => endOf(right).localeCompare(endOf(left)) || right.id - left.id);
+    return [
+      { key: 'active', delegations: active, total: active.length },
+      { key: 'upcoming', delegations: upcoming, total: upcoming.length },
+      {
+        key: 'ended',
+        delegations: this.allEnded() ? ended : ended.slice(0, ENDED_SHOWN),
+        total: ended.length,
+      },
+    ];
   });
 
   constructor() {
     effect(() => {
-      const shown = this.shown();
-      if (shown) {
-        this.lastShownId = shown.delegation.id;
-      } else if (this.notFound() && this.selectedId() === this.lastShownId) {
-        this.lastShownId = null;
-        this.select(null);
-        this.snackBar.open(this.transloco.translate('delegations.detail.gone'), undefined, {
-          duration: 5000,
-        });
+      const given = this.given().length;
+      const received = this.received().length;
+      if (this.chosenSide() === null && !this.loading() && given + received > 0) {
+        this.chosenSide.set(given === 0 ? 'received' : 'given');
       }
     });
   }
@@ -144,12 +127,13 @@ export class DelegationListComponent implements OnInit {
   }
 
   /**
-   * Shows a delegation in the pane and keeps it in the URL; null goes back to the lists.
+   * Switches the board between given and received delegations, the ended column folded again.
    *
-   * @param id the delegation id
+   * @param side the side to show
    */
-  select(id: number | null): void {
-    this.shownDelegation.select(id);
+  show(side: BoardSide): void {
+    this.chosenSide.set(side);
+    this.allEnded.set(false);
   }
 
   delegate(): void {
@@ -158,6 +142,7 @@ export class DelegationListComponent implements OnInit {
       .afterClosed()
       .subscribe((delegation?: Delegation) => {
         if (delegation) {
+          this.show('given');
           this.store.dispatch(DelegationsActions.created({ delegation }));
         }
       });
@@ -174,8 +159,18 @@ export class DelegationListComponent implements OnInit {
       });
   }
 
+  /**
+   * Whether the card offers «Відкликати»: a running or planned delegation the caller gave, on their own page.
+   *
+   * @param delegation the delegation on the card
+   * @return true when the card shows the action
+   */
   revocable(delegation: Delegation): boolean {
-    return delegation.state === 'active' || delegation.state === 'upcoming';
+    return (
+      this.delegatorId === null &&
+      this.side() === 'given' &&
+      (delegation.state === 'active' || delegation.state === 'upcoming')
+    );
   }
 
   problemFor(delegation: Delegation): string | null {
@@ -183,6 +178,16 @@ export class DelegationListComponent implements OnInit {
     return problem && problem.id === delegation.id
       ? `delegations.problems.${problem.problem}`
       : null;
+  }
+
+  /**
+   * The person on the other end of a delegation: its delegate on the given side, its delegator on the received one.
+   *
+   * @param delegation the delegation on the card
+   * @return the other person
+   */
+  other(delegation: Delegation): UserBrief {
+    return this.side() === 'given' ? delegation.delegate : delegation.delegator;
   }
 
   person(user: UserBrief): string {
@@ -196,6 +201,31 @@ export class DelegationListComponent implements OnInit {
   name(organization: OrganizationRef): string {
     return organizationName(organization, this.language.current());
   }
+
+  /**
+   * The days until a running delegation ends or a planned one starts, as a key and a count.
+   *
+   * @param delegation the delegation on the card
+   * @return the key and count, or null for an ended delegation
+   */
+  remaining(delegation: Delegation): { key: string; count: number } | null {
+    const left = daysLeft(delegation, kyivToday());
+    return left
+      ? {
+          key: `delegations.board.${left.key}.${pluralForm(left.count, this.language.current())}`,
+          count: left.count,
+        }
+      : null;
+  }
+
+  limits(delegation: Delegation): Capabilities | null {
+    return capabilitiesOf(delegation.role);
+  }
+}
+
+/** The day a delegation ended: its revocation day, or its last day when it ran out. */
+function endOf(delegation: Delegation): string {
+  return (delegation.revokedAt ?? delegation.validTo).slice(0, 10);
 }
 
 function idOf(value: string | null): number | null {

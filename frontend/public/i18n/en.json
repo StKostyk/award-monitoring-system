@@ -939,18 +939,22 @@
     "title": "My delegations",
     "context": "Powers you handed over or received for a period",
     "personContext": "Powers of this person, handed over and received (read only)",
-    "detail": {
-      "back": "Back to the list",
-      "givenTo": "Given to: {{name}}",
-      "receivedFrom": "From: {{name}}",
-      "reason": "Reason",
-      "noReason": "Not given",
-      "can": "Can",
-      "cannot": "Cannot",
-      "hint": "Choose a delegation to see its period, reason and limits.",
-      "emptyHint": "No delegations yet.",
-      "notFound": "This delegation is not one of yours.",
-      "gone": "The delegation is no longer in the list.",
+    "board": {
+      "sides": "Whose delegations to show",
+      "given": "From me · {{count}}",
+      "received": "To me · {{count}}",
+      "columns": {
+        "active": "Active",
+        "upcoming": "Scheduled",
+        "ended": "Ended"
+      },
+      "empty": {
+        "active": "No active delegations",
+        "upcoming": "No scheduled delegations",
+        "ended": "No ended delegations"
+      },
+      "limits": "Limits of authority",
+      "showAll": "Show all · {{count}}",
       "endsIn": {
         "one": "{{count}} day left",
         "few": "{{count}} days left",
@@ -980,21 +984,8 @@
         "delegate": "Pass these powers on"
       }
     },
-    "given": "Given",
-    "received": "Received",
-    "emptyGiven": "You have not handed your authority to anybody yet",
-    "emptyReceived": "Nobody has handed you their authority yet",
     "period": "{{from}} — {{to}}",
     "actingFor": "Acting for: {{name}}",
-    "columns": {
-      "role": "Role",
-      "organization": "Organisation",
-      "delegate": "Delegate",
-      "delegator": "Delegated by",
-      "period": "Period",
-      "state": "State",
-      "actions": "Actions"
-    },
     "states": {
       "active": "Active",
       "upcoming": "Upcoming",

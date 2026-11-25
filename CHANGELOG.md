@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- My delegations as a status board: a from-me / to-me toggle over active, scheduled and ended columns of cards with dates, note, limits of authority and revocation where it applies
 - Users page as a full table with the last sign-in that splits into a narrow list beside a person pane with role and account tabs, the person's awards and delegations
 - Unit analytics with a sticky unit rail, the comparison period under each change, top performers linked to their portfolio with a hover card, and names that wrap instead of being cut
 - My dashboard timeline as a journey road at 960 px and wider and a dated feed with a national filter below; timeline entries carry their recognition level

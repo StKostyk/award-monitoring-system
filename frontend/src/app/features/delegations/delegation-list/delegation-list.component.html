@@ -30,239 +30,155 @@
   </p>
 }
 
-<app-split mode="detail" [detailOpen]="selectedId() !== null">
-  <div splitSide>
-    @if (firstLoad()) {
-      <app-skeleton-rows
-        [count]="3"
-        [label]="'app.loading' | transloco"
-        data-testid="delegations-loading"
-      />
-    } @else {
-      <app-pane
-        icon="arrow-right"
-        [heading]="'delegations.given' | transloco"
-        flush
-        data-testid="given-list"
-      >
-        <nav
-          class="delegations__list"
-          appListRows
-          [attr.aria-label]="'delegations.given' | transloco"
-        >
-          @for (delegation of given(); track delegation.id) {
-            <ng-container
-              [ngTemplateOutlet]="row"
-              [ngTemplateOutletContext]="{
-                $implicit: delegation,
-                user: delegation.delegate,
-                side: 'given',
-              }"
-            />
-          } @empty {
-            <p class="delegations__empty" data-testid="given-empty">
-              {{ 'delegations.emptyGiven' | transloco }}
-            </p>
-          }
-        </nav>
-      </app-pane>
+@if (firstLoad()) {
+  <app-skeleton-rows
+    [count]="3"
+    [label]="'app.loading' | transloco"
+    data-testid="delegations-loading"
+  />
+} @else if (!problem()) {
+  <mat-button-toggle-group
+    class="delegations__sides"
+    [value]="side()"
+    (change)="show($event.value)"
+    [attr.aria-label]="'delegations.board.sides' | transloco"
+    hideSingleSelectionIndicator
+    data-testid="delegations-side"
+  >
+    <mat-button-toggle value="given" data-testid="side-given">
+      {{ 'delegations.board.given' | transloco: { count: given().length } }}
+    </mat-button-toggle>
+    <mat-button-toggle value="received" data-testid="side-received">
+      {{ 'delegations.board.received' | transloco: { count: received().length } }}
+    </mat-button-toggle>
+  </mat-button-toggle-group>
 
-      <app-pane
-        icon="arrow-left"
-        [heading]="'delegations.received' | transloco"
-        flush
-        data-testid="received-list"
+  <div class="delegations__board" data-testid="delegations-board">
+    @for (column of columns(); track column.key) {
+      <section
+        class="delegations__column"
+        [attr.aria-labelledby]="'column-' + column.key"
+        [attr.data-testid]="'column-' + column.key"
       >
-        <nav
-          class="delegations__list"
-          appListRows
-          [attr.aria-label]="'delegations.received' | transloco"
-        >
-          @for (delegation of received(); track delegation.id) {
-            <ng-container
-              [ngTemplateOutlet]="row"
-              [ngTemplateOutletContext]="{
-                $implicit: delegation,
-                user: delegation.delegator,
-                side: 'received',
-              }"
-            />
-          } @empty {
-            <p class="delegations__empty" data-testid="received-empty">
-              {{ 'delegations.emptyReceived' | transloco }}
-            </p>
-          }
-        </nav>
-      </app-pane>
-    }
-  </div>
-
-  <div splitMain class="delegations__main">
-    @if (selectedId() !== null) {
-      <button
-        mat-button
-        type="button"
-        class="delegations__back"
-        (click)="select(null)"
-        data-testid="delegations-back"
-      >
-        {{ 'delegations.detail.back' | transloco }}
-      </button>
-    }
-    @if (shown(); as shown) {
-      <app-pane flush data-testid="delegation-detail">
-        <div class="delegations__banner">
-          <span class="delegations__initials" aria-hidden="true">{{
-            initialsOf(shown.given ? shown.delegation.delegate : shown.delegation.delegator)
-          }}</span>
-          <span class="delegations__banner-text">
-            <h2 class="delegations__banner-title">
-              {{ 'roles.' + shown.delegation.role | transloco }} ·
-              {{ name(shown.delegation.organization) }}
-            </h2>
-            <span data-testid="detail-person">
-              {{
-                (shown.given ? 'delegations.detail.givenTo' : 'delegations.detail.receivedFrom')
-                  | transloco
-                    : {
-                        name: person(
-                          shown.given ? shown.delegation.delegate : shown.delegation.delegator
-                        ),
-                      }
-              }}
-            </span>
-          </span>
+        <h2 class="delegations__column-title" [id]="'column-' + column.key">
           <span
-            class="app-st"
-            [class.app-st--ok]="shown.delegation.state === 'active'"
-            [class.app-st--wait]="shown.delegation.state === 'upcoming'"
-            data-testid="detail-state"
-            >{{ 'delegations.states.' + shown.delegation.state | transloco }}</span
+            [class]="'delegations__dot delegations__dot--' + column.key"
+            aria-hidden="true"
+          ></span>
+          {{ 'delegations.board.columns.' + column.key | transloco }}
+          <span class="delegations__count">{{ column.total }}</span>
+        </h2>
+
+        @for (delegation of column.delegations; track delegation.id) {
+          <article
+            class="delegations__card"
+            [class.delegations__card--ended]="column.key === 'ended'"
+            [attr.data-testid]="side() + '-card'"
           >
-        </div>
-        <div class="delegations__detail">
-          <dl class="delegations__facts">
-            <dt>{{ 'delegations.columns.period' | transloco }}</dt>
-            <dd data-testid="detail-period">
+            <header class="delegations__card-head">
+              <span class="delegations__initials" aria-hidden="true">{{
+                initialsOf(other(delegation))
+              }}</span>
+              <span class="delegations__who">
+                <span class="delegations__person" data-testid="card-person">{{
+                  person(other(delegation))
+                }}</span>
+                <span class="delegations__role" data-testid="card-role">
+                  {{ 'roles.' + delegation.role | transloco }} · {{ name(delegation.organization) }}
+                </span>
+              </span>
+              @if (column.key === 'ended') {
+                <span class="app-st" data-testid="card-state">{{
+                  'delegations.states.' + delegation.state | transloco
+                }}</span>
+              }
+            </header>
+
+            <p class="delegations__dates" data-testid="card-period">
+              <app-icon inline name="calendar" />
               {{
                 'delegations.period'
                   | transloco
                     : {
-                        from: (shown.delegation.validFrom | kyivDate),
-                        to: (shown.delegation.validTo | kyivDate),
+                        from: (delegation.validFrom | kyivDate),
+                        to: (delegation.validTo | kyivDate),
                       }
               }}
-              @if (remaining(); as remaining) {
-                <span class="delegations__secondary" data-testid="detail-days-left">{{
+              @if (remaining(delegation); as remaining) {
+                <span class="delegations__secondary" data-testid="card-days-left">{{
                   remaining.key | transloco: { count: remaining.count }
                 }}</span>
               }
-            </dd>
-            <dt>{{ 'delegations.detail.reason' | transloco }}</dt>
-            <dd data-testid="detail-reason">
-              {{ shown.delegation.reason || ('delegations.detail.noReason' | transloco) }}
-            </dd>
-          </dl>
+            </p>
 
-          @if (capabilities(); as capabilities) {
-            <div class="delegations__capabilities">
-              <section data-testid="detail-can">
-                <h3 class="delegations__subheading">
-                  {{ 'delegations.detail.can' | transloco }}
-                </h3>
-                <ul class="delegations__lines">
-                  @for (line of capabilities.can; track line) {
+            @if (delegation.reason) {
+              <p class="delegations__note" data-testid="card-note">{{ delegation.reason }}</p>
+            }
+
+            @if (column.key !== 'ended' && limits(delegation); as limits) {
+              <details class="delegations__limits" data-testid="card-limits">
+                <summary>{{ 'delegations.board.limits' | transloco }}</summary>
+                <ul class="delegations__lines" data-testid="card-can">
+                  @for (line of limits.can; track line) {
                     <li>
                       <app-icon inline name="check" class="delegations__can" />
                       {{ line | transloco }}
                     </li>
                   }
                 </ul>
-              </section>
-              <section data-testid="detail-cannot">
-                <h3 class="delegations__subheading">
-                  {{ 'delegations.detail.cannot' | transloco }}
-                </h3>
-                <ul class="delegations__lines">
-                  @for (line of capabilities.cannot; track line) {
+                <ul class="delegations__lines" data-testid="card-cannot">
+                  @for (line of limits.cannot; track line) {
                     <li>
                       <app-icon inline name="x" class="delegations__cannot" />
                       {{ line | transloco }}
                     </li>
                   }
                 </ul>
-              </section>
-            </div>
-          }
+              </details>
+            }
 
-          @if (delegatorId === null && shown.given && revocable(shown.delegation)) {
-            <div class="delegations__actions">
-              <button
-                mat-stroked-button
-                type="button"
-                [disabled]="revokingId() === shown.delegation.id"
-                (click)="revoke(shown.delegation)"
-                data-testid="revoke-delegation"
-              >
-                {{ 'delegations.revoke.action' | transloco }}
-              </button>
-              @if (problemFor(shown.delegation); as problem) {
-                <span
-                  class="delegations__problem"
-                  role="alert"
-                  data-testid="revoke-delegation-error"
-                >
-                  {{ problem | transloco }}
-                </span>
-              }
-            </div>
-          }
-        </div>
-      </app-pane>
-    } @else if (notFound()) {
-      <app-pane data-testid="delegation-not-found">
-        <p class="delegations__hint">{{ 'delegations.detail.notFound' | transloco }}</p>
-      </app-pane>
-    } @else if (!firstLoad() && !problem()) {
-      <app-pane data-testid="delegation-hint">
-        <p class="delegations__hint">
-          {{
-            (given().length + received().length > 0
-              ? 'delegations.detail.hint'
-              : 'delegations.detail.emptyHint'
-            ) | transloco
-          }}
-        </p>
-      </app-pane>
+            @if (revocable(delegation) || problemFor(delegation)) {
+              <div class="delegations__actions">
+                @if (revocable(delegation)) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="revokingId() === delegation.id"
+                    (click)="revoke(delegation)"
+                    data-testid="revoke-delegation"
+                  >
+                    {{ 'delegations.revoke.action' | transloco }}
+                  </button>
+                }
+                @if (problemFor(delegation); as problem) {
+                  <span
+                    class="delegations__problem"
+                    role="alert"
+                    data-testid="revoke-delegation-error"
+                  >
+                    {{ problem | transloco }}
+                  </span>
+                }
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="delegations__empty" [attr.data-testid]="'empty-' + column.key">
+            {{ 'delegations.board.empty.' + column.key | transloco }}
+          </p>
+        }
+        @if (column.delegations.length < column.total) {
+          <button
+            mat-button
+            type="button"
+            class="delegations__more"
+            (click)="allEnded.set(true)"
+            data-testid="ended-all"
+          >
+            {{ 'delegations.board.showAll' | transloco: { count: column.total } }}
+          </button>
+        }
+      </section>
     }
   </div>
-</app-split>
-
-<ng-template #row let-delegation let-user="user" let-side="side">
-  <a
-    appListRow
-    [initials]="initialsOf(user)"
-    [rowTitle]="person(user)"
-    [meta]="
-      ('roles.' + delegation.role | transloco) +
-      ' · ' +
-      ('delegations.period'
-        | transloco
-          : { from: (delegation.validFrom | kyivDate), to: (delegation.validTo | kyivDate) })
-    "
-    [selected]="delegation.id === selectedId()"
-    routerLink="."
-    [queryParams]="{ delegation: delegation.id }"
-    queryParamsHandling="merge"
-    [attr.data-testid]="side + '-row'"
-  >
-    <span
-      rowEnd
-      class="app-st"
-      [class.app-st--ok]="delegation.state === 'active'"
-      [class.app-st--wait]="delegation.state === 'upcoming'"
-      [attr.data-testid]="side + '-state'"
-      >{{ 'delegations.states.' + delegation.state | transloco }}</span
-    >
-  </a>
-</ng-template>
+}
