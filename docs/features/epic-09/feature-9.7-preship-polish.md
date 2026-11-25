@@ -357,7 +357,7 @@ Written as stubs with `x-status: planned` in this PRD's PR:
 | AC-1.7 | `BrandService` spec: neutral mark | - | `layout.spec.ts`: sidebar logo under the neutral brand |
 | AC-1.8 | - | existing `LoginPageFT`, rate-limit FT | `login.spec.ts` existing cases, reduced motion |
 | AC-2.1 to AC-2.4 | widget table: borders, totals, grouped header, pinned column, year order on phones | - | `analytics.spec.ts`: table matches the API numbers, 360 scroll caption |
-| AC-3.1 | `AnalyticsServiceTest` | `MyAnalyticsIT` (`level` per entry) | - |
+| AC-3.1 | `PersonalAnalyticsServiceTest` | `AwardStatisticsIT`, `PersonalAnalyticsFT` (`level` per entry) | - |
 | AC-3.2 to AC-3.4 | road and feed by width, level filter | - | `dashboard.spec.ts`: road at 1280, feed at 360, link opens the award |
 | AC-4.1 to AC-4.4 | rail, caption, performer card | - | `analytics.spec.ts`: performer link opens the portfolio |
 | AC-5.1 | `UserServiceTest` | `UserAdminIT` (`lastLoginAt`) | - |
@@ -403,8 +403,9 @@ draft wording and get the merged i18n text at the validation.
 13. Hover and then Tab to «Найкращі» row 1, Enter. Expected: hover card with three latest awards, then the person's
     portfolio (AC-4.3).
 14. As `employee.fmi`, My dashboard at 1280. Expected: the journey road with one milestone per award (AC-3.2);
-    click one → its award page (AC-3.4).
-15. At 360. Expected: dated feed by year, «Від національного» narrows it (AC-3.3).
+    click one → its award page; Tab to another and Enter → its award page (AC-3.4).
+15. At 360. Expected: dated feed by year with the count per year, «Від національного» narrows it to national and
+    international awards, «Усі» restores it (AC-3.3).
 16. As `admin`, `/admin/users`. Expected: full table with last sign-in (AC-5.1, AC-5.2); select `dean.fmi` → narrow
     list and the person pane with tabs and links; «×» → full table (AC-5.3); 360 → full page with back (AC-5.4).
 17. As `dean.fmi`, `/delegations`, delegate to `secretary.fmi` for next week. Expected: card under «Заплановані» in

@@ -1,112 +1,136 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import type { ECElementEvent, EChartsCoreOption } from 'echarts/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
+import { map } from 'rxjs';
 
 import { LanguageService } from '../../../core/i18n/language.service';
-import { ChartComponent } from '../../../shared/charts/chart.component';
-import { categoryAxis, escapeHtml, tooltip } from '../../../shared/charts/chart-style';
-import { ChartThemeService } from '../../../shared/charts/chart-theme.service';
-import { kyivDate } from '../../../shared/date-format';
+import { monthNames } from '../../../shared/date-format';
 import { IconComponent } from '../../../shared/icons/icon.component';
-import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
-import { RECOGNITION_LEVELS, awardTitle, categoryName } from '../../awards/awards.service';
+import { pluralForm } from '../../../shared/plural';
+import {
+  RECOGNITION_LEVELS,
+  RecognitionLevel,
+  awardTitle,
+  categoryName,
+} from '../../awards/awards.service';
 import { TimelineEntry } from '../analytics.service';
-import { TableScrollComponent } from '../../../shared/widgets/table-scroll.component';
 
-const MARKER_SIZE = 12;
-const AXIS_PADDING_MS = 60 * 24 * 60 * 60 * 1000;
+const WIDE_QUERY = '(min-width: 960px)';
+const STOP_WIDTH = 150;
+const MIN_PER_ROW = 2;
+const MAX_PER_ROW = 6;
+const DEFAULT_PER_ROW = 4;
+const NATIONAL_AND_UP: readonly RecognitionLevel[] = RECOGNITION_LEVELS.slice(
+  RECOGNITION_LEVELS.indexOf('NATIONAL'),
+);
 
-/** Every counted award on a time axis by level; a point or a table row opens the award. */
+/** Which awards the feed shows. */
+export type TimelineFilter = 'all' | 'national';
+
+interface ShownEntry extends TimelineEntry {
+  year: string;
+  day: string;
+  month: string;
+  shownTitle: string;
+  categoryName: string;
+}
+
+/**
+ * Every counted award of the person: a road from the first award to today at 960 px and wider, a feed grouped by
+ * year below; every milestone and row opens the award.
+ */
 @Component({
   selector: 'app-timeline-chart',
-  imports: [
-    ChartComponent,
-    IconComponent,
-    KyivDatePipe,
-    RouterLink,
-    TableScrollComponent,
-    TranslocoPipe,
-  ],
+  imports: [IconComponent, RouterLink, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './timeline-chart.component.html',
+  styleUrl: './timeline-chart.component.scss',
 })
 export class TimelineChartComponent {
-  private readonly theme = inject(ChartThemeService);
-  private readonly transloco = inject(TranslocoService);
   private readonly language = inject(LanguageService);
-  private readonly router = inject(Router);
 
   readonly timeline = input.required<TimelineEntry[]>();
   readonly truncated = input(false);
 
-  protected readonly rows = computed(() => {
+  protected readonly wide = toSignal(
+    inject(BreakpointObserver)
+      .observe(WIDE_QUERY)
+      .pipe(map((state) => state.matches)),
+    { initialValue: false },
+  );
+  protected readonly perRow = signal(DEFAULT_PER_ROW);
+  protected readonly filter = signal<TimelineFilter>('all');
+
+  private readonly entries = computed<ShownEntry[]>(() => {
     const language = this.language.current();
+    const months = monthNames(language);
     return this.timeline().map((entry) => ({
       ...entry,
+      year: entry.awardDate.slice(0, 4),
+      day: entry.awardDate.slice(8, 10),
+      month: months[Number(entry.awardDate.slice(5, 7)) - 1],
       shownTitle: awardTitle(entry, language),
       categoryName: categoryName(entry.category, language),
     }));
   });
-  protected readonly levels = computed(() =>
-    RECOGNITION_LEVELS.filter((level) =>
-      this.timeline().some((entry) => entry.category.level === level),
-    ),
-  );
-  protected readonly description = computed(() => {
-    this.language.current();
-    const rows = this.rows();
-    return this.transloco.translate('analytics.timeline.description', {
-      count: rows.length,
-      latest: rows[0]?.shownTitle ?? '',
-    });
-  });
-  protected readonly option = computed<EChartsCoreOption>(() => {
-    const language = this.language.current();
-    const palette = this.theme.palette();
-    const levels = this.levels();
-    const rows = this.rows();
-    return {
-      grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
-      tooltip: {
-        ...tooltip(palette, 'item'),
-        formatter: (params: { dataIndex: number }) => {
-          const row = rows[params.dataIndex];
-          return row
-            ? `<strong>${escapeHtml(row.shownTitle)}</strong><br>${kyivDate(row.awardDate, language)}` +
-                `<br>${escapeHtml(row.awardingOrganization)}`
-            : '';
-        },
-      },
-      xAxis: {
-        type: 'time',
-        min: (extent: { min: number }) => extent.min - AXIS_PADDING_MS,
-        max: (extent: { max: number }) => extent.max + AXIS_PADDING_MS,
-        axisLabel: { color: palette.mutedText, hideOverlap: true },
-        splitLine: { show: false },
-        axisLine: { lineStyle: { color: palette.grid } },
-      },
-      yAxis: categoryAxis(
-        palette,
-        levels.map((level) => this.transloco.translate(`categories.levels.${level}`)),
-      ),
-      series: [
-        {
-          type: 'scatter',
-          name: this.transloco.translate('analytics.timeline.title'),
-          symbolSize: MARKER_SIZE,
-          cursor: 'pointer',
-          itemStyle: { color: palette.bar, opacity: 1 },
-          data: rows.map((row) => [row.awardDate, levels.indexOf(row.category.level)]),
-        },
-      ],
-    };
+
+  protected readonly road = computed(() => {
+    const perRow = this.perRow();
+    const stops = [...this.entries()].reverse();
+    const rows = Array.from({ length: Math.ceil(stops.length / perRow) }, (_, row) => ({
+      row: row + 1,
+      back: row % 2 === 1,
+      stops: stops.slice(row * perRow, (row + 1) * perRow).map((stop, index) => ({
+        ...stop,
+        column: row % 2 === 1 ? perRow - index : index + 1,
+      })),
+    }));
+    return { first: stops[0]?.year ?? '', rows };
   });
 
-  protected open(event: ECElementEvent): void {
-    const row = this.rows()[event.dataIndex];
-    if (row) {
-      void this.router.navigate(['/awards', row.awardId]);
+  protected readonly feed = computed(() => {
+    const language = this.language.current();
+    const national = this.filter() === 'national';
+    const groups: { year: string; form: Intl.LDMLPluralRule; items: ShownEntry[] }[] = [];
+    for (const entry of this.entries()) {
+      if (national && !NATIONAL_AND_UP.includes(entry.level)) {
+        continue;
+      }
+      const last = groups.at(-1);
+      if (last?.year === entry.year) {
+        last.items.push(entry);
+      } else {
+        groups.push({ year: entry.year, form: 'other', items: [entry] });
+      }
     }
+    return groups.map((group) => ({ ...group, form: pluralForm(group.items.length, language) }));
+  });
+
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef);
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const observer = new ResizeObserver(([entry]) => {
+        const fits = Math.floor(entry.contentRect.width / STOP_WIDTH);
+        this.perRow.set(Math.min(MAX_PER_ROW, Math.max(MIN_PER_ROW, fits)));
+      });
+      observer.observe(host.nativeElement);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
   }
 }

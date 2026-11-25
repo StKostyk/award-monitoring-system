@@ -126,8 +126,10 @@ class CvExportServiceTest {
     private static List<TimelineEntry> awards() {
         return List.of(
             new TimelineEntry(3L, "State prize", "Державна премія", LocalDate.of(2025, 6, 3), NATIONAL,
-                "Кабінет Міністрів", true),
-            new TimelineEntry(2L, "Faculty award", null, LocalDate.of(2025, 1, 10), FACULTY, null, false),
-            new TimelineEntry(1L, "Letter", "Подяка", LocalDate.of(2019, 9, 1), NATIONAL, "МОН", false));
+                "Кабінет Міністрів", true, NATIONAL.level()),
+            new TimelineEntry(2L, "Faculty award", null, LocalDate.of(2025, 1, 10), FACULTY, null, false,
+                FACULTY.level()),
+            new TimelineEntry(1L, "Letter", "Подяка", LocalDate.of(2019, 9, 1), NATIONAL, "МОН", false,
+                NATIONAL.level()));
     }
 }
