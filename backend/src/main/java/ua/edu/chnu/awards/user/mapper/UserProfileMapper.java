@@ -58,7 +58,7 @@ public class UserProfileMapper {
     public UserSummaryResponse toSummary(User user, List<UserRole> roles, boolean confirmed) {
         return new UserSummaryResponse(user.getId(), user.getEmailAddress(), user.getFirstName(),
             user.getLastName(), toRef(user.getOrganization()), user.getAccountStatus(),
-            roles.stream().map(this::toAssignment).toList(), confirmed);
+            roles.stream().map(this::toAssignment).toList(), confirmed, user.getLastLoginAt());
     }
 
     /**

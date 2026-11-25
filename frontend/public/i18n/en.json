@@ -627,7 +627,13 @@
         "waiting": "Waiting for a membership check: {{count}}",
         "blocked": "Blocked: {{count}}"
       },
-      "pick": "Choose a person in the list to see the account, the roles and the actions."
+      "columns": {
+        "name": "Name and address",
+        "unit": "Unit",
+        "roles": "Roles",
+        "status": "Status",
+        "lastLogin": "Last sign-in"
+      }
     },
     "people": {
       "add": "Add a colleague without an account",
@@ -703,6 +709,14 @@
     },
     "detail": {
       "back": "Back to the user list",
+      "close": "Close the user card",
+      "tabs": {
+        "roles": "Roles",
+        "account": "Account"
+      },
+      "awards": "Awards · {{count}}",
+      "awardsLoading": "Awards",
+      "delegations": "Delegations",
       "email": "Email",
       "organization": "Organisation",
       "status": "Status",
@@ -924,6 +938,7 @@
   "delegations": {
     "title": "My delegations",
     "context": "Powers you handed over or received for a period",
+    "personContext": "Powers of this person, handed over and received (read only)",
     "detail": {
       "back": "Back to the list",
       "givenTo": "Given to: {{name}}",

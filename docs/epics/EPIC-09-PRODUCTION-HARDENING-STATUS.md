@@ -84,7 +84,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5za | 9.7.8 Privacy control panel | 9.7 | 3 | SCRUM-188 | #506 | no | To do |
 | 5za | 9.7.7 Notifications inbox with a reading pane | 9.7 | 3 | SCRUM-187 | #505 | no | To do |
 | 5za | 9.7.6 Delegations status board | 9.7 | 2 | SCRUM-186 | #504 | no | To do |
-| 5za | 9.7.5 Users list that splits on select | 9.7 | 3 | SCRUM-185 | #503 | no | To do |
+| 5za | 9.7.5 Users list that splits on select | 9.7 | 3 | SCRUM-185 | #503 | no | In review |
 | 5za | 9.7.4 Unit analytics rail and clickable top performers | 9.7 | 3 | SCRUM-184 | #502 | no | In review |
 | 5za | 9.7.3 Timeline as a journey road and a dated feed | 9.7 | 3 | SCRUM-183 | #501 | no | In review |
 | 5za | 9.7.2 Spreadsheet tables in widgets | 9.7 | 3 | SCRUM-182 | #500 | no | In review |

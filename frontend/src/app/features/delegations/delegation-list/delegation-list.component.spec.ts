@@ -229,6 +229,15 @@ describe('DelegationListComponent', () => {
     expect(query('[data-testid="revoke-delegation"]')).toBeNull();
   });
 
+  it('ac5_3_reads_another_persons_page_without_creating_or_revoking', async () => {
+    await open('/delegations?delegatorId=5&delegation=1');
+
+    expect(store.selectSignal(delegationsFeature.selectDelegatorId)()).toBe(5);
+    expect(query('[data-testid="delegation-detail"]')).not.toBeNull();
+    expect(query('[data-testid="revoke-delegation"]')).toBeNull();
+    expect(query('[data-testid="delegate-open"]')).toBeNull();
+  });
+
   it('ac3_4_asks_for_a_confirmation_before_revoking', async () => {
     await open('/delegations?delegation=1');
     const dispatch = vi.spyOn(store, 'dispatch');

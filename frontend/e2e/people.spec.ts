@@ -11,6 +11,7 @@ import {
   signIn,
   uniqueToken,
   userRow,
+  userTableRow,
 } from './helpers';
 
 const { secretary, rectorSecretary } = SEED;
@@ -65,11 +66,11 @@ test.describe('people without an account', () => {
 
     await page.goto('/admin/users');
     await page.getByTestId('filter-q').fill(lastName);
-    const row = userRow(page, lastName);
+    await expect(userTableRow(page, lastName).getByTestId('unclaimed-badge')).toHaveText(
+      'Без облікового запису',
+    );
 
-    await expect(row.getByTestId('unclaimed-badge')).toHaveText('Без облікового запису');
-
-    await row.click();
+    await userRow(page, lastName).click();
     await removeOpenPerson(page);
     await page.getByTestId('filter-q').fill(lastName);
 
@@ -184,5 +185,103 @@ test.describe('people without an account', () => {
 
     await expect(page.getByTestId('users-table')).toBeVisible();
     await expect(page.getByTestId('person-add-open')).toHaveCount(0);
+  });
+});
+
+test.describe('users list that splits on select (9.7.5)', () => {
+  const { admin, dean } = SEED;
+
+  test('ac5_1 ac5_2 ac5_3 the full table narrows beside the person pane and comes back on close', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await signIn(page, admin, DEMO_PASSWORD);
+    await page.goto('/admin/users');
+    const table = page.locator('table[data-testid="users-table"]');
+
+    await expect(table.locator('thead th')).toHaveText([
+      "Ім'я та адреса",
+      'Підрозділ',
+      'Ролі',
+      'Статус',
+      'Останній вхід',
+    ]);
+    await page.getByTestId('filter-q').fill(admin);
+    const own = userTableRow(page, admin);
+    await expect(own.getByTestId('user-last-login')).not.toContainText('Ще не входив');
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.getByTestId('filter-q').fill(dean);
+    await userRow(page, dean).click();
+
+    await expect(page).toHaveURL(/\/admin\/users\/\d+$/);
+    await expect(table).toHaveCount(0);
+    await expect(userRow(page, dean)).toHaveAttribute('aria-current', 'true');
+    await expect(userRow(page, dean)).not.toContainText('Декан');
+    await expect(page.getByTestId('detail-tabs').getByRole('tab')).toHaveText([
+      'Ролі',
+      'Обліковий запис',
+    ]);
+    await expect(page.getByTestId('detail-awards')).toHaveText(/Нагороди · \d+/);
+    await expect(page.getByTestId('back-to-users')).toBeHidden();
+    expect(
+      await page
+        .locator('app-split .split__side')
+        .evaluate((side) => getComputedStyle(side).position),
+    ).toBe('sticky');
+    expect(await seriousViolations(page)).toEqual([]);
+
+    await page.getByTestId('detail-tab-account').click();
+    await expect(page.getByTestId('detail-last-login')).toBeVisible();
+
+    const selected = page.url();
+    await page.reload();
+    await expect(page).toHaveURL(selected);
+    await expect(page.getByTestId('detail-email')).toHaveText(dean);
+
+    await page.getByTestId('detail-close').click();
+
+    await expect(page).toHaveURL(/\/admin\/users$/);
+    await expect(table).toBeVisible();
+  });
+
+  test('ac5_3 the delegations link opens the person page read only', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await signIn(page, admin, DEMO_PASSWORD);
+    await page.goto('/admin/users');
+    await page.getByTestId('filter-q').fill(dean);
+    await userRow(page, dean).click();
+    const awards = page.getByTestId('detail-awards');
+    await expect(awards).toHaveAttribute('href', /\/achievements\?person=\d+$/);
+
+    await page.getByTestId('detail-delegations').click();
+
+    await expect(page).toHaveURL(/\/delegations\?delegatorId=\d+$/);
+    await expect(page.getByTestId('page-context')).toHaveText(
+      'Повноваження цієї особи: передані та отримані (лише перегляд)',
+    );
+    await expect(page.getByTestId('delegate-open')).toHaveCount(0);
+  });
+
+  test('ac5_4 at 360 the list is full width and a person opens as a full page', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await signIn(page, admin, DEMO_PASSWORD);
+    await page.goto('/admin/users');
+    await page.getByTestId('filter-q').fill(dean);
+
+    await expect(page.locator('table[data-testid="users-table"]')).toHaveCount(0);
+    await userRow(page, dean).click();
+
+    await expect(page.getByTestId('back-to-users')).toBeVisible();
+    await expect(page.getByTestId('detail-close')).toBeHidden();
+    await expect(page.getByTestId('users-table')).toBeHidden();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+
+    await page.getByTestId('back-to-users').click();
+    await expect(page.getByTestId('users-table')).toBeVisible();
   });
 });

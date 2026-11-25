@@ -77,6 +77,22 @@ class UserDirectoryServiceTest {
     }
 
     @Test
+    void ac5_1_rowsCarryTheLastSignInAndNullBeforeTheFirstOne() {
+        Instant signedIn = Instant.parse("2026-11-20T08:15:00Z");
+        User newcomer = User.builder().id(6L).emailAddress("n@chnu.edu.ua").firstName("C").lastName("D")
+            .organization(department).accountStatus(AccountStatus.ACTIVE).createdAt(Instant.EPOCH).build();
+        member.setLastLoginAt(signedIn);
+        when(access.readableOrganizations()).thenReturn(Optional.empty());
+        when(userRepository.findAll(any(Specification.class), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(member, newcomer)));
+
+        List<UserSummaryResponse> rows =
+            service.list(new UserDirectoryQuery(null, null, null, false, null), 0, 20).getContent();
+
+        assertThat(rows).extracting(UserSummaryResponse::lastLoginAt).containsExactly(signedIn, null);
+    }
+
+    @Test
     void ac16_anEmptyPageAsksForNoRoles() {
         when(access.readableOrganizations()).thenReturn(Optional.empty());
         when(userRepository.findAll(any(Specification.class), any(Pageable.class)))

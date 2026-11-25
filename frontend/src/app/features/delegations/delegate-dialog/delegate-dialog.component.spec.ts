@@ -33,6 +33,7 @@ const secretary: UserSummary = {
   status: 'ACTIVE',
   roles: [],
   membershipConfirmed: true,
+  lastLoginAt: null,
 };
 
 const translations = {

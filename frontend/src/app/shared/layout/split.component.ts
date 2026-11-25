@@ -32,6 +32,7 @@ export type SplitMode = 'stack' | 'detail';
     '[class.split--detail]': "mode() === 'detail'",
     '[class.split--detail-open]': "mode() === 'detail' && detailOpen()",
     '[class.split--sticky]': 'stickySide()',
+    '[class.split--side-full]': 'sideFull() && !open()',
   },
   template: `
     <div class="split__side" #side (focusin)="onFocusIn($event)">
@@ -60,7 +61,15 @@ export type SplitMode = 'stack' | 'detail';
     }
 
     @media (min-width: 960px) {
-      :host(.split--sticky) .split__side {
+      :host(.split--side-full) {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      :host(.split--side-full) .split__main {
+        display: none;
+      }
+
+      :host(.split--sticky:not(.split--side-full)) .split__side {
         position: sticky;
         top: 72px;
         max-height: calc(100dvh - 88px);
@@ -90,10 +99,12 @@ export class SplitComponent {
   readonly detailOpen = input(false);
   /** Whether the side column stays in view beside the main column from 960 px, scrolling on its own when taller. */
   readonly stickySide = input(false, { transform: booleanAttribute });
+  /** Whether the side column takes the whole width from 960 px while no detail is open (a full table). */
+  readonly sideFull = input(false, { transform: booleanAttribute });
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly side = viewChild.required<ElementRef<HTMLElement>>('side');
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
-  private readonly open = computed(() => this.mode() === 'detail' && this.detailOpen());
+  protected readonly open = computed(() => this.mode() === 'detail' && this.detailOpen());
   private lastFocusInSide: HTMLElement | null = null;
   private opener: HTMLElement | null = null;
   private lastClick: { scrollTop: number; at: number } | null = null;

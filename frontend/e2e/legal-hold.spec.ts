@@ -20,6 +20,7 @@ async function openUser(page: Page, email: string): Promise<void> {
   await page.getByTestId('filter-q').fill(email);
   await userRow(page, email).click();
   await expect(page.getByTestId('detail-email')).toHaveText(email);
+  await page.getByTestId('detail-tab-account').click();
 }
 
 function audited(action: string, email: string): string {

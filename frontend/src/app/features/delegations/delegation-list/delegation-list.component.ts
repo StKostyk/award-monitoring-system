@@ -10,7 +10,7 @@ import {
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
@@ -74,7 +74,13 @@ export class DelegationListComponent implements OnInit {
   private readonly language = inject(LanguageService);
   private lastShownId: number | null = null;
 
-  protected readonly canDelegate = canDelegate(this.auth.permissions());
+  /** The person whose page an administrator reads (`?delegatorId=`); null for the caller's own page. */
+  protected readonly delegatorId = idOf(
+    inject(ActivatedRoute).snapshot.queryParamMap.get('delegatorId'),
+  );
+  /** Another person's page is read-only: no new delegation and no revocation. */
+  protected readonly canDelegate =
+    this.delegatorId === null && canDelegate(this.auth.permissions());
 
   readonly given = this.store.selectSignal(delegationsFeature.selectGiven);
   readonly received = this.store.selectSignal(delegationsFeature.selectReceived);
@@ -134,7 +140,7 @@ export class DelegationListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.store.dispatch(DelegationsActions.opened());
+    this.store.dispatch(DelegationsActions.opened({ delegatorId: this.delegatorId }));
   }
 
   /**
@@ -190,4 +196,9 @@ export class DelegationListComponent implements OnInit {
   name(organization: OrganizationRef): string {
     return organizationName(organization, this.language.current());
   }
+}
+
+function idOf(value: string | null): number | null {
+  const id = Number(value);
+  return value !== null && Number.isInteger(id) && id > 0 ? id : null;
 }
