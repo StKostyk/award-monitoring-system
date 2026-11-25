@@ -12,6 +12,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { readPermissions } from '../../../core/auth/permissions';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { AchievementsService } from '../../achievements/achievements.service';
 import { LegalHoldsService } from '../legal-holds.service';
 import { PeopleService } from '../people.service';
 import { RevokeRoleDialogComponent } from '../revoke-role-dialog/revoke-role-dialog.component';
@@ -89,6 +90,11 @@ const translations = {
         sessionHint: 'Нова роль зʼявиться після наступного оновлення токена або входу.',
         notFound: 'Користувача не знайдено',
         notFoundHint: 'Такого користувача немає.',
+        close: 'Закрити картку користувача',
+        tabs: { roles: 'Ролі', account: 'Обліковий запис' },
+        awards: 'Нагороди · {{count}}',
+        awardsLoading: 'Нагороди',
+        delegations: 'Делегування',
       },
       problems: {
         'role-last-own': 'Не можна відкликати власну останню роль',
@@ -102,15 +108,26 @@ function token(claims: Record<string, unknown>): string {
   return `header.${btoa(JSON.stringify(claims))}.signature`;
 }
 
+async function openAccountTab(fixture: ComponentFixture<UserDetailComponent>): Promise<void> {
+  (fixture.nativeElement as HTMLElement)
+    .querySelector<HTMLElement>('[data-testid="detail-tab-account"]')
+    ?.click();
+  fixture.detectChanges();
+  await fixture.whenStable();
+  fixture.detectChanges();
+}
+
 describe('UserDetailComponent', () => {
   let fixture: ComponentFixture<UserDetailComponent>;
   let store: Store;
   let dialog: { open: ReturnType<typeof vi.fn> };
   let api: { revokeRole: ReturnType<typeof vi.fn> };
   let params: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let achievements: { list: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     params = new BehaviorSubject(convertToParamMap({ id: '7' }));
+    achievements = { list: vi.fn().mockReturnValue(of({ content: [], totalElements: 4 })) };
     dialog = { open: vi.fn() };
     api = { revokeRole: vi.fn().mockReturnValue(of(undefined)) };
     await TestBed.configureTestingModule({
@@ -129,6 +146,7 @@ describe('UserDetailComponent', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: UsersService, useValue: api },
         { provide: PeopleService, useValue: { get: vi.fn().mockReturnValue(NEVER) } },
+        { provide: AchievementsService, useValue: achievements },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         {
           provide: AuthService,
@@ -159,8 +177,6 @@ describe('UserDetailComponent', () => {
     expect(element.querySelector('[data-testid="current-roles"]')?.textContent).toContain(
       'діє з 01.09.2026',
     );
-    expect(element.textContent).toContain('01.09.2026, 03:00');
-    expect(element.textContent).not.toContain('2026-09-01T00:00:00Z');
     const history = Array.from(
       element.querySelectorAll<HTMLElement>('[data-testid="role-history"] li'),
     );
@@ -169,6 +185,58 @@ describe('UserDetailComponent', () => {
     expect(history[0].classList).not.toContain('admin__role--ended');
     expect(history[1].classList).toContain('admin__role--ended');
     expect(history[1].textContent).toContain('діє з 01.01.2025 до 31.12.2025');
+  });
+
+  it('ac5_3_keeps_the_account_facts_on_their_own_tab', async () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('[data-testid="detail-account"]')).toBeNull();
+
+    await openAccountTab(fixture);
+
+    expect(element.querySelector('[data-testid="current-roles"]')).toBeNull();
+    const account = element.querySelector('[data-testid="detail-account"]');
+    expect(account?.textContent).toContain('01.09.2026, 03:00');
+    expect(account?.textContent).not.toContain('2026-09-01T00:00:00Z');
+    expect(element.querySelector('[data-testid="detail-last-login"]')?.textContent).toContain(
+      'Ще не входив',
+    );
+  });
+
+  it('ac5_3_closes_with_the_cross_and_links_the_persons_awards_with_their_count', () => {
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    const awards = element.querySelector('[data-testid="detail-awards"]');
+
+    expect(element.querySelector('[data-testid="detail-close"]')?.getAttribute('href')).toBe(
+      '/admin/users',
+    );
+    expect(element.querySelector('[data-testid="detail-close"]')?.getAttribute('aria-label')).toBe(
+      'Закрити картку користувача',
+    );
+    expect(achievements.list).toHaveBeenCalledWith(
+      expect.objectContaining({ filters: expect.objectContaining({ person: 7 }), size: 1 }),
+    );
+    expect(awards?.textContent).toContain('Нагороди · 4');
+    expect(awards?.getAttribute('href')).toBe('/achievements?person=7');
+    expect(element.querySelector('[data-testid="detail-delegations"]')).toBeNull();
+    const tabs = Array.from(element.querySelectorAll('[role="tab"]')).map((tab) =>
+      tab.textContent?.trim(),
+    );
+    expect(tabs).toEqual(['Ролі', 'Обліковий запис']);
+  });
+
+  it('ac5_3_names_the_awards_without_a_count_when_the_count_fails', () => {
+    achievements.list.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    params.next(convertToParamMap({ id: '8' }));
+    store.dispatch(AdminUsersActions.userLoaded({ user }));
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="detail-awards"]')?.textContent.trim(),
+    ).toBe('Нагороди');
   });
 
   it('ac2_10_shows_a_not_found_state_for_an_unknown_user_without_an_error_loop', () => {
@@ -263,7 +331,7 @@ describe('UserDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="legal-hold-card"]')).toBeNull();
   });
 
-  it('ac1_9_shows_the_person_card_and_no_role_assignment_for_a_person_without_an_account', () => {
+  it('ac1_9_ac5_3_opens_a_person_without_an_account_on_the_account_tab_with_the_person_card', async () => {
     store.dispatch(
       AdminUsersActions.userLoaded({
         user: {
@@ -277,6 +345,8 @@ describe('UserDetailComponent', () => {
     );
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(element.querySelector('app-person-card')).not.toBeNull();
     expect(element.querySelector('[data-testid="assign-role-open"]')).toBeNull();
@@ -397,6 +467,7 @@ describe('UserDetailComponent for a GDPR officer', () => {
         { provide: MatDialog, useValue: { open: vi.fn() } },
         { provide: UsersService, useValue: {} },
         { provide: LegalHoldsService, useValue: holds },
+        { provide: AchievementsService, useValue: { list: () => NEVER } },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         {
           provide: AuthService,
@@ -419,6 +490,7 @@ describe('UserDetailComponent for a GDPR officer', () => {
     fixture.detectChanges();
     store.dispatch(AdminUsersActions.userLoaded({ user }));
     fixture.detectChanges();
+    await openAccountTab(fixture);
 
     expect(fixture.nativeElement.querySelector('[data-testid="legal-hold-card"]')).not.toBeNull();
     expect(holds.list).toHaveBeenCalledWith(7);

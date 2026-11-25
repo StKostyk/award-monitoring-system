@@ -2383,6 +2383,7 @@ paths:
         - $ref: '#/components/parameters/AchievementYearParam'
         - $ref: '#/components/parameters/AchievementLevelParam'
         - $ref: '#/components/parameters/AchievementRecipientParam'
+        - $ref: '#/components/parameters/AchievementPersonParam'
         - $ref: '#/components/parameters/SearchQueryParam'
       responses:
         '200':
@@ -4074,8 +4075,9 @@ components:
       name: person
       in: query
       description: >
-        Owner of personal awards: only that account's public awards while its status is `ACTIVE`, none for an
-        unknown or inactive account (an empty page, not 404, and no separate lookup); empty together with
+        Owner of personal awards: only that account's awards the list shows (the public ones on the public list)
+        while its status is `ACTIVE`, none for an unknown or inactive account (an empty page, not 404, and no
+        separate lookup); empty together with
         `recipient=UNIT`
       schema:
         type: integer
@@ -4555,7 +4557,7 @@ components:
         lastLoginAt:
           type: [string, 'null']
           format: date-time
-          description: Last successful sign-in; null before the first one and for erased accounts (planned, 9.7.5)
+          description: Last successful sign-in; null before the first one and for erased accounts
 
     UserDetail:
       allOf:

@@ -25,7 +25,7 @@ import { YearGroupComponent } from './year-group.component';
       <span pageChips data-testid="chip">3 waiting</span>
       <button pageActions type="button" data-testid="action">Export</button>
     </app-page-header>
-    <app-split mode="detail" [detailOpen]="selected() !== null">
+    <app-split mode="detail" [detailOpen]="selected() !== null" [sideFull]="full()">
       <div splitSide appListRows data-testid="rows">
         @for (row of rows; track row.id) {
           <button
@@ -61,6 +61,7 @@ class HostComponent {
     { id: 3, initials: 'МС', title: 'Марія Савчук', meta: 'Кафедра фізики' },
   ];
   readonly selected = signal<number | null>(null);
+  readonly full = signal(false);
 }
 
 const KEY_CODES: Record<string, number> = { End: 35, Home: 36, ArrowUp: 38, ArrowDown: 40 };
@@ -135,6 +136,21 @@ describe('page layout kit', () => {
 
     host.selected.set(2);
     detect();
+    expect(split.classList).toContain('split--detail-open');
+  });
+
+  it('ac5_2_ac5_3_a_full_side_column_spans_the_page_until_a_detail_opens', () => {
+    const { element, host, detect } = render();
+    const split = element.querySelector('app-split') as HTMLElement;
+    expect(split.classList).not.toContain('split--side-full');
+
+    host.full.set(true);
+    detect();
+    expect(split.classList).toContain('split--side-full');
+
+    host.selected.set(2);
+    detect();
+    expect(split.classList).not.toContain('split--side-full');
     expect(split.classList).toContain('split--detail-open');
   });
 

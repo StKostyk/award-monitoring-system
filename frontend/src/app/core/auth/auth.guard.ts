@@ -43,11 +43,17 @@ export const peopleGuard: CanActivateFn = () => {
   return canManagePeople(auth.permissions()) || router.createUrlTree(['/forbidden']);
 };
 
-/** Delegations are open to a caller holding an approval role of their own; anybody else is refused. */
-export const delegationGuard: CanActivateFn = () => {
+/**
+ * Delegations are open to a caller holding an approval role of their own, and another person's page
+ * (`?delegatorId=`) to a holder of `user:manage`; anybody else is refused.
+ */
+export const delegationGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return canDelegate(auth.permissions()) || router.createUrlTree(['/forbidden']);
+  const permissions = auth.permissions();
+  const reading =
+    route.queryParamMap.has('delegatorId') && permissions.hasPermission('user:manage');
+  return reading || canDelegate(permissions) || router.createUrlTree(['/forbidden']);
 };
 
 /** The reviewer queue is open to a caller with an approval role, their own or by delegation. */

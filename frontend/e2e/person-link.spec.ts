@@ -61,7 +61,7 @@ test.describe('link at membership confirmation', () => {
     await page.getByTestId(`confirm-candidate-${first}`).click();
     await page.getByTestId('confirm-submit').click();
 
-    await expect(row).toContainText('Працівник');
+    await expect(page.getByTestId('current-roles')).toContainText('Працівник');
 
     await row.click();
     await page.getByTestId('person-link-open').click();

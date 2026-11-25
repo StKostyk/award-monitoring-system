@@ -42,6 +42,7 @@ const user: UserSummary = {
   status: 'ACTIVE',
   roles: [],
   membershipConfirmed: false,
+  lastLoginAt: null,
 };
 
 function person(id: number, lastName: string, status: Person['status'] = 'UNCLAIMED'): Person {

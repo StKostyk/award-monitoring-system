@@ -1,6 +1,8 @@
 <app-page-header
   [heading]="'delegations.title' | transloco"
-  [context]="'delegations.context' | transloco"
+  [context]="
+    (delegatorId === null ? 'delegations.context' : 'delegations.personContext') | transloco
+  "
 >
   @if (canDelegate) {
     <button
@@ -193,7 +195,7 @@
             </div>
           }
 
-          @if (shown.given && revocable(shown.delegation)) {
+          @if (delegatorId === null && shown.given && revocable(shown.delegation)) {
             <div class="delegations__actions">
               <button
                 mat-stroked-button

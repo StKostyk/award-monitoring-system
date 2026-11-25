@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Users page as a full table with the last sign-in that splits into a narrow list beside a person pane with role and account tabs, the person's awards and delegations
 - Unit analytics with a sticky unit rail, the comparison period under each change, top performers linked to their portfolio with a hover card, and names that wrap instead of being cut
 - My dashboard timeline as a journey road at 960 px and wider and a dated feed with a national filter below; timeline entries carry their recognition level
 - Widget tables as spreadsheet grids with totals, grouped headers and a pinned first column with a scroll caption on phones

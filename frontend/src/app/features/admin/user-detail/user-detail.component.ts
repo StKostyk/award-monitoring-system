@@ -1,13 +1,15 @@
 import { HttpStatusCode } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatTab, MatTabGroup, MatTabLabel } from '@angular/material/tabs';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
+import { catchError, map, of, switchMap } from 'rxjs';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -15,6 +17,10 @@ import { canManagePeople, grantableRoles } from '../../../core/auth/permissions'
 import { OrganizationRef, RoleAssignment } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { IconComponent } from '../../../shared/icons/icon.component';
+import {
+  AchievementsService,
+  NO_ACHIEVEMENT_FILTERS,
+} from '../../achievements/achievements.service';
 import { AssignRoleDialogComponent } from '../assign-role-dialog/assign-role-dialog.component';
 import { LegalHoldCardComponent } from '../legal-hold-card/legal-hold-card.component';
 import { PersonCardComponent } from '../person-card/person-card.component';
@@ -33,8 +39,9 @@ import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { StatusPageComponent } from '../../../shared/status-page/status-page.component';
 
 /**
- * The person selected on the users page, in the pane beside the list: profile, roles, history and the actions on
- * the account. Follows the id in the address, so selecting another row reuses the pane.
+ * The person selected on the users page, in the pane beside the list: a header with the links to the person's
+ * awards and delegations, then the roles and the account on two tabs, with the actions on each. Follows the id in
+ * the address, so selecting another row reuses the pane.
  */
 @Component({
   selector: 'app-user-detail',
@@ -45,6 +52,10 @@ import { StatusPageComponent } from '../../../shared/status-page/status-page.com
     MatCardContent,
     MatProgressBar,
     MatButton,
+    MatIconButton,
+    MatTabGroup,
+    MatTab,
+    MatTabLabel,
     IconComponent,
     RouterLink,
     TranslocoPipe,
@@ -65,11 +76,15 @@ export class UserDetailComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly language = inject(LanguageService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly achievements = inject(AchievementsService);
 
   protected id = 0;
   protected readonly canAssign = grantableRoles(this.auth.permissions()).length > 0;
   protected readonly canManagePeople = canManagePeople(this.auth.permissions());
   protected readonly canManageHolds = this.auth.permissions().hasPermission('legal-hold:manage');
+  protected readonly canReadDelegations = this.auth.permissions().hasPermission('user:manage');
+  /** The open tab: 0 the roles, 1 the account, where a person without an account opens. */
+  protected readonly tab = signal(0);
 
   readonly user = this.store.selectSignal(adminUsersFeature.selectSelected);
   readonly loading = this.store.selectSignal(adminUsersFeature.selectSelectedLoading);
@@ -80,6 +95,19 @@ export class UserDetailComponent implements OnInit {
   readonly linked = signal<number | null>(null);
   readonly confirmingId = this.store.selectSignal(adminUsersFeature.selectConfirmingId);
   readonly confirmProblem = this.store.selectSignal(adminUsersFeature.selectConfirmProblem);
+  /** The awards of the person shared with colleagues; null while they load or when the count failed. */
+  readonly awards = signal<{ total: number } | null>(null);
+
+  constructor() {
+    let shownId: number | null = null;
+    effect(() => {
+      const user = this.user();
+      if (user && user.id !== shownId) {
+        shownId = user.id;
+        this.tab.set(user.status === 'UNCLAIMED' ? 1 : 0);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
@@ -89,6 +117,21 @@ export class UserDetailComponent implements OnInit {
       this.linked.set(null);
       this.store.dispatch(AdminUsersActions.userOpened({ id: this.id }));
     });
+    this.route.paramMap
+      .pipe(
+        map((params) => Number(params.get('id'))),
+        switchMap((id) => {
+          this.awards.set(null);
+          return this.achievements
+            .list({ filters: { ...NO_ACHIEVEMENT_FILTERS, person: id }, page: 0, size: 1 })
+            .pipe(
+              map((page) => ({ total: page.totalElements })),
+              catchError(() => of(null)),
+            );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((awards) => this.awards.set(awards));
   }
 
   reload(): void {

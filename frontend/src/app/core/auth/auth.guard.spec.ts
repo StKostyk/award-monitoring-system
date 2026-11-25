@@ -4,6 +4,7 @@ import {
   ActivatedRouteSnapshot,
   Router,
   RouterStateSnapshot,
+  convertToParamMap,
   provideRouter,
 } from '@angular/router';
 import { vi } from 'vitest';
@@ -24,6 +25,10 @@ import {
 import { ConnectivityService } from '../connectivity/connectivity.service';
 import { AuthService } from './auth.service';
 import { NO_PERMISSIONS, readPermissions } from './permissions';
+
+function withQuery(params: Record<string, string>): ActivatedRouteSnapshot {
+  return { queryParamMap: convertToParamMap(params) } as ActivatedRouteSnapshot;
+}
 
 function tokenWith(claims: Record<string, unknown>): string {
   return `header.${btoa(JSON.stringify(claims))}.signature`;
@@ -128,11 +133,32 @@ describe('authGuard', () => {
   it('ac3_6_opens_the_delegations_page_for_an_approval_role_of_the_callers_own', () => {
     auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['DEAN:9'] })));
 
-    const allowed = TestBed.runInInjectionContext(() =>
-      delegationGuard({} as ActivatedRouteSnapshot, state),
-    );
+    const allowed = TestBed.runInInjectionContext(() => delegationGuard(withQuery({}), state));
 
     expect(allowed).toBe(true);
+  });
+
+  it('ac5_3_opens_another_persons_delegations_page_for_a_people_manager_only', () => {
+    auth.permissions.set(
+      readPermissions(tokenWith({ permissions: ['user:read:all', 'user:manage'] })),
+    );
+    const forbidden = TestBed.inject(Router).createUrlTree(['/forbidden']).toString();
+
+    expect(
+      TestBed.runInInjectionContext(() => delegationGuard(withQuery({ delegatorId: '5' }), state)),
+    ).toBe(true);
+    expect(String(TestBed.runInInjectionContext(() => delegationGuard(withQuery({}), state)))).toBe(
+      forbidden,
+    );
+
+    auth.permissions.set(readPermissions(tokenWith({ role_scopes: ['EMPLOYEE:64'] })));
+    expect(
+      String(
+        TestBed.runInInjectionContext(() =>
+          delegationGuard(withQuery({ delegatorId: '5' }), state),
+        ),
+      ),
+    ).toBe(forbidden);
   });
 
   it('ac3_6_sends_an_employee_and_a_delegate_only_to_the_forbidden_page', () => {
@@ -142,9 +168,7 @@ describe('authGuard', () => {
     ]) {
       auth.permissions.set(readPermissions(tokenWith(claims)));
 
-      const refused = TestBed.runInInjectionContext(() =>
-        delegationGuard({} as ActivatedRouteSnapshot, state),
-      );
+      const refused = TestBed.runInInjectionContext(() => delegationGuard(withQuery({}), state));
 
       expect(String(refused)).toBe(TestBed.inject(Router).createUrlTree(['/forbidden']).toString());
     }

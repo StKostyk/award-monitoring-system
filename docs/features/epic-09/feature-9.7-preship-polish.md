@@ -408,7 +408,8 @@ draft wording and get the merged i18n text at the validation.
 15. At 360. Expected: dated feed by year with the count per year, «Від національного» narrows it to national and
     international awards, «Усі» restores it (AC-3.3).
 16. As `admin`, `/admin/users`. Expected: full table with last sign-in (AC-5.1, AC-5.2); select `dean.fmi` → narrow
-    list and the person pane with tabs and links; «×» → full table (AC-5.3); 360 → full page with back (AC-5.4).
+    list and the person pane with tabs and links; «Делегування» → `/delegations?delegatorId=<id>` read only, without
+    «Делегувати» or «Відкликати»; «×» → full table (AC-5.3); 360 → full page with back (AC-5.4).
 17. As `dean.fmi`, `/delegations`, delegate to `secretary.fmi` for next week. Expected: card under «Заплановані» in
     «Від мене», with «Відкликати»; as `secretary.fmi` the card is under «Мені» without an action (AC-6.1, AC-6.2).
 18. As `employee.fmi` after `dean.fmi` approves one award: `/notifications`, select it. Expected: reading pane,
@@ -439,7 +440,7 @@ draft wording and get the merged i18n text at the validation.
     found», the list stays; `DELETE /notifications/<that id>/read` answers 404 (AC-7.1).
 30. Reload `/notifications` with a notification selected. Expected: the same one open, still read.
 31. Back after «Відкрити нагороду». Expected: `/notifications` with the same notification selected.
-32. Direct URL `/admin/users?selected=<erased person id>` as `admin`. Expected: 404 message in the pane, full list.
+32. Direct URL `/admin/users/<erased person id>` as `admin`. Expected: 404 message in the pane, full list.
 33. **Hidden in state**: on the delegations board, an ended (revoked or expired) card and a received card. Expected:
     no «Відкликати»; `DELETE /delegations/<ended id>` answers 409, the received one 403 or 404 as in 7.x (AC-6.2).
 34. **Hidden in state**: a notification that is already unread. Expected: «Позначити непрочитаним» absent; the API

@@ -39,7 +39,7 @@ const { reducer } = delegationsFeature;
 describe('delegationsFeature', () => {
   it('ac3_5_keeps_the_two_lists_the_server_returned', () => {
     const loaded = reducer(
-      reducer(initialState, DelegationsActions.opened()),
+      reducer(initialState, DelegationsActions.opened({ delegatorId: null })),
       DelegationsActions.delegationsLoaded({ list }),
     );
 

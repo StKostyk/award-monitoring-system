@@ -69,8 +69,18 @@ class AchievementEndpointsTest extends AbstractAwardEndpointsTest {
             .andExpect(jsonPath("$.content").isEmpty());
     }
 
+    @Test
+    void ac5_3_thePersonFilterNarrowsTheSharedList() throws Exception {
+        when(achievements.shared(new AchievementQuery(null, null, null, null, 7L, null), 0, 1))
+            .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get(ACHIEVEMENTS).with(secretary()).param("person", "7").param("size", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
     @ParameterizedTest
-    @ValueSource(strings = {"year=abc", "level=GALACTIC", "recipient=TEAM", "unit=x"})
+    @ValueSource(strings = {"year=abc", "level=GALACTIC", "recipient=TEAM", "unit=x", "person=abc"})
     void ac1_6_aMalformedFilterIsAnInvalidParameter(String filter) throws Exception {
         mockMvc.perform(get(ACHIEVEMENTS + "?" + filter).with(employee()))
             .andExpect(status().isBadRequest())

@@ -93,7 +93,7 @@ class UserControllerTest extends AbstractUserEndpointsTest {
         OrganizationRef department = new OrganizationRef(64L, "Department of Algebra and Informatics",
             "Кафедра алгебри та інформатики", "DAI", OrganizationType.DEPARTMENT);
         UserSummaryResponse row = new UserSummaryResponse(5L, "employee.fmi@chnu.edu.ua", "Анастасія",
-            "Працівник", department, AccountStatus.ACTIVE, List.of(), false);
+            "Працівник", department, AccountStatus.ACTIVE, List.of(), false, Instant.parse("2026-11-20T08:15:00Z"));
         when(directoryService.list(new UserDirectoryQuery(null, RoleType.EMPLOYEE, null, true, "пра"), 1, 100))
             .thenReturn(new PageImpl<>(List.of(row), PageRequest.of(1, 100), 101));
 
@@ -104,6 +104,7 @@ class UserControllerTest extends AbstractUserEndpointsTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content[0].email").value("employee.fmi@chnu.edu.ua"))
             .andExpect(jsonPath("$.content[0].membershipConfirmed").value(false))
+            .andExpect(jsonPath("$.content[0].lastLoginAt").value("2026-11-20T08:15:00Z"))
             .andExpect(jsonPath("$.totalElements").value(101))
             .andExpect(jsonPath("$.number").value(1))
             .andExpect(jsonPath("$.last").value(true));

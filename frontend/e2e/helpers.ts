@@ -394,6 +394,11 @@ export function shownDay(isoDay: string): string {
   return `${day}.${month}.${year}`;
 }
 
+/** The table row of the full users table (960 px and wider, nobody selected) that holds the person's link. */
+export function userTableRow(page: Page, text: string): Locator {
+  return page.getByTestId('user-row').filter({ has: userRow(page, text) });
+}
+
 /** A row of the users page, by the e-mail address of the account or by a part of the name. */
 export function userRow(page: Page, text: string): Locator {
   return text.includes('@')
