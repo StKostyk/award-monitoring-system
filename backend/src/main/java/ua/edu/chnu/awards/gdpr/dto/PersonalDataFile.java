@@ -40,7 +40,7 @@ import ua.edu.chnu.awards.user.entity.AccountStatus;
  * @param activityLog     the person's own application events, newest first
  * @param notifications   in-app notifications and the delivery log of mails, newest first
  * @param notificationPreferences the notification choices the person changed from the default
- * @param dashboardPreferences    the colour scheme and dashboard layouts; system and default when never saved
+ * @param dashboardPreferences    scheme, layouts and getting-started progress; defaults when never saved
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PersonalDataFile(Metadata exportMetadata, PersonalData personalData, List<RoleEntry> roles,
@@ -412,9 +412,11 @@ public record PersonalDataFile(Metadata exportMetadata, PersonalData personalDat
      *
      * @param colorScheme {@code SYSTEM}, {@code LIGHT} or {@code DARK}
      * @param layouts     the stored layouts as JSON, written into the file as they are
+     * @param onboarding  the stored getting-started progress as JSON, written into the file as it is
      * @param updatedAt   when the choice was saved, null when never
      */
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-    public record DashboardPreferenceEntry(String colorScheme, @JsonRawValue String layouts, Instant updatedAt) {
+    public record DashboardPreferenceEntry(String colorScheme, @JsonRawValue String layouts,
+                                           @JsonRawValue String onboarding, Instant updatedAt) {
     }
 }

@@ -49,8 +49,9 @@ class DataExportFT extends AbstractFunctionalTest {
             + " 'SENT', now())", exporter.getId(), "ft-export-" + exporter.getId());
         jdbc.update("INSERT INTO notification_preferences (user_id, event_type, email_enabled, in_app_enabled)"
             + " VALUES (?, 'AWARD_RETURNED', false, true)", exporter.getId());
-        jdbc.update("INSERT INTO dashboard_preferences (user_id, color_scheme, layouts) VALUES (?, 'DARK', "
-            + "'{\"MY_AWARDS\": {\"order\": [\"RANK\"], \"hidden\": [\"KPI\"]}}'::jsonb)",
+        jdbc.update("INSERT INTO dashboard_preferences (user_id, color_scheme, layouts, onboarding) "
+            + "VALUES (?, 'DARK', '{\"MY_AWARDS\": {\"order\": [\"RANK\"], \"hidden\": [\"KPI\"]}}'::jsonb, "
+            + "'{\"done\": [\"PROFILE\"], \"dismissed\": true, \"tourSeen\": false}'::jsonb)",
             exporter.getId());
     }
 
@@ -83,7 +84,7 @@ class DataExportFT extends AbstractFunctionalTest {
             .body("awards[0].visibility", equalTo("PRIVATE"))
             .body("roles", hasSize(0))
             .body("activity_log.action", hasItem("LOGIN_SUCCESS"))
-            .body("export_metadata.format_version", equalTo("1.8"))
+            .body("export_metadata.format_version", equalTo("1.9"))
             .body("notifications", hasSize(1))
             .body("notifications[0].channel", equalTo("EMAIL"))
             .body("notifications[0].delivery_status", equalTo("SENT"))
@@ -95,6 +96,8 @@ class DataExportFT extends AbstractFunctionalTest {
             .body("dashboard_preferences.color_scheme", equalTo("DARK"))
             .body("dashboard_preferences.layouts.MY_AWARDS.order", contains("RANK"))
             .body("dashboard_preferences.layouts.MY_AWARDS.hidden", contains("KPI"))
+            .body("dashboard_preferences.onboarding.done", contains("PROFILE"))
+            .body("dashboard_preferences.onboarding.dismissed", equalTo(true))
             .body("dashboard_preferences.updated_at", notNullValue());
         assertThat(export.asString()).doesNotContain("password", "$2a$", "token");
 

@@ -30,6 +30,7 @@ import {
 import { Fact } from '../../../shared/widgets/widget-data';
 import { KpiWidgetComponent } from '../../../shared/widgets/kpi-widget.component';
 import { LevelStairsWidgetComponent } from '../../../shared/widgets/level-stairs-widget.component';
+import { OnboardingChecklistComponent } from '../../onboarding/onboarding-checklist/onboarding-checklist.component';
 import { readPeriod } from '../analytics-period';
 import { AnalyticsPeriod } from '../analytics.service';
 import { CategoryChartComponent } from '../category-chart/category-chart.component';
@@ -72,6 +73,7 @@ export const MIN_FACT_AWARDS = 2;
     MatIconButton,
     MatProgressBar,
     MatTooltip,
+    OnboardingChecklistComponent,
     PageHeaderComponent,
     PaneComponent,
     PeriodSelectComponent,

@@ -44,6 +44,7 @@ import { canManagePeople } from '../../../core/auth/permissions';
 import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { WIDE_LAYOUT } from '../../../core/layout/shell.component';
+import { OnboardingChecklistComponent } from '../../onboarding/onboarding-checklist/onboarding-checklist.component';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { watchLeftSelection } from '../../../shared/layout/left-selection';
 import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
@@ -79,6 +80,7 @@ export interface UserCounts {
 @Component({
   selector: 'app-user-list',
   imports: [
+    OnboardingChecklistComponent,
     ReactiveFormsModule,
     MatFormField,
     MatLabel,

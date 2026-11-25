@@ -1,5 +1,5 @@
 <app-page-header
-  [heading]="'delegations.title' | transloco"
+  [heading]="(delegatorId === null ? 'delegations.title' : 'delegations.personTitle') | transloco"
   [context]="
     (delegatorId === null ? 'delegations.context' : 'delegations.personContext') | transloco
   "
@@ -36,7 +36,7 @@
     [label]="'app.loading' | transloco"
     data-testid="delegations-loading"
   />
-} @else if (!problem()) {
+} @else if (!problem() || given().length + received().length > 0) {
   <mat-button-toggle-group
     class="delegations__sides"
     [value]="side()"
@@ -46,10 +46,16 @@
     data-testid="delegations-side"
   >
     <mat-button-toggle value="given" data-testid="side-given">
-      {{ 'delegations.board.given' | transloco: { count: given().length } }}
+      {{
+        (delegatorId === null ? 'delegations.board.given' : 'delegations.board.givenBy')
+          | transloco: { count: given().length }
+      }}
     </mat-button-toggle>
     <mat-button-toggle value="received" data-testid="side-received">
-      {{ 'delegations.board.received' | transloco: { count: received().length } }}
+      {{
+        (delegatorId === null ? 'delegations.board.received' : 'delegations.board.receivedBy')
+          | transloco: { count: received().length }
+      }}
     </mat-button-toggle>
   </mat-button-toggle-group>
 
@@ -167,15 +173,20 @@
             {{ 'delegations.board.empty.' + column.key | transloco }}
           </p>
         }
-        @if (column.delegations.length < column.total) {
+        @if (column.key === 'ended' && column.total > endedShown) {
           <button
             mat-button
             type="button"
             class="delegations__more"
-            (click)="allEnded.set(true)"
+            [attr.aria-expanded]="allEnded()"
+            (click)="allEnded.set(!allEnded())"
             data-testid="ended-all"
           >
-            {{ 'delegations.board.showAll' | transloco: { count: column.total } }}
+            {{
+              allEnded()
+                ? ('delegations.board.showFewer' | transloco)
+                : ('delegations.board.showAll' | transloco: { count: column.total })
+            }}
           </button>
         }
       </section>

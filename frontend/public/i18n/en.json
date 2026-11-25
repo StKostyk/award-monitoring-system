@@ -108,6 +108,81 @@
       "hint": "Ask your faculty secretary or the head of your department. Once it is confirmed, the roles reach your session after the next sign-in."
     }
   },
+  "onboarding": {
+    "heading": "Welcome, {{name}}! · First steps",
+    "progress": "{{done}} of {{total}} done",
+    "done": "Done",
+    "allDone": "All first steps are done. This list will not appear again.",
+    "dismiss": "Hide the list",
+    "tourStart": "Show a tour of the screen",
+    "steps": {
+      "NOTICE": {
+        "title": "Read the privacy notice",
+        "hint": "What the system keeps about you and why",
+        "action": "Open"
+      },
+      "PROFILE": {
+        "title": "Check your profile",
+        "hint": "Name, unit and e-mail",
+        "action": "Check"
+      },
+      "FIRST_AWARD": {
+        "title": "Add your first award",
+        "hint": "A draft can be saved and finished later",
+        "action": "Add"
+      },
+      "VISIBILITY": {
+        "title": "Choose who sees your awards",
+        "hint": "Visibility and rankings",
+        "action": "Set up"
+      },
+      "NOTIFICATIONS": {
+        "title": "Set up notifications",
+        "hint": "Which e-mails you receive",
+        "action": "Set up"
+      },
+      "REVIEW_QUEUE": {
+        "title": "Look at the review queue",
+        "hint": "Awards waiting for your decision",
+        "action": "Open"
+      },
+      "DELEGATE": {
+        "title": "Appoint a deputy",
+        "hint": "Who reviews awards while you are away",
+        "action": "Appoint"
+      },
+      "IMPORT": {
+        "title": "Import staff",
+        "hint": "Colleagues from a spreadsheet",
+        "action": "Import"
+      }
+    },
+    "tour": {
+      "count": "Step {{n}} of {{total}}",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Done",
+      "skip": "Skip",
+      "stops": {
+        "search": {
+          "title": "Search",
+          "text": "Finds a page, an award or an action. Also opens with Ctrl K."
+        },
+        "navigation": {
+          "title": "Navigation",
+          "text": "Every page of your roles. The current page is highlighted."
+        },
+        "newAward": {
+          "title": "New award",
+          "text": "Adds an award: fill in the details, attach a document and send it for review."
+        },
+        "views": {
+          "title": "Chart / Table",
+          "text": "Every chart can be read as a table with the same numbers."
+        }
+      }
+    }
+  },
   "roles": {
     "EMPLOYEE": "Employee",
     "FACULTY_SECRETARY": "Faculty secretary",
@@ -937,12 +1012,15 @@
   },
   "delegations": {
     "title": "My delegations",
+    "personTitle": "Delegations",
     "context": "Powers you handed over or received for a period",
     "personContext": "Powers of this person, handed over and received (read only)",
     "board": {
       "sides": "Whose delegations to show",
       "given": "From me · {{count}}",
       "received": "To me · {{count}}",
+      "givenBy": "Given · {{count}}",
+      "receivedBy": "Received · {{count}}",
       "columns": {
         "active": "Active",
         "upcoming": "Scheduled",
@@ -955,6 +1033,7 @@
       },
       "limits": "Limits of authority",
       "showAll": "Show all · {{count}}",
+      "showFewer": "Show fewer",
       "endsIn": {
         "one": "{{count}} day left",
         "few": "{{count}} days left",
@@ -1905,6 +1984,7 @@
       "roadNewest": "My newest awards up to today",
       "none": "No approved awards yet.",
       "start": "{{year}} · start",
+      "startShown": "from {{year}} · newest",
       "today": "today",
       "filter": "Award level",
       "all": "All",

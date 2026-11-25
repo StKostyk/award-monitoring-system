@@ -80,7 +80,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5w | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | Done |
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | Done |
 | 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | Done |
-| 5za | 9.7.9 First sign-in checklist and spotlight tour | 9.7 | 5 | SCRUM-189 | #507 | no | To do |
+| 5za | 9.7.9 First sign-in checklist and spotlight tour | 9.7 | 5 | SCRUM-189 | #507 | no | In review |
 | 5za | 9.7.8 Privacy control panel | 9.7 | 3 | SCRUM-188 | #506 | no | In review |
 | 5za | 9.7.7 Notifications inbox with a reading pane | 9.7 | 3 | SCRUM-187 | #505 | no | In review |
 | 5za | 9.7.6 Delegations status board | 9.7 | 2 | SCRUM-186 | #504 | no | In review |

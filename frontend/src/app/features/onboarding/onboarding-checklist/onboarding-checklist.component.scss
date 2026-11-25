@@ -1,0 +1,90 @@
+:host {
+  display: block;
+}
+
+:host:has(.onboarding) {
+  margin-block-end: 16px;
+}
+
+.onboarding__progress,
+.onboarding__all-done {
+  margin: 0 0 12px;
+  color: var(--app-muted);
+  font: var(--mat-sys-body-medium);
+}
+
+.onboarding__all-done {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+}
+
+.onboarding__steps {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding__step {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-block-end: 1px solid var(--app-row-divider);
+}
+
+.onboarding__mark {
+  color: var(--app-muted);
+}
+
+.onboarding__step--done .onboarding__mark {
+  color: var(--app-gold-text);
+}
+
+.onboarding__text {
+  display: grid;
+  gap: 2px;
+}
+
+.onboarding__title {
+  font: var(--mat-sys-title-small);
+}
+
+.onboarding__step--done .onboarding__title {
+  color: var(--app-muted);
+}
+
+.onboarding__hint {
+  color: var(--app-muted);
+  font: var(--mat-sys-body-small);
+}
+
+.onboarding__done {
+  color: var(--app-gold-text);
+  font: var(--mat-sys-label-medium);
+}
+
+.onboarding__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-block-start: 8px;
+}
+
+@media (max-width: 599.98px) {
+  .onboarding__step {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .onboarding__open,
+  .onboarding__done {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

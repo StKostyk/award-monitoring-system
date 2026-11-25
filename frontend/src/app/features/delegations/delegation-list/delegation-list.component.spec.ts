@@ -71,6 +71,7 @@ const translations = {
     roles: { DEAN: 'Декан' },
     delegations: {
       title: 'Мої делегування',
+      personTitle: 'Делегування',
       period: '{{from}} — {{to}}',
       states: {
         active: 'Активне',
@@ -84,6 +85,8 @@ const translations = {
       board: {
         given: 'Від мене · {{count}}',
         received: 'Мені · {{count}}',
+        givenBy: 'Видані · {{count}}',
+        receivedBy: 'Отримані · {{count}}',
         columns: { active: 'Активні', upcoming: 'Заплановані', ended: 'Завершені' },
         empty: {
           active: 'Немає активних делегувань',
@@ -92,6 +95,7 @@ const translations = {
         },
         limits: 'Межі повноважень',
         showAll: 'Показати всі · {{count}}',
+        showFewer: 'Згорнути',
         endsIn: { many: 'Залишилося {{count}} днів', few: 'Залишилося {{count}} дні' },
       },
       capabilities: {
@@ -289,6 +293,10 @@ describe('DelegationListComponent', () => {
     expect(queryAll('[data-testid="given-card"]')).toHaveLength(3);
     expect(query('[data-testid="revoke-delegation"]')).toBeNull();
     expect(query('[data-testid="delegate-open"]')).toBeNull();
+    expect(query('h1')?.textContent).toContain('Делегування');
+    expect(query('h1')?.textContent).not.toContain('Мої');
+    expect(query('[data-testid="side-given"]')?.textContent).toContain('Видані · 3');
+    expect(query('[data-testid="side-received"]')?.textContent).toContain('Отримані · 1');
   });
 
   it('ac6_3_keeps_the_columns_in_the_order_active_scheduled_ended', async () => {
@@ -381,7 +389,34 @@ describe('DelegationListComponent', () => {
     harness.detectChanges();
 
     expect(queryAll('[data-testid="given-card"]', column('ended'))).toHaveLength(7);
-    expect(query('[data-testid="ended-all"]')).toBeNull();
+    expect(query('[data-testid="ended-all"]')?.textContent).toContain('Згорнути');
+    expect(query('[data-testid="ended-all"]')?.getAttribute('aria-expanded')).toBe('true');
+
+    query('[data-testid="ended-all"]')?.click();
+    harness.detectChanges();
+
+    expect(queryAll('[data-testid="given-card"]', column('ended'))).toHaveLength(5);
+  });
+
+  it('ac6_1_orders_revocations_by_the_kyiv_day', async () => {
+    const lateEvening: Delegation = {
+      ...given,
+      id: 30,
+      state: 'revoked',
+      reason: 'Пізно ввечері',
+      revokedAt: '2026-11-23T22:30:00Z',
+    };
+    const morning: Delegation = {
+      ...given,
+      id: 31,
+      state: 'revoked',
+      reason: 'Зранку',
+      revokedAt: '2026-11-23T08:00:00Z',
+    };
+    await open('/delegations', { given: [morning, lateEvening], received: [] });
+
+    const shown = queryAll('[data-testid="card-note"]', column('ended'));
+    expect(shown.map((note) => note.textContent)).toEqual(['Пізно ввечері', 'Зранку']);
   });
 
   it('ac6_1_orders_ended_delegations_by_the_day_they_ended', async () => {
@@ -452,5 +487,15 @@ describe('DelegationListComponent', () => {
 
     expect(query('[data-testid="delegations-error"]')).not.toBeNull();
     expect(query('[data-testid="delegations-board"]')).toBeNull();
+  });
+
+  it('ac7_3_keeps_the_board_beside_a_failed_reload', async () => {
+    await open('/delegations');
+    store.dispatch(DelegationsActions.reloaded());
+    store.dispatch(DelegationsActions.delegationsLoadFailed({ problem: 'network' }));
+    harness.detectChanges();
+
+    expect(query('[data-testid="delegations-error"]')).not.toBeNull();
+    expect(queryAll('[data-testid="given-card"]')).toHaveLength(3);
   });
 });

@@ -49,18 +49,28 @@ describe('delegationsFeature', () => {
     expect(loaded.problem).toBeNull();
   });
 
-  it('ac3_5_empties_the_lists_when_the_request_fails', () => {
+  it('ac3_5_keeps_the_lists_beside_a_failed_reload', () => {
     const loaded = reducer(initialState, DelegationsActions.delegationsLoaded({ list }));
 
     const failed = reducer(
-      loaded,
+      reducer(loaded, DelegationsActions.reloaded()),
       DelegationsActions.delegationsLoadFailed({ problem: 'network' }),
     );
 
-    expect(failed.given).toEqual([]);
-    expect(failed.received).toEqual([]);
+    expect(failed.given).toEqual([given]);
     expect(failed.problem).toBe('network');
     expect(failed.loading).toBe(false);
+  });
+
+  it('ac5_3_empties_the_lists_when_another_persons_page_opens', () => {
+    const loaded = reducer(initialState, DelegationsActions.delegationsLoaded({ list }));
+
+    const same = reducer(loaded, DelegationsActions.opened({ delegatorId: null }));
+    const other = reducer(loaded, DelegationsActions.opened({ delegatorId: 5 }));
+
+    expect(same.given).toEqual([given]);
+    expect(other.given).toEqual([]);
+    expect(other.received).toEqual([]);
   });
 
   it('ac3_1_reports_a_created_delegation', () => {

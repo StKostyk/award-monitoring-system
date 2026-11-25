@@ -18,9 +18,10 @@
           [class.road__lane--turn]="!$last"
           [style.grid-row]="row.row"
         >
-          @if ($first && !truncated()) {
+          @if ($first) {
             <span class="road__start" data-testid="timeline-start">{{
-              'analytics.timeline.start' | transloco: { year: view.first }
+              (truncated() ? 'analytics.timeline.startShown' : 'analytics.timeline.start')
+                | transloco: { year: view.first }
             }}</span>
           }
           @if ($last) {
