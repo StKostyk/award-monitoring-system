@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unit analytics with a sticky unit rail, the comparison period under each change, top performers linked to their portfolio with a hover card, and names that wrap instead of being cut
 - My dashboard timeline as a journey road at 960 px and wider and a dated feed with a national filter below; timeline entries carry their recognition level
 - Widget tables as spreadsheet grids with totals, grouped headers and a pinned first column with a scroll caption on phones
 - Sign-in page themes (catalogue cards, night sky, rushnyk) chosen by APP_SIGN_IN_THEME, a daily quote and logo mark 9 for the neutral brand

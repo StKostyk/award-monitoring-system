@@ -1952,7 +1952,8 @@
     "exportFailed": "The report could not be exported.",
     "delta": {
       "new": "new",
-      "previous": "Previous period: {{count}}"
+      "previous": "Previous period: {{count}}",
+      "against": "vs {{previous}}"
     },
     "tiles": {
       "approved": "Approved awards",
@@ -1975,8 +1976,7 @@
     },
     "trend": {
       "personal": "Personal awards",
-      "unitAwards": "Unit awards",
-      "ownScale": "Each department on its own scale; the last year of the period is highlighted."
+      "unitAwards": "Unit awards"
     },
     "comparison": {
       "unit": "Unit",
@@ -2012,7 +2012,10 @@
       "note": "Only people who agreed to be named in analytics appear here.",
       "empty": "Nobody in this unit has agreed to be named yet.",
       "groupTooSmall": "The unit has fewer members than the minimum group for naming people, so nobody is listed.",
-      "awards": "Awards"
+      "awards": "Awards",
+      "latest": "Latest awards",
+      "periodCount": "Awards in the period: {{count}}",
+      "portfolio": "Portfolio →"
     },
     "highlights": {
       "strengths": "Strengths",

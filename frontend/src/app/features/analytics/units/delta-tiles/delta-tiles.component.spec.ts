@@ -74,4 +74,18 @@ describe('DeltaTilesComponent', () => {
         .textContent,
     ).toContain('—');
   });
+
+  it('ac4_2_captions_each_change_with_the_previous_period', () => {
+    const element = render({ previousPeriod: { from: 2017, to: 2021 } });
+    const captions = [...element.querySelectorAll('[data-testid="tile-against"]')];
+
+    expect(captions.map((caption) => caption.textContent!.trim())).toEqual([
+      'vs 2017–2021',
+      'vs 2017–2021',
+    ]);
+    expect(captions[0].closest('[data-testid="tile-approved"]')).not.toBeNull();
+    fixture.componentRef.setInput('previousPeriod', null);
+    fixture.detectChanges();
+    expect(element.querySelector('[data-testid="tile-against"]')).toBeNull();
+  });
 });

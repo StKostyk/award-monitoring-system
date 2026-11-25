@@ -1,5 +1,6 @@
 import { FocusableOption, FocusKeyManager } from '@angular/cdk/a11y';
 import {
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   contentChildren,
@@ -25,6 +26,7 @@ import { IconName } from '../icons/icons';
   host: {
     class: 'list-row',
     '[class.list-row--selected]': 'selected()',
+    '[class.list-row--wrap]': 'wrap()',
     '[attr.aria-current]': "selected() ? 'true' : null",
   },
   template: `
@@ -126,6 +128,13 @@ import { IconName } from '../icons/icons';
       text-overflow: ellipsis;
     }
 
+    :host(.list-row--wrap) :is(.list-row__title, .list-row__meta) {
+      overflow: visible;
+      white-space: normal;
+      text-overflow: clip;
+      overflow-wrap: anywhere;
+    }
+
     .list-row__end {
       display: inline-flex;
       flex: none;
@@ -163,6 +172,8 @@ export class ListRowComponent implements FocusableOption {
   readonly meta = input<string | null>(null);
   /** Whether this row's detail is open. */
   readonly selected = input(false);
+  /** Whether the title and the meta wrap instead of ending in an ellipsis. */
+  readonly wrap = input(false, { transform: booleanAttribute });
   /** The row's link or button. */
   readonly host: HTMLElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 

@@ -157,3 +157,134 @@
     margin-top: 0;
   }
 }
+
+.podium__card {
+  padding: 0;
+}
+
+.podium__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 14px 10px 12px;
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ranks__row {
+  display: block;
+  padding: 0;
+}
+
+.ranks__link {
+  display: grid;
+  grid-template-columns: 20px 32px minmax(0, 1fr) auto 12px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-radius: var(--app-radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+
+.podium__link,
+.ranks__link {
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+
+    .podium__name,
+    strong {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.ranks__go {
+  color: var(--app-muted);
+}
+
+.ranks__who span {
+  overflow-wrap: anywhere;
+}
+
+.top-card {
+  display: grid;
+  gap: 10px;
+  width: min(300px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--app-pane-border);
+  border-radius: var(--app-card-radius);
+  background: var(--mat-sys-surface-container-lowest);
+  box-shadow: var(--mat-sys-level3);
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface);
+  pointer-events: none;
+}
+
+.top-card__head {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.top-card__who {
+  display: grid;
+  overflow-wrap: anywhere;
+
+  strong {
+    font: 700 0.875rem / 1.3 var(--app-font-heading);
+  }
+
+  span {
+    color: var(--app-muted);
+  }
+}
+
+.top-card__label,
+.top-card__loading {
+  margin: 0;
+  color: var(--app-muted);
+}
+
+.top-card__awards {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+}
+
+.top-card__year {
+  color: var(--app-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.top-card__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--app-row-divider);
+}
+
+.top-card__go {
+  font-weight: 700;
+  color: var(--mat-sys-primary);
+}

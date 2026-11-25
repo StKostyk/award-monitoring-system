@@ -188,18 +188,29 @@ describe('UnitAnalyticsComponent', () => {
     expect(element('unit-export')).not.toBeNull();
   });
 
-  it('ac2_2_states_the_previous_period_and_that_the_year_is_not_over', async () => {
+  it('ac4_2_captions_each_change_with_the_previous_period_instead_of_a_paragraph', async () => {
     await setUp();
     load();
 
-    expect(element('unit-analytics-compared')!.textContent).toContain(
-      '2024–2026, compared with 2021–2023.',
-    );
-    expect(element('unit-analytics-compared')!.textContent).toContain('2026 is not over yet');
+    expect(element('unit-analytics-compared')).toBeNull();
+    const captions = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="tile-against"]'),
+    ];
+    expect(captions.map((caption) => caption.textContent!.trim())).toEqual([
+      'vs 2021–2023',
+      'vs 2021–2023',
+    ]);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('not over');
+  });
 
-    load(departmentAnalytics());
+  it('ac4_1_keeps_the_unit_rail_sticky_beside_the_widgets', async () => {
+    await setUp();
+    load();
 
-    expect(element('unit-analytics-compared')!.textContent).not.toContain('not over');
+    const split = (fixture.nativeElement as HTMLElement).querySelector('app-split')!;
+    expect(split.classList).toContain('split--sticky');
+    expect(split.querySelector('.split__side [data-testid="section-totals"]')).not.toBeNull();
+    expect(element('page-context')!.closest('app-split')).toBeNull();
   });
 
   it('ac2_3_ac6_1_shows_the_faculty_sections_in_order_with_the_comparison', async () => {

@@ -30,6 +30,16 @@ export function deltaView(figure: Figure): DeltaView {
   };
 }
 
+/**
+ * The years of a period to print, one year alone or a range with an en dash.
+ *
+ * @param period the first and last year
+ * @returns e.g. `2024` or `2017–2021`
+ */
+export function periodYears(period: { from: number; to: number }): string {
+  return period.from === period.to ? String(period.from) : `${period.from}–${period.to}`;
+}
+
 function roundHalfAway(value: number): number {
   return Math.sign(value) * Math.round(Math.abs(value));
 }

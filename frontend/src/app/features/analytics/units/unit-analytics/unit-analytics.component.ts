@@ -147,17 +147,6 @@ export class UnitAnalyticsComponent {
   protected readonly shownPeriod = computed<AnalyticsPeriod>(
     () => this.analytics()?.period ?? this.period(),
   );
-  protected readonly comparedWith = computed(() => {
-    this.language.current();
-    const data = this.analytics();
-    if (!data) {
-      return '';
-    }
-    return this.transloco.translate('unitAnalytics.comparedWith', {
-      period: years(data.period),
-      previous: years(data.previousPeriod),
-    });
-  });
   protected readonly hasYears = computed(
     () => this.analytics()?.byYear.some((entry) => entry.total > 0) ?? false,
   );
@@ -228,8 +217,4 @@ export class UnitAnalyticsComponent {
       this.store.dispatch(UnitAnalyticsActions.unitsRequested());
     }
   }
-}
-
-function years(period: { from: number; to: number }): string {
-  return period.from === period.to ? String(period.from) : `${period.from}–${period.to}`;
 }

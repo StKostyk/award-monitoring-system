@@ -4,6 +4,11 @@
     <dd class="tile__value" [appCountUp]="totals().approved.current"></dd>
     <dd>
       <app-delta [figure]="totals().approved" [chip]="bento()" [detailed]="bento()" />
+      @if (previous(); as years) {
+        <span class="tile__against" data-testid="tile-against">
+          {{ 'unitAnalytics.delta.against' | transloco: { previous: years } }}
+        </span>
+      }
     </dd>
     @if (points(); as line) {
       <dd class="tile__spark" aria-hidden="true">
@@ -18,6 +23,11 @@
     <dd class="tile__value" [appCountUp]="totals().awardedPeople.current"></dd>
     <dd>
       <app-delta [figure]="totals().awardedPeople" [chip]="bento()" [detailed]="bento()" />
+      @if (previous(); as years) {
+        <span class="tile__against" data-testid="tile-against">
+          {{ 'unitAnalytics.delta.against' | transloco: { previous: years } }}
+        </span>
+      }
     </dd>
   </div>
   <div class="tile" data-testid="tile-unit-awards">

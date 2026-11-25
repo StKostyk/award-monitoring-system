@@ -1,6 +1,7 @@
 import {
   afterNextRender,
   afterRenderEffect,
+  booleanAttribute,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -19,7 +20,8 @@ const USER_SCROLL_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as 
 export type SplitMode = 'stack' | 'detail';
 
 /**
- * A page of a side column (at most 380 px, a list or summaries) beside a main column, both scrolling with the page.
+ * A page of a side column (at most 380 px, a list or summaries) beside a main column, both scrolling with the page
+ * unless the side column is sticky.
  * The caller projects them with the splitSide and splitMain attributes. Below 960 px the columns stack with the side
  * column first; in the detail mode an open detail takes the whole width instead and the list comes back when it
  * closes.
@@ -29,6 +31,7 @@ export type SplitMode = 'stack' | 'detail';
   host: {
     '[class.split--detail]': "mode() === 'detail'",
     '[class.split--detail-open]': "mode() === 'detail' && detailOpen()",
+    '[class.split--sticky]': 'stickySide()',
   },
   template: `
     <div class="split__side" #side (focusin)="onFocusIn($event)">
@@ -56,6 +59,16 @@ export type SplitMode = 'stack' | 'detail';
       outline: none;
     }
 
+    @media (min-width: 960px) {
+      :host(.split--sticky) .split__side {
+        position: sticky;
+        top: 72px;
+        max-height: calc(100dvh - 88px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+    }
+
     @media (max-width: 959.98px) {
       :host {
         grid-template-columns: minmax(0, 1fr);
@@ -75,6 +88,8 @@ export class SplitComponent {
   readonly mode = input<SplitMode>('stack');
   /** Whether a detail is open in the main column (the detail mode only). */
   readonly detailOpen = input(false);
+  /** Whether the side column stays in view beside the main column from 960 px, scrolling on its own when taller. */
+  readonly stickySide = input(false, { transform: booleanAttribute });
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly side = viewChild.required<ElementRef<HTMLElement>>('side');
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
