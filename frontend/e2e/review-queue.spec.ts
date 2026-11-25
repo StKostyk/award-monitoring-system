@@ -237,9 +237,11 @@ test.describe('review queue with checklist, shortcuts and undo', () => {
     await approveWithKeyboard(page);
     sql(`update award_requests set version = version + 1 where award_id = ${id}`);
 
-    await expect(page.locator('mat-snack-bar-container')).not.toContainText('Рішення збережено', {
+    const snackBars = page.locator('mat-snack-bar-container');
+    await expect(snackBars.filter({ hasText: 'Дані застаріли, сторінку оновлено' })).toBeVisible({
       timeout: HOLD + 5000,
     });
+    await expect(snackBars.filter({ hasText: 'Рішення збережено' })).toHaveCount(0);
     await expect(page.getByTestId('review-item').filter({ hasText: title })).toHaveCount(1);
     expect(decisions(id)).toBe(0);
     await page.context().close();
