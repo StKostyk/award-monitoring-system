@@ -1726,6 +1726,33 @@
     "lastDay": ", last day {{date}}",
     "oldest": ", oldest deadline {{date}}",
     "colleague": "Award of {{person}}: {{text}}",
+    "inbox": {
+      "filters": "Notification filter",
+      "all": "All · {{count}}",
+      "unread": "Unread · {{count}}",
+      "groups": {
+        "awards": "Awards",
+        "review": "Review",
+        "roles": "Roles"
+      },
+      "list": "Inbox",
+      "newestFirst": "Newest first",
+      "emptyGroup": "No notifications in this group",
+      "pane": "Notification",
+      "hint": "Choose a notification in the list to read it here.",
+      "notFound": "Notification not found: it is not on this page of the list or it belongs to someone else.",
+      "read": "Read",
+      "unreadState": "Unread",
+      "markUnread": "Mark as unread",
+      "back": "Back to notifications",
+      "targets": {
+        "award": "Open the award",
+        "reviews": "Go to the review queue",
+        "profile": "Go to the profile",
+        "delegations": "Go to delegations",
+        "awards": "Go to my awards"
+      }
+    },
     "types": {
       "AWARD_APPROVED": "«{{title}}» approved by {{reviewer}} at the {{level}} level",
       "AWARD_REJECTED": "«{{title}}» rejected by {{reviewer}} at the {{level}} level",

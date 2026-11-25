@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
 
 class NotificationServiceTest {
@@ -38,7 +40,7 @@ class NotificationServiceTest {
     void ac1_7_theListIsTheCallersInAppRowsNewestFirstWithAClampedPage() {
         when(repository.findByUserIdAndChannel(eq(CALLER), eq(IN_APP), any())).thenReturn(Page.empty());
 
-        service.list(CALLER, false, -1, 1000);
+        service.list(CALLER, false, List.of(), -1, 1000);
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(repository).findByUserIdAndChannel(eq(CALLER), eq(IN_APP), pageable.capture());
@@ -52,7 +54,7 @@ class NotificationServiceTest {
     void ac1_7_unreadReadsOnlyUnreadRows() {
         when(repository.findByUserIdAndChannelAndReadFalse(eq(CALLER), eq(IN_APP), any())).thenReturn(Page.empty());
 
-        assertThat(service.list(CALLER, true, 0, 20)).isEmpty();
+        assertThat(service.list(CALLER, true, List.of(), 0, 20)).isEmpty();
         verify(repository, never()).findByUserIdAndChannel(anyLong(), any(), any());
     }
 
@@ -87,6 +89,50 @@ class NotificationServiceTest {
         when(repository.markRead(5L, CALLER, IN_APP, NOW)).thenReturn(0);
 
         assertThatThrownBy(() -> service.markRead(CALLER, 5L)).isInstanceOf(NotificationNotFoundException.class)
+            .hasMessageContaining("5");
+    }
+
+    @Test
+    void ac7_2_typesFilterTheListAndCombineWithUnread() {
+        List<NotificationType> types = List.of(NotificationType.AWARD_APPROVED, NotificationType.AWARD_REJECTED);
+        when(repository.findByUserIdAndChannelAndTypeIn(eq(CALLER), eq(IN_APP), eq(types), any()))
+            .thenReturn(Page.empty());
+        when(repository.findByUserIdAndChannelAndReadFalseAndTypeIn(eq(CALLER), eq(IN_APP), eq(types), any()))
+            .thenReturn(Page.empty());
+
+        service.list(CALLER, false, types, 0, 20);
+        service.list(CALLER, true, types, 0, 20);
+
+        verify(repository).findByUserIdAndChannelAndTypeIn(eq(CALLER), eq(IN_APP), eq(types), any());
+        verify(repository).findByUserIdAndChannelAndReadFalseAndTypeIn(eq(CALLER), eq(IN_APP), eq(types), any());
+        verify(repository, never()).findByUserIdAndChannel(anyLong(), any(), any());
+        verify(repository, never()).findByUserIdAndChannelAndReadFalse(anyLong(), any(), any());
+    }
+
+    @Test
+    void ac7_1_markingARowUnreadNeedsNoFurtherCheck() {
+        when(repository.markUnread(5L, CALLER, IN_APP)).thenReturn(1);
+
+        service.markUnread(CALLER, 5L);
+
+        verify(repository, never()).existsByIdAndUserIdAndChannel(anyLong(), anyLong(), any());
+    }
+
+    @Test
+    void ac7_1_markingAnUnreadRowUnreadIsANoOp() {
+        when(repository.markUnread(5L, CALLER, IN_APP)).thenReturn(0);
+        when(repository.existsByIdAndUserIdAndChannel(5L, CALLER, IN_APP)).thenReturn(true);
+
+        service.markUnread(CALLER, 5L);
+
+        verify(repository).existsByIdAndUserIdAndChannel(5L, CALLER, IN_APP);
+    }
+
+    @Test
+    void ac7_1_unreadingARowThatIsNotTheCallersInAppRowIsNotFound() {
+        when(repository.markUnread(5L, CALLER, IN_APP)).thenReturn(0);
+
+        assertThatThrownBy(() -> service.markUnread(CALLER, 5L)).isInstanceOf(NotificationNotFoundException.class)
             .hasMessageContaining("5");
     }
 

@@ -85,7 +85,7 @@ describe('NotificationBellComponent', () => {
   it('ac2_3_lists_the_latest_ten_with_unread_marked', async () => {
     await openMenu();
 
-    expect(api.list).toHaveBeenCalledWith(0, MENU_SIZE, false);
+    expect(api.list).toHaveBeenCalledWith(0, MENU_SIZE, false, []);
     expect(unread.refresh).toHaveBeenCalled();
     const items = menuItems();
     expect(items.length).toBe(2);
