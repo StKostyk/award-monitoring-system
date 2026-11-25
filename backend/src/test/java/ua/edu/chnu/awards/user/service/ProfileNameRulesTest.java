@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,14 @@ class ProfileNameRulesTest {
         assertThat(rules.check(new UserUpdateRequest("  Олена ", null)))
             .containsExactly(Map.entry("first_name", "Олена"));
         assertThat(rules.check(new UserUpdateRequest(null, null))).isEmpty();
+    }
+
+    @Test
+    void ac13_2_decomposedNamesAreStoredComposed() {
+        String decomposed = Normalizer.normalize("Олійник", Normalizer.Form.NFD);
+
+        assertThat(rules.check(new UserUpdateRequest(null, decomposed)))
+            .containsExactly(Map.entry("last_name", "Олійник"));
     }
 
     @Test

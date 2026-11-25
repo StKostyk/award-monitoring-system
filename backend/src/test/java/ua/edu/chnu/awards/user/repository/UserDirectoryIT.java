@@ -2,6 +2,7 @@ package ua.edu.chnu.awards.user.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,6 +22,7 @@ import ua.edu.chnu.awards.support.AbstractJpaSliceTest;
 import ua.edu.chnu.awards.support.TestUsers;
 import ua.edu.chnu.awards.user.entity.AccountStatus;
 import ua.edu.chnu.awards.user.entity.User;
+import ua.edu.chnu.awards.user.service.UserAccounts;
 
 class UserDirectoryIT extends AbstractJpaSliceTest {
 
@@ -104,6 +107,35 @@ class UserDirectoryIT extends AbstractJpaSliceTest {
         assertThat(find(specifications.matching("r.n%"))).isEmpty();
         assertThat(find(specifications.matching("d_r"))).isEmpty();
         assertThat(specifications.matching("н")).isNull();
+    }
+
+    @Test
+    void ac13_1_decomposedFragmentFindsTheSameUsersAsItsComposedForm() {
+        User composed = entityManager.persist(named(TestUsers.user("dir.nfc@chnu.edu.ua",
+            entityManager.find(Organization.class, TestUsers.DAI_DEPARTMENT_ID)), "Ївга", "Олійник"));
+        entityManager.flush();
+
+        for (String typed : List.of("Олійник", "Ївга Олій")) {
+            String decomposed = Normalizer.normalize(typed, Normalizer.Form.NFD);
+            assertThat(decomposed).isNotEqualTo(typed);
+            assertThat(find(specifications.matching(decomposed))).extracting(User::getId)
+                .containsExactly(composed.getId());
+        }
+    }
+
+    @Test
+    void ac13_2_peopleWithoutAnAccountMatchADecomposedFragment() {
+        User person = TestUsers.user("dir.unclaimed@chnu.edu.ua",
+            entityManager.find(Organization.class, TestUsers.DAI_DEPARTMENT_ID));
+        person.setAccountStatus(AccountStatus.UNCLAIMED);
+        entityManager.persist(named(person, "Ївга", "Олійник"));
+        entityManager.flush();
+
+        Page<User> found = new UserAccounts(userRepository).findWithoutAccount(
+            Set.of(TestUsers.DAI_DEPARTMENT_ID), Normalizer.normalize("олійник", Normalizer.Form.NFD),
+            PageRequest.of(0, 10));
+
+        assertThat(found.getContent()).extracting(User::getId).containsExactly(person.getId());
     }
 
     @Test

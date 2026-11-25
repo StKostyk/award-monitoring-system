@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.user.repository;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Set;
@@ -87,13 +88,15 @@ public class UserSpecifications {
     }
 
     /**
-     * Name or address containing the fragment, case-insensitively; short fragments match everything.
+     * Name or address containing the fragment in composed (NFC) form, case-insensitively; short fragments match
+     * everything.
      *
      * @param fragment typed text
      * @return specification
      */
     public Specification<User> matching(String fragment) {
-        String needle = fragment == null ? "" : fragment.trim().toLowerCase(Locale.ROOT);
+        String needle = fragment == null ? ""
+            : Normalizer.normalize(fragment, Normalizer.Form.NFC).trim().toLowerCase(Locale.ROOT);
         if (needle.length() < MIN_QUERY_LENGTH) {
             return null;
         }

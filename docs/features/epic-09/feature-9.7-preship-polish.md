@@ -286,6 +286,17 @@ University and unit analytics become one section; the routes `/analytics`, `/ana
   summary tiles and the rail in the sticky side column, the faculties, facts, trend, category, level, source and
   comparison in the main column; it fits 360 px without sideways scroll.
 
+### 9.7.13 Users search matches names typed in decomposed Unicode (SCRUM-193)
+
+Found in the validation (2026-11-25): a «й» or «ї» typed as a base letter plus a combining mark matched nobody.
+
+- **AC-13.1** (Users) Given `GET /users?q=` with a fragment in decomposed form (NFD), then it finds the same users
+  as the composed (NFC) form.
+- **AC-13.2** (Other name searches and inputs) Given `GET /people?q=`, then it normalises the fragment the same way;
+  award and achievement searches already normalise through `SearchTerms` and stay unchanged. Given a decomposed
+  name at registration, in a profile change or in an added person, then it passes the name rules (which accept no
+  combining mark) and is stored composed.
+
 ## 5. Edge cases
 
 - Sign-in: the quote list is read once at start; a day change at Kyiv midnight while the page is open changes
@@ -567,6 +578,8 @@ draft wording and get the merged i18n text at the validation.
     address with its query and fragment. Checked in the validation 2026-11-25: all three kept.
 51. In `/admin/users` search a surname with «й» typed as «и» plus U+0306 (`GET /users?q=` with `%D0%B8%CC%86`).
     Expected: the same people as the composed spelling (9.7.13, SCRUM-193; the validation found 10 against 0).
+    As `secretary.fmi`, `GET /people?q=` with the same decomposed fragment. Expected: the same people without an
+    account as the composed spelling (AC-13.2).
 
 ### Run 2026-11-25
 

@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.user.service;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,7 +27,7 @@ public class ProfileNameRules {
      * Cleans the sent names and refuses the request when a name or another property is not acceptable.
      *
      * @param request the change
-     * @return the trimmed names keyed by their column, only those that were sent
+     * @return the trimmed names in composed (NFC) form keyed by their column, only those that were sent
      * @throws ApiProblemException 422 {@code validation-failed} listing every refused field
      */
     public Map<String, String> check(UserUpdateRequest request) {
@@ -47,7 +48,7 @@ public class ProfileNameRules {
         if (value == null) {
             return;
         }
-        String name = value.strip();
+        String name = Normalizer.normalize(value, Normalizer.Form.NFC).strip();
         if (name.isEmpty()) {
             errors.add(new FieldViolation(field, "required", "The name cannot be empty"));
         } else if (name.length() > MAX_LENGTH) {

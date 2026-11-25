@@ -168,7 +168,7 @@ public class PersonRules {
     }
 
     private static String name(List<FieldViolation> errors, String field, String value) {
-        String trimmed = value == null ? "" : value.strip();
+        String trimmed = value == null ? "" : Normalizer.normalize(value, Normalizer.Form.NFC).strip();
         if (trimmed.isEmpty()) {
             errors.add(new FieldViolation(field, "required", "The name is required"));
         } else if (trimmed.length() > NAME_MAX) {

@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.user.service;
 
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -121,7 +122,7 @@ public class UserAccounts {
      * A page of people without an account in the departments, by last and first name.
      *
      * @param organizationIds the departments, none for an empty page
-     * @param fragment        part of the name or address; under two characters for all
+     * @param fragment        part of the name or address, in any Unicode form; under two characters for all
      * @param pageable        page and size
      * @return the page
      */
@@ -129,8 +130,9 @@ public class UserAccounts {
         if (organizationIds.isEmpty()) {
             return Page.empty(pageable);
         }
-        String pattern = fragment == null || fragment.strip().length() < MIN_FRAGMENT ? "%"
-            : "%" + fragment.strip().toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
+        String needle = fragment == null ? "" : Normalizer.normalize(fragment, Normalizer.Form.NFC).strip();
+        String pattern = needle.length() < MIN_FRAGMENT ? "%"
+            : "%" + needle.toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
         return users.findWithoutAccount(organizationIds, pattern, pageable);
     }
 

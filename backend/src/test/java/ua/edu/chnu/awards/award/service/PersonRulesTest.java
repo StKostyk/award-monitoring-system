@@ -95,6 +95,17 @@ class PersonRulesTest {
             .containsExactly("firstName:invalid");
     }
 
+    @Test
+    void ac13_2_decomposedNamesAreStoredComposed() {
+        covered(DEPARTMENT, OrganizationType.DEPARTMENT);
+
+        PersonForm clean = rules.check(new PersonForm(Normalizer.normalize("Ївга", Normalizer.Form.NFD),
+            Normalizer.normalize("Олійник ", Normalizer.Form.NFD), DEPARTMENT, null, null, null), true);
+
+        assertThat(clean.firstName()).isEqualTo("Ївга");
+        assertThat(clean.lastName()).isEqualTo("Олійник");
+    }
+
     private void covered(long id, OrganizationType type) {
         when(units.covers(id)).thenReturn(true);
         when(tree.node(id)).thenReturn(Optional.of(new OrganizationTree.Node(id, type, null, 0, true)));
