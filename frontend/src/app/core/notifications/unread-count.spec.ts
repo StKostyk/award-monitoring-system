@@ -25,6 +25,7 @@ describe('UnreadCount', () => {
   const api = {
     unreadCount: vi.fn(),
     markRead: vi.fn(),
+    markUnread: vi.fn(),
     markAllRead: vi.fn(),
   };
   let visibility: DocumentVisibilityState;
@@ -47,6 +48,7 @@ describe('UnreadCount', () => {
     auth.isAuthenticated.set(true);
     api.unreadCount.mockReset().mockReturnValue(of(2));
     api.markRead.mockReset().mockReturnValue(of(undefined));
+    api.markUnread.mockReset().mockReturnValue(of(undefined));
     api.markAllRead.mockReset().mockReturnValue(of(2));
     TestBed.configureTestingModule({
       providers: [
@@ -182,5 +184,22 @@ describe('UnreadCount', () => {
 
     expect(store.count()).toBe(0);
     expect(store.badge()).toBe('');
+  });
+
+  it('ac7_1_marks_a_read_item_unread_and_raises_the_count', () => {
+    const store = create();
+    api.unreadCount.mockReturnValueOnce(new Subject<number>());
+    store.markUnread({ ...approval, read: true }).subscribe();
+
+    expect(api.markUnread).toHaveBeenCalledWith(7);
+    expect(store.count()).toBe(3);
+  });
+
+  it('ac7_1_sends_nothing_for_an_unread_item', () => {
+    const store = create();
+    store.markUnread(approval).subscribe();
+
+    expect(api.markUnread).not.toHaveBeenCalled();
+    expect(store.count()).toBe(2);
   });
 });

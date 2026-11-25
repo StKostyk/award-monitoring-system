@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.notification.service;
 
 import java.time.Clock;
+import java.util.Collection;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ua.edu.chnu.awards.common.web.PageResponse;
 import ua.edu.chnu.awards.notification.dto.NotificationResponse;
+import ua.edu.chnu.awards.notification.entity.Notification;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
 import ua.edu.chnu.awards.notification.repository.NotificationRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -34,16 +37,26 @@ public class NotificationService {
      *
      * @param userId the person
      * @param unread only unread ones
+     * @param types  only these types, every type when empty
      * @param page   0-based page, negative read as 0
      * @param size   page size, clamped to 1-100
      * @return the page, newest first
      */
     @Transactional(readOnly = true)
-    public Page<NotificationResponse> list(long userId, boolean unread, int page, int size) {
+    public Page<NotificationResponse> list(long userId, boolean unread, Collection<NotificationType> types, int page,
+                                           int size) {
         Pageable pageable = PageResponse.request(page, size, NEWEST_FIRST);
-        return (unread
-            ? notifications.findByUserIdAndChannelAndReadFalse(userId, IN_APP, pageable)
-            : notifications.findByUserIdAndChannel(userId, IN_APP, pageable)).map(NotificationResponse::of);
+        Page<Notification> rows;
+        if (types.isEmpty()) {
+            rows = unread
+                ? notifications.findByUserIdAndChannelAndReadFalse(userId, IN_APP, pageable)
+                : notifications.findByUserIdAndChannel(userId, IN_APP, pageable);
+        } else {
+            rows = unread
+                ? notifications.findByUserIdAndChannelAndReadFalseAndTypeIn(userId, IN_APP, types, pageable)
+                : notifications.findByUserIdAndChannelAndTypeIn(userId, IN_APP, types, pageable);
+        }
+        return rows.map(NotificationResponse::of);
     }
 
     /**
@@ -67,6 +80,21 @@ public class NotificationService {
     @Transactional
     public void markRead(long userId, long id) {
         if (notifications.markRead(id, userId, IN_APP, clock.instant()) == 0
+                && !notifications.existsByIdAndUserIdAndChannel(id, userId, IN_APP)) {
+            throw new NotificationNotFoundException(id);
+        }
+    }
+
+    /**
+     * Marks one of the person's notifications unread; one unread already stays as it is.
+     *
+     * @param userId the person
+     * @param id     the notification
+     * @throws NotificationNotFoundException when it is not the person's in-app notification
+     */
+    @Transactional
+    public void markUnread(long userId, long id) {
+        if (notifications.markUnread(id, userId, IN_APP) == 0
                 && !notifications.existsByIdAndUserIdAndChannel(id, userId, IN_APP)) {
             throw new NotificationNotFoundException(id);
         }

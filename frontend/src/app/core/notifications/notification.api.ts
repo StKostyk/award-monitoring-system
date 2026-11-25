@@ -60,10 +60,18 @@ export class NotificationApi {
       .pipe(map((body) => body.preferences));
   }
 
-  list(page: number, size: number, unread = false): Observable<Page<AppNotification>> {
+  list(
+    page: number,
+    size: number,
+    unread = false,
+    types: readonly NotificationType[] = [],
+  ): Observable<Page<AppNotification>> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (unread) {
       params = params.set('unread', true);
+    }
+    for (const type of types) {
+      params = params.append('type', type);
     }
     return this.http.get<Page<AppNotification>>(this.base, { params });
   }
@@ -76,6 +84,10 @@ export class NotificationApi {
 
   markRead(id: number): Observable<void> {
     return this.http.post<void>(`${this.base}/${id}/read`, null);
+  }
+
+  markUnread(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}/read`);
   }
 
   markAllRead(): Observable<number> {

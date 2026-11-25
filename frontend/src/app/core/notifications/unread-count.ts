@@ -94,6 +94,19 @@ export class UnreadCount {
     );
   }
 
+  /** Marks one notification unread, sending nothing when it already is, then asks for the server's count. */
+  markUnread(notification: AppNotification): Observable<void> {
+    if (!notification.read) {
+      return of(undefined);
+    }
+    return this.api.markUnread(notification.id).pipe(
+      tap(() => {
+        this.count.update((count) => count + 1);
+        this.refresh();
+      }),
+    );
+  }
+
   /** Marks every notification read and empties the badge. */
   markAllRead(): Observable<number> {
     return this.api.markAllRead().pipe(

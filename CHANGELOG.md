@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Notifications as an inbox with a reading pane: chips for unread, awards, review and roles, reading in place without leaving the page, and marking a notification unread again (DELETE /notifications/{id}/read, type filter)
 - My delegations as a status board: a from-me / to-me toggle over active, scheduled and ended columns of cards with dates, note, limits of authority and revocation where it applies
 - Users page as a full table with the last sign-in that splits into a narrow list beside a person pane with role and account tabs, the person's awards and delegations
 - Unit analytics with a sticky unit rail, the comparison period under each change, top performers linked to their portfolio with a hover card, and names that wrap instead of being cut

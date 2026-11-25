@@ -2515,8 +2515,7 @@ paths:
           style: form
           explode: true
           description: >
-            Only notifications of these types, combinable with `unread`; an unknown value answers 400 (planned,
-            9.7.7)
+            Only notifications of these types, combinable with `unread`; an unknown value answers 400 (9.7.7)
           schema:
             type: array
             items:
@@ -2587,7 +2586,6 @@ paths:
       description: >
         Idempotent: an unread notification stays unchanged. Another person's notification, an e-mail delivery row
         or an unknown id answers 404 (9.7.7).
-      x-status: planned
       security:
         - bearerAuth: []
       operationId: markNotificationUnread

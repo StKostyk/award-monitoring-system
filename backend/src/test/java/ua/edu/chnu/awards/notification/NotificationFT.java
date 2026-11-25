@@ -131,6 +131,56 @@ class NotificationFT extends AbstractFunctionalTest {
     }
 
     @Test
+    void ac7_1_markingUnreadClearsTheReadMarkAndCountsUp() {
+        long id = insert(readerId, "IN_APP", "AWARD_APPROVED", Duration.ZERO);
+        String reader = tokenOf(READER);
+        as(reader).post(NOTIFICATIONS + "/" + id + "/read").then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        as(reader).delete(NOTIFICATIONS + "/" + id + "/read").then().statusCode(HttpStatus.NO_CONTENT.value());
+        as(reader).delete(NOTIFICATIONS + "/" + id + "/read").then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        assertThat(readAt(id)).isNull();
+        as(reader).get(NOTIFICATIONS + UNREAD).then().body("unread", equalTo(1));
+        as(reader).get(NOTIFICATIONS).then().body("content[0].read", equalTo(false));
+    }
+
+    @Test
+    void ac7_1_unreadingAnotherPersonsAnEmailOrAnUnknownIdIsNotFound() {
+        long others = insert(otherId, "IN_APP", "AWARD_APPROVED", Duration.ZERO);
+        long email = insert(readerId, "EMAIL", "AWARD_APPROVED", Duration.ZERO);
+        jdbc.update("update notifications set is_read = true, read_at = now() where notification_id = ?", others);
+        String reader = tokenOf(READER);
+
+        for (long id : new long[] {others, email, Long.MAX_VALUE}) {
+            as(reader).delete(NOTIFICATIONS + "/" + id + "/read").then().statusCode(HttpStatus.NOT_FOUND.value())
+                .body("type", equalTo(PROBLEM + "notification-not-found"));
+        }
+        assertThat(readAt(others)).isNotNull();
+    }
+
+    @Test
+    void ac7_2_typesFilterNewestFirstAndCombineWithUnread() {
+        long approved = insert(readerId, "IN_APP", "AWARD_APPROVED", Duration.ofHours(3));
+        long rejected = insert(readerId, "IN_APP", "AWARD_REJECTED", Duration.ofHours(2));
+        insert(readerId, "IN_APP", "ROLE_ASSIGNED", Duration.ofHours(1));
+        jdbc.update("update notifications set is_read = true, read_at = now() where notification_id = ?", approved);
+        String reader = tokenOf(READER);
+
+        as(reader).queryParam("type", "AWARD_APPROVED", "AWARD_REJECTED").get(NOTIFICATIONS).then()
+            .statusCode(HttpStatus.OK.value())
+            .body("content.id", contains((int) rejected, (int) approved))
+            .body("totalElements", equalTo(2));
+        as(reader).queryParam("type", "AWARD_APPROVED", "AWARD_REJECTED").queryParam("unread", true)
+            .get(NOTIFICATIONS).then().statusCode(HttpStatus.OK.value())
+            .body("content.id", contains((int) rejected));
+        as(reader).queryParam("type", "").get(NOTIFICATIONS).then().statusCode(HttpStatus.OK.value())
+            .body("totalElements", equalTo(3));
+        as(reader).queryParam("type", "BOGUS").get(NOTIFICATIONS).then()
+            .statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("type", equalTo(PROBLEM + "invalid-parameter"));
+    }
+
+    @Test
     void ac1_10_readAllMarksTheCallersUnreadRowsOnly() {
         insert(readerId, "IN_APP", "AWARD_APPROVED", Duration.ofHours(1));
         insert(readerId, "IN_APP", "ROLE_ASSIGNED", Duration.ZERO);
@@ -151,6 +201,7 @@ class NotificationFT extends AbstractFunctionalTest {
         RestAssured.get(NOTIFICATIONS).then().statusCode(HttpStatus.UNAUTHORIZED.value());
         RestAssured.get(NOTIFICATIONS + UNREAD).then().statusCode(HttpStatus.UNAUTHORIZED.value());
         RestAssured.post(NOTIFICATIONS + "/1/read").then().statusCode(HttpStatus.UNAUTHORIZED.value());
+        RestAssured.delete(NOTIFICATIONS + "/1/read").then().statusCode(HttpStatus.UNAUTHORIZED.value());
         RestAssured.post(NOTIFICATIONS + "/read-all").then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 

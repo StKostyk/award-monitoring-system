@@ -1,84 +1,191 @@
-<header class="notifications__header">
-  <h1>{{ 'notifications.title' | transloco }}</h1>
-  <div class="notifications__actions">
-    <mat-slide-toggle
-      [checked]="unreadOnly()"
-      (change)="filter($event)"
-      data-testid="notifications-unread-only"
-    >
-      {{ 'notifications.unreadOnly' | transloco }}
-    </mat-slide-toggle>
+<app-page-header [heading]="'notifications.title' | transloco">
+  <div
+    pageChips
+    class="notifications__chips"
+    role="group"
+    [attr.aria-label]="'notifications.inbox.filters' | transloco"
+  >
     <button
-      mat-stroked-button
       type="button"
-      [disabled]="!feed.anyUnread()"
-      (click)="markAllRead()"
-      data-testid="notifications-page-mark-all"
+      class="app-chip"
+      [class.app-chip--filled]="filter() === 'all'"
+      [attr.aria-pressed]="filter() === 'all'"
+      (click)="choose('all')"
+      data-testid="notifications-filter-all"
     >
-      <app-icon matButtonIcon name="check-check" />
-      {{ 'notifications.markAllRead' | transloco }}
+      {{ 'notifications.inbox.all' | transloco: { count: allTotal() } }}
     </button>
+    <button
+      type="button"
+      class="app-chip"
+      [class.app-chip--filled]="filter() === 'unread'"
+      [attr.aria-pressed]="filter() === 'unread'"
+      (click)="choose('unread')"
+      data-testid="notifications-filter-unread"
+    >
+      {{ 'notifications.inbox.unread' | transloco: { count: unread.count() } }}
+    </button>
+    @for (group of groups; track group) {
+      <button
+        type="button"
+        class="app-chip"
+        [class.app-chip--filled]="filter() === group"
+        [attr.aria-pressed]="filter() === group"
+        (click)="choose(group)"
+        [attr.data-testid]="'notifications-filter-' + group"
+      >
+        {{ 'notifications.inbox.groups.' + group | transloco }}
+      </button>
+    }
   </div>
-</header>
+  <button
+    pageActions
+    mat-stroked-button
+    type="button"
+    [disabled]="!feed.anyUnread()"
+    (click)="markAllRead()"
+    data-testid="notifications-page-mark-all"
+  >
+    <app-icon matButtonIcon name="check-check" />
+    {{ 'notifications.markAllRead' | transloco }}
+  </button>
+</app-page-header>
 
 @if (feed.actionFailed()) {
   <p class="notifications__problem" role="alert" data-testid="notifications-action-failed">
     {{ 'notifications.actionFailed' | transloco }}
   </p>
 }
-@if (feed.loading() && feed.items().length === 0) {
-  <app-skeleton-rows [label]="'app.loading' | transloco" data-testid="notifications-loading" />
-} @else if (feed.loading()) {
-  <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
-}
-@if (feed.failed()) {
-  <p class="notifications__problem" role="alert">
-    {{ 'notifications.loadFailed' | transloco }}
-    <button mat-button type="button" (click)="load()">
-      {{ 'notifications.retry' | transloco }}
-    </button>
-  </p>
-}
 
-@if (feed.items().length > 0) {
-  <ul class="notifications__list" data-testid="notifications-list">
-    @for (item of feed.items(); track item.id) {
-      <li>
-        <button
-          type="button"
-          class="notifications__item"
-          [class.notifications__item--unread]="!item.read"
-          (click)="feed.open(item)"
-          data-testid="notifications-list-item"
+<app-split mode="detail" stickySide [detailOpen]="selectedId() !== null">
+  <div splitSide class="notifications__side">
+    <app-pane icon="inbox" [heading]="'notifications.inbox.list' | transloco" flush>
+      <span paneMeta>{{ 'notifications.inbox.newestFirst' | transloco }}</span>
+      @if (feed.loading() && feed.items().length === 0) {
+        <app-skeleton-rows
+          [label]="'app.loading' | transloco"
+          data-testid="notifications-loading"
+        />
+      } @else if (feed.loading()) {
+        <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+      }
+      @if (feed.failed()) {
+        <p class="notifications__problem" role="alert" data-testid="notifications-load-failed">
+          {{ 'notifications.loadFailed' | transloco }}
+          <button mat-button type="button" (click)="load()">
+            {{ 'notifications.retry' | transloco }}
+          </button>
+        </p>
+      }
+      @if (feed.items().length > 0) {
+        <nav
+          class="notifications__rows"
+          appListRows
+          [attr.aria-label]="'notifications.inbox.list' | transloco"
+          data-testid="notifications-list"
         >
-          <span class="notifications__dot" aria-hidden="true"></span>
-          <span class="notifications__body">
-            @if (!item.read) {
-              <span class="cdk-visually-hidden">{{ 'notifications.unread' | transloco }}: </span>
-            }
-            <span class="notifications__text">{{ texts.text(item) }}</span>
-            <span class="notifications__time">{{ texts.time(item) }}</span>
-          </span>
-        </button>
-      </li>
-    }
-  </ul>
-} @else if (!feed.loading() && !feed.failed()) {
-  <app-empty-state
-    class="notifications__empty"
-    icon="bell"
-    [text]="(unreadOnly() ? 'notifications.emptyUnread' : 'notifications.empty') | transloco"
-    data-testid="notifications-page-empty"
-  />
-}
+          @for (item of feed.items(); track item.id) {
+            <button
+              appListRow
+              wrap
+              type="button"
+              class="notifications__row"
+              [class.notifications__row--unread]="!item.read"
+              [icon]="iconOf(item)"
+              [rowTitle]="texts.text(item)"
+              [meta]="texts.time(item)"
+              [selected]="item.id === selectedId()"
+              (click)="open(item)"
+              data-testid="notifications-list-item"
+            >
+              @if (!item.read) {
+                <span rowEnd class="notifications__dot">
+                  <span class="cdk-visually-hidden">{{ 'notifications.unread' | transloco }}</span>
+                </span>
+              }
+            </button>
+          }
+        </nav>
+      } @else if (!feed.loading() && !feed.failed()) {
+        <app-empty-state
+          class="notifications__empty"
+          icon="bell"
+          [text]="emptyText() | transloco"
+          data-testid="notifications-page-empty"
+        />
+      }
+    </app-pane>
 
-@if (total() > pageSize) {
-  <mat-paginator
-    [length]="total()"
-    [pageIndex]="pageIndex()"
-    [pageSize]="pageSize"
-    [hidePageSize]="true"
-    (page)="page($event)"
-    data-testid="notifications-paginator"
-  />
-}
+    @if (total() > pageSize) {
+      <mat-paginator
+        [length]="total()"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize"
+        [hidePageSize]="true"
+        (page)="page($event)"
+        data-testid="notifications-paginator"
+      />
+    }
+  </div>
+
+  <div splitMain class="notifications__main">
+    @if (selectedId() !== null) {
+      <button
+        mat-button
+        type="button"
+        class="notifications__back"
+        (click)="select(null)"
+        data-testid="notifications-back"
+      >
+        <app-icon matButtonIcon name="arrow-left" />
+        {{ 'notifications.inbox.back' | transloco }}
+      </button>
+    }
+    <app-pane
+      [icon]="paneIcon()"
+      [heading]="'notifications.inbox.pane' | transloco"
+      data-testid="notification-pane"
+    >
+      @if (selected(); as item) {
+        <span paneMeta data-testid="notification-pane-state">{{
+          (item.read ? 'notifications.inbox.read' : 'notifications.inbox.unreadState') | transloco
+        }}</span>
+        <p class="notifications__text" data-testid="notification-pane-text">
+          {{ texts.text(item) }}
+        </p>
+        <p class="notifications__time">{{ texts.time(item) }}</p>
+        <div class="notifications__actions">
+          @if (targetOf(item); as target) {
+            <button
+              mat-flat-button
+              type="button"
+              (click)="go(target)"
+              data-testid="notification-pane-open"
+            >
+              {{ target.label | transloco }}
+              <app-icon matButtonIcon iconPositionEnd name="arrow-right" />
+            </button>
+          }
+          @if (item.read) {
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="feed.markUnread(item)"
+              data-testid="notification-pane-unread"
+            >
+              {{ 'notifications.inbox.markUnread' | transloco }}
+            </button>
+          }
+        </div>
+      } @else if (notFound()) {
+        <p class="notifications__hint" role="status" data-testid="notification-pane-not-found">
+          {{ 'notifications.inbox.notFound' | transloco }}
+        </p>
+      } @else {
+        <p class="notifications__hint" data-testid="notification-pane-hint">
+          {{ 'notifications.inbox.hint' | transloco }}
+        </p>
+      }
+    </app-pane>
+  </div>
+</app-split>

@@ -112,7 +112,7 @@ test.describe('notification centre', () => {
     ).toBe('t');
   });
 
-  test('ac2_5 ac2_6 the page filters unread and mark all empties the badge', async ({
+  test('ac2_5 ac2_6 ac7_2 ac7_3 ac7_4 the inbox filters, reads in place and only the button leaves', async ({
     browser,
   }) => {
     const owner = await freshEmployee(browser, 'bellpage');
@@ -128,41 +128,69 @@ test.describe('notification centre', () => {
     sql(
       `update notifications set is_read = true, read_at = now() where user_id = ${user(owner)} and type = 'ROLE_ASSIGNED'`,
     );
+    const overdue = sql(
+      `select notification_id from notifications where user_id = ${user(owner)} and type = 'REVIEW_OVERDUE'`,
+    );
     const page = await signedInAs(browser, owner, FRESH_PASSWORD);
+    const bell = page.getByTestId('notification-bell');
 
     await page.goto('/notifications');
     const rows = page.getByTestId('notifications-list-item');
     await expect(rows).toHaveCount(3);
-    await expect(page.getByTestId('notification-bell')).toHaveAccessibleName(
-      'Сповіщення, непрочитаних: 2',
-    );
+    await expect(page.getByTestId('notifications-filter-all')).toHaveText('Усі · 3');
+    await expect(page.getByTestId('notifications-filter-unread')).toHaveText('Непрочитані · 2');
+    await expect(page.getByTestId('notification-pane-hint')).toBeVisible();
+    await expect(bell).toHaveAccessibleName('Сповіщення, непрочитаних: 2');
     expect(await seriousViolations(page)).toEqual([]);
 
     await page.goto('/notifications?page=999');
     await expect(page).toHaveURL(/\/notifications$/);
     await expect(rows).toHaveCount(3);
 
-    await page.getByTestId('notifications-unread-only').locator('button').click();
-    await expect(page).toHaveURL(/\/notifications\?unread=true$/);
+    await page.getByTestId('notifications-filter-unread').click();
+    await expect(page).toHaveURL(/\/notifications\?filter=unread$/);
     await expect(rows).toHaveCount(2);
+    await page.getByTestId('notifications-filter-roles').click();
+    await expect(rows).toHaveCount(2);
+    await page.getByTestId('notifications-filter-review').click();
+    await expect(rows).toHaveCount(1);
+    await page.getByTestId('notifications-filter-all').click();
+    await expect(rows).toHaveCount(3);
 
-    await page.getByTestId('notification-bell').click();
-    await page.getByTestId('notifications-mark-all').click();
-    await expect(page.getByTestId('notification-bell')).toHaveAccessibleName('Сповіщення');
+    await rows.filter({ hasText: 'прострочен' }).click();
+    await expect(page).toHaveURL(new RegExp(`/notifications\\?selected=${overdue}$`));
+    await expect(page.getByTestId('notification-pane-text')).toContainText('прострочен');
+    await expect(bell).toHaveAccessibleName('Сповіщення, непрочитаних: 1');
+    await page.getByTestId('notification-pane-unread').click();
+    await expect(bell).toHaveAccessibleName('Сповіщення, непрочитаних: 2');
+    await expect(page.getByTestId('notification-pane-unread')).toHaveCount(0);
+    expect(sql(`select is_read from notifications where notification_id = ${overdue}`)).toBe('f');
+
     await page.reload();
+    await expect(page.getByTestId('notification-pane-text')).toContainText('прострочен');
+    await expect(page.getByTestId('notification-pane-state')).toHaveText('Непрочитане');
+    await page.getByTestId('notification-pane-open').click();
+    await expect(page).toHaveURL(/\/(reviews|forbidden)$/);
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`/notifications\\?selected=${overdue}$`));
+    await expect(page.getByTestId('notification-pane-text')).toContainText('прострочен');
+    await expect(bell).toHaveAccessibleName('Сповіщення, непрочитаних: 2');
+
+    await page.goto('/notifications?selected=999999999');
+    await expect(page.getByTestId('notification-pane-not-found')).toBeVisible();
+    await expect(rows).toHaveCount(3);
+
+    await page.getByTestId('notifications-page-mark-all').click();
+    await expect(bell).toHaveAccessibleName('Сповіщення');
+    await page.getByTestId('notifications-filter-unread').click();
     await expect(page.getByTestId('notifications-page-empty')).toHaveText(
       'Непрочитаних сповіщень немає',
     );
     await expect(page.getByTestId('notifications-page-mark-all')).toBeDisabled();
-
-    await page.getByTestId('notifications-unread-only').locator('button').click();
-    await expect(page).toHaveURL(/\/notifications$/);
-    await rows.filter({ hasText: 'доручає вам роль' }).click();
-    await expect(page).toHaveURL(/\/(delegations|forbidden)$/);
   });
 
   for (const scheme of ['light', 'dark'] as const) {
-    test(`ac2_7 the menu and the page pass the screen check at 360 px in ${scheme}`, async ({
+    test(`ac2_7 ac7_5 the menu and the page pass the screen check at 360 px in ${scheme}`, async ({
       browser,
     }) => {
       const owner = await freshEmployee(browser, `bell${scheme}`);
@@ -177,11 +205,23 @@ test.describe('notification centre', () => {
       await page.emulateMedia({ colorScheme: scheme });
 
       await page.goto('/notifications');
-      await expect(page.getByTestId('notifications-list-item')).toHaveCount(1);
+      const row = page.getByTestId('notifications-list-item');
+      await expect(row).toHaveCount(1);
       expect(await seriousViolations(page)).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         360,
       );
+
+      await row.click();
+      await expect(page.getByTestId('notification-pane-text')).toBeVisible();
+      await expect(row).toBeHidden();
+      expect(await seriousViolations(page)).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        360,
+      );
+      await page.getByTestId('notifications-back').click();
+      await expect(page).toHaveURL(/\/notifications$/);
+      await expect(row).toBeVisible();
 
       await (await shellTool(page, 'notification-bell')).click();
       await expect(page.getByTestId('notification-item')).toHaveCount(1);

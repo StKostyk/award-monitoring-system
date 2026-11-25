@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { Page } from '../../shared/page';
-import { AppNotification, NotificationApi } from './notification.api';
+import { AppNotification, NotificationApi, NotificationType } from './notification.api';
 import { notificationTarget } from './notification-text';
 import { UnreadCount } from './unread-count';
 
@@ -35,18 +35,20 @@ export class NotificationFeed {
    *
    * @param accept sees the page first; returning false leaves the list empty and the feed loading, for a caller
    *   that moves on to another page
+   * @param types only these types, every type when empty
    */
   load(
     page: number,
     size: number,
     unreadOnly = false,
     accept: (page: Page<AppNotification>) => boolean = () => true,
+    types: readonly NotificationType[] = [],
   ): void {
     this.request?.unsubscribe();
     this.loading.set(true);
     this.failed.set(false);
     this.actionFailed.set(false);
-    this.request = this.api.list(page, size, unreadOnly).subscribe({
+    this.request = this.api.list(page, size, unreadOnly, types).subscribe({
       next: (result) => {
         if (!accept(result)) {
           this.items.set([]);
@@ -64,15 +66,29 @@ export class NotificationFeed {
 
   /** Marks the item read when it is unread and opens its target. */
   open(notification: AppNotification): void {
+    this.read(notification);
+    const target = notificationTarget(notification);
+    if (target) {
+      void this.router.navigate(target);
+    }
+  }
+
+  /** Marks the item read when it is unread, staying where the page is. */
+  read(notification: AppNotification): void {
     this.actionFailed.set(false);
     this.unread.markRead(notification).subscribe({
       next: () => this.markLocally((item) => item.id === notification.id),
       error: () => this.actionFailed.set(true),
     });
-    const target = notificationTarget(notification);
-    if (target) {
-      void this.router.navigate(target);
-    }
+  }
+
+  /** Marks the item unread again when it is read. */
+  markUnread(notification: AppNotification): void {
+    this.actionFailed.set(false);
+    this.unread.markUnread(notification).subscribe({
+      next: () => this.markLocally((item) => item.id === notification.id, false),
+      error: () => this.actionFailed.set(true),
+    });
   }
 
   /**
@@ -88,9 +104,7 @@ export class NotificationFeed {
     });
   }
 
-  private markLocally(matches: (item: AppNotification) => boolean): void {
-    this.items.update((items) =>
-      items.map((item) => (matches(item) ? { ...item, read: true } : item)),
-    );
+  private markLocally(matches: (item: AppNotification) => boolean, read = true): void {
+    this.items.update((items) => items.map((item) => (matches(item) ? { ...item, read } : item)));
   }
 }

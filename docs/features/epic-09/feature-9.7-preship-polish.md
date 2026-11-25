@@ -438,7 +438,8 @@ draft wording and get the merged i18n text at the validation.
     quote changes only after reload.
 29. Direct URL `/notifications?selected=<id of another person's notification>`. Expected: the pane shows «not
     found», the list stays; `DELETE /notifications/<that id>/read` answers 404 (AC-7.1).
-30. Reload `/notifications` with a notification selected. Expected: the same one open, still read.
+30. Reload `/notifications` with a notification selected. Expected: the same one open, still read; after
+    «Позначити непрочитаним» a reload or Back keeps it unread (only a click in the list reads it).
 31. Back after «Відкрити нагороду». Expected: `/notifications` with the same notification selected.
 32. Direct URL `/admin/users/<erased person id>` as `admin`. Expected: 404 message in the pane, full list.
 33. **Hidden in state**: on the delegations board, an ended (revoked or expired) card and a received card. Expected:
