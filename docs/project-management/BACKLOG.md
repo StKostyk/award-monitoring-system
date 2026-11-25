@@ -240,7 +240,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.7.10 | Privacy notice storage section, terms of use and List-Unsubscribe | 3 | ✅ Done | SCRUM-190 | [#509](https://github.com/StKostyk/award-monitoring-system/issues/509) |
 | 9.7.11 | UI review fixes: logo mark 9, checklist card, unit switch in place | 3 | ✅ Done | SCRUM-191 | [#513](https://github.com/StKostyk/award-monitoring-system/issues/513) |
 | 9.7.12 | One analytics page | 5 | ✅ Done | SCRUM-192 | [#514](https://github.com/StKostyk/award-monitoring-system/issues/514) |
-| 9.7.13 | Users search matches names typed in decomposed Unicode | 1 |  | SCRUM-193 | [#526](https://github.com/StKostyk/award-monitoring-system/issues/526) |
+| 9.7.13 | Users search matches names typed in decomposed Unicode | 1 | 👀 In review | SCRUM-193 | [#526](https://github.com/StKostyk/award-monitoring-system/issues/526) |
 
 ### Later epics
 | ID | Story | Points | Epic |

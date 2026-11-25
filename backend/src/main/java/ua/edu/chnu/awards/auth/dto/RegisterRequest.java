@@ -1,5 +1,7 @@
 package ua.edu.chnu.awards.auth.dto;
 
+import java.text.Normalizer;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,9 +28,21 @@ public record RegisterRequest(
     @NotNull Long organizationId,
     @NotBlank @Size(max = 20) String privacyNoticeVersion) {
 
+    /**
+     * Keeps the names in composed (NFC) form, so a letter typed with a combining mark passes the name rules.
+     */
+    public RegisterRequest {
+        firstName = composed(firstName);
+        lastName = composed(lastName);
+    }
+
     @Override
     public String toString() {
         return "RegisterRequest[email=" + email + ", firstName=" + firstName + ", lastName=" + lastName
             + ", organizationId=" + organizationId + ", privacyNoticeVersion=" + privacyNoticeVersion + "]";
+    }
+
+    private static String composed(String name) {
+        return name == null ? null : Normalizer.normalize(name, Normalizer.Form.NFC);
     }
 }

@@ -81,7 +81,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5w | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | Done |
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | Done |
 | 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | Done |
-| 5za | 9.7.13 Users search matches names typed in decomposed Unicode | 9.7 | 1 | SCRUM-193 | #526 | no | To do |
+| 5za | 9.7.13 Users search matches names typed in decomposed Unicode | 9.7 | 1 | SCRUM-193 | #526 | no | In review |
 | 5za | 9.7.12 One analytics page | 9.7 | 5 | SCRUM-192 | #514 | no | Done |
 | 5za | 9.7.11 UI review fixes: logo mark 9, checklist card, unit switch in place | 9.7 | 3 | SCRUM-191 | #513 | no | Done |
 | 5za | 9.7.9 First sign-in checklist and spotlight tour | 9.7 | 5 | SCRUM-189 | #507 | no | Done |
