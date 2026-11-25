@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,17 +32,23 @@ public class LoginController {
      *
      * @param error          error code set by the failure handler, if any
      * @param authentication the current principal, if any
+     * @param csrf           token of the form, loaded before the page streams out
      * @param model          view model
      * @return template name or redirect
      */
     @GetMapping("/login")
-    public String login(@RequestParam(required = false) String error, Authentication authentication, Model model) {
+    public String login(@RequestParam(required = false) String error, Authentication authentication, CsrfToken csrf,
+                        Model model) {
         if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
             return toApp();
+        }
+        if (csrf != null) {
+            model.addAttribute("csrfReady", !csrf.getToken().isEmpty());
         }
         model.addAttribute("error", error == null ? null : "login.error." + knownCode(error));
         model.addAttribute("registerUrl", properties.frontendUrl() + "/register");
         model.addAttribute("forgotPasswordUrl", properties.frontendUrl() + "/forgot-password");
+        model.addAttribute("privacyUrl", properties.frontendUrl() + "/privacy");
         return "login";
     }
 

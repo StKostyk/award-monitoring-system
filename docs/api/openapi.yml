@@ -4028,14 +4028,6 @@ components:
         minimum: 1950
         maximum: 2100
 
-    UserIdParam:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-
     SizeParam:
       name: size
       in: query

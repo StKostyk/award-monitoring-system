@@ -143,6 +143,9 @@ app:
   brand:
     # university brand of the sign-in and error pages; the same ids as the frontend's brand/brand.json
     id: ${APP_BRAND:chnu}
+  sign-in:
+    # look of the sign-in, error and 429 pages: catalogue, sky or rushnyk; any other value stops the start
+    theme: ${APP_SIGN_IN_THEME:catalogue}
   jobs:
     catch-up-on-start: ${APP_JOBS_CATCH_UP_ON_START:false}
     catch-up-delay: ${APP_JOBS_CATCH_UP_DELAY:PT1M}

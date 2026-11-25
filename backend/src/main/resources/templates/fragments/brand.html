@@ -4,20 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title}">Sign in</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/login-assets/{id}/logo.svg(id=${@loginBrand.id})}">
     <script th:src="@{/login-assets/scheme.js}"></script>
     <link rel="stylesheet" th:href="@{/login-assets/brand-{id}.css(id=${@loginBrand.id})}">
     <link rel="stylesheet" th:href="@{/login-assets/login.css}">
+    <link rel="stylesheet" th:href="@{/login-assets/signin-{theme}.css(theme=${@signInTheme.id})}">
 </head>
-<body>
-<aside class="brand" th:fragment="panel" data-testid="login-brand">
-    <img class="brand__logo" th:src="@{/login-assets/{id}/logo.svg(id=${@loginBrand.id})}" alt="">
-    <div>
-        <p class="brand__name" th:text="${#messages.msg('brand.' + @loginBrand.id + '.name')}">Award Registry</p>
-        <p class="brand__organization" th:text="${#messages.msg('brand.' + @loginBrand.id + '.organization')}">University</p>
-    </div>
-    <div class="brand__story">
-        <p class="brand__claim" th:text="#{login.claim}">University awards in one place.</p>
-    </div>
-</aside>
-</body>
 </html>

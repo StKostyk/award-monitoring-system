@@ -3,32 +3,24 @@
 <head th:replace="~{fragments/brand :: head(#{login.title})}">
     <title>Sign in</title>
 </head>
-<body>
-<aside th:replace="~{fragments/brand :: panel}"></aside>
-<div class="page">
-    <main class="card">
-        <header class="card__header">
-            <h1 th:text="#{login.heading}">Sign in</h1>
-            <a class="card__lang" th:href="@{/login(lang=${#locale.language == 'uk'} ? 'en' : 'uk')}"
-               th:text="#{login.language}">English</a>
-        </header>
-        <p class="alert" th:if="${error}" th:text="#{${error}}" role="alert">Error</p>
-        <p class="notice" th:if="${param.logout}" th:text="#{login.loggedOut}" role="status">Signed out</p>
-        <form th:action="@{/login}" method="post" autocomplete="on">
-            <label for="username" th:text="#{login.email}">Email</label>
-            <input id="username" name="username" type="email" autocomplete="username" required autofocus>
-            <label for="password" th:text="#{login.password}">Password</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" required>
-            <button type="submit" th:text="#{login.submit}">Sign in</button>
-        </form>
-        <p class="card__link">
+<body th:replace="~{fragments/signin :: page(~{::main}, true)}">
+<main class="signin-form" data-testid="login-form">
+    <p class="alert" th:if="${error}" th:text="#{${error}}" role="alert">Error</p>
+    <p class="notice" th:if="${param.logout}" th:text="#{login.loggedOut}" role="status">Signed out</p>
+    <form th:action="@{/login}" method="post" autocomplete="on">
+        <label for="username" th:text="#{login.email}">Email</label>
+        <input id="username" name="username" type="email" autocomplete="username" required autofocus>
+        <label for="password" th:text="#{login.password}">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <p class="signin-form__forgot">
             <a th:href="${forgotPasswordUrl}" th:text="#{login.forgotPassword}" id="forgot-password">Forgot password?</a>
         </p>
-        <p class="card__footer">
-            <span th:text="#{login.noAccount}">No account yet?</span>
-            <a th:href="${registerUrl}" th:text="#{login.register}">Register</a>
-        </p>
-    </main>
-</div>
+        <button type="submit" th:text="#{login.submit}">Sign in</button>
+    </form>
+    <p class="signin-form__register">
+        <span th:text="#{login.noAccount}">No account yet?</span>
+        <a th:href="${registerUrl}" th:text="#{login.register}">Register</a>
+    </p>
+</main>
 </body>
 </html>

@@ -55,7 +55,7 @@ test.describe('authentication', () => {
     await page.reload();
 
     await expect(page).toHaveURL(/localhost:8080\/login/);
-    await expect(page.locator('h1')).toHaveText('Вхід');
+    await expect(page.getByTestId('login-form')).toBeVisible();
   });
 
   test('ac61 ac65 a refresh token revoked elsewhere sends the open tab to the login page', async ({
@@ -75,7 +75,7 @@ test.describe('authentication', () => {
     await page.reload();
 
     await expect(page).toHaveURL(/localhost:8080\/login/, { timeout: 15_000 });
-    await expect(page.locator('h1')).toHaveText('Вхід');
+    await expect(page.getByTestId('login-form')).toBeVisible();
   });
 
   test('ac63 signing in at the login page directly lands on the app', async ({ page }) => {
@@ -104,9 +104,9 @@ test.describe('authentication', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.click('.card__lang');
+    await page.getByRole('link', { name: 'EN', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    await expect(page.locator('h1')).toHaveText('Sign in');
+    await expect(page.locator('h1')).toHaveText('Your card in this catalogue is already waiting.');
 
     await page.fill('#username', employee.email);
     await page.fill('#password', employee.password);

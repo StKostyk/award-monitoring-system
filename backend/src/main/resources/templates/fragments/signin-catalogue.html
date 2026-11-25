@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="scene(content, login)"
+      th:with="cards=${@quoteOfTheDay.fromToday(#locale)}">
+<section class="catalogue-stream" aria-hidden="true" data-testid="login-brand">
+    <div class="catalogue-stream__lane" th:each="lane : ${ {0, 1} }"
+         th:classappend="${lane == 1} ? 'catalogue-stream__lane--down'">
+        <div class="catalogue-stream__track">
+            <th:block th:each="copy : ${ {0, 1} }">
+                <figure class="catalogue-card" th:each="card, row : ${cards}" th:if="${row.index % 2 == lane}"
+                        th:classappend="${row.index == 0} ? 'catalogue-card--today'">
+                    <div class="catalogue-card__head"><b th:text="${card.author}">Author</b>
+                        <span th:text="${card.year}">Year</span></div>
+                    <p class="catalogue-card__text" th:text="#{signin.quote.text(${card.text})}">Quote</p>
+                    <div class="catalogue-card__foot"><span th:text="${card.source}">Source</span>
+                        <span th:text="|№ ${card.number}|">№</span></div>
+                    <span class="catalogue-card__stamp" th:if="${row.index == 0}"
+                          th:text="#{signin.quote.stamp}">Quote of the day</span>
+                </figure>
+            </th:block>
+        </div>
+    </div>
+</section>
+<div class="catalogue-side">
+    <div class="catalogue-side__top">
+        <span></span>
+        <th:block th:if="${login}"><p th:replace="~{fragments/signin :: languages}"></p></th:block>
+    </div>
+    <div class="catalogue-side__form">
+        <th:block th:if="${login}">
+            <p class="catalogue-side__eyebrow" th:text="#{signin.catalogue.eyebrow}">University achievement catalogue</p>
+            <h1 class="catalogue-side__title" th:text="#{signin.catalogue.title}">Your card is waiting.</h1>
+            <div class="sr-only"><figure th:replace="~{fragments/signin :: quote}"></figure></div>
+        </th:block>
+        <main th:replace="${content}"></main>
+    </div>
+    <div class="catalogue-side__foot">
+        <p th:replace="~{fragments/signin :: brand}"></p>
+        <footer th:replace="~{fragments/signin :: footer}"></footer>
+    </div>
+</div>
+</th:block>
+</body>
+</html>
