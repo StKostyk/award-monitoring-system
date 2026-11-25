@@ -5700,7 +5700,8 @@ components:
           type: boolean
         level:
           $ref: '#/components/schemas/RecognitionLevel'
-          description: Recognition level of the award's category (planned, 9.7.3)
+          description: Recognition level of the award's category
+      required: [awardId, awardDate, category, verified, level]
 
     PersonalRank:
       type: object

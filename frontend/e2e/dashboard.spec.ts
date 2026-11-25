@@ -59,7 +59,7 @@ test.describe('personal dashboard', () => {
     expect(await shownWidgets(page)).toEqual(WIDGETS);
     await expect(page.getByTestId('tile-approved')).not.toContainText(/^\s*0\s*$/);
     await expect(page.getByTestId('rank-position')).toContainText(/\d+ з \d+ на кафедрі/);
-    await expect(page.getByTestId('chart-canvas').first().locator('svg')).toBeVisible();
+    await expect(page.getByTestId('timeline-road')).toBeVisible();
     expect(await seriousViolations(page)).toEqual([]);
   });
 
@@ -81,18 +81,54 @@ test.describe('personal dashboard', () => {
     await expect(page.getByTestId('widget-KPI')).toBeVisible();
   });
 
-  test('ac2_6 shows a chart as a table whose entries open the award', async ({ browser }) => {
+  test('ac3_2 ac3_4 draws the timeline as a road whose milestones open the award', async ({
+    browser,
+  }) => {
     const page = await signedIn(browser, SEED.lecturer);
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/dashboard');
     const timeline = page.getByTestId('widget-TIMELINE');
-    await timeline.getByTestId('pane-view-table').focus();
-    await page.keyboard.press('Space');
-    const link = timeline.getByTestId('timeline-link').first();
-    await expect(link).toHaveAttribute('href', /^\/awards\/\d+$/);
-    const href = await link.getAttribute('href');
+    await expect(timeline.getByTestId('timeline-road')).toBeVisible();
+    await expect(timeline.getByTestId('timeline-feed')).toHaveCount(0);
+    await expect(timeline.getByTestId('pane-view-table')).toHaveCount(0);
+    await expect(timeline.getByTestId('timeline-today')).toBeVisible();
+    const years = await timeline.getByTestId('timeline-stop-year').allTextContents();
+    expect(years.length).toBeGreaterThan(0);
+    expect([...years].sort()).toEqual(years);
+    const stop = timeline.getByTestId('timeline-stop').first();
+    await expect(stop).toHaveAttribute('href', /^\/awards\/\d+$/);
+    const href = await stop.getAttribute('href');
 
-    await link.focus();
+    await stop.focus();
     await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+  });
+
+  test('ac3_3 ac3_4 shows the timeline as a dated feed below 960 px', async ({ browser }) => {
+    const page = await signedIn(browser, SEED.lecturer);
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto('/dashboard');
+    const timeline = page.getByTestId('widget-TIMELINE');
+    await expect(timeline.getByTestId('timeline-feed')).toBeVisible();
+    await expect(timeline.getByTestId('timeline-road')).toHaveCount(0);
+    await expect(timeline.getByTestId('timeline-year').first()).toHaveText(/\d{4}\s+\d+/);
+    const all = await timeline.getByTestId('timeline-row').count();
+    expect(all).toBeGreaterThan(0);
+
+    await timeline.getByTestId('timeline-filter-national').click();
+    await expect(timeline.getByTestId('timeline-filter-national')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    for (const level of await timeline.getByTestId('timeline-row-level').allTextContents()) {
+      expect(['Національний', 'Міжнародний', 'National', 'International']).toContain(level.trim());
+    }
+    await timeline.getByTestId('timeline-filter-all').click();
+    await expect(timeline.getByTestId('timeline-row')).toHaveCount(all);
+
+    const row = timeline.getByTestId('timeline-row').first();
+    const href = await row.getAttribute('href');
+    await row.click();
     await expect(page).toHaveURL(new RegExp(`${href}$`));
   });
 

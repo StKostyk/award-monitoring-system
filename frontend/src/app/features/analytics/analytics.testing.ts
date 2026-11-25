@@ -70,6 +70,7 @@ export function sampleAnalytics(): PersonalAnalytics {
         category: { id: 7, name: 'Grant', nameUk: 'Грант', level: 'NATIONAL' },
         awardingOrganization: 'Ministry of Education',
         verified: true,
+        level: 'NATIONAL',
       },
       {
         awardId: 22,
@@ -79,6 +80,7 @@ export function sampleAnalytics(): PersonalAnalytics {
         category: { id: 7, name: 'Grant', nameUk: 'Грант', level: 'DEPARTMENT' },
         awardingOrganization: 'ЧНУ',
         verified: false,
+        level: 'DEPARTMENT',
       },
       {
         awardId: 10,
@@ -88,6 +90,7 @@ export function sampleAnalytics(): PersonalAnalytics {
         category: { id: 3, name: 'Diploma', nameUk: 'Диплом', level: 'FACULTY' },
         awardingOrganization: 'Faculty of Mathematics',
         verified: true,
+        level: 'FACULTY',
       },
     ],
     timelineTruncated: false,

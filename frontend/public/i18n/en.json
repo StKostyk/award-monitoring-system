@@ -1859,8 +1859,23 @@
       "description": "Bar chart of approved awards by level: {{list}}."
     },
     "timeline": {
-      "title": "Approved awards over time",
-      "description": "Chart of {{count}} approved awards by date and level; the latest is «{{latest}}». Switch to the table to open an award.",
+      "road": "My journey from the first award to today",
+      "roadNewest": "My newest awards up to today",
+      "none": "No approved awards yet.",
+      "start": "{{year}} · start",
+      "today": "today",
+      "filter": "Award level",
+      "all": "All",
+      "national": "National and up",
+      "count": {
+        "one": "{{count}} award",
+        "few": "{{count}} awards",
+        "many": "{{count}} awards",
+        "other": "{{count}} awards"
+      },
+      "verified": "verified",
+      "noneNational": "No national or international awards yet.",
+      "allAwards": "All awards →",
       "truncated": "Only the newest {{count}} awards are shown."
     },
     "table": {

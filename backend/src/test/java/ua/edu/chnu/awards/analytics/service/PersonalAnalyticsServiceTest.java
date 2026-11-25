@@ -155,7 +155,7 @@ class PersonalAnalyticsServiceTest {
         YearRange period = new YearRange(2020, 2026);
         List<TimelineEntry> entries = IntStream.rangeClosed(1, TIMELINE_LIMIT + 1)
             .mapToObj(day -> new TimelineEntry((long) day, "Letter " + day, null, LocalDate.of(2026, 1, day),
-                MINISTRY, "МОН", false))
+                MINISTRY, "МОН", false, MINISTRY.level()))
             .toList();
         when(statistics.totals(USER_ID, period)).thenReturn(new CountedTotals(TIMELINE_LIMIT + 1, 0, null, null));
         when(statistics.timeline(USER_ID, period, TIMELINE_LIMIT + 1)).thenReturn(entries);

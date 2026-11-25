@@ -40,6 +40,7 @@ export interface TimelineEntry {
   category: CategoryRef;
   awardingOrganization: string;
   verified: boolean;
+  level: RecognitionLevel;
 }
 
 export interface PersonalRank {
