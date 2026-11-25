@@ -78,6 +78,7 @@ one picked option on the canvas; this feature builds the picks.
 | 9.7.7 | Notifications inbox with a reading pane (SCRUM-187) | 3 | no | - |
 | 9.7.8 | Privacy control panel (SCRUM-188) | 3 | no | - |
 | 9.7.9 | First sign-in checklist and spotlight tour (SCRUM-189) | 5 | no | 9.7.8 |
+| 9.7.11 | UI review fixes: logo mark 9, checklist card, unit switch in place (SCRUM-191) | 3 | no | 9.7.9 |
 
 Order 9.7.1 → 9.7.9 as listed. The branches stack and the full gate and e2e run once on the 9.7.9 branch (D1). If time
 runs short before the demo server, 9.7.9 and then 9.7.8 move after the deploy (§11 risk 1).
@@ -231,6 +232,22 @@ only on ink or burgundy in the light scheme).
   «Назад», «Далі» and «Пропустити»; Escape ends it; after the tour `tourSeen` is stored (board Onb-B).
 - **AC-9.6** (Access) Given no token, then both endpoints answer 401; each account reads and writes only its own
   progress.
+
+### 9.7.11 UI review fixes (SCRUM-191)
+
+Fixes from the UI review of the stack; supersedes the ChNU half of AC-1.7 and the card look of AC-9.4.
+
+- **AC-11.1** (Mark 9 for ChNU) Given the ChNU brand, then the sidebar, the sign-in and error pages, the favicon and
+  the installed-app icons show mark 9 «Книга-сходи»; the crimson theme and the ChNU names stay. The university logo
+  replaces the same files once its use is approved.
+- **AC-11.2** (Checklist card, board Onb-A) Given the checklist, then it is a brand-coloured card: on the left a
+  progress ring «N/M» with «Перші кроки», the greeting and «Виконано N з M»; on the right each step on its own light
+  card with a numbered circle, a done step ticked, struck through and marked «готово»; the first open step ringed in
+  gold with a filled button, later steps with a text link; «Показати тур по екрану» and «Сховати список» in light
+  text below. Dark mode uses the same tokens.
+- **AC-11.3** (Unit switch in place) Given the unit analytics page, when another unit is chosen in the rail, then the
+  panes stay on screen marked as updating (`aria-busy`) while the new figures load, the scroll position and the
+  focus stay, and the new figures replace the old in place; a failed load shows the error as before.
 
 ## 5. Edge cases
 
@@ -475,6 +492,18 @@ draft wording and get the merged i18n text at the validation.
 43. Trigger a notification mail (submit an award as `employee.fmi`, decide it as `dean.fmi`) and a password reset
     mail; open both in Mailpit → «Headers». Expected: the decision mail has `List-Unsubscribe:
     <http://localhost/profile#notifications>`; the reset mail has none.
+
+### UI review fixes (9.7.11, SCRUM-191)
+
+44. With the default `APP_BRAND` (chnu), open `/login`, sign in and look at the sidebar, the browser tab and
+    `http://localhost/brand/icons/icon-192.png`. Expected: mark 9 «Книга-сходи» everywhere, crimson theme, «Облік
+    нагород ЧНУ».
+45. Register a fresh account and open My dashboard in light and dark. Expected: the crimson checklist card with the
+    ring «1/5», «Перші кроки», the done step struck through with «готово», «Додати першу нагороду» ringed in gold
+    with a filled button, the later steps as text links, the tour and hide links in light text (AC-11.2).
+46. As `dean.fmi`, open `/analytics`, scroll down to the rail and choose another department. Expected: the panes stay
+    (dimmed briefly), the page does not jump to the top, the focus stays on the chosen row, the new figures appear
+    in place (AC-11.3).
 
 ## 11. Risks
 

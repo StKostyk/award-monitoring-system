@@ -80,19 +80,27 @@ describe('UnitAnalyticsComponent', () => {
     fixture.detectChanges();
   }
 
-  it('ac2_2_loads_the_units_and_the_unit_of_the_address_for_its_period', async () => {
+  it('ac2_2_ac11_3_loads_the_unit_of_the_address_and_keeps_the_figures_on_later_switches', async () => {
     await setUp();
 
     expect(dispatch).toHaveBeenCalledWith(UnitAnalyticsActions.unitsRequested());
     expect(dispatch).toHaveBeenCalledWith(
-      UnitAnalyticsActions.unitSelected({ unitId: 9, period: { from: null, to: null } }),
+      UnitAnalyticsActions.unitSelected({
+        unitId: 9,
+        period: { from: null, to: null },
+        keepFigures: false,
+      }),
     );
 
     queryParams.next(convertToParamMap({ from: '2024', to: '2026' }));
     params.next(convertToParamMap({ id: '64' }));
 
     expect(dispatch).toHaveBeenCalledWith(
-      UnitAnalyticsActions.unitSelected({ unitId: 64, period: { from: 2024, to: 2026 } }),
+      UnitAnalyticsActions.unitSelected({
+        unitId: 64,
+        period: { from: 2024, to: 2026 },
+        keepFigures: true,
+      }),
     );
   });
 
@@ -136,7 +144,7 @@ describe('UnitAnalyticsComponent', () => {
     expect(element('unit-option-64')!.getAttribute('aria-current')).toBe('true');
   });
 
-  it('ac6_1_keeps_the_list_and_the_faculty_counts_while_a_sibling_department_loads', async () => {
+  it('ac6_1_ac11_3_keeps_the_list_the_counts_and_the_figures_while_a_sibling_department_loads', async () => {
     await setUp();
     const http = TestBed.inject(HttpTestingController);
     params.next(convertToParamMap({ id: '64' }));
@@ -147,7 +155,9 @@ describe('UnitAnalyticsComponent', () => {
     params.next(convertToParamMap({ id: '66' }));
     fixture.detectChanges();
 
-    expect(element('section-totals')).toBeNull();
+    expect(element('section-totals')).not.toBeNull();
+    expect(element('section-trend')).not.toBeNull();
+    expect(element('unit-analytics-body')!.getAttribute('aria-busy')).toBe('true');
     expect(element('unit-option-66')!.getAttribute('aria-current')).toBe('true');
     expect(element('unit-option-64')!.textContent).toContain('11');
     expect(element('page-context')!.textContent).toContain('Analysis');

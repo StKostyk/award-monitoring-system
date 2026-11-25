@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ЧНУ">
-  <rect width="64" height="64" rx="17" fill="#d9a441"/>
-  <text x="32" y="38.5" text-anchor="middle" font-family="Manrope, Segoe UI, Arial, sans-serif" font-size="21" font-weight="800" fill="#3a0e16">ЧНУ</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Книга-сходи">
+  <rect width="64" height="64" rx="14" fill="#7a1f2e"/>
+  <path d="M6 46q13-6 26 0q13-6 26 0v8q-13-6-26 0q-13-6-26 0z" fill="#f6efe4"/>
+  <path d="M32 46v8" stroke="#7a1f2e" stroke-width="1.5"/>
+  <rect x="17" y="31" width="9" height="12" rx="1" fill="#f0d9a8"/>
+  <rect x="28" y="21" width="9" height="22" rx="1" fill="#f0d9a8"/>
+  <rect x="39" y="10" width="9" height="33" rx="1" fill="#d9a441"/>
 </svg>

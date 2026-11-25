@@ -238,6 +238,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.7.8 | Privacy control panel | 3 | 👀 In review (11) | SCRUM-188 | [#506](https://github.com/StKostyk/award-monitoring-system/issues/506) |
 | 9.7.9 | First sign-in checklist and spotlight tour | 5 | 👀 In review (11) | SCRUM-189 | [#507](https://github.com/StKostyk/award-monitoring-system/issues/507) |
 | 9.7.10 | Privacy notice storage section, terms of use and List-Unsubscribe | 3 | 👀 In review (5za) | SCRUM-190 | [#509](https://github.com/StKostyk/award-monitoring-system/issues/509) |
+| 9.7.11 | UI review fixes: logo mark 9, checklist card, unit switch in place | 3 | 👀 In review (5za) | SCRUM-191 | [#513](https://github.com/StKostyk/award-monitoring-system/issues/513) |
 
 ### Later epics
 | ID | Story | Points | Epic |

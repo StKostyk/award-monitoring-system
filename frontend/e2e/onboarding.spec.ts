@@ -24,9 +24,12 @@ test.describe('getting started', () => {
     await dashboardOf(page);
 
     const checklist = page.getByTestId('onboarding-checklist');
-    await expect(checklist).toContainText('Вітаємо, Ірина! · Перші кроки');
+    await expect(checklist.getByRole('heading', { name: 'Перші кроки' })).toBeVisible();
+    await expect(checklist).toContainText('Вітаємо, Ірина!');
+    await expect(page.getByTestId('onboarding-ring')).toHaveText('1/5');
     await expect(page.getByTestId('onboarding-progress')).toHaveText('Виконано 1 з 5');
     await expect(page.getByTestId('onboarding-step-NOTICE')).toHaveAttribute('data-done', 'true');
+    await expect(page.getByTestId('onboarding-step-PROFILE')).toHaveAttribute('data-next', 'true');
     expect(await seriousViolations(page)).toEqual([]);
 
     await page.getByTestId('onboarding-open-VISIBILITY').click();

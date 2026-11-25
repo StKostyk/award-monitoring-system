@@ -1,3 +1,4 @@
+import { _IdGenerator } from '@angular/cdk/a11y';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import {
@@ -18,36 +19,21 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../../core/auth/auth.service';
 import { canReadOwnAnalytics } from '../../../core/auth/permissions';
 import { IconComponent } from '../../../shared/icons/icon.component';
-import { IconName } from '../../../shared/icons/icons';
-import { PaneComponent } from '../../../shared/layout/pane.component';
 import { OnboardingTourComponent } from '../onboarding-tour/onboarding-tour.component';
-import {
-  OnboardingService,
-  OnboardingStep,
-  OnboardingStepKey,
-  STEP_LINKS,
-} from '../onboarding.service';
+import { OnboardingService, OnboardingStep, STEP_LINKS } from '../onboarding.service';
 
-/** The icon of each step. */
-const STEP_ICONS: Record<OnboardingStepKey, IconName> = {
-  NOTICE: 'shield-check',
-  PROFILE: 'user',
-  FIRST_AWARD: 'medal',
-  VISIBILITY: 'eye',
-  NOTIFICATIONS: 'bell',
-  REVIEW_QUEUE: 'clipboard-check',
-  DELEGATE: 'users',
-  IMPORT: 'upload',
-};
+/** The length of the progress ring's circle (radius 50). */
+const RING = 2 * Math.PI * 50;
 
 /**
- * The getting-started card: the steps of the account's roles with a button to each page, «Сховати список» for good,
- * a line when everything is done (shown once, then the card is gone) and, on My dashboard, the spotlight tour. The
- * administrator and the data protection officer, who have no My dashboard, see it on their landing page.
+ * The getting-started card (board Onb-A): a progress ring beside the steps of the account's roles, the next step with
+ * a filled button and the later ones with a link to their page, «Сховати список» for good, a line when everything is
+ * done (shown once, then the card is gone) and, on My dashboard, the spotlight tour. The administrator and the data
+ * protection officer, who have no My dashboard, see it on their landing page.
  */
 @Component({
   selector: 'app-onboarding-checklist',
-  imports: [IconComponent, MatButton, PaneComponent, RouterLink, TranslocoPipe],
+  imports: [IconComponent, MatButton, RouterLink, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './onboarding-checklist.component.html',
   styleUrl: './onboarding-checklist.component.scss',
@@ -59,10 +45,16 @@ export class OnboardingChecklistComponent implements OnInit, OnDestroy {
   readonly landing = input(false, { transform: booleanAttribute });
 
   protected readonly links = STEP_LINKS;
-  protected readonly icons = STEP_ICONS;
+  protected readonly titleId = inject(_IdGenerator).getId('app-onboarding-');
   protected readonly firstName = computed(() => this.auth.profile()?.firstName ?? '');
   protected readonly steps = computed(() => this.onboarding.state()?.steps ?? []);
   protected readonly doneCount = computed(() => this.steps().filter((step) => step.done).length);
+  protected readonly nextKey = computed(() => this.steps().find((step) => !step.done)?.key ?? null);
+  protected readonly dash = computed(() => {
+    const total = this.steps().length;
+    const share = total === 0 ? 0 : this.doneCount() / total;
+    return `${(RING * share).toFixed(1)} ${RING.toFixed(1)}`;
+  });
   protected readonly allDone = computed(
     () => this.steps().length > 0 && this.doneCount() === this.steps().length,
   );

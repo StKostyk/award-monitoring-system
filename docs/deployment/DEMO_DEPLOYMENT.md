@@ -80,8 +80,10 @@ docker run --rm httpd:2.4-alpine htpasswd -nbB -C 12 "" 'the-demo-password' | tr
 Without `DEMO_PASSWORD_HASH` the seed creates nothing. The seed only inserts: a new hash later does not change
 the password of accounts that already exist.
 
-**University brand.** The frontend image ships the ChNU brand (`brand/brand.json` with `"id": "chnu"` and its
-logo). Another university mounts its own file and logo read-only over the image's, for example in an override of
+**University brand.** The frontend image ships the ChNU brand (`brand/brand.json` with `"id": "chnu"`, the crimson
+theme and the ChNU names). Until the university approves the use of its own logo, the ChNU brand carries mark 9
+«Книга-сходи», the same mark and icons as the neutral brand (9.7.11); the university logo replaces
+`brand/chnu/logo.svg`, `brand/icons/*` and the backend's `static/login-assets/chnu/logo.svg`. Another university mounts its own file and logo read-only over the image's, for example in an override of
 the `frontend` service:
 
 ```yaml

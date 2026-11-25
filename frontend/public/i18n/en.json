@@ -110,7 +110,8 @@
     }
   },
   "onboarding": {
-    "heading": "Welcome, {{name}}! · First steps",
+    "title": "First steps",
+    "greeting": "Welcome, {{name}}!",
     "progress": "{{done}} of {{total}} done",
     "done": "Done",
     "allDone": "All first steps are done. This list will not appear again.",

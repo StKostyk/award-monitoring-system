@@ -61,7 +61,10 @@ describe('OnboardingChecklistComponent', () => {
   it('ac9_4_greets_by_name_and_lists_the_steps_with_their_buttons', async () => {
     await shown(employeeState());
 
-    expect(element('onboarding-checklist')?.textContent).toContain('Welcome, Olena! · First steps');
+    expect(element('onboarding-checklist')?.querySelector('h2')?.textContent).toContain(
+      'First steps',
+    );
+    expect(element('onboarding-checklist')?.textContent).toContain('Welcome, Olena!');
     expect(element('onboarding-progress')?.textContent).toContain('2 of 5 done');
     expect(element('onboarding-step-NOTICE')?.dataset['done']).toBe('true');
     expect(element('onboarding-open-NOTICE')).toBeNull();
@@ -70,6 +73,34 @@ describe('OnboardingChecklistComponent', () => {
     expect(element('onboarding-open-NOTIFICATIONS')?.getAttribute('href')).toBe(
       '/profile?section=notifications',
     );
+  });
+
+  it('ac11_2_shows_the_progress_ring_numbered_steps_and_the_next_step_first', async () => {
+    await shown(employeeState());
+
+    expect(element('onboarding-ring')?.textContent?.trim()).toBe('2/5');
+    expect(element('onboarding-ring')?.getAttribute('aria-hidden')).toBe('true');
+    expect(element('onboarding-ring-value')?.getAttribute('stroke-dasharray')).toMatch(
+      /^125\.\d+ /,
+    );
+    expect(element('onboarding-step-NOTICE')?.textContent).toContain('Done');
+    expect(element('onboarding-number-FIRST_AWARD')?.textContent?.trim()).toBe('3');
+    expect(element('onboarding-step-FIRST_AWARD')?.dataset['next']).toBe('true');
+    expect(element('onboarding-step-VISIBILITY')?.dataset['next']).toBeUndefined();
+    expect(element('onboarding-open-FIRST_AWARD')?.classList).toContain(
+      'mat-mdc-unelevated-button',
+    );
+    expect(element('onboarding-open-VISIBILITY')?.classList).not.toContain('mat-mdc-button-base');
+  });
+
+  it('ac11_2_draws_no_progress_before_the_first_step_is_done', async () => {
+    const fresh = employeeState();
+    fresh.steps = fresh.steps.map((step) => ({ ...step, done: false }));
+    await shown(fresh);
+
+    expect(element('onboarding-ring')?.textContent?.trim()).toBe('0/5');
+    expect(element('onboarding-ring-value')).toBeNull();
+    expect(element('onboarding-step-NOTICE')?.dataset['next']).toBe('true');
   });
 
   it('ac9_4_marks_a_stored_step_done_when_its_page_opens', async () => {

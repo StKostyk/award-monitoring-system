@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 
 import { languageStub, translations } from '../../analytics.testing';
 import { ALGEBRA, ANALYSIS, FACULTY } from '../unit-analytics.testing';
@@ -68,6 +69,18 @@ describe('UnitListComponent', () => {
     ]);
     expect(rows()[1].getAttribute('aria-current')).toBe('true');
     expect(rows()[0].getAttribute('aria-current')).toBeNull();
+  });
+
+  it('ac11_3_opens_another_unit_without_leaving_the_place_on_the_page', () => {
+    render([FACULTY, ALGEBRA, ANALYSIS], ALGEBRA.id);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    rows()[2].click();
+
+    expect(navigate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ state: { stayInPlace: true } }),
+    );
   });
 
   it('ac6_1_shows_no_count_while_the_counts_are_unknown', () => {

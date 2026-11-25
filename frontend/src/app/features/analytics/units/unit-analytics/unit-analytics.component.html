@@ -33,7 +33,13 @@
       </button>
     </section>
   } @else {
-    <app-split mode="stack" stickySide>
+    <app-split
+      mode="stack"
+      stickySide
+      [class.units--updating]="updating()"
+      [attr.aria-busy]="updating()"
+      data-testid="unit-analytics-body"
+    >
       <div splitSide>
         @if (analytics(); as data) {
           <app-pane

@@ -344,6 +344,40 @@ test.describe('unit analytics', () => {
     expect(await seriousViolations(page)).toEqual([]);
   });
 
+  test('9.7 ac11_3 switches the unit in place keeping the scroll and the focus', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.dean);
+    await page.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
+    const side = page.locator('.split__side');
+    const body = page.getByTestId('unit-analytics-body');
+    await expect(page.getByTestId('section-by-source')).toBeVisible();
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(`**/api/v1/analytics/units/${DAI}?*`, async (route) => {
+      await held;
+      await route.continue();
+    });
+    const scroller = page.locator('mat-sidenav-content');
+    await scroller.evaluate((element) => (element.scrollTop = 600));
+    await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    const row = side.getByTestId(`unit-option-${DAI}`);
+    await row.focus();
+    const before = (await row.boundingBox())!.y;
+
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`/analytics/units/${DAI}\\?from=2021&to=2025$`));
+    await expect(body).toHaveAttribute('aria-busy', 'true');
+    await expect(page.getByTestId('section-trend')).toBeVisible();
+    expect(Math.abs((await row.boundingBox())!.y - before)).toBeLessThan(2);
+    release();
+
+    await expect(body).toHaveAttribute('aria-busy', 'false');
+    await expect(page.getByTestId('section-comparison')).toHaveCount(0);
+    expect(await scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await expect(side.getByTestId(`unit-option-${DAI}`)).toBeFocused();
+  });
+
   test('ac6_2 period chips switch to the current year and back to the whole period', async ({
     browser,
   }) => {
