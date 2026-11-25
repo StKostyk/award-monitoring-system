@@ -36,7 +36,7 @@ one picked option on the canvas; this feature builds the picks.
 **In**
 
 - Sign-in page: three themes rendered by the backend (A catalogue cards, the default; B night sky; C embroidered
-  rushnyk), chosen by one deployment setting without a rebuild; «ЦИТАТА ДНЯ» from a list of 19 quotes, one per
+  rushnyk), chosen by one deployment setting without a rebuild; «ЦИТАТА ДНЯ» from a list of 18 quotes, one per
   Kyiv date, the same for everyone, in Ukrainian and English; phone layouts at 360.
 - Logo mark 9 «Книга-сходи» as the neutral brand's mark (sign-in page, sidebar, favicon and app icons of the
   neutral brand). The ChNU brand keeps its slot for the real logo.
@@ -238,7 +238,7 @@ only on ink or burgundy in the light scheme).
   nothing until reload. The rate-limit and error pages keep the chosen theme. Reduced motion freezes the cards,
   stars and smoke.
 - Quote with a doubtful source (Pasteur): ships only if the wording and source are confirmed; otherwise the list has
-  18 quotes (A3).
+  17 quotes (A3).
 - Tables: a unit with zero awards in a year shows «0», not an empty cell; a period of one year still has the totals.
 - Timeline: no awards shows the empty state of 9.6; a single award draws the road with one milestone; the
   `truncated` flag of `GET /analytics/me` shows «Усі нагороди →».
@@ -297,7 +297,7 @@ pane header.
 2. **D2 The sign-in theme is a backend setting.** The pre-ship notes asked for a runtime frontend setting, but
    `/login` is rendered by the backend (Spring Authorization Server), so the switch is `app.sign-in.theme`
    (`APP_SIGN_IN_THEME`) next to `app.brand` (`APP_BRAND`): no rebuild, a container restart.
-3. **D3 Quotes live in the backend.** A resource file with the 19 quotes (author, year, source and text in `uk`
+3. **D3 Quotes live in the backend.** A resource file with the 18 quotes (17 until A3 is settled) (author, year, source and text in `uk`
    and `en`); the day index is the number of days since 1970-01-01 of the Kyiv date, modulo the list length.
 4. **D4 Onboarding progress is a column of `dashboard_preferences`**, not a table: the row is already per account,
    in the export and deleted by the erasure. It is written only by `PUT /users/me/onboarding`; the preferences save

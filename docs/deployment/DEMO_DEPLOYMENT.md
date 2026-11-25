@@ -21,6 +21,7 @@ Copy `.env.prod.example` to `.env.prod` (ignored by git) and fill it in.
 | `MAIL_FROM` | A sender verified in Brevo |
 | `ALLOWED_EMAIL_DOMAINS` | Domains accepted at registration (default `chnu.edu.ua`) |
 | `APP_BRAND` | Brand of the sign-in and error pages (`chnu` default, `neutral`); keep it equal to the `id` in the frontend's `brand.json` |
+| `APP_SIGN_IN_THEME` | Look of the sign-in, error and 429 pages: `catalogue` (default), `sky` or `rushnyk`; read at start (`docker compose up -d app` applies it, no rebuild); any other value stops the start |
 | `JWK_KEY_ID`, `JWK_PRIVATE_KEY`, `JWK_PUBLIC_KEY` | Token signing key, see below |
 | `FLYWAY_LOCATIONS`, `DEMO_PASSWORD_HASH` | Demo accounts, see below |
 

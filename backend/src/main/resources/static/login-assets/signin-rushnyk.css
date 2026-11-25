@@ -1,0 +1,413 @@
+body.signin--rushnyk {
+    --sp-bg: light-dark(#f7f1e9, #0b1020);
+    --sp-text: light-dark(#2b1b1e, #ece4d8);
+    --sp-muted: light-dark(#5c4a4d, #c3b9c9);
+    --sp-label: light-dark(#5c4a4d, #d4cad8);
+    --sp-link: light-dark(#a3102a, #f5d58a);
+    --sp-link-hover: light-dark(#7a1f2e, #ffe7a8);
+    --sp-focus: light-dark(#a3102a, #f5d58a);
+    --sp-field-bg: light-dark(#fffdf9, #18213b);
+    --sp-field-border: light-dark(#bba48f, #56607e);
+    --sp-field-text: light-dark(#2b1b1e, #f3eee6);
+    --sp-button-bg: light-dark(#b3122e, #d9a441);
+    --sp-button-hover: light-dark(#7a1f2e, #f0c160);
+    --sp-button-text: light-dark(#ffffff, #241006);
+    --sp-button-shadow: 0 8px 20px light-dark(rgb(179 18 46 / 30%), rgb(217 164 65 / 25%));
+    --sp-error: light-dark(#93000a, #ffdad6);
+    --sp-error-bg: light-dark(#ffdad6, #93000a);
+    --sp-notice: light-dark(#3a0e16, #f6efe4);
+    --sp-notice-bg: light-dark(#f0d9a8, #3c2a52);
+    --sp-quote-label: light-dark(#a3102a, #f5d58a);
+    --sp-linen: light-dark(#efe4d0, #1d1a24);
+    --sp-linen-thread: light-dark(rgb(120 90 50 / 6%), rgb(236 228 216 / 5%));
+    --sp-card: light-dark(#fffdf9, #151c33);
+    --sp-card-strip: light-dark(#fbf5ec, #1d2440);
+    --sp-red: light-dark(#b3122e, #e0485f);
+    --sp-ink: light-dark(#1d1013, #e9dcc6);
+    --sp-gold: #d9a441;
+    --sp-radius: 10px;
+
+    display: grid;
+    grid-template-columns: 420px minmax(0, 1fr);
+}
+
+.rk-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.st-r {
+    fill: var(--sp-red);
+}
+
+.st-k {
+    fill: var(--sp-ink);
+}
+
+.st-g {
+    fill: var(--sp-gold);
+}
+
+.rk-linen {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--sp-linen);
+    background-image:
+        repeating-linear-gradient(0deg, var(--sp-linen-thread) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, var(--sp-linen-thread) 0 1px, transparent 1px 3px);
+    box-shadow: inset -12px 0 24px rgb(58 14 22 / 12%);
+}
+
+.rk-ribbon {
+    position: absolute;
+    top: 0;
+    height: 2080px;
+    animation: rk-weave 30s linear infinite;
+}
+
+.rk-ribbon--main {
+    left: 95px;
+    width: 230px;
+    padding: 0;
+    border-left: 2px dashed rgb(179 18 46 / 35%);
+    border-right: 2px dashed rgb(179 18 46 / 35%);
+    background: rgb(255 255 255 / 22%);
+}
+
+.rk-ribbon--side {
+    width: 30px;
+}
+
+.rk-ribbon--left {
+    left: 14px;
+}
+
+.rk-ribbon--right {
+    right: 14px;
+}
+
+.rk-ribbon-t {
+    display: none;
+}
+
+@keyframes rk-weave {
+    from { transform: translateY(0); }
+    to { transform: translateY(-1040px); }
+}
+
+@keyframes rk-weave-x {
+    from { transform: translateX(0); }
+    to { transform: translateX(-520px); }
+}
+
+.rk-field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100vh;
+    padding: 28px 56px 18px;
+    overflow: hidden;
+}
+
+.rk-motifs {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.rk-motif {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    opacity: 0.12;
+}
+
+.rk-motif--star {
+    left: 30%;
+    top: 14%;
+}
+
+.rk-motif--kalyna {
+    right: 6%;
+    top: 12%;
+}
+
+.rk-motif--tree {
+    left: 42%;
+    bottom: 6%;
+}
+
+.rk-motif--rosette {
+    right: 8%;
+    bottom: 8%;
+}
+
+.rk-top {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.rk-top__band {
+    flex: 1;
+    max-width: 432px;
+    height: 20px;
+}
+
+.rk-content {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 36px;
+}
+
+.rk-hero {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rk-hero .signin-brand {
+    font-size: 0.875rem;
+}
+
+.rk-hero__title {
+    font-family: var(--lp-font-serif);
+    font-size: clamp(1.9rem, 3vw, 2.5rem);
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+}
+
+.rk-hero__title em {
+    font-weight: 600;
+    color: var(--sp-red);
+}
+
+.rk-hero__lead {
+    margin: 0;
+    color: var(--sp-muted);
+}
+
+.rk-path {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rk-path::before {
+    content: "";
+    position: absolute;
+    left: 13px;
+    top: 14px;
+    bottom: 14px;
+    border-left: 3px dashed var(--sp-red);
+}
+
+.rk-path__step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: center;
+}
+
+.rk-path__step::before {
+    content: "";
+    grid-row: span 2;
+    width: 28px;
+    height: 28px;
+    background:
+        linear-gradient(45deg, transparent 42%, var(--sp-step) 42% 58%, transparent 58%),
+        linear-gradient(-45deg, transparent 42%, var(--sp-step) 42% 58%, transparent 58%),
+        var(--sp-bg);
+    border-radius: 4px;
+}
+
+.rk-path__step--r {
+    --sp-step: var(--sp-red);
+}
+
+.rk-path__step--k {
+    --sp-step: var(--sp-ink);
+}
+
+.rk-path__step--g {
+    --sp-step: var(--sp-gold);
+}
+
+.rk-path__step b {
+    font-family: var(--lp-font-heading);
+    font-size: 0.95rem;
+}
+
+.rk-path__step span {
+    font-size: 0.8125rem;
+    color: var(--sp-muted);
+}
+
+.rk-hero .signin-quote {
+    padding-top: 12px;
+    border-top: 2px dashed rgb(179 18 46 / 35%);
+}
+
+.rk-card {
+    position: relative;
+    flex: 0 0 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 48px 30px 30px;
+    background: var(--sp-card);
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgb(58 14 22 / 16%);
+    overflow: hidden;
+}
+
+.rk-card__strip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 27px;
+    padding: 6px 0;
+    background:
+        linear-gradient(var(--sp-card-strip), var(--sp-card-strip)) padding-box;
+    border-top: 2px dashed var(--sp-ink);
+    border-bottom: 2px dashed var(--sp-ink);
+}
+
+.rk-card__title {
+    font-size: 1.375rem;
+}
+
+.rk-field > .signin-footer {
+    position: relative;
+}
+
+@media (max-width: 900px) {
+    body.signin--rushnyk {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rk-linen {
+        position: relative;
+        flex: none;
+        height: min(33vh, 160px);
+        box-shadow: inset 0 -10px 20px rgb(58 14 22 / 10%);
+    }
+
+    .rk-ribbon {
+        display: none;
+    }
+
+    .rk-ribbon-t {
+        display: block;
+        position: absolute;
+        left: 0;
+        animation: rk-weave-x 26s linear infinite;
+    }
+
+    .rk-ribbon-t--main {
+        top: calc(50% - 57px);
+        width: 1040px;
+        height: 115px;
+        border-top: 2px dashed rgb(179 18 46 / 35%);
+        border-bottom: 2px dashed rgb(179 18 46 / 35%);
+        background: rgb(255 255 255 / 22%);
+    }
+
+    .rk-ribbon-t--edge {
+        top: 4px;
+        width: 2080px;
+        height: 15px;
+    }
+
+    .rk-ribbon-t--bottom {
+        top: auto;
+        bottom: 4px;
+    }
+
+    .rk-field {
+        min-height: 0;
+        padding: 14px 20px 20px;
+        gap: 18px;
+    }
+
+    .rk-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rk-content {
+        gap: 16px;
+    }
+
+    .rk-hero {
+        display: contents;
+    }
+
+    .rk-hero .signin-brand {
+        order: 1;
+    }
+
+    .rk-hero__title {
+        order: 2;
+    }
+
+    .rk-hero__lead {
+        order: 3;
+    }
+
+    .rk-card {
+        order: 4;
+        margin-top: 6px;
+    }
+
+    .rk-path {
+        order: 5;
+        margin-top: 6px;
+    }
+
+    .rk-hero .signin-quote {
+        order: 6;
+    }
+
+    .rk-card {
+        flex: none;
+        padding: 44px 20px 22px;
+    }
+
+    .rk-motif {
+        width: 100px;
+        height: 100px;
+    }
+
+    .rk-motif--star,
+    .rk-motif--tree {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rk-ribbon,
+    .rk-ribbon-t {
+        animation: none;
+    }
+}

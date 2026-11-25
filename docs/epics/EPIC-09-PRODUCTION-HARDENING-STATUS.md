@@ -88,14 +88,14 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5za | 9.7.4 Unit analytics rail and clickable top performers | 9.7 | 3 | SCRUM-184 | #502 | no | To do |
 | 5za | 9.7.3 Timeline as a journey road and a dated feed | 9.7 | 3 | SCRUM-183 | #501 | no | To do |
 | 5za | 9.7.2 Spreadsheet tables in widgets | 9.7 | 3 | SCRUM-182 | #500 | no | To do |
-| 5za | 9.7.1 Sign-in themes, quote of the day and logo mark 9 | 9.7 | 5 | SCRUM-181 | #499 | no | To do |
-| 5za | 9.6.7 Remaining pages of the all-pages canvas | 9.6 | 3 | SCRUM-180 | #491 | no | In review |
-| 5za | 9.6.6 Profile with sections | 9.6 | 3 | SCRUM-179 | #490 | no | In review |
-| 5za | 9.6.5 Hall of Fame widgets | 9.6 | 5 | SCRUM-178 | #489 | no | In review |
-| 5za | 9.6.4 University bento with the faculty comparison | 9.6 | 5 | SCRUM-177 | #488 | no | In review |
-| 5za | 9.6.3 Unit analytics widgets | 9.6 | 5 | SCRUM-176 | #487 | no | In review |
-| 5za | 9.6.2 My dashboard widgets | 9.6 | 3 | SCRUM-175 | #486 | no | In review |
-| 5za | 9.6.1 Canvas look, sidebar tools and widget header | 9.6 | 5 | SCRUM-174 | #485 | no | In review |
+| 5za | 9.7.1 Sign-in themes, quote of the day and logo mark 9 | 9.7 | 5 | SCRUM-181 | #499 | no | In review |
+| 5za | 9.6.7 Remaining pages of the all-pages canvas | 9.6 | 3 | SCRUM-180 | #491 | no | Done |
+| 5za | 9.6.6 Profile with sections | 9.6 | 3 | SCRUM-179 | #490 | no | Done |
+| 5za | 9.6.5 Hall of Fame widgets | 9.6 | 5 | SCRUM-178 | #489 | no | Done |
+| 5za | 9.6.4 University bento with the faculty comparison | 9.6 | 5 | SCRUM-177 | #488 | no | Done |
+| 5za | 9.6.3 Unit analytics widgets | 9.6 | 5 | SCRUM-176 | #487 | no | Done |
+| 5za | 9.6.2 My dashboard widgets | 9.6 | 3 | SCRUM-175 | #486 | no | Done |
+| 5za | 9.6.1 Canvas look, sidebar tools and widget header | 9.6 | 5 | SCRUM-174 | #485 | no | Done |
 | 5za | 9.5.10 Back from a pane at 360 px loses the list scroll | 9.5 | 2 | SCRUM-173 | #479 | no | Done |
 | 5za | 9.5.9 Selection that left the list stays in Reviews and Users | 9.5 | 2 | SCRUM-172 | #478 | no | Done |
 | 5za | 9.5.8 Dashboard header without context line, actions wrap | 9.5 | 1 | SCRUM-171 | #477 | no | Done |

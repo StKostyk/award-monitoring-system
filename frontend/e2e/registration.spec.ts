@@ -85,7 +85,7 @@ test.describe('registration', () => {
   test('the login page links to registration', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/localhost:8080\/login/);
-    await page.click('.card__footer a');
+    await page.click('.signin-form__register a');
     await expect(page).toHaveURL('http://localhost:4200/register');
   });
 });
