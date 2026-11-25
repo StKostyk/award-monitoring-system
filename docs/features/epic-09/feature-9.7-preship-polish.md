@@ -2,7 +2,8 @@
 
 > **Epic**: 9 Production hardening (SCRUM-128) · **Tracker**: `docs/epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md`
 > **Sprint**: 11 (2026-11-23 to 2026-11-29) and 12 (2026-11-30 to 2026-12-06) · **Points**: 30
-> **Status**: Approved 2026-11-24
+> **Status**: Validated 2026-11-25 (manual run 2026-11-25: 48 of 49, step 41 covered by e2e
+> `privacy-notice.spec` ac1_8); fix 9.7.13 (SCRUM-193) open
 > **Governing docs**: ADR-014 and ADR-016 (9.3 addenda: tokens, effect components, chart theme), ADR-015 (NgRx per
 > feature, selection in the URL), ADR-021 (one backend instance, settings through the environment),
 > `docs/frontend/UI_GUIDELINES.md`, Feature 9.6 (widget header 8, the «Графік / Таблиця» switch, common widget
@@ -233,6 +234,18 @@ only on ink or burgundy in the light scheme).
   «Назад», «Далі» and «Пропустити»; Escape ends it; after the tour `tourSeen` is stored (board Onb-B).
 - **AC-9.6** (Access) Given no token, then both endpoints answer 401; each account reads and writes only its own
   progress.
+
+### 9.7.10 Legal pages and mail headers (SCRUM-190)
+
+- **AC-10.1** (Notice 1.1) Given the privacy notice, then version 1.1 (uk, en) adds «Файли cookie та сховище
+  браузера»: the sign-in session cookie, sign-in keys in session storage, language and colour scheme, unsaved form
+  drafts, the application cache; no analytics or third-party cookies. 1.1 is current, so every account acknowledges
+  it at the next sign-in; 1.0 stays readable.
+- **AC-10.2** (Terms of use) Given `/terms`, then the terms (uk, en, version 1.0) open without an account and are
+  linked from sign-up, the sign-in page and the privacy notice page.
+- **AC-10.3** (List-Unsubscribe) Given a notification mail that carries the preferences link, then it also carries a
+  `List-Unsubscribe` header pointing to the notification preferences; security mails (verification, password reset,
+  lockout) carry none.
 
 ### 9.7.11 UI review fixes (SCRUM-191)
 
@@ -548,6 +561,12 @@ draft wording and get the merged i18n text at the validation.
 49. As `dean.fmi`, open `/analytics`; as `secretary.fmi`, open `/analytics`. Expected: the dean lands on the
     faculty with its departments and no «Увесь університет»; the secretary sees only the departments the API
     returns; `/analytics/university` as either opens the forbidden page (AC-12.2, 12.5).
+### Detours from the validation
+50. Signed out, open `/notifications?selected=<id>&filter=awards` and `/profile#notifications` (as `employee.fmi`)
+    and `/analytics/units/9?from=2021&to=2025` (as `dean.fmi`), then sign in. Expected: each lands on the same
+    address with its query and fragment. Checked in the validation 2026-11-25: all three kept.
+51. In `/admin/users` search a surname with «й» typed as «и» plus U+0306 (`GET /users?q=` with `%D0%B8%CC%86`).
+    Expected: the same people as the composed spelling (9.7.13, SCRUM-193; the validation found 10 against 0).
 
 ### Run 2026-11-25
 
@@ -624,3 +643,82 @@ Compose stack at c4453e5 (develop after #523/#524; app rebuilt, frontend from 83
 - `openapi.yml` stubs turned into the shipped contract, `DATA_DICTIONARY.md` §1.8 (`onboarding`, export 1.9),
   `UI_GUIDELINES.md` (widget tables, sign-in themes), CHANGELOG lines, tracker and BACKLOG rows.
 - The manual run of §10 recorded in this PRD.
+
+## Validation (2026-11-25)
+
+Result: **PASSED WITH NOTES**. Stories 9.7.1 to 9.7.12 merged (#510-#512, #515-#523); manual run of §10 on
+2026-11-25: 48 of 49 steps, step 41 covered by e2e `privacy-notice.spec` ac1_8 (every seed account had already
+acknowledged 1.1, and consent rows are append-only). One fix story from the scenario review: 9.7.13 (SCRUM-193, #526).
+
+Suite on `develop` plus the e2e fix of this PR: unit 1 498, IT/FT 644, JaCoCo 98.2 % lines (7 392/7 527),
+Checkstyle/PMD/SpotBugs 0; frontend lint, 1 607 unit tests, production build 930 kB; Playwright 280/280 on one worker (55 min): `command-centre.spec` ac5_1 ac5_7 and
+`people.spec` ac1_4 ac1_10 passed on retry, the retry also ran the three command-centre tests the first failure had
+left unrun.
+
+| AC | Evidence (all passing) |
+|----|------------------------|
+| 1.1-1.3, 1.6 | `LoginPageFT` ac1_1, `SignInThemesFT` ac1_2, ac1_3; e2e `login.spec` ac1_1 ac1_5; manual 1, 4-6 |
+| 1.4 | `SignInThemeTest` ac1_4 (4, unknown value stops the start), `SignInThemesFT` ac1_4_ac1_8 (error page keeps the theme); manual 26 |
+| 1.5 | `QuoteOfTheDayTest` ac1_5 (5: Kyiv midnight, wrap-around, language), `LoginPageFT` ac1_5; manual 2, 3, 28 |
+| 1.7, 11.1 | `brand.service.spec` (neutral fallback, ChNU file), `LoginPageFT` (logo per brand), e2e `theme.spec` (neutral logo path); the artwork itself by manual 8 and 44 |
+| 1.8 | `LoginPageFT` ac1_8, e2e `login.spec` ac1_8 (reduced motion); manual 7, 27 |
+| 2.1-2.4 | `year-grid.component.spec`, `unit-comparison.component.spec`; e2e `unit-analytics.spec` 9.7 ac2_1 ac2_2 ac2_4, 9.7 ac2_3, `university-analytics.spec` 9.7 ac2_1 ac2_4; manual 9-11 |
+| 3.1 | `PersonalAnalyticsServiceTest`, `AwardStatisticsIT`, `PersonalAnalyticsFT` (level per entry) |
+| 3.2-3.4 | `timeline-chart.component.spec`; e2e `dashboard.spec` ac3_2 ac3_4, ac3_3 ac3_4; manual 14, 15 |
+| 4.1-4.3 | `delta-tiles.component.spec` ac4_1, ac4_2, `top-performers.component.spec` ac4_3 (5), `unit-analytics.component.spec` ac4_1, ac4_2; e2e `unit-analytics.spec` 9.7 ac4_1 ac4_3; manual 12, 13 |
+| 4.4 | No automated test: long names wrap in the rail and the comparison table by manual 13 only |
+| 5.1 | `UserDirectoryServiceTest`, `AuthenticationFlowFT` (`lastLoginAt`) |
+| 5.2-5.4 | `user-list`, `user-detail.component.spec`, `admin-users.feature.spec`; e2e `people.spec` ac5_1 ac5_2 ac5_3, ac5_3, ac5_4; manual 16, 32 |
+| 6.1-6.3 | `delegation-list.component.spec` ac6_1, ac6_2, `delegations.feature.spec`; e2e `delegation.spec` ac6_3, ac34; manual 17, 33, 38 |
+| 7.1, 7.2 | `NotificationFT` ac7_1 (2), ac7_2, `NotificationServiceTest`, `unread-count.spec`; manual 18, 29, 34 |
+| 7.3-7.5 | `notification-list.component.spec` ac7_3, ac7_4 (12), ac7_5; e2e `notifications.spec` ac7_2 ac7_3 ac7_4; manual 18, 30, 31 |
+| 8.1-8.4 | `privacy-centre.component.spec` ac8_1 (2), ac8_2 (3), ac8_3; e2e `privacy-centre.spec` ac8_1 ac8_2, ac8_4; manual 19 |
+| 9.1-9.3, 9.6 | `OnboardingServiceTest` (9), `OnboardingQueriesIT` ac9_2, ac9_3, `OnboardingFT` ac9_1, ac9_3 (2), ac9_6, `DataExportFT`; manual 24, 25, 36 |
+| 9.4, 9.5 | `onboarding-checklist`, `onboarding-tour.component.spec`, `onboarding.service.spec`; e2e `onboarding.spec` ac9_4, ac9_5; manual 20-23, 35 |
+| 10.1 | e2e `privacy-notice.spec` ac1_2 ac1_9 (1.1 and 1.0 in the selector), ac1_8 (acknowledgement of 1.1); manual 41 (page part) |
+| 10.2 | `terms.component.spec`, `register.component.spec` ac10_2; e2e `privacy-notice.spec` ac10_2; manual 42 |
+| 10.3 | `MailDeliveryTest` ac10_3 (2); manual 43 |
+| 11.2 | `onboarding-checklist.component.spec` ac11_2 (2); manual 45 |
+| 11.3 | `navigation-focus.service.spec`, `unit-analytics.effects.spec`, e2e `unit-analytics.spec` ac11_3; manual 46 |
+| 12.1-12.7 | `analytics-rail.component.spec` ac12_1 to ac12_4, `unit-analytics-entry.component.spec` ac12_5, `shell.component.spec` ac12_6, `university-analytics.component.spec` ac12_7; e2e `university-analytics.spec` 9.7 ac12_1 ac12_4 ac12_5, 9.7 ac12_7; manual 47-49 |
+
+Edge cases of §5: quote at midnight (`QuoteOfTheDayTest`, manual 28), theme on the error and rate-limit pages
+(`SignInThemesFT`), reduced motion (e2e `login.spec` ac1_8, manual 27); the Pasteur quote did not ship (17 quotes in
+`quotes.json`, A3); zero years and one-year periods (`year-grid.component.spec`); empty, single and truncated
+timeline (`timeline-chart.component.spec`); rankings consent (`PersonalAnalyticsServiceTest` ac1_6_ac1_7), private
+awards in the hover card (`top-performers.component.spec`, manual 13); erased or out-of-scope person
+(`user-detail.component.spec`, `admin-users.effects.spec`, manual 32); delegation state changes and the 409 (manual
+33, 38); mark unread no-op and a notification without a target (`NotificationFT`, `notification-list` ac7_4, manual
+34); export 429 and legal hold (`privacy-centre.component.spec`); onboarding roles added or removed and stored keys of
+a removed role (`OnboardingServiceTest`, `OnboardingFT`, manual 37). A draft that never reached review is the only
+award that can be deleted, so no decision notification points at a missing award.
+
+Security: A01 every new endpoint takes the person from the token (`OnboardingController`, `NotificationController`
+`DELETE /{id}/read`, `PrivacyCentreController` `byMe`); foreign notifications 404 (`NotificationFT` ac7_1), steps
+outside the caller's roles 400 (`OnboardingFT` ac9_3), `/analytics/university` 403 for a dean or secretary (manual
+49); a revoked role signs the holder out everywhere (manual 37, 39). A02 nothing new. A03 the onboarding keys are an
+enum checked before the JSONB write; the user search escapes `%`, `_` and `\` (`UserSpecifications`). A07 401
+without a token (`OnboardingFT` ac9_6, `NotificationFT` ac1_11); the sign-in themes keep the CSRF form, the lockout
+and the rate-limit page (`SignInThemesFT`), and `/login` answers `Cache-Control: no-cache, no-store`.
+
+Integration: the Compose stack rebuilt from `develop` starts clean; Flyway applies every migration on the empty
+Testcontainers database of the IT/FT run; `openapi.yml` lists all 99 operations of `/v3/api-docs` (the 7 extra
+entries are the authorization server and actuator).
+
+Findings:
+1. User search with decomposed input: «Олійник» finds 10 people, the same name with «й» as «и» + U+0306 finds none
+   (`UserSpecifications.matching` does not normalise). Fix story 9.7.13 (SCRUM-193, #526); detour step 51.
+2. Deep links through sign-in keep the query and the fragment (`/notifications?selected=…&filter=…`,
+   `/profile#notifications`, `/analytics/units/9?from=…`); detour step 50.
+3. A read notification opened from the «Непрочитані» chip and reloaded shows the not-found text of a selection
+   outside the list («немає на цій сторінці списку або воно належить іншій особі»). Kept: the text names both cases.
+4. Two tabs saving onboarding progress: the last full write wins, so a stale tab can show a hidden checklist again
+   (§5 says last write wins). Kept.
+5. A second tab that requests erasure after the first one did gets the 409 message without reloading the status
+   line; a query-only change of `delegatorId` on the delegations board keeps the first person. Both rare; kept.
+6. CI on `develop` failed on e2e strict-mode races: `review-queue.spec` ac6_6 (fixed in #524) and
+   `documents.spec` ac2_1 (two «Dismiss» buttons, fixed in this PR).
+7. Refactor sweep: duplicated category and level rows and period helpers in unit and university analytics, the
+   chart-pane hold repeated in five chart components, `DeltaTilesComponent` `bento` layout and `years` input unused,
+   fixed waits in `review-queue.spec`, `OnboardingRequest` copying its list without `List.copyOf`. No defect; listed
+   in the tracker's technical notes for a later clean-up.

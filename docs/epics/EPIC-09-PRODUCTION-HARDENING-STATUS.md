@@ -16,12 +16,13 @@
 | 9.4 Dashboards and widget layout (scheme and layout on the account, widget kit, Hall of Fame, «Мої нагороди» with the CV export, Command centre with the department reminder) | PRD approved 2026-11-17, 23 points ([PRD](../features/epic-09/feature-9.4-dashboards.md)) | - | - |
 | 9.5 Page layouts (page kit, My dashboard and unit analytics split, Achievements story feed, Users and Reviews with the item beside the list, university bento, Compliance and delegations split) | Done 2026-11-22: 7 planned stories and 3 fixes, 36 points; manual run of §10 30 steps, the three failed steps fixed in 9.5.8, 9.5.9 and 9.5.10 and passed in the rerun of 2026-11-22 ([PRD](../features/epic-09/feature-9.5-page-layouts.md)) | 2026-11-20 | 2026-11-22 |
 | 9.6 Widget and shell redesign (sidebar tools instead of the top bar, widget header with the chart or table switch, redrawn widgets of My dashboard, unit and university analytics and Hall of Fame, Profile in sections, remaining pages of the all-pages canvas) | PRD approved 2026-11-23: 7 stories, 29 points ([PRD](../features/epic-09/feature-9.6-widget-redesign.md)) | 2026-11-23 | - |
-| 9.7 Pre-ship polish (sign-in themes with the quote of the day and logo mark 9, spreadsheet tables in widgets, timeline road and feed, unit analytics rail, Users split on select, delegations board, notifications inbox, privacy control panel, first sign-in checklist and tour) | PRD approved 2026-11-24: 9 stories, 30 points ([PRD](../features/epic-09/feature-9.7-preship-polish.md)) | - | - |
+| 9.7 Pre-ship polish (sign-in themes with the quote of the day and logo mark 9, spreadsheet tables in widgets, timeline road and feed, unit analytics rail, Users split on select, delegations board, notifications inbox, privacy control panel, first sign-in checklist and tour) | Validated 2026-11-25: 12 stories, every AC with a named test except AC-4.4 (manual step 13); manual run of §10 48 of 49 steps, step 41 covered by e2e `privacy-notice.spec` ac1_8; fix 9.7.13 (SCRUM-193) open ([PRD](../features/epic-09/feature-9.7-preship-polish.md)) | 2026-11-24 | - |
 
 ## Current focus
 
-Feature 9.5 done 2026-11-22 (SCRUM-163 to SCRUM-169, fixes SCRUM-171 to SCRUM-173). Feature 9.6 (SCRUM-174 to SCRUM-180) is in progress: stories stacked one branch on the
-next, the full gate and e2e once on the last branch; then the 9.4 close-out and the demo server 9.2.4 (SCRUM-134).
+Feature 9.7 validated 2026-11-25 (SCRUM-181 to SCRUM-192; manual run 48 of 49); its fix 9.7.13 (SCRUM-193, user
+search with decomposed Unicode) is next. Then the manual run and validation of 9.6 (SCRUM-174 to SCRUM-180), the 9.4
+close-out and the demo server 9.2.4 (SCRUM-134).
 
 ## Scope
 
@@ -80,6 +81,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5w | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | Done |
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | Done |
 | 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | Done |
+| 5za | 9.7.13 Users search matches names typed in decomposed Unicode | 9.7 | 1 | SCRUM-193 | #526 | no | To do |
 | 5za | 9.7.12 One analytics page | 9.7 | 5 | SCRUM-192 | #514 | no | Done |
 | 5za | 9.7.11 UI review fixes: logo mark 9, checklist card, unit switch in place | 9.7 | 3 | SCRUM-191 | #513 | no | Done |
 | 5za | 9.7.9 First sign-in checklist and spotlight tour | 9.7 | 5 | SCRUM-189 | #507 | no | Done |
@@ -127,6 +129,7 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 | 2026-11-16 | Feature 9.3 closed: steps 14 and 22 of the manual run, failed in the run, are accepted on the tests of their fix stories instead of a second walk (`review-queue.component.spec` ac14, e2e `review-queue.spec` ac6_1 to ac6_4 and «the decision lost with the session is named after the next sign-in»); step 21 stays under the 2026-11-15 decision | The fixes are frontend-only and their e2e cases replay the failed steps on the Compose stack | 9.3 PRD §10 Run 2026-11-16, PRs #416, #417, #418 |
 | 2026-11-21 | Feature 9.5 validated: every AC has a named test (AC-3.4 assertions added to `achievements.spec.ts`); full gate and e2e green; five findings recorded, a selection that leaves the list keeps its state in Reviews and Users | All 9.5 code merged; the findings do not block the manual run | [PRD 9.5 Validation](../features/epic-09/feature-9.5-page-layouts.md#validation) |
 | 2026-11-22 | Feature 9.5 closed: steps 1, 25 and 29, failed in the run of 2026-11-21, walked again after their fixes and passed; the dashboard context line keeps the label «Зараз на розгляді», AC-8.1 and step 1 follow it | Rerun on the Compose stack at develop fabb23e, no step accepted on tests alone | 9.5 PRD §10 Run 2026-11-22, PRs #481, #482, #483 |
+| 2026-11-25 | Feature 9.7 validated: AC-10.1 to 10.3 (9.7.10) written into the PRD from #509; a revoked role signs the holder out, so manual steps 37 and 39 expect the sign-in page; the neutral brand of the interface needs the frontend brand file as well as `APP_BRAND`; one fix story 9.7.13 (SCRUM-193) for user search with decomposed Unicode | Scenario steps follow the security doc and DEMO_DEPLOYMENT; the search gap was confirmed through the API | 9.7 PRD §Validation, §10 Run 2026-11-25, PR #525 |
 | 2026-11-17 | Feature 9.4 PRD approved: widget order and visibility only (no free grid); the scheme and layouts in `dashboard_preferences` (V052 drops `hidden_widgets`, export format 1.8); facts generated in the browser; the reminder goes to a colleague the sender picks, once a week per department; CV export as PDF and text; `/` opens the dashboard of the highest role | The cut named on 2026-11-14; no head-of-department data exists; no stored text to translate | 9.4 PRD §7 |
 | 2026-11-14 | The "remind head of department" mail and the CV export move to 9.4; the demo server 9.2.4 moves after 9.3, the Epic 2 feature for people without an account and 9.4 | Both sit on 9.4 screens; the demo should show the finished look | 9.3 PRD §7 deviation 1 |
 | 2026-10-29 | Lighthouse 90 sits in Feature 9.2: it is measured against the production build that the deployment ships | Same build, same measurement setup as 8.1 | 8.1 PRD F-2 |
@@ -158,6 +161,11 @@ Kickoff defaults, confirmed or changed in the feature PRDs.
 
 ## Technical notes
 
+- 9.7 refactor candidates (validation sweep 2026-11-25): the category and level rows and the period helpers shared
+  by unit and university analytics; one helper for the chart-pane hold repeated in five chart components; remove
+  `DeltaTilesComponent` `layout`/`years` (unused since 9.7.12) with the `.tiles-bento` rules; the faculty-report
+  fetch of `unit-analytics.component.ts` into the store; fixed waits in `review-queue.spec`; `OnboardingRequest`
+  with `List.copyOf`.
 - 9.5 refactor candidates (validation sweep 2026-11-21): `compliance.component.html` (~500 lines) as one child
   component per section; batch selection bookkeeping in `review-list.component.ts` as a helper; one count-line
   helper for the Users context line and the delegation days-left phrase (`pluralForm` against Transloco plurals);

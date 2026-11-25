@@ -112,8 +112,12 @@ test.describe('award documents', () => {
     await expect(queue.getByTestId('documents-retry')).toHaveCount(0);
     expect(uploads).toBe(3);
     await accessible(page);
-    await queue.getByTestId('documents-dismiss').first().click();
-    await queue.getByTestId('documents-dismiss').click();
+    await queue.getByTestId('documents-queued-звіт.docx').getByTestId('documents-dismiss').click();
+    await expect(queue.getByTestId('documents-queued-звіт.docx')).toHaveCount(0);
+    await queue
+      .getByTestId('documents-queued-великий.pdf')
+      .getByTestId('documents-dismiss')
+      .click();
     await expect(queue).toHaveCount(0);
 
     await input.setInputFiles({
