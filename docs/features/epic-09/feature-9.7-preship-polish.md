@@ -79,6 +79,7 @@ one picked option on the canvas; this feature builds the picks.
 | 9.7.8 | Privacy control panel (SCRUM-188) | 3 | no | - |
 | 9.7.9 | First sign-in checklist and spotlight tour (SCRUM-189) | 5 | no | 9.7.8 |
 | 9.7.11 | UI review fixes: logo mark 9, checklist card, unit switch in place (SCRUM-191) | 3 | no | 9.7.9 |
+| 9.7.12 | One analytics page (SCRUM-192) | 5 | no | 9.7.11 |
 
 Order 9.7.1 → 9.7.9 as listed. The branches stack and the full gate and e2e run once on the 9.7.9 branch (D1). If time
 runs short before the demo server, 9.7.9 and then 9.7.8 move after the deploy (§11 risk 1).
@@ -249,6 +250,29 @@ Fixes from the UI review of the stack; supersedes the ChNU half of AC-1.7 and th
   panes stay on screen marked as updating (`aria-busy`) while the new figures load, the scroll position and the
   focus stay, and the new figures replace the old in place; a failed load shows the error as before.
 
+### 9.7.12 One analytics page (SCRUM-192)
+
+University and unit analytics become one section; the routes `/analytics`, `/analytics/university` and
+`/analytics/units/:id` stay, so saved links keep working.
+
+- **AC-12.1** (Rail) Given an analytics page, then the side rail lists «Увесь університет» to a holder of
+  `analytics:read:university`, then the faculties open to the caller (a faculty whose parent is not in the list) in
+  the order of the API, and the departments of the shown faculty only, indented under it; the shown row has
+  `aria-current`.
+- **AC-12.2** (Scope) Given a dean or a faculty secretary, then the rail lists only what `GET /analytics/units`
+  returns, without «Увесь університет»; departments whose faculty is not open to the caller are listed as top rows.
+- **AC-12.3** (Counts) Given the unit page, then the open faculty and its departments show the approved awards of
+  the period; other rows show none.
+- **AC-12.4** (Switch) Given a rail row, then it opens that page for the same period; unit to unit switches in place
+  (AC-11.3), the university page and a unit page are separate pages with the same rail (D7).
+- **AC-12.5** (Landing) Given `/analytics`, then a holder of the university view lands on `/analytics/university`,
+  anyone else on the first faculty open to them (the first unit when none is), keeping the period.
+- **AC-12.6** (Navigation) Given the side menu or the command palette, then one entry «Аналітика» leads to the
+  section and stays current on every analytics page.
+- **AC-12.7** (Layout) Given `/analytics/university`, then it has the unit page layout: the page header, the
+  summary tiles and the rail in the sticky side column, the faculties, facts, trend, category, level, source and
+  comparison in the main column; it fits 360 px without sideways scroll.
+
 ## 5. Edge cases
 
 - Sign-in: the quote list is read once at start; a day change at Kyiv midnight while the page is open changes
@@ -325,6 +349,9 @@ pane header.
 6. **D6 Notification groups are client-side.** «Нагороди» = `AWARD_APPROVED`, `AWARD_REJECTED`, `AWARD_RETURNED`,
    `AWARD_CORRECTED`, `AWARDS_REMINDER`; «Розгляд» = `AWARD_ESCALATED`, `REVIEW_OVERDUE`, `REVIEW_TAKEN_OVER`;
    «Ролі» = `ROLE_ASSIGNED`, `ROLE_REVOKED`, `DELEGATION_CREATED`, `DELEGATION_REVOKED`; the API filters by type.
+7. **D7 University and unit stay two routed pages** (AC-12.4): the university report and a unit report come from
+   different endpoints and stores, so «Увесь університет» ↔ a unit is a page change with the same rail, not an
+   in-place switch; only unit ↔ unit switches in place.
 
 Assumptions: **A1** The catalogue theme is the default. **A2** The Angular account pages keep the 9.3 card.
 **A3** The Pasteur quote ships only once its wording and source are confirmed. **A4** No «Журнал» tab in the
@@ -504,6 +531,20 @@ draft wording and get the merged i18n text at the validation.
 46. As `dean.fmi`, open `/analytics`, scroll down to the rail and choose another department. Expected: the panes stay
     (dimmed briefly), the page does not jump to the top, the focus stays on the chosen row, the new figures appear
     in place (AC-11.3).
+
+### One analytics page (9.7.12, SCRUM-192)
+
+47. As `rector`, open `http://localhost/analytics?from=2021&to=2025`. Expected: the address becomes
+    `/analytics/university?from=2021&to=2025`; the side menu has one «Аналітика» entry, marked current; the side
+    column shows «Підсумок» and «Підрозділи» with «Увесь університет» selected and the faculties below it, no
+    department; the main column starts with «Факультети» (AC-12.1, 12.5–12.7).
+48. Choose «Факультет математики та інформатики» in the rail, then «Кафедра алгебри та інформатики». Expected: the
+    period stays in the address; the faculty row and its departments show counts and the departments are indented;
+    the department switch happens in place; «Аналітика» stays current; «Увесь університет» returns to the
+    university page (AC-12.1, 12.3, 12.4).
+49. As `dean.fmi`, open `/analytics`; as `secretary.fmi`, open `/analytics`. Expected: the dean lands on the
+    faculty with its departments and no «Увесь університет»; the secretary sees only the departments the API
+    returns; `/analytics/university` as either opens the forbidden page (AC-12.2, 12.5).
 
 ## 11. Risks
 

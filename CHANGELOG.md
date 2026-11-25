@@ -104,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- One «Аналітика» section: the university and unit pages share a side rail and layout, and /analytics lands by role (9.7.12).
 - ChNU brand shows logo mark 9; the getting-started checklist is a brand card with a progress ring; switching units on unit analytics keeps the page in place (9.7.11)
 - Award detail and privacy in two columns, the users toolbar under the title, command centre panes with the widget header, a 404 tile, and the gold logo on the sign-in page.
 - Profile: a burgundy banner and sections chosen on the left (name, sign-in address, notifications as switches, privacy, roles), the section kept in the address.

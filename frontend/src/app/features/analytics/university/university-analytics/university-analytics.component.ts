@@ -7,14 +7,15 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
-import { BentoComponent, BentoTileComponent } from '../../../../shared/layout/bento.component';
 import { PageHeaderComponent } from '../../../../shared/layout/page-header.component';
 import { PaneComponent } from '../../../../shared/layout/pane.component';
+import { SplitComponent } from '../../../../shared/layout/split.component';
 import { RECOGNITION_LEVELS, categoryName } from '../../../awards/awards.service';
 import { readPeriod } from '../../analytics-period';
 import { AnalyticsPeriod } from '../../analytics.service';
 import { PeriodChipsComponent } from '../../period-chips/period-chips.component';
 import { PeriodSelectComponent } from '../../period-select/period-select.component';
+import { AnalyticsRailComponent } from '../../rail/analytics-rail.component';
 import {
   ComparisonBarsComponent,
   ComparisonRow,
@@ -22,6 +23,8 @@ import {
 import { DeltaTilesComponent } from '../../units/delta-tiles/delta-tiles.component';
 import { HighlightsComponent } from '../../units/highlights/highlights.component';
 import { SourceChartComponent } from '../../units/source-chart/source-chart.component';
+import { UnitAnalyticsActions } from '../../units/store/unit-analytics.actions';
+import { unitAnalyticsFeature } from '../../units/store/unit-analytics.feature';
 import { UnitComparisonRow } from '../../units/unit-analytics.service';
 import {
   ComparisonLabels,
@@ -41,12 +44,14 @@ const UNIVERSITY_LABELS: ComparisonLabels = {
   total: 'universityAnalytics.comparison.universityTotal',
 };
 
-/** Analytics of the whole university for a period as a bento page (W3 A). */
+/**
+ * Analytics of the whole university for a period, laid out as the unit page: the tiles and the analytics rail
+ * beside the figures.
+ */
 @Component({
   selector: 'app-university-analytics',
   imports: [
-    BentoComponent,
-    BentoTileComponent,
+    AnalyticsRailComponent,
     BoardReportButtonComponent,
     ComparisonBarsComponent,
     DeltaTilesComponent,
@@ -60,6 +65,7 @@ const UNIVERSITY_LABELS: ComparisonLabels = {
     PeriodSelectComponent,
     ProjectionTrendChartComponent,
     SourceChartComponent,
+    SplitComponent,
     TranslocoPipe,
     UnitComparisonComponent,
   ],
@@ -79,13 +85,12 @@ export class UniversityAnalyticsComponent {
   readonly loading = this.store.selectSignal(universityAnalyticsFeature.selectLoading);
   readonly problem = this.store.selectSignal(universityAnalyticsFeature.selectProblem);
   readonly invalid = signal(false);
+  readonly units = this.store.selectSignal(unitAnalyticsFeature.selectUnits);
+  private readonly unitsStatus = this.store.selectSignal(unitAnalyticsFeature.selectUnitsStatus);
 
   protected readonly labels = UNIVERSITY_LABELS;
   protected readonly linkable = isFaculty;
   protected readonly highlightLimit = HIGHLIGHT_LIMIT;
-  protected readonly yearCounts = computed(
-    () => this.analytics()?.byYear.map((entry) => entry.total) ?? [],
-  );
   protected readonly reportDisabled = computed(
     () => this.invalid() || this.loading() || this.problem() !== null || !this.analytics(),
   );
@@ -130,6 +135,7 @@ export class UniversityAnalyticsComponent {
   });
 
   constructor() {
+    this.requestUnitsUnlessLoaded();
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
       const period = readPeriod(query);
       this.invalid.set(period === null);
@@ -152,7 +158,15 @@ export class UniversityAnalyticsComponent {
   }
 
   protected retry(): void {
+    this.requestUnitsUnlessLoaded();
     this.store.dispatch(UniversityAnalyticsActions.periodSelected({ period: this.period() }));
+  }
+
+  private requestUnitsUnlessLoaded(): void {
+    const status = this.unitsStatus();
+    if (status === 'idle' || status === 'failed') {
+      this.store.dispatch(UnitAnalyticsActions.unitsRequested());
+    }
   }
 }
 

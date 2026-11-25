@@ -63,7 +63,7 @@ test.describe('Hall of Fame', () => {
     );
     await expect(page.getByTestId('board-report')).toBeVisible();
     await expect(page.getByTestId('nav-hall-of-fame')).toBeVisible();
-    await expect(page.getByTestId('nav-university-analytics')).toBeVisible();
+    await expect(page.getByTestId('nav-unit-analytics')).toBeVisible();
     expect(await seriousViolations(page)).toEqual([]);
   });
 

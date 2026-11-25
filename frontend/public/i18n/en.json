@@ -2102,7 +2102,7 @@
       "bySource": "By awarding organisation",
       "topPerformers": "Top performers",
       "highlights": "Highlights",
-      "units": "Departments"
+      "units": "Units"
     },
     "trend": {
       "personal": "Personal awards",
@@ -2160,7 +2160,7 @@
       "showAll": "All {{count}}",
       "showLess": "Show less"
     },
-    "wholeFaculty": "Whole faculty",
+    "wholeUniversity": "Whole university",
     "approved": "approved awards"
   },
   "universityAnalytics": {

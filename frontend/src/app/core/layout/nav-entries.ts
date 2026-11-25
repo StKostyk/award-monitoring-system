@@ -10,7 +10,6 @@ import {
   canReadDirectory,
   canReadOwnAnalytics,
   canReadUnitAnalytics,
-  canReadUniversityAnalytics,
   canReview,
   roleHome,
 } from '../auth/permissions';
@@ -25,8 +24,6 @@ export interface NavEntry {
   readonly icon: IconName;
   /** Whether only the path itself, not its children, marks the entry current. */
   readonly exact: boolean;
-  /** A child path that belongs to another entry and does not mark this one current. */
-  readonly excludes: string | null;
   /** Whether an anonymous visitor sees the entry too. */
   readonly anonymous: boolean;
   readonly allowed: (permissions: TokenPermissions) => boolean;
@@ -49,23 +46,7 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   ),
   entry('awards', '/awards', 'awards.title', 'award', canCreateAwards),
   entry('dashboard', '/dashboard', 'analytics.title', 'chart-line', canReadOwnAnalytics),
-  entry(
-    'unit-analytics',
-    '/analytics',
-    'unitAnalytics.title',
-    'chart-column',
-    canReadUnitAnalytics,
-    {
-      excludes: '/analytics/university',
-    },
-  ),
-  entry(
-    'university-analytics',
-    '/analytics/university',
-    'universityAnalytics.title',
-    'landmark',
-    canReadUniversityAnalytics,
-  ),
+  entry('unit-analytics', '/analytics', 'titles.analytics', 'chart-column', canReadUnitAnalytics),
   entry('achievements', '/achievements', 'achievements.title', 'trophy', ANYONE),
   entry('reviews', '/reviews', 'reviews.title', 'clipboard-check', canReview),
   entry('users', '/admin/users', 'admin.users.title', 'users', canReadDirectory),
@@ -93,7 +74,7 @@ function entry(
   label: string,
   icon: IconName,
   allowed: (permissions: TokenPermissions) => boolean,
-  options: { exact?: boolean; excludes?: string; anonymous?: boolean } = {},
+  options: { exact?: boolean; anonymous?: boolean } = {},
 ): NavEntry {
   return {
     id,
@@ -102,7 +83,6 @@ function entry(
     icon,
     allowed,
     exact: options.exact ?? false,
-    excludes: options.excludes ?? null,
     anonymous: options.anonymous ?? false,
   };
 }

@@ -3,6 +3,8 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 
 import en from '../../../../public/i18n/en.json';
 import uk from '../../../../public/i18n/uk.json';
+import { AuthService } from '../../core/auth/auth.service';
+import { readPermissions } from '../../core/auth/permissions';
 import { AppLanguage, LanguageService } from '../../core/i18n/language.service';
 import { PersonalAnalytics } from './analytics.service';
 
@@ -24,6 +26,14 @@ export function languageStub(language: AppLanguage = 'en') {
 /** A bearer token carrying the given claims. */
 export function tokenWith(claims: Record<string, unknown>): string {
   return `header.${btoa(JSON.stringify(claims))}.signature`;
+}
+
+/** An auth service whose access token grants the given permissions. */
+export function authStub(permissions: string[] = []) {
+  return {
+    provide: AuthService,
+    useValue: { permissions: signal(readPermissions(tokenWith({ permissions }))) },
+  };
 }
 
 const algebra = {

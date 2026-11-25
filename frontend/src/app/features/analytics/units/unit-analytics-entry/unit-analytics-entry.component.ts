@@ -5,10 +5,16 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
 
+import { AuthService } from '../../../../core/auth/auth.service';
+import { canReadUniversityAnalytics } from '../../../../core/auth/permissions';
+import { landingUnit } from '../../rail/analytics-units';
 import { UnitAnalyticsActions } from '../store/unit-analytics.actions';
 import { unitAnalyticsFeature } from '../store/unit-analytics.feature';
 
-/** `/analytics`: opens the first unit open to the caller, keeping the period of the address bar. */
+/**
+ * `/analytics`: opens the university page for a holder of the university view, else the first faculty open to the
+ * caller (the first unit when no faculty is), keeping the period of the address bar.
+ */
 @Component({
   selector: 'app-unit-analytics-entry',
   imports: [MatButton, MatProgressBar, TranslocoPipe],
@@ -49,27 +55,36 @@ export class UnitAnalyticsEntryComponent {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly university = canReadUniversityAnalytics(inject(AuthService).permissions());
 
   readonly units = this.store.selectSignal(unitAnalyticsFeature.selectUnits);
   readonly status = this.store.selectSignal(unitAnalyticsFeature.selectUnitsStatus);
 
   constructor() {
+    if (this.university) {
+      this.open(['university']);
+      return;
+    }
     if (this.status() !== 'loaded') {
       this.store.dispatch(UnitAnalyticsActions.unitsRequested());
     }
     effect(() => {
-      const first = this.units()[0];
-      if (this.status() === 'loaded' && first) {
-        void this.router.navigate(['units', first.id], {
-          relativeTo: this.route,
-          queryParamsHandling: 'preserve',
-          replaceUrl: true,
-        });
+      const unit = landingUnit(this.units());
+      if (this.status() === 'loaded' && unit) {
+        this.open(['units', unit.id]);
       }
     });
   }
 
   protected retry(): void {
     this.store.dispatch(UnitAnalyticsActions.unitsRequested());
+  }
+
+  private open(commands: (string | number)[]): void {
+    void this.router.navigate(commands, {
+      relativeTo: this.route,
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   }
 }

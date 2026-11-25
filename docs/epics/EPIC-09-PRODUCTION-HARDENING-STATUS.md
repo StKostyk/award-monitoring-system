@@ -80,17 +80,18 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5w | 9.5.3 Achievements as a story feed | 9.5 | 3 | SCRUM-165 | #458 | no | Done |
 | 5v | 9.5.2 My dashboard in the split layout | 9.5 | 5 | SCRUM-164 | #457 | no | Done |
 | 5u | 9.5.1 Page kit and shell fixes | 9.5 | 3 | SCRUM-163 | #456 | no | Done |
-| 5za | 9.7.11 UI review fixes: logo mark 9, checklist card, unit switch in place | 9.7 | 3 | SCRUM-191 | #513 | no | In review |
-| 5za | 9.7.9 First sign-in checklist and spotlight tour | 9.7 | 5 | SCRUM-189 | #507 | no | In review |
-| 5za | 9.7.10 Privacy notice storage section, terms of use and List-Unsubscribe | 9.7 | 3 | SCRUM-190 | #509 | no | In review |
-| 5za | 9.7.8 Privacy control panel | 9.7 | 3 | SCRUM-188 | #506 | no | In review |
-| 5za | 9.7.7 Notifications inbox with a reading pane | 9.7 | 3 | SCRUM-187 | #505 | no | In review |
-| 5za | 9.7.6 Delegations status board | 9.7 | 2 | SCRUM-186 | #504 | no | In review |
-| 5za | 9.7.5 Users list that splits on select | 9.7 | 3 | SCRUM-185 | #503 | no | In review |
-| 5za | 9.7.4 Unit analytics rail and clickable top performers | 9.7 | 3 | SCRUM-184 | #502 | no | In review |
-| 5za | 9.7.3 Timeline as a journey road and a dated feed | 9.7 | 3 | SCRUM-183 | #501 | no | In review |
-| 5za | 9.7.2 Spreadsheet tables in widgets | 9.7 | 3 | SCRUM-182 | #500 | no | In review |
-| 5za | 9.7.1 Sign-in themes, quote of the day and logo mark 9 | 9.7 | 5 | SCRUM-181 | #499 | no | In review |
+| 5za | 9.7.12 One analytics page | 9.7 | 5 | SCRUM-192 | #514 | no | In review |
+| 5za | 9.7.11 UI review fixes: logo mark 9, checklist card, unit switch in place | 9.7 | 3 | SCRUM-191 | #513 | no | Done |
+| 5za | 9.7.9 First sign-in checklist and spotlight tour | 9.7 | 5 | SCRUM-189 | #507 | no | Done |
+| 5za | 9.7.10 Privacy notice storage section, terms of use and List-Unsubscribe | 9.7 | 3 | SCRUM-190 | #509 | no | Done |
+| 5za | 9.7.8 Privacy control panel | 9.7 | 3 | SCRUM-188 | #506 | no | Done |
+| 5za | 9.7.7 Notifications inbox with a reading pane | 9.7 | 3 | SCRUM-187 | #505 | no | Done |
+| 5za | 9.7.6 Delegations status board | 9.7 | 2 | SCRUM-186 | #504 | no | Done |
+| 5za | 9.7.5 Users list that splits on select | 9.7 | 3 | SCRUM-185 | #503 | no | Done |
+| 5za | 9.7.4 Unit analytics rail and clickable top performers | 9.7 | 3 | SCRUM-184 | #502 | no | Done |
+| 5za | 9.7.3 Timeline as a journey road and a dated feed | 9.7 | 3 | SCRUM-183 | #501 | no | Done |
+| 5za | 9.7.2 Spreadsheet tables in widgets | 9.7 | 3 | SCRUM-182 | #500 | no | Done |
+| 5za | 9.7.1 Sign-in themes, quote of the day and logo mark 9 | 9.7 | 5 | SCRUM-181 | #499 | no | Done |
 | 5za | 9.6.7 Remaining pages of the all-pages canvas | 9.6 | 3 | SCRUM-180 | #491 | no | Done |
 | 5za | 9.6.6 Profile with sections | 9.6 | 3 | SCRUM-179 | #490 | no | Done |
 | 5za | 9.6.5 Hall of Fame widgets | 9.6 | 5 | SCRUM-178 | #489 | no | Done |

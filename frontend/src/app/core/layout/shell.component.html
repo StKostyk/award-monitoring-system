@@ -51,8 +51,9 @@
               [routerLink]="item.path"
               routerLinkActive
               #link="routerLinkActive"
+              ariaCurrentWhenActive="page"
               [routerLinkActiveOptions]="{ exact: item.exact }"
-              [activated]="current(item, link.isActive)"
+              [activated]="link.isActive"
               [attr.data-testid]="'nav-' + item.id"
             >
               <app-icon matListItemIcon [name]="item.icon" />

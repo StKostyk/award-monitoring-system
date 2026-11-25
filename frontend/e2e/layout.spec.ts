@@ -6,10 +6,9 @@ const DESKTOP = { width: 1280, height: 900 };
 const PHONE = { width: 360, height: 780 };
 const DESKTOP_BESIDE_SCROLLBAR = { width: 1264, height: 900 };
 /** The height of a one-line side menu item. */
-const ONE_LINE_ITEM = 48;
 
 test.describe('page layout and shell (9.5.1)', () => {
-  test('ac1_5 every Ukrainian sidebar label is shown in full and the active item covers both lines', async ({
+  test('ac1_5 every Ukrainian sidebar label is shown in full and the active item covers its label', async ({
     page,
   }) => {
     await page.setViewportSize(DESKTOP);
@@ -36,12 +35,10 @@ test.describe('page layout and shell (9.5.1)', () => {
         };
       }),
     );
-    expect(labels.map((label) => label.label)).toContain('Аналітика університету');
     expect(labels.filter((label) => label.clipped || !label.inside)).toEqual([]);
     const active = labels.find((label) => label.active);
-    expect(active?.label).toBe('Аналітика університету');
-    expect(active?.lines).toBe(2);
-    expect(active?.height).toBeGreaterThan(ONE_LINE_ITEM);
+    expect(active).toBeDefined();
+    expect(active!.label).toBe('Аналітика');
   });
 
   test('ac1_1 ac1_4 the pages never scroll sideways at 360 and 1280', async ({ page }) => {
