@@ -1973,7 +1973,14 @@
       "verified": "Верифіковано",
       "facultyLevel": "Рівень факультету",
       "inactive": "неактивна",
-      "perHundredShort": "На 100"
+      "perHundredShort": "На 100",
+      "awardsGroup": "Нагороди",
+      "peopleGroup": "Люди",
+      "approvedShort": "Усього",
+      "verifiedShort": "Верифік.",
+      "awardedShort": "Нагороджені",
+      "perHundredGroup": "На 100 прац.",
+      "facultyTotal": "Увесь факультет"
     },
     "bars": {
       "current": "Цей період",
@@ -2019,7 +2026,8 @@
       "faculties": "Факультети"
     },
     "comparison": {
-      "universityLevel": "Рівень університету"
+      "universityLevel": "Рівень університету",
+      "universityTotal": "Увесь університет"
     },
     "projection": {
       "approved": "Затверджені нагороди",
@@ -2150,6 +2158,11 @@
     "level": "Рівень",
     "awards": "Нагороди",
     "note": "Примітка",
+    "table": {
+      "total": "Разом",
+      "scrollHint": "{{shown}} з {{total}} років — гортайте →",
+      "scrollLabel": "{{caption}}: таблиця, гортається вбік"
+    },
     "kpi": {
       "up": "більше на {{percent}}",
       "down": "менше на {{percent}}",

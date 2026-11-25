@@ -32,7 +32,9 @@ describe('UnitComparisonComponent', () => {
   }
 
   function sortBy(index: number, table = 'comparison-table'): void {
-    const headers = fixture.nativeElement.querySelectorAll(`[data-testid="${table}"] thead th`);
+    const headers = fixture.nativeElement.querySelectorAll(
+      `[data-testid="${table}"] thead th[mat-sort-header]`,
+    );
     (headers[index] as HTMLElement).click();
     fixture.detectChanges();
   }
@@ -63,6 +65,43 @@ describe('UnitComparisonComponent', () => {
     expect(row.textContent).toContain('55');
   });
 
+  it('ac2_2_groups_the_columns_under_awards_and_people_with_the_total_last', () => {
+    fixture.componentRef.setInput('totals', facultyAnalytics().totals);
+    pane.pane.view.set('table');
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    const header = (row: number) =>
+      [
+        ...element.querySelectorAll(
+          `[data-testid="comparison-full-table"] thead tr:nth-child(${row}) th`,
+        ),
+      ].map((cell) => cell.textContent!.trim());
+    const total = element.querySelector('[data-testid="comparison-full-total"]') as HTMLElement;
+    const totals = facultyAnalytics().totals;
+
+    expect(header(1)).toEqual(['Unit', 'Awards', 'People']);
+    expect(header(2)).toEqual([
+      'Total',
+      'Change',
+      'Verified',
+      'Awarded',
+      'Members',
+      'Per 100 staff',
+    ]);
+    expect(element.querySelector('[data-testid="comparison-group-awards"]')!.classList).toContain(
+      'analytics-table__tint',
+    );
+    expect(
+      element.querySelector('[data-testid="comparison-group-people"]')!.classList,
+    ).not.toContain('analytics-table__tint');
+    expect(total.parentElement!.tagName).toBe('TFOOT');
+    expect(total.querySelector('th')!.textContent!.trim()).toBe('Whole faculty');
+    expect([...total.querySelectorAll('td')].map((cell) => cell.textContent!.trim())[0]).toBe(
+      String(totals.approved.current),
+    );
+    expect(total.textContent).toContain(String(totals.members));
+  });
+
   it('ac2_4_sorts_by_every_column', () => {
     const expectations: [number, string[]][] = [
       [
@@ -71,6 +110,14 @@ describe('UnitComparisonComponent', () => {
           'Department of Algebra and Informatics',
           'Department of Mathematical Analysis',
           'Faculty level',
+        ],
+      ],
+      [
+        5,
+        [
+          'Faculty level',
+          'Department of Mathematical Analysis',
+          'Department of Algebra and Informatics',
         ],
       ],
       [
@@ -83,14 +130,6 @@ describe('UnitComparisonComponent', () => {
       ],
       [
         2,
-        [
-          'Faculty level',
-          'Department of Mathematical Analysis',
-          'Department of Algebra and Informatics',
-        ],
-      ],
-      [
-        3,
         [
           'Department of Mathematical Analysis',
           'Faculty level',
@@ -106,7 +145,7 @@ describe('UnitComparisonComponent', () => {
         ],
       ],
       [
-        5,
+        6,
         [
           'Department of Mathematical Analysis',
           'Faculty level',
@@ -114,7 +153,7 @@ describe('UnitComparisonComponent', () => {
         ],
       ],
       [
-        6,
+        3,
         [
           'Faculty level',
           'Department of Mathematical Analysis',
@@ -130,7 +169,7 @@ describe('UnitComparisonComponent', () => {
       expect(firstCells(full).map((cell) => cell.replace(/\s*\(inactive\)/, ''))).toEqual(order);
     }
 
-    sortBy(6, full);
+    sortBy(3, full);
 
     expect(firstCells(full)[0]).toBe('Department of Algebra and Informatics');
   });

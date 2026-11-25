@@ -9,39 +9,44 @@ import { BarListComponent, BarRow } from './bar-list.component';
 import { crossing, cumulative, lastMonthOf } from './facts';
 import { monthSpan } from './kpi-widget.component';
 import { CalendarMonth, MonthCount } from './widget-data';
+import { TableScrollComponent } from './table-scroll.component';
 
 /** T2: this year to date against last year to the same month as a scoreboard, the turn or the gap in one line. */
 @Component({
   selector: 'app-race-widget',
-  imports: [BarListComponent, EmptyStateComponent, TranslocoPipe],
+  imports: [BarListComponent, EmptyStateComponent, TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (!hasData()) {
       <app-empty-state icon="chart-line" [text]="'widgets.empty' | transloco" />
     } @else if (table()) {
-      <table class="analytics-table" data-testid="race-widget-table">
-        <caption>
-          {{
-            'widgets.race.title' | transloco: { year: year(), previous: year() - 1 }
-          }}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">{{ 'widgets.month' | transloco }}</th>
-            <th scope="col">{{ year() }}</th>
-            <th scope="col">{{ year() - 1 }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (name of months(); track $index) {
+      <app-table-scroll
+        [label]="'widgets.race.title' | transloco: { year: year(), previous: year() - 1 }"
+      >
+        <table class="analytics-table" data-testid="race-widget-table">
+          <caption>
+            {{
+              'widgets.race.title' | transloco: { year: year(), previous: year() - 1 }
+            }}
+          </caption>
+          <thead>
             <tr>
-              <th scope="row">{{ name }}</th>
-              <td>{{ $index < thisYear().length ? thisYear()[$index] : '' }}</td>
-              <td>{{ lastYear()[$index] }}</td>
+              <th scope="col">{{ 'widgets.month' | transloco }}</th>
+              <th scope="col">{{ year() }}</th>
+              <th scope="col">{{ year() - 1 }}</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (name of months(); track $index) {
+              <tr>
+                <th scope="row">{{ name }}</th>
+                <td>{{ $index < thisYear().length ? thisYear()[$index] : '' }}</td>
+                <td>{{ lastYear()[$index] }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-table-scroll>
     } @else {
       <p class="race__span">{{ span() }}</p>
       <div class="race__score" data-testid="race-score">

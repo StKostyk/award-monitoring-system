@@ -38,6 +38,7 @@ const HIGHLIGHT_LIMIT = 4;
 const UNIVERSITY_LABELS: ComparisonLabels = {
   caption: 'universityAnalytics.sections.comparison',
   levelRow: 'universityAnalytics.comparison.universityLevel',
+  total: 'universityAnalytics.comparison.universityTotal',
 };
 
 /** Analytics of the whole university for a period as a bento page (W3 A). */

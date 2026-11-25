@@ -164,6 +164,81 @@ test.describe('unit analytics', () => {
     await expect(page.getByTestId('section-highlights')).toContainText('Highlights');
   });
 
+  test('9.7 ac2_1 ac2_2 ac2_4 shows the trend and the comparison as spreadsheet tables with the api numbers', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.dean);
+    const response = page.waitForResponse(
+      (candidate) =>
+        candidate.url().includes(`/api/v1/analytics/units/${FMI}?`) &&
+        candidate.request().method() === 'GET',
+    );
+    await page.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
+    const report = (await (await response).json()) as UnitReport;
+
+    await page
+      .locator('app-pane', { has: page.getByTestId('unit-trend-multiples') })
+      .getByTestId('pane-view-table')
+      .click();
+    const grid = page.getByTestId('unit-trend-table');
+    await expect(grid.locator('thead th')).toHaveText([
+      'Підрозділ',
+      ...report.byYear.map((entry) => String(entry.year)),
+      'Разом',
+    ]);
+    const yearTotals = report.byYear.map((entry) => String(entry.total));
+    const sum = report.byYear.reduce((total, entry) => total + entry.total, 0);
+    await expect(grid.getByTestId('year-grid-totals').locator('td')).toHaveText([
+      ...yearTotals,
+      String(sum),
+    ]);
+    await expect(page.getByTestId('year-grid-running')).toHaveCount(0);
+
+    await page
+      .locator('app-pane', { has: page.getByTestId('comparison-table') })
+      .getByTestId('pane-view-table')
+      .click();
+    const full = page.getByTestId('comparison-full-table');
+    await expect(full.locator('thead tr').first().locator('th')).toHaveText([
+      'Підрозділ',
+      'Нагороди',
+      'Люди',
+    ]);
+    const total = page.getByTestId('comparison-full-total');
+    await expect(total.locator('th')).toHaveText('Увесь факультет');
+    await expect(total.locator('td').first()).toHaveText(String(report.totals.approved.current));
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
+  test('9.7 ac2_3 pins the unit column on a phone with the newest year first and a scroll caption', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.dean);
+    await page.setViewportSize({ width: 360, height: 800 });
+    const year = new Date().getFullYear();
+    await page.goto(`/analytics/units/${FMI}?from=${year - 5}&to=${year}`);
+    await page
+      .locator('app-pane', { has: page.getByTestId('unit-trend-multiples') })
+      .getByTestId('pane-view-table')
+      .click();
+
+    const grid = page.getByTestId('unit-trend-table');
+    await expect(grid.getByTestId('year-grid-year').first()).toHaveText(`${year}*`);
+    await expect(page.getByTestId('year-grid-running')).toContainText('рік триває');
+    const area = page.getByTestId('table-scroll').filter({ has: grid });
+    await expect(area).toHaveAttribute('tabindex', '0');
+    await expect(area).toHaveAttribute('aria-label', /Нагороди за роками/);
+    await expect(page.getByTestId('table-scroll-hint')).toHaveText(/\d з 6 років — гортайте →/);
+
+    const pinned = grid.locator('tbody th').first();
+    const before = await pinned.boundingBox();
+    await area.evaluate((node) => node.scrollBy({ left: 200 }));
+    await expect.poll(() => area.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+    expect(Math.abs((await pinned.boundingBox())!.x - before!.x)).toBeLessThan(1);
+    expect(await noHorizontalScroll(page)).toBe(true);
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
   test('ac3_6 downloads the shown period as PDF, Excel and CSV', async ({ browser }) => {
     const page = await signedIn(browser, SEED.dean);
     await page.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
@@ -270,5 +345,6 @@ test.describe('unit analytics', () => {
 
 interface UnitReport {
   totals: { approved: { current: number } };
+  byYear: { year: number; total: number }[];
   units: { unit: { id: number }; approved: { current: number } }[];
 }

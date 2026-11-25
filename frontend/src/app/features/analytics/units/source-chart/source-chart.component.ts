@@ -11,13 +11,14 @@ import {
 } from '../../../../shared/charts/chart-style';
 import { ChartThemeService } from '../../../../shared/charts/chart-theme.service';
 import { UnitAnalytics } from '../unit-analytics.service';
+import { TableScrollComponent } from '../../../../shared/widgets/table-scroll.component';
 
 const LABEL_WIDTH = 160;
 
 /** Approved awards per awarding organisation, the largest 12 as bars and the rest in one "Other" bar. */
 @Component({
   selector: 'app-source-chart',
-  imports: [ChartComponent, TranslocoPipe],
+  imports: [ChartComponent, TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './source-chart.component.html',
 })

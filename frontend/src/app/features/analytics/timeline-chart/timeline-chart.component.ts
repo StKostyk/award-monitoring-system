@@ -12,6 +12,7 @@ import { IconComponent } from '../../../shared/icons/icon.component';
 import { KyivDatePipe } from '../../../shared/kyiv-date.pipe';
 import { RECOGNITION_LEVELS, awardTitle, categoryName } from '../../awards/awards.service';
 import { TimelineEntry } from '../analytics.service';
+import { TableScrollComponent } from '../../../shared/widgets/table-scroll.component';
 
 const MARKER_SIZE = 12;
 const AXIS_PADDING_MS = 60 * 24 * 60 * 60 * 1000;
@@ -19,7 +20,14 @@ const AXIS_PADDING_MS = 60 * 24 * 60 * 60 * 1000;
 /** Every counted award on a time axis by level; a point or a table row opens the award. */
 @Component({
   selector: 'app-timeline-chart',
-  imports: [ChartComponent, KyivDatePipe, IconComponent, RouterLink, TranslocoPipe],
+  imports: [
+    ChartComponent,
+    IconComponent,
+    KyivDatePipe,
+    RouterLink,
+    TableScrollComponent,
+    TranslocoPipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './timeline-chart.component.html',
 })

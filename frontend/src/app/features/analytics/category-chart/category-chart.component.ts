@@ -12,6 +12,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { PaneComponent } from '../../../shared/layout/pane.component';
 import { BarListComponent, BarRow } from '../../../shared/widgets/bar-list.component';
 import { CategoryRef, categoryName } from '../../awards/awards.service';
+import { TableScrollComponent } from '../../../shared/widgets/table-scroll.component';
 
 const TOP_CARDS = 3;
 const PERCENT = 100;
@@ -56,7 +57,7 @@ export function categoryRows(
 /** W1 / D: the three most frequent categories as cards, the rest as a ranked list of bars. */
 @Component({
   selector: 'app-category-chart',
-  imports: [BarListComponent, TranslocoPipe],
+  imports: [BarListComponent, TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './category-chart.component.html',
   styleUrl: './category-chart.component.scss',

@@ -9,13 +9,14 @@ import { ChartThemeService } from '../../../shared/charts/chart-theme.service';
 import { kyivDateTime } from '../../../shared/date-format';
 import { RetentionRun } from '../compliance.service';
 import { runDurations } from './run-durations';
+import { TableScrollComponent } from '../../../shared/widgets/table-scroll.component';
 
 const CHART_HEIGHT = 220;
 
 /** The duration in seconds of the newest finished retention runs, a run that failed in the error colour. */
 @Component({
   selector: 'app-run-durations',
-  imports: [ChartComponent, TranslocoPipe],
+  imports: [ChartComponent, TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-chart
@@ -24,34 +25,36 @@ const CHART_HEIGHT = 220;
       [height]="height"
       data-testid="run-durations"
     >
-      <table class="analytics-table" data-testid="run-durations-table">
-        <caption>
-          {{
-            'compliance.retention.durations' | transloco
-          }}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">{{ 'compliance.retention.started' | transloco }}</th>
-            <th scope="col">{{ 'compliance.retention.seconds' | transloco }}</th>
-            <th scope="col">{{ 'compliance.columns.outcome' | transloco }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (bar of bars(); track bar.id) {
-            <tr data-testid="run-duration-row" [attr.data-failed]="bar.failed">
-              <th scope="row">{{ bar.label }}</th>
-              <td>{{ bar.seconds }}</td>
-              <td>
-                {{
-                  (bar.failed ? 'compliance.retention.failed' : 'compliance.retention.ok')
-                    | transloco
-                }}
-              </td>
+      <app-table-scroll [label]="'compliance.retention.durations' | transloco">
+        <table class="analytics-table" data-testid="run-durations-table">
+          <caption>
+            {{
+              'compliance.retention.durations' | transloco
+            }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">{{ 'compliance.retention.started' | transloco }}</th>
+              <th scope="col">{{ 'compliance.retention.seconds' | transloco }}</th>
+              <th scope="col">{{ 'compliance.columns.outcome' | transloco }}</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (bar of bars(); track bar.id) {
+              <tr data-testid="run-duration-row" [attr.data-failed]="bar.failed">
+                <th scope="row">{{ bar.label }}</th>
+                <td>{{ bar.seconds }}</td>
+                <td>
+                  {{
+                    (bar.failed ? 'compliance.retention.failed' : 'compliance.retention.ok')
+                      | transloco
+                  }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-table-scroll>
     </app-chart>
   `,
 })
