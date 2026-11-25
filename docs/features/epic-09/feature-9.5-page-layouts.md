@@ -345,9 +345,9 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
 17. Sign in as `gdpr`, open `/compliance`. Expected: the three sections with their counts on the left; retention
     selected with the policies and the last seven runs as bars; a failed run in the error colour. Select «Юридичні
     утримання» and reload: the URL holds `?tab=holds` and the section stays selected. (AC-7.1, AC-7.2)
-18. Sign in as `dean.fmi`, open `/delegations`, select the delegation to the secretary. Expected: period with days
-    left, reason, the can and cannot lines in Ukrainian and in English, «Відкликати»; the URL holds
-    `?delegation=<id>`. At 360 px the pane shows alone with «До списку». (AC-7.3, AC-7.4)
+18. Sign in as `dean.fmi`, open `/delegations`, find the card of the delegation to the secretary (since 9.7.6 the
+    page is a status board, no pane). Expected: period with days left, reason, «Межі повноважень» opening the can
+    and cannot lines in Ukrainian and in English, «Відкликати». At 360 px the columns stack. (AC-7.3, AC-7.4)
 19. Run the axe scan on every page above at 1280 in both schemes. Expected: no serious finding and no `region`.
     (AC-1.7)
 20. Open the trend widget of the Hall of Fame as `dean.fmi` at 360 in English. Expected: the last bar's annotation
@@ -361,7 +361,7 @@ to the secretary. Widths 360 and 1280, both schemes, both languages for the step
     `POST /users/<id>/roles` with `updateOrganization` answers 409 `membership-already-confirmed`.
 23. Hidden in state: open `/reviews?request=<id>` of a request returned to its submitter. Expected: no decision
     buttons; `POST /awards/<id>/decisions` answers 404 (a returned request is no longer pending for the reviewer).
-24. Hidden in state: select a revoked or expired delegation, or one received. Expected: no «Відкликати»; `DELETE
+24. Hidden in state: a revoked or expired delegation card, or a received one. Expected: no «Відкликати»; `DELETE
     /delegations/<id>` of the revoked one answers 409. A planned (upcoming) given delegation keeps «Відкликати».
 25. Two browsers as `secretary.fmi` and `dean.fmi` with the same request selected; the dean decides it first.
     Expected: the secretary's next refresh clears the selection with a snack bar; deciding from the stale pane
