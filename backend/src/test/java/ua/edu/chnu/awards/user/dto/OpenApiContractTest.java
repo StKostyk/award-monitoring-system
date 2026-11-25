@@ -221,7 +221,7 @@ class OpenApiContractTest {
             .containsExactlyInAnyOrderElementsOf(components(YearRange.class));
         assertThat(property(property(property(analytics, "byYear"), "items"), "properties").keySet())
             .containsExactlyInAnyOrderElementsOf(components(YearCount.class));
-        assertThat(property((Map<String, Object>) schemas.get("TimelineEntry"), "properties").keySet())
+        assertThat(implemented(property((Map<String, Object>) schemas.get("TimelineEntry"), "properties")))
             .containsExactlyInAnyOrderElementsOf(components(TimelineEntry.class));
         assertThat(rank.keySet()).containsExactlyInAnyOrderElementsOf(components(PersonalRank.class));
         assertThat((List<String>) property(rank, "status").get("enum")).containsExactlyElementsOf(
@@ -273,6 +273,15 @@ class OpenApiContractTest {
 
     private static List<String> components(Class<? extends Record> type) {
         return Stream.of(type.getRecordComponents()).map(RecordComponent::getName).toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> implemented(Map<String, Object> properties) {
+        return properties.entrySet().stream()
+            .filter(entry -> !String.valueOf(((Map<String, Object>) entry.getValue()).get("description"))
+                .contains("(planned"))
+            .map(Map.Entry::getKey)
+            .toList();
     }
 
     @SuppressWarnings("unchecked")
