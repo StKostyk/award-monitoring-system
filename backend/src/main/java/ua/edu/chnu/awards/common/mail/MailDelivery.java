@@ -24,8 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Sends emails one at a time as {@code multipart/alternative}: the plain text and its HTML rendering in the brand
- * layout. A failed send is retried twice before it is logged and thrown, so that the event publication of the
- * calling listener stays incomplete.
+ * layout; a notification the recipient can switch off names the preferences page in {@code List-Unsubscribe}. A
+ * failed send is retried twice before it is logged and thrown, so that the event publication of the calling listener
+ * stays incomplete.
  */
 @Component
 @Slf4j
@@ -35,6 +36,7 @@ public class MailDelivery {
     private static final long[] PAUSE_MS = {2_000, 5_000};
     private static final String UTF_8 = StandardCharsets.UTF_8.name();
     private static final String INVALID_DOMAIN = ".invalid";
+    private static final String LIST_UNSUBSCRIBE = "List-Unsubscribe";
 
     /** One conversation with the SMTP server at a time; parallel sends make it drop connections. */
     private final Lock smtp = new ReentrantLock();
@@ -152,6 +154,9 @@ public class MailDelivery {
             MimeBodyPart page = new MimeBodyPart();
             page.setContent(html.render(subject, content), "text/html; charset=UTF-8");
             message.setContent(new MimeMultipart("alternative", text, page));
+            if (content.preferencesLink()) {
+                message.setHeader(LIST_UNSUBSCRIBE, "<" + html.preferencesUrl() + ">");
+            }
             message.saveChanges();
         } catch (MessagingException e) {
             throw new MailPreparationException(e);

@@ -16,12 +16,14 @@ test.describe('privacy notice', () => {
     await page.goto('/privacy-notice');
     await expect(page.getByTestId('notice-text')).toContainText('Хто відповідає за обробку');
     await expect(page.getByTestId('notice-text')).toContainText('gdpr@chnu.edu.ua');
+    await expect(page.getByTestId('notice-text')).toContainText('Файли cookie та сховище браузера');
     await expect(page.getByTestId('notice-acknowledge')).toHaveCount(0);
     expect(await seriousViolations(page)).toEqual([]);
 
     await page.getByTestId('notice-version').click();
-    await expect(page.getByRole('option')).toHaveCount(1);
-    await expect(page.getByRole('option')).toContainText('1.0 · 15.10.2026');
+    await expect(page.getByRole('option')).toHaveCount(2);
+    await expect(page.getByRole('option').nth(0)).toContainText('1.1 · 26.11.2026');
+    await expect(page.getByRole('option').nth(1)).toContainText('1.0 · 15.10.2026');
     await page.keyboard.press('Escape');
 
     await toggleLanguage(page);
@@ -45,7 +47,7 @@ test.describe('privacy notice', () => {
     await page.click('button[type="submit"]');
 
     await expect(page).toHaveURL(/\/privacy-notice\?acknowledge=true&returnUrl=%2Fnotifications/);
-    await expect(page.getByTestId('notice-acknowledge-hint')).toContainText('1.0');
+    await expect(page.getByTestId('notice-acknowledge-hint')).toContainText('1.1');
     await expect(page.getByTestId('notice-text')).toContainText('Хто відповідає за обробку');
     expect(await seriousViolations(page)).toEqual([]);
     await page.getByTestId('notice-acknowledge').click();
@@ -59,5 +61,23 @@ test.describe('privacy notice', () => {
         `select count(*) from consent_records where consent_type = 'DATA_PROCESSING' and user_id = ${userId}`,
       ),
     ).toBe('1');
+  });
+
+  test('ac10_2 the terms of use open without an account and the sign-in page links them', async ({
+    page,
+  }) => {
+    await page.goto('/terms');
+    await expect(page.getByTestId('terms-text')).toContainText('Про систему');
+    await expect(page.getByTestId('terms-text')).toContainText('Версія 1.0');
+    expect(await seriousViolations(page)).toEqual([]);
+    await page.getByTestId('terms-privacy-link').click();
+    await expect(page).toHaveURL(/\/privacy-notice$/);
+    await expect(page.getByTestId('notice-terms-link')).toHaveAttribute('href', '/terms');
+
+    await page.goto('http://localhost:8080/login');
+    await expect(page.locator('.signin-footer a[href$="/terms"]')).toHaveText('Умови користування');
+    await expect(page.locator('.signin-footer a[href$="/privacy-notice"]')).toHaveText(
+      'Конфіденційність',
+    );
   });
 });

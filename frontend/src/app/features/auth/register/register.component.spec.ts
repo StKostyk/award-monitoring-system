@@ -206,6 +206,13 @@ describe('RegisterComponent', () => {
     http.expectNone(`${environment.apiUrl}/auth/register`);
   });
 
+  it('ac10_2_links_the_terms_of_use_beside_the_notice', () => {
+    const terms = fixture.nativeElement.querySelector('[data-testid="terms-link"]');
+
+    expect(terms.getAttribute('href')).toBe('/terms');
+    expect(terms.getAttribute('target')).toBe('_blank');
+  });
+
   it('ac1_3 asks to tick the box again when the notice changed while the form was open', () => {
     fixture.componentInstance.form.setValue({
       email: 'new.user@chnu.edu.ua',

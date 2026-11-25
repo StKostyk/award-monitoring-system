@@ -64,10 +64,11 @@ class ConsentFT extends AbstractFunctionalTest {
     @Test
     void ac12_theNoticeVersionIsOpenToEveryone() {
         RestAssured.given().get("/api/v1/public/privacy-notice").then().statusCode(HttpStatus.OK.value())
-            .body("version", equalTo("1.0"))
-            .body("publishedOn", equalTo("2026-10-15"))
-            .body("versions", hasSize(1))
-            .body("versions[0].version", equalTo("1.0"));
+            .body("version", equalTo("1.1"))
+            .body("publishedOn", equalTo("2026-11-26"))
+            .body("versions", hasSize(2))
+            .body("versions[0].version", equalTo("1.1"))
+            .body("versions[1].version", equalTo("1.0"));
     }
 
     @Test
@@ -75,7 +76,7 @@ class ConsentFT extends AbstractFunctionalTest {
         RestAssured.given().get(CONSENTS).then().statusCode(HttpStatus.UNAUTHORIZED.value());
 
         as(tokenOf(PERSON)).get(CONSENTS).then().statusCode(HttpStatus.OK.value())
-            .body("notice.currentVersion", equalTo("1.0"))
+            .body("notice.currentVersion", equalTo("1.1"))
             .body("notice.acknowledgedVersion", nullValue())
             .body("notice.acknowledgementRequired", equalTo(true))
             .body("consents", hasSize(1))
@@ -91,12 +92,14 @@ class ConsentFT extends AbstractFunctionalTest {
         acknowledge(token, "0.9").then().statusCode(HttpStatus.UNPROCESSABLE_ENTITY.value())
             .body("errors[0].field", equalTo("version"))
             .body("errors[0].code", equalTo("outdated"));
-        acknowledge(token, "1.0").then().statusCode(HttpStatus.OK.value())
-            .body("notice.acknowledgedVersion", equalTo("1.0"))
+        acknowledge(token, "1.0").then().statusCode(HttpStatus.UNPROCESSABLE_ENTITY.value())
+            .body("errors[0].code", equalTo("outdated"));
+        acknowledge(token, "1.1").then().statusCode(HttpStatus.OK.value())
+            .body("notice.acknowledgedVersion", equalTo("1.1"))
             .body("notice.acknowledgedAt", notNullValue())
             .body("notice.acknowledgementRequired", equalTo(false))
             .body("history", hasSize(1));
-        acknowledge(token, "1.0").then().statusCode(HttpStatus.OK.value()).body("history", hasSize(1));
+        acknowledge(token, "1.1").then().statusCode(HttpStatus.OK.value()).body("history", hasSize(1));
 
         assertThat(auditCount("PRIVACY_NOTICE_ACKNOWLEDGED")).isEqualTo(1);
     }

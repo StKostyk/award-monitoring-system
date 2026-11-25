@@ -181,7 +181,7 @@ class ClaimFT extends AbstractFunctionalTest {
     private static Response register(String email, String firstName, String lastName, long organizationId) {
         return RestAssured.given().contentType(ContentType.JSON)
             .body(Map.of("email", email, "password", PASSWORD, "firstName", firstName, "lastName", lastName,
-                "organizationId", organizationId, "privacyNoticeVersion", "1.0"))
+                "organizationId", organizationId, "privacyNoticeVersion", "1.1"))
             .post("/api/v1/auth/register");
     }
 

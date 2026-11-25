@@ -28,7 +28,7 @@ export const SEED = {
 export const FRESH_PASSWORD = 'correct-horse-battery';
 
 /** The privacy notice version the backend serves as current (`app.privacy.notice-version`). */
-export const NOTICE_VERSION = '1.0';
+export const NOTICE_VERSION = '1.1';
 
 /** The app-wide notice shown while the server cannot be reached. */
 export const OFFLINE_NOTICE =

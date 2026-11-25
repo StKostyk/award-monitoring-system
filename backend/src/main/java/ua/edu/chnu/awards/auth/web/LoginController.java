@@ -48,7 +48,8 @@ public class LoginController {
         model.addAttribute("error", error == null ? null : "login.error." + knownCode(error));
         model.addAttribute("registerUrl", properties.frontendUrl() + "/register");
         model.addAttribute("forgotPasswordUrl", properties.frontendUrl() + "/forgot-password");
-        model.addAttribute("privacyUrl", properties.frontendUrl() + "/privacy");
+        model.addAttribute("privacyUrl", properties.frontendUrl() + "/privacy-notice");
+        model.addAttribute("termsUrl", properties.frontendUrl() + "/terms");
         return "login";
     }
 

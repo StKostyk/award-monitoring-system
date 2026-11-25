@@ -34,6 +34,7 @@
 <footer class="signin-footer" th:fragment="footer">
     <span th:text="${#messages.msg('brand.' + @loginBrand.id + '.organization')}">University</span>
     <a th:if="${privacyUrl}" th:href="${privacyUrl}" th:text="#{signin.privacy}">Privacy</a>
+    <a th:if="${termsUrl}" th:href="${termsUrl}" th:text="#{signin.terms}">Terms of use</a>
 </footer>
 </body>
 </html>

@@ -61,7 +61,8 @@ class LoginPageFT extends AbstractFunctionalTest {
         assertThat(page)
             .contains("signin--catalogue", "/login-assets/signin-catalogue.css", "catalogue-card--today")
             .contains("ЦИТАТА ДНЯ", "Каталог досягнень університету", "name=\"password\"")
-            .contains("http://localhost:4200/privacy", "Конфіденційність")
+            .contains("href=\"http://localhost:4200/privacy-notice\"", "Конфіденційність")
+            .contains("href=\"http://localhost:4200/terms\"", "Умови користування")
             .doesNotContain("signin-sky.css", "signin-rushnyk.css", "login-award-count");
         assertThat(page.split("catalogue-card--today", -1)).hasSize(3);
     }
