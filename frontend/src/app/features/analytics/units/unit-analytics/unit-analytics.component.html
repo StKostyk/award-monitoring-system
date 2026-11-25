@@ -124,7 +124,11 @@
               chartLabel="charts.ranking"
               data-testid="section-comparison"
             >
-              <app-unit-comparison [rows]="data.units" [period]="shownPeriod()" />
+              <app-unit-comparison
+                [rows]="data.units"
+                [period]="shownPeriod()"
+                [totals]="data.totals"
+              />
             </app-pane>
           }
 

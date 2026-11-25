@@ -87,7 +87,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 5za | 9.7.5 Users list that splits on select | 9.7 | 3 | SCRUM-185 | #503 | no | To do |
 | 5za | 9.7.4 Unit analytics rail and clickable top performers | 9.7 | 3 | SCRUM-184 | #502 | no | To do |
 | 5za | 9.7.3 Timeline as a journey road and a dated feed | 9.7 | 3 | SCRUM-183 | #501 | no | To do |
-| 5za | 9.7.2 Spreadsheet tables in widgets | 9.7 | 3 | SCRUM-182 | #500 | no | To do |
+| 5za | 9.7.2 Spreadsheet tables in widgets | 9.7 | 3 | SCRUM-182 | #500 | no | In review |
 | 5za | 9.7.1 Sign-in themes, quote of the day and logo mark 9 | 9.7 | 5 | SCRUM-181 | #499 | no | In review |
 | 5za | 9.6.7 Remaining pages of the all-pages canvas | 9.6 | 3 | SCRUM-180 | #491 | no | Done |
 | 5za | 9.6.6 Profile with sections | 9.6 | 3 | SCRUM-179 | #490 | no | Done |

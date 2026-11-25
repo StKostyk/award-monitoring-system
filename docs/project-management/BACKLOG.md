@@ -229,7 +229,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.6.6 | Profile with sections | 3 | ✅ Done | SCRUM-179 | [#490](https://github.com/StKostyk/award-monitoring-system/issues/490) |
 | 9.6.7 | Remaining pages of the all-pages canvas | 3 | ✅ Done | SCRUM-180 | [#491](https://github.com/StKostyk/award-monitoring-system/issues/491) |
 | 9.7.1 | Sign-in themes, quote of the day and logo mark 9 | 5 | 👀 In review (11) | SCRUM-181 | [#499](https://github.com/StKostyk/award-monitoring-system/issues/499) |
-| 9.7.2 | Spreadsheet tables in widgets | 3 | 11 | SCRUM-182 | [#500](https://github.com/StKostyk/award-monitoring-system/issues/500) |
+| 9.7.2 | Spreadsheet tables in widgets | 3 | 👀 In review (11) | SCRUM-182 | [#500](https://github.com/StKostyk/award-monitoring-system/issues/500) |
 | 9.7.3 | Timeline as a journey road and a dated feed | 3 | 11 | SCRUM-183 | [#501](https://github.com/StKostyk/award-monitoring-system/issues/501) |
 | 9.7.4 | Unit analytics rail and clickable top performers | 3 | 11 | SCRUM-184 | [#502](https://github.com/StKostyk/award-monitoring-system/issues/502) |
 | 9.7.5 | Users list that splits on select | 3 | 11 | SCRUM-185 | [#503](https://github.com/StKostyk/award-monitoring-system/issues/503) |

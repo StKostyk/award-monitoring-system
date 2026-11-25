@@ -7,6 +7,7 @@ import { PaneComponent } from '../layout/pane.component';
 import { BarListComponent, BarRow } from './bar-list.component';
 import { peakYear } from './facts';
 import { YearTotal } from './widget-data';
+import { TableScrollComponent } from './table-scroll.component';
 
 /** A year of T1 with what marks it. */
 export interface TrendRow extends YearTotal {
@@ -27,42 +28,44 @@ export function trendRows(years: YearTotal[], partialYear: number | null): Trend
 /** T1: awards per year as thick horizontal bars, the running year hatched; a table in the pane's table view. */
 @Component({
   selector: 'app-trend-widget',
-  imports: [BarListComponent, EmptyStateComponent, TranslocoPipe],
+  imports: [BarListComponent, EmptyStateComponent, TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (!peak()) {
       <app-empty-state icon="chart-bar" [text]="'widgets.empty' | transloco" />
     } @else if (table()) {
-      <table class="analytics-table" data-testid="trend-widget-table">
-        <caption>
-          {{
-            'widgets.trend.title' | transloco
-          }}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">{{ 'widgets.year' | transloco }}</th>
-            <th scope="col">{{ 'widgets.awards' | transloco }}</th>
-            <th scope="col">{{ 'widgets.note' | transloco }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rows(); track row.year) {
+      <app-table-scroll [label]="'widgets.trend.title' | transloco">
+        <table class="analytics-table" data-testid="trend-widget-table">
+          <caption>
+            {{
+              'widgets.trend.title' | transloco
+            }}
+          </caption>
+          <thead>
             <tr>
-              <th scope="row">{{ row.year }}</th>
-              <td>{{ row.total }}</td>
-              <td>
-                @if (row.peak) {
-                  {{ 'widgets.trend.peak' | transloco }}
-                }
-                @if (row.partial) {
-                  {{ 'widgets.trend.partial' | transloco }}
-                }
-              </td>
+              <th scope="col">{{ 'widgets.year' | transloco }}</th>
+              <th scope="col">{{ 'widgets.awards' | transloco }}</th>
+              <th scope="col">{{ 'widgets.note' | transloco }}</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.year) {
+              <tr>
+                <th scope="row">{{ row.year }}</th>
+                <td>{{ row.total }}</td>
+                <td>
+                  @if (row.peak) {
+                    {{ 'widgets.trend.peak' | transloco }}
+                  }
+                  @if (row.partial) {
+                    {{ 'widgets.trend.partial' | transloco }}
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-table-scroll>
     } @else {
       <app-bar-list
         data-testid="trend-widget-bars"

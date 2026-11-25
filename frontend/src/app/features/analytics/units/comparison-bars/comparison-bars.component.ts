@@ -11,6 +11,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { withOther } from '../../../../shared/charts/chart-style';
 import { PaneComponent } from '../../../../shared/layout/pane.component';
+import { TableScrollComponent } from '../../../../shared/widgets/table-scroll.component';
 
 /** One row of a current-against-previous comparison. */
 export interface ComparisonRow {
@@ -26,7 +27,7 @@ const MIN_BAR_PERCENT = 4;
 /** W2 A: two thick bars per row, the previous period muted above the current one; beyond 12 rows one "Other" pair. */
 @Component({
   selector: 'app-comparison-bars',
-  imports: [TranslocoPipe],
+  imports: [TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './comparison-bars.component.html',
   styleUrl: './comparison-bars.component.scss',

@@ -391,8 +391,11 @@ draft wording and get the merged i18n text at the validation.
    dashboard (AC-1.8).
 8. With `APP_BRAND=neutral`: `/login`, the sidebar and the browser tab. Expected: mark 9, top step gold (AC-1.7).
 9. As `dean.fmi`, unit analytics of the faculty (unit 9), «Нагороди за роками» → «Таблиця». Expected: full grid,
-   row and column totals, «Разом», «2026*» with «рік триває» (AC-2.1).
-10. «Порівняння кафедр» → «Таблиця». Expected: two-level headers «Нагороди» and «Люди», faculty total last (AC-2.2).
+   row and column totals, «Разом», «2026*» with «рік триває» (AC-2.1). As `rector`, `/analytics/university`, the
+   same widget → «Таблиця». Expected: one row per faculty plus «Рівень університету» when it has awards, the
+   «Разом» row equal to the chart's columns, the projection line under the grid.
+10. «Порівняння кафедр» → «Таблиця». Expected: two-level headers «Нагороди» (Усього, Зміна, Верифік.) and «Люди»
+    (Нагороджені, Працівники, На 100 прац.), «Увесь факультет» last; sorting by every column still works (AC-2.2).
 11. Same tables at 360. Expected: pinned first column, newest year first, «N з M років — гортайте →», Tab reaches
     the scroll area (AC-2.3); numbers equal the chart (AC-2.4).
 12. Unit analytics at 1280, scroll. Expected: header scrolls away, rail stays (AC-4.1); no comparison paragraph,

@@ -1973,7 +1973,14 @@
       "verified": "Verified",
       "facultyLevel": "Faculty level",
       "inactive": "inactive",
-      "perHundredShort": "Per 100"
+      "perHundredShort": "Per 100",
+      "awardsGroup": "Awards",
+      "peopleGroup": "People",
+      "approvedShort": "Total",
+      "verifiedShort": "Verified",
+      "awardedShort": "Awarded",
+      "perHundredGroup": "Per 100 staff",
+      "facultyTotal": "Whole faculty"
     },
     "bars": {
       "current": "This period",
@@ -2019,7 +2026,8 @@
       "faculties": "Faculties"
     },
     "comparison": {
-      "universityLevel": "University level"
+      "universityLevel": "University level",
+      "universityTotal": "Whole university"
     },
     "projection": {
       "approved": "Approved awards",
@@ -2150,6 +2158,11 @@
     "level": "Level",
     "awards": "Awards",
     "note": "Note",
+    "table": {
+      "total": "Total",
+      "scrollHint": "{{shown}} of {{total}} years — scroll →",
+      "scrollLabel": "{{caption}}: table, scrolls sideways"
+    },
     "kpi": {
       "up": "up {{percent}}",
       "down": "down {{percent}}",
