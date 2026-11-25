@@ -359,7 +359,7 @@ Written as stubs with `x-status: planned` in this PRD's PR:
 | AC-2.1 to AC-2.4 | widget table: borders, totals, grouped header, pinned column, year order on phones | - | `analytics.spec.ts`: table matches the API numbers, 360 scroll caption |
 | AC-3.1 | `PersonalAnalyticsServiceTest` | `AwardStatisticsIT`, `PersonalAnalyticsFT` (`level` per entry) | - |
 | AC-3.2 to AC-3.4 | road and feed by width, level filter | - | `dashboard.spec.ts`: road at 1280, feed at 360, link opens the award |
-| AC-4.1 to AC-4.4 | rail, caption, performer card | - | `analytics.spec.ts`: performer link opens the portfolio |
+| AC-4.1 to AC-4.4 | `split` sticky side, `delta-tiles` caption, `year-grid` without footnote, `top-performers` card (latest awards, count only, Escape) | - | `unit-analytics.spec.ts`: rail stays in view, performer link opens the portfolio by keyboard |
 | AC-5.1 | `UserServiceTest` | `UserAdminIT` (`lastLoginAt`) | - |
 | AC-5.2 to AC-5.4 | list modes, URL selection | - | `people.spec.ts`: full table, split, close |
 | AC-6.1 to AC-6.3 | columns by state, actions | - | `delegations.spec.ts`: board, revoke from a card |
@@ -400,8 +400,9 @@ draft wording and get the merged i18n text at the validation.
     the scroll area (AC-2.3); numbers equal the chart (AC-2.4).
 12. Unit analytics at 1280, scroll. Expected: header scrolls away, rail stays (AC-4.1); no comparison paragraph,
     «до 2017–2021» under each change, no subtitle on «Нагороди за роками» (AC-4.2).
-13. Hover and then Tab to «Найкращі» row 1, Enter. Expected: hover card with three latest awards, then the person's
-    portfolio (AC-4.3).
+13. Hover and then Tab to «Найкращі» row 1, Enter. Expected: hover card with the name, unit, «Нагород за період: N»
+    and up to three latest public awards (none listed when every award is private), Escape hides it; Enter opens the
+    person's portfolio (AC-4.3). Long department names in the rail and the comparison table wrap, never cut (AC-4.4).
 14. As `employee.fmi`, My dashboard at 1280. Expected: the journey road with one milestone per award (AC-3.2);
     click one → its award page; Tab to another and Enter → its award page (AC-3.4).
 15. At 360. Expected: dated feed by year with the count per year, «Від національного» narrows it to national and

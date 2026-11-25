@@ -96,9 +96,13 @@ export function yearGrid(
                 scope="col"
                 [attr.data-year]="column.year"
                 [class.is-current]="column.current"
+                [attr.title]="column.current ? ('widgets.trend.running' | transloco) : null"
                 data-testid="year-grid-year"
               >
                 {{ column.year }}{{ column.current ? '*' : '' }}
+                @if (column.current && !footnote()) {
+                  <span class="cdk-visually-hidden">{{ 'widgets.trend.running' | transloco }}</span>
+                }
               </th>
             }
             <th scope="col" class="is-total">{{ 'widgets.table.total' | transloco }}</th>
@@ -126,7 +130,7 @@ export function yearGrid(
         </tfoot>
       </table>
     </app-table-scroll>
-    @if (running()) {
+    @if (running() && footnote()) {
       <p class="analytics-note year-grid__note" data-testid="year-grid-running">
         * {{ 'widgets.trend.running' | transloco }}
       </p>
@@ -145,6 +149,8 @@ export class YearGridComponent {
   readonly rows = input.required<YearGridRow[]>();
   /** Whether the last year is still running. */
   readonly running = input(false);
+  /** Whether a footnote explains the running year; without it, the year's header explains itself on hover. */
+  readonly footnote = input(true);
   /** The test id of the table. */
   readonly testId = input<string | null>(null);
 

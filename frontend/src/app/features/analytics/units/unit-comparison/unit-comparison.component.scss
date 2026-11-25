@@ -10,10 +10,9 @@
   }
 }
 
-@container (min-width: 720px) {
-  .comparison__table th[scope='row'] {
-    white-space: nowrap;
-  }
+.comparison__table th[scope='row'] {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .comparison__table--full {

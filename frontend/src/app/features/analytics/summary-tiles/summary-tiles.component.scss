@@ -36,6 +36,13 @@
   color: var(--mat-sys-primary);
 }
 
+.tile__against {
+  display: block;
+  margin-top: 2px;
+  font: 500 0.75rem / 1.4 var(--app-font-body);
+  color: var(--mat-sys-on-surface-variant);
+}
+
 :host(.tiles-bento) {
   .tiles {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

@@ -69,7 +69,7 @@ test.describe('unit analytics', () => {
 
     await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}$`));
     expect(await sections(page)).toEqual(FACULTY_SECTIONS);
-    await expect(page.getByTestId('unit-analytics-compared')).toContainText('у порівнянні з');
+    await expect(page.getByTestId('tile-against').first()).toContainText('до ');
     await expect(page.getByTestId('comparison-table')).toContainText('Рівень факультету');
     const trendPaths = page.getByTestId('section-trend').locator('svg path');
     await expect.poll(() => trendPaths.count()).toBeGreaterThan(AXIS_ONLY_PATHS);
@@ -82,10 +82,8 @@ test.describe('unit analytics', () => {
   }) => {
     const page = await signedIn(browser, SEED.dean);
     await page.goto(`/analytics/units/${FMI}?from=2021&to=2025`);
-    await expect(page.getByTestId('unit-analytics-compared')).toContainText(
-      '2021–2025, у порівнянні з 2016–2020.',
-    );
-    await expect(page.getByTestId('unit-analytics-compared')).not.toContainText('не завершився');
+    await expect(page.getByTestId('tile-against')).toHaveText(['до 2016–2020', 'до 2016–2020']);
+    await expect(page.getByTestId('unit-analytics-compared')).toHaveCount(0);
 
     await page.getByTestId(`comparison-row-${DAI}`).getByRole('link').click();
     await expect(page).toHaveURL(new RegExp(`/analytics/units/${DAI}\\?from=2021&to=2025$`));
@@ -223,8 +221,11 @@ test.describe('unit analytics', () => {
       .click();
 
     const grid = page.getByTestId('unit-trend-table');
-    await expect(grid.getByTestId('year-grid-year').first()).toHaveText(`${year}*`);
-    await expect(page.getByTestId('year-grid-running')).toContainText('рік триває');
+    await expect(grid.getByTestId('year-grid-year').first()).toHaveText(
+      new RegExp(`^\\s*${year}\\*\\s*рік триває$`),
+    );
+    await expect(page.getByTestId('year-grid-running')).toHaveCount(0);
+    await expect(grid.getByTestId('year-grid-year').first()).toHaveAttribute('title', 'рік триває');
     const area = page.getByTestId('table-scroll').filter({ has: grid });
     await expect(area).toHaveAttribute('tabindex', '0');
     await expect(area).toHaveAttribute('aria-label', /Нагороди за роками/);
@@ -237,6 +238,29 @@ test.describe('unit analytics', () => {
     expect(Math.abs((await pinned.boundingBox())!.x - before!.x)).toBeLessThan(1);
     expect(await noHorizontalScroll(page)).toBe(true);
     expect(await seriousViolations(page)).toEqual([]);
+  });
+
+  test('9.7 ac4_1 ac4_3 keeps the rail beside the widgets and opens a performer portfolio by keyboard', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.dean);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`/analytics/units/${FMI}`);
+    await expect(page.getByTestId('section-totals')).toBeVisible();
+    await expect(page.getByTestId('section-trend').locator('.multiples__key')).toHaveCount(0);
+
+    await page.getByTestId('section-by-source').scrollIntoViewIfNeeded();
+    await expect(page.locator('app-page-header')).not.toBeInViewport();
+    await expect(page.getByTestId('section-totals')).toBeInViewport();
+
+    const link = page.getByTestId('top-performer-link').first();
+    await link.focus();
+    const card = page.getByTestId('top-card');
+    await expect(card).toBeVisible();
+    await expect(card).toContainText('Нагород за період');
+    await expect(card).toContainText('Портфоліо →');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/public\/achievements\?person=\d+$/);
   });
 
   test('ac3_6 downloads the shown period as PDF, Excel and CSV', async ({ browser }) => {
@@ -331,9 +355,7 @@ test.describe('unit analytics', () => {
     await page.getByTestId('period-chip-year').click();
     await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}\\?from=${year}&to=${year}$`));
     await expect(page.getByTestId('period-chip-year')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByTestId('unit-analytics-compared')).toContainText(
-      `${year}, у порівнянні`,
-    );
+    await expect(page.getByTestId('tile-against').first()).toHaveText(`до ${Number(year) - 1}`);
 
     await page.getByTestId('period-chip-all').click();
     await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}$`));

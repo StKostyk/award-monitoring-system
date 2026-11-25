@@ -5,6 +5,8 @@
 
 .DESCRIPTION
     Refuses to ship when build/gate-summary.txt is missing, belongs to another branch or does not report PASS
+    (-GateFrom <branch>: a stacked story ships on the passing gate of a branch that contains it, checked with
+    git merge-base --is-ancestor)
     for the backend and the frontend (-SkipGate for documentation-only changes: nothing under backend/, and
     openapi.yml only gains operations marked "x-status: planned" with their schemas). A skipped backend counts as
     passed while the branch changes nothing under backend/ or docs/api/openapi.yml compared with -Base. The tracker row of the story
@@ -44,6 +46,7 @@ param(
     [ValidateSet('Added', 'Changed', 'Fixed', 'Removed', 'Security')]
     [string]$ChangelogSection = 'Added',
     [switch]$SkipGate,
+    [string]$GateFrom,
     [switch]$NoTracker
 )
 
@@ -78,7 +81,12 @@ if (-not $SkipGate) {
     $summary = Join-Path $root 'build/gate-summary.txt'
     if (-not (Test-Path $summary)) { throw 'No gate run found; run .\tools\gate.ps1 first.' }
     $text = Get-Content $summary -Raw
-    if ($text -notmatch "Branch:\s+$([regex]::Escape($branch))") { throw 'The last gate run belongs to another branch.' }
+    $gated = if ($GateFrom) { $GateFrom } else { $branch }
+    if ($text -notmatch "Branch:\s+$([regex]::Escape($gated))") { throw 'The last gate run belongs to another branch.' }
+    if ($GateFrom) {
+        git merge-base --is-ancestor HEAD $GateFrom
+        if ($LASTEXITCODE) { throw "$GateFrom does not contain $branch; the gate run does not cover it." }
+    }
     if ($text -notmatch 'Backend:\s+(PASS|SKIPPED)' -or
             $text -notmatch 'Frontend:.*lint PASS, tests PASS.*, prod build PASS') {
         throw "The last gate run did not pass:`n$text"

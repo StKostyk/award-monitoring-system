@@ -103,6 +103,13 @@ export class UnitTrendChartComponent {
       },
     ];
   });
+  protected readonly running = computed(() => {
+    this.language.current();
+    const analytics = this.analytics();
+    return analytics.partialYear
+      ? `${analytics.period.to}: ${this.transloco.translate('widgets.trend.running')}`
+      : null;
+  });
   protected readonly range = computed(() => {
     const years = this.years();
     return years.length > 1 ? `${years[0]}–${years.at(-1)}` : String(years[0] ?? '');

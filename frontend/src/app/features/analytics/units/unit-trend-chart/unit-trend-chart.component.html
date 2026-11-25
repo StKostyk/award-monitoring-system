@@ -5,12 +5,10 @@
     [years]="years()"
     [rows]="gridRows()"
     [running]="analytics().partialYear"
+    [footnote]="false"
     testId="unit-trend-table"
   />
 } @else {
-  @if (faculty()) {
-    <p class="multiples__key">{{ 'unitAnalytics.trend.ownScale' | transloco }}</p>
-  }
   <ul class="multiples" [class.multiples--single]="!faculty()" data-testid="unit-trend-multiples">
     @for (line of lines(); track line.id + '-' + $index) {
       <li class="multiple" data-testid="unit-trend-multiple">
@@ -23,9 +21,16 @@
         </header>
         <ol class="columns" [attr.aria-label]="line.label">
           @for (column of line.columns; track column.year) {
-            <li class="columns__item" [class.columns__item--current]="column.current">
+            <li
+              class="columns__item"
+              [class.columns__item--current]="column.current"
+              [class.columns__item--running]="column.current && running()"
+              [attr.title]="column.current ? running() : null"
+            >
               <b class="columns__count">
-                <span class="cdk-visually-hidden">{{ column.year }}:</span>
+                <span class="cdk-visually-hidden">{{
+                  column.current && running() ? running() + ',' : column.year + ':'
+                }}</span>
                 {{ column.count }}
               </b>
               <span class="columns__bar" [style.height.%]="column.height" aria-hidden="true"></span>

@@ -13,7 +13,7 @@ const ROWS: YearGridRow[] = [
   { key: 'analysis', label: 'Кафедра аналізу', counts: [4, 5, 3] },
 ];
 
-function render(phone = false, running = true): HTMLElement {
+function render(phone = false, running = true, footnote = true): HTMLElement {
   TestBed.configureTestingModule({
     imports: [YearGridComponent, NoopAnimationsModule, translations('uk')],
     providers: [
@@ -30,6 +30,7 @@ function render(phone = false, running = true): HTMLElement {
   fixture.componentRef.setInput('years', YEARS);
   fixture.componentRef.setInput('rows', ROWS);
   fixture.componentRef.setInput('running', running);
+  fixture.componentRef.setInput('footnote', footnote);
   fixture.componentRef.setInput('testId', 'grid');
   fixture.detectChanges();
   return fixture.nativeElement as HTMLElement;
@@ -75,6 +76,16 @@ describe('YearGridComponent', () => {
     expect(element.querySelectorAll('tbody td.is-current')).toHaveLength(2);
     expect(element.querySelector('[data-testid="year-grid-running"]')!.textContent).toContain(
       '* рік триває',
+    );
+  });
+
+  it('ac4_2_explains_the_running_year_on_hover_without_a_footnote', () => {
+    const element = render(false, true, false);
+
+    expect(element.querySelector('[data-testid="year-grid-running"]')).toBeNull();
+    expect(element.querySelector('thead .is-current')!.getAttribute('title')).toBe('рік триває');
+    expect(element.querySelector('thead .is-current .cdk-visually-hidden')!.textContent).toBe(
+      'рік триває',
     );
   });
 

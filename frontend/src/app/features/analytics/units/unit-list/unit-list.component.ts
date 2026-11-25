@@ -28,6 +28,7 @@ import { AnalysableUnit } from '../unit-analytics.service';
           [rowTitle]="option.whole ? ('unitAnalytics.wholeFaculty' | transloco) : option.title"
           [meta]="option.meta"
           [selected]="option.id === selected()"
+          wrap
           [routerLink]="['/analytics/units', option.id]"
           queryParamsHandling="preserve"
           [attr.data-testid]="'unit-option-' + option.id"

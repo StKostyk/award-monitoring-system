@@ -15,22 +15,36 @@
           [class]="'podium__card--' + person.rank"
           data-testid="top-podium-card"
         >
-          @if (ranked()) {
-            <span class="podium__rank">{{ person.rank }}</span>
-          }
-          <span class="avatar" aria-hidden="true">{{ person.initials }}</span>
-          <strong class="podium__name">{{ person.lastName }} {{ person.firstName }}</strong>
-          @if (person.departmentName) {
-            <span class="podium__detail">{{ person.departmentName }}</span>
-          }
-          <b class="podium__count">
-            <span class="cdk-visually-hidden">{{ 'unitAnalytics.top.awards' | transloco }}:</span>
-            {{ person.count }}
-          </b>
-          <span class="podium__detail">
-            {{ 'unitAnalytics.top.highest' | transloco }}:
-            {{ 'categories.levels.' + person.highestLevel | transloco }}
-          </span>
+          <a
+            #link
+            class="podium__link"
+            routerLink="/public/achievements"
+            [queryParams]="{ person: person.userId }"
+            [attr.aria-describedby]="card()?.person?.userId === person.userId ? 'top-card' : null"
+            (mouseenter)="show(person, link)"
+            (mouseleave)="hide(person)"
+            (focus)="focus(person, link)"
+            (blur)="blur(person)"
+            (keydown.escape)="close()"
+            data-testid="top-performer-link"
+          >
+            @if (ranked()) {
+              <span class="podium__rank">{{ person.rank }}</span>
+            }
+            <span class="avatar" aria-hidden="true">{{ person.initials }}</span>
+            <strong class="podium__name">{{ person.lastName }} {{ person.firstName }}</strong>
+            @if (person.departmentName) {
+              <span class="podium__detail">{{ person.departmentName }}</span>
+            }
+            <b class="podium__count">
+              <span class="cdk-visually-hidden">{{ 'unitAnalytics.top.awards' | transloco }}:</span>
+              {{ person.count }}
+            </b>
+            <span class="podium__detail">
+              {{ 'unitAnalytics.top.highest' | transloco }}:
+              {{ 'categories.levels.' + person.highestLevel | transloco }}
+            </span>
+          </a>
         </li>
       }
     </ol>
@@ -38,22 +52,80 @@
       <ol class="ranks" [start]="rest()[0].rank" data-testid="top-list">
         @for (person of rest(); track person.userId) {
           <li class="ranks__row" data-testid="top-list-row">
-            <em class="ranks__rank" aria-hidden="true">{{ person.rank }}</em>
-            <span class="avatar avatar--small" aria-hidden="true">{{ person.initials }}</span>
-            <span class="ranks__who">
-              <strong>{{ person.lastName }} {{ person.firstName }}</strong>
-              @if (person.departmentName) {
-                <span>{{ person.departmentName }}</span>
-              }
-            </span>
-            <b class="ranks__count">
-              <span class="cdk-visually-hidden">{{ 'unitAnalytics.top.awards' | transloco }}:</span>
-              {{ person.count }}
-            </b>
+            <a
+              #link
+              class="ranks__link"
+              routerLink="/public/achievements"
+              [queryParams]="{ person: person.userId }"
+              [attr.aria-describedby]="card()?.person?.userId === person.userId ? 'top-card' : null"
+              (mouseenter)="show(person, link)"
+              (mouseleave)="hide(person)"
+              (focus)="focus(person, link)"
+              (blur)="blur(person)"
+              (keydown.escape)="close()"
+              data-testid="top-performer-link"
+            >
+              <em class="ranks__rank" aria-hidden="true">{{ person.rank }}</em>
+              <span class="avatar avatar--small" aria-hidden="true">{{ person.initials }}</span>
+              <span class="ranks__who">
+                <strong>{{ person.lastName }} {{ person.firstName }}</strong>
+                @if (person.departmentName) {
+                  <span>{{ person.departmentName }}</span>
+                }
+              </span>
+              <b class="ranks__count">
+                <span class="cdk-visually-hidden"
+                  >{{ 'unitAnalytics.top.awards' | transloco }}:</span
+                >
+                {{ person.count }}
+              </b>
+              <span class="ranks__go" aria-hidden="true">›</span>
+            </a>
           </li>
         }
       </ol>
     }
   </div>
   <p class="analytics-note">{{ 'unitAnalytics.top.note' | transloco }}</p>
+}
+
+@if (card(); as shown) {
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="shown.origin"
+    [cdkConnectedOverlayOpen]="true"
+    [cdkConnectedOverlayPositions]="positions"
+    cdkConnectedOverlayPanelClass="top-card-pane"
+  >
+    <div class="top-card" id="top-card" role="tooltip" data-testid="top-card">
+      <div class="top-card__head">
+        <span class="avatar" aria-hidden="true">{{ shown.person.initials }}</span>
+        <span class="top-card__who">
+          <strong>{{ shown.person.lastName }} {{ shown.person.firstName }}</strong>
+          @if (shown.person.departmentName) {
+            <span>{{ shown.person.departmentName }}</span>
+          }
+        </span>
+      </div>
+      @if (shown.latest === 'loading') {
+        <p class="top-card__loading">{{ 'app.loading' | transloco }}</p>
+      } @else if (shown.latest.length > 0) {
+        <p class="top-card__label">{{ 'unitAnalytics.top.latest' | transloco }}</p>
+        <ul class="top-card__awards" data-testid="top-card-awards">
+          @for (award of shown.latest; track $index) {
+            <li>
+              <span>{{ award.title }}</span>
+              <span class="top-card__year">{{ award.year }}</span>
+            </li>
+          }
+        </ul>
+      }
+      <div class="top-card__foot">
+        <span data-testid="top-card-count">
+          {{ 'unitAnalytics.top.periodCount' | transloco: { count: shown.person.count } }}
+        </span>
+        <span class="top-card__go">{{ 'unitAnalytics.top.portfolio' | transloco }}</span>
+      </div>
+    </div>
+  </ng-template>
 }
