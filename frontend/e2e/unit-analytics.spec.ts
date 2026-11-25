@@ -69,6 +69,8 @@ test.describe('unit analytics', () => {
 
     await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}$`));
     expect(await sections(page)).toEqual(FACULTY_SECTIONS);
+    await expect(page.getByTestId(`unit-option-${FMI}`)).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByTestId('unit-option-university')).toHaveCount(0);
     await expect(page.getByTestId('tile-against').first()).toContainText('до ');
     await expect(page.getByTestId('comparison-table')).toContainText('Рівень факультету');
     const trendPaths = page.getByTestId('section-trend').locator('svg path');
@@ -320,7 +322,7 @@ test.describe('unit analytics', () => {
     await expect(side.getByTestId('tile-approved').locator('.tile__value')).toHaveText(
       String(report.totals.approved.current),
     );
-    await expect(side.getByTestId(`unit-option-${FMI}`)).toContainText('Увесь факультет');
+    await expect(side.getByTestId(`unit-option-${FMI}`)).toContainText('Факультет математики');
     await expect(side.getByTestId(`unit-option-${FMI}`)).toContainText(
       String(report.totals.approved.current),
     );

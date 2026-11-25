@@ -228,17 +228,18 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.6.5 | Hall of Fame widgets | 5 | ✅ Done | SCRUM-178 | [#489](https://github.com/StKostyk/award-monitoring-system/issues/489) |
 | 9.6.6 | Profile with sections | 3 | ✅ Done | SCRUM-179 | [#490](https://github.com/StKostyk/award-monitoring-system/issues/490) |
 | 9.6.7 | Remaining pages of the all-pages canvas | 3 | ✅ Done | SCRUM-180 | [#491](https://github.com/StKostyk/award-monitoring-system/issues/491) |
-| 9.7.1 | Sign-in themes, quote of the day and logo mark 9 | 5 | 👀 In review (11) | SCRUM-181 | [#499](https://github.com/StKostyk/award-monitoring-system/issues/499) |
-| 9.7.2 | Spreadsheet tables in widgets | 3 | 👀 In review (11) | SCRUM-182 | [#500](https://github.com/StKostyk/award-monitoring-system/issues/500) |
-| 9.7.3 | Timeline as a journey road and a dated feed | 3 | 👀 In review (11) | SCRUM-183 | [#501](https://github.com/StKostyk/award-monitoring-system/issues/501) |
-| 9.7.4 | Unit analytics rail and clickable top performers | 3 | 👀 In review (11) | SCRUM-184 | [#502](https://github.com/StKostyk/award-monitoring-system/issues/502) |
-| 9.7.5 | Users list that splits on select | 3 | 👀 In review (11) | SCRUM-185 | [#503](https://github.com/StKostyk/award-monitoring-system/issues/503) |
-| 9.7.6 | Delegations status board | 2 | 👀 In review (11) | SCRUM-186 | [#504](https://github.com/StKostyk/award-monitoring-system/issues/504) |
-| 9.7.7 | Notifications inbox with a reading pane | 3 | 👀 In review (11) | SCRUM-187 | [#505](https://github.com/StKostyk/award-monitoring-system/issues/505) |
-| 9.7.8 | Privacy control panel | 3 | 👀 In review (11) | SCRUM-188 | [#506](https://github.com/StKostyk/award-monitoring-system/issues/506) |
-| 9.7.9 | First sign-in checklist and spotlight tour | 5 | 👀 In review (11) | SCRUM-189 | [#507](https://github.com/StKostyk/award-monitoring-system/issues/507) |
-| 9.7.10 | Privacy notice storage section, terms of use and List-Unsubscribe | 3 | 👀 In review (5za) | SCRUM-190 | [#509](https://github.com/StKostyk/award-monitoring-system/issues/509) |
-| 9.7.11 | UI review fixes: logo mark 9, checklist card, unit switch in place | 3 | 👀 In review (5za) | SCRUM-191 | [#513](https://github.com/StKostyk/award-monitoring-system/issues/513) |
+| 9.7.1 | Sign-in themes, quote of the day and logo mark 9 | 5 | ✅ Done | SCRUM-181 | [#499](https://github.com/StKostyk/award-monitoring-system/issues/499) |
+| 9.7.2 | Spreadsheet tables in widgets | 3 | ✅ Done | SCRUM-182 | [#500](https://github.com/StKostyk/award-monitoring-system/issues/500) |
+| 9.7.3 | Timeline as a journey road and a dated feed | 3 | ✅ Done | SCRUM-183 | [#501](https://github.com/StKostyk/award-monitoring-system/issues/501) |
+| 9.7.4 | Unit analytics rail and clickable top performers | 3 | ✅ Done | SCRUM-184 | [#502](https://github.com/StKostyk/award-monitoring-system/issues/502) |
+| 9.7.5 | Users list that splits on select | 3 | ✅ Done | SCRUM-185 | [#503](https://github.com/StKostyk/award-monitoring-system/issues/503) |
+| 9.7.6 | Delegations status board | 2 | ✅ Done | SCRUM-186 | [#504](https://github.com/StKostyk/award-monitoring-system/issues/504) |
+| 9.7.7 | Notifications inbox with a reading pane | 3 | ✅ Done | SCRUM-187 | [#505](https://github.com/StKostyk/award-monitoring-system/issues/505) |
+| 9.7.8 | Privacy control panel | 3 | ✅ Done | SCRUM-188 | [#506](https://github.com/StKostyk/award-monitoring-system/issues/506) |
+| 9.7.9 | First sign-in checklist and spotlight tour | 5 | ✅ Done | SCRUM-189 | [#507](https://github.com/StKostyk/award-monitoring-system/issues/507) |
+| 9.7.10 | Privacy notice storage section, terms of use and List-Unsubscribe | 3 | ✅ Done | SCRUM-190 | [#509](https://github.com/StKostyk/award-monitoring-system/issues/509) |
+| 9.7.11 | UI review fixes: logo mark 9, checklist card, unit switch in place | 3 | ✅ Done | SCRUM-191 | [#513](https://github.com/StKostyk/award-monitoring-system/issues/513) |
+| 9.7.12 | One analytics page | 5 | 👀 In review (5za) | SCRUM-192 | [#514](https://github.com/StKostyk/award-monitoring-system/issues/514) |
 
 ### Later epics
 | ID | Story | Points | Epic |

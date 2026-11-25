@@ -18,6 +18,7 @@ import { readPeriod } from '../../analytics-period';
 import { AnalyticsPeriod } from '../../analytics.service';
 import { PeriodChipsComponent } from '../../period-chips/period-chips.component';
 import { PeriodSelectComponent } from '../../period-select/period-select.component';
+import { AnalyticsRailComponent } from '../../rail/analytics-rail.component';
 import {
   ComparisonBarsComponent,
   ComparisonRow,
@@ -32,13 +33,13 @@ import { unitAnalyticsFeature } from '../store/unit-analytics.feature';
 import { TopPerformersComponent } from '../top-performers/top-performers.component';
 import { UnitAnalytics, UnitAnalyticsService } from '../unit-analytics.service';
 import { UnitComparisonComponent } from '../unit-comparison/unit-comparison.component';
-import { UnitListComponent } from '../unit-list/unit-list.component';
 import { UnitTrendChartComponent } from '../unit-trend-chart/unit-trend-chart.component';
 
 /** Analytics of one faculty or department for a period, compared with the period before it. */
 @Component({
   selector: 'app-unit-analytics',
   imports: [
+    AnalyticsRailComponent,
     ComparisonBarsComponent,
     DeltaTilesComponent,
     ExportMenuComponent,
@@ -56,7 +57,6 @@ import { UnitTrendChartComponent } from '../unit-trend-chart/unit-trend-chart.co
     TranslocoPipe,
     SplitComponent,
     UnitComparisonComponent,
-    UnitListComponent,
     UnitTrendChartComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

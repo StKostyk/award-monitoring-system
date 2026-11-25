@@ -54,7 +54,9 @@ test.describe('sign-in page themes', () => {
     await expect(page.locator('.signin-footer')).toContainText(
       'Чернівецький національний університет',
     );
-    await expect(page.locator('.signin-footer a')).toHaveAttribute('href', /\/privacy$/);
+    const footerLinks = page.locator('.signin-footer a');
+    await expect(footerLinks.first()).toHaveAttribute('href', /\/privacy-notice$/);
+    await expect(footerLinks.nth(1)).toHaveAttribute('href', /\/terms$/);
     const quote = await page.getByTestId('quote-of-the-day').textContent();
     expect(await background(page, 'button[type="submit"]')).toBe('rgb(122, 31, 46)');
     await expect

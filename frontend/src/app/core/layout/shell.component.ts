@@ -16,10 +16,10 @@ import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@ang
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatToolbar } from '@angular/material/toolbar';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Store } from '@ngrx/store';
-import { filter, map } from 'rxjs';
+import { map } from 'rxjs';
 
 import { DelegationsService } from '../../features/delegations/delegations.service';
 import { PrivacyCentreService } from '../../features/privacy/privacy-centre.service';
@@ -36,7 +36,7 @@ import { NotificationBellComponent } from '../notifications/notification-bell/no
 import { PreferencesActions } from '../preferences/store/preferences.actions';
 import { APPLE, CommandPaletteService } from './command-palette.service';
 import { NavigationFocusService } from './navigation-focus.service';
-import { NavEntry, navEntriesFor } from './nav-entries';
+import { navEntriesFor } from './nav-entries';
 
 export const WIDE_LAYOUT = '(min-width: 960px)';
 
@@ -117,13 +117,6 @@ export class ShellComponent {
     return ROLE_RANK.find((role) => held.has(role)) ?? null;
   });
   protected readonly shortcut = APPLE.test(globalThis.navigator?.userAgent ?? '') ? '⌘K' : 'Ctrl K';
-  private readonly url = toSignal(
-    this.router.events.pipe(
-      filter((event) => event instanceof NavigationEnd),
-      map((event) => event.urlAfterRedirects),
-    ),
-    { initialValue: this.router.url },
-  );
   protected readonly actingFor = signal('');
   protected readonly erasureDate = computed(() => {
     const pending = this.privacy.erasure();
@@ -138,17 +131,6 @@ export class ShellComponent {
     const destroyRef = inject(DestroyRef);
     inject(NavigationFocusService).follow(() => this.main()?.nativeElement, destroyRef);
     this.palette.listen(destroyRef);
-  }
-
-  /**
-   * Whether an active router link should mark its entry current, unless the URL belongs to a child entry.
-   *
-   * @param item the side menu entry
-   * @param active whether its router link is active
-   * @return whether the entry is the current page
-   */
-  protected current(item: NavEntry, active: boolean): boolean {
-    return active && !(item.excludes && this.url().startsWith(item.excludes));
   }
 
   /** Moves the focus to the page content, past the navigation. */

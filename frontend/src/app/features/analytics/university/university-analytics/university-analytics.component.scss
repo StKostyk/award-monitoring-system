@@ -1,15 +1,22 @@
 .university__period {
-  margin-bottom: 8px;
+  display: grid;
+  gap: 8px;
 }
 
 .university__compared {
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
-  margin: 0 0 16px;
+  margin: 0;
 }
 
-app-bento-tile > app-pane {
-  height: 100%;
+.university__pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+
+  @media (min-width: 1280px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .university__problem {

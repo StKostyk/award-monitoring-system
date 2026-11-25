@@ -7,8 +7,9 @@ import { keepPreferencesLocal, SEED, seriousViolations, signedIn, toggleLanguage
 /** US-010 DoD: the university analytics page is usable within this time on the seed. */
 const USABLE_WITHIN_MS = 10000;
 
-/** Faculty of Mathematics and Informatics and the university itself (seed). */
+/** Faculty of Mathematics and Informatics, its algebra department and the university itself (seed). */
 const FMI = 9;
+const DAI = 64;
 const UNIVERSITY = 1;
 
 /** Length of the `%PDF` signature at the start of a PDF file. */
@@ -16,6 +17,7 @@ const PDF_SIGNATURE_BYTES = 4;
 
 const UNIVERSITY_SECTIONS = [
   'totals',
+  'units',
   'faculties',
   'highlights',
   'trend',
@@ -45,22 +47,16 @@ test.describe('university analytics', () => {
     await warmUp.context().close();
 
     const page = await signedIn(browser, SEED.rector);
-    await expect(page.getByTestId('nav-unit-analytics')).toBeVisible();
+    await expect(page.getByTestId('nav-university-analytics')).toHaveCount(0);
     const started = Date.now();
-    await page.getByTestId('nav-university-analytics').click();
+    await page.getByTestId('nav-unit-analytics').click();
     await expect(page.getByTestId('section-highlights')).toBeVisible();
     await expect(page.getByTestId('compliance-status')).toHaveCount(0);
     expect(Date.now() - started).toBeLessThan(USABLE_WITHIN_MS);
 
     await expect(page).toHaveURL(/\/analytics\/university$/);
-    await expect(page.getByTestId('nav-university-analytics')).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    await expect(page.getByTestId('nav-unit-analytics')).not.toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    await expect(page.getByTestId('nav-unit-analytics')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('section-units')).toBeVisible();
     expect(await sections(page)).toEqual(UNIVERSITY_SECTIONS);
     await expect(page.getByTestId('university-analytics-compared')).toContainText('у порівнянні з');
     await expect(page.getByTestId('university-projection')).toContainText(
@@ -95,6 +91,36 @@ test.describe('university analytics', () => {
     await page.goBack();
     await expect(page).toHaveURL(/\/analytics\/university\?from=2021&to=2025$/);
     await expect(page.getByTestId('section-trend')).toBeVisible();
+  });
+
+  test('9.7 ac12_1 ac12_4 ac12_5 walks a rector from the university to a faculty and a department in the rail', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.rector);
+    await page.goto('/analytics?from=2021&to=2025');
+    await expect(page).toHaveURL(/\/analytics\/university\?from=2021&to=2025$/);
+    const side = page.locator('.split__side');
+    await expect(side.getByTestId('unit-option-university')).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(side.getByTestId(`unit-option-${FMI}`)).toBeVisible();
+    await expect(side.getByTestId(`unit-option-${DAI}`)).toHaveCount(0);
+
+    await side.getByTestId(`unit-option-${FMI}`).click();
+    await expect(page).toHaveURL(new RegExp(`/analytics/units/${FMI}\\?from=2021&to=2025$`));
+    await expect(side.getByTestId('unit-option-university')).toBeVisible();
+    await expect(side.getByTestId(`unit-option-${FMI}`)).toHaveAttribute('aria-current', 'true');
+
+    await side.getByTestId(`unit-option-${DAI}`).click();
+    await expect(page).toHaveURL(new RegExp(`/analytics/units/${DAI}\\?from=2021&to=2025$`));
+    await expect(side.getByTestId(`unit-option-${DAI}`)).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByTestId('nav-unit-analytics')).toHaveAttribute('aria-current', 'page');
+
+    await side.getByTestId('unit-option-university').click();
+    await expect(page).toHaveURL(/\/analytics\/university\?from=2021&to=2025$/);
+    await expect(page.getByTestId('section-faculties')).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
   });
 
   test('ac2_1 refuses every account without university analytics', async ({ browser }) => {
@@ -220,7 +246,7 @@ test.describe('university analytics', () => {
     ).toContain('Onest');
   });
 
-  test('ac6_3 ac6_4 lays the bento out in four, two and one columns with the numbers of the api', async ({
+  test('9.7 ac12_7 lays the page out as the unit page with the numbers of the api', async ({
     browser,
   }) => {
     const page = await signedIn(browser, SEED.rector);
@@ -232,24 +258,25 @@ test.describe('university analytics', () => {
     await page.goto('/analytics/university?from=2021&to=2025');
     const report = (await (await response).json()) as UniversityReport;
 
-    await expect(page.getByTestId('tile-approved').locator('.tile__value')).toHaveText(
+    const side = page.locator('.split__side');
+    const main = page.locator('.split__main');
+    await expect(side.getByTestId('tile-approved').locator('.tile__value')).toHaveText(
       String(report.totals.approved.current),
     );
     for (const row of report.units.filter((candidate) => !candidate.facultyLevel)) {
-      await expect(page.getByTestId(`faculty-bar-${row.unit.id}`)).toContainText(
+      await expect(main.getByTestId(`faculty-bar-${row.unit.id}`)).toContainText(
         String(row.approved.current),
       );
     }
     await expect(page.getByTestId('period-chip-all')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.getByTestId('board-report')).toBeEnabled();
 
-    expect(await bentoColumns(page)).toBe(4);
-    expect(await tileSpan(page, 'faculties')).toEqual(['span 3', 'span 2']);
-    expect(await tileSpan(page, 'trend')).toEqual(['span 4', 'auto']);
-    await page.setViewportSize({ width: 900, height: 900 });
-    await expect.poll(() => bentoColumns(page)).toBe(2);
+    await expect(side.getByTestId('section-units')).toBeVisible();
+    for (const section of ['faculties', 'highlights', 'trend', 'comparison']) {
+      await expect(main.getByTestId(`section-${section}`)).toBeVisible();
+    }
+    await expect(page.locator('app-bento')).toHaveCount(0);
     await page.setViewportSize({ width: 360, height: 800 });
-    await expect.poll(() => bentoColumns(page)).toBe(1);
     expect(await noHorizontalScroll(page)).toBe(true);
 
     await page.getByTestId(`faculty-bar-${FMI}`).getByRole('link').click();
@@ -261,19 +288,6 @@ interface UniversityReport {
   totals: { approved: { current: number } };
   byYear: { year: number; total: number }[];
   units: { unit: { id: number }; facultyLevel: boolean; approved: { current: number } }[];
-}
-
-function bentoColumns(page: Page): Promise<number> {
-  return page
-    .locator('app-bento')
-    .evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length);
-}
-
-function tileSpan(page: Page, section: string): Promise<string[]> {
-  return page.getByTestId(`section-${section}`).evaluate((node) => {
-    const tile = getComputedStyle(node.closest('app-bento-tile')!);
-    return [tile.gridColumnStart, tile.gridRowStart];
-  });
 }
 
 async function chartColours(page: Page): Promise<string[]> {

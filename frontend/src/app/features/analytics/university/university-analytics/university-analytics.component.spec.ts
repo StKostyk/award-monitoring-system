@@ -15,7 +15,10 @@ import { vi } from 'vitest';
 
 import { chartStub } from '../../../../shared/charts/chart.testing';
 import { currentKyivYear } from '../../../../shared/date-format';
-import { languageStub, translations } from '../../analytics.testing';
+import { authStub, languageStub, translations } from '../../analytics.testing';
+import { UnitAnalyticsActions } from '../../units/store/unit-analytics.actions';
+import { unitAnalyticsFeature } from '../../units/store/unit-analytics.feature';
+import { ALGEBRA, FACULTY } from '../../units/unit-analytics.testing';
 import { UniversityAnalyticsActions } from '../store/university-analytics.actions';
 import { universityAnalyticsFeature } from '../store/university-analytics.feature';
 import { universityAnalytics } from '../university-analytics.testing';
@@ -42,8 +45,10 @@ describe('UniversityAnalyticsComponent', () => {
         provideHttpClientTesting(),
         provideStore({}),
         provideState(universityAnalyticsFeature),
+        provideState(unitAnalyticsFeature),
         stub.provider,
         languageStub(language).provider,
+        authStub(['analytics:read:department', 'analytics:read:university']),
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParams } },
       ],
     }).compileComponents();
@@ -125,22 +130,29 @@ describe('UniversityAnalyticsComponent', () => {
     expect(element('university-analytics-compared')!.textContent).toContain('2026 is not over yet');
   });
 
-  it('ac6_3_lays_the_kpi_faculties_facts_and_years_out_as_bento_tiles', async () => {
+  it('ac12_7_lays_the_page_out_as_the_unit_page_with_the_tiles_and_the_rail_beside_the_figures', async () => {
     await setUp();
     load();
+    store.dispatch(UnitAnalyticsActions.unitsLoaded({ units: [FACULTY, ALGEBRA] }));
+    fixture.detectChanges();
 
-    const tile = (section: string) =>
-      element(`section-${section}`)!.closest('app-bento-tile') as HTMLElement;
-    const spans = (section: string) => [
-      tile(section).getAttribute('data-span'),
-      tile(section).getAttribute('data-rows'),
-    ];
-    expect(spans('totals')).toEqual(['4', '1']);
-    expect(spans('faculties')).toEqual(['3', '2']);
-    expect(spans('highlights')).toEqual(['1', '2']);
-    expect(spans('trend')).toEqual(['4', '1']);
+    const side = (section: string) => element(section)!.closest('.split__side');
+    expect(side('section-totals')).not.toBeNull();
+    expect(side('section-units')).not.toBeNull();
+    expect(side('section-faculties')).toBeNull();
+    expect(element('section-trend')!.closest('.split__main')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-bento')).toBeNull();
+    expect(element('unit-option-university')!.getAttribute('aria-current')).toBe('true');
+    expect(element('unit-option-9')!.getAttribute('href')).toBe('/analytics/units/9');
+    expect(element('unit-option-64')).toBeNull();
     expect(element('faculty-bar-9')!.textContent).toContain('80');
     expect(element('tile-approved')).not.toBeNull();
+  });
+
+  it('ac12_7_loads_the_units_for_the_rail_once', async () => {
+    await setUp();
+
+    expect(dispatch).toHaveBeenCalledWith(UnitAnalyticsActions.unitsRequested());
   });
 
   it('ac6_3_period_chips_and_board_report_stay_in_the_header', async () => {

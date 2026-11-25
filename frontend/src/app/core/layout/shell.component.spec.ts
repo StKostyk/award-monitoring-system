@@ -303,16 +303,8 @@ describe('ShellComponent', () => {
     ).toBe('/analytics');
   });
 
-  it('ac2_1_shows_university_analytics_beside_unit_analytics_to_a_rector', () => {
+  it('ac12_6_offers_a_rector_one_analytics_entry_for_the_university_and_the_units', () => {
     auth.isAuthenticated.set(true);
-    auth.permissions.set(
-      readPermissions(tokenWith({ permissions: ['analytics:read:department'] })),
-    );
-    const dean = TestBed.createComponent(ShellComponent);
-    dean.detectChanges();
-
-    expect(dean.nativeElement.querySelector('[data-testid="nav-university-analytics"]')).toBeNull();
-
     auth.permissions.set(
       readPermissions(
         tokenWith({ permissions: ['analytics:read:department', 'analytics:read:university'] }),
@@ -321,14 +313,10 @@ describe('ShellComponent', () => {
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement
-        .querySelector('[data-testid="nav-university-analytics"]')
-        .getAttribute('href'),
-    ).toBe('/analytics/university');
-    expect(
-      fixture.nativeElement.querySelector('[data-testid="nav-unit-analytics"]'),
-    ).not.toBeNull();
+    const entries = fixture.nativeElement.querySelectorAll('a[href^="/analytics"]');
+    expect(entries.length).toBe(1);
+    expect(entries[0].getAttribute('data-testid')).toBe('nav-unit-analytics');
+    expect(entries[0].textContent).toContain('titles.analytics');
   });
 
   it('ac3_3_lists_the_hall_of_fame_for_a_rector_or_dean_only', () => {

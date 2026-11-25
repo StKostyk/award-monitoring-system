@@ -16,7 +16,7 @@ import { vi } from 'vitest';
 import { chartStub } from '../../../../shared/charts/chart.testing';
 import { currentKyivYear } from '../../../../shared/date-format';
 import { reduceMotion } from '../../../../shared/effects/effects.testing';
-import { languageStub, translations } from '../../analytics.testing';
+import { authStub, languageStub, translations } from '../../analytics.testing';
 import { UnitAnalyticsActions } from '../store/unit-analytics.actions';
 import { UNIT_NOT_FOUND } from '../store/unit-analytics.effects';
 import { unitAnalyticsFeature } from '../store/unit-analytics.feature';
@@ -52,6 +52,7 @@ describe('UnitAnalyticsComponent', () => {
         provideState(unitAnalyticsFeature),
         stub.provider,
         languageStub(language).provider,
+        authStub(['analytics:read:department']),
         { provide: ActivatedRoute, useValue: { paramMap: params, queryParamMap: queryParams } },
       ],
     }).compileComponents();
@@ -112,7 +113,10 @@ describe('UnitAnalyticsComponent', () => {
     expect(list.closest('.split__side')).not.toBeNull();
     expect(element('unit-option-9')!.getAttribute('href')).toBe('/analytics/units/9');
     expect(element('unit-option-64')!.getAttribute('href')).toBe('/analytics/units/64');
-    expect(element('unit-option-9')!.textContent).toContain('Whole faculty');
+    expect(element('unit-option-9')!.textContent).toContain(
+      'Faculty of Mathematics and Informatics',
+    );
+    expect(element('unit-option-university')).toBeNull();
   });
 
   it('ac6_1_counts_the_approved_awards_of_the_faculty_and_its_departments', async () => {
