@@ -264,9 +264,10 @@ only on ink or burgundy in the light scheme).
 ### Endpoints
 - New: `DELETE /notifications/{id}/read` (9.7.7), `GET|PUT /users/me/onboarding` (9.7.9).
 - Changed: `GET /analytics/me` (`TimelineEntry.level`, 9.7.3), `GET /users` (`UserSummary.lastLoginAt`, 9.7.5),
-  `GET /notifications` (`type` filter, 9.7.7), `GET /users/me/export` (format 1.9 with `onboarding`, 9.7.9).
+  `GET /notifications` (`type` filter, 9.7.7), `GET /users/me/activity` (`byMe` filter, 9.7.8),
+  `GET /users/me/export` (format 1.9 with `onboarding`, 9.7.9).
 - Read as is: `GET /analytics/units/{id}`, `GET /analytics/university`, `GET /achievements?person=`,
-  `GET /delegations`, `GET /users/me/privacy`, `GET /users/me/activity`, `GET /users/me/consents`.
+  `GET /delegations`, `GET /users/me/privacy`, `GET /users/me/consents`.
 
 ### Services
 - Backend: `LoginController` and the `login.html` template with a theme fragment per theme, a quote-of-the-day
@@ -415,8 +416,10 @@ draft wording and get the merged i18n text at the validation.
 18. As `employee.fmi` after `dean.fmi` approves one award: `/notifications`, select it. Expected: reading pane,
     marked read, the URL stays `/notifications` (AC-7.3, AC-7.4); «Позначити непрочитаним» → unread, sidebar
     counter up; «Відкрити нагороду» → the award (AC-7.1, AC-7.4); chip «Ролі» hides it (AC-7.2).
-19. `/privacy`. Expected: «Усе гаразд», the tiles of AC-8.1; «Щодо мене» in activity; «Завантажити» downloads the
-    JSON (AC-8.1 to AC-8.3); 360 one column (AC-8.4).
+19. `/privacy`. Expected: «Усе гаразд», the tiles of AC-8.1; «Щодо мене» in activity; «Увесь журнал →» opens the
+    whole log in the tile with «Показати ще»; «Завантажити» downloads the JSON (AC-8.1 to AC-8.3); «Видалити мій
+    обліковий запис» with the password turns the status line into the countdown, «Скасувати запит» there brings
+    «Усе гаразд» back; 360 one column, status line first (AC-8.4).
 20. Register a fresh account, confirm in Mailpit, sign in, acknowledge the notice. Expected: My dashboard with
     «Вітаємо, <ім'я>!», NOTICE done, four open steps (AC-9.1, AC-9.2, AC-9.4).
 21. «Додати» on the first award step, save a draft, back to My dashboard. Expected: `FIRST_AWARD` done (AC-9.2).

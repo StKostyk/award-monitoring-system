@@ -17,7 +17,7 @@ import {
   PrivacyCentreService,
   PrivacySummary,
 } from '../privacy-centre.service';
-import { PrivacyCentreComponent, fileName } from './privacy-centre.component';
+import { PrivacyCentreComponent, TILE_ENTRIES, fileName } from './privacy-centre.component';
 
 const OVERVIEW: ConsentOverview = {
   notice: {
@@ -74,7 +74,8 @@ describe('PrivacyCentreComponent', () => {
   let http: HttpTestingController;
   const consents = { overview: vi.fn(), choose: vi.fn() };
   const summaryUrl = `${environment.apiUrl}/users/me/privacy`;
-  const activityUrl = `${environment.apiUrl}/users/me/activity?page=0&size=20`;
+  const activityUrl = `${environment.apiUrl}/users/me/activity?page=0&size=20&byMe=true`;
+  const aboutUrl = `${environment.apiUrl}/users/me/activity?page=0&size=20&byMe=false`;
   const exportUrl = `${environment.apiUrl}/users/me/export`;
 
   async function configure() {
@@ -122,32 +123,65 @@ describe('PrivacyCentreComponent', () => {
   }
 
   afterEach(() => {
+    vi.useRealTimers();
     http.verify();
     vi.restoreAllMocks();
   });
 
-  it('ac2_3_shows_the_cards_in_order_with_the_notice_and_the_choices', async () => {
+  it('ac8_1_shows_the_status_line_and_the_tiles_in_order', async () => {
     const fixture = await setup();
-    const cards = Array.from(
-      fixture.nativeElement.querySelectorAll('mat-card') as NodeListOf<HTMLElement>,
-    ).map((card) => card.dataset['testid']);
+    const tiles = Array.from(
+      fixture.nativeElement.querySelectorAll('app-pane') as NodeListOf<HTMLElement>,
+    ).map((tile) => tile.dataset['testid']);
 
-    expect(cards).toEqual([
+    expect(tiles).toEqual([
       'privacy-notice-card',
       'privacy-consents-card',
-      'privacy-data-card',
-      'privacy-erasure-card',
       'privacy-choices-card',
+      'privacy-email-card',
+      'privacy-data-card',
       'privacy-activity-card',
+      'privacy-erasure-card',
     ]);
+    expect(fixture.componentInstance.status()).toBe('ok');
+    expect(query(fixture, 'privacy-status-text')?.textContent).toContain(
+      'privacy.centre.status.ok',
+    );
     expect(query(fixture, 'privacy-notice-acknowledged')?.textContent).toContain('15.10.2026');
+    expect(query(fixture, 'privacy-notice-link')?.getAttribute('href')).toBe('/privacy-notice');
     expect(query(fixture, 'privacy-awards-PRIVATE')?.textContent?.trim()).toBe('2');
     expect(query(fixture, 'privacy-documents')?.textContent?.trim()).toBe('3');
-    expect(query(fixture, 'privacy-email-off')?.textContent?.trim()).toBe('2');
+    expect(query(fixture, 'privacy-email-off-types')?.querySelectorAll('li').length).toBe(2);
     expect(query(fixture, 'privacy-notifications-link')?.getAttribute('href')).toBe(
       '/profile?section=notifications',
     );
     expect(query(fixture, 'privacy-awards-link')?.getAttribute('href')).toBe('/awards');
+    expect(query(fixture, 'privacy-awards-link')?.textContent).toContain(
+      'privacy.centre.tiles.change',
+    );
+    expect(query(fixture, 'privacy-download')?.textContent).toContain(
+      'privacy.centre.tiles.download',
+    );
+  });
+
+  it('ac8_1_asks_for_attention_when_the_notice_needs_an_acknowledgement', async () => {
+    consents.overview.mockResolvedValue({
+      ...OVERVIEW,
+      notice: { ...OVERVIEW.notice, currentVersion: '1.1', acknowledgementRequired: true },
+    });
+    await configure();
+    const fixture = TestBed.createComponent(PrivacyCentreComponent);
+    fixture.detectChanges();
+    http.expectOne(summaryUrl).flush({ ...SUMMARY, emailOffTypes: [] });
+    http.expectOne(activityUrl).flush({ content: [], totalPages: 1 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('notice');
+    expect(query(fixture, 'privacy-status-notice')?.getAttribute('href')).toBe('/privacy-notice');
+    expect(query(fixture, 'privacy-email-off')?.textContent).toContain(
+      'privacy.centre.tiles.emailAllOn',
+    );
   });
 
   it('ac2_4_stores_the_analytics_choice_and_shows_the_new_history_line', async () => {
@@ -234,37 +268,71 @@ describe('PrivacyCentreComponent', () => {
     expect(fileName('attachment; filename=data.json')).toBe('data.json');
   });
 
-  it('ac2_6_labels_known_actions_shows_unknown_codes_and_who_acted', async () => {
-    const fixture = await setup([
-      entry('LOGIN_SUCCESS', true, 2),
-      entry('SOMETHING_NEW', false, 1),
-    ]);
-    const rows = fixture.nativeElement.querySelectorAll(
-      '[data-testid="privacy-activity-row"]',
-    ) as NodeListOf<HTMLElement>;
+  it('ac8_2_shows_my_entries_first_and_switches_to_entries_about_me', async () => {
+    const fixture = await setup([entry('LOGIN_SUCCESS', true, 2)]);
+    const rows = (): NodeListOf<HTMLElement> =>
+      fixture.nativeElement.querySelectorAll('[data-testid="privacy-activity-row"]');
 
-    expect(rows.length).toBe(2);
-    expect(rows[0].textContent).toContain('Вхід');
-    expect(rows[0].textContent).toContain('privacy.activity.byMe');
-    expect(rows[1].textContent).toContain('SOMETHING_NEW');
-    expect(rows[1].textContent).toContain('privacy.activity.aboutMe');
-    expect(rows[0].querySelector('time')?.textContent).toContain('15.10.2026');
-  });
+    expect(rows().length).toBe(1);
+    expect(rows()[0].textContent).toContain('Вхід');
+    expect(rows()[0].querySelector('time')?.textContent).toContain('15.10.2026');
+    expect(query(fixture, 'privacy-activity-mine')?.getAttribute('aria-pressed')).toBe('true');
 
-  it('ac2_6_shows_an_empty_state_and_loads_more_pages', async () => {
-    const empty = await setup();
-    expect(query(empty, 'privacy-activity-empty')).not.toBeNull();
-    TestBed.resetTestingModule();
-
-    const fixture = await setup([entry('LOGOUT', true, 5)], 2);
-    query(fixture, 'privacy-activity-more')?.click();
-    http
-      .expectOne(`${environment.apiUrl}/users/me/activity?page=1&size=20`)
-      .flush({ content: [entry('LOGIN_SUCCESS', true, 1)], totalPages: 2 });
+    query(fixture, 'privacy-activity-about')?.click();
+    http.expectOne(aboutUrl).flush({ content: [entry('SOMETHING_NEW', false, 1)], totalPages: 1 });
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.activity().length).toBe(2);
+    expect(rows().length).toBe(1);
+    expect(rows()[0].textContent).toContain('SOMETHING_NEW');
+    expect(query(fixture, 'privacy-activity-about')?.getAttribute('aria-pressed')).toBe('true');
+
+    query(fixture, 'privacy-activity-mine')?.click();
+    query(fixture, 'privacy-activity-about')?.click();
+    fixture.detectChanges();
+    expect(rows()[0].textContent).toContain('SOMETHING_NEW');
+  });
+
+  it('ac8_2_shows_the_latest_entries_and_the_full_log_on_request', async () => {
+    const entries = Array.from({ length: 7 }, (_, i) => entry('LOGIN_SUCCESS', true, 10 - i));
+    const fixture = await setup(entries, 2);
+    const rows = (): number =>
+      fixture.nativeElement.querySelectorAll('[data-testid="privacy-activity-row"]').length;
+
+    expect(rows()).toBe(TILE_ENTRIES);
     expect(query(fixture, 'privacy-activity-more')).toBeNull();
+
+    query(fixture, 'privacy-activity-all')?.click();
+    fixture.detectChanges();
+    expect(rows()).toBe(7);
+    expect(query(fixture, 'privacy-activity-all')).toBeNull();
+
+    query(fixture, 'privacy-activity-more')?.click();
+    http
+      .expectOne(`${environment.apiUrl}/users/me/activity?page=1&size=20&byMe=true`)
+      .flush({ content: [entry('LOGOUT', true, 1)], totalPages: 2 });
+    fixture.detectChanges();
+
+    expect(rows()).toBe(8);
+    expect(query(fixture, 'privacy-activity-more')).toBeNull();
+  });
+
+  it('ac8_2_says_when_only_the_chosen_kind_is_empty', async () => {
+    const fixture = await setup([entry('LOGIN_SUCCESS', true, 2)]);
+
+    query(fixture, 'privacy-activity-about')?.click();
+    http.expectOne(aboutUrl).flush({ content: [], totalPages: 0 });
+    fixture.detectChanges();
+
+    expect(query(fixture, 'privacy-activity-empty')?.textContent).toContain(
+      'privacy.centre.tiles.emptyFilter',
+    );
+  });
+
+  it('ac2_6_shows_an_empty_state', async () => {
+    const fixture = await setup();
+
+    expect(query(fixture, 'privacy-activity-empty')).not.toBeNull();
+    expect(query(fixture, 'privacy-activity-all')).toBeNull();
   });
 
   it('ac2_3_shows_a_load_error_when_the_summary_fails', async () => {
@@ -279,6 +347,7 @@ describe('PrivacyCentreComponent', () => {
 
     expect(query(fixture, 'privacy-summary-error')).not.toBeNull();
     expect(query(fixture, 'privacy-activity-error')).not.toBeNull();
+    expect(fixture.componentInstance.status()).toBe('failed');
     expect(fixture.componentInstance.overviewFailed()).toBe(true);
   });
 
@@ -344,6 +413,27 @@ describe('PrivacyCentreComponent', () => {
       expect(query(fixture, 'privacy-erasure-open')).not.toBeNull();
     });
 
+    it('ac8_3_turns_the_status_line_into_the_countdown_with_a_cancel', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-11-05T10:00:00Z'));
+      const fixture = await setup([], 1, { ...SUMMARY, erasure: PENDING });
+
+      expect(fixture.componentInstance.status()).toBe('erasure');
+      expect(fixture.componentInstance.daysLeft(PENDING.scheduledFor)).toBe(10);
+      expect(query(fixture, 'privacy-status-text')?.textContent).toContain(
+        'privacy.centre.status.erasure',
+      );
+      vi.useRealTimers();
+      query(fixture, 'privacy-status-cancel')?.click();
+      http.expectOne(cancelUrl).flush(null, { status: 204, statusText: 'No Content' });
+      http.expectOne(activityUrl).flush({ content: [], totalPages: 1 });
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.status()).toBe('ok');
+      expect(query(fixture, 'privacy-status-cancel')).toBeNull();
+      expect(query(fixture, 'privacy-erasure-done')).not.toBeNull();
+    });
+
     it('ac4_4_reloads_when_nothing_is_pending_any_more', async () => {
       const fixture = await setup([], 1, { ...SUMMARY, erasure: PENDING });
 
@@ -370,6 +460,7 @@ describe('PrivacyCentreComponent', () => {
 
       expect(query(fixture, 'privacy-erasure-error')).not.toBeNull();
       expect(query(fixture, 'privacy-erasure-scheduled')).not.toBeNull();
+      expect(query(fixture, 'privacy-status-error')).not.toBeNull();
       expect(fixture.componentInstance.cancellingErasure()).toBe(false);
     });
 

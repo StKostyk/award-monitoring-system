@@ -2767,6 +2767,14 @@ paths:
         - bearerAuth: []
       operationId: listMyActivity
       parameters:
+        - name: byMe
+          in: query
+          required: false
+          description: >
+            `true` for the caller's own actions, `false` for actions of others about the caller; absent for both
+            (9.7.8). Any other value answers 400.
+          schema:
+            type: boolean
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:

@@ -1482,11 +1482,9 @@
       "notice": {
         "title": "Privacy notice",
         "acknowledged": "You confirmed version {{version}}",
-        "notAcknowledged": "You have not confirmed the notice yet.",
-        "read": "Read the notice"
+        "notAcknowledged": "You have not confirmed the notice yet."
       },
       "consents": {
-        "title": "Consents",
         "ANALYTICS": "Name me in rankings and comparisons of unit reports",
         "ANALYTICS_purpose": "Without this consent you are counted only in totals. Withdrawing it does not affect earlier reports.",
         "failed": "The choice could not be saved. Try again later.",
@@ -1501,37 +1499,48 @@
         }
       },
       "choices": {
-        "title": "Your choices",
         "awards": {
           "PRIVATE": "Approved awards seen only by you and reviewers",
           "UNIVERSITY": "Approved awards shown to colleagues",
           "PUBLIC": "Approved awards shown publicly"
         },
         "documentsTitle": "Documents shown to colleagues",
-        "emailTitle": "Event types with e-mail switched off",
-        "awardsLink": "My awards",
         "notificationsLink": "Notification settings"
       },
       "data": {
         "title": "Your data",
-        "download": "Download my data",
         "downloading": "Preparing the file…",
         "downloaded": "File downloaded",
         "lastExport": "Last download: {{date}}",
         "tooMany": "Too many requests. Try again later.",
         "failed": "The file could not be prepared. Try again later.",
         "hint": "A JSON file with everything the system keeps about you: profile, roles, delegations, awards including drafts, document details, consents, devices and the log of your actions with IP addresses. You will get an email about the download."
+      },
+      "status": {
+        "ok": "All fine: the notice is acknowledged and no deletion is requested.",
+        "notice": "Needs your attention: acknowledge the current version of the privacy notice.",
+        "erasure": "Your account will be deleted on {{date}}, days left: {{days}}.",
+        "cancel": "Cancel the request"
+      },
+      "tiles": {
+        "read": "Read",
+        "change": "Change",
+        "download": "Download",
+        "visibility": "Award visibility",
+        "email": "E-mail notifications",
+        "emailAllOn": "E-mails arrive for every event.",
+        "emailOff": "Switched off for event types: {{count}}",
+        "mine": "Mine",
+        "fullLog": "Full log →",
+        "emptyFilter": "No entries of this kind yet."
       }
     },
     "activity": {
       "title": "Your activity",
       "empty": "Nothing recorded yet.",
       "failed": "The activity could not be loaded.",
-      "byMe": "By me",
       "aboutMe": "About me",
       "columns": {
-        "action": "Action",
-        "time": "Time",
         "who": "Who"
       },
       "actions": {

@@ -39,14 +39,16 @@ public class PrivacyCentreController {
      * Audit events written by or about the caller, newest first.
      *
      * @param jwt  the access token
+     * @param byMe true for the caller's own actions, false for actions of others about the caller, absent for both
      * @param page 0-based page
      * @param size page size, kept between 1 and 100
      * @return the page
      */
     @GetMapping("/activity")
     public PageResponse<ActivityEntry> activity(@AuthenticationPrincipal Jwt jwt,
+                                                @RequestParam(required = false) Boolean byMe,
                                                 @RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "20") int size) {
-        return privacyCentre.activity(Long.parseLong(jwt.getSubject()), page, size);
+        return privacyCentre.activity(Long.parseLong(jwt.getSubject()), byMe, page, size);
     }
 }

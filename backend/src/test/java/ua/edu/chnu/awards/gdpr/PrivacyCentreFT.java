@@ -106,6 +106,11 @@ class PrivacyCentreFT extends AbstractFunctionalTest {
             .body("content", everyItem(not(hasKey("newValues"))));
         as(token).queryParam("size", 500).get(ACTIVITY).then().statusCode(HttpStatus.OK.value())
             .body("size", equalTo(100));
+        as(token).queryParam("byMe", false).get(ACTIVITY).then().statusCode(HttpStatus.OK.value())
+            .body("content.byMe", everyItem(equalTo(false)));
+        as(token).queryParam("byMe", true).get(ACTIVITY).then().statusCode(HttpStatus.OK.value())
+            .body("content.action", hasItem("LOGIN_SUCCESS"));
+        as(token).queryParam("byMe", "maybe").get(ACTIVITY).then().statusCode(HttpStatus.BAD_REQUEST.value());
         as(token).queryParam("size", 1).queryParam("page", 1).get(ACTIVITY).then()
             .statusCode(HttpStatus.OK.value()).body("size", equalTo(1)).body("number", equalTo(1));
         as(token).queryParam("page", "first").get(ACTIVITY).then().statusCode(HttpStatus.BAD_REQUEST.value());
