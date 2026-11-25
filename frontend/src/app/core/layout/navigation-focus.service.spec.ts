@@ -1,3 +1,5 @@
+import { Location } from '@angular/common';
+import { provideLocationMocks } from '@angular/common/testing';
 import { Component, DestroyRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
@@ -25,6 +27,7 @@ describe('NavigationFocusService', () => {
     vi.useRealTimers();
     TestBed.configureTestingModule({
       providers: [
+        provideLocationMocks(),
         provideRouter([
           { path: 'awards', component: ListComponent },
           { path: 'profile', component: ListComponent },
@@ -61,6 +64,26 @@ describe('NavigationFocusService', () => {
     const heading = main.querySelector('h1');
     expect(document.activeElement).toBe(heading);
     expect(heading?.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('ac11_3_a_navigation_that_stays_in_place_keeps_the_focus', async () => {
+    await router.navigateByUrl('/profile', { state: { stayInPlace: true } });
+    await settle();
+
+    expect(document.activeElement?.id).toBe('link');
+  });
+
+  it('ac11_3_going_back_to_a_page_opened_in_place_moves_the_focus_to_its_heading', async () => {
+    router.setUpLocationChangeListener();
+    await router.navigateByUrl('/profile', { state: { stayInPlace: true } });
+    await router.navigateByUrl('/plain');
+    await settle();
+    TestBed.inject(Location).back();
+    await settle();
+    await settle();
+
+    expect(router.url).toBe('/profile');
+    expect(document.activeElement).toBe(main.querySelector('h1'));
   });
 
   it('ac1_4_a_change_of_the_query_only_keeps_the_focus', async () => {

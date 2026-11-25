@@ -8,36 +8,39 @@ import { tooltip } from '../charts/chart-style';
 import { ChartThemeService } from '../charts/chart-theme.service';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { LabelledCount } from './widget-data';
+import { TableScrollComponent } from './table-scroll.component';
 
 /** V6: the levels as a treemap, each area as large as its count. */
 @Component({
   selector: 'app-level-map-widget',
-  imports: [ChartComponent, EmptyStateComponent, TranslocoPipe],
+  imports: [ChartComponent, EmptyStateComponent, TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (rows().length > 0) {
       <app-chart [option]="option()" [description]="description()" label="widgets.data">
-        <table class="analytics-table" data-testid="level-map-table">
-          <caption>
-            {{
-              'widgets.map.title' | transloco
-            }}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">{{ 'widgets.level' | transloco }}</th>
-              <th scope="col">{{ 'widgets.awards' | transloco }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of rows(); track row.key) {
+        <app-table-scroll [label]="'widgets.map.title' | transloco">
+          <table class="analytics-table" data-testid="level-map-table">
+            <caption>
+              {{
+                'widgets.map.title' | transloco
+              }}
+            </caption>
+            <thead>
               <tr>
-                <th scope="row">{{ row.key | transloco }}</th>
-                <td>{{ row.count }}</td>
+                <th scope="col">{{ 'widgets.level' | transloco }}</th>
+                <th scope="col">{{ 'widgets.awards' | transloco }}</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.key) {
+                <tr>
+                  <th scope="row">{{ row.key | transloco }}</th>
+                  <td>{{ row.count }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-table-scroll>
       </app-chart>
     } @else {
       <app-empty-state icon="chart-column" [text]="'widgets.empty' | transloco" />

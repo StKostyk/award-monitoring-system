@@ -21,6 +21,7 @@ Copy `.env.prod.example` to `.env.prod` (ignored by git) and fill it in.
 | `MAIL_FROM` | A sender verified in Brevo |
 | `ALLOWED_EMAIL_DOMAINS` | Domains accepted at registration (default `chnu.edu.ua`) |
 | `APP_BRAND` | Brand of the sign-in and error pages (`chnu` default, `neutral`); keep it equal to the `id` in the frontend's `brand.json` |
+| `APP_SIGN_IN_THEME` | Look of the sign-in, error and 429 pages: `catalogue` (default), `sky` or `rushnyk`; read at start (`docker compose up -d app` applies it, no rebuild); any other value stops the start |
 | `JWK_KEY_ID`, `JWK_PRIVATE_KEY`, `JWK_PUBLIC_KEY` | Token signing key, see below |
 | `FLYWAY_LOCATIONS`, `DEMO_PASSWORD_HASH` | Demo accounts, see below |
 
@@ -79,8 +80,10 @@ docker run --rm httpd:2.4-alpine htpasswd -nbB -C 12 "" 'the-demo-password' | tr
 Without `DEMO_PASSWORD_HASH` the seed creates nothing. The seed only inserts: a new hash later does not change
 the password of accounts that already exist.
 
-**University brand.** The frontend image ships the ChNU brand (`brand/brand.json` with `"id": "chnu"` and its
-logo). Another university mounts its own file and logo read-only over the image's, for example in an override of
+**University brand.** The frontend image ships the ChNU brand (`brand/brand.json` with `"id": "chnu"`, the crimson
+theme and the ChNU names). Until the university approves the use of its own logo, the ChNU brand carries mark 9
+«Книга-сходи», the same mark and icons as the neutral brand (9.7.11); the university logo replaces
+`brand/chnu/logo.svg`, `brand/icons/*` and the backend's `static/login-assets/chnu/logo.svg`. Another university mounts its own file and logo read-only over the image's, for example in an override of
 the `frontend` service:
 
 ```yaml

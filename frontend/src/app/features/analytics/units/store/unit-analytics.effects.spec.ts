@@ -79,7 +79,7 @@ describe('UnitAnalyticsEffects', () => {
     expect(await failed).toEqual(UnitAnalyticsActions.analyticsLoadFailed({ problem: 'unknown' }));
   });
 
-  it('ac2_2_drops_the_figures_of_the_previous_unit_but_keeps_them_for_a_new_period', () => {
+  it('ac11_3_keeps_the_figures_on_screen_while_another_unit_or_period_loads', () => {
     const reducer = unitAnalyticsFeature.reducer;
     const loaded = reducer(
       { ...initialState, unitId: 9 },
@@ -92,12 +92,23 @@ describe('UnitAnalyticsEffects', () => {
     );
     const otherUnit = reducer(
       loaded,
+      UnitAnalyticsActions.unitSelected({
+        unitId: 64,
+        period: { from: null, to: null },
+        keepFigures: true,
+      }),
+    );
+    const reopened = reducer(
+      loaded,
       UnitAnalyticsActions.unitSelected({ unitId: 64, period: { from: null, to: null } }),
     );
 
     expect(samePeriodChange.analytics).not.toBeNull();
     expect(samePeriodChange.loading).toBe(true);
-    expect(otherUnit.analytics).toBeNull();
+    expect(otherUnit.analytics?.unit.id).toBe(9);
+    expect(otherUnit.loading).toBe(true);
+    expect(otherUnit.unitId).toBe(64);
+    expect(reopened.analytics).toBeNull();
     expect(
       reducer(otherUnit, UnitAnalyticsActions.analyticsLoaded({ analytics: departmentAnalytics() }))
         .analytics?.unit.id,

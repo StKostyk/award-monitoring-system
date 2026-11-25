@@ -99,6 +99,13 @@
               >{{ 'register.privacyNoticeLink' | transloco }}</a
             >
           </mat-checkbox>
+          <p class="auth-form__terms" data-testid="terms-line">
+            {{ 'register.terms' | transloco }}
+            <a href="/terms" target="_blank" rel="noopener" data-testid="terms-link">{{
+              'register.termsLink' | transloco
+            }}</a
+            >.
+          </p>
           @if (form.controls.privacyNotice.touched && form.controls.privacyNotice.invalid) {
             <p class="auth-form__error" data-testid="privacy-notice-required">
               {{ 'register.validation.privacyNotice' | transloco }}

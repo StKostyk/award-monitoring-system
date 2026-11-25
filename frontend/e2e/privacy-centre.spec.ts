@@ -14,7 +14,7 @@ import {
 } from './helpers';
 
 test.describe('privacy centre', () => {
-  test('ac2_3 ac2_4 ac2_6 opens from the account menu, stores the analytics choice and lists my activity', async ({
+  test('ac2_3 ac2_4 ac2_6 ac8_1 ac8_2 opens from the account menu, stores the analytics choice and lists my activity', async ({
     page,
   }) => {
     const email = `e2e.privacy.${Date.now()}@chnu.edu.ua`;
@@ -25,10 +25,21 @@ test.describe('privacy centre', () => {
     await (await shellTool(page, 'user-menu')).click();
     await page.getByTestId('nav-privacy').click();
     await expect(page).toHaveURL('http://localhost:4200/privacy');
-    await expect(page.getByTestId('privacy-notice-acknowledged')).toContainText('1.0');
+    await expect(page.getByTestId('privacy-notice-acknowledged')).toContainText('1.1');
     await expect(page.getByTestId('privacy-awards-PRIVATE')).toHaveText('0');
     await expect(page.getByTestId('privacy-activity-action').first()).toHaveText('Вхід');
-    await expect(page.getByTestId('privacy-activity-row').first()).toContainText('Мною');
+    await expect(page.getByTestId('privacy-status')).toContainText('Усе гаразд');
+    await expect(page.getByTestId('privacy-email-off')).toContainText('про всі події');
+    await expect(page.getByTestId('privacy-awards-link')).toHaveText('Змінити');
+    await expect(page.getByTestId('privacy-download')).toHaveText('Завантажити');
+    await expect(page.getByTestId('privacy-activity-mine')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('privacy-activity-about').click();
+    await expect(page.getByTestId('privacy-activity-about')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByTestId('privacy-activity-action').getByText('Вхід')).toHaveCount(0);
+    await page.getByTestId('privacy-activity-mine').click();
 
     const analytics = page.getByTestId('privacy-analytics').getByRole('switch');
     await expect(analytics).toHaveAttribute('aria-checked', 'false');
@@ -83,7 +94,7 @@ test.describe('privacy centre', () => {
     await expect.poll(() => countMessages(email, 'Your data was exported')).toBe(1);
   });
 
-  test('ac2_7 fits a phone and a desktop in both languages without serious axe findings', async ({
+  test('ac2_7 ac8_4 fits a phone and a desktop in both languages without serious axe findings', async ({
     page,
   }) => {
     const email = `e2e.privacy.layout.${Date.now()}@chnu.edu.ua`;
@@ -99,6 +110,18 @@ test.describe('privacy centre', () => {
         width,
       );
       expect(await seriousViolations(page)).toEqual([]);
+      if (width === 360) {
+        const status = await page.getByTestId('privacy-status').boundingBox();
+        const lefts = new Set<number>();
+        let previousTop = status?.y ?? 0;
+        for (const tile of await page.locator('app-bento-tile').all()) {
+          const box = await tile.boundingBox();
+          lefts.add(Math.round(box?.x ?? -1));
+          expect(box?.y ?? 0).toBeGreaterThan(previousTop);
+          previousTop = box?.y ?? 0;
+        }
+        expect(lefts.size).toBe(1);
+      }
     }
 
     await toggleLanguage(page);

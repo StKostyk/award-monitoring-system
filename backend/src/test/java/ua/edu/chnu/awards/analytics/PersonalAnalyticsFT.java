@@ -121,6 +121,12 @@ class PersonalAnalyticsFT extends AbstractFunctionalTest {
     }
 
     @Test
+    void ac3_1_everyTimelineEntryCarriesTheLevelOfItsCategory() {
+        as(tokenOf(OWNER)).queryParam("to", 2025).get(ANALYTICS).then().statusCode(HttpStatus.OK.value())
+            .body("timeline.level", contains("NATIONAL", "NATIONAL"));
+    }
+
+    @Test
     void ac1_5_invalidYearsNameTheParameter() {
         String token = tokenOf(OWNER);
         Map<String, Map<String, Object>> cases = Map.of(

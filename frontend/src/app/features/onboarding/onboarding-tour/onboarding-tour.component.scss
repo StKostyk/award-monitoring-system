@@ -1,0 +1,78 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+}
+
+.tour__dim,
+.tour__spotlight {
+  position: fixed;
+  pointer-events: none;
+}
+
+.tour__dim {
+  inset: 0;
+  background: color-mix(in srgb, var(--mat-sys-scrim) 55%, transparent);
+}
+
+.tour__spotlight {
+  border-radius: var(--app-radius-sm);
+  outline: 3px solid var(--app-gold);
+  box-shadow: 0 0 0 9999px color-mix(in srgb, var(--mat-sys-scrim) 55%, transparent);
+  transition:
+    top 0.2s ease,
+    left 0.2s ease,
+    width 0.2s ease,
+    height 0.2s ease;
+}
+
+.tour__bubble {
+  position: fixed;
+  box-sizing: border-box;
+  width: min(352px, calc(100vw - 32px));
+  padding: 16px 16px 8px;
+  border-radius: var(--app-card-radius);
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  box-shadow: var(--mat-sys-level3);
+}
+
+.tour__count {
+  margin: 0 0 4px;
+  color: var(--app-gold-text);
+  font: var(--mat-sys-label-medium);
+}
+
+.tour__title {
+  margin: 0 0 8px;
+  font: var(--mat-sys-title-medium);
+}
+
+.tour__text {
+  margin: 0 0 8px;
+  color: var(--app-muted);
+  font: var(--mat-sys-body-medium);
+}
+
+.tour__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.tour__actions .mat-mdc-button-base {
+  min-height: 44px;
+}
+
+.tour__nav {
+  display: flex;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour__spotlight {
+    transition: none;
+  }
+}

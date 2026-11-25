@@ -86,6 +86,7 @@ describe('PrivacyNoticeComponent', () => {
     await open();
     text('/privacy/1.1/uk.html', '<h2>Хто відповідає</h2>');
     expect(shown('notice-text')?.innerHTML).toContain('Хто відповідає');
+    expect(shown('notice-terms-link')?.getAttribute('href')).toBe('/terms');
 
     lang.set('en');
     fixture.detectChanges();

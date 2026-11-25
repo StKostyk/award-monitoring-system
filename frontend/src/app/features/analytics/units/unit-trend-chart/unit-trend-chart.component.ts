@@ -11,6 +11,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { PaneComponent } from '../../../../shared/layout/pane.component';
 import { organizationName } from '../../../../shared/organization-name';
+import { YearGridComponent, YearGridRow } from '../../../../shared/widgets/year-grid.component';
 import { UnitAnalytics } from '../unit-analytics.service';
 
 const PERCENT = 100;
@@ -36,7 +37,7 @@ export interface TrendLine {
 /** W2 A: approved awards by year as one small column chart per department, each on its own scale. */
 @Component({
   selector: 'app-unit-trend-chart',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, YearGridComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './unit-trend-chart.component.html',
   styleUrl: './unit-trend-chart.component.scss',
@@ -75,6 +76,39 @@ export class UnitTrendChartComponent {
         row.byYear,
       ),
     );
+  });
+  protected readonly rowHeader = computed(() =>
+    this.faculty() ? 'unitAnalytics.comparison.unit' : 'widgets.awards',
+  );
+  protected readonly gridRows = computed<YearGridRow[]>(() => {
+    this.language.current();
+    if (this.faculty()) {
+      return this.lines().map((entry, index) => ({
+        key: `${entry.id}-${index}`,
+        label: entry.label,
+        counts: entry.counts,
+      }));
+    }
+    const byYear = this.analytics().byYear;
+    return [
+      {
+        key: 'personal',
+        label: this.transloco.translate('unitAnalytics.trend.personal'),
+        counts: byYear.map((entry) => entry.personal),
+      },
+      {
+        key: 'unit',
+        label: this.transloco.translate('unitAnalytics.trend.unitAwards'),
+        counts: byYear.map((entry) => entry.unitAwards),
+      },
+    ];
+  });
+  protected readonly running = computed(() => {
+    this.language.current();
+    const analytics = this.analytics();
+    return analytics.partialYear
+      ? `${analytics.period.to}: ${this.transloco.translate('widgets.trend.running')}`
+      : null;
   });
   protected readonly range = computed(() => {
     const years = this.years();

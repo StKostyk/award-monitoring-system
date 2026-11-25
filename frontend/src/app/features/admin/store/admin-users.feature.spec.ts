@@ -19,6 +19,7 @@ const newcomer: UserSummary = {
   status: 'ACTIVE',
   roles: [],
   membershipConfirmed: false,
+  lastLoginAt: null,
 };
 
 const page: UserPage = {

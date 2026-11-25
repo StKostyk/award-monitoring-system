@@ -36,6 +36,10 @@
       <p>{{ 'app.loading' | transloco }}</p>
     }
 
+    <p class="notice__related">
+      <a routerLink="/terms" data-testid="notice-terms-link">{{ 'terms.title' | transloco }}</a>
+    </p>
+
     @if (acknowledging()) {
       @if (error(); as error) {
         <p class="notice__error" role="alert" data-testid="notice-error">{{ error | transloco }}</p>

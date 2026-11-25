@@ -221,9 +221,10 @@ public class AwardStatistics {
     }
 
     private static TimelineEntry entry(ResultSet row) throws SQLException {
+        CategoryRef category = category(row);
         return new TimelineEntry(row.getLong("award_id"), row.getString("title"), row.getString("title_uk"),
-            row.getObject("award_date", LocalDate.class), category(row), row.getString("awarding_organization"),
-            row.getBoolean("verification_badge"));
+            row.getObject("award_date", LocalDate.class), category, row.getString("awarding_organization"),
+            row.getBoolean("verification_badge"), category.level());
     }
 
     private static CategoryRef category(ResultSet row) throws SQLException {

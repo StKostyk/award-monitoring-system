@@ -4,7 +4,7 @@ import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent } from '@angular/material/card';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { EMPTY, catchError, filter, switchMap } from 'rxjs';
 
@@ -30,6 +30,7 @@ const ACKNOWLEDGE_PROBLEMS = ['outdated', 'network'];
     MatOption,
     TranslocoPipe,
     KyivDatePipe,
+    RouterLink,
   ],
   templateUrl: './privacy-notice.component.html',
   styleUrl: './privacy-notice.component.scss',

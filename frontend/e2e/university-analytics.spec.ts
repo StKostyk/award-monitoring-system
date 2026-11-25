@@ -137,6 +137,31 @@ test.describe('university analytics', () => {
     expect(await noHorizontalScroll(page)).toBe(true);
   });
 
+  test('9.7 ac2_1 ac2_4 shows the trend as a faculty grid whose totals match the api', async ({
+    browser,
+  }) => {
+    const page = await signedIn(browser, SEED.rector);
+    const response = page.waitForResponse(
+      (candidate) =>
+        candidate.url().includes('/api/v1/analytics/university?') &&
+        candidate.request().method() === 'GET',
+    );
+    await page.goto('/analytics/university?from=2021&to=2025');
+    const report = (await (await response).json()) as UniversityReport;
+
+    await page
+      .locator('app-pane', { has: page.getByTestId('projection-columns') })
+      .getByTestId('pane-view-table')
+      .click();
+    const grid = page.getByTestId('projection-table');
+    await expect(grid.locator('tbody tr')).toHaveCount(report.units.length);
+    await expect(grid.getByTestId('year-grid-totals').locator('td')).toHaveText([
+      ...report.byYear.map((entry) => String(entry.total)),
+      String(report.byYear.reduce((total, entry) => total + entry.total, 0)),
+    ]);
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
   test('ac3_5 downloads the board report of the shown period', async ({ browser }) => {
     const page = await signedIn(browser, SEED.rector);
     await page.goto('/analytics/university?from=2021&to=2025');
@@ -234,6 +259,7 @@ test.describe('university analytics', () => {
 
 interface UniversityReport {
   totals: { approved: { current: number } };
+  byYear: { year: number; total: number }[];
   units: { unit: { id: number }; facultyLevel: boolean; approved: { current: number } }[];
 }
 

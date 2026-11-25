@@ -1,0 +1,131 @@
+@if (visible()) {
+  <section class="onboarding" [attr.aria-labelledby]="titleId" data-testid="onboarding-checklist">
+    <div class="onboarding__summary">
+      <svg
+        class="onboarding__ring"
+        viewBox="0 0 120 120"
+        aria-hidden="true"
+        data-testid="onboarding-ring"
+      >
+        <circle class="onboarding__track" cx="60" cy="60" r="50" />
+        @if (doneCount() > 0) {
+          <circle
+            class="onboarding__value"
+            cx="60"
+            cy="60"
+            r="50"
+            transform="rotate(-90 60 60)"
+            [attr.stroke-dasharray]="dash()"
+            data-testid="onboarding-ring-value"
+          />
+        }
+        <text class="onboarding__count" x="60" y="69" text-anchor="middle">
+          {{ doneCount() }}/{{ steps().length }}
+        </text>
+      </svg>
+      <div class="onboarding__caption">
+        <h2 class="onboarding__title" [id]="titleId">
+          {{ 'onboarding.title' | transloco }}
+        </h2>
+        <p class="onboarding__greeting">
+          {{ 'onboarding.greeting' | transloco: { name: firstName() } }}
+        </p>
+        @if (!allDone()) {
+          <p class="onboarding__progress" data-testid="onboarding-progress">
+            {{ 'onboarding.progress' | transloco: { done: doneCount(), total: steps().length } }}
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="onboarding__body">
+      @if (allDone()) {
+        <p class="onboarding__all-done" role="status" data-testid="onboarding-all-done">
+          <app-icon name="circle-check" />
+          {{ 'onboarding.allDone' | transloco }}
+        </p>
+      } @else {
+        <ol class="onboarding__steps">
+          @for (step of steps(); track step.key; let index = $index) {
+            <li
+              class="onboarding__step"
+              [class.onboarding__step--done]="step.done"
+              [class.onboarding__step--next]="step.key === nextKey()"
+              [attr.data-testid]="'onboarding-step-' + step.key"
+              [attr.data-done]="step.done"
+              [attr.data-next]="step.key === nextKey() || null"
+            >
+              <span
+                class="onboarding__number"
+                aria-hidden="true"
+                [attr.data-testid]="'onboarding-number-' + step.key"
+              >
+                @if (step.done) {
+                  <app-icon name="check" />
+                } @else {
+                  {{ index + 1 }}
+                }
+              </span>
+              <span class="onboarding__text">
+                <span class="onboarding__step-title">{{
+                  'onboarding.steps.' + step.key + '.title' | transloco
+                }}</span>
+                @if (!step.done) {
+                  <span class="onboarding__hint">{{
+                    'onboarding.steps.' + step.key + '.hint' | transloco
+                  }}</span>
+                }
+              </span>
+              @if (step.done) {
+                <span class="onboarding__done">{{ 'onboarding.done' | transloco }}</span>
+              } @else if (step.key === nextKey()) {
+                <a
+                  mat-flat-button
+                  class="onboarding__open"
+                  [routerLink]="links[step.key].path"
+                  [queryParams]="links[step.key].queryParams"
+                  [fragment]="links[step.key].fragment"
+                  (click)="open(step)"
+                  [attr.data-testid]="'onboarding-open-' + step.key"
+                >
+                  {{ 'onboarding.steps.' + step.key + '.action' | transloco }}
+                </a>
+              } @else {
+                <a
+                  class="onboarding__link"
+                  [routerLink]="links[step.key].path"
+                  [queryParams]="links[step.key].queryParams"
+                  [fragment]="links[step.key].fragment"
+                  (click)="open(step)"
+                  [attr.data-testid]="'onboarding-open-' + step.key"
+                >
+                  {{ 'onboarding.steps.' + step.key + '.action' | transloco }}
+                </a>
+              }
+            </li>
+          }
+        </ol>
+        <div class="onboarding__actions">
+          @if (tour()) {
+            <button
+              type="button"
+              class="onboarding__action"
+              (click)="startTour()"
+              data-testid="onboarding-tour-start"
+            >
+              {{ 'onboarding.tourStart' | transloco }}
+            </button>
+          }
+          <button
+            type="button"
+            class="onboarding__action"
+            (click)="dismiss()"
+            data-testid="onboarding-dismiss"
+          >
+            {{ 'onboarding.dismiss' | transloco }}
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+}

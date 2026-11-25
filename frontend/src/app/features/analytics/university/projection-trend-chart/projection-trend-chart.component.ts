@@ -3,6 +3,8 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { PaneComponent } from '../../../../shared/layout/pane.component';
+import { organizationName } from '../../../../shared/organization-name';
+import { YearGridComponent, YearGridRow } from '../../../../shared/widgets/year-grid.component';
 import { TrendProjection, UniversityAnalytics } from '../university-analytics.service';
 
 /** A year of the trend table: an approved count, or the estimate of the projected year. */
@@ -25,7 +27,7 @@ export interface TrendColumn extends TrendYear {
  */
 @Component({
   selector: 'app-projection-trend-chart',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, YearGridComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './projection-trend-chart.component.html',
   styleUrl: './projection-trend-chart.component.scss',
@@ -52,6 +54,20 @@ export class ProjectionTrendChartComponent {
     }
     return rows;
   });
+  protected readonly years = computed(() => this.analytics().byYear.map((entry) => entry.year));
+  protected readonly gridRows = computed<YearGridRow[]>(() => {
+    const language = this.language.current();
+    return this.analytics().units.map((row, index) => ({
+      key: `${row.unit.id}-${index}`,
+      label: row.facultyLevel
+        ? this.transloco.translate('universityAnalytics.comparison.universityLevel')
+        : organizationName(row.unit, language),
+      counts: row.byYear,
+    }));
+  });
+  protected readonly projected = computed(
+    () => this.rows().find((row) => row.projected !== null) ?? null,
+  );
   protected readonly columns = computed<TrendColumn[]>(() => {
     const rows = this.rows();
     const tallest = Math.max(1, ...rows.map((row) => Math.max(row.total ?? 0, row.projected ?? 0)));

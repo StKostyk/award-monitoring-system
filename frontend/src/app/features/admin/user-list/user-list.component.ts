@@ -1,3 +1,5 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -41,12 +43,15 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { canManagePeople } from '../../../core/auth/permissions';
 import { AccountStatus, OrganizationRef, RoleType } from '../../../core/auth/user-profile';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { WIDE_LAYOUT } from '../../../core/layout/shell.component';
+import { OnboardingChecklistComponent } from '../../onboarding/onboarding-checklist/onboarding-checklist.component';
 import { IconComponent } from '../../../shared/icons/icon.component';
 import { watchLeftSelection } from '../../../shared/layout/left-selection';
 import { ListRowComponent, ListRowsDirective } from '../../../shared/layout/list-row.component';
 import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
 import { PaneComponent } from '../../../shared/layout/pane.component';
 import { SplitComponent } from '../../../shared/layout/split.component';
+import { kyivDateTime } from '../../../shared/date-format';
 import { organizationName } from '../../../shared/organization-name';
 import { TranslatedPaginatorIntl } from '../../../shared/translated-paginator-intl';
 import { initials } from '../../../shared/widgets/top-widget.component';
@@ -68,13 +73,14 @@ export interface UserCounts {
 }
 
 /**
- * The users page: the people of the caller's scope in a list with filters, and the selected person in the pane
- * beside it (the child route `:id`); the header counts the accounts, those waiting for a membership check and the
- * blocked ones.
+ * The users page: the people of the caller's scope with filters, as a full table from 960 px while nobody is
+ * selected and as a narrow list of names and units beside the selected person's pane (the child route `:id`); the
+ * header counts the accounts, those waiting for a membership check and the blocked ones.
  */
 @Component({
   selector: 'app-user-list',
   imports: [
+    OnboardingChecklistComponent,
     ReactiveFormsModule,
     MatFormField,
     MatLabel,
@@ -86,6 +92,7 @@ export interface UserCounts {
     MatPaginator,
     MatProgressBar,
     MatButton,
+    NgTemplateOutlet,
     IconComponent,
     ListRowComponent,
     ListRowsDirective,
@@ -139,6 +146,14 @@ export class UserListComponent implements OnInit {
     ),
     { initialValue: null },
   );
+  private readonly wide = toSignal(
+    inject(BreakpointObserver)
+      .observe(WIDE_LAYOUT)
+      .pipe(map((state) => state.matches)),
+    { initialValue: false },
+  );
+  /** The full table: a wide screen with nobody selected. */
+  readonly tableMode = computed(() => this.wide() && this.selectedId() === null);
   readonly counted = signal<UserCounts>({ total: null, waiting: null, blocked: null });
   /** The context line: the counts that loaded, in the interface language. */
   readonly counts = computed(() => {
@@ -248,6 +263,16 @@ export class UserListComponent implements OnInit {
 
   name(organization: OrganizationRef): string {
     return organizationName(organization, this.language.current());
+  }
+
+  /**
+   * A moment in the interface language, in Kyiv time.
+   *
+   * @param value the ISO instant
+   * @returns the date and time to show
+   */
+  moment(value: string): string {
+    return kyivDateTime(value, this.language.current());
   }
 
   private childId(): number | null {

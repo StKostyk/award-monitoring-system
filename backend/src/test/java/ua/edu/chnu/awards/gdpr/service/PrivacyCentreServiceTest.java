@@ -64,11 +64,11 @@ class PrivacyCentreServiceTest {
     @Test
     void ac22_thePageSizeIsClampedAndANegativePageIsTheFirst() {
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
-        when(activityQueries.activity(eq(USER), pageable.capture()))
-            .thenAnswer(call -> new PageImpl<ActivityEntry>(List.of(), call.getArgument(1), 0));
+        when(activityQueries.activity(eq(USER), eq(Boolean.FALSE), pageable.capture()))
+            .thenAnswer(call -> new PageImpl<ActivityEntry>(List.of(), call.getArgument(2), 0));
 
-        service.activity(USER, -3, 500);
-        PageResponse<ActivityEntry> small = service.activity(USER, 2, 0);
+        service.activity(USER, Boolean.FALSE, -3, 500);
+        PageResponse<ActivityEntry> small = service.activity(USER, Boolean.FALSE, 2, 0);
 
         assertThat(pageable.getAllValues()).extracting(Pageable::getPageNumber, Pageable::getPageSize)
             .containsExactly(tuple(0, PageResponse.MAX_SIZE), tuple(2, 1));

@@ -11,6 +11,8 @@ export function reduceMotion(): void {
       matches: query.includes('reduced-motion'),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
     })),
   );
 }

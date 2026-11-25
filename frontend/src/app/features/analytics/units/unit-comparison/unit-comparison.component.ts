@@ -15,9 +15,10 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { PaneComponent } from '../../../../shared/layout/pane.component';
 import { organizationName } from '../../../../shared/organization-name';
+import { TableScrollComponent } from '../../../../shared/widgets/table-scroll.component';
 import { AnalyticsPeriod } from '../../analytics.service';
 import { DeltaComponent } from '../delta/delta.component';
-import { UnitComparisonRow } from '../unit-analytics.service';
+import { UnitComparisonRow, UnitTotals } from '../unit-analytics.service';
 
 export type ComparisonColumn =
   'name' | 'members' | 'approved' | 'change' | 'awardedPeople' | 'perHundred' | 'verified';
@@ -36,11 +37,13 @@ interface NamedRow {
 export interface ComparisonLabels {
   caption: string;
   levelRow: string;
+  total: string;
 }
 
 const DEPARTMENT_LABELS: ComparisonLabels = {
   caption: 'unitAnalytics.sections.comparison',
   levelRow: 'unitAnalytics.comparison.facultyLevel',
+  total: 'unitAnalytics.comparison.facultyTotal',
 };
 
 const PERCENT = 100;
@@ -56,6 +59,7 @@ const MIN_BAR_PERCENT = 4;
     MatSortHeader,
     NgTemplateOutlet,
     RouterLink,
+    TableScrollComponent,
     TranslocoPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,6 +73,8 @@ export class UnitComparisonComponent {
 
   readonly rows = input.required<UnitComparisonRow[]>();
   readonly period = input.required<AnalyticsPeriod>();
+  /** The totals of the unit compared, the last row of the table view; none without. */
+  readonly totals = input<UnitTotals | null>(null);
   readonly labels = input<ComparisonLabels>(DEPARTMENT_LABELS);
   readonly linkable = input<(row: UnitComparisonRow) => boolean>(isChildUnit);
 

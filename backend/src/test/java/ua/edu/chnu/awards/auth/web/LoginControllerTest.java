@@ -17,16 +17,16 @@ class LoginControllerTest {
     void ac4_the_model_carries_no_award_count() {
         ExtendedModelMap model = new ExtendedModelMap();
 
-        assertThat(controller.login(null, null, model)).isEqualTo("login");
+        assertThat(controller.login(null, null, null, model)).isEqualTo("login");
         assertThat(model).doesNotContainKeys("awardCount", "awardCountKey")
-            .containsKeys("registerUrl", "forgotPasswordUrl");
+            .containsKeys("registerUrl", "forgotPasswordUrl", "privacyUrl", "termsUrl");
     }
 
     @Test
     void a_failed_attempt_keeps_its_known_error_code() {
         ExtendedModelMap model = new ExtendedModelMap();
 
-        assertThat(controller.login("BAD_CREDENTIALS", null, model)).isEqualTo("login");
+        assertThat(controller.login("BAD_CREDENTIALS", null, null, model)).isEqualTo("login");
         assertThat(model).containsEntry("error", "login.error.BAD_CREDENTIALS");
     }
 

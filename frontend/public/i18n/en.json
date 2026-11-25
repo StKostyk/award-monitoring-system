@@ -15,6 +15,7 @@
     "notFound": "Page not found",
     "offline": "No connection",
     "privacyNotice": "Privacy notice",
+    "terms": "Terms of use",
     "privacy": "Privacy",
     "notifications": "Notifications",
     "awards": "My awards",
@@ -106,6 +107,82 @@
       "title": "Department membership not confirmed",
       "text": "Your department membership is not confirmed yet: {{organization}}.",
       "hint": "Ask your faculty secretary or the head of your department. Once it is confirmed, the roles reach your session after the next sign-in."
+    }
+  },
+  "onboarding": {
+    "title": "First steps",
+    "greeting": "Welcome, {{name}}!",
+    "progress": "{{done}} of {{total}} done",
+    "done": "Done",
+    "allDone": "All first steps are done. This list will not appear again.",
+    "dismiss": "Hide the list",
+    "tourStart": "Show a tour of the screen",
+    "steps": {
+      "NOTICE": {
+        "title": "Read the privacy notice",
+        "hint": "What the system keeps about you and why",
+        "action": "Open"
+      },
+      "PROFILE": {
+        "title": "Check your profile",
+        "hint": "Name, unit and e-mail",
+        "action": "Check"
+      },
+      "FIRST_AWARD": {
+        "title": "Add your first award",
+        "hint": "A draft can be saved and finished later",
+        "action": "Add"
+      },
+      "VISIBILITY": {
+        "title": "Choose who sees your awards",
+        "hint": "Visibility and rankings",
+        "action": "Set up"
+      },
+      "NOTIFICATIONS": {
+        "title": "Set up notifications",
+        "hint": "Which e-mails you receive",
+        "action": "Set up"
+      },
+      "REVIEW_QUEUE": {
+        "title": "Look at the review queue",
+        "hint": "Awards waiting for your decision",
+        "action": "Open"
+      },
+      "DELEGATE": {
+        "title": "Appoint a deputy",
+        "hint": "Who reviews awards while you are away",
+        "action": "Appoint"
+      },
+      "IMPORT": {
+        "title": "Import staff",
+        "hint": "Colleagues from a spreadsheet",
+        "action": "Import"
+      }
+    },
+    "tour": {
+      "count": "Step {{n}} of {{total}}",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Done",
+      "skip": "Skip",
+      "stops": {
+        "search": {
+          "title": "Search",
+          "text": "Finds a page, an award or an action. Also opens with Ctrl K."
+        },
+        "navigation": {
+          "title": "Navigation",
+          "text": "Every page of your roles. The current page is highlighted."
+        },
+        "newAward": {
+          "title": "New award",
+          "text": "Adds an award: fill in the details, attach a document and send it for review."
+        },
+        "views": {
+          "title": "Chart / Table",
+          "text": "Every chart can be read as a table with the same numbers."
+        }
+      }
     }
   },
   "roles": {
@@ -627,7 +704,13 @@
         "waiting": "Waiting for a membership check: {{count}}",
         "blocked": "Blocked: {{count}}"
       },
-      "pick": "Choose a person in the list to see the account, the roles and the actions."
+      "columns": {
+        "name": "Name and address",
+        "unit": "Unit",
+        "roles": "Roles",
+        "status": "Status",
+        "lastLogin": "Last sign-in"
+      }
     },
     "people": {
       "add": "Add a colleague without an account",
@@ -703,6 +786,14 @@
     },
     "detail": {
       "back": "Back to the user list",
+      "close": "Close the user card",
+      "tabs": {
+        "roles": "Roles",
+        "account": "Account"
+      },
+      "awards": "Awards · {{count}}",
+      "awardsLoading": "Awards",
+      "delegations": "Delegations",
       "email": "Email",
       "organization": "Organisation",
       "status": "Status",
@@ -923,19 +1014,28 @@
   },
   "delegations": {
     "title": "My delegations",
+    "personTitle": "Delegations",
     "context": "Powers you handed over or received for a period",
-    "detail": {
-      "back": "Back to the list",
-      "givenTo": "Given to: {{name}}",
-      "receivedFrom": "From: {{name}}",
-      "reason": "Reason",
-      "noReason": "Not given",
-      "can": "Can",
-      "cannot": "Cannot",
-      "hint": "Choose a delegation to see its period, reason and limits.",
-      "emptyHint": "No delegations yet.",
-      "notFound": "This delegation is not one of yours.",
-      "gone": "The delegation is no longer in the list.",
+    "personContext": "Powers of this person, handed over and received (read only)",
+    "board": {
+      "sides": "Whose delegations to show",
+      "given": "From me · {{count}}",
+      "received": "To me · {{count}}",
+      "givenBy": "Given · {{count}}",
+      "receivedBy": "Received · {{count}}",
+      "columns": {
+        "active": "Active",
+        "upcoming": "Scheduled",
+        "ended": "Ended"
+      },
+      "empty": {
+        "active": "No active delegations",
+        "upcoming": "No scheduled delegations",
+        "ended": "No ended delegations"
+      },
+      "limits": "Limits of authority",
+      "showAll": "Show all · {{count}}",
+      "showFewer": "Show fewer",
       "endsIn": {
         "one": "{{count}} day left",
         "few": "{{count}} days left",
@@ -965,21 +1065,8 @@
         "delegate": "Pass these powers on"
       }
     },
-    "given": "Given",
-    "received": "Received",
-    "emptyGiven": "You have not handed your authority to anybody yet",
-    "emptyReceived": "Nobody has handed you their authority yet",
     "period": "{{from}} — {{to}}",
     "actingFor": "Acting for: {{name}}",
-    "columns": {
-      "role": "Role",
-      "organization": "Organisation",
-      "delegate": "Delegate",
-      "delegator": "Delegated by",
-      "period": "Period",
-      "state": "State",
-      "actions": "Actions"
-    },
     "states": {
       "active": "Active",
       "upcoming": "Upcoming",
@@ -1360,6 +1447,8 @@
     "signIn": "Sign in",
     "privacyNotice": "I have read the",
     "privacyNoticeLink": "privacy notice",
+    "terms": "By using the system you accept the",
+    "termsLink": "terms of use",
     "validation": {
       "required": "Required",
       "institutionalEmail": "An address in the chnu.edu.ua domain is required",
@@ -1476,11 +1565,9 @@
       "notice": {
         "title": "Privacy notice",
         "acknowledged": "You confirmed version {{version}}",
-        "notAcknowledged": "You have not confirmed the notice yet.",
-        "read": "Read the notice"
+        "notAcknowledged": "You have not confirmed the notice yet."
       },
       "consents": {
-        "title": "Consents",
         "ANALYTICS": "Name me in rankings and comparisons of unit reports",
         "ANALYTICS_purpose": "Without this consent you are counted only in totals. Withdrawing it does not affect earlier reports.",
         "failed": "The choice could not be saved. Try again later.",
@@ -1495,37 +1582,48 @@
         }
       },
       "choices": {
-        "title": "Your choices",
         "awards": {
           "PRIVATE": "Approved awards seen only by you and reviewers",
           "UNIVERSITY": "Approved awards shown to colleagues",
           "PUBLIC": "Approved awards shown publicly"
         },
         "documentsTitle": "Documents shown to colleagues",
-        "emailTitle": "Event types with e-mail switched off",
-        "awardsLink": "My awards",
         "notificationsLink": "Notification settings"
       },
       "data": {
         "title": "Your data",
-        "download": "Download my data",
         "downloading": "Preparing the file…",
         "downloaded": "File downloaded",
         "lastExport": "Last download: {{date}}",
         "tooMany": "Too many requests. Try again later.",
         "failed": "The file could not be prepared. Try again later.",
         "hint": "A JSON file with everything the system keeps about you: profile, roles, delegations, awards including drafts, document details, consents, devices and the log of your actions with IP addresses. You will get an email about the download."
+      },
+      "status": {
+        "ok": "All fine: the notice is acknowledged and no deletion is requested.",
+        "notice": "Needs your attention: acknowledge the current version of the privacy notice.",
+        "erasure": "Your account will be deleted on {{date}}, days left: {{days}}.",
+        "cancel": "Cancel the request"
+      },
+      "tiles": {
+        "read": "Read",
+        "change": "Change",
+        "download": "Download",
+        "visibility": "Award visibility",
+        "email": "E-mail notifications",
+        "emailAllOn": "E-mails arrive for every event.",
+        "emailOff": "Switched off for event types: {{count}}",
+        "mine": "Mine",
+        "fullLog": "Full log →",
+        "emptyFilter": "No entries of this kind yet."
       }
     },
     "activity": {
       "title": "Your activity",
       "empty": "Nothing recorded yet.",
       "failed": "The activity could not be loaded.",
-      "byMe": "By me",
       "aboutMe": "About me",
       "columns": {
-        "action": "Action",
-        "time": "Time",
         "who": "Who"
       },
       "actions": {
@@ -1615,6 +1713,10 @@
         "cancelFailed": "The erasure could not be cancelled. Try again later."
       }
     }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "loadFailed": "The terms of use could not be loaded. Try again later."
   },
   "profile": {
     "menu": "My profile",
@@ -1720,6 +1822,33 @@
     "lastDay": ", last day {{date}}",
     "oldest": ", oldest deadline {{date}}",
     "colleague": "Award of {{person}}: {{text}}",
+    "inbox": {
+      "filters": "Notification filter",
+      "all": "All · {{count}}",
+      "unread": "Unread · {{count}}",
+      "groups": {
+        "awards": "Awards",
+        "review": "Review",
+        "roles": "Roles"
+      },
+      "list": "Inbox",
+      "newestFirst": "Newest first",
+      "emptyGroup": "No notifications in this group",
+      "pane": "Notification",
+      "hint": "Choose a notification in the list to read it here.",
+      "notFound": "Notification not found: it is not on this page of the list or it belongs to someone else.",
+      "read": "Read",
+      "unreadState": "Unread",
+      "markUnread": "Mark as unread",
+      "back": "Back to notifications",
+      "targets": {
+        "award": "Open the award",
+        "reviews": "Go to the review queue",
+        "profile": "Go to the profile",
+        "delegations": "Go to delegations",
+        "awards": "Go to my awards"
+      }
+    },
     "types": {
       "AWARD_APPROVED": "«{{title}}» approved by {{reviewer}} at the {{level}} level",
       "AWARD_REJECTED": "«{{title}}» rejected by {{reviewer}} at the {{level}} level",
@@ -1859,8 +1988,24 @@
       "description": "Bar chart of approved awards by level: {{list}}."
     },
     "timeline": {
-      "title": "Approved awards over time",
-      "description": "Chart of {{count}} approved awards by date and level; the latest is «{{latest}}». Switch to the table to open an award.",
+      "road": "My journey from the first award to today",
+      "roadNewest": "My newest awards up to today",
+      "none": "No approved awards yet.",
+      "start": "{{year}} · start",
+      "startShown": "from {{year}} · newest",
+      "today": "today",
+      "filter": "Award level",
+      "all": "All",
+      "national": "National and up",
+      "count": {
+        "one": "{{count}} award",
+        "few": "{{count}} awards",
+        "many": "{{count}} awards",
+        "other": "{{count}} awards"
+      },
+      "verified": "verified",
+      "noneNational": "No national or international awards yet.",
+      "allAwards": "All awards →",
       "truncated": "Only the newest {{count}} awards are shown."
     },
     "table": {
@@ -1937,7 +2082,8 @@
     "exportFailed": "The report could not be exported.",
     "delta": {
       "new": "new",
-      "previous": "Previous period: {{count}}"
+      "previous": "Previous period: {{count}}",
+      "against": "vs {{previous}}"
     },
     "tiles": {
       "approved": "Approved awards",
@@ -1960,8 +2106,7 @@
     },
     "trend": {
       "personal": "Personal awards",
-      "unitAwards": "Unit awards",
-      "ownScale": "Each department on its own scale; the last year of the period is highlighted."
+      "unitAwards": "Unit awards"
     },
     "comparison": {
       "unit": "Unit",
@@ -1973,7 +2118,14 @@
       "verified": "Verified",
       "facultyLevel": "Faculty level",
       "inactive": "inactive",
-      "perHundredShort": "Per 100"
+      "perHundredShort": "Per 100",
+      "awardsGroup": "Awards",
+      "peopleGroup": "People",
+      "approvedShort": "Total",
+      "verifiedShort": "Verified",
+      "awardedShort": "Awarded",
+      "perHundredGroup": "Per 100 staff",
+      "facultyTotal": "Whole faculty"
     },
     "bars": {
       "current": "This period",
@@ -1990,7 +2142,10 @@
       "note": "Only people who agreed to be named in analytics appear here.",
       "empty": "Nobody in this unit has agreed to be named yet.",
       "groupTooSmall": "The unit has fewer members than the minimum group for naming people, so nobody is listed.",
-      "awards": "Awards"
+      "awards": "Awards",
+      "latest": "Latest awards",
+      "periodCount": "Awards in the period: {{count}}",
+      "portfolio": "Portfolio →"
     },
     "highlights": {
       "strengths": "Strengths",
@@ -2019,7 +2174,8 @@
       "faculties": "Faculties"
     },
     "comparison": {
-      "universityLevel": "University level"
+      "universityLevel": "University level",
+      "universityTotal": "Whole university"
     },
     "projection": {
       "approved": "Approved awards",
@@ -2150,6 +2306,11 @@
     "level": "Level",
     "awards": "Awards",
     "note": "Note",
+    "table": {
+      "total": "Total",
+      "scrollHint": "{{shown}} of {{total}} years — scroll →",
+      "scrollLabel": "{{caption}}: table, scrolls sideways"
+    },
     "kpi": {
       "up": "up {{percent}}",
       "down": "down {{percent}}",

@@ -1,44 +1,159 @@
-<app-chart [option]="option()" [description]="description()" (pointClicked)="open($event)">
-  <table class="analytics-table" data-testid="timeline-table">
-    <caption>
-      {{
-        'analytics.timeline.title' | transloco
-      }}
-    </caption>
-    <thead>
-      <tr>
-        <th scope="col">{{ 'analytics.table.date' | transloco }}</th>
-        <th scope="col">{{ 'analytics.table.award' | transloco }}</th>
-        <th scope="col">{{ 'analytics.table.category' | transloco }}</th>
-        <th scope="col">{{ 'analytics.table.organization' | transloco }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of rows(); track row.awardId) {
-        <tr>
-          <td>{{ row.awardDate | kyivDate }}</td>
-          <th scope="row">
-            <a [routerLink]="['/awards', row.awardId]" data-testid="timeline-link">{{
-              row.shownTitle
-            }}</a>
-            @if (row.verified) {
-              <span class="analytics-verified">
-                <app-icon inline name="badge-check" />
-                {{ 'achievements.verified' | transloco }}
-              </span>
-            }
-          </th>
-          <td>
-            {{ row.categoryName }} ({{ 'categories.levels.' + row.category.level | transloco }})
-          </td>
-          <td>{{ row.awardingOrganization }}</td>
-        </tr>
+@if (timeline().length === 0) {
+  <p class="analytics-note" data-testid="timeline-none">
+    {{ 'analytics.timeline.none' | transloco }}
+  </p>
+} @else if (wide()) {
+  @let view = road();
+  <div
+    class="road"
+    [style.--road-columns]="perRow()"
+    [style.--road-rows]="view.rows.length"
+    data-testid="timeline-road"
+  >
+    <div class="road__lanes" aria-hidden="true">
+      @for (row of view.rows; track row.row) {
+        <span
+          class="road__lane"
+          [class.road__lane--back]="row.back"
+          [class.road__lane--turn]="!$last"
+          [style.grid-row]="row.row"
+        >
+          @if ($first) {
+            <span class="road__start" data-testid="timeline-start">{{
+              (truncated() ? 'analytics.timeline.startShown' : 'analytics.timeline.start')
+                | transloco: { year: view.first }
+            }}</span>
+          }
+          @if ($last) {
+            <span class="road__today" data-testid="timeline-today">
+              <app-icon inline name="flag" />
+              {{ 'analytics.timeline.today' | transloco }}
+            </span>
+          }
+        </span>
       }
-    </tbody>
-  </table>
-</app-chart>
+    </div>
+    <ol
+      class="road__stops"
+      [attr.aria-label]="
+        (truncated() ? 'analytics.timeline.roadNewest' : 'analytics.timeline.road') | transloco
+      "
+    >
+      @for (row of view.rows; track row.row) {
+        @for (stop of row.stops; track stop.awardId) {
+          <li class="road__stop" [style.grid-row]="row.row" [style.grid-column]="stop.column">
+            <a
+              class="road__link"
+              [routerLink]="['/awards', stop.awardId]"
+              [attr.title]="stop.awardingOrganization + ' · ' + stop.categoryName"
+              data-testid="timeline-stop"
+            >
+              <span class="road__year" data-testid="timeline-stop-year">{{ stop.year }}</span>
+              <span class="road__title" data-testid="timeline-stop-title">{{
+                stop.shownTitle
+              }}</span>
+              <span class="road__marks">
+                <span [class]="'app-lv app-lv--' + stop.level" data-testid="timeline-stop-level">{{
+                  'categories.levels.' + stop.level | transloco
+                }}</span>
+                @if (stop.verified) {
+                  <span class="road__verified" data-testid="timeline-stop-verified">
+                    <app-icon inline name="badge-check" />
+                    <span class="cdk-visually-hidden">{{
+                      'analytics.timeline.verified' | transloco
+                    }}</span>
+                  </span>
+                }
+              </span>
+              <span [class]="'road__pin road__pin--' + stop.level" aria-hidden="true"></span>
+            </a>
+          </li>
+        }
+      }
+    </ol>
+  </div>
+} @else {
+  <div class="feed" data-testid="timeline-feed">
+    <div
+      class="feed__filters"
+      role="group"
+      [attr.aria-label]="'analytics.timeline.filter' | transloco"
+    >
+      <button
+        type="button"
+        class="app-chip"
+        [class.app-chip--filled]="filter() === 'all'"
+        [attr.aria-pressed]="filter() === 'all'"
+        (click)="filter.set('all')"
+        data-testid="timeline-filter-all"
+      >
+        {{ 'analytics.timeline.all' | transloco }}
+      </button>
+      <button
+        type="button"
+        class="app-chip"
+        [class.app-chip--filled]="filter() === 'national'"
+        [attr.aria-pressed]="filter() === 'national'"
+        (click)="filter.set('national')"
+        data-testid="timeline-filter-national"
+      >
+        {{ 'analytics.timeline.national' | transloco }}
+      </button>
+    </div>
+    @for (group of feed(); track group.year) {
+      <section class="feed__year">
+        <h3 class="feed__heading" data-testid="timeline-year">
+          {{ group.year }}
+          <span class="feed__count">{{
+            'analytics.timeline.count.' + group.form | transloco: { count: group.items.length }
+          }}</span>
+        </h3>
+        <ul class="feed__rows">
+          @for (item of group.items; track item.awardId) {
+            <li>
+              <a
+                class="feed__row"
+                [routerLink]="['/awards', item.awardId]"
+                data-testid="timeline-row"
+              >
+                <span class="feed__date" data-testid="timeline-day">
+                  <b>{{ item.day }}</b>
+                  {{ item.month }}
+                </span>
+                <span class="feed__main">
+                  <span class="feed__title">
+                    {{ item.shownTitle }}
+                    @if (item.verified) {
+                      <span class="feed__verified">
+                        <app-icon inline name="badge-check" />
+                        {{ 'analytics.timeline.verified' | transloco }}
+                      </span>
+                    }
+                  </span>
+                  <span class="feed__meta"
+                    >{{ item.awardingOrganization }} · {{ item.categoryName }}</span
+                  >
+                </span>
+                <span [class]="'app-lv app-lv--' + item.level" data-testid="timeline-row-level">{{
+                  'categories.levels.' + item.level | transloco
+                }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    } @empty {
+      <p class="analytics-note" data-testid="timeline-none">
+        {{ 'analytics.timeline.noneNational' | transloco }}
+      </p>
+    }
+  </div>
+}
 @if (truncated()) {
-  <p class="analytics-note" data-testid="timeline-truncated">
+  <p class="analytics-note timeline__more" data-testid="timeline-truncated">
     {{ 'analytics.timeline.truncated' | transloco: { count: timeline().length } }}
+    <a routerLink="/awards" data-testid="timeline-all">{{
+      'analytics.timeline.allAwards' | transloco
+    }}</a>
   </p>
 }

@@ -6,6 +6,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
 import { vi } from 'vitest';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { LanguageService } from '../../core/i18n/language.service';
 import { Page } from '../../shared/page';
 import { ComplianceComponent, readView } from './compliance.component';
@@ -106,6 +107,7 @@ describe('ComplianceComponent', () => {
         provideStore(),
         provideState(complianceFeature),
         { provide: LanguageService, useValue: { current: () => 'uk' } },
+        { provide: AuthService, useValue: { permissions: () => ({ hasPermission: () => true }) } },
       ],
     }).compileComponents();
     store = TestBed.inject(Store);

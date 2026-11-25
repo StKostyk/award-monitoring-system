@@ -3,12 +3,6 @@
   gap: 8px;
 }
 
-.units__compared {
-  font: var(--mat-sys-body-medium);
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0;
-}
-
 .units__pair {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -16,6 +10,28 @@
 
   @media (min-width: 1280px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+[data-testid='section-totals'],
+[splitMain] > app-pane,
+.units__pair {
+  transition: opacity 150ms ease-out;
+}
+
+.units--updating {
+  [data-testid='section-totals'],
+  [splitMain] > app-pane,
+  .units__pair {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-testid='section-totals'],
+  [splitMain] > app-pane,
+  .units__pair {
+    transition: none;
   }
 }
 

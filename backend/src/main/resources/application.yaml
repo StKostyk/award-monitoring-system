@@ -143,6 +143,9 @@ app:
   brand:
     # university brand of the sign-in and error pages; the same ids as the frontend's brand/brand.json
     id: ${APP_BRAND:chnu}
+  sign-in:
+    # look of the sign-in, error and 429 pages: catalogue, sky or rushnyk; any other value stops the start
+    theme: ${APP_SIGN_IN_THEME:catalogue}
   jobs:
     catch-up-on-start: ${APP_JOBS_CATCH_UP_ON_START:false}
     catch-up-delay: ${APP_JOBS_CATCH_UP_DELAY:PT1M}
@@ -204,10 +207,12 @@ app:
     unit-interval: ${APP_REMINDERS_UNIT_INTERVAL:P7D}
   privacy:
     # texts: frontend/public/privacy/<version>/<lang>.html; a new version is added here and becomes current
-    notice-version: ${APP_PRIVACY_NOTICE_VERSION:1.0}
+    notice-version: ${APP_PRIVACY_NOTICE_VERSION:1.1}
     notice-versions:
       - version: '1.0'
         published-on: 2026-10-15
+      - version: '1.1'
+        published-on: 2026-11-26
   rate-limit:
     api-requests-per-minute: ${API_RATE_LIMIT_PER_MINUTE:600}
     export-requests-per-minute: ${EXPORT_RATE_LIMIT_PER_MINUTE:5}

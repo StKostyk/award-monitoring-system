@@ -2,13 +2,6 @@
   display: block;
 }
 
-.multiples__key {
-  margin: 0 0 8px;
-  font-size: 0.75rem;
-  line-height: 1.35;
-  color: var(--app-muted);
-}
-
 .multiples {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
@@ -90,6 +83,14 @@
 
 .columns__item--current .columns__bar {
   background: var(--app-bar);
+}
+
+.columns__item--running .columns__bar {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mat-sys-surface) 38%, transparent) 0 4px,
+    transparent 4px 9px
+  );
 }
 
 .columns__year {

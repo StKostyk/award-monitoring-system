@@ -25,6 +25,7 @@ import ua.edu.chnu.awards.award.dto.OpenAwards;
 import ua.edu.chnu.awards.award.dto.TimelineEntry;
 import ua.edu.chnu.awards.award.dto.VisibilityCounts;
 import ua.edu.chnu.awards.award.dto.YearRange;
+import ua.edu.chnu.awards.award.entity.RecognitionLevel;
 import ua.edu.chnu.awards.support.AbstractIntegrationTest;
 import ua.edu.chnu.awards.support.AwardRows;
 import ua.edu.chnu.awards.support.ConsentRows;
@@ -127,8 +128,9 @@ class AwardStatisticsIT extends AbstractIntegrationTest {
 
         assertThat(timeline).extracting(TimelineEntry::awardId).containsExactly(sameDaySecond, sameDayFirst, older);
         assertThat(timeline.get(2)).isEqualTo(new TimelineEntry(older, "Letter", "Подяка", LocalDate.of(2022, 1, 1),
-            timeline.get(2).category(), "МОН", true));
+            timeline.get(2).category(), "МОН", true, RecognitionLevel.NATIONAL));
         assertThat(timeline.get(2).category().id()).isEqualTo(13L);
+        assertThat(timeline).allSatisfy(entry -> assertThat(entry.level()).isEqualTo(entry.category().level()));
         assertThat(statistics.timeline(ownerId, PERIOD, 2)).hasSize(2);
     }
 

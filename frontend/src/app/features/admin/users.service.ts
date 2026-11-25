@@ -24,11 +24,11 @@ export interface UserSummary {
   status: AccountStatus;
   roles: RoleAssignment[];
   membershipConfirmed: boolean;
+  lastLoginAt: string | null;
 }
 
 export interface UserDetail extends UserSummary {
   createdAt: string;
-  lastLoginAt: string | null;
   roleHistory: RoleAssignment[];
 }
 

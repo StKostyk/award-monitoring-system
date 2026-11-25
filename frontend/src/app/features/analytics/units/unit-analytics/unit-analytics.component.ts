@@ -125,7 +125,8 @@ export class UnitAnalyticsComponent {
     { initialValue: null },
   );
   protected readonly counts = computed(() => {
-    const data = this.analytics();
+    const shown = this.analytics();
+    const data = shown?.unit.id === this.unitId() ? shown : null;
     const report = data?.unit.type === 'FACULTY' ? data : this.facultyReport();
     if (!report) {
       return data ? new Map([[data.unit.id, data.totals.approved.current]]) : null;
@@ -141,23 +142,14 @@ export class UnitAnalyticsComponent {
   protected readonly notFound = computed(
     () => this.unknownId() || this.problem() === UNIT_NOT_FOUND,
   );
+  /** True while the figures on screen wait for another unit or period. */
+  protected readonly updating = computed(() => this.loading() && this.analytics() !== null);
   protected readonly exportDisabled = computed(
     () => this.invalid() || this.loading() || this.problem() !== null || !this.analytics(),
   );
   protected readonly shownPeriod = computed<AnalyticsPeriod>(
     () => this.analytics()?.period ?? this.period(),
   );
-  protected readonly comparedWith = computed(() => {
-    this.language.current();
-    const data = this.analytics();
-    if (!data) {
-      return '';
-    }
-    return this.transloco.translate('unitAnalytics.comparedWith', {
-      period: years(data.period),
-      previous: years(data.previousPeriod),
-    });
-  });
   protected readonly hasYears = computed(
     () => this.analytics()?.byYear.some((entry) => entry.total > 0) ?? false,
   );
@@ -189,6 +181,7 @@ export class UnitAnalyticsComponent {
 
   constructor() {
     this.requestUnitsUnlessLoaded();
+    let opened = false;
     combineLatest([this.route.paramMap, this.route.queryParamMap])
       .pipe(takeUntilDestroyed())
       .subscribe(([params, query]) => {
@@ -197,7 +190,10 @@ export class UnitAnalyticsComponent {
         this.unknownId.set(!Number.isSafeInteger(unitId) || unitId <= 0);
         this.invalid.set(period === null);
         if (period && !this.unknownId()) {
-          this.store.dispatch(UnitAnalyticsActions.unitSelected({ unitId, period }));
+          this.store.dispatch(
+            UnitAnalyticsActions.unitSelected({ unitId, period, keepFigures: opened }),
+          );
+          opened = true;
         }
       });
   }
@@ -228,8 +224,4 @@ export class UnitAnalyticsComponent {
       this.store.dispatch(UnitAnalyticsActions.unitsRequested());
     }
   }
-}
-
-function years(period: { from: number; to: number }): string {
-  return period.from === period.to ? String(period.from) : `${period.from}–${period.to}`;
 }

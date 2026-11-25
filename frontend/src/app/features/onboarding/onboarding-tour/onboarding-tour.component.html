@@ -1,0 +1,58 @@
+<div class="tour" data-testid="onboarding-tour">
+  @if (spotlight(); as box) {
+    <div
+      class="tour__spotlight"
+      [style.top.px]="box.top"
+      [style.left.px]="box.left"
+      [style.width.px]="box.width"
+      [style.height.px]="box.height"
+      data-testid="tour-spotlight"
+    ></div>
+  } @else {
+    <div class="tour__dim"></div>
+  }
+  <section
+    #bubbleBox
+    class="tour__bubble"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tour-title"
+    aria-describedby="tour-text"
+    cdkTrapFocus
+    [style.top.px]="bubble()?.top ?? 0"
+    [style.left.px]="bubble()?.left ?? 0"
+    [attr.data-stop]="stop().key"
+    data-testid="tour-bubble"
+  >
+    <p class="tour__count" data-testid="tour-count">
+      {{ 'onboarding.tour.count' | transloco: { n: index() + 1, total: stops.length } }}
+    </p>
+    <h2 class="tour__title" id="tour-title">
+      {{ 'onboarding.tour.stops.' + stop().key + '.title' | transloco }}
+    </h2>
+    <p class="tour__text" id="tour-text">
+      {{ 'onboarding.tour.stops.' + stop().key + '.text' | transloco }}
+    </p>
+    <div class="tour__actions">
+      <button mat-button type="button" (click)="end()" data-testid="tour-skip">
+        {{ 'onboarding.tour.skip' | transloco }}
+      </button>
+      <span class="tour__nav">
+        @if (index() > 0) {
+          <button mat-stroked-button type="button" (click)="back()" data-testid="tour-back">
+            {{ 'onboarding.tour.back' | transloco }}
+          </button>
+        }
+        <button
+          #nextButton
+          mat-flat-button
+          type="button"
+          (click)="forward()"
+          data-testid="tour-next"
+        >
+          {{ (last() ? 'onboarding.tour.finish' : 'onboarding.tour.next') | transloco }}
+        </button>
+      </span>
+    </div>
+  </section>
+</div>

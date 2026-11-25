@@ -9,7 +9,7 @@ export const UnitAnalyticsActions = createActionGroup({
     'Units Requested': emptyProps(),
     'Units Loaded': props<{ units: AnalysableUnit[] }>(),
     'Units Load Failed': props<{ problem: string }>(),
-    'Unit Selected': props<{ unitId: number; period: AnalyticsPeriod }>(),
+    'Unit Selected': props<{ unitId: number; period: AnalyticsPeriod; keepFigures?: boolean }>(),
     'Analytics Loaded': props<{ analytics: UnitAnalytics }>(),
     'Analytics Load Failed': props<{ problem: string }>(),
   },

@@ -15,10 +15,10 @@
   }
 </ng-template>
 
-<div class="comparison__scroll" tabindex="0" [attr.aria-label]="labels().caption | transloco">
+<app-table-scroll class="comparison__scroll" [label]="labels().caption | transloco">
   @if (table()) {
     <table
-      class="analytics-table comparison__table comparison__table--full"
+      class="analytics-table analytics-table--grouped comparison__table comparison__table--full"
       matSort
       [matSortActive]="sort().active"
       [matSortDirection]="sort().direction"
@@ -32,26 +32,44 @@
       </caption>
       <thead>
         <tr>
-          <th scope="col" mat-sort-header="name">
+          <th scope="col" rowspan="2" mat-sort-header="name">
             {{ 'unitAnalytics.comparison.unit' | transloco }}
+          </th>
+          <th
+            scope="colgroup"
+            colspan="3"
+            class="analytics-table__group analytics-table__tint"
+            data-testid="comparison-group-awards"
+          >
+            {{ 'unitAnalytics.comparison.awardsGroup' | transloco }}
+          </th>
+          <th
+            scope="colgroup"
+            colspan="3"
+            class="analytics-table__group"
+            data-testid="comparison-group-people"
+          >
+            {{ 'unitAnalytics.comparison.peopleGroup' | transloco }}
+          </th>
+        </tr>
+        <tr>
+          <th scope="col" class="analytics-table__tint" mat-sort-header="approved">
+            {{ 'unitAnalytics.comparison.approvedShort' | transloco }}
+          </th>
+          <th scope="col" class="analytics-table__tint" mat-sort-header="change">
+            {{ 'unitAnalytics.comparison.change' | transloco }}
+          </th>
+          <th scope="col" class="analytics-table__tint" mat-sort-header="verified">
+            {{ 'unitAnalytics.comparison.verifiedShort' | transloco }}
+          </th>
+          <th scope="col" mat-sort-header="awardedPeople">
+            {{ 'unitAnalytics.comparison.awardedShort' | transloco }}
           </th>
           <th scope="col" mat-sort-header="members">
             {{ 'unitAnalytics.comparison.members' | transloco }}
           </th>
-          <th scope="col" mat-sort-header="approved">
-            {{ 'unitAnalytics.comparison.approved' | transloco }}
-          </th>
-          <th scope="col" mat-sort-header="change">
-            {{ 'unitAnalytics.comparison.change' | transloco }}
-          </th>
-          <th scope="col" mat-sort-header="awardedPeople">
-            {{ 'unitAnalytics.comparison.awardedPeople' | transloco }}
-          </th>
           <th scope="col" mat-sort-header="perHundred">
-            {{ 'unitAnalytics.comparison.perHundred' | transloco }}
-          </th>
-          <th scope="col" mat-sort-header="verified">
-            {{ 'unitAnalytics.comparison.verified' | transloco }}
+            {{ 'unitAnalytics.comparison.perHundredGroup' | transloco }}
           </th>
         </tr>
       </thead>
@@ -61,10 +79,11 @@
             <th scope="row">
               <ng-container *ngTemplateOutlet="unitName; context: { $implicit: entry }" />
             </th>
-            <td>{{ entry.row.members }}</td>
-            <td>{{ entry.row.approved.current }}</td>
-            <td><app-delta [figure]="entry.row.approved" chip /></td>
+            <td class="analytics-table__tint">{{ entry.row.approved.current }}</td>
+            <td class="analytics-table__tint"><app-delta [figure]="entry.row.approved" chip /></td>
+            <td class="analytics-table__tint">{{ entry.row.verified }}</td>
             <td>{{ entry.row.awardedPeople }}</td>
+            <td>{{ entry.row.members }}</td>
             <td>
               @if (entry.row.perHundredMembers !== null) {
                 {{ entry.row.perHundredMembers | number: '1.0-1' }}
@@ -72,10 +91,28 @@
                 —
               }
             </td>
-            <td>{{ entry.row.verified }}</td>
           </tr>
         }
       </tbody>
+      @if (totals(); as total) {
+        <tfoot>
+          <tr data-testid="comparison-full-total">
+            <th scope="row">{{ labels().total | transloco }}</th>
+            <td class="analytics-table__tint">{{ total.approved.current }}</td>
+            <td class="analytics-table__tint"><app-delta [figure]="total.approved" chip /></td>
+            <td class="analytics-table__tint">{{ total.verified }}</td>
+            <td>{{ total.awardedPeople.current }}</td>
+            <td>{{ total.members }}</td>
+            <td>
+              @if (total.perHundredMembers !== null) {
+                {{ total.perHundredMembers | number: '1.0-1' }}
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        </tfoot>
+      }
     </table>
   } @else {
     <table
@@ -141,4 +178,4 @@
       </tbody>
     </table>
   }
-</div>
+</app-table-scroll>

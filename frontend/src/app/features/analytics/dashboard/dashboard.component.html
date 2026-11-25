@@ -28,6 +28,8 @@
   </div>
 </app-page-header>
 
+<app-onboarding-checklist tour />
+
 @if (invalid()) {
   <section class="dashboard__problem" role="alert" data-testid="dashboard-invalid">
     <p>{{ 'analytics.report.invalidPeriod' | transloco }}</p>

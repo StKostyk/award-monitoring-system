@@ -99,7 +99,7 @@ public class PersonalDataQueries {
         """;
 
     private static final String DASHBOARD_PREFERENCES = """
-        select color_scheme, layouts::text as layouts, updated_at
+        select color_scheme, layouts::text as layouts, onboarding::text as onboarding, updated_at
           from dashboard_preferences
          where user_id = :userId
         """;
@@ -209,7 +209,8 @@ public class PersonalDataQueries {
      */
     public DashboardPreferenceEntry dashboardPreferences(long userId) {
         return jdbc.query(DASHBOARD_PREFERENCES, Map.of(USER_ID, userId), (row, index) -> new DashboardPreferenceEntry(
-                row.getString("color_scheme"), row.getString("layouts"), instant(row, "updated_at")))
-            .stream().findFirst().orElseGet(() -> new DashboardPreferenceEntry("SYSTEM", "{}", null));
+                row.getString("color_scheme"), row.getString("layouts"), row.getString("onboarding"),
+                instant(row, "updated_at")))
+            .stream().findFirst().orElseGet(() -> new DashboardPreferenceEntry("SYSTEM", "{}", "{}", null));
     }
 }

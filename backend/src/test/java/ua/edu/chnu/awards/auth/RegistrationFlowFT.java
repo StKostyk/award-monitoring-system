@@ -81,14 +81,14 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
 
         RestAssured.given().contentType(ContentType.JSON).header("User-Agent", "FT browser")
             .body(Map.of("email", NOTICE, "password", PASSWORD, "firstName", "Олена", "lastName", "Нова",
-                "organizationId", 64L, "privacyNoticeVersion", "1.0"))
+                "organizationId", 64L, "privacyNoticeVersion", "1.1"))
             .post("/api/v1/auth/register").then().statusCode(201);
 
         long userId = userRepository.findByEmailAddressIgnoreCase(NOTICE).orElseThrow().getId();
         Map<String, Object> consent = jdbc.queryForMap("select consent_type, consent_version, is_granted,"
             + " granted_at is not null as dated, host(ip_address) as ip, user_agent from consent_records"
             + " where user_id = ?", userId);
-        assertThat(consent).containsEntry("consent_type", "DATA_PROCESSING").containsEntry("consent_version", "1.0")
+        assertThat(consent).containsEntry("consent_type", "DATA_PROCESSING").containsEntry("consent_version", "1.1")
             .containsEntry("is_granted", true).containsEntry("dated", true).containsEntry("user_agent", "FT browser");
         assertThat(consent.get("ip")).isNotNull();
         assertThat(jdbc.queryForObject("select count(*) from audit_logs where user_id = ? and entity_type = 'GDPR'"
@@ -151,7 +151,7 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
 
         RestAssured.given().contentType(ContentType.JSON)
             .body(Map.of("email", ABANDONED, "password", PASSWORD, "firstName", "Друга", "lastName", "Спроба",
-                "organizationId", 65L, "privacyNoticeVersion", "1.0"))
+                "organizationId", 65L, "privacyNoticeVersion", "1.1"))
             .post("/api/v1/auth/register").then().statusCode(201).body("status", equalTo("PENDING"));
 
         assertThat(userRepository.findByEmailAddressIgnoreCase(ABANDONED).orElseThrow().getFirstName())
@@ -182,7 +182,7 @@ class RegistrationFlowFT extends AbstractIntegrationTest {
     }
 
     private static Response register(String email, long organizationId) {
-        return register(email, organizationId, "1.0");
+        return register(email, organizationId, "1.1");
     }
 
     private static Response register(String email, long organizationId, String noticeVersion) {

@@ -1,6 +1,7 @@
 package ua.edu.chnu.awards.notification.repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ua.edu.chnu.awards.notification.entity.DeliveryStatus;
 import ua.edu.chnu.awards.notification.entity.Notification;
 import ua.edu.chnu.awards.notification.entity.NotificationChannel;
+import ua.edu.chnu.awards.notification.entity.NotificationType;
 
 /**
  * Notification rows.
@@ -100,6 +102,31 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                                                           Pageable pageable);
 
     /**
+     * One person's rows of a channel and of some types.
+     *
+     * @param userId   the person
+     * @param channel  the channel
+     * @param types    the types, not empty
+     * @param pageable page and order
+     * @return the page
+     */
+    Page<Notification> findByUserIdAndChannelAndTypeIn(long userId, NotificationChannel channel,
+                                                       Collection<NotificationType> types, Pageable pageable);
+
+    /**
+     * One person's unread rows of a channel and of some types.
+     *
+     * @param userId   the person
+     * @param channel  the channel
+     * @param types    the types, not empty
+     * @param pageable page and order
+     * @return the page
+     */
+    Page<Notification> findByUserIdAndChannelAndReadFalseAndTypeIn(long userId, NotificationChannel channel,
+                                                                   Collection<NotificationType> types,
+                                                                   Pageable pageable);
+
+    /**
      * How many rows of a channel one person has not read.
      *
      * @param userId  the person
@@ -132,6 +159,20 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         + "AND n.channel = :channel AND n.read = false")
     int markRead(@Param("id") long id, @Param("userId") long userId, @Param("channel") NotificationChannel channel,
                  @Param("at") Instant at);
+
+    /**
+     * Marks one read row of a person unread and clears its read time.
+     *
+     * @param id      the row
+     * @param userId  the person
+     * @param channel the channel
+     * @return 1 when marked, 0 when it was unread already or is not the person's
+     */
+    @Modifying
+    @Query("UPDATE Notification n SET n.read = false, n.readAt = null WHERE n.id = :id AND n.userId = :userId "
+        + "AND n.channel = :channel AND n.read = true")
+    int markUnread(@Param("id") long id, @Param("userId") long userId,
+                   @Param("channel") NotificationChannel channel);
 
     /**
      * Marks every unread row of a person's channel read.

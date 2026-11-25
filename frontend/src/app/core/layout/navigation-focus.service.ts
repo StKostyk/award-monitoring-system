@@ -8,10 +8,14 @@ const HEADING_WAIT_MS = 3000;
 const HEADINGS = 'h1, h2, mat-card-title';
 const OPEN_DIALOG = '.cdk-overlay-container .mat-mdc-dialog-surface';
 
+/** The router state key of a navigation that changes the figures of the page in place, such as another unit. */
+export const STAY_IN_PLACE = 'stayInPlace';
+
 /**
  * Moves the focus to the page heading after every navigation to another path, so that keyboard and screen
  * reader users start on the new page instead of the link they used. The first load, changes of the query only,
- * an open dialog and a focus the user has already moved are left alone.
+ * a link or call with the {@link STAY_IN_PLACE} state (not Back or Forward, which bring the state back), an open
+ * dialog and a focus the user has already moved are left alone.
  */
 @Injectable({ providedIn: 'root' })
 export class NavigationFocusService {
@@ -40,7 +44,13 @@ export class NavigationFocusService {
         const moved = path !== this.path;
         this.path = path;
         const target = main();
-        if (!first && moved && target && !this.document.querySelector(OPEN_DIALOG)) {
+        if (
+          !first &&
+          moved &&
+          target &&
+          !this.staysInPlace() &&
+          !this.document.querySelector(OPEN_DIALOG)
+        ) {
           this.focusPage(target);
         }
       });
@@ -56,6 +66,13 @@ export class NavigationFocusService {
       element.setAttribute('tabindex', '-1');
     }
     element.focus();
+  }
+
+  private staysInPlace(): boolean {
+    const navigation = this.router.lastSuccessfulNavigation();
+    return (
+      navigation?.trigger === 'imperative' && navigation.extras.state?.[STAY_IN_PLACE] === true
+    );
   }
 
   private focusPage(main: HTMLElement): void {

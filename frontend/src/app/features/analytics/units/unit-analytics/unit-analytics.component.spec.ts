@@ -80,19 +80,27 @@ describe('UnitAnalyticsComponent', () => {
     fixture.detectChanges();
   }
 
-  it('ac2_2_loads_the_units_and_the_unit_of_the_address_for_its_period', async () => {
+  it('ac2_2_ac11_3_loads_the_unit_of_the_address_and_keeps_the_figures_on_later_switches', async () => {
     await setUp();
 
     expect(dispatch).toHaveBeenCalledWith(UnitAnalyticsActions.unitsRequested());
     expect(dispatch).toHaveBeenCalledWith(
-      UnitAnalyticsActions.unitSelected({ unitId: 9, period: { from: null, to: null } }),
+      UnitAnalyticsActions.unitSelected({
+        unitId: 9,
+        period: { from: null, to: null },
+        keepFigures: false,
+      }),
     );
 
     queryParams.next(convertToParamMap({ from: '2024', to: '2026' }));
     params.next(convertToParamMap({ id: '64' }));
 
     expect(dispatch).toHaveBeenCalledWith(
-      UnitAnalyticsActions.unitSelected({ unitId: 64, period: { from: 2024, to: 2026 } }),
+      UnitAnalyticsActions.unitSelected({
+        unitId: 64,
+        period: { from: 2024, to: 2026 },
+        keepFigures: true,
+      }),
     );
   });
 
@@ -136,7 +144,7 @@ describe('UnitAnalyticsComponent', () => {
     expect(element('unit-option-64')!.getAttribute('aria-current')).toBe('true');
   });
 
-  it('ac6_1_keeps_the_list_and_the_faculty_counts_while_a_sibling_department_loads', async () => {
+  it('ac6_1_ac11_3_keeps_the_list_the_counts_and_the_figures_while_a_sibling_department_loads', async () => {
     await setUp();
     const http = TestBed.inject(HttpTestingController);
     params.next(convertToParamMap({ id: '64' }));
@@ -147,7 +155,9 @@ describe('UnitAnalyticsComponent', () => {
     params.next(convertToParamMap({ id: '66' }));
     fixture.detectChanges();
 
-    expect(element('section-totals')).toBeNull();
+    expect(element('section-totals')).not.toBeNull();
+    expect(element('section-trend')).not.toBeNull();
+    expect(element('unit-analytics-body')!.getAttribute('aria-busy')).toBe('true');
     expect(element('unit-option-66')!.getAttribute('aria-current')).toBe('true');
     expect(element('unit-option-64')!.textContent).toContain('11');
     expect(element('page-context')!.textContent).toContain('Analysis');
@@ -188,18 +198,29 @@ describe('UnitAnalyticsComponent', () => {
     expect(element('unit-export')).not.toBeNull();
   });
 
-  it('ac2_2_states_the_previous_period_and_that_the_year_is_not_over', async () => {
+  it('ac4_2_captions_each_change_with_the_previous_period_instead_of_a_paragraph', async () => {
     await setUp();
     load();
 
-    expect(element('unit-analytics-compared')!.textContent).toContain(
-      '2024–2026, compared with 2021–2023.',
-    );
-    expect(element('unit-analytics-compared')!.textContent).toContain('2026 is not over yet');
+    expect(element('unit-analytics-compared')).toBeNull();
+    const captions = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="tile-against"]'),
+    ];
+    expect(captions.map((caption) => caption.textContent!.trim())).toEqual([
+      'vs 2021–2023',
+      'vs 2021–2023',
+    ]);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('not over');
+  });
 
-    load(departmentAnalytics());
+  it('ac4_1_keeps_the_unit_rail_sticky_beside_the_widgets', async () => {
+    await setUp();
+    load();
 
-    expect(element('unit-analytics-compared')!.textContent).not.toContain('not over');
+    const split = (fixture.nativeElement as HTMLElement).querySelector('app-split')!;
+    expect(split.classList).toContain('split--sticky');
+    expect(split.querySelector('.split__side [data-testid="section-totals"]')).not.toBeNull();
+    expect(element('page-context')!.closest('app-split')).toBeNull();
   });
 
   it('ac2_3_ac6_1_shows_the_faculty_sections_in_order_with_the_comparison', async () => {

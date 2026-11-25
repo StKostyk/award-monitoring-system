@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Privacy notice 1.1 with a section on cookies and browser storage, terms of use at /terms linked from sign-up, the notice and the sign-in page, and a List-Unsubscribe header on notification mails
+- A getting-started checklist per role on My dashboard (landing page for the administrator and the data protection officer) with an optional spotlight tour; progress kept by GET|PUT /users/me/onboarding
+- Privacy page as a control panel: a status line with the deletion countdown and its cancel, tiles for the notice, rankings consent, award visibility, e-mails, data download, activity (mine / about me, full log; GET /users/me/activity byMe filter) and deletion
+- Notifications as an inbox with a reading pane: chips for unread, awards, review and roles, reading in place without leaving the page, and marking a notification unread again (DELETE /notifications/{id}/read, type filter)
+- My delegations as a status board: a from-me / to-me toggle over active, scheduled and ended columns of cards with dates, note, limits of authority and revocation where it applies
+- Users page as a full table with the last sign-in that splits into a narrow list beside a person pane with role and account tabs, the person's awards and delegations
+- Unit analytics with a sticky unit rail, the comparison period under each change, top performers linked to their portfolio with a hover card, and names that wrap instead of being cut
+- My dashboard timeline as a journey road at 960 px and wider and a dated feed with a national filter below; timeline entries carry their recognition level
+- Widget tables as spreadsheet grids with totals, grouped headers and a pinned first column with a scroll caption on phones
+- Sign-in page themes (catalogue cards, night sky, rushnyk) chosen by APP_SIGN_IN_THEME, a daily quote and logo mark 9 for the neutral brand
 - Page layout kit (header, split, list rows, bento) for the redesigned pages; side menu labels wrap instead of being cut off, chart annotations stay inside the chart, and every signed-in page passes the axe landmark check.
 - Faculty secretaries and deans import colleagues and their past awards from an .xlsx or .csv file with a column mapping and a row preview (2.5.5).
 - Command centre for faculty and rector's secretaries: today's queue with one-click decisions, units without awards and a weekly «Нагадати завідувачу» reminder by mail and in the app (9.4.5).
@@ -94,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User domain entities (`User`, `Organization`, `UserRole`) and repositories over the existing schema; V014 adds the authorization-server tables, `one_time_tokens` and `user_devices`; demo accounts seeded in the `local` and `docker` profiles
 
 ### Changed
+- ChNU brand shows logo mark 9; the getting-started checklist is a brand card with a progress ring; switching units on unit analytics keeps the page in place (9.7.11)
 - Award detail and privacy in two columns, the users toolbar under the title, command centre panes with the widget header, a 404 tile, and the gold logo on the sign-in page.
 - Profile: a burgundy banner and sections chosen on the left (name, sign-in address, notifications as switches, privacy, roles), the section kept in the address.
 - Hall of Fame: this year as the page hero with a progress ring, thick year bars, a this-year-against-last scoreboard and equal record cards.

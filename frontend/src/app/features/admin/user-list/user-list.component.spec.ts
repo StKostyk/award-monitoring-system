@@ -1,3 +1,4 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -8,7 +9,7 @@ import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Store, provideState, provideStore } from '@ngrx/store';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, map, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -37,6 +38,7 @@ const newcomer: UserSummary = {
   status: 'ACTIVE',
   roles: [],
   membershipConfirmed: false,
+  lastLoginAt: null,
 };
 
 const employee: UserSummary = {
@@ -50,6 +52,7 @@ const employee: UserSummary = {
     { id: 3, role: 'EMPLOYEE', organization: department, validFrom: '2026-09-01', validTo: null },
   ],
   membershipConfirmed: true,
+  lastLoginAt: '2026-11-20T08:15:00Z',
 };
 
 const unclaimed: UserSummary = {
@@ -61,6 +64,7 @@ const unclaimed: UserSummary = {
   status: 'UNCLAIMED',
   roles: [],
   membershipConfirmed: false,
+  lastLoginAt: null,
 };
 
 function token(claims: Record<string, unknown>): string {
@@ -95,10 +99,17 @@ const translations = {
           waiting: 'Чекають перевірки членства: {{count}}',
           blocked: 'Заблоковано: {{count}}',
         },
-        pick: 'Оберіть людину в списку',
+        columns: {
+          name: "Ім'я та адреса",
+          unit: 'Підрозділ',
+          roles: 'Ролі',
+          status: 'Статус',
+          lastLogin: 'Останній вхід',
+        },
         selectionGone: 'Цієї особи більше немає в списку.',
       },
       status: { ACTIVE: 'Активний', UNCLAIMED: 'Без облікового запису' },
+      detail: { never: 'Ще не входив' },
       people: {
         add: 'Додати колегу без облікового запису',
         badge: 'Без облікового запису',
@@ -123,6 +134,7 @@ function countsBy(query: UserFilters): number {
 
 describe('UserListComponent', () => {
   let fixture: ComponentFixture<UserListComponent>;
+  const wide = new BehaviorSubject(false);
   let store: Store;
   let api: { list: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn> };
 
@@ -149,12 +161,17 @@ describe('UserListComponent', () => {
         { provide: UsersService, useValue: api },
         { provide: LanguageService, useValue: { current: () => 'uk' } },
         { provide: AuthService, useValue: { permissions } },
+        {
+          provide: BreakpointObserver,
+          useValue: { observe: () => wide.pipe(map((matches) => ({ matches, breakpoints: {} }))) },
+        },
       ],
     }).compileComponents();
     store = TestBed.inject(Store);
   }
 
   beforeEach(async () => {
+    wide.next(false);
     api = { list: vi.fn((query: UserFilters) => of(counted(countsBy(query)))), get: vi.fn() };
     permissions.set(readPermissions(token({ role_scopes: ['FACULTY_SECRETARY:9'] })));
     await setUp();
@@ -184,7 +201,35 @@ describe('UserListComponent', () => {
     expect(rows()[1].textContent).toContain('Працівник · Кафедра алгебри');
     expect(rows()[0].getAttribute('href')).toBe('/admin/users/7');
     expect(rows()[0].dataset['email']).toBe('newcomer@chnu.edu.ua');
-    expect(fixture.nativeElement.querySelector('[data-testid="users-pick-hint"]')).not.toBeNull();
+  });
+
+  it('ac5_2_spans_the_page_as_a_table_with_address_unit_roles_status_and_last_sign_in', () => {
+    wide.next(true);
+    store.dispatch(AdminUsersActions.usersLoaded({ page }));
+    fixture.detectChanges();
+    const table = fixture.nativeElement.querySelector('table[data-testid="users-table"]');
+    const cells = (row: Element): string[] =>
+      Array.from(row.querySelectorAll('th, td')).map((cell) => cell.textContent?.trim() ?? '');
+    const [, second] = Array.from(table.querySelectorAll('tbody tr')) as Element[];
+
+    expect(fixture.componentInstance.tableMode()).toBe(true);
+    expect(cells(table.querySelector('thead tr'))).toEqual([
+      "Ім'я та адреса",
+      'Підрозділ',
+      'Ролі',
+      'Статус',
+      'Останній вхід',
+    ]);
+    expect(rows()).toHaveLength(2);
+    expect(rows()[0].textContent).toContain('newcomer@chnu.edu.ua');
+    expect(rows()[0].getAttribute('href')).toBe('/admin/users/7');
+    expect(cells(second)[1]).toBe('Кафедра алгебри');
+    expect(cells(second)[2]).toBe('Працівник');
+    expect(cells(second)[3]).toContain('Активний');
+    expect(cells(second)[4]).toBe('20.11.2026, 10:15');
+    expect(table.querySelector('[data-testid="user-last-login"]')?.textContent).toContain(
+      'Ще не входив',
+    );
   });
 
   it('ac4_2_counts_the_accounts_the_waiting_and_the_blocked_in_the_context_line', () => {
@@ -236,7 +281,6 @@ describe('UserListComponent', () => {
       element.querySelector('[data-testid="user-link"][aria-current="true"]')?.textContent,
     ).toContain('Працівник Анастасія');
     expect(element.querySelector('[data-testid="pane-stub"]')).not.toBeNull();
-    expect(element.querySelector('[data-testid="users-pick-hint"]')).toBeNull();
 
     await harness.navigateByUrl('/admin/users/7');
 

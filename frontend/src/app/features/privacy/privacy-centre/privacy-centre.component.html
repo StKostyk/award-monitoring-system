@@ -1,295 +1,318 @@
 <div class="centre">
-  <h1 class="centre__title">{{ 'privacy.centre.title' | transloco }}</h1>
+  <app-page-header [heading]="'privacy.centre.title' | transloco" />
 
-  <div class="centre__columns">
-    <div class="centre__column">
-      <mat-card class="centre__card" data-testid="privacy-notice-card">
-        <mat-card-header>
-          <mat-card-title>{{ 'privacy.centre.notice.title' | transloco }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @if (overview(); as overview) {
-            @if (overview.notice.acknowledgedVersion; as version) {
-              <p data-testid="privacy-notice-acknowledged">
-                {{ 'privacy.centre.notice.acknowledged' | transloco: { version } }}
-                @if (overview.notice.acknowledgedAt; as at) {
-                  · <time [attr.datetime]="at">{{ date(at) }}</time>
-                }
-              </p>
-            } @else {
-              <p>{{ 'privacy.centre.notice.notAcknowledged' | transloco }}</p>
-            }
-          } @else if (overviewFailed()) {
-            <p class="centre__problem" role="alert">
-              {{ 'privacy.centre.loadFailed' | transloco }}
-            </p>
-          }
-          <a mat-stroked-button routerLink="/privacy-notice" data-testid="privacy-notice-link">
-            {{ 'privacy.centre.notice.read' | transloco }}
-          </a>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="centre__card" data-testid="privacy-consents-card">
-        <mat-card-header>
-          <mat-card-title>{{ 'privacy.centre.consents.title' | transloco }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @if (overview(); as overview) {
-            <mat-slide-toggle
-              [checked]="analytics()"
-              [disabled]="savingConsent()"
-              (change)="chooseAnalytics($event)"
-              data-testid="privacy-analytics"
-            >
-              {{ 'privacy.centre.consents.ANALYTICS' | transloco }}
-            </mat-slide-toggle>
-            <p class="centre__hint">
-              {{ 'privacy.centre.consents.ANALYTICS_purpose' | transloco }}
-            </p>
-            @if (consentProblem(); as consentProblem) {
-              <p class="centre__problem" role="alert" data-testid="privacy-analytics-error">
-                {{ consentProblem | transloco }}
-              </p>
-            }
-            <mat-expansion-panel class="centre__history" data-testid="privacy-consent-history">
-              <mat-expansion-panel-header>
-                <mat-panel-title>{{
-                  'privacy.centre.consents.history' | transloco
-                }}</mat-panel-title>
-              </mat-expansion-panel-header>
-              @if (history().length === 0) {
-                <p>{{ 'privacy.centre.consents.noHistory' | transloco }}</p>
-              } @else {
-                <ul class="centre__list">
-                  @for (line of history(); track $index) {
-                    <li data-testid="privacy-consent-line">
-                      <time [attr.datetime]="line.at">{{ time(line.at) }}</time> ·
-                      {{ 'privacy.centre.consents.types.' + line.type | transloco }} ·
-                      {{
-                        (line.granted
-                          ? 'privacy.centre.consents.granted'
-                          : 'privacy.centre.consents.withdrawn'
-                        ) | transloco
-                      }}
-                      ·
-                      {{ 'privacy.centre.consents.version' | transloco: { version: line.version } }}
-                    </li>
-                  }
-                </ul>
-              }
-            </mat-expansion-panel>
-          } @else if (overviewFailed()) {
-            <p class="centre__problem" role="alert">
-              {{ 'privacy.centre.loadFailed' | transloco }}
-            </p>
-          }
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="centre__card" data-testid="privacy-data-card">
-        <mat-card-header>
-          <mat-card-title>{{ 'privacy.centre.data.title' | transloco }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <p class="centre__hint">{{ 'privacy.centre.data.hint' | transloco }}</p>
-          @if (summary()?.lastExportAt; as lastExportAt) {
-            <p data-testid="privacy-last-export">
-              {{ 'privacy.centre.data.lastExport' | transloco: { date: time(lastExportAt) } }}
-            </p>
-          }
-          @if (exportMessage(); as exportMessage) {
-            <p role="status" data-testid="privacy-export-done">{{ exportMessage | transloco }}</p>
-          }
-          @if (exportProblem(); as exportProblem) {
-            <p class="centre__problem" role="alert" data-testid="privacy-export-error">
-              {{ exportProblem | transloco }}
-            </p>
-          }
-          <div class="centre__actions">
-            <button
-              mat-stroked-button
-              type="button"
-              [disabled]="exporting()"
-              (click)="downloadData()"
-              data-testid="privacy-download"
-            >
-              {{
-                (exporting() ? 'privacy.centre.data.downloading' : 'privacy.centre.data.download')
-                  | transloco
-              }}
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="centre__card" data-testid="privacy-erasure-card">
-        <mat-card-header>
-          <mat-card-title>{{ 'privacy.erasure.title' | transloco }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @if (erasure(); as pending) {
-            <p class="centre__scheduled" data-testid="privacy-erasure-scheduled">
-              {{ 'privacy.erasure.scheduled' | transloco: { date: date(pending.scheduledFor) } }}
-            </p>
-            @if (pending.postponed) {
-              <p data-testid="privacy-erasure-postponed">
-                {{ 'privacy.erasure.postponed' | transloco }}
-              </p>
-            }
-            <p class="centre__hint">{{ 'privacy.erasure.cancelHint' | transloco }}</p>
-          } @else if (summary()) {
-            <p>{{ 'privacy.erasure.intro' | transloco }}</p>
-            <ul class="centre__list" data-testid="privacy-erasure-terms">
-              <li>{{ 'privacy.erasure.erased' | transloco }}</li>
-              <li>{{ 'privacy.erasure.keptAwards' | transloco }}</li>
-              <li>{{ 'privacy.erasure.keptAudit' | transloco }}</li>
-              <li>{{ 'privacy.erasure.keptConsents' | transloco }}</li>
-            </ul>
-            <p class="centre__hint">{{ 'privacy.erasure.grace' | transloco }}</p>
-          } @else if (summaryFailed()) {
-            <p class="centre__problem" role="alert">
-              {{ 'privacy.centre.loadFailed' | transloco }}
-            </p>
-          }
-          @if (erasureMessage(); as erasureMessage) {
-            <p role="status" data-testid="privacy-erasure-done">{{ erasureMessage | transloco }}</p>
-          }
+  <div
+    class="centre__status"
+    [class.centre__status--ok]="status() === 'ok'"
+    [class.centre__status--warn]="status() !== 'ok' && status() !== 'loading'"
+    role="status"
+    data-testid="privacy-status"
+  >
+    @switch (status()) {
+      @case ('erasure') {
+        @if (erasure(); as pending) {
+          <app-icon class="centre__status-icon" name="triangle-alert" />
+          <span data-testid="privacy-status-text">
+            {{
+              'privacy.centre.status.erasure'
+                | transloco
+                  : { date: date(pending.scheduledFor), days: daysLeft(pending.scheduledFor) }
+            }}
+          </span>
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="cancellingErasure()"
+            (click)="cancelErasure()"
+            data-testid="privacy-status-cancel"
+          >
+            {{ 'privacy.centre.status.cancel' | transloco }}
+          </button>
           @if (erasureProblem(); as erasureProblem) {
-            <p class="centre__problem" role="alert" data-testid="privacy-erasure-error">
+            <span class="centre__status-problem" role="alert" data-testid="privacy-status-error">
               {{ erasureProblem | transloco }}
-            </p>
+            </span>
           }
-          <div class="centre__actions">
-            @if (erasure()) {
-              <button
-                mat-stroked-button
-                type="button"
-                [disabled]="cancellingErasure()"
-                (click)="cancelErasure()"
-                data-testid="privacy-erasure-cancel"
-              >
-                {{ 'privacy.erasure.cancel' | transloco }}
-              </button>
-            } @else if (summary()) {
-              <button
-                mat-stroked-button
-                type="button"
-                class="centre__danger"
-                (click)="openErasure()"
-                data-testid="privacy-erasure-open"
-              >
-                {{ 'privacy.erasure.open' | transloco }}
-              </button>
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-    <div class="centre__column">
-      <mat-card class="centre__card" data-testid="privacy-choices-card">
-        <mat-card-header>
-          <mat-card-title>{{ 'privacy.centre.choices.title' | transloco }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @if (summary(); as summary) {
-            <dl class="centre__facts">
-              @for (visibility of visibilities; track visibility) {
-                <dt>{{ 'privacy.centre.choices.awards.' + visibility | transloco }}</dt>
-                <dd [attr.data-testid]="'privacy-awards-' + visibility">
-                  {{ summary.awardsByVisibility[visibility] }}
-                </dd>
+        }
+      }
+      @case ('notice') {
+        <app-icon class="centre__status-icon" name="circle-alert" />
+        <span data-testid="privacy-status-text">{{
+          'privacy.centre.status.notice' | transloco
+        }}</span>
+        <a mat-flat-button routerLink="/privacy-notice" data-testid="privacy-status-notice">
+          {{ 'privacy.centre.tiles.read' | transloco }}
+        </a>
+      }
+      @case ('failed') {
+        <app-icon class="centre__status-icon" name="circle-alert" />
+        <span data-testid="privacy-status-text">{{ 'privacy.centre.loadFailed' | transloco }}</span>
+      }
+      @case ('loading') {
+        <span data-testid="privacy-status-text">{{ 'app.loading' | transloco }}</span>
+      }
+      @default {
+        <app-icon class="centre__status-icon" name="shield-check" />
+        <span data-testid="privacy-status-text">{{ 'privacy.centre.status.ok' | transloco }}</span>
+      }
+    }
+  </div>
+
+  <app-bento class="centre__tiles">
+    <app-bento-tile>
+      <app-pane
+        [heading]="'privacy.centre.notice.title' | transloco"
+        icon="file-text"
+        data-testid="privacy-notice-card"
+      >
+        @if (overview(); as overview) {
+          @if (overview.notice.acknowledgedVersion; as version) {
+            <p data-testid="privacy-notice-acknowledged">
+              {{ 'privacy.centre.notice.acknowledged' | transloco: { version } }}
+              @if (overview.notice.acknowledgedAt; as at) {
+                · <time [attr.datetime]="at">{{ date(at) }}</time>
               }
-              <dt>{{ 'privacy.centre.choices.documentsTitle' | transloco }}</dt>
-              <dd data-testid="privacy-documents">
-                {{ summary.documentsShown }}
-              </dd>
-              <dt>{{ 'privacy.centre.choices.emailTitle' | transloco }}</dt>
-              <dd data-testid="privacy-email-off">
-                {{ summary.emailOffTypes.length }}
-              </dd>
-            </dl>
-            <div class="centre__actions">
-              <a mat-stroked-button routerLink="/awards" data-testid="privacy-awards-link">
-                {{ 'privacy.centre.choices.awardsLink' | transloco }}
-              </a>
-              <a
-                mat-stroked-button
-                routerLink="/profile"
-                [queryParams]="{ section: 'notifications' }"
-                data-testid="privacy-notifications-link"
-              >
-                {{ 'privacy.centre.choices.notificationsLink' | transloco }}
-              </a>
-            </div>
-          } @else if (summaryFailed()) {
-            <p class="centre__problem" role="alert" data-testid="privacy-summary-error">
-              {{ 'privacy.centre.loadFailed' | transloco }}
             </p>
           } @else {
-            <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+            <p>{{ 'privacy.centre.notice.notAcknowledged' | transloco }}</p>
           }
-        </mat-card-content>
-      </mat-card>
+        } @else if (overviewFailed()) {
+          <p class="centre__problem" role="alert">{{ 'privacy.centre.loadFailed' | transloco }}</p>
+        }
+        <a mat-stroked-button routerLink="/privacy-notice" data-testid="privacy-notice-link">
+          {{ 'privacy.centre.tiles.read' | transloco }}
+        </a>
+      </app-pane>
+    </app-bento-tile>
 
-      <mat-card class="centre__card" data-testid="privacy-activity-card">
-        <mat-card-header>
-          <mat-card-title>{{ 'privacy.activity.title' | transloco }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @if (activity().length === 0 && !activityLoading() && !activityProblem()) {
-            <p data-testid="privacy-activity-empty">{{ 'privacy.activity.empty' | transloco }}</p>
-          } @else if (activity().length > 0) {
-            <div class="table-scroll" tabindex="0">
-              <table class="centre__table" data-testid="privacy-activity">
-                <thead>
-                  <tr>
-                    <th scope="col">{{ 'privacy.activity.columns.action' | transloco }}</th>
-                    <th scope="col">{{ 'privacy.activity.columns.time' | transloco }}</th>
-                    <th scope="col">{{ 'privacy.activity.columns.who' | transloco }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (entry of activity(); track $index) {
-                    <tr data-testid="privacy-activity-row">
-                      <td data-testid="privacy-activity-action">
-                        @if (actionKey(entry.action); as key) {
-                          {{ key | transloco }}
-                        } @else {
-                          {{ entry.action }}
-                        }
-                      </td>
-                      <td>
-                        <time [attr.datetime]="entry.occurredAt">{{ time(entry.occurredAt) }}</time>
-                      </td>
-                      <td>
-                        {{
-                          (entry.byMe ? 'privacy.activity.byMe' : 'privacy.activity.aboutMe')
-                            | transloco
-                        }}
-                      </td>
-                    </tr>
+    <app-bento-tile>
+      <app-pane
+        [heading]="'privacy.centre.consents.types.ANALYTICS' | transloco"
+        icon="trophy"
+        data-testid="privacy-consents-card"
+      >
+        @if (overview()) {
+          <mat-slide-toggle
+            [checked]="analytics()"
+            [disabled]="savingConsent()"
+            (change)="chooseAnalytics($event)"
+            data-testid="privacy-analytics"
+          >
+            {{ 'privacy.centre.consents.ANALYTICS' | transloco }}
+          </mat-slide-toggle>
+          <p class="centre__hint">{{ 'privacy.centre.consents.ANALYTICS_purpose' | transloco }}</p>
+          @if (consentProblem(); as consentProblem) {
+            <p class="centre__problem" role="alert" data-testid="privacy-analytics-error">
+              {{ consentProblem | transloco }}
+            </p>
+          }
+          <mat-expansion-panel class="centre__history" data-testid="privacy-consent-history">
+            <mat-expansion-panel-header>
+              <mat-panel-title>{{ 'privacy.centre.consents.history' | transloco }}</mat-panel-title>
+            </mat-expansion-panel-header>
+            @if (history().length === 0) {
+              <p>{{ 'privacy.centre.consents.noHistory' | transloco }}</p>
+            } @else {
+              <ul class="centre__list">
+                @for (line of history(); track $index) {
+                  <li data-testid="privacy-consent-line">
+                    <time [attr.datetime]="line.at">{{ time(line.at) }}</time> ·
+                    {{ 'privacy.centre.consents.types.' + line.type | transloco }} ·
+                    {{
+                      (line.granted
+                        ? 'privacy.centre.consents.granted'
+                        : 'privacy.centre.consents.withdrawn'
+                      ) | transloco
+                    }}
+                    ·
+                    {{ 'privacy.centre.consents.version' | transloco: { version: line.version } }}
+                  </li>
+                }
+              </ul>
+            }
+          </mat-expansion-panel>
+        } @else if (overviewFailed()) {
+          <p class="centre__problem" role="alert">{{ 'privacy.centre.loadFailed' | transloco }}</p>
+        }
+      </app-pane>
+    </app-bento-tile>
+
+    <app-bento-tile id="choices" class="centre__anchor">
+      <app-pane
+        [heading]="'privacy.centre.tiles.visibility' | transloco"
+        icon="eye"
+        data-testid="privacy-choices-card"
+      >
+        @if (summary(); as summary) {
+          <dl class="centre__facts">
+            @for (visibility of visibilities; track visibility) {
+              <dt>{{ 'privacy.centre.choices.awards.' + visibility | transloco }}</dt>
+              <dd [attr.data-testid]="'privacy-awards-' + visibility">
+                {{ summary.awardsByVisibility[visibility] }}
+              </dd>
+            }
+            <dt>{{ 'privacy.centre.choices.documentsTitle' | transloco }}</dt>
+            <dd data-testid="privacy-documents">{{ summary.documentsShown }}</dd>
+          </dl>
+          <a mat-stroked-button routerLink="/awards" data-testid="privacy-awards-link">
+            {{ 'privacy.centre.tiles.change' | transloco }}
+          </a>
+        } @else if (summaryFailed()) {
+          <p class="centre__problem" role="alert" data-testid="privacy-summary-error">
+            {{ 'privacy.centre.loadFailed' | transloco }}
+          </p>
+        } @else {
+          <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+        }
+      </app-pane>
+    </app-bento-tile>
+
+    <app-bento-tile>
+      <app-pane
+        [heading]="'privacy.centre.tiles.email' | transloco"
+        icon="mail"
+        data-testid="privacy-email-card"
+      >
+        @if (summary(); as summary) {
+          <p data-testid="privacy-email-off">
+            @if (summary.emailOffTypes.length === 0) {
+              {{ 'privacy.centre.tiles.emailAllOn' | transloco }}
+            } @else {
+              {{
+                'privacy.centre.tiles.emailOff' | transloco: { count: summary.emailOffTypes.length }
+              }}
+            }
+          </p>
+          @if (summary.emailOffTypes.length > 0) {
+            <ul class="centre__list" data-testid="privacy-email-off-types">
+              @for (type of summary.emailOffTypes; track type) {
+                <li>{{ 'notifications.preferences.types.' + type | transloco }}</li>
+              }
+            </ul>
+          }
+          <a
+            mat-stroked-button
+            routerLink="/profile"
+            [queryParams]="{ section: 'notifications' }"
+            data-testid="privacy-notifications-link"
+          >
+            {{ 'privacy.centre.choices.notificationsLink' | transloco }}
+          </a>
+        } @else if (summaryFailed()) {
+          <p class="centre__problem" role="alert">{{ 'privacy.centre.loadFailed' | transloco }}</p>
+        }
+      </app-pane>
+    </app-bento-tile>
+
+    <app-bento-tile [span]="2">
+      <app-pane
+        [heading]="'privacy.centre.data.title' | transloco"
+        icon="download"
+        data-testid="privacy-data-card"
+      >
+        <p class="centre__hint">{{ 'privacy.centre.data.hint' | transloco }}</p>
+        @if (summary()?.lastExportAt; as lastExportAt) {
+          <p data-testid="privacy-last-export">
+            {{ 'privacy.centre.data.lastExport' | transloco: { date: time(lastExportAt) } }}
+          </p>
+        }
+        @if (exportMessage(); as exportMessage) {
+          <p role="status" data-testid="privacy-export-done">{{ exportMessage | transloco }}</p>
+        }
+        @if (exportProblem(); as exportProblem) {
+          <p class="centre__problem" role="alert" data-testid="privacy-export-error">
+            {{ exportProblem | transloco }}
+          </p>
+        }
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="exporting()"
+          (click)="downloadData()"
+          data-testid="privacy-download"
+        >
+          {{
+            (exporting() ? 'privacy.centre.data.downloading' : 'privacy.centre.tiles.download')
+              | transloco
+          }}
+        </button>
+      </app-pane>
+    </app-bento-tile>
+
+    <app-bento-tile [span]="fullLog() ? 4 : 2" [rows]="fullLog() ? 1 : 2">
+      <app-pane
+        [heading]="'privacy.activity.title' | transloco"
+        icon="clock"
+        data-testid="privacy-activity-card"
+      >
+        <span
+          paneMeta
+          class="centre__toggle"
+          role="group"
+          [attr.aria-label]="'privacy.activity.columns.who' | transloco"
+        >
+          <button
+            type="button"
+            [class.centre__toggle--on]="byMe()"
+            [attr.aria-pressed]="byMe()"
+            (click)="chooseWho(true)"
+            data-testid="privacy-activity-mine"
+          >
+            {{ 'privacy.centre.tiles.mine' | transloco }}
+          </button>
+          <button
+            type="button"
+            [class.centre__toggle--on]="!byMe()"
+            [attr.aria-pressed]="!byMe()"
+            (click)="chooseWho(false)"
+            data-testid="privacy-activity-about"
+          >
+            {{ 'privacy.activity.aboutMe' | transloco }}
+          </button>
+        </span>
+        @if (
+          shown().length === 0 && !activityLoading() && !activityProblem() && !activityHasMore()
+        ) {
+          <p data-testid="privacy-activity-empty">
+            {{
+              (byMe() ? 'privacy.activity.empty' : 'privacy.centre.tiles.emptyFilter') | transloco
+            }}
+          </p>
+        } @else if (shown().length > 0) {
+          <ul class="centre__feed" data-testid="privacy-activity">
+            @for (entry of shown(); track $index) {
+              <li class="centre__entry" data-testid="privacy-activity-row">
+                <span class="centre__entry-action" data-testid="privacy-activity-action">
+                  @if (actionKey(entry.action); as key) {
+                    {{ key | transloco }}
+                  } @else {
+                    {{ entry.action }}
                   }
-                </tbody>
-              </table>
-            </div>
-          }
-          @if (activityLoading()) {
-            <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
-          }
-          @if (activityProblem(); as problem) {
-            <div class="centre__problem" role="alert" data-testid="privacy-activity-error">
-              <span>{{ 'privacy.activity.failed' | transloco }}</span>
-              <button
-                mat-button
-                type="button"
-                (click)="loadMore()"
-                data-testid="privacy-activity-retry"
-              >
-                {{ 'awards.history.retry' | transloco }}
-              </button>
-            </div>
-          } @else if (activityHasMore() && !activityLoading()) {
+                </span>
+                <time class="centre__hint" [attr.datetime]="entry.occurredAt">{{
+                  time(entry.occurredAt)
+                }}</time>
+              </li>
+            }
+          </ul>
+        }
+        @if (activityLoading()) {
+          <mat-progress-bar [attr.aria-label]="'app.loading' | transloco" mode="indeterminate" />
+        }
+        @if (activityProblem()) {
+          <div class="centre__problem" role="alert" data-testid="privacy-activity-error">
+            <span>{{ 'privacy.activity.failed' | transloco }}</span>
+            <button
+              mat-button
+              type="button"
+              (click)="loadMore()"
+              data-testid="privacy-activity-retry"
+            >
+              {{ 'awards.history.retry' | transloco }}
+            </button>
+          </div>
+        } @else if (fullLog()) {
+          @if (activityHasMore() && !activityLoading()) {
             <button
               mat-stroked-button
               type="button"
@@ -299,8 +322,77 @@
               {{ 'awards.history.more' | transloco }}
             </button>
           }
-        </mat-card-content>
-      </mat-card>
-    </div>
-  </div>
+        } @else if (hasHidden()) {
+          <button
+            mat-button
+            type="button"
+            (click)="showFullLog()"
+            data-testid="privacy-activity-all"
+          >
+            {{ 'privacy.centre.tiles.fullLog' | transloco }}
+          </button>
+        }
+      </app-pane>
+    </app-bento-tile>
+
+    <app-bento-tile [span]="2">
+      <app-pane
+        [heading]="'privacy.erasure.title' | transloco"
+        icon="triangle-alert"
+        data-testid="privacy-erasure-card"
+      >
+        @if (erasure(); as pending) {
+          <p class="centre__scheduled" data-testid="privacy-erasure-scheduled">
+            {{ 'privacy.erasure.scheduled' | transloco: { date: date(pending.scheduledFor) } }}
+          </p>
+          @if (pending.postponed) {
+            <p data-testid="privacy-erasure-postponed">
+              {{ 'privacy.erasure.postponed' | transloco }}
+            </p>
+          }
+          <p class="centre__hint">{{ 'privacy.erasure.cancelHint' | transloco }}</p>
+        } @else if (summary()) {
+          <p>{{ 'privacy.erasure.intro' | transloco }}</p>
+          <ul class="centre__list" data-testid="privacy-erasure-terms">
+            <li>{{ 'privacy.erasure.erased' | transloco }}</li>
+            <li>{{ 'privacy.erasure.keptAwards' | transloco }}</li>
+            <li>{{ 'privacy.erasure.keptAudit' | transloco }}</li>
+            <li>{{ 'privacy.erasure.keptConsents' | transloco }}</li>
+          </ul>
+          <p class="centre__hint">{{ 'privacy.erasure.grace' | transloco }}</p>
+        } @else if (summaryFailed()) {
+          <p class="centre__problem" role="alert">{{ 'privacy.centre.loadFailed' | transloco }}</p>
+        }
+        @if (erasureMessage(); as erasureMessage) {
+          <p role="status" data-testid="privacy-erasure-done">{{ erasureMessage | transloco }}</p>
+        }
+        @if (erasureProblem(); as erasureProblem) {
+          <p class="centre__problem" role="alert" data-testid="privacy-erasure-error">
+            {{ erasureProblem | transloco }}
+          </p>
+        }
+        @if (erasure()) {
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="cancellingErasure()"
+            (click)="cancelErasure()"
+            data-testid="privacy-erasure-cancel"
+          >
+            {{ 'privacy.erasure.cancel' | transloco }}
+          </button>
+        } @else if (summary()) {
+          <button
+            mat-stroked-button
+            type="button"
+            class="centre__danger"
+            (click)="openErasure()"
+            data-testid="privacy-erasure-open"
+          >
+            {{ 'privacy.erasure.open' | transloco }}
+          </button>
+        }
+      </app-pane>
+    </app-bento-tile>
+  </app-bento>
 </div>

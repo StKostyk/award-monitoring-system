@@ -138,7 +138,7 @@ describe('Unit analytics charts', () => {
     expect(table.textContent).toContain('All other organisations');
   });
 
-  it('ac2_3_draws_one_small_chart_per_department_for_a_faculty', () => {
+  it('ac2_3_ac4_2_draws_one_small_chart_per_department_without_a_subtitle', () => {
     setUp('uk');
     const fixture = TestBed.createComponent(UnitTrendChartComponent);
     fixture.componentRef.setInput('analytics', facultyAnalytics());
@@ -154,17 +154,44 @@ describe('Unit analytics charts', () => {
     expect(texts(multiples[1] as HTMLElement, '.columns__count')).toEqual([
       '2024: 3',
       '2025: 3',
-      '2026: 5',
+      '2026: рік триває, 5',
     ]);
     expect(multiples[1].querySelector('.multiple__total')!.textContent).toContain('11');
     expect(multiples[1].querySelectorAll('.columns__item--current')).toHaveLength(1);
     expect((multiples[0].querySelector('.columns__bar') as HTMLElement).style.height).toBe('0%');
-    expect(element.querySelector('.multiples__key')).not.toBeNull();
+    expect(element.querySelector('.multiples__key')).toBeNull();
+    const running = multiples[1].querySelector('.columns__item--running')!;
+    expect(running.getAttribute('title')).toBe('2026: рік триває');
 
     pane.pane.view.set('table');
     fixture.detectChanges();
 
     expect(element.querySelectorAll('[data-testid="unit-trend-table"] tbody tr')).toHaveLength(3);
+    expect(element.querySelector('[data-testid="year-grid-running"]')).toBeNull();
+    expect(element.querySelector('thead .is-current')!.getAttribute('title')).toBe('рік триває');
+  });
+
+  it('ac2_4_the_faculty_grid_shows_the_numbers_of_the_small_charts', () => {
+    setUp();
+    const fixture = TestBed.createComponent(UnitTrendChartComponent);
+    fixture.componentRef.setInput('analytics', facultyAnalytics());
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    const charted = [...element.querySelectorAll('[data-testid="unit-trend-multiple"]')].map(
+      (multiple) =>
+        [...multiple.querySelectorAll('.columns__count')].map((count) =>
+          count.textContent!.replace(/^.*[:,]\s*/s, '').trim(),
+        ),
+    );
+
+    pane.pane.view.set('table');
+    fixture.detectChanges();
+    const tabled = [...element.querySelectorAll('[data-testid="unit-trend-table"] tbody tr')].map(
+      (row) =>
+        [...row.querySelectorAll('td:not(.is-total)')].map((cell) => cell.textContent!.trim()),
+    );
+
+    expect(tabled).toEqual(charted);
   });
 
   it('ac2_3_draws_one_small_chart_of_the_totals_for_a_department', () => {
@@ -180,10 +207,12 @@ describe('Unit analytics charts', () => {
 
     pane.pane.view.set('table');
     fixture.detectChanges();
-    const rows = [...element.querySelectorAll('[data-testid="unit-trend-table"] tbody tr')].map(
-      (row) => [...row.children].map((cell) => cell.textContent!.trim()).join(' '),
-    );
+    const rows = [
+      ...element.querySelectorAll(
+        '[data-testid="unit-trend-table"] tbody tr, [data-testid="unit-trend-table"] tfoot tr',
+      ),
+    ].map((row) => [...row.children].map((cell) => cell.textContent!.trim()).join(' '));
 
-    expect(rows).toEqual(['2024 3 1 4', '2025 4 1 5', '2026 5 1 6']);
+    expect(rows).toEqual(['Personal awards 3 4 5 12', 'Unit awards 1 1 1 3', 'Total 4 5 6 15']);
   });
 });

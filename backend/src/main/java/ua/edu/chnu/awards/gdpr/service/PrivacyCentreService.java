@@ -51,12 +51,14 @@ public class PrivacyCentreService {
      * One page of the person's activity, newest first.
      *
      * @param userId the person
+     * @param byMe   true for the person's own actions, false for actions of others about them, null for both
      * @param page   0-based page, a negative one is the first
      * @param size   page size, kept between 1 and the list maximum
      * @return the page
      */
     @Transactional(readOnly = true)
-    public PageResponse<ActivityEntry> activity(long userId, int page, int size) {
-        return PageResponse.of(activityQueries.activity(userId, PageResponse.request(page, size, Sort.unsorted())));
+    public PageResponse<ActivityEntry> activity(long userId, Boolean byMe, int page, int size) {
+        return PageResponse.of(activityQueries.activity(userId, byMe,
+            PageResponse.request(page, size, Sort.unsorted())));
     }
 }

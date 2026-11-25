@@ -13,6 +13,7 @@ import { PaneComponent } from '../../../shared/layout/pane.component';
 import { BarListComponent, BarRow } from '../../../shared/widgets/bar-list.component';
 import { currentKyivMonth } from '../../../shared/widgets/facts';
 import { LEVEL_BANDS, LevelBand, YearCount, levelBand } from '../analytics.service';
+import { TableScrollComponent } from '../../../shared/widgets/table-scroll.component';
 
 export interface YearRow {
   year: number;
@@ -73,7 +74,7 @@ export function yearSummary(rows: YearRow[]): YearSummary | null {
 /** W1: approved awards per year as three comparison cards over thick bars, newest year on top. */
 @Component({
   selector: 'app-year-trend-chart',
-  imports: [BarListComponent, TranslocoPipe],
+  imports: [BarListComponent, TableScrollComponent, TranslocoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './year-trend-chart.component.html',
   styleUrl: './year-trend-chart.component.scss',

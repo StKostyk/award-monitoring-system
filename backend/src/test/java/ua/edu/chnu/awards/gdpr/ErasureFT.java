@@ -117,7 +117,7 @@ class ErasureFT extends AbstractFunctionalTest {
             .statusCode(HttpStatus.NOT_FOUND.value());
         RestAssured.given().contentType(ContentType.JSON).body(Map.of("email", PERSON, "password", DEMO_PASSWORD,
                 "firstName", "Олена", "lastName", "Нова", "organizationId", TestUsers.DAI_DEPARTMENT_ID,
-                "privacyNoticeVersion", "1.0"))
+                "privacyNoticeVersion", "1.1"))
             .post("/api/v1/auth/register").then().statusCode(HttpStatus.CREATED.value());
         assertThat(jdbc.queryForObject("select count(*) from users where lower(email_address) = ? and user_id <> ?",
             Integer.class, PERSON, personId)).isOne();

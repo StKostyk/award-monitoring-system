@@ -8,6 +8,11 @@
   --app-on-cyan: #00243a;
   --app-ok: light-dark(#2f6b3a, #8fd5b0);
   --app-bad: light-dark(#b3261e, #ffb4ab);
+  --app-level-mark-FACULTY: light-dark(#6a4a0e, #f5d58a);
+  --app-level-mark-UNIVERSITY: light-dark(#6b1a28, #ffb2b9);
+  --app-level-mark-REGIONAL: light-dark(#283c6b, #b9c6e4);
+  --app-level-mark-NATIONAL: light-dark(#7a1f2e, #7ddcff);
+  --app-level-mark-INTERNATIONAL: light-dark(#2b1b1e, #f5c451);
   --app-accent-from: var(--mat-sys-primary);
   --app-accent-to: var(--mat-sys-primary);
   --app-accent-gradient: linear-gradient(135deg, var(--app-accent-from), var(--app-accent-to));

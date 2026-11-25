@@ -74,6 +74,21 @@ class MailDeliveryTest {
     }
 
     @Test
+    void ac10_3_aNotificationNamesItsPreferencesAsTheUnsubscribeAddress() throws Exception {
+        delivery.send("olena@chnu.edu.ua", "Subject", MailContent.notification("Text"));
+
+        assertThat(sent().getHeader("List-Unsubscribe"))
+            .containsExactly("<" + MailRenderers.FRONTEND + "/profile#notifications>");
+    }
+
+    @Test
+    void ac10_3_aSecurityMailHasNoUnsubscribeHeader() throws Exception {
+        delivery.send("olena@chnu.edu.ua", "Subject", "Text");
+
+        assertThat(sent().getHeader("List-Unsubscribe")).isNull();
+    }
+
+    @Test
     void ac1_4_placeholderAndErasedAddressesNeverReceiveMail() throws Exception {
         delivery.send("unclaimed-1b2c@unclaimed.invalid", "Subject", "Text");
         delivery.send(List.of("erased-7@erased.invalid", "olena@chnu.edu.ua"), "Subject", "Text");

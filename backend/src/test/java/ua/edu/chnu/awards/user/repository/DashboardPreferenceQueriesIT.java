@@ -58,7 +58,7 @@ class DashboardPreferenceQueriesIT extends AbstractIntegrationTest {
             + " where tgrelid = 'dashboard_preferences'::regclass and not tgisinternal", String.class);
 
         assertThat(columns).extracting(column -> column.get("column_name"))
-            .containsExactly("user_id", "updated_at", "color_scheme", "layouts");
+            .containsExactly("user_id", "updated_at", "color_scheme", "layouts", "onboarding");
         assertThat(columns.get(2)).containsEntry("is_nullable", "NO");
         assertThat((String) columns.get(2).get("column_default")).startsWith("'SYSTEM'");
         assertThat(columns.get(3)).containsEntry("data_type", "jsonb").containsEntry("is_nullable", "NO");

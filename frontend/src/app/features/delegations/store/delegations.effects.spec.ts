@@ -1,13 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideMockActions } from '@ngrx/effects/testing';
-import { Action, provideStore } from '@ngrx/store';
+import { Action, Store, provideState, provideStore } from '@ngrx/store';
 import { Subject, firstValueFrom, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { Delegation, DelegationList, DelegationsService } from '../delegations.service';
 import { DelegationsActions } from './delegations.actions';
 import { DelegationsEffects } from './delegations.effects';
+import { delegationsFeature } from './delegations.feature';
 
 const delegation: Delegation = {
   id: 1,
@@ -49,6 +50,7 @@ describe('DelegationsEffects', () => {
     TestBed.configureTestingModule({
       providers: [
         provideStore(),
+        provideState(delegationsFeature),
         provideMockActions(() => actions$),
         { provide: DelegationsService, useValue: api },
         DelegationsEffects,
@@ -59,16 +61,25 @@ describe('DelegationsEffects', () => {
 
   it('ac3_5_loads_the_delegations_given_and_received', async () => {
     const result = firstValueFrom(effects.load$);
-    actions$.next(DelegationsActions.opened());
+    actions$.next(DelegationsActions.opened({ delegatorId: null }));
 
     expect(await result).toEqual(DelegationsActions.delegationsLoaded({ list }));
-    expect(api.list).toHaveBeenCalledWith();
+    expect(api.list).toHaveBeenCalledWith(undefined, undefined);
+  });
+
+  it('ac5_3_reads_another_persons_page_on_every_load', async () => {
+    TestBed.inject(Store).dispatch(DelegationsActions.opened({ delegatorId: 5 }));
+    const result = firstValueFrom(effects.load$);
+    actions$.next(DelegationsActions.reloaded());
+
+    expect(await result).toEqual(DelegationsActions.delegationsLoaded({ list }));
+    expect(api.list).toHaveBeenCalledWith(undefined, 5);
   });
 
   it('reports a failed load as a typed problem', async () => {
     api.list.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
     const result = firstValueFrom(effects.load$);
-    actions$.next(DelegationsActions.opened());
+    actions$.next(DelegationsActions.opened({ delegatorId: null }));
 
     expect(await result).toEqual(DelegationsActions.delegationsLoadFailed({ problem: 'network' }));
   });

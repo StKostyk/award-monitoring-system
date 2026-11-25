@@ -1,6 +1,14 @@
 import { expect, test } from './fixtures';
 
-import { DEMO_PASSWORD, registerAndVerify, SEED, signIn, toggleLanguage, userRow } from './helpers';
+import {
+  DEMO_PASSWORD,
+  registerAndVerify,
+  SEED,
+  signIn,
+  toggleLanguage,
+  userRow,
+  userTableRow,
+} from './helpers';
 
 const { employee, secretary, dean } = SEED;
 const password = 'correct-horse-battery';
@@ -35,14 +43,19 @@ test.describe('role assignment', () => {
 
     await expect(page).toHaveURL(/\/admin\/users$/);
     await page.getByTestId('filter-q').fill(email);
-    const row = userRow(page, email);
+    const row = userTableRow(page, email);
 
     await expect(row.getByTestId('unconfirmed-badge')).toContainText('Не підтверджено');
 
-    await row.click();
+    await userRow(page, email).click();
     await page.getByTestId('confirm-membership').click();
 
-    await expect(row).toContainText('Працівник');
+    await expect(page.getByTestId('membership-actions')).toHaveCount(0);
+    await expect(page.getByTestId('current-roles')).toContainText('Працівник');
+    await page.getByTestId('detail-close').click();
+
+    await expect(page).toHaveURL(/\/admin\/users$/);
+    await expect(row.getByTestId('user-roles')).toContainText('Працівник');
     await expect(row.getByTestId('unconfirmed-badge')).toHaveCount(0);
   });
 

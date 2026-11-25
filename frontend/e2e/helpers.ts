@@ -28,7 +28,7 @@ export const SEED = {
 export const FRESH_PASSWORD = 'correct-horse-battery';
 
 /** The privacy notice version the backend serves as current (`app.privacy.notice-version`). */
-export const NOTICE_VERSION = '1.0';
+export const NOTICE_VERSION = '1.1';
 
 /** The app-wide notice shown while the server cannot be reached. */
 export const OFFLINE_NOTICE =
@@ -392,6 +392,11 @@ export function pastDay(): string {
 export function shownDay(isoDay: string): string {
   const [year, month, day] = isoDay.split('-');
   return `${day}.${month}.${year}`;
+}
+
+/** The table row of the full users table (960 px and wider, nobody selected) that holds the person's link. */
+export function userTableRow(page: Page, text: string): Locator {
+  return page.getByTestId('user-row').filter({ has: userRow(page, text) });
 }
 
 /** A row of the users page, by the e-mail address of the account or by a part of the name. */

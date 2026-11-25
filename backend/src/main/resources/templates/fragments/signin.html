@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body th:fragment="page(content, login)" th:class="|signin signin--${@signInTheme.id}|"
+      th:switch="${@signInTheme.id}">
+<th:block th:case="'sky'"><th:block th:replace="~{fragments/signin-sky :: scene(${content}, ${login})}"></th:block></th:block>
+<th:block th:case="'rushnyk'"><th:block th:replace="~{fragments/signin-rushnyk :: scene(${content}, ${login})}"></th:block></th:block>
+<th:block th:case="*"><th:block th:replace="~{fragments/signin-catalogue :: scene(${content}, ${login})}"></th:block></th:block>
+</body>
+<body>
+<p class="signin-lang" th:fragment="languages" th:with="english=${#locale.language == 'en'}">
+    <span th:unless="${english}" aria-current="true">УКР</span>
+    <a th:if="${english}" th:href="@{/login(lang='uk')}" lang="uk" hreflang="uk">УКР</a>
+    <span aria-hidden="true">·</span>
+    <span th:if="${english}" aria-current="true">EN</span>
+    <a th:unless="${english}" th:href="@{/login(lang='en')}" lang="en" hreflang="en">EN</a>
+</p>
+
+<p class="signin-brand" th:fragment="brand" data-testid="signin-brand">
+    <img class="signin-brand__logo" th:src="@{/login-assets/{id}/logo.svg(id=${@loginBrand.id})}" alt=""
+         width="32" height="32">
+    <span class="signin-brand__name" th:text="${#messages.msg('brand.' + @loginBrand.id + '.name')}">Awards</span>
+</p>
+
+<figure class="signin-quote" th:fragment="quote" th:with="quote=${@quoteOfTheDay.today(#locale)}"
+        data-testid="quote-of-the-day">
+    <figcaption class="signin-quote__label" th:text="#{signin.quote.label}">Quote of the day</figcaption>
+    <blockquote class="signin-quote__text">
+        <p th:text="#{signin.quote.text(${quote.text})}">Quote</p>
+    </blockquote>
+    <p class="signin-quote__source"><span th:text="${quote.author}">Author</span>,
+        <cite th:text="${quote.source}">source</cite>, <span th:text="${quote.year}">year</span></p>
+</figure>
+
+<footer class="signin-footer" th:fragment="footer">
+    <span th:text="${#messages.msg('brand.' + @loginBrand.id + '.organization')}">University</span>
+    <a th:if="${privacyUrl}" th:href="${privacyUrl}" th:text="#{signin.privacy}">Privacy</a>
+    <a th:if="${termsUrl}" th:href="${termsUrl}" th:text="#{signin.terms}">Terms of use</a>
+</footer>
+</body>
+</html>

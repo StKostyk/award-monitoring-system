@@ -1,5 +1,6 @@
 package ua.edu.chnu.awards.gdpr.repository;
 
+import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,8 @@ public class ActivityQueries {
           from audit_logs
          where (user_id = :userId or (entity_type in (:areas) and entity_id = :userId))
            and action_type not in ('INSERT', 'UPDATE', 'DELETE')
+           and (cast(:byMe as boolean) is null
+                or (coalesce(new_values ->> 'actorId', user_id::text) = :userText) = cast(:byMe as boolean))
         """;
 
     private static final String ROWS = "select action_type, created_at, entity_type, entity_id,"
@@ -44,12 +47,14 @@ public class ActivityQueries {
      * One page of a person's activity, newest first.
      *
      * @param userId   the person
+     * @param byMe     true for the person's own actions, false for actions of others about them, null for both
      * @param pageable page number and size
      * @return the page
      */
-    public Page<ActivityEntry> activity(long userId, Pageable pageable) {
+    public Page<ActivityEntry> activity(long userId, Boolean byMe, Pageable pageable) {
         MapSqlParameterSource params = new MapSqlParameterSource(Map.of("userId", userId, "areas", ACCOUNT_AREAS,
-            "userText", Long.toString(userId), "limit", pageable.getPageSize(), "offset", pageable.getOffset()));
+            "userText", Long.toString(userId), "limit", pageable.getPageSize(), "offset", pageable.getOffset()))
+            .addValue("byMe", byMe, Types.BOOLEAN);
         List<ActivityEntry> rows = jdbc.query(ROWS, params, (row, index) -> new ActivityEntry(
             row.getString("action_type"), row.getObject("created_at", OffsetDateTime.class).toInstant(),
             row.getString("entity_type"), row.getObject("entity_id", Long.class), row.getBoolean("by_me")));

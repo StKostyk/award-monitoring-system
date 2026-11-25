@@ -16,6 +16,8 @@ export interface DelegationsState {
   revokingId: number | null;
   revokeProblem: RevokeProblem | null;
   message: string | null;
+  /** The person whose page is read (a holder of `user:manage`); null for the caller's own page. */
+  delegatorId: number | null;
 }
 
 export const initialState: DelegationsState = {
@@ -26,14 +28,17 @@ export const initialState: DelegationsState = {
   revokingId: null,
   revokeProblem: null,
   message: null,
+  delegatorId: null,
 };
 
 export const delegationsFeature = createFeature({
   name: 'delegations',
   reducer: createReducer(
     initialState,
-    on(DelegationsActions.opened, (state) => ({
+    on(DelegationsActions.opened, (state, { delegatorId }) => ({
       ...state,
+      ...(delegatorId === state.delegatorId ? {} : { given: [], received: [] }),
+      delegatorId,
       loading: true,
       problem: null,
       message: null,
@@ -55,8 +60,6 @@ export const delegationsFeature = createFeature({
     })),
     on(DelegationsActions.delegationsLoadFailed, (state, { problem }) => ({
       ...state,
-      given: [],
-      received: [],
       loading: false,
       problem,
     })),

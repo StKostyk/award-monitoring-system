@@ -33,7 +33,13 @@
       </button>
     </section>
   } @else {
-    <app-split mode="stack">
+    <app-split
+      mode="stack"
+      stickySide
+      [class.units--updating]="updating()"
+      [attr.aria-busy]="updating()"
+      data-testid="unit-analytics-body"
+    >
       <div splitSide>
         @if (analytics(); as data) {
           <app-pane
@@ -42,7 +48,7 @@
             flush
             data-testid="section-totals"
           >
-            <app-delta-tiles [totals]="data.totals" />
+            <app-delta-tiles [totals]="data.totals" [previousPeriod]="data.previousPeriod" />
           </app-pane>
         }
         @if (units().length > 0) {
@@ -81,13 +87,6 @@
             </button>
           </div>
         } @else if (analytics(); as data) {
-          <p class="units__compared" data-testid="unit-analytics-compared">
-            {{ comparedWith() }}
-            @if (data.partialYear) {
-              {{ 'unitAnalytics.partialYear' | transloco: { year: data.period.to } }}
-            }
-          </p>
-
           <app-pane
             icon="chart-line"
             [heading]="'unitAnalytics.sections.trend' | transloco"
@@ -124,7 +123,11 @@
               chartLabel="charts.ranking"
               data-testid="section-comparison"
             >
-              <app-unit-comparison [rows]="data.units" [period]="shownPeriod()" />
+              <app-unit-comparison
+                [rows]="data.units"
+                [period]="shownPeriod()"
+                [totals]="data.totals"
+              />
             </app-pane>
           }
 

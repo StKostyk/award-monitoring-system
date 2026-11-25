@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
+import { STAY_IN_PLACE } from '../../../../core/layout/navigation-focus.service';
 import { ListRowComponent, ListRowsDirective } from '../../../../shared/layout/list-row.component';
 import { organizationName } from '../../../../shared/organization-name';
 import { AnalysableUnit } from '../unit-analytics.service';
@@ -28,8 +29,10 @@ import { AnalysableUnit } from '../unit-analytics.service';
           [rowTitle]="option.whole ? ('unitAnalytics.wholeFaculty' | transloco) : option.title"
           [meta]="option.meta"
           [selected]="option.id === selected()"
+          wrap
           [routerLink]="['/analytics/units', option.id]"
           queryParamsHandling="preserve"
+          [state]="stayInPlace"
           [attr.data-testid]="'unit-option-' + option.id"
         >
           @if (option.count !== undefined) {
@@ -63,6 +66,8 @@ export class UnitListComponent {
   readonly selected = input<number | null>(null);
   /** Approved awards by unit id for the shown period, or null while they are unknown. */
   readonly counts = input<ReadonlyMap<number, number> | null>(null);
+
+  protected readonly stayInPlace = { [STAY_IN_PLACE]: true };
 
   protected readonly options = computed(() => {
     const language = this.language.current();

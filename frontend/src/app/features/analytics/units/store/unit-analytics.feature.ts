@@ -42,11 +42,11 @@ export const unitAnalyticsFeature = createFeature({
       units: [],
       unitsStatus: 'failed' as const,
     })),
-    on(UnitAnalyticsActions.unitSelected, (state, { unitId, period }) => ({
+    on(UnitAnalyticsActions.unitSelected, (state, { unitId, period, keepFigures }) => ({
       ...state,
       unitId,
       period,
-      analytics: state.unitId === unitId ? state.analytics : null,
+      analytics: keepFigures || state.unitId === unitId ? state.analytics : null,
       loading: true,
       problem: null,
     })),

@@ -5,7 +5,7 @@ import { Delegation, DelegationList } from '../delegations.service';
 export const DelegationsActions = createActionGroup({
   source: 'Delegations',
   events: {
-    Opened: emptyProps(),
+    Opened: props<{ delegatorId: number | null }>(),
     Reloaded: emptyProps(),
     Refreshed: emptyProps(),
     'Delegations Loaded': props<{ list: DelegationList }>(),

@@ -74,10 +74,14 @@ export class PrivacyCentreService {
    *
    * @param page the page index
    * @param size the page size
+   * @param byMe true for the person's own actions, false for actions of others about them, absent for both
    * @returns the page of entries
    */
-  activity(page: number, size: number): Observable<Page<ActivityEntry>> {
-    const params = new HttpParams().set('page', page).set('size', size);
+  activity(page: number, size: number, byMe?: boolean): Observable<Page<ActivityEntry>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (byMe !== undefined) {
+      params = params.set('byMe', byMe);
+    }
     return this.http.get<Page<ActivityEntry>>(`${this.base}/activity`, { params });
   }
 }
