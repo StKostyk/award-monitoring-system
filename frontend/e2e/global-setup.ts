@@ -10,7 +10,9 @@ const WARM_UP_TIMEOUT = 120_000;
  * also after a manual run with another notice version; the redirect itself is covered by
  * `privacy-notice.spec.ts` with an account of its own. Closes the review requests that earlier runs left open
  * (awards titled with a `uniqueToken` suffix or owned by an `e2e.` account), so that their overdue deadlines do
- * not fill the first page of the review queues ahead of the requests a spec submits. Signs a seed account in once,
+ * not fill the first page of the review queues ahead of the requests a spec submits. Hides the getting-started
+ * checklist of every existing account, so that only the accounts a spec registers show it (`onboarding.spec.ts`
+ * covers it). Signs a seed account in once,
  * so that the first spec does not pay for the first compilation of the lazy routes and the warm-up of the backend.
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
@@ -21,6 +23,12 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
      where coalesce((select c.consent_version from consent_records c where c.user_id = u.user_id
        and c.consent_type = 'DATA_PROCESSING' order by c.created_at desc, c.consent_id desc
        limit 1), '') <> '${NOTICE_VERSION}'`,
+  );
+  sql(
+    `insert into dashboard_preferences (user_id, onboarding)
+     select user_id, '{"dismissed": true}'::jsonb from users
+     on conflict (user_id) do update
+     set onboarding = dashboard_preferences.onboarding || '{"dismissed": true}'::jsonb`,
   );
   const browser = await chromium.launch();
   try {

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- A getting-started checklist per role on My dashboard (landing page for the administrator and the data protection officer) with an optional spotlight tour; progress kept by GET|PUT /users/me/onboarding
 - Privacy page as a control panel: a status line with the deletion countdown and its cancel, tiles for the notice, rankings consent, award visibility, e-mails, data download, activity (mine / about me, full log; GET /users/me/activity byMe filter) and deletion
 - Notifications as an inbox with a reading pane: chips for unread, awards, review and roles, reading in place without leaving the page, and marking a notification unread again (DELETE /notifications/{id}/read, type filter)
 - My delegations as a status board: a from-me / to-me toggle over active, scheduled and ended columns of cards with dates, note, limits of authority and revocation where it applies

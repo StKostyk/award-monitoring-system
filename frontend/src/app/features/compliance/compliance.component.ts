@@ -21,6 +21,7 @@ import { PageHeaderComponent } from '../../shared/layout/page-header.component';
 import { PaneComponent } from '../../shared/layout/pane.component';
 import { SplitComponent } from '../../shared/layout/split.component';
 import { TranslatedPaginatorIntl } from '../../shared/translated-paginator-intl';
+import { OnboardingChecklistComponent } from '../onboarding/onboarding-checklist/onboarding-checklist.component';
 import { UserRef } from '../reviews/reviews.service';
 import { Phrase, durationPhrase, isErasedEmail, periodPhrases } from './compliance-format';
 import { ErasureEntry, ErasureStatus, RetentionRun } from './compliance.service';
@@ -78,6 +79,7 @@ export function readView(params: ParamMap): ComplianceView {
   selector: 'app-compliance',
   imports: [
     NgTemplateOutlet,
+    OnboardingChecklistComponent,
     PageHeaderComponent,
     SplitComponent,
     PaneComponent,

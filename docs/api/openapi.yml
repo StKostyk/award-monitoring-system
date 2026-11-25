@@ -3035,8 +3035,9 @@ paths:
       description: >
         The steps of the caller's roles in order, each done when the data proves it (`NOTICE`, `FIRST_AWARD`,
         `DELEGATE`) or when the caller stored it; plus whether the checklist was dismissed and the tour seen
-        (9.7.9).
-      x-status: planned
+        (9.7.9). Steps by role: every account `NOTICE`, `PROFILE`, `NOTIFICATIONS`; holders of `award:create` add
+        `FIRST_AWARD`, `VISIBILITY`; holders of `award:approve:level1` `REVIEW_QUEUE`; deans and the rector
+        `DELEGATE`; faculty secretaries `IMPORT`. Roles held in person today count, borrowed ones do not.
       security:
         - bearerAuth: []
       operationId: getOnboarding
@@ -3053,8 +3054,8 @@ paths:
       tags: [Users]
       summary: Save the caller's getting-started progress
       description: >
-        Replaces the stored progress (last write wins); not audited; part of the export and the erasure (9.7.9).
-      x-status: planned
+        Replaces the stored progress (last write wins); not audited; part of the export and the erasure (9.7.9). Steps the data
+        decides are accepted and not stored; a missing `done` is empty.
       security:
         - bearerAuth: []
       operationId: saveOnboarding
@@ -4396,14 +4397,14 @@ components:
 
     PersonalDataExport:
       type: object
-      description: GDPR Article 20 export, format version 1.8; every section is present, possibly empty
+      description: GDPR Article 20 export, format version 1.9; every section is present, possibly empty
       required: [export_metadata, personal_data, roles, delegations, awards, award_versions, documents,
                  review_decisions, decisions_made, consent_history, legal_holds, erasure_requests, devices, activity_log,
                  notifications, notification_preferences, dashboard_preferences]
       properties:
         export_metadata:
           type: object
-          description: '`export_date` (instant), `user_id`, `format_version` (`1.8`), `gdpr_article`'
+          description: '`export_date` (instant), `user_id`, `format_version` (`1.9`), `gdpr_article`'
         personal_data:
           type: object
           description: |
@@ -4510,8 +4511,9 @@ components:
           type: object
           description: >-
             Colour scheme and dashboard layouts (since 1.8, 9.4.1): `color_scheme` (`SYSTEM` when never saved),
-            `layouts` (as stored, `{}` when never saved), `updated_at` (null when never saved). Format 1.7 carried
-            `hidden_widgets` instead
+            `layouts` (as stored, `{}` when never saved), `onboarding` (since 1.9, 9.7.9: the stored
+            getting-started progress `{"done": [...], "dismissed": bool, "tourSeen": bool}` as stored, `{}` when never
+            saved), `updated_at` (null when never saved). Format 1.7 carried `hidden_widgets` instead
 
     EmailChangeConfirmRequest:
       type: object
@@ -5746,7 +5748,7 @@ components:
 
     OnboardingStepKey:
       type: string
-      description: A getting-started step (planned, 9.7.9)
+      description: A getting-started step (9.7.9)
       enum: [NOTICE, PROFILE, FIRST_AWARD, VISIBILITY, NOTIFICATIONS, REVIEW_QUEUE, DELEGATE, IMPORT]
 
     OnboardingStep:
@@ -5763,7 +5765,7 @@ components:
 
     OnboardingState:
       type: object
-      description: The caller's getting-started steps (planned, 9.7.9)
+      description: The caller's getting-started steps (9.7.9)
       required: [steps, dismissed, tourSeen]
       properties:
         steps:
@@ -5777,7 +5779,7 @@ components:
 
     OnboardingUpdate:
       type: object
-      description: The stored progress, replaced as a whole (planned, 9.7.9)
+      description: The stored progress, replaced as a whole (9.7.9)
       required: [done, dismissed, tourSeen]
       properties:
         done:

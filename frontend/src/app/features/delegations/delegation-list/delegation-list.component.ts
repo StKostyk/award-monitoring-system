@@ -71,6 +71,8 @@ export class DelegationListComponent implements OnInit {
   private readonly chosenSide = signal<BoardSide | null>(null);
   /** Whether every ended delegation shows, not only the latest few. */
   readonly allEnded = signal(false);
+  /** How many ended delegations show while the column is folded. */
+  protected readonly endedShown = ENDED_SHOWN;
 
   /** The person whose page an administrator reads (`?delegatorId=`); null for the caller's own page. */
   protected readonly delegatorId = idOf(
@@ -223,9 +225,11 @@ export class DelegationListComponent implements OnInit {
   }
 }
 
-/** The day a delegation ended: its revocation day, or its last day when it ran out. */
+/** The day a delegation ended: its revocation day in Kyiv, or its last day when it ran out. */
 function endOf(delegation: Delegation): string {
-  return (delegation.revokedAt ?? delegation.validTo).slice(0, 10);
+  return delegation.revokedAt
+    ? kyivToday(new Date(delegation.revokedAt))
+    : delegation.validTo.slice(0, 10);
 }
 
 function idOf(value: string | null): number | null {

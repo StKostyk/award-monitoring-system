@@ -1,0 +1,72 @@
+@if (visible()) {
+  <app-pane
+    icon="sparkles"
+    class="onboarding"
+    [heading]="'onboarding.heading' | transloco: { name: firstName() }"
+    data-testid="onboarding-checklist"
+  >
+    @if (allDone()) {
+      <p class="onboarding__all-done" role="status" data-testid="onboarding-all-done">
+        <app-icon name="circle-check" />
+        {{ 'onboarding.allDone' | transloco }}
+      </p>
+    } @else {
+      <p class="onboarding__progress" data-testid="onboarding-progress">
+        {{ 'onboarding.progress' | transloco: { done: doneCount(), total: steps().length } }}
+      </p>
+      <ol class="onboarding__steps">
+        @for (step of steps(); track step.key) {
+          <li
+            class="onboarding__step"
+            [class.onboarding__step--done]="step.done"
+            [attr.data-testid]="'onboarding-step-' + step.key"
+            [attr.data-done]="step.done"
+          >
+            <app-icon
+              class="onboarding__mark"
+              [name]="step.done ? 'circle-check' : icons[step.key]"
+            />
+            <span class="onboarding__text">
+              <span class="onboarding__title">{{
+                'onboarding.steps.' + step.key + '.title' | transloco
+              }}</span>
+              <span class="onboarding__hint">{{
+                'onboarding.steps.' + step.key + '.hint' | transloco
+              }}</span>
+            </span>
+            @if (step.done) {
+              <span class="onboarding__done">{{ 'onboarding.done' | transloco }}</span>
+            } @else {
+              <a
+                mat-stroked-button
+                class="onboarding__open"
+                [routerLink]="links[step.key].path"
+                [queryParams]="links[step.key].queryParams"
+                [fragment]="links[step.key].fragment"
+                (click)="open(step)"
+                [attr.data-testid]="'onboarding-open-' + step.key"
+              >
+                {{ 'onboarding.steps.' + step.key + '.action' | transloco }}
+              </a>
+            }
+          </li>
+        }
+      </ol>
+      <div class="onboarding__actions">
+        @if (tour()) {
+          <button
+            mat-button
+            type="button"
+            (click)="startTour()"
+            data-testid="onboarding-tour-start"
+          >
+            {{ 'onboarding.tourStart' | transloco }}
+          </button>
+        }
+        <button mat-button type="button" (click)="dismiss()" data-testid="onboarding-dismiss">
+          {{ 'onboarding.dismiss' | transloco }}
+        </button>
+      </div>
+    }
+  </app-pane>
+}

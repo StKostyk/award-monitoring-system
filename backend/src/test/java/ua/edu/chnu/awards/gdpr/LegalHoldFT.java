@@ -168,7 +168,7 @@ class LegalHoldFT extends AbstractFunctionalTest {
     @Test
     void ac3_7_theExportListsTheHoldDatesOnly() {
         as(tokenOf(PERSON)).get("/api/v1/users/me/export").then().statusCode(HttpStatus.OK.value())
-            .body("export_metadata.format_version", equalTo("1.8"))
+            .body("export_metadata.format_version", equalTo("1.9"))
             .body("dashboard_preferences.color_scheme", equalTo("SYSTEM"))
             .body("dashboard_preferences.layouts.size()", equalTo(0))
             .body("dashboard_preferences.updated_at", nullValue())

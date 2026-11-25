@@ -410,7 +410,7 @@ draft wording and get the merged i18n text at the validation.
     international awards, «Усі» restores it (AC-3.3).
 16. As `admin`, `/admin/users`. Expected: full table with last sign-in (AC-5.1, AC-5.2); select `dean.fmi` → narrow
     list and the person pane with tabs and links; «Делегування» → `/delegations?delegatorId=<id>` read only, without
-    «Делегувати» or «Відкликати»; «×» → full table (AC-5.3); 360 → full page with back (AC-5.4).
+    «Делегувати» or «Відкликати», the toggle reads «Видані · N» / «Отримані · N»; «×» → full table (AC-5.3); 360 → full page with back (AC-5.4).
 17. As `dean.fmi`, `/delegations`, delegate to `secretary.fmi` for next week. Expected: card under «Заплановані» in
     «Від мене», with «Відкликати»; as `secretary.fmi` the card is under «Мені» without an action (AC-6.1, AC-6.2).
 18. As `employee.fmi` after `dean.fmi` approves one award: `/notifications`, select it. Expected: reading pane,
@@ -425,7 +425,8 @@ draft wording and get the merged i18n text at the validation.
 21. «Додати» on the first award step, save a draft, back to My dashboard. Expected: `FIRST_AWARD` done (AC-9.2).
 22. «Налаштувати» on visibility. Expected: the privacy panel opens; back on My dashboard the step is done (AC-9.4).
 23. «Показати тур по екрану», go through all four steps. Expected: «Крок N з 4» on search, navigation, «Нова
-    нагорода», the switch (AC-9.5).
+    нагорода», the switch (AC-9.5); without a chart on the page (no approved award yet) or with the menu closed on a
+    phone, the step's bubble shows in the middle of the screen. Escape on any step ends the tour.
 24. `curl -H "Authorization: Bearer <token>" http://localhost/api/v1/users/me/onboarding`. Expected: the steps with
     `done`, `tourSeen: true` (AC-9.3); without the header 401 (AC-9.6).
 25. As `dean.fmi`, `GET /users/me/onboarding`. Expected: `REVIEW_QUEUE` and `DELEGATE` added, `DELEGATE` done after

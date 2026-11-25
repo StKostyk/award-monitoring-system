@@ -78,7 +78,7 @@ class PersonalDataAssemblerTest {
     void ac32_theMetadataAndProfileDescribeThePersonWithDepartmentAndFaculty() {
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.8",
+        assertThat(file.exportMetadata()).isEqualTo(new PersonalDataFile.Metadata(NOW, 5L, "1.9",
             "Article 20 - Right to Data Portability"));
         PersonalDataFile.Profile profile = file.personalData().profile();
         assertThat(profile.email()).isEqualTo("employee.fmi@chnu.edu.ua");
@@ -114,14 +114,14 @@ class PersonalDataAssemblerTest {
     }
 
     @Test
-    void ac1_7_theSchemeAndLayoutsAreCopiedIntoFormatOnePointEight() {
+    void ac1_7_theSchemeLayoutsAndOnboardingAreCopiedIntoFormatOnePointNine() {
         DashboardPreferenceEntry choice = new DashboardPreferenceEntry("DARK",
-            "{\"MY_AWARDS\": {\"order\": [], \"hidden\": [\"RANK\"]}}", NOW);
+            "{\"MY_AWARDS\": {\"order\": [], \"hidden\": [\"RANK\"]}}", "{\"done\": [\"PROFILE\"]}", NOW);
         when(queries.dashboardPreferences(5L)).thenReturn(choice);
 
         PersonalDataFile file = assembler.assemble(user);
 
-        assertThat(file.exportMetadata().formatVersion()).isEqualTo("1.8");
+        assertThat(file.exportMetadata().formatVersion()).isEqualTo("1.9");
         assertThat(file.dashboardPreferences()).isEqualTo(choice);
     }
 

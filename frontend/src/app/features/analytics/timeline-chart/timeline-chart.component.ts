@@ -6,6 +6,7 @@ import {
   ElementRef,
   afterNextRender,
   computed,
+  effect,
   inject,
   input,
   signal,
@@ -29,6 +30,9 @@ import { TimelineEntry } from '../analytics.service';
 
 const WIDE_QUERY = '(min-width: 960px)';
 const STOP_WIDTH = 150;
+/** The road's side padding (`--road-inset`) and the gap between stops, in pixels. */
+const ROAD_INSET = 24;
+const STOP_GAP = 8;
 const MIN_PER_ROW = 2;
 const MAX_PER_ROW = 6;
 const DEFAULT_PER_ROW = 4;
@@ -48,8 +52,9 @@ interface ShownEntry extends TimelineEntry {
 }
 
 /**
- * Every counted award of the person: a road from the first award to today at 960 px and wider, a feed grouped by
- * year below; every milestone and row opens the award.
+ * Every counted award of the person: a road from the first award to today at 960 px and wider when the pane holds
+ * at least two stops, a feed grouped by year otherwise (the national filter is the feed's and resets on the road);
+ * every milestone and row opens the award.
  */
 @Component({
   selector: 'app-timeline-chart',
@@ -64,13 +69,22 @@ export class TimelineChartComponent {
   readonly timeline = input.required<TimelineEntry[]>();
   readonly truncated = input(false);
 
-  protected readonly wide = toSignal(
+  private readonly wideWindow = toSignal(
     inject(BreakpointObserver)
       .observe(WIDE_QUERY)
       .pipe(map((state) => state.matches)),
     { initialValue: false },
   );
-  protected readonly perRow = signal(DEFAULT_PER_ROW);
+  /** The stops that fit in one row of the pane; null until the pane is measured. */
+  private readonly fitting = signal<number | null>(null);
+  /** The road needs a wide window and a pane that holds at least the minimum row. */
+  protected readonly wide = computed(() => {
+    const fitting = this.fitting();
+    return this.wideWindow() && (fitting === null || fitting >= MIN_PER_ROW);
+  });
+  protected readonly perRow = computed(() =>
+    Math.min(MAX_PER_ROW, Math.max(MIN_PER_ROW, this.fitting() ?? DEFAULT_PER_ROW)),
+  );
   protected readonly filter = signal<TimelineFilter>('all');
 
   private readonly entries = computed<ShownEntry[]>(() => {
@@ -79,7 +93,7 @@ export class TimelineChartComponent {
     return this.timeline().map((entry) => ({
       ...entry,
       year: entry.awardDate.slice(0, 4),
-      day: entry.awardDate.slice(8, 10),
+      day: String(Number(entry.awardDate.slice(8, 10))),
       month: months[Number(entry.awardDate.slice(5, 7)) - 1],
       shownTitle: awardTitle(entry, language),
       categoryName: categoryName(entry.category, language),
@@ -121,13 +135,18 @@ export class TimelineChartComponent {
   constructor() {
     const host = inject<ElementRef<HTMLElement>>(ElementRef);
     const destroyRef = inject(DestroyRef);
+    effect(() => {
+      if (this.wide()) {
+        this.filter.set('all');
+      }
+    });
     afterNextRender(() => {
       if (typeof ResizeObserver === 'undefined') {
         return;
       }
       const observer = new ResizeObserver(([entry]) => {
-        const fits = Math.floor(entry.contentRect.width / STOP_WIDTH);
-        this.perRow.set(Math.min(MAX_PER_ROW, Math.max(MIN_PER_ROW, fits)));
+        const room = entry.contentRect.width - 2 * ROAD_INSET + STOP_GAP;
+        this.fitting.set(Math.floor(room / (STOP_WIDTH + STOP_GAP)));
       });
       observer.observe(host.nativeElement);
       destroyRef.onDestroy(() => observer.disconnect());

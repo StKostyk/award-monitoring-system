@@ -2,6 +2,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TimelineEntry } from '../analytics.service';
 import { languageStub, sampleAnalytics, translations } from '../analytics.testing';
@@ -127,7 +128,7 @@ describe('TimelineChartComponent', () => {
       '/awards/22',
       '/awards/10',
     ]);
-    expect(texts(element, '[data-testid="timeline-day"]')).toEqual(['01 Mar', '15 Jan', '10 May']);
+    expect(texts(element, '[data-testid="timeline-day"]')).toEqual(['1 Mar', '15 Jan', '10 May']);
     expect(rows[0].textContent).toContain('verified');
     expect(rows[1].textContent).not.toContain('verified');
     expect(rows[0].textContent).toContain('Ministry of Education · Grant');
@@ -136,6 +137,71 @@ describe('TimelineChartComponent', () => {
       'Department',
       'Faculty',
     ]);
+  });
+
+  describe('in a measured pane', () => {
+    let resized: ((entries: { contentRect: { width: number } }[]) => void) | undefined;
+
+    beforeEach(() => {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(callback: typeof resized) {
+            resized = callback;
+          }
+
+          observe(): void {
+            /* the test reports the width */
+          }
+
+          disconnect(): void {
+            /* nothing to release */
+          }
+        },
+      );
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    async function measured(width: number): Promise<HTMLElement> {
+      const element = render(true);
+      await fixture.whenStable();
+      resized?.([{ contentRect: { width } }]);
+      fixture.detectChanges();
+      return element;
+    }
+
+    it('ac3_2_shows_the_feed_when_the_pane_is_too_narrow_for_the_road', async () => {
+      const element = await measured(300);
+
+      expect(element.querySelector('[data-testid="timeline-road"]')).toBeNull();
+      expect(element.querySelector('[data-testid="timeline-feed"]')).not.toBeNull();
+    });
+
+    it('ac3_2_fits_the_stops_inside_the_road_padding', async () => {
+      const element = await measured(640);
+
+      expect(
+        element
+          .querySelector<HTMLElement>('[data-testid="timeline-road"]')
+          ?.style.getPropertyValue('--road-columns'),
+      ).toBe('3');
+    });
+
+    it('ac3_3_resets_the_feed_filter_when_the_road_shows', async () => {
+      const element = await measured(300);
+      element.querySelector<HTMLButtonElement>('[data-testid="timeline-filter-national"]')?.click();
+      fixture.detectChanges();
+
+      resized?.([{ contentRect: { width: 1000 } }]);
+      fixture.detectChanges();
+      resized?.([{ contentRect: { width: 300 } }]);
+      fixture.detectChanges();
+
+      expect(
+        element.querySelector('[data-testid="timeline-filter-all"]')?.getAttribute('aria-pressed'),
+      ).toBe('true');
+    });
   });
 
   it('ac3_3_filters_the_feed_to_national_and_higher_awards', () => {
@@ -185,7 +251,9 @@ describe('TimelineChartComponent', () => {
     expect(element.querySelector('[data-testid="timeline-all"]')?.getAttribute('href')).toBe(
       '/awards',
     );
-    expect(element.querySelector('[data-testid="timeline-start"]')).toBeNull();
+    expect(element.querySelector('[data-testid="timeline-start"]')?.textContent).toContain(
+      'from 2024 · newest',
+    );
     expect(element.querySelector('ol')?.getAttribute('aria-label')).toBe(
       'My newest awards up to today',
     );

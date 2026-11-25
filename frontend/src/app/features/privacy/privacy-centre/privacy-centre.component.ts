@@ -2,8 +2,11 @@ import { HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  Injector,
   OnInit,
+  afterNextRender,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -16,7 +19,7 @@ import {
 } from '@angular/material/expansion';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
@@ -137,6 +140,9 @@ export class PrivacyCentreComponent implements OnInit {
   readonly overviewFailed = signal(false);
   readonly summary = signal<PrivacySummary | null>(null);
   readonly summaryFailed = signal(false);
+  private readonly fragment = inject(ActivatedRoute).snapshot.fragment;
+  private readonly injector = inject(Injector);
+  private fragmentShown = false;
   readonly savingConsent = signal(false);
   readonly consentProblem = signal<string | null>(null);
   readonly exporting = signal(false);
@@ -191,6 +197,15 @@ export class PrivacyCentreComponent implements OnInit {
   });
 
   private aboutLoaded = false;
+
+  constructor() {
+    effect(() => {
+      if (this.fragment && !this.fragmentShown && this.summary() && this.overview()) {
+        this.fragmentShown = true;
+        afterNextRender(() => this.showFragment(), { injector: this.injector });
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.consents
@@ -343,5 +358,10 @@ export class PrivacyCentreComponent implements OnInit {
       next: (summary) => this.summary.set(summary),
       error: () => this.summaryFailed.set(true),
     });
+  }
+
+  private showFragment(): void {
+    const tile = this.fragment ? document.getElementById(this.fragment) : null;
+    tile?.scrollIntoView({ block: 'start' });
   }
 }

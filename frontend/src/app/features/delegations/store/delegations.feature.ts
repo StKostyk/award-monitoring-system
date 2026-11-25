@@ -37,6 +37,7 @@ export const delegationsFeature = createFeature({
     initialState,
     on(DelegationsActions.opened, (state, { delegatorId }) => ({
       ...state,
+      ...(delegatorId === state.delegatorId ? {} : { given: [], received: [] }),
       delegatorId,
       loading: true,
       problem: null,
@@ -59,8 +60,6 @@ export const delegationsFeature = createFeature({
     })),
     on(DelegationsActions.delegationsLoadFailed, (state, { problem }) => ({
       ...state,
-      given: [],
-      received: [],
       loading: false,
       problem,
     })),

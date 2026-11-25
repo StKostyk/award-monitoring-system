@@ -236,7 +236,7 @@ Tracker: [EPIC-09-PRODUCTION-HARDENING-STATUS.md](../epics/EPIC-09-PRODUCTION-HA
 | 9.7.6 | Delegations status board | 2 | 👀 In review (11) | SCRUM-186 | [#504](https://github.com/StKostyk/award-monitoring-system/issues/504) |
 | 9.7.7 | Notifications inbox with a reading pane | 3 | 👀 In review (11) | SCRUM-187 | [#505](https://github.com/StKostyk/award-monitoring-system/issues/505) |
 | 9.7.8 | Privacy control panel | 3 | 👀 In review (11) | SCRUM-188 | [#506](https://github.com/StKostyk/award-monitoring-system/issues/506) |
-| 9.7.9 | First sign-in checklist and spotlight tour | 5 | 11 | SCRUM-189 | [#507](https://github.com/StKostyk/award-monitoring-system/issues/507) |
+| 9.7.9 | First sign-in checklist and spotlight tour | 5 | 👀 In review (11) | SCRUM-189 | [#507](https://github.com/StKostyk/award-monitoring-system/issues/507) |
 
 ### Later epics
 | ID | Story | Points | Epic |

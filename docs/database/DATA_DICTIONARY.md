@@ -18,7 +18,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 | **Domain** | **Entities** | **Purpose** |
 |------------|--------------|-------------|
-| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations`, `dashboard_preferences` | Identity, access control, approval authority lent to a colleague, organizational structure, colour scheme and dashboard layouts |
+| **User Domain** | `users`, `user_roles`, `role_delegations`, `organizations`, `dashboard_preferences` | Identity, access control, approval authority lent to a colleague, organizational structure, colour scheme, dashboard layouts and getting-started progress |
 | **Authentication Domain** | `one_time_tokens`, `user_devices`, `oauth2_*` | Email links, known browsers, authorization-server state |
 | **Award Domain** | `awards`, `award_versions`, `award_categories`, `documents` | Core business entities for award management |
 | **Workflow Domain** | `award_requests`, `review_decisions`, `review_templates` | Multi-level approval workflow tracking |
@@ -296,14 +296,15 @@ This Data Dictionary provides comprehensive documentation for all database entit
 
 ### 1.8 Entity: `dashboard_preferences`
 
-**Description**: The colour scheme and the dashboard layouts a person chose (V046, 5.1.2; V052, 9.4.1). No row means the system scheme and every dashboard in its default layout.
+**Description**: The colour scheme and the dashboard layouts a person chose (V046, 5.1.2; V052, 9.4.1) and the getting-started progress (V055, 9.7.9). No row means the system scheme, every dashboard in its default layout and no progress saved.
 
 **Business Rules**:
 - At most one row per account; a save replaces the whole choice (`insert ... on conflict (user_id) do update`), last write wins
 - `layouts` maps a dashboard (`MY_AWARDS`, `HALL_OF_FAME`, `COMMAND_CENTRE`) to `{"order": [...], "hidden": [...]}`; both lists hold widgets of that dashboard only (`MY_AWARDS`: `KPI`, `FACT`, `TREND`, `LEVEL_STAIRS`, `IN_PROGRESS`, `LATEST`, `BY_CATEGORY`, `RANK`, `VISIBILITY`; `HALL_OF_FAME`: `KPI`, `TREND`, `RACE`, `RECORDS`, `FACT`, `TOP`, `LEVEL_MAP`; `COMMAND_CENTRE`: `TODAY`, `QUEUE`, `UNITS`, `TOP`), without duplicates; the service rejects anything else with `invalid-parameter` naming the field. A missing dashboard keeps its default; widgets missing from `order` follow in their default order
 - V052 moved the V046 `hidden_widgets` lists into `layouts.MY_AWARDS.hidden` with the 9.4 names (`SUMMARY`→`KPI`, `YEAR_TREND`→`TREND`, `BY_LEVEL`→`LEVEL_STAIRS`, `BY_CATEGORY` and `RANK` unchanged, `TIMELINE` dropped) and removed the column
+- `onboarding` holds `{"done": [step keys], "dismissed": bool, "tourSeen": bool}`, written only by `PUT /users/me/onboarding` with its own upsert (a new row gets the default scheme and layouts; the dashboard save leaves the column alone). `done` holds stored steps of the caller's current roles only (`PROFILE`, `VISIBILITY`, `NOTIFICATIONS`, `REVIEW_QUEUE`, `IMPORT`); `NOTICE`, `FIRST_AWARD` and `DELEGATE` are decided from `consent_records`, `awards` and `role_delegations` and never stored. Keys of a role the person lost stay until the next save and are ignored
 - Not audited (no trigger, no audit row): it records a display choice, not a processing decision
-- Personal data: part of the export (`dashboard_preferences`, `color_scheme`, `layouts` and `updated_at` since format 1.8) and deleted by the erasure (`RoleErasure`, order 20, count `dashboardPreferencesDeleted`)
+- Personal data: part of the export (`dashboard_preferences`, `color_scheme`, `layouts` and `updated_at` since format 1.8, `onboarding` since 1.9) and deleted by the erasure (`RoleErasure`, order 20, count `dashboardPreferencesDeleted`)
 
 | **Column** | **Data Type** | **Nullable** | **Default** | **Constraints** | **Description** |
 |------------|---------------|--------------|-------------|-----------------|-----------------|
@@ -311,6 +312,7 @@ This Data Dictionary provides comprehensive documentation for all database entit
 | `updated_at` | `TIMESTAMPTZ` | NO | `CURRENT_TIMESTAMP` | - | When the choice was last saved |
 | `color_scheme` | `VARCHAR(10)` | NO | `'SYSTEM'` | CHECK `ck_dashboard_preferences_color_scheme` (`SYSTEM`, `LIGHT`, `DARK`) | `SYSTEM` follows the browser |
 | `layouts` | `JSONB` | NO | `'{}'` | - | Widget order and hidden widgets per dashboard |
+| `onboarding` | `JSONB` | NO | `'{}'` | - | Getting-started progress: stored steps, hidden checklist, seen tour |
 
 **Indexes**: `pk_dashboard_preferences`
 
