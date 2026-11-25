@@ -105,7 +105,7 @@ class PrivacyQueriesIT extends AbstractIntegrationTest {
         audit(admin.getId(), "AWARD_SUBMITTED", "awards", user.getId(), "{}", 2);
         audit(user.getId(), "AWARD_SUBMITTED", "awards", 99L, "{}", 1);
 
-        Page<ActivityEntry> page = activityQueries.activity(user.getId(), PageRequest.of(0, 20));
+        Page<ActivityEntry> page = activityQueries.activity(user.getId(), null, PageRequest.of(0, 20));
 
         assertThat(page.getTotalElements()).isEqualTo(4);
         assertThat(page.getContent()).extracting(ActivityEntry::action, ActivityEntry::entityType,
@@ -115,8 +115,24 @@ class PrivacyQueriesIT extends AbstractIntegrationTest {
                 tuple("ACCOUNT_LOCKED", "USER", user.getId(), false),
                 tuple("ROLE_ASSIGNED", "AUTHORIZATION", user.getId(), false),
                 tuple("LOGIN_SUCCESS", "AUTHENTICATION", user.getId(), true));
-        assertThat(activityQueries.activity(user.getId(), PageRequest.of(1, 3)).getContent())
+        assertThat(activityQueries.activity(user.getId(), null, PageRequest.of(1, 3)).getContent())
             .extracting(ActivityEntry::action).containsExactly("LOGIN_SUCCESS");
+    }
+
+    @Test
+    void ac8_2_theActivityFiltersByWhoActed() {
+        audit(user.getId(), "LOGIN_SUCCESS", "AUTHENTICATION", user.getId(), "{}", 3);
+        audit(user.getId(), "ROLE_ASSIGNED", "AUTHORIZATION", user.getId(), "{\"actorId\":" + admin.getId() + "}", 2);
+        audit(admin.getId(), "ACCOUNT_LOCKED", "USER", user.getId(), "{}", 1);
+
+        Page<ActivityEntry> mine = activityQueries.activity(user.getId(), true, PageRequest.of(0, 20));
+        Page<ActivityEntry> aboutMe = activityQueries.activity(user.getId(), false, PageRequest.of(0, 20));
+
+        assertThat(mine.getTotalElements()).isEqualTo(1);
+        assertThat(mine.getContent()).extracting(ActivityEntry::action).containsExactly("LOGIN_SUCCESS");
+        assertThat(aboutMe.getTotalElements()).isEqualTo(2);
+        assertThat(aboutMe.getContent()).extracting(ActivityEntry::action)
+            .containsExactly("ACCOUNT_LOCKED", "ROLE_ASSIGNED");
     }
 
     private long approved(String visibility) {

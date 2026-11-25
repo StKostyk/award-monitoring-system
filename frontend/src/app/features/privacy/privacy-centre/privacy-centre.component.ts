@@ -8,7 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import {
   MatExpansionPanel,
@@ -22,8 +21,12 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 import { problemStatus, problemType } from '../../../core/api/problem';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { kyivDate, kyivDateTime } from '../../../shared/date-format';
+import { kyivDate, kyivDateTime, kyivDaysUntil } from '../../../shared/date-format';
 import { attachmentName, saveFile } from '../../../shared/file-download';
+import { IconComponent } from '../../../shared/icons/icon.component';
+import { BentoComponent, BentoTileComponent } from '../../../shared/layout/bento.component';
+import { PageHeaderComponent } from '../../../shared/layout/page-header.component';
+import { PaneComponent } from '../../../shared/layout/pane.component';
 import { PagedList } from '../../../shared/paged-list';
 import { ProfileService } from '../../profile/profile.service';
 import { ConsentOverview, ConsentsService } from '../consents.service';
@@ -39,6 +42,12 @@ import {
 const DEFAULT_EXPORT_NAME = 'award-monitoring-export.json';
 
 const PAGE_SIZE = 20;
+
+/** Entries the activity tile shows before «Увесь журнал». */
+export const TILE_ENTRIES = 5;
+
+/** What the status line of the panel says: all fine, a pending deletion, an unacknowledged notice or a failure. */
+export type PrivacyStatus = 'ok' | 'erasure' | 'notice' | 'failed' | 'loading';
 
 /** Audit actions with a label under `privacy.activity.actions`; any other code is shown as it is. */
 export const LABELLED_ACTIONS: ReadonlySet<string> = new Set([
@@ -98,16 +107,17 @@ export function fileName(disposition: string | null): string {
 @Component({
   selector: 'app-privacy-centre',
   imports: [
+    BentoComponent,
+    BentoTileComponent,
+    IconComponent,
     MatButton,
-    MatCard,
-    MatCardHeader,
-    MatCardTitle,
-    MatCardContent,
     MatExpansionPanel,
     MatExpansionPanelHeader,
     MatExpansionPanelTitle,
     MatProgressBar,
     MatSlideToggle,
+    PageHeaderComponent,
+    PaneComponent,
     RouterLink,
     TranslocoPipe,
   ],
@@ -143,15 +153,44 @@ export class PrivacyCentreComponent implements OnInit {
   );
   readonly history = computed(() => [...(this.overview()?.history ?? [])].reverse());
 
-  private readonly list = new PagedList<ActivityEntry, string>({
-    fetch: (page) => this.centre.activity(page, PAGE_SIZE),
-    key: (entry) => `${entry.occurredAt}|${entry.action}|${entry.entityType}|${entry.entityId}`,
+  private readonly lists = {
+    mine: this.activityList(true),
+    about: this.activityList(false),
+  };
+
+  readonly byMe = signal(true);
+  readonly fullLog = signal(false);
+  private readonly list = computed(() => (this.byMe() ? this.lists.mine : this.lists.about));
+
+  readonly activity = computed(() => this.list().items());
+  readonly activityLoading = computed(() => this.list().loading());
+  readonly activityProblem = computed(() => this.list().problem());
+  readonly activityHasMore = computed(() => this.list().hasMore());
+
+  readonly shown = computed(() =>
+    this.fullLog() ? this.activity() : this.activity().slice(0, TILE_ENTRIES),
+  );
+  readonly hasHidden = computed(
+    () => this.activity().length > TILE_ENTRIES || this.activityHasMore(),
+  );
+
+  readonly status = computed<PrivacyStatus>(() => {
+    if (this.erasure()) {
+      return 'erasure';
+    }
+    if (this.overviewFailed() || this.summaryFailed()) {
+      return 'failed';
+    }
+    const overview = this.overview();
+    if (!overview || !this.summary()) {
+      return 'loading';
+    }
+    return overview.notice.acknowledgementRequired || !overview.notice.acknowledgedVersion
+      ? 'notice'
+      : 'ok';
   });
 
-  readonly activity = this.list.items;
-  readonly activityLoading = this.list.loading;
-  readonly activityProblem = this.list.problem;
-  readonly activityHasMore = this.list.hasMore;
+  private aboutLoaded = false;
 
   ngOnInit(): void {
     this.consents
@@ -159,11 +198,27 @@ export class PrivacyCentreComponent implements OnInit {
       .then((overview) => this.overview.set(overview))
       .catch(() => this.overviewFailed.set(true));
     this.loadSummary();
-    this.list.load();
+    this.lists.mine.load();
   }
 
   loadMore(): void {
-    this.list.load();
+    this.list().load();
+  }
+
+  chooseWho(byMe: boolean): void {
+    this.byMe.set(byMe);
+    if (!byMe && !this.aboutLoaded) {
+      this.aboutLoaded = true;
+      this.lists.about.load();
+    }
+  }
+
+  showFullLog(): void {
+    this.fullLog.set(true);
+  }
+
+  daysLeft(iso: string): number {
+    return kyivDaysUntil(iso);
   }
 
   chooseAnalytics(change: MatSlideToggleChange): void {
@@ -198,7 +253,7 @@ export class PrivacyCentreComponent implements OnInit {
         this.exportMessage.set('privacy.centre.data.downloaded');
         this.exporting.set(false);
         this.loadSummary();
-        this.list.reload();
+        this.reloadActivity();
       },
       error: (err: unknown) => {
         this.exportProblem.set(
@@ -224,7 +279,7 @@ export class PrivacyCentreComponent implements OnInit {
       .subscribe((request) => {
         if (request) {
           this.erasureMessage.set('privacy.erasure.requested');
-          this.list.reload();
+          this.reloadActivity();
         } else {
           this.loadSummary();
         }
@@ -242,7 +297,7 @@ export class PrivacyCentreComponent implements OnInit {
       next: () => {
         this.erasureMessage.set('privacy.erasure.cancelled');
         this.cancellingErasure.set(false);
-        this.list.reload();
+        this.reloadActivity();
       },
       error: (err: unknown) => {
         this.cancellingErasure.set(false);
@@ -266,6 +321,20 @@ export class PrivacyCentreComponent implements OnInit {
 
   actionKey(action: string): string | null {
     return LABELLED_ACTIONS.has(action) ? `privacy.activity.actions.${action}` : null;
+  }
+
+  private activityList(byMe: boolean): PagedList<ActivityEntry, string> {
+    return new PagedList<ActivityEntry, string>({
+      fetch: (page) => this.centre.activity(page, PAGE_SIZE, byMe),
+      key: (entry) => `${entry.occurredAt}|${entry.action}|${entry.entityType}|${entry.entityId}`,
+    });
+  }
+
+  private reloadActivity(): void {
+    this.lists.mine.reload();
+    if (this.aboutLoaded) {
+      this.lists.about.reload();
+    }
   }
 
   private loadSummary(): void {

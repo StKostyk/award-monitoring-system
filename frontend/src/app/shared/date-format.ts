@@ -94,3 +94,15 @@ function format(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateT
   }
   return formatter;
 }
+
+/** Whole Kyiv calendar days from today to the day of an instant; 0 on that day and after it. */
+export function kyivDaysUntil(iso: string, now: number = Date.now()): number {
+  const day = (instant: number): number => {
+    const [year, month, date] = format('en-CA', DAY)
+      .format(new Date(instant))
+      .split('-')
+      .map(Number);
+    return Date.UTC(year, month - 1, date);
+  };
+  return Math.max(0, Math.round((day(Date.parse(iso)) - day(now)) / 86_400_000));
+}
