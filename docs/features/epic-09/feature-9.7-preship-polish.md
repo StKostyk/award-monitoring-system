@@ -434,7 +434,9 @@ draft wording and get the merged i18n text at the validation.
    scroll (AC-1.6).
 7. In each theme sign in with a wrong password, then with `employee.fmi`. Expected: the error message, then My
    dashboard (AC-1.8).
-8. With `APP_BRAND=neutral`: `/login`, the sidebar and the browser tab. Expected: mark 9, top step gold (AC-1.7).
+8. With `APP_BRAND=neutral` and the neutral `brand/brand.json`, manifest and icons in the frontend (as in
+   `DEMO_DEPLOYMENT.md`, «University brand»): `/login`, the sidebar and the browser tab. Expected: mark 9, top step
+   gold (AC-1.7).
 9. As `dean.fmi`, unit analytics of the faculty (unit 9), «Нагороди за роками» → «Таблиця». Expected: full grid,
    row and column totals, «Разом», «2026*» with «рік триває» (AC-2.1). As `rector`, `/analytics/university`, the
    same widget → «Таблиця». Expected: one row per faculty plus «Рівень університету» when it has awards, the
@@ -499,13 +501,14 @@ draft wording and get the merged i18n text at the validation.
 36. **Hidden in state**: `PUT /users/me/onboarding` as `employee.fmi` with `done: ["REVIEW_QUEUE"]`. Expected: 400
     `invalid-parameter` (AC-9.3).
 37. **Revoked mid-flow**: `admin` revokes `secretary.fmi`'s secretary role while `secretary.fmi` has My dashboard
-    with the checklist open. Expected: the open `IMPORT` button leads to the forbidden page; on reload the step is
-    gone; another faculty secretary keeps it (AC-9.1).
+    with the checklist open. Expected: a revoke signs the holder out everywhere, so the open `IMPORT` button leads to
+    the sign-in page; after signing in again the step is gone; another faculty secretary keeps it (AC-9.1).
 38. **Revoked mid-flow**: `dean.fmi` revokes the delegation of step 17 while `secretary.fmi` has the board open on
     «Мені». Expected: on reload the card moves to «Завершені»; `dean.fmi` sees it there without an action (AC-6.1).
 39. **Revoked mid-flow**: `admin` revokes `secretary.fmi`'s secretary role (`user:manage:scope`) while
-    `secretary.fmi` has `/admin/users` open with a person pane. Expected: the next tab change or action answers 403
-    and the shell sends the account to `/forbidden`; `dean.fmi` at the same faculty keeps the page (AC-5.3).
+    `secretary.fmi` has `/admin/users` open with a person pane. Expected: the next tab change or action ends at the
+    sign-in page (the revoke signs the holder out everywhere); after signing in again `/admin/users` opens the
+    forbidden page; `dean.fmi` at the same faculty keeps the page (AC-5.3).
 40. Token expiry with the person pane or the reading pane open, then an action. Expected: the silent refresh keeps the
     session, or the sign-in page returns to the same URL.
 
@@ -526,8 +529,8 @@ draft wording and get the merged i18n text at the validation.
     `http://localhost/brand/icons/icon-192.png`. Expected: mark 9 «Книга-сходи» everywhere, crimson theme, «Облік
     нагород ЧНУ».
 45. Register a fresh account and open My dashboard in light and dark. Expected: the crimson checklist card with the
-    ring «1/5», «Перші кроки», the done step struck through with «готово», «Додати першу нагороду» ringed in gold
-    with a filled button, the later steps as text links, the tour and hide links in light text (AC-11.2).
+    ring «1/5», «Перші кроки», the done step struck through with «готово», the first open step («Перевірити
+    профіль») ringed in gold with a filled button, the later steps as text links, the tour and hide links in light text (AC-11.2).
 46. As `dean.fmi`, open `/analytics`, scroll down to the rail and choose another department. Expected: the panes stay
     (dimmed briefly), the page does not jump to the top, the focus stays on the chosen row, the new figures appear
     in place (AC-11.3).
@@ -545,6 +548,62 @@ draft wording and get the merged i18n text at the validation.
 49. As `dean.fmi`, open `/analytics`; as `secretary.fmi`, open `/analytics`. Expected: the dean lands on the
     faculty with its departments and no «Увесь університет»; the secretary sees only the departments the API
     returns; `/analytics/university` as either opens the forbidden page (AC-12.2, 12.5).
+
+### Run 2026-11-25
+
+Compose stack at c4453e5 (develop after #523/#524; app rebuilt, frontend from 83ca484 with the same tree), defaults catalogue/chnu; sky, rushnyk, neutral (frontend brand file copied in) and stars set per step and restored; MCP Chromium 1280/360. Result: 48 pass, 1 blocked.
+
+| Step | Result | Evidence |
+|---|---|---|
+| 1 | PASS | catalogue theme at 1280: card stream left, quote card «ЦИТАТА ДНЯ» (Українка, 1890), form under «Каталог досягнень університету», no brand top left (screenshot) |
+| 2 | PASS | EN link: same quote «Without hope I shall still hope…» (Ukrainka 1890), labels Email address/Password, button Sign in |
+| 3 | PASS | fresh browser context: same quote of the day (Українка, «Contra spem spero!», 1890) |
+| 4 | PASS | APP_SIGN_IN_THEME=sky (env checked), /login: night sky with «Сузір'я книги» and «Сузір'я сходинок», 2 sky-shoot animations, skyline with smoke, «УКР · EN» top right, same quote of the day (screenshot) |
+| 5 | PASS | APP_SIGN_IN_THEME=rushnyk: stitched band left, path of three cross-stitch steps, eight-point star and rosettes, kalyna and tree motifs faint behind, all mirror-symmetric (no hooked motif), card at the right (form x 904-1194), same quote (screenshots) |
+| 6 | PASS | 360 x 740: catalogue band 240 px, sky band ~240 px, rushnyk band 160 px (each at most a third), form full width (x 20-325 / 40-305), scrollWidth = clientWidth in all three (screenshots) |
+| 7 | PASS | catalogue, sky and rushnyk: wrong password -> /login?error=BAD_CREDENTIALS «Невірна адреса або пароль.» in the same theme; employee.fmi -> /dashboard «Мій дашборд» |
+| 8 | PASS | step text corrected (the frontend brand comes from brand/brand.json, DEMO_DEPLOYMENT.md «University brand»; neutral brand.json, manifest and icons copied into award-frontend): APP_BRAND=neutral /login footer mark 9 «Облік нагород» «Університет»; sidebar mark 9 (book + steps, top step gold) «Облік нагород / Університет», green #2d6a4f theme, tab «Мій дашборд — Облік нагород» with the neutral icons |
+| 9 | PASS | dean.fmi units/9 «Таблиця»: 6 rows + «Разом», row and column totals add up (algebra 319, 2022 col 28, total 402), «2026*» with «рік триває»; rector /analytics/university 2021-2025: 13 faculty/college rows + «Рівень університету» 15, «Разом» 102/113/126/126/125 = API byYear, projection line «Прогноз на 2026: близько 136 нагород» |
+| 10 | PASS | «Порівняння кафедр» table: header groups «Нагороди» (Усього, Зміна, Верифік.) and «Люди» (Нагороджені, Працівники, На 100 прац.), «Увесь факультет» last (402), each of the 6 columns sorts (aria-sort ascending, order changes) |
+| 11 | PASS | dean units/9 at 360: both tables in a role=region tabindex=0 scroll area with aria-label «… гортається вбік», first column sticky (left 33.5 -> 33 after scrollLeft 150), years newest first (2026* … 2022), «2 з 5 років — гортайте →»; values as in the 1280 table; page scrollWidth 360 |
+| 12 | PASS | dean units/9 at 1280: after scrolling 1200 px h1 at -1150, rail «Підрозділи» sticky (478 -> 443); summary without comparison paragraph, both change chips with «до 2017–2021», «Нагороди за роками» starts with the Графік/Таблиця switch (no subtitle/footnote) (screenshots) |
+| 13 | PASS | «Найбільше нагород» row 1 hover: card «Секретаренко Аліна / Факультет математики та інформатики / Нагород за період: 7 / Портфоліо →», no awards listed (all 10 PRIVATE; 7 = personal awards 2022-2026), Escape hides it, focus shows it, Enter -> /public/achievements?person=5; long department names wrap in rail and comparison table |
+| 14 | PASS | employee.fmi My dashboard 1280: «Хронологія» road with 19 stops = 19 approved awards; click stop 1 -> /awards/942 «Подяка кафедри 2020»; focus on stop 2 (A /awards/941) + Enter -> /awards/941 «Грамота факультету 2021» |
+| 15 | PASS | 360: dated feed by year («2026 10 нагород», day + month), 19 rows; «Від національного» -> 2 (2024: international + national, = DB levels), «Усі» -> 19; page scrollWidth 360 |
+| 16 | PASS | admin /admin/users: full table (Ім'я та адреса, Підрозділ, Ролі, Статус, Останній вхід: «Ще не входив» / «21.11.2026, 21:10»); dean.fmi -> /admin/users/4 narrow list without table header + pane tabs Ролі/Обліковий запис, links «Нагороди · 0», «Делегування» -> /delegations?delegatorId=4 read only (0 «Делегувати», 0 «Відкликати»), toggle «Видані · 26» / «Отримані · 0»; «Закрити картку» -> full table; 360: full-page card with «До списку користувачів», scrollWidth 360 |
+| 17 | PASS | dean.fmi /delegations «Делегувати»: Декан · ФМІ to secretary.fmi 30.11-06.12.2026 -> card under «Заплановані 1» in «Від мене» with «Відкликати» («Почнеться через 5 днів»); secretary.fmi «Мені · 27»: card under «Заплановані» with no button |
+| 18 | PASS | dean approved award 2366 -> employee /notifications, click: reading pane, bell 11 -> 10, path /notifications (?selected=1888); «Позначити непрочитаним» -> bell 11; «Відкрити нагороду» -> /awards/2366; chip «Ролі» -> ?filter=roles, item gone («У цій групі сповіщень немає») |
+| 19 | PASS | employee /privacy: «Усе гаразд…», tiles notice 1.1, rankings, visibility 19/0/0/0, mail, data, activity; «Щодо мене» empty = GET /users/me/activity?byMe=false 0 rows; «Увесь журнал →» 14 -> 44 lines in the tile, «Показати ще» -> 84; «Завантажити» -> award-monitoring-export-2026-11-25.json (12 sections); delete with password + checkbox -> «Обліковий запис буде видалено 25.12.2026, залишилось днів: 30.», «Скасувати запит» -> «Усе гаразд»; 360 one column, status line first, scrollWidth 360 |
+| 20 | PASS | mr97.onb2 (registered + verified via Mailpit, notice 1.1 at sign-up, EMPLOYEE) signs in -> /dashboard «Вітаємо, Iryna!», «Виконано 1 з 5», NOTICE «Готово», 4 open steps (PROFILE, FIRST_AWARD, VISIBILITY, NOTIFICATIONS) |
+| 21 | PASS | «Додати» on FIRST_AWARD -> /awards/new, «Заповнити без документа», title, «Зберегти чернетку» -> /awards/2367/edit; back on My dashboard FIRST_AWARD done (NOTICE, FIRST_AWARD done) |
+| 22 | PASS | «Налаштувати» on VISIBILITY -> /privacy#choices «Конфіденційність і мої дані»; Back -> My dashboard, VISIBILITY done |
+| 23 | PASS | «Показати тур по екрану» at 1280: «Крок 1 з 4» Пошук, 2 Навігація, 3 Нова нагорода, 4 Графік / Таблиця (no chart: bubble centred 640,450), «Готово»; 360 with the menu closed: steps 1-2 centred (180,370); Escape ends the tour on step 2 and 4 |
+| 24 | PASS | GET /users/me/onboarding with Bearer (mr97.onb2): steps with done (NOTICE, FIRST_AWARD, VISIBILITY true), tourSeen true, dismissed false; without the header 401 |
+| 25 | PASS | dean.fmi GET /users/me/onboarding: steps NOTICE, PROFILE, FIRST_AWARD, VISIBILITY, NOTIFICATIONS + REVIEW_QUEUE and DELEGATE; DELEGATE done (derived) after the step 17 delegation |
+| 26 | PASS | APP_SIGN_IN_THEME=stars: start fails, IllegalStateException «app.sign-in.theme (APP_SIGN_IN_THEME) must be one of catalogue, sky, rushnyk, not 'stars'», container restarts; restarted without the variable -> healthy, catalogue |
+| 27 | PASS | reducedMotion reduce: catalogue 0 running animations and card positions unchanged after 1.5 s (no-preference: catalogue-up/down running, cards move); sky 0 running (normally sky-twinkle, sky-shoot, sky-wisp smoke, sky-rise); rushnyk 0 running |
+| 28 | PASS | browser clock set to 23:59:50 Kyiv and run 90 s past midnight: quote unchanged, no request sent; the page is server-rendered, the change on reload is QuoteOfTheDayTest.ac1_5_the_quote_changes_at_kyiv_midnight_not_at_utc_midnight (server clock not moved) |
+| 29 | PASS | employee /notifications?selected=1685 (dean's): pane «Сповіщення не знайдено: … належить іншій особі.», list stays (9 items); DELETE /notifications/1685/read 404 notification-not-found, dean's row unchanged |
+| 30 | PASS | 1888 read (bell 10) + reload: same notification open, bell 10, «Позначити непрочитаним» shown; after «Позначити непрочитаним» reload and Back keep it unread (bell 11) |
+| 31 | PASS | «Відкрити нагороду» -> /awards/2366, Back -> /notifications?selected=1888 with the same notification selected |
+| 32 | PASS | admin /admin/users/2113 (DELETED account): GET /users/2113 404, pane «Користувача не знайдено. Такого користувача немає або він поза межами ваших повноважень.», list beside it with all 1958 people (20 links, «1–20 з 1958») |
+| 33 | PASS | dean «Завершені · 26» cards (revoked/expired) without «Відкликати»; secretary received card without a button; DELETE /delegations/55 (revoked) as dean 409 delegation-not-active, DELETE /delegations/58 (received) as secretary 404 |
+| 34 | PASS | 1035 unread: pane without «Позначити непрочитаним» (only «Відкрити нагороду»); DELETE /notifications/1035/read 204, still unread |
+| 35 | PASS | mr97.onb2 «Сховати список»: no checklist on reload, in a second browser after a new sign-in (dismissed true); PUT /users/me/onboarding dismissed false -> 200, checklist back on reload |
+| 36 | PASS | employee.fmi PUT /users/me/onboarding done [REVIEW_QUEUE] -> 400 urn:awards:problem:invalid-parameter, parameter done; state unchanged |
+| 37 | PASS | step text corrected (a revoke signs the holder out everywhere, AUTHENTICATION_AUTHORIZATION.md role assignment): admin revokes FACULTY_SECRETARY of secretary.fmi while My dashboard shows IMPORT; the IMPORT button leads to the sign-in page; after sign-in GET /users/me/onboarding lists NOTICE, PROFILE, NOTIFICATIONS (IMPORT gone); mr97.sec2 (faculty secretary of 9) keeps REVIEW_QUEUE and IMPORT |
+| 38 | PASS | secretary.fmi /delegations on «Мені» with delegation 58 under «Заплановані»; dean.fmi «Відкликати» -> dean «Заплановані 0», «Завершені 27»; secretary reload (server session idle 19 min -> sign-in -> back at /delegations) shows «Мені · 27» with the card «Відкликано 30.11.2026 — 06.12.2026» under «Завершені»; dean's ended cards without «Відкликати» |
+| 39 | PASS | step text corrected (as 37): secretary.fmi /admin/users/1098 pane, after the revoke the next tab change ends at the sign-in page, after sign-in /admin/users/1098 -> /forbidden; dean.fmi on /admin/users/1098 keeps the page and switches to «Обліковий запис» |
+| 40 | PASS | admin /admin/users/4 pane and employee /notifications?selected=1888 opened 18:02Z, idle past the 15 min access token; 18:17Z tab change + search: GET /users?q=… 200, /users/4 200; reading-pane action: 204 /notifications/669/read, unread-count 200; URLs unchanged, no sign-in page (silent refresh) |
+| 41 | BLOCKED | every seed account already acknowledged 1.1 and consent_records are append-only (fn_consent_records_guard refused the 1.0 setup), so the redirect at sign-in was not walked; covered by e2e privacy-notice.spec ac1_8; checked: /privacy-notice?acknowledge=true shows «Файли cookie та сховище браузера», the hint «…версію 1.1…», «Я ознайомився», selector 1.1 · 26.11.2026 and 1.0 · 15.10.2026 |
+| 42 | PASS | signed out: footer «Конфіденційність» -> /privacy-notice (h1 shown, no sign-in loop), «Умови користування» -> /terms in uk and en (EN switch: «Terms of use»), links back to the notice; /register shows «Користуючись системою, ви погоджуєтеся з умовами користування.» with the link |
+| 43 | PASS | employee submits 2366, dean approves: «Нагороду затверджено / Award approved» 20:01 to employee.fmi has List-Unsubscribe: <http://localhost/profile#notifications>; «Скидання пароля / Password reset» to mr97.notice (POST /auth/password-reset/request 202) has no List-Unsubscribe |
+| 44 | PASS | default brand chnu: /login footer and sidebar show mark 9 (book with steps, top step gold) and «Облік нагород ЧНУ», primary #7a1f2e crimson, tab «Мій дашборд — Облік нагород ЧНУ» with brand/icons/favicon.ico, /brand/icons/icon-192.png 200 image/png mark 9 |
+| 45 | PASS | step text corrected (the first open step is «Перевірити профіль», AC-11.2): crimson card light / dark tokens, ring «1/5», «Перші кроки», NOTICE struck through with «Готово», first open step ringed gold with the filled «Перевірити», later steps as text links, «Показати тур по екрану» / «Сховати список» in light text (screenshots) |
+| 46 | PASS | dean.fmi /analytics -> units/9, scrolled 450, chose «Кафедра математичного аналізу»: /analytics/units/66 in the same document, aria-busy on the panes during the load, scrollTop stays 450, focus on the chosen row, figures replaced in place (21, +9 (+75 %)) |
+| 47 | PASS | rector /analytics?from=2021&to=2025 -> /analytics/university?from=2021&to=2025; one «Аналітика» nav entry aria-current=page; side column «Підсумок», «Підрозділи» with «Увесь університет» (aria-current) and 12 faculties, no department; main column starts with «Факультети» |
+| 48 | PASS | rector: faculty FMI -> /analytics/units/9?from=2021&to=2025, rail faculty «147 схвалених нагород» and 5 departments with counts indented (padding 44 vs 18 px); department -> /analytics/units/64?from=2021&to=2025 in place (same document, scrollTop 400 kept, focus on the row), nav «Аналітика» current; «Увесь університет» -> /analytics/university?from=2021&to=2025 |
+| 49 | PASS | dean /analytics -> units/9, rail faculty + 5 departments, no «Увесь університет»; secretary /analytics -> units/64, rail = 5 departments of GET /analytics/units (64-68), no faculty/university; /analytics/university as either -> /forbidden «Доступ заборонено» (API 403) |
 
 ## 11. Risks
 
