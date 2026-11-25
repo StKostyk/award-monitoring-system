@@ -2,8 +2,8 @@
 
 > **Epic**: 9 Production hardening (SCRUM-128) · **Tracker**: `docs/epics/EPIC-09-PRODUCTION-HARDENING-STATUS.md`
 > **Sprint**: 11 (2026-11-23 to 2026-11-29) and 12 (2026-11-30 to 2026-12-06) · **Points**: 30
-> **Status**: Validated 2026-11-25 (manual run 2026-11-25: 48 of 49, step 41 covered by e2e
-> `privacy-notice.spec` ac1_8); fix 9.7.13 (SCRUM-193) open
+> **Status**: Done 2026-11-25 (manual run 2026-11-25: 48 of 49, step 41 accepted on e2e `privacy-notice.spec`
+> ac1_8; fix 9.7.13 (SCRUM-193) merged in #528)
 > **Governing docs**: ADR-014 and ADR-016 (9.3 addenda: tokens, effect components, chart theme), ADR-015 (NgRx per
 > feature, selection in the URL), ADR-021 (one backend instance, settings through the environment),
 > `docs/frontend/UI_GUIDELINES.md`, Feature 9.6 (widget header 8, the «Графік / Таблиця» switch, common widget
@@ -627,7 +627,7 @@ Compose stack at c4453e5 (develop after #523/#524; app rebuilt, frontend from 83
 | 38 | PASS | secretary.fmi /delegations on «Мені» with delegation 58 under «Заплановані»; dean.fmi «Відкликати» -> dean «Заплановані 0», «Завершені 27»; secretary reload (server session idle 19 min -> sign-in -> back at /delegations) shows «Мені · 27» with the card «Відкликано 30.11.2026 — 06.12.2026» under «Завершені»; dean's ended cards without «Відкликати» |
 | 39 | PASS | step text corrected (as 37): secretary.fmi /admin/users/1098 pane, after the revoke the next tab change ends at the sign-in page, after sign-in /admin/users/1098 -> /forbidden; dean.fmi on /admin/users/1098 keeps the page and switches to «Обліковий запис» |
 | 40 | PASS | admin /admin/users/4 pane and employee /notifications?selected=1888 opened 18:02Z, idle past the 15 min access token; 18:17Z tab change + search: GET /users?q=… 200, /users/4 200; reading-pane action: 204 /notifications/669/read, unread-count 200; URLs unchanged, no sign-in page (silent refresh) |
-| 41 | BLOCKED | every seed account already acknowledged 1.1 and consent_records are append-only (fn_consent_records_guard refused the 1.0 setup), so the redirect at sign-in was not walked; covered by e2e privacy-notice.spec ac1_8; checked: /privacy-notice?acknowledge=true shows «Файли cookie та сховище браузера», the hint «…версію 1.1…», «Я ознайомився», selector 1.1 · 26.11.2026 and 1.0 · 15.10.2026 |
+| 41 | ACCEPTED ON E2E (`privacy-notice.spec` ac1_8, 2026-11-25) | every seed account already acknowledged 1.1 and consent_records are append-only (fn_consent_records_guard refused the 1.0 setup), so the redirect at sign-in was not walked; covered by e2e privacy-notice.spec ac1_8; checked: /privacy-notice?acknowledge=true shows «Файли cookie та сховище браузера», the hint «…версію 1.1…», «Я ознайомився», selector 1.1 · 26.11.2026 and 1.0 · 15.10.2026 |
 | 42 | PASS | signed out: footer «Конфіденційність» -> /privacy-notice (h1 shown, no sign-in loop), «Умови користування» -> /terms in uk and en (EN switch: «Terms of use»), links back to the notice; /register shows «Користуючись системою, ви погоджуєтеся з умовами користування.» with the link |
 | 43 | PASS | employee submits 2366, dean approves: «Нагороду затверджено / Award approved» 20:01 to employee.fmi has List-Unsubscribe: <http://localhost/profile#notifications>; «Скидання пароля / Password reset» to mr97.notice (POST /auth/password-reset/request 202) has no List-Unsubscribe |
 | 44 | PASS | default brand chnu: /login footer and sidebar show mark 9 (book with steps, top step gold) and «Облік нагород ЧНУ», primary #7a1f2e crimson, tab «Мій дашборд — Облік нагород ЧНУ» with brand/icons/favicon.ico, /brand/icons/icon-192.png 200 image/png mark 9 |
@@ -662,6 +662,9 @@ Compose stack at c4453e5 (develop after #523/#524; app rebuilt, frontend from 83
 Result: **PASSED WITH NOTES**. Stories 9.7.1 to 9.7.12 merged (#510-#512, #515-#523); manual run of §10 on
 2026-11-25: 48 of 49 steps, step 41 covered by e2e `privacy-notice.spec` ac1_8 (every seed account had already
 acknowledged 1.1, and consent rows are append-only). One fix story from the scenario review: 9.7.13 (SCRUM-193, #526).
+Closed 2026-11-25: 9.7.13 merged in #528 (NFC for the user and people searches and for names at registration, in
+the profile and for added people; gate unit 1 502, IT/FT 646, JaCoCo 98.2 %); step 41 accepted on e2e
+`privacy-notice.spec` ac1_8.
 
 Suite on `develop` plus the e2e fix of this PR: unit 1 498, IT/FT 644, JaCoCo 98.2 % lines (7 392/7 527),
 Checkstyle/PMD/SpotBugs 0; frontend lint, 1 607 unit tests, production build 930 kB; Playwright 280/280 on one worker (55 min): `command-centre.spec` ac5_1 ac5_7 and
