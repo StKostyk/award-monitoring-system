@@ -14,6 +14,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { PaneComponent } from '../../../../shared/layout/pane.component';
+import { RowLinkDirective } from '../../../../shared/layout/row-link.directive';
 import { organizationName } from '../../../../shared/organization-name';
 import { TableScrollComponent } from '../../../../shared/widgets/table-scroll.component';
 import { AnalyticsPeriod } from '../../analytics.service';
@@ -59,6 +60,7 @@ const MIN_BAR_PERCENT = 4;
     MatSortHeader,
     NgTemplateOutlet,
     RouterLink,
+    RowLinkDirective,
     TableScrollComponent,
     TranslocoPipe,
   ],

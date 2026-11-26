@@ -109,6 +109,7 @@ progress. No story has a large UI part; 9.1.3 has one but is a stretch.
 | 6a | 9.2.5 Move a confirmed employee to another department | 9.2 | 3 | SCRUM-194 | #535 | no | Done |
 | 6b | 9.2.6 Document preview on award, review and profile screens | 9.2 | 5 | SCRUM-195 | #536 | no | Done |
 | 6c | 9.2.7 Award page with the document stage and review path | 9.2 | 5 | SCRUM-196 | #537 | no | Done |
+| 6d | 9.2.8 Open a user from anywhere on the table row | 9.2 | 2 | SCRUM-197 | #538 | no | In review |
 | 6c | 9.2.9 In-rework tab for awards sent back by the reviewer | 9.2 | 5 | SCRUM-198 | #539 | no | In review |
 | 7 | 9.1.3 Backend-for-frontend with an HttpOnly session cookie (stretch) | 9.1 | 8 | SCRUM-135 | #376 | no | Planned |
 

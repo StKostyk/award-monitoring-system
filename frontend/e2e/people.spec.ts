@@ -285,3 +285,24 @@ test.describe('users list that splits on select (9.7.5)', () => {
     await expect(page.getByTestId('users-table')).toBeVisible();
   });
 });
+
+test.describe('users table rows open the person (9.2.8)', () => {
+  const { admin, dean } = SEED;
+
+  test('ac1 ac2 a click on any cell of the row opens the card and the row shows a pointer', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await signIn(page, admin, DEMO_PASSWORD);
+    await page.goto('/admin/users');
+    await page.getByTestId('filter-q').fill(dean);
+    const row = userTableRow(page, dean);
+
+    await expect(row).toHaveCount(1);
+    expect(await row.evaluate((element) => getComputedStyle(element).cursor)).toBe('pointer');
+    await row.getByTestId('user-roles').click();
+
+    await expect(page).toHaveURL(/\/admin\/users\/\d+$/);
+    await expect(userRow(page, dean)).toHaveAttribute('aria-current', 'true');
+  });
+});
