@@ -177,6 +177,10 @@ with ClamAV in it.
   about 1.5 times its peak on the rehearsal stack (ClamAV 2.9 GB for its signature reload, backend 1 GB with
   `MaxRAMPercentage=60`, backup 1.1 GB for its 768 MB tmpfs); the backend has a fixed address so the frontend proxy
   keeps reaching it after the backend container is recreated.
+- **Mail** (2026-11-26): Gmail SMTP with an app password replaces Brevo. Brevo sent the `@gmail.com` sender from
+  its own servers, which fails Gmail's DMARC alignment, and paused the account after the first message; Gmail's own
+  server sends the same address aligned and free. A domain with SPF and DKIM is not bought for a demo that ends after
+  the defense; production uses the university's mail domain.
 - **One instance, no load balancer or Auto Scaling group**: with one target a load balancer only adds a hop and a
   monthly charge, and Caddy already terminates TLS. An Auto Scaling group would replace a failed host with an
   empty disk, while the database and the documents live on the instance's volume; automatic recovery keeps the
